@@ -1,0 +1,73 @@
+Resolver Expectations — Authoring Template (Operator-Facing)
+
+Scope Lock
+- Governance only. No runtime logic, no APIs, no credentials, no prompts.
+- Join strategy: contract_key → file_url → file_name.
+
+Intent-First Authoring (copy/paste and fill)
+WHEN: <describe pointer availability or joinability>
+EXPECT: <what outcome or issue should be surfaced>
+BECAUSE: <brief rationale>
+
+Rule Mapping Shape (documentation-oriented)
+- rule_id: RSV_R<number>_<SHORT_NAME>
+- description: Plain English (WHEN/EXPECT/BECAUSE)
+- when: { sheet, field, operator, value? }
+- then: issues and/or blocking diagnostics to surface
+
+Template (JSON snippet — documentation only)
+{
+  "rule_id": "RSV_R<number>_<SHORT_NAME>",
+  "description": "<WHEN/EXPECT/BECAUSE>",
+  "when": {
+    "sheet": "<accounts|catalog|__contract__>",
+    "field": "<file_url|s3_bucket|sf_content_version_id|...>",
+    "operator": "EXISTS|NOT_EXISTS|IN|EQ|NEQ|CONTAINS",
+    "value": "<optional>"
+  },
+  "then": [
+    {"resolver_issue_type": "<string>", "severity": "warning|blocking", "details": "<short>"}
+  ]
+}
+
+Examples (synthetic)
+
+1) Rule: RSV_R1_NO_RESOLVABLE_POINTERS
+WHEN
+- __contract__.all_pointers NOT_EXISTS (i.e., file_url blank AND no SF IDs AND no S3 pointers)
+EXPECT
+- Surface blocking issue: no_resolvable_pointers
+BECAUSE
+- Cannot safely resolve files without any pointer
+Snippet
+{
+  "rule_id": "RSV_R1_NO_RESOLVABLE_POINTERS",
+  "description": "If no resolvable pointers exist, block with explicit diagnostic.",
+  "when": {"sheet": "__contract__", "field": "all_pointers", "operator": "NOT_EXISTS"},
+  "then": [
+    {"resolver_issue_type": "no_resolvable_pointers", "severity": "blocking", "details": "file_url + SF IDs + S3 pointers all missing."}
+  ]
+}
+
+2) Rule: RSV_R2_JOIN_MISSING_TARGET_ROW
+WHEN
+- catalog join by (contract_key → file_url → file_name) fails
+EXPECT
+- Surface blocking issue: join_failed_missing_target_row
+BECAUSE
+- Cannot apply downstream actions without a joinable target
+Snippet
+{
+  "rule_id": "RSV_R2_JOIN_MISSING_TARGET_ROW",
+  "description": "If catalog row cannot be joined by the triplet, block with a join-failure diagnostic.",
+  "when": {"sheet": "catalog", "field": "joinable", "operator": "EQ", "value": false},
+  "then": [
+    {"resolver_issue_type": "join_failed_missing_target_row", "severity": "blocking", "details": "No catalog row for triplet."}
+  ]
+}
+
+Operator Checklist
+- Always test examples against the synthetic dataset.
+- Keep conditions explicit; avoid ambiguous interpretations of pointer presence.
+- Use blocking for unsafe/no-pointer states; use warning for recoverable hints.
+- Reinforce the join strategy in all examples.

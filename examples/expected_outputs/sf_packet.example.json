@@ -1,0 +1,128 @@
+{
+  "sf_summary": {
+    "contracts": 3,
+    "blocked": 0,
+    "needs_review": 2,
+    "ready": 1
+  },
+  "sf_contract_results": [
+    {
+      "contract_key": "ck:001",
+      "file_name": "a.pdf",
+      "file_url": "https://example.org/a.pdf",
+      "detected_subtype": {
+        "value": "record_label",
+        "confidence": null
+      },
+      "sf_contract_status": "NEEDS_REVIEW",
+      "notes": null
+    },
+    {
+      "contract_key": null,
+      "file_name": "c.pdf",
+      "file_url": null,
+      "detected_subtype": {
+        "value": "record_label",
+        "confidence": null
+      },
+      "sf_contract_status": "NEEDS_REVIEW",
+      "notes": null
+    },
+    {
+      "contract_key": null,
+      "file_name": "b.pdf",
+      "file_url": "https://example.org/b.pdf",
+      "detected_subtype": {
+        "value": "artist",
+        "confidence": null
+      },
+      "sf_contract_status": "READY",
+      "notes": null
+    }
+  ],
+  "sf_field_actions": [
+    {
+      "contract_key": "ck:001",
+      "file_url": "https://example.org/a.pdf",
+      "file_name": "a.pdf",
+      "sheet": "catalog",
+      "row_index": null,
+      "field": "artist_name",
+      "action": "blank",
+      "proposed_value": null,
+      "reason_category": "salesforce_rules",
+      "reason_text": "If subtype indicates record label entity, artist_name must be blank.",
+      "severity": "warning"
+    },
+    {
+      "contract_key": null,
+      "file_url": null,
+      "file_name": "c.pdf",
+      "sheet": "catalog",
+      "row_index": null,
+      "field": "artist_name",
+      "action": "blank",
+      "proposed_value": null,
+      "reason_category": "salesforce_rules",
+      "reason_text": "If subtype indicates record label entity, artist_name must be blank.",
+      "severity": "warning"
+    }
+  ],
+  "sf_issues": [
+    {
+      "contract_key": "ck:001",
+      "file_url": "https://example.org/a.pdf",
+      "file_name": "a.pdf",
+      "sheet": "catalog",
+      "row_index": null,
+      "field": "artist_name",
+      "issue_type": "field_should_be_blank_but_populated",
+      "severity": "warning",
+      "details": "If subtype indicates record label entity, artist_name must be blank.",
+      "suggested_routing": null
+    },
+    {
+      "contract_key": null,
+      "file_url": null,
+      "file_name": "c.pdf",
+      "sheet": "catalog",
+      "row_index": null,
+      "field": "artist_name",
+      "issue_type": "field_should_be_blank_but_populated",
+      "severity": "warning",
+      "details": "If subtype indicates record label entity, artist_name must be blank.",
+      "suggested_routing": null
+    }
+  ],
+  "sf_manual_review_queue": [],
+  "sf_change_log": [
+    {
+      "timestamp": null,
+      "agent": "salesforce_agent_preview",
+      "sheet": "catalog",
+      "row_key": null,
+      "field": "artist_name",
+      "old_value": "Some Artist",
+      "new_value": null,
+      "reason_category": "salesforce_rules",
+      "severity": "warning",
+      "notes": "SF_R1_LABEL_NOT_ARTIST"
+    },
+    {
+      "timestamp": null,
+      "agent": "salesforce_agent_preview",
+      "sheet": "catalog",
+      "row_key": null,
+      "field": "artist_name",
+      "old_value": "Artist C Name",
+      "new_value": null,
+      "reason_category": "salesforce_rules",
+      "severity": "warning",
+      "notes": "SF_R1_LABEL_NOT_ARTIST"
+    }
+  ],
+  "sf_meta": {
+    "ruleset_version": "v0.1.0",
+    "qa_loaded": false
+  }
+}

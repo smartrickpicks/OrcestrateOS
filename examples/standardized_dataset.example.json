@@ -1,0 +1,78 @@
+{
+  "standardized_dataset": {
+    "sheets": {
+      "accounts": {
+        "headers": [
+          "contract_key",
+          "file_url",
+          "file_name",
+          "account_name",
+          "subtype",
+          "billing_country",
+          "billing_city"
+        ],
+        "rows": [
+          {
+            "contract_key": "ck:001",
+            "file_url": "https://example.org/a.pdf",
+            "file_name": "a.pdf",
+            "account_name": "Label A",
+            "subtype": "record_label",
+            "billing_country": "United States",
+            "billing_city": "New York"
+          },
+          {
+            "contract_key": "",
+            "file_url": "https://example.org/b.pdf",
+            "file_name": "b.pdf",
+            "account_name": "Artist B",
+            "subtype": "artist",
+            "billing_country": "United States",
+            "billing_city": "Los Angeles"
+          },
+          {
+            "contract_key": "",
+            "file_url": "",
+            "file_name": "c.pdf",
+            "account_name": "Label C",
+            "subtype": "record_label",
+            "billing_country": "United States",
+            "billing_city": "San Francisco"
+          }
+        ]
+      },
+      "catalog": {
+        "headers": [
+          "contract_key",
+          "file_url",
+          "file_name",
+          "artist_name",
+          "track_title"
+        ],
+        "rows": [
+          {
+            "contract_key": "ck:001",
+            "file_url": "https://example.org/a.pdf",
+            "file_name": "a.pdf",
+            "artist_name": "Some Artist",
+            "track_title": ""
+          },
+          {
+            "contract_key": "",
+            "file_url": "https://example.org/b.pdf",
+            "file_name": "b.pdf",
+            "artist_name": "",
+            "track_title": ""
+          },
+          {
+            "contract_key": "",
+            "file_url": "",
+            "file_name": "c.pdf",
+            "artist_name": "Artist C Name",
+            "track_title": ""
+          }
+        ]
+      }
+    }
+  }
+}

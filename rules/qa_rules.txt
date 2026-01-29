@@ -1,0 +1,80 @@
+QA Expectations — Authoring Template (Operator-Facing)
+
+Scope Lock
+- Governance only. No runtime logic, no APIs, no credentials, no prompts.
+- Join strategy: contract_key → file_url → file_name.
+
+Intent-First Authoring (copy/paste and fill)
+WHEN: <condition indicating quality risk>
+EXPECT: <READY|NEEDS_REVIEW|BLOCKED, and what issue to surface>
+BECAUSE: <brief rationale>
+
+Rule Mapping Shape (documentation-oriented)
+- rule_id: QA_R<number>_<SHORT_NAME>
+- description: Plain English intent (WHEN/EXPECT/BECAUSE)
+- when: { sheet, field, operator, value? }
+- then: list of QA outcomes to surface (issues and/or status)
+
+Template (JSON snippet — documentation only)
+{
+  "rule_id": "QA_R<number>_<SHORT_NAME>",
+  "description": "<WHEN/EXPECT/BECAUSE>",
+  "when": {
+    "sheet": "<canonical_sheet_or__extraction__>",
+    "field": "<canonical_field_or_quality_metric>",
+    "operator": "IN|EQ|NEQ|CONTAINS|EXISTS|NOT_EXISTS",
+    "value": ["<value>"]
+  },
+  "then": [
+    {"qa_issue_type": "<string>", "field": "<target_or__extraction_>", "severity": "warning|blocking", "details": "<short>"},
+    {"qa_status": "READY|NEEDS_REVIEW|BLOCKED"}
+  ]
+}
+
+Severity Guidance
+- warning → NEEDS_REVIEW
+- blocking → BLOCKED
+
+Examples (synthetic)
+
+1) Rule: QA_R1_SUSPECT_MOJIBAKE
+WHEN
+- __extraction__.text_quality IN ["suspect_mojibake"]
+EXPECT
+- NEEDS_REVIEW and an issue noting suspect encoding
+BECAUSE
+- Corrupted text risks misinterpretation of fields
+Snippet
+{
+  "rule_id": "QA_R1_SUSPECT_MOJIBAKE",
+  "description": "If text quality is suspect mojibake, flag for review.",
+  "when": {"sheet": "__extraction__", "field": "text_quality", "operator": "EQ", "value": "suspect_mojibake"},
+  "then": [
+    {"qa_issue_type": "extraction_suspect_mojibake", "field": "_extraction_", "severity": "warning", "details": "Encoding appears corrupted."},
+    {"qa_status": "NEEDS_REVIEW"}
+  ]
+}
+
+2) Rule: QA_R2_UNRECOVERABLE_EMPTY
+WHEN
+- __extraction__.extracted_text_chars EQ 0
+EXPECT
+- BLOCKED and an issue noting unrecoverable extraction empty
+BECAUSE
+- No usable text; cannot proceed
+Snippet
+{
+  "rule_id": "QA_R2_UNRECOVERABLE_EMPTY",
+  "description": "If extracted text is empty after attempts, block.",
+  "when": {"sheet": "__extraction__", "field": "extracted_text_chars", "operator": "EQ", "value": 0},
+  "then": [
+    {"qa_issue_type": "extraction_unrecoverable", "field": "_extraction_", "severity": "blocking", "details": "No usable text layer."},
+    {"qa_status": "BLOCKED"}
+  ]
+}
+
+Operator Checklist
+- Use canonical signals/fields that appear in preview outputs.
+- Keep conditions simple and deterministic.
+- Map warning ↔ NEEDS_REVIEW, blocking ↔ BLOCKED consistently.
+- Align examples with synthetic datasets and expected outputs.

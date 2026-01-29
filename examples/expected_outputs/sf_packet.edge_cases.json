@@ -1,0 +1,157 @@
+{
+  "sf_summary": {
+    "contracts": 4,
+    "blocked": 1,
+    "needs_review": 2,
+    "ready": 1
+  },
+  "sf_contract_results": [
+    {
+      "contract_key": null,
+      "file_name": "edge-c.pdf",
+      "file_url": null,
+      "detected_subtype": {
+        "value": "record_label",
+        "confidence": null
+      },
+      "sf_contract_status": "NEEDS_REVIEW",
+      "notes": null
+    },
+    {
+      "contract_key": null,
+      "file_name": "edge-a.pdf",
+      "file_url": "https://edge.example/a.pdf",
+      "detected_subtype": {
+        "value": "record_label",
+        "confidence": null
+      },
+      "sf_contract_status": "NEEDS_REVIEW",
+      "notes": null
+    },
+    {
+      "contract_key": "ck:edge2",
+      "file_name": "edge-b.pdf",
+      "file_url": null,
+      "detected_subtype": {
+        "value": "record_label",
+        "confidence": null
+      },
+      "sf_contract_status": "READY",
+      "notes": null
+    },
+    {
+      "contract_key": "ck:edge4",
+      "file_name": "edge-d.pdf",
+      "file_url": null,
+      "detected_subtype": {
+        "value": "record_label",
+        "confidence": null
+      },
+      "sf_contract_status": "BLOCKED",
+      "notes": null
+    }
+  ],
+  "sf_field_actions": [
+    {
+      "contract_key": null,
+      "file_url": null,
+      "file_name": "edge-c.pdf",
+      "sheet": "catalog",
+      "row_index": null,
+      "field": "artist_name",
+      "action": "blank",
+      "proposed_value": null,
+      "reason_category": "salesforce_rules",
+      "reason_text": "If subtype indicates record label entity, artist_name must be blank.",
+      "severity": "warning"
+    },
+    {
+      "contract_key": null,
+      "file_url": "https://edge.example/a.pdf",
+      "file_name": "edge-a.pdf",
+      "sheet": "catalog",
+      "row_index": null,
+      "field": "artist_name",
+      "action": "blank",
+      "proposed_value": null,
+      "reason_category": "salesforce_rules",
+      "reason_text": "If subtype indicates record label entity, artist_name must be blank.",
+      "severity": "warning"
+    }
+  ],
+  "sf_issues": [
+    {
+      "contract_key": null,
+      "file_url": null,
+      "file_name": "edge-c.pdf",
+      "sheet": "catalog",
+      "row_index": null,
+      "field": "artist_name",
+      "issue_type": "field_should_be_blank_but_populated",
+      "severity": "warning",
+      "details": "If subtype indicates record label entity, artist_name must be blank.",
+      "suggested_routing": null
+    },
+    {
+      "contract_key": null,
+      "file_url": "https://edge.example/a.pdf",
+      "file_name": "edge-a.pdf",
+      "sheet": "catalog",
+      "row_index": null,
+      "field": "artist_name",
+      "issue_type": "field_should_be_blank_but_populated",
+      "severity": "warning",
+      "details": "If subtype indicates record label entity, artist_name must be blank.",
+      "suggested_routing": null
+    },
+    {
+      "contract_key": "ck:edge4",
+      "file_url": null,
+      "file_name": "edge-d.pdf",
+      "sheet": "catalog",
+      "row_index": null,
+      "field": "artist_name",
+      "issue_type": "join_failed_missing_target_row",
+      "severity": "blocking",
+      "details": "Cannot join to catalog for rule SF_R1_LABEL_NOT_ARTIST",
+      "suggested_routing": null
+    }
+  ],
+  "sf_manual_review_queue": [
+    {
+      "contract_key": "ck:edge4",
+      "severity": "blocking",
+      "reason": "blocking_salesforce_rule_or_join_failure"
+    }
+  ],
+  "sf_change_log": [
+    {
+      "timestamp": null,
+      "agent": "salesforce_agent_preview",
+      "sheet": "catalog",
+      "row_key": null,
+      "field": "artist_name",
+      "old_value": "A Artist",
+      "new_value": null,
+      "reason_category": "salesforce_rules",
+      "severity": "warning",
+      "notes": "SF_R1_LABEL_NOT_ARTIST"
+    },
+    {
+      "timestamp": null,
+      "agent": "salesforce_agent_preview",
+      "sheet": "catalog",
+      "row_key": null,
+      "field": "artist_name",
+      "old_value": "C Artist",
+      "new_value": null,
+      "reason_category": "salesforce_rules",
+      "severity": "warning",
+      "notes": "SF_R1_LABEL_NOT_ARTIST"
+    }
+  ],
+  "sf_meta": {
+    "ruleset_version": "v0.1.0",
+    "qa_loaded": false
+  }
+}

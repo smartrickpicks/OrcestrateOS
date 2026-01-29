@@ -1,0 +1,87 @@
+{
+  "standardized_dataset": {
+    "sheets": {
+      "accounts": {
+        "headers": [
+          "contract_key",
+          "file_url",
+          "file_name",
+          "account_name",
+          "subtype",
+          "billing_country",
+          "billing_city"
+        ],
+        "rows": [
+          {
+            "contract_key": "",
+            "file_url": "https://edge.example/a.pdf",
+            "file_name": "edge-a.pdf",
+            "account_name": "Edge A Label",
+            "subtype": "record_label",
+            "billing_country": "United States",
+            "billing_city": "NYC"
+          },
+          {
+            "contract_key": "ck:edge2",
+            "file_url": "",
+            "file_name": "edge-b.pdf",
+            "account_name": "Edge B Artist",
+            "subtype": "record_label",
+            "billing_country": "United States",
+            "billing_city": "LA"
+          },
+          {
+            "contract_key": "",
+            "file_url": "",
+            "file_name": "edge-c.pdf",
+            "account_name": "Edge C Label",
+            "subtype": "record_label",
+            "billing_country": "United States",
+            "billing_city": "SF"
+          },
+          {
+            "contract_key": "ck:edge4",
+            "file_url": "",
+            "file_name": "edge-d.pdf",
+            "account_name": "Edge D Label",
+            "subtype": "record_label",
+            "billing_country": "United States",
+            "billing_city": "SEA"
+          }
+        ]
+      },
+      "catalog": {
+        "headers": [
+          "contract_key",
+          "file_url",
+          "file_name",
+          "artist_name",
+          "track_title"
+        ],
+        "rows": [
+          {
+            "contract_key": "",
+            "file_url": "https://edge.example/a.pdf",
+            "file_name": "edge-a.pdf",
+            "artist_name": "A Artist",
+            "track_title": ""
+          },
+          {
+            "contract_key": "ck:edge2",
+            "file_url": "",
+            "file_name": "edge-b.pdf",
+            "artist_name": "",
+            "track_title": ""
+          },
+          {
+            "contract_key": "",
+            "file_url": "",
+            "file_name": "edge-c.pdf",
+            "artist_name": "C Artist",
+            "track_title": ""
+          }
+        ]
+      }
+    }
+  }
+}

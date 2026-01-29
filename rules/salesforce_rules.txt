@@ -1,0 +1,95 @@
+Salesforce Semantic Rules — Authoring Template (Operator-Facing)
+
+Scope Lock
+- Governance only. No runtime logic, no APIs, no credentials, no prompts.
+- Join strategy for context and matching: contract_key → file_url → file_name (no fabricated identifiers).
+
+Intent-First Authoring (copy/paste and fill)
+WHEN: <describe the condition as observed>
+EXPECT: <describe the desired data state or restriction>
+BECAUSE: <brief rationale — why this protects correctness>
+
+Patch Mapping (copy-paste skeleton)
+{
+  "rule_id": "SF_R<number>_<SHORT_NAME>",
+  "description": "<Plain English: WHEN … THEN … BECAUSE …>",
+  "when": {
+    "sheet": "<canonical_sheet>",
+    "field": "<canonical_field>",
+    "operator": "IN|EQ|NEQ|CONTAINS|EXISTS|NOT_EXISTS",
+    "value": ["<value>"]
+  },
+  "then": [
+    {
+      "action": "REQUIRE_BLANK|REQUIRE_PRESENT|SET_VALUE",
+      "sheet": "<target_sheet>",
+      "field": "<target_field>",
+      "severity": "info|warning|blocking",
+      "proposed_value": "<for SET_VALUE only or omit>"
+    }
+  ]
+}
+
+Severity Guidance
+- info: non-critical format cleanups;
+- warning: needs human review but not a stop;
+- blocking: do not proceed without correction.
+
+Examples (synthetic)
+
+1) Rule: SF_R1_LABEL_NOT_ARTIST
+WHEN
+- accounts.subtype IN ["record_label", "label"]
+EXPECT
+- catalog.artist_name must be blank
+BECAUSE
+- Label entities should not populate artist_name in catalog
+Patch
+{
+  "rule_id": "SF_R1_LABEL_NOT_ARTIST",
+  "description": "If subtype indicates record label entity, artist_name must be blank.",
+  "when": {"sheet": "accounts", "field": "subtype", "operator": "IN", "value": ["record_label", "label"]},
+  "then": [
+    {"action": "REQUIRE_BLANK", "sheet": "catalog", "field": "artist_name", "severity": "warning"}
+  ]
+}
+
+2) Rule: SF_R2_ARTIST_REQUIRES_ARTIST_NAME
+WHEN
+- accounts.subtype EQ "artist"
+EXPECT
+- catalog.artist_name must be present
+BECAUSE
+- Artist subtype requires artist name for downstream routing
+Patch
+{
+  "rule_id": "SF_R2_ARTIST_REQUIRES_ARTIST_NAME",
+  "description": "If subtype is artist, catalog.artist_name must be present.",
+  "when": {"sheet": "accounts", "field": "subtype", "operator": "EQ", "value": "artist"},
+  "then": [
+    {"action": "REQUIRE_PRESENT", "sheet": "catalog", "field": "artist_name", "severity": "warning"}
+  ]
+}
+
+3) Rule: SF_R3_COUNTRY_NORMALIZE_USA
+WHEN
+- accounts.billing_country IN ["usa", "u.s.a.", "united states of america"]
+EXPECT
+- Normalize to "United States"
+BECAUSE
+- Consistent country values reduce mismatches and duplicates
+Patch
+{
+  "rule_id": "SF_R3_COUNTRY_NORMALIZE_USA",
+  "description": "Normalize USA variants to United States.",
+  "when": {"sheet": "accounts", "field": "billing_country", "operator": "IN", "value": ["usa", "u.s.a.", "united states of america"]},
+  "then": [
+    {"action": "SET_VALUE", "sheet": "accounts", "field": "billing_country", "severity": "info", "proposed_value": "United States"}
+  ]
+}
+
+Operator Checklist
+- Use canonical sheet/field names (post-standardizer).
+- Keep values lowercase/trimmed in conditions to match normalization assumptions.
+- Choose the lowest severity that still protects correctness.
+- Reinforce join strategy in your examples and tests: contract_key → file_url → file_name.

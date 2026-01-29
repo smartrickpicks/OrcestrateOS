@@ -1,0 +1,35 @@
+{
+  "base_version": "v0.1.0",
+  "rationale": "Illustrative patch showing an added Salesforce rule and a deprecation entry for governance testing (offline only).",
+  "author": "Kiwi Control Board",
+  "changes": [
+    {
+      "action": "add_rule",
+      "target": "salesforce_rules",
+      "rule": {
+        "rule_id": "SF_R1_LABEL_NOT_ARTIST",
+        "description": "If subtype indicates record label entity, artist_name must be blank.",
+        "when": {
+          "sheet": "accounts",
+          "field": "subtype",
+          "operator": "IN",
+          "value": ["record_label", "label"]
+        },
+        "then": [
+          {
+            "action": "REQUIRE_BLANK",
+            "sheet": "catalog",
+            "field": "artist_name",
+            "severity": "warning"
+          }
+        ]
+      }
+    },
+    {
+      "action": "deprecate_rule",
+      "target": "salesforce_rules",
+      "rule_id": "SF_R0_DEPRECATED_SAMPLE",
+      "reason": "Legacy sample rule removed in favor of explicit subtype checks."
+    }
+  ]
+}

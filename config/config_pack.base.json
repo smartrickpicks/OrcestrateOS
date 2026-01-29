@@ -1,0 +1,21 @@
+{
+  "version": "v0.1.0",
+  "metadata": {
+    "purpose": "Semantic control plane base configuration for DataDash + Kiwi (governance only).",
+    "scope_lock": "No runtime execution, no external APIs, no credentials, no prompts.",
+    "join_strategy": ["contract_key", "file_url", "file_name"],
+    "determinism": "Offline preview only; same inputs must yield identical outputs.",
+    "created": "2026-01-29",
+    "notes": "Operator-first; schemas stable; examples synthetic and minimal."
+  },
+  "salesforce_rules": {
+    "rules": []
+  },
+  "qa_rules": {
+    "rules": []
+  },
+  "resolver_rules": {
+    "rules": []
+  },
+  "deprecated_rules": []
+}
