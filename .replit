@@ -21,6 +21,10 @@ author = "agent"
 task = "workflow.run"
 args = "Smoke Test"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Viewer Server"
+
 [[workflows.workflow]]
 name = "Smoke Test"
 author = "agent"
@@ -32,8 +36,24 @@ args = "bash scripts/replit_smoke.sh"
 [workflows.workflow.metadata]
 outputType = "console"
 
+[[workflows.workflow]]
+name = "Viewer Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "bash scripts/serve_viewer.sh"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [deployment]
 deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
 
 [[ports]]
 localPort = 8080

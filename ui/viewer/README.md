@@ -7,19 +7,29 @@ A read-only, single-file HTML viewer for sf_packet artifacts. No build step, no 
 
 ## How to Open
 
-### Option 1: Local file (simple)
-Open `ui/viewer/index.html` directly in your browser.
+### In Replit
 
-**Note:** Due to browser security policies, fetching local JSON files may be blocked. Use Option 2 if tables don't load.
+1. Click the **Run** button (or run the "Viewer Server" workflow)
+2. The Webview pane will open - navigate to `/ui/viewer/index.html`
+3. Or use the URL shown in the console output
 
-### Option 2: Local server (recommended)
+**Note:** Replit may show "app not running" briefly before the static server starts. This is expected for static HTML - the viewer has no backend framework, just a simple file server.
+
+### Run Locally
+
 From the repository root, run:
 
 ```bash
-python3 -m http.server 8080
+bash scripts/serve_viewer.sh
 ```
 
-Then open: http://localhost:8080/ui/viewer/index.html
+Then open: http://localhost:5000/ui/viewer/index.html
+
+### Open File Directly (limited)
+
+Open `ui/viewer/index.html` directly in your browser.
+
+**Note:** Due to browser security policies, fetching local JSON files may be blocked. Use the serve script if tables don't load.
 
 ## Artifacts Read
 
