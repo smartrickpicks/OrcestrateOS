@@ -1,5 +1,45 @@
 # CHANGELOG
 
+## Version: v1.2.4
+Date: 2026-01-30
+
+### Added (Structured Intent + UI Cleanup)
+
+- Structured Intent Authoring
+  - WHEN: Target Field selector (populated from dataset schema) + Condition Type dropdown
+  - THEN: Action Type dropdown with structured options
+  - BECAUSE: Plain-English comment field (required, max 500 chars)
+  - "Other" escape hatch for edge cases with custom text input
+  - Live Intent Preview showing rendered WHEN/THEN/BECAUSE
+
+- Updated PatchRequestV1 Schema
+  - intent_structured: Source of truth with target_field, condition_type, condition_params, action_type, action_params, severity, risk
+  - intent_rendered: Deterministic preview string generated from intent_structured
+  - Backward compatibility: legacy requests get condition_type=OTHER, action_type=OTHER
+
+- Form Validation
+  - Required fields: Target Field, Condition Type, Action Type, Comment
+  - "Other" flows require custom text before submit
+  - Character limit on Comment field
+  - Submit disabled until validation passes
+
+- Inline Helpers
+  - Example text under selectors
+  - Intent Preview updates live as user types
+  - Clear error messages on validation failure
+
+### Changed
+- Removed legacy Patch Studio overlay panel (was causing stacked drawers)
+- "Build Patch" button now switches to Patch Studio tab instead of opening overlay
+- "Open Full Patch Studio" button removed from Patch page
+- WHEN/THEN fields no longer accept arbitrary free-text (must use selectors)
+
+### Removed
+- Legacy #patch-studio overlay element
+- closePatchStudio() function and related handlers
+
+---
+
 ## Version: v1.2.3
 Date: 2026-01-30
 

@@ -1,4 +1,4 @@
-# Kiwi Semantic Control Board (v1.2.3)
+# Kiwi Semantic Control Board (v1.2.4)
 
 ## Overview
 
@@ -42,6 +42,14 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 - Admin Actions: Admin Approve, Admin Hold, Export to Kiwi, Paste Return, Mark Applied
 - Revision Tracking: revisions array with diff summaries and snapshots
 - Append-only Audit Log with event types
+
+**v1.2.4 Structured Intent + UI Cleanup:**
+- Structured Intent Authoring: Target Field selector, Condition Type dropdown, Action Type dropdown
+- "Other" escape hatch for edge cases with custom text input
+- Live Intent Preview showing rendered WHEN/THEN/BECAUSE
+- Updated PatchRequestV1 schema with intent_structured and intent_rendered fields
+- Form validation with required fields and character limits
+- Removed legacy Patch Studio overlay panel (no more stacked drawers)
 
 **What This Is NOT:**
 - Not a runtime system

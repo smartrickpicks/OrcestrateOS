@@ -1,0 +1,192 @@
+{
+  "version": "v1.2.4-replit-followups",
+  "context": {
+    "source": "User review of Replit v1.2.3 implementation + Patch Studio screenshot",
+    "key_notes": [
+      "Patch Studio tab integration is correct, but one remaining button/action still opens the old side panel overlay",
+      "WHEN/THEN/BECAUSE should not be fully free-text; should be structured selectors (field/condition/action) with optional 'Other' and a plain-English comment",
+      "Plain-English rationale/comment should remain editable"
+    ],
+    "screenshot_ref": "/mnt/data/3942BC01-38F5-4F03-98E3-CE3C7CC7F43C.png"
+  },
+  "decisions": {
+    "ui_direction": {
+      "workbench_is_single_drawer": true,
+      "patch_studio_is_tab_only": true,
+      "no_stacked_drawers": true
+    },
+    "intent_authoring": {
+      "structured_intent_required": true,
+      "free_text_allowed": "comment/rationale only",
+      "other_escape_hatch": true
+    }
+  },
+  "tasks": [
+    {
+      "id": "V1-UI-REMOVE-OVERLAY-001",
+      "owner": "Replit",
+      "title": "Remove remaining Patch Studio side-panel overlay entry point",
+      "problem": "One UI path still opens the old stacked side panel instead of using the Workbench tab.",
+      "instructions": [
+        "Identify the button/action that triggers the/count: likely legacy 'Patch Studio' open handler or a route that mounts the old drawer component.",
+        "Delete or disable the legacy drawer component mount (or feature-flag it off).",
+        "Ensure all Patch Studio navigation routes through Record Workbench tab only."
+      ],
+      "acceptance_criteria": [
+        "No user action can open a second stacked drawer for Patch Studio",
+        "Patch Studio always renders inside Record Workbench tab container",
+        "Smoke test: open record -> Patch Studio -> switch tabs -> close drawer (no overlay persists)"
+      ]
+    },
+    {
+      "id": "V1-INTENT-STRUCTURE-001",
+      "owner": "Replit",
+      "title": "Convert WHEN/THEN inputs from free-text to structured selectors",
+      "problem": "Free-text WHEN/THEN is too error-prone; needs deterministic, schema-driven intent for non-technical operators.",
+      "ui_changes": {
+        "replace_when": {
+          "current": "Textarea",
+          "new_controls": [
+            {
+              "type": "Select",
+              "label": "Target Field",
+              "source": "Dataset schema (sheet/field) + glossary aliases",
+              "value_format": "sheet.field"
+            },
+            {
+              "type": "Select",
+              "label": "Condition Type",
+              "options": [
+                "SHOULD_BE_BLANK_BUT_POPULATED",
+                "SHOULD_BE_PRESENT_BUT_MISSING",
+                "INVALID_FORMAT",
+                "OUT_OF_RANGE",
+                "MISMATCH_WITH_OTHER_FIELD",
+                "DUPLICATE",
+                "OTHER"
+              ]
+            },
+            {
+              "type": "Optional Inputs",
+              "shown_when": [
+                "INVALID_FORMAT (pattern selector)",
+                "OUT_OF_RANGE (min/max)",
+                "MISMATCH_WITH_OTHER_FIELD (choose other field)",
+                "OTHER (free-text condition)"
+              ]
+            }
+          ]
+        },
+        "replace_then": {
+          "current": "Textarea",
+          "new_controls": [
+            {
+              "type": "Select",
+              "label": "Action Type",
+              "options": [
+                "REQUIRE_PRESENT",
+                "REQUIRE_BLANK",
+                "WARN_ONLY",
+                "NORMALIZE_VALUE",
+                "MAP_FIELD",
+                "BLOCK_SUBMISSION",
+                "OTHER"
+              ]
+            },
+            {
+              "type": "Optional Inputs",
+              "shown_when": [
+                "NORMALIZE_VALUE (normalization preset selector)",
+                "MAP_FIELD (target field selector)",
+                "OTHER (free-text action)"
+              ]
+            }
+          ]
+        },
+        "because": {
+          "keep_editable": true,
+          "rename_label": "Comment (plain English)",
+          "helper_text": "Explain why this rule exists in human terms. This is what reviewers/admins will read."
+        },
+        "rationale": {
+          "keep_editable": true,
+          "note": "Rationale can remain as a longer note field, optional."
+        }
+      },
+      "acceptance_criteria": [
+        "WHEN cannot be submitted as arbitrary text; must be composed from selectors",
+        "THEN cannot be submitted as arbitrary text; must be composed from selectors",
+        "BECAUSE remains plain English editable",
+        "An 'OTHER' option exists for edge cases with an additional text box",
+        "Submit creates a PatchRequest with both (a) structured intent and (b) rendered plain-English intent string"
+      ],
+      "depends_on": ["V1-DATA-SCHEMA-INTENT-001"]
+    },
+    {
+      "id": "V1-DATA-SCHEMA-INTENT-001",
+      "owner": "Replit",
+      "title": "Update PatchRequestV1 schema to support structured intent + rendered intent text",
+      "schema_update": {
+        "add_fields": {
+          "intent_structured": {
+            "target_field": "sheet.field",
+            "condition_type": "enum",
+            "condition_params": "object (optional)",
+            "action_type": "enum",
+            "action_params": "object (optional)",
+            "severity": "low|warning|block (optional)",
+            "risk": "low|medium|high",
+            "target_artifact": "enum/string"
+          },
+          "intent_rendered": {
+            "when": "string",
+            "then": "string",
+            "because": "string"
+          }
+        },
+        "rules": [
+          "intent_structured is the source of truth",
+          "intent_rendered is generated deterministically from intent_structured",
+          "Keys are sorted before export for canonicalization"
+        ]
+      },
+      "acceptance_criteria": [
+        "Existing requests remain backward-compatible (migration: if legacy text exists, populate intent_rendered and set intent_structured.condition_type=OTHER, action_type=OTHER)",
+        "Exports to Kiwi batch include intent_rendered WHEN/THEN/BECAUSE plus structured mapping payload when available",
+        "Audit log records structured field changes with diff summaries"
+      ]
+    },
+    {
+      "id": "V1-UX-HELPERS-001",
+      "owner": "Replit",
+      "title": "Add inline helper text + validation to prevent nonsense intent",
+      "details": {
+        "validations": [
+          "Target Field is required",
+          "Condition Type is required",
+          "Action Type is required",
+          "If OTHER selected, free-text box must be non-empty",
+          "Because/comment must be <= N chars (choose N later) and non-empty on submit"
+        ],
+        "helpers": [
+          "Show example under each selector (1 line)",
+          "Show a live preview: 'Intent Preview' rendering WHEN/THEN/BECAUSE text"
+        ]
+      },
+      "acceptance_criteria": [
+        "User sees an Intent Preview that updates live",
+        "Submit disabled until required selectors are set",
+        "OTHER flows require text before submit"
+      ]
+    }
+  ],
+  "notes_for_future_agents": {
+    "qe_finetuner_dependency": [
+      "QE-FineTuner should consume structured intent + preflight/evidence snapshots (once editors are reintroduced).",
+      "Do not attempt QE agent workflow execution until V1 editor surfaces exist (Field Editor, PDF Anchors, Preflight snapshots)."
+    ]
+  },
+  "miro_prompt": {
+    "text": "Update the V1 Workbench node to include 'Patch Studio Intent Authoring (Structured)' and show sub-components: Target Field Selector, Condition Type Selector, Action Type Selector, Plain-English Comment. Add a note: 'intent_structured is source of truth; intent_rendered is deterministic preview string'. Also add a small warning badge on the old 'Patch Studio overlay drawer' node and mark it 'DEPRECATED/REMOVE'."
+  }
+}

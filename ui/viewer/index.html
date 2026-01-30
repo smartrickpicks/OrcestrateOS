@@ -897,7 +897,6 @@
           <p class="page-desc">Open Record Workbench from Triage page to select records and add rules.</p>
           <div id="patch-draft-summary"></div>
           <div class="patch-studio-inline-actions">
-            <button class="toolbar-btn" id="open-patch-studio">Open Full Patch Studio</button>
             <button class="toolbar-btn" id="copy-patch-json">Copy Patch JSON</button>
             <button class="toolbar-btn" id="copy-pr-summary">Copy PR Summary</button>
           </div>
@@ -1604,18 +1603,70 @@
         <button class="patch-studio-sub-tab" data-subtab="evidence" style="flex: 1; padding: 10px; border: none; background: #263238; color: #aaa; cursor: pointer; font-size: 0.85em;">Evidence Pack</button>
       </div>
       <div class="patch-studio-sub-panel" id="subtab-draft" style="padding: 15px;">
+        <fieldset style="border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
+          <legend style="font-weight: 600; font-size: 0.85em; color: #1565c0; padding: 0 8px;">WHEN (condition)</legend>
+          <div style="margin-bottom: 10px;">
+            <label style="display: block; font-size: 0.8em; color: #666; margin-bottom: 4px;">Target Field</label>
+            <select id="ps-target-field" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+              <option value="">-- Select field --</option>
+            </select>
+            <span style="font-size: 0.75em; color: #888;">e.g., contracts.label_name</span>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <label style="display: block; font-size: 0.8em; color: #666; margin-bottom: 4px;">Condition Type</label>
+            <select id="ps-condition-type" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+              <option value="">-- Select condition --</option>
+              <option value="SHOULD_BE_BLANK_BUT_POPULATED">Should be blank but has data</option>
+              <option value="SHOULD_BE_PRESENT_BUT_MISSING">Should have data but is empty</option>
+              <option value="INVALID_FORMAT">Invalid format/pattern</option>
+              <option value="OUT_OF_RANGE">Value out of allowed range</option>
+              <option value="MISMATCH_WITH_OTHER_FIELD">Mismatches another field</option>
+              <option value="DUPLICATE">Duplicate value detected</option>
+              <option value="OTHER">Other (specify below)</option>
+            </select>
+          </div>
+          <div id="ps-condition-other-wrap" style="display: none; margin-bottom: 10px;">
+            <label style="display: block; font-size: 0.8em; color: #666; margin-bottom: 4px;">Describe condition (required for Other)</label>
+            <input type="text" id="ps-condition-other" placeholder="e.g., contains 'Various Artists'" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+          </div>
+        </fieldset>
+        
+        <fieldset style="border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
+          <legend style="font-weight: 600; font-size: 0.85em; color: #2e7d32; padding: 0 8px;">THEN (action)</legend>
+          <div style="margin-bottom: 10px;">
+            <label style="display: block; font-size: 0.8em; color: #666; margin-bottom: 4px;">Action Type</label>
+            <select id="ps-action-type" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+              <option value="">-- Select action --</option>
+              <option value="REQUIRE_PRESENT">Require field to have a value</option>
+              <option value="REQUIRE_BLANK">Require field to be blank</option>
+              <option value="WARN_ONLY">Warn only (non-blocking)</option>
+              <option value="NORMALIZE_VALUE">Normalize/standardize value</option>
+              <option value="MAP_FIELD">Map to another field</option>
+              <option value="BLOCK_SUBMISSION">Block submission</option>
+              <option value="OTHER">Other (specify below)</option>
+            </select>
+          </div>
+          <div id="ps-action-other-wrap" style="display: none; margin-bottom: 10px;">
+            <label style="display: block; font-size: 0.8em; color: #666; margin-bottom: 4px;">Describe action (required for Other)</label>
+            <input type="text" id="ps-action-other" placeholder="e.g., require artist_name to be present" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+          </div>
+        </fieldset>
+        
         <div style="margin-bottom: 15px;">
-          <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85em;">WHEN (condition)</label>
-          <textarea id="ps-intent-when" placeholder="e.g., label_name field contains 'Various Artists'" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 60px;"></textarea>
+          <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85em;">Comment (plain English) <span style="color: #c62828;">*</span></label>
+          <textarea id="ps-intent-because" placeholder="Explain why this rule exists in human terms. This is what reviewers/admins will read." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 60px;"></textarea>
+          <span style="font-size: 0.75em; color: #888;">Required. Max 500 characters.</span>
         </div>
-        <div style="margin-bottom: 15px;">
-          <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85em;">THEN (action)</label>
-          <textarea id="ps-intent-then" placeholder="e.g., require artist_name to be present" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 60px;"></textarea>
+        
+        <div style="background: #f5f5f5; border-radius: 6px; padding: 12px; margin-bottom: 15px; border-left: 3px solid #1565c0;">
+          <div style="font-weight: 600; font-size: 0.8em; color: #1565c0; margin-bottom: 8px;">Intent Preview</div>
+          <div id="ps-intent-preview" style="font-size: 0.85em; color: #333;">
+            <div><strong>WHEN:</strong> <span id="preview-when" style="color: #666;">(select field and condition)</span></div>
+            <div><strong>THEN:</strong> <span id="preview-then" style="color: #666;">(select action)</span></div>
+            <div><strong>BECAUSE:</strong> <span id="preview-because" style="color: #666;">(enter comment)</span></div>
+          </div>
         </div>
-        <div style="margin-bottom: 15px;">
-          <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85em;">BECAUSE (justification)</label>
-          <textarea id="ps-intent-because" placeholder="e.g., compilation albums need explicit artist attribution" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 60px;"></textarea>
-        </div>
+        
         <div style="margin-bottom: 15px;">
           <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85em;">Target Artifact</label>
           <select id="ps-target" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
@@ -1700,7 +1751,7 @@
         <button class="drawer-btn" id="drawer-copy">Copy JSON</button>
         <button class="drawer-btn drawer-btn-secondary" id="copy-pr-summary">Copy PR Summary</button>
         <button class="drawer-btn drawer-btn-secondary" id="copy-rule-draft">Copy Rule Draft</button>
-        <button class="drawer-btn" id="open-patch-studio" style="background: #2e7d32;">Build Patch</button>
+        <button class="drawer-btn" id="switch-to-patch-studio-tab" style="background: #2e7d32;">Build Patch</button>
       </div>
     </div>
     <div class="drawer-actions" id="drawer-actions-patch-studio" style="display: none;">
@@ -1722,113 +1773,7 @@
     </div>
   </div>
 
-  <div class="patch-studio" id="patch-studio">
-    <div class="patch-studio-header">
-      <div class="patch-studio-header-row">
-        <h3>Patch Studio</h3>
-        <button class="patch-studio-close" id="patch-studio-close">&times;</button>
-      </div>
-      <span style="font-size: 0.8em; opacity: 0.8;">Build and validate patch drafts</span>
-    </div>
-    <div class="patch-studio-tabs">
-      <button class="patch-studio-tab active" data-panel="draft">Draft</button>
-      <button class="patch-studio-tab" data-panel="preflight">Preflight</button>
-    </div>
-    <div class="patch-studio-body">
-      <div class="patch-studio-panel active" id="panel-draft">
-        <div class="patch-field">
-          <label>Base Version</label>
-          <input type="text" id="patch-base-version" placeholder="0.1.0" value="0.1.0">
-        </div>
-        <div class="patch-field">
-          <label>Author</label>
-          <input type="text" id="patch-author" placeholder="operator@example.com">
-        </div>
-        <div class="patch-field">
-          <label>Rationale</label>
-          <textarea id="patch-rationale" placeholder="Describe why this patch is needed..."></textarea>
-        </div>
-        <div class="patch-changes-header">
-          <h4>Changes (<span id="patch-changes-count">0</span>)</h4>
-          <button class="selection-btn" id="clear-patch-changes">Clear All</button>
-        </div>
-        <div class="patch-changes-list" id="patch-changes-list">
-          <div class="patch-empty">No changes added. Select issues/actions in the Workbench tabs and add them here.</div>
-        </div>
-        <div class="evidence-section">
-          <h4>Evidence Helper (Copy Only)</h4>
-          <div class="evidence-btns">
-            <button class="evidence-btn" id="copy-smoke-baseline">Smoke Baseline</button>
-            <button class="evidence-btn" id="copy-smoke-edge">Smoke Edge</button>
-            <button class="evidence-btn" id="copy-evidence-template">Evidence Template</button>
-          </div>
-        </div>
-      </div>
-      <div class="patch-studio-panel" id="panel-preflight">
-        <div class="preflight-checklist" id="preflight-checklist"></div>
-        <div class="preflight-section-title">1. Base Version Check</div>
-        <div class="preflight-input-group">
-          <label>Base Version (or paste base JSON header)</label>
-          <input type="text" id="preflight-base-version" placeholder='0.1.0 or {"version": "0.1.0", ...}'>
-          <div class="preflight-input-actions">
-            <button class="preflight-parse-btn" data-parse="base-version">Parse</button>
-            <button class="preflight-clear-btn" data-clear="base-version">Clear</button>
-          </div>
-          <div class="preflight-result" id="preflight-base-result" style="display: none;"></div>
-        </div>
-        <div class="preflight-section-title">2. Validation Report</div>
-        <div class="preflight-input-group">
-          <label>Paste validator output (stdout/stderr or JSON)</label>
-          <textarea id="preflight-validation-input" placeholder="OK: configuration valid&#10;base.version: 0.1.0&#10;patch.base_version: 0.1.0&#10;changes_count: 3"></textarea>
-          <div class="preflight-input-actions">
-            <button class="preflight-parse-btn" data-parse="validation">Parse</button>
-            <button class="preflight-clear-btn" data-clear="validation">Clear</button>
-          </div>
-          <div class="preflight-result" id="preflight-validation-result" style="display: none;"></div>
-        </div>
-        <div class="preflight-section-title">3. Conflict Check</div>
-        <div class="preflight-input-group">
-          <label>Paste conflict report (or type "reviewed" for manual confirmation)</label>
-          <textarea id="preflight-conflict-input" placeholder="No conflicts found&#10;OR&#10;reviewed"></textarea>
-          <div class="preflight-input-actions">
-            <button class="preflight-parse-btn" data-parse="conflict">Parse</button>
-            <button class="preflight-clear-btn" data-clear="conflict">Clear</button>
-          </div>
-          <div class="preflight-result" id="preflight-conflict-result" style="display: none;"></div>
-        </div>
-        <div class="preflight-section-title">4. Smoke Evidence</div>
-        <div class="preflight-input-group">
-          <label>Paste smoke test output (baseline)</label>
-          <textarea id="preflight-smoke-baseline-input" placeholder="OK: preview output matches expected"></textarea>
-          <div class="preflight-input-actions">
-            <button class="preflight-parse-btn" data-parse="smoke-baseline">Parse</button>
-            <button class="preflight-clear-btn" data-clear="smoke-baseline">Clear</button>
-          </div>
-        </div>
-        <div class="preflight-input-group">
-          <label>Paste smoke test output (edge, optional)</label>
-          <textarea id="preflight-smoke-edge-input" placeholder="OK: preview output matches expected"></textarea>
-          <div class="preflight-input-actions">
-            <button class="preflight-parse-btn" data-parse="smoke-edge">Parse</button>
-            <button class="preflight-clear-btn" data-clear="smoke-edge">Clear</button>
-          </div>
-        </div>
-        <div class="preflight-input-group">
-          <label>SHA256 Hashes (optional)</label>
-          <input type="text" id="preflight-sha256" placeholder="patch: abc123..., output: def456...">
-        </div>
-        <div class="preflight-result" id="preflight-smoke-result" style="display: none;"></div>
-        <div class="preflight-reset-row">
-          <button class="preflight-reset-btn" id="preflight-reset">Reset All Evidence</button>
-        </div>
-      </div>
-    </div>
-    <div class="patch-studio-actions">
-      <button class="patch-studio-btn patch-studio-btn-primary" id="copy-full-patch">Copy Full Patch Draft (JSON)</button>
-      <button class="patch-studio-btn patch-studio-btn-secondary" id="copy-rule-mapping">Copy Rule Mapping (JSON)</button>
-      <button class="patch-studio-btn patch-studio-btn-secondary" id="copy-grouped-rules">Copy Grouped Rule Draft</button>
-    </div>
-  </div>
+  <!-- Legacy Patch Studio overlay removed in v1.2.4 - all functionality now in Workbench tab -->
 
   <script>
     const PRIMARY_PATH = 'out/sf_packet.preview.json';
@@ -2596,8 +2541,76 @@
       }
     }
     
+    var CONDITION_TYPES = [
+      { value: 'SHOULD_BE_BLANK_BUT_POPULATED', label: 'Should be blank but has data' },
+      { value: 'SHOULD_BE_PRESENT_BUT_MISSING', label: 'Should have data but is empty' },
+      { value: 'INVALID_FORMAT', label: 'Invalid format/pattern' },
+      { value: 'OUT_OF_RANGE', label: 'Value out of allowed range' },
+      { value: 'MISMATCH_WITH_OTHER_FIELD', label: 'Mismatches another field' },
+      { value: 'DUPLICATE', label: 'Duplicate value detected' },
+      { value: 'OTHER', label: 'Other (specify)' }
+    ];
+    
+    var ACTION_TYPES = [
+      { value: 'REQUIRE_PRESENT', label: 'Require field to have a value' },
+      { value: 'REQUIRE_BLANK', label: 'Require field to be blank' },
+      { value: 'WARN_ONLY', label: 'Warn only (non-blocking)' },
+      { value: 'NORMALIZE_VALUE', label: 'Normalize/standardize value' },
+      { value: 'MAP_FIELD', label: 'Map to another field' },
+      { value: 'BLOCK_SUBMISSION', label: 'Block submission' },
+      { value: 'OTHER', label: 'Other (specify)' }
+    ];
+    
+    function renderIntentPreview(intentStructured) {
+      var whenText = '';
+      var thenText = '';
+      
+      if (intentStructured.target_field) {
+        whenText = 'Field "' + intentStructured.target_field + '"';
+        var condition = CONDITION_TYPES.find(function(c) { return c.value === intentStructured.condition_type; });
+        if (condition) {
+          whenText += ' ' + condition.label.toLowerCase();
+        }
+        if (intentStructured.condition_type === 'OTHER' && intentStructured.condition_params && intentStructured.condition_params.custom) {
+          whenText += ': ' + intentStructured.condition_params.custom;
+        }
+      }
+      
+      var action = ACTION_TYPES.find(function(a) { return a.value === intentStructured.action_type; });
+      if (action) {
+        thenText = action.label;
+      }
+      if (intentStructured.action_type === 'OTHER' && intentStructured.action_params && intentStructured.action_params.custom) {
+        thenText += ': ' + intentStructured.action_params.custom;
+      }
+      
+      return {
+        when: whenText || 'WHEN: (not specified)',
+        then: thenText || 'THEN: (not specified)',
+        because: intentStructured.because || ''
+      };
+    }
+    
     function createPatchRequest(options) {
       var now = new Date().toISOString();
+      
+      var intentStructured = {
+        target_field: options.target_field || (options.sheet && options.field ? options.sheet + '.' + options.field : null),
+        condition_type: options.condition_type || 'OTHER',
+        condition_params: options.condition_params || (options.when ? { custom: options.when } : null),
+        action_type: options.action_type || 'OTHER',
+        action_params: options.action_params || (options.then ? { custom: options.then } : null),
+        severity: options.severity || 'warning',
+        risk: options.risk || 'low',
+        target_artifact: options.target || 'proposed_changes',
+        because: options.because || ''
+      };
+      
+      var intentRendered = renderIntentPreview(intentStructured);
+      if (options.because) {
+        intentRendered.because = options.because;
+      }
+      
       var request = {
         request_id: generatePatchRequestId(),
         created_at_utc: now,
@@ -2618,12 +2631,10 @@
           field: options.field || null
         },
         risk: options.risk || 'low',
+        intent_structured: intentStructured,
+        intent_rendered: intentRendered,
         proposed_change: {
-          intent: {
-            when: options.when || '',
-            then: options.then || '',
-            because: options.because || ''
-          },
+          intent: intentRendered,
           rationale: options.rationale || ''
         },
         evidence: {
@@ -6130,6 +6141,7 @@
       
       populateSubtypeDropdown();
       renderAllTables();
+      populateTargetFieldDropdown();
       restoreSelection();
     }
 
@@ -6229,18 +6241,136 @@
       const issues = getRelatedRecords(identity, allData.issues);
       if (issues.length > 0) {
         const firstIssue = issues[0];
-        document.getElementById('ps-intent-when').value = 
-          (firstIssue.sheet || '') + '.' + (firstIssue.field || '') + ' ' + (firstIssue.issue_type || '');
+        var targetFieldSel = document.getElementById('ps-target-field');
+        if (targetFieldSel) {
+          var fieldVal = (firstIssue.sheet || '') + '.' + (firstIssue.field || '');
+          var opt = targetFieldSel.querySelector('option[value="' + fieldVal + '"]');
+          if (opt) {
+            targetFieldSel.value = fieldVal;
+          }
+        }
       }
     }
     
+    function populateTargetFieldDropdown() {
+      var select = document.getElementById('ps-target-field');
+      if (!select || !allData) return;
+      
+      select.innerHTML = '<option value="">-- Select field --</option>';
+      var fields = new Set();
+      
+      if (allData.issues) {
+        allData.issues.forEach(function(issue) {
+          if (issue.sheet && issue.field) {
+            fields.add(issue.sheet + '.' + issue.field);
+          }
+        });
+      }
+      if (allData.field_actions) {
+        allData.field_actions.forEach(function(action) {
+          if (action.sheet && action.field) {
+            fields.add(action.sheet + '.' + action.field);
+          }
+        });
+      }
+      
+      Array.from(fields).sort().forEach(function(f) {
+        var opt = document.createElement('option');
+        opt.value = f;
+        opt.textContent = f;
+        select.appendChild(opt);
+      });
+      
+      var otherOpt = document.createElement('option');
+      otherOpt.value = 'OTHER';
+      otherOpt.textContent = 'Other (type manually)';
+      select.appendChild(otherOpt);
+    }
+    
+    function updateIntentPreview() {
+      var targetField = document.getElementById('ps-target-field')?.value || '';
+      var conditionType = document.getElementById('ps-condition-type')?.value || '';
+      var conditionOther = document.getElementById('ps-condition-other')?.value || '';
+      var actionType = document.getElementById('ps-action-type')?.value || '';
+      var actionOther = document.getElementById('ps-action-other')?.value || '';
+      var because = document.getElementById('ps-intent-because')?.value || '';
+      
+      var whenText = '';
+      if (targetField && targetField !== 'OTHER') {
+        whenText = 'Field "' + targetField + '"';
+      } else if (targetField === 'OTHER') {
+        whenText = 'Field (custom)';
+      }
+      if (conditionType) {
+        var cond = CONDITION_TYPES.find(function(c) { return c.value === conditionType; });
+        if (cond) {
+          whenText += ' ' + cond.label.toLowerCase();
+        }
+      }
+      if (conditionType === 'OTHER' && conditionOther) {
+        whenText += ': ' + conditionOther;
+      }
+      
+      var thenText = '';
+      if (actionType) {
+        var act = ACTION_TYPES.find(function(a) { return a.value === actionType; });
+        if (act) {
+          thenText = act.label;
+        }
+      }
+      if (actionType === 'OTHER' && actionOther) {
+        thenText += ': ' + actionOther;
+      }
+      
+      document.getElementById('preview-when').textContent = whenText || '(select field and condition)';
+      document.getElementById('preview-then').textContent = thenText || '(select action)';
+      document.getElementById('preview-because').textContent = because || '(enter comment)';
+    }
+    
+    document.getElementById('ps-condition-type')?.addEventListener('change', function(e) {
+      var wrap = document.getElementById('ps-condition-other-wrap');
+      if (e.target.value === 'OTHER') {
+        wrap.style.display = 'block';
+      } else {
+        wrap.style.display = 'none';
+      }
+      updateIntentPreview();
+    });
+    
+    document.getElementById('ps-action-type')?.addEventListener('change', function(e) {
+      var wrap = document.getElementById('ps-action-other-wrap');
+      if (e.target.value === 'OTHER') {
+        wrap.style.display = 'block';
+      } else {
+        wrap.style.display = 'none';
+      }
+      updateIntentPreview();
+    });
+    
+    document.getElementById('ps-target-field')?.addEventListener('change', updateIntentPreview);
+    document.getElementById('ps-condition-other')?.addEventListener('input', updateIntentPreview);
+    document.getElementById('ps-action-other')?.addEventListener('input', updateIntentPreview);
+    document.getElementById('ps-intent-because')?.addEventListener('input', updateIntentPreview);
+    
     function getPatchStudioDraft() {
+      var targetField = document.getElementById('ps-target-field')?.value || '';
+      var conditionType = document.getElementById('ps-condition-type')?.value || '';
+      var conditionOther = document.getElementById('ps-condition-other')?.value || '';
+      var actionType = document.getElementById('ps-action-type')?.value || '';
+      var actionOther = document.getElementById('ps-action-other')?.value || '';
+      var because = document.getElementById('ps-intent-because')?.value || '';
+      
+      var intentStructured = {
+        target_field: targetField !== 'OTHER' ? targetField : null,
+        condition_type: conditionType || 'OTHER',
+        condition_params: conditionType === 'OTHER' && conditionOther ? { custom: conditionOther } : null,
+        action_type: actionType || 'OTHER',
+        action_params: actionType === 'OTHER' && actionOther ? { custom: actionOther } : null,
+        because: because
+      };
+      
       return {
-        intent: {
-          when: document.getElementById('ps-intent-when')?.value || '',
-          then: document.getElementById('ps-intent-then')?.value || '',
-          because: document.getElementById('ps-intent-because')?.value || ''
-        },
+        intent_structured: intentStructured,
         target: document.getElementById('ps-target')?.value || 'proposed_changes',
         risk: document.getElementById('ps-risk')?.value || 'low',
         rationale: document.getElementById('ps-rationale')?.value || '',
@@ -6254,8 +6384,13 @@
     }
     
     function clearPatchStudioForm() {
-      document.getElementById('ps-intent-when').value = '';
-      document.getElementById('ps-intent-then').value = '';
+      document.getElementById('ps-target-field').value = '';
+      document.getElementById('ps-condition-type').value = '';
+      document.getElementById('ps-condition-other').value = '';
+      document.getElementById('ps-condition-other-wrap').style.display = 'none';
+      document.getElementById('ps-action-type').value = '';
+      document.getElementById('ps-action-other').value = '';
+      document.getElementById('ps-action-other-wrap').style.display = 'none';
       document.getElementById('ps-intent-because').value = '';
       document.getElementById('ps-target').value = 'proposed_changes';
       document.getElementById('ps-risk').value = 'low';
@@ -6264,16 +6399,37 @@
       document.getElementById('ps-evidence-expected').value = '';
       document.getElementById('ps-evidence-justification').value = '';
       document.getElementById('ps-evidence-repro').value = '';
+      updateIntentPreview();
+    }
+    
+    function validatePatchStudioForm() {
+      var targetField = document.getElementById('ps-target-field')?.value || '';
+      var conditionType = document.getElementById('ps-condition-type')?.value || '';
+      var conditionOther = document.getElementById('ps-condition-other')?.value || '';
+      var actionType = document.getElementById('ps-action-type')?.value || '';
+      var actionOther = document.getElementById('ps-action-other')?.value || '';
+      var because = document.getElementById('ps-intent-because')?.value || '';
+      
+      var errors = [];
+      if (!targetField) errors.push('Target Field is required');
+      if (!conditionType) errors.push('Condition Type is required');
+      if (conditionType === 'OTHER' && !conditionOther) errors.push('Please describe the condition');
+      if (!actionType) errors.push('Action Type is required');
+      if (actionType === 'OTHER' && !actionOther) errors.push('Please describe the action');
+      if (!because) errors.push('Comment (plain English) is required');
+      if (because.length > 500) errors.push('Comment must be 500 characters or less');
+      
+      return errors;
     }
     
     document.getElementById('ps-submit-to-queue')?.addEventListener('click', function() {
-      const draft = getPatchStudioDraft();
-      
-      if (!draft.intent.when && !draft.intent.then) {
-        showToast('Please fill in at least WHEN and THEN fields', 'warning');
+      var errors = validatePatchStudioForm();
+      if (errors.length > 0) {
+        showToast(errors[0], 'warning');
         return;
       }
       
+      const draft = getPatchStudioDraft();
       const identity = currentSelection.joinIdentity || {};
       const author = 'Analyst';
       
@@ -6285,9 +6441,12 @@
         file_url: identity.file_url || null,
         file_name: identity.file_name || null,
         target: draft.target,
-        when: draft.intent.when,
-        then: draft.intent.then,
-        because: draft.intent.because,
+        target_field: draft.intent_structured.target_field,
+        condition_type: draft.intent_structured.condition_type,
+        condition_params: draft.intent_structured.condition_params,
+        action_type: draft.intent_structured.action_type,
+        action_params: draft.intent_structured.action_params,
+        because: draft.intent_structured.because,
         rationale: draft.rationale,
         risk: draft.risk,
         evidence_observation: draft.evidence.observation,
@@ -6559,7 +6718,6 @@
       if (e.key === 'Escape') {
         closeModal();
         closeDrawer();
-        closePatchStudio();
       }
     });
 
@@ -6673,17 +6831,12 @@
       savePatchDraft();
     });
 
-    document.querySelectorAll('#open-patch-studio').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.getElementById('patch-studio').classList.add('active');
-      });
+    document.getElementById('switch-to-patch-studio-tab')?.addEventListener('click', () => {
+      var patchStudioTab = document.querySelector('.drawer-tab[data-tab="patch-studio"]');
+      if (patchStudioTab) {
+        patchStudioTab.click();
+      }
     });
-
-    document.getElementById('patch-studio-close')?.addEventListener('click', closePatchStudio);
-
-    function closePatchStudio() {
-      document.getElementById('patch-studio').classList.remove('active');
-    }
 
     document.getElementById('patch-base-version')?.addEventListener('input', e => {
       patchDraft.baseVersion = e.target.value;
