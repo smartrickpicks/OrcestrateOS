@@ -2426,7 +2426,7 @@
     document.getElementById('confirm-run')?.addEventListener('change', updateRunButton);
 
     document.getElementById('drawer-close')?.addEventListener('click', closeDrawer);
-    document.getElementById('drawer-overlay').addEventListener('click', closeDrawer);
+    document.getElementById('drawer-overlay')?.addEventListener('click', closeDrawer);
 
     document.getElementById('drawer-tabs').addEventListener('click', e => {
       const tab = e.target.closest('.drawer-tab');
@@ -3314,14 +3314,16 @@ Add any additional notes here.
       return md;
     }
 
-    document.getElementById('stream-panel-toggle').addEventListener('click', () => {
+    document.getElementById('stream-panel-toggle')?.addEventListener('click', () => {
       const body = document.getElementById('stream-panel-body');
       const btn = document.getElementById('stream-panel-toggle');
-      body.classList.toggle('active');
-      btn.textContent = body.classList.contains('active') ? 'Hide' : 'Show';
-      if (body.classList.contains('active')) {
-        renderRecordStateSummary();
-        renderSessionTimeline();
+      if (body && btn) {
+        body.classList.toggle('active');
+        btn.textContent = body.classList.contains('active') ? 'Hide' : 'Show';
+        if (body.classList.contains('active')) {
+          renderRecordStateSummary();
+          renderSessionTimeline();
+        }
       }
     });
 
@@ -3896,14 +3898,14 @@ Add any additional notes here.
     });
 
     // Welcome hero and top toolbar event listeners
-    document.getElementById('welcome-load-data').addEventListener('click', openDataSourceModal);
-    document.getElementById('btn-load-data').addEventListener('click', openDataSourceModal);
-    document.getElementById('btn-ruleset').addEventListener('click', openRulesetModal);
-    document.getElementById('btn-compare').addEventListener('click', openCompareModal);
-    document.getElementById('btn-run').addEventListener('click', openRunModal);
+    document.getElementById('welcome-load-data')?.addEventListener('click', openDataSourceModal);
+    document.getElementById('btn-load-data')?.addEventListener('click', openDataSourceModal);
+    document.getElementById('btn-ruleset')?.addEventListener('click', openRulesetModal);
+    document.getElementById('btn-compare')?.addEventListener('click', openCompareModal);
+    document.getElementById('btn-run')?.addEventListener('click', openRunModal);
 
     // Data source modal events
-    document.getElementById('data-source-modal').addEventListener('click', e => {
+    document.getElementById('data-source-modal')?.addEventListener('click', e => {
       if (e.target.id === 'data-source-modal') closeDataSourceModal();
     });
     document.querySelectorAll('#data-source-modal .wizard-preset-btn').forEach(btn => {
