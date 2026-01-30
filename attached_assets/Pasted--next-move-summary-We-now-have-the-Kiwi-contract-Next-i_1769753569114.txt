@@ -1,0 +1,195 @@
+{
+  "next_move": {
+    "summary": "We now have the Kiwi contract. Next is to bind Replit to it with an implementation prompt that (1) enables Masterline (auto-load masters from repo for dev), (2) adds Admin Workflow Map for all config artifacts, and (3) implements Standardizer → merged_dataset.json as the canonical internal format.",
+    "why_this_is_next": [
+      "Your UI shell is done; now we lock semantics + data model so future UI work doesn’t drift.",
+      "Masterline autoload makes dev/testing painless (your request).",
+      "Standardizer-first JSON canon is the bridge from spreadsheet inputs to deterministic queues/records."
+    ]
+  },
+  "replit_prompt": {
+    "mode": "IMPLEMENTATION_SPEC",
+    "hard_constraints": [
+      "offline-first",
+      "deterministic",
+      "no network calls",
+      "no executing validators/smoke from UI (copy-only commands allowed)",
+      "no direct edits to Truth Config / Proposed Changes / Preview Packet / Reference Expected (view-only)",
+      "copy-only exports for patches and PR summaries"
+    ],
+    "terms": {
+      "use_nomenclature_pack": true,
+      "replace_sf_packet_with": "Preview Packet",
+      "labels_must_match": "nomenclature_pack.internal_to_human_labels"
+    },
+    "deliverables": [
+      {
+        "id": "D1_masterline_autoload_dev_mode",
+        "goal": "For development, preload repo master artifacts into their respective panels/compare slots so placeholder values always have real data.",
+        "requirements": {
+          "dev_toggle": "Admin → Settings: 'Dev Masterline' (ON/OFF)",
+          "when_on": [
+            "On app boot, attempt to load master_artifacts from repo paths in masterline_manifest.master_artifacts",
+            "Populate: Ruleset (Truth Config + Proposed Changes), Reference Expected, and Example Standardized Dataset slots",
+            "Do NOT auto-load Preview Packet (because it may be regenerated externally); instead show last-known if present and mark stale"
+          ],
+          "when_off": [
+            "Behave exactly as now: EMPTY_NO_DATA until user loads artifacts"
+          ],
+          "ui": {
+            "show_status_chips": [
+              "Truth Config: loaded|missing",
+              "Proposed Changes: loaded|missing",
+              "Reference Expected: loaded|missing",
+              "Example Standardized Dataset: loaded|missing",
+              "Preview Packet: loaded|missing|stale"
+            ],
+            "button": "Admin → 'Configure / Rebind Paths' opens a small modal to override repo-relative paths (local only)"
+          },
+          "determinism": [
+            "stable ordering of loaded artifacts list",
+            "no best-guess path search beyond provided paths unless user explicitly clicks 'Scan'"
+          ]
+        },
+        "acceptance_criteria": [
+          "Fresh boot with Dev Masterline ON shows the dashboard populated with masters without user actions.",
+          "If any file missing, UI shows missing chip and never crashes.",
+          "No network calls. All loads are local fetch/read."
+        ]
+      },
+      {
+        "id": "D2_admin_workflow_map",
+        "goal": "Admin panel shows the full workflow as a vertical map of config artifacts (like config_pack flow), with each step showing payload + read-only viewer, and editable local aliases/settings where permitted.",
+        "requirements": {
+          "structure": [
+            {
+              "section": "Workflow Map",
+              "nodes_in_order": [
+                "Truth Config (config/config_pack.base.json) [view-only]",
+                "Proposed Changes (config/config_pack.v0.1.3.patch.json) [view-only]",
+                "Glossary / Aliases (local-only) [editable]",
+                "Standardizer Schema (standardizer_json_schema rendered) [view-only spec + local settings]",
+                "Reference Expected (examples/expected_outputs/*) [view-only]",
+                "Preview Packet (out/sf_packet.preview.json) [view-only; stale marker allowed]",
+                "Evidence Inputs (Validation Evidence, Smoke Evidence) [pasted; local-only]"
+              ]
+            }
+          ],
+          "node_ui": {
+            "each_node_has": [
+              "plain-English description (from nomenclature_pack.tooltips where applicable)",
+              "path shown + copy path button",
+              "JSON viewer (collapsed by default, expand/collapse, search within)",
+              "status chip (loaded/missing/stale)",
+              "info icon tooltip"
+            ],
+            "editable_nodes": [
+              "Glossary / Aliases",
+              "Determinism display conventions (sorting labels, null chips)",
+              "Local path overrides (NOT file contents)"
+            ]
+          }
+        },
+        "acceptance_criteria": [
+          "Admin can visually understand the end-to-end governance pipeline without technical jargon.",
+          "All master artifacts from masterline_manifest appear in some node or sub-node list.",
+          "No editing of versioned config files from UI."
+        ]
+      },
+      {
+        "id": "D3_standardizer_json_canon",
+        "goal": "Implement early conversion of CSV/XLSX into merged_dataset.json, then have queues/records optionally bind to it (next phase).",
+        "requirements": {
+          "inputs": [
+            "CSV upload",
+            "XLSX upload",
+            "Paste CSV text"
+          ],
+          "process": [
+            "normalize headers per standardizer_json_schema.header_mapping.normalization",
+            "apply alias mapping (source: Admin local Glossary/Aliases + Truth Config anchors if present)",
+            "produce merged_dataset.json with schema in standardizer_json_schema.merged_dataset_schema.shape",
+            "record issues per error_model (missing_headers, ambiguous_columns, missing_required_anchor)"
+          ],
+          "outputs": {
+            "artifacts": [
+              "merged_dataset.json (canonical)",
+              "standardization_issues.json (list of issues/conflicts)",
+              "standardization_change_log.json (what headers mapped/renamed)"
+            ],
+            "ui_surface": [
+              "Admin → Standardizer node shows last run summary + downloads/copy buttons",
+              "Analyst/Reviewer can view merged_dataset in a viewer tab (read-only)"
+            ]
+          },
+          "determinism": [
+            "sheet_order uses standardizer_json_schema.merged_dataset_schema.deterministic_ordering.sheet_order",
+            "header_order canonical first then extras alpha",
+            "keys sorted in JSON output",
+            "nulls explicit",
+            "row_order preserved unless split/loop exists (not implemented yet)"
+          ]
+        },
+        "acceptance_criteria": [
+          "Given the same CSV/XLSX, merged_dataset.json is byte-stable across runs (same ordering).",
+          "Issues are captured, not guessed-away.",
+          "No network calls."
+        ]
+      },
+      {
+        "id": "D4_tooltips_and_plain_english_pass",
+        "goal": "Apply nomenclature_pack across UI and add tooltips in high-confusion zones.",
+        "requirements": {
+          "must_apply_to": [
+            "Queues table headers",
+            "Record Drawer field groups",
+            "Evidence Strip chips",
+            "Ruleset / Data Source drawers",
+            "Admin Workflow Map nodes"
+          ],
+          "tooltip_source": "nomenclature_pack.tooltips",
+          "special_rule": "Any internal token beginning with 'sf_' must never be shown raw unless inside JSON viewer."
+        },
+        "acceptance_criteria": [
+          "User sees 'Preview Packet' everywhere, not sf_packet.",
+          "Record Status and Identity Keys are explained via tooltips."
+        ]
+      }
+    ],
+    "implementation_notes": {
+      "do_not_change": [
+        "existing queue-centric dashboard shell",
+        "existing Data Sources drawer behavior (keep; extend with standardizer output binding)"
+      ],
+      "future_hook": [
+        "Later: bind queues to merged_dataset.json + Preview Packet together (Preview Packet drives issues/actions, merged_dataset provides ground truth rows)."
+      ]
+    }
+  },
+  "what_i_need_from_you": {
+    "to_make_this_executable": [
+      {
+        "thing": "repo_paths_confirmation",
+        "why": "masterline_manifest currently lists paths; Replit needs exact paths that exist in repo",
+        "format": {
+          "provide": "a JSON object mapping each master_artifact to its real repo path",
+          "example": {
+            "config/config_pack.base.json": "config/config_pack.base.json"
+          }
+        }
+      },
+      {
+        "thing": "one_real_dataset_file",
+        "why": "to validate the standardizer determinism and issue model",
+        "acceptable": ["xlsx", "csv"]
+      }
+    ],
+    "if_you_dont_want_to_send_anything": [
+      "Tell Replit to implement with paths as-is and show missing chips; you can rebind paths via Admin later."
+    ]
+  },
+  "quick_choice": {
+    "default_choice": "Proceed with D1–D4 exactly as written.",
+    "if_you_want_a_wizard_now": "Add a first-run 'Configure' CTA that only toggles Dev Masterline ON and sets local path overrides; nothing more."
+  }
+}
