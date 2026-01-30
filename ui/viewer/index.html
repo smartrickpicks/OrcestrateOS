@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Board Viewer v0.2</title>
+  <title>Control Board Viewer v0.3</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 20px; }
@@ -86,13 +86,28 @@
 
     .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); display: none; z-index: 900; }
     .drawer-overlay.active { display: block; }
-    .drawer { position: fixed; top: 0; right: -450px; width: 450px; height: 100vh; background: white; box-shadow: -4px 0 20px rgba(0,0,0,0.2); z-index: 901; transition: right 0.3s ease; display: flex; flex-direction: column; }
+    .drawer { position: fixed; top: 0; right: -550px; width: 550px; height: 100vh; background: white; box-shadow: -4px 0 20px rgba(0,0,0,0.2); z-index: 901; transition: right 0.3s ease; display: flex; flex-direction: column; }
     .drawer.active { right: 0; }
-    .drawer-header { background: #1a1a2e; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+    .drawer-header { background: #1a1a2e; color: white; padding: 15px 20px; flex-shrink: 0; }
+    .drawer-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .drawer-header h3 { margin: 0; font-size: 1em; }
     .drawer-close { background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; line-height: 1; }
-    .drawer-body { padding: 20px; overflow-y: auto; flex-grow: 1; }
-    .drawer-json { background: #263238; color: #eceff1; padding: 15px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 0.8em; white-space: pre-wrap; word-break: break-all; max-height: 60vh; overflow-y: auto; }
+    .drawer-identity { display: flex; align-items: center; gap: 10px; }
+    .identity-pill { background: #0f3460; padding: 6px 12px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.75em; word-break: break-all; flex-grow: 1; }
+    .identity-copy { background: #1565c0; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.75em; white-space: nowrap; }
+    .identity-copy:hover { background: #1976d2; }
+    .drawer-tabs { display: flex; background: #263238; flex-shrink: 0; }
+    .drawer-tab { flex: 1; padding: 12px 8px; text-align: center; color: #90a4ae; background: none; border: none; cursor: pointer; font-size: 0.85em; border-bottom: 3px solid transparent; transition: all 0.2s; }
+    .drawer-tab:hover { color: white; background: #37474f; }
+    .drawer-tab.active { color: white; border-bottom-color: #1565c0; background: #37474f; }
+    .drawer-tab-count { display: inline-block; background: #455a64; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.75em; margin-left: 4px; }
+    .drawer-body { padding: 15px; overflow-y: auto; flex-grow: 1; }
+    .drawer-json { background: #263238; color: #eceff1; padding: 15px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 0.8em; white-space: pre-wrap; word-break: break-all; max-height: 100%; overflow-y: auto; }
+    .drawer-table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+    .drawer-table th, .drawer-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #eee; }
+    .drawer-table th { background: #f5f5f5; font-weight: 600; color: #333; }
+    .drawer-table tr:hover { background: #f9f9f9; }
+    .drawer-empty { color: #666; font-style: italic; padding: 20px; text-align: center; background: #f9f9f9; border-radius: 6px; }
     .drawer-actions { padding: 15px 20px; border-top: 1px solid #eee; flex-shrink: 0; }
     .drawer-btn { width: 100%; padding: 12px; background: #1565c0; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9em; }
     .drawer-btn:hover { background: #1976d2; }
@@ -100,7 +115,7 @@
 </head>
 <body>
   <h1>Control Board Viewer</h1>
-  <p class="subtitle">v0.2 | Governance-only | Offline-first | Read-only preview</p>
+  <p class="subtitle">v0.3 | Governance-only | Offline-first | Record Workbench</p>
 
   <div class="toolbar" id="toolbar">
     <button class="toolbar-btn" data-cmd="validate">Validate</button>
@@ -187,14 +202,24 @@ Note: This viewer does NOT execute any commands automatically.
   <div class="drawer-overlay" id="drawer-overlay"></div>
   <div class="drawer" id="drawer">
     <div class="drawer-header">
-      <h3>Record Details</h3>
-      <button class="drawer-close" id="drawer-close">&times;</button>
+      <div class="drawer-header-row">
+        <h3>Record Workbench</h3>
+        <button class="drawer-close" id="drawer-close">&times;</button>
+      </div>
+      <div class="drawer-identity">
+        <div class="identity-pill" id="identity-pill"></div>
+        <button class="identity-copy" id="identity-copy">Copy ID</button>
+      </div>
     </div>
-    <div class="drawer-body">
-      <pre class="drawer-json" id="drawer-json"></pre>
+    <div class="drawer-tabs" id="drawer-tabs">
+      <button class="drawer-tab active" data-tab="contract">Contract</button>
+      <button class="drawer-tab" data-tab="issues">Issues <span class="drawer-tab-count" id="issues-count">0</span></button>
+      <button class="drawer-tab" data-tab="actions">Actions <span class="drawer-tab-count" id="actions-count">0</span></button>
+      <button class="drawer-tab" data-tab="changelog">Change Log <span class="drawer-tab-count" id="changelog-count">0</span></button>
     </div>
+    <div class="drawer-body" id="drawer-body"></div>
     <div class="drawer-actions">
-      <button class="drawer-btn" id="drawer-copy">Copy JSON</button>
+      <button class="drawer-btn" id="drawer-copy">Copy JSON (Current Tab)</button>
     </div>
   </div>
 
@@ -204,10 +229,12 @@ Note: This viewer does NOT execute any commands automatically.
     const RELATIVE_PRIMARY = '../../out/sf_packet.preview.json';
     const RELATIVE_FALLBACK = '../../examples/expected_outputs/sf_packet.example.json';
     const COMMANDS_PATH = 'run_commands.json';
+    const STORAGE_KEY = 'viewer_selection_v03';
 
     let commands = {};
-    let allData = { contractResults: [], issues: [], fieldActions: [] };
+    let allData = { contractResults: [], issues: [], fieldActions: [], changeLog: [] };
     let activeFilters = { search: '', severities: ['blocking', 'warning', 'info'], statuses: ['ready', 'needs_review', 'blocked'], subtype: '' };
+    let currentSelection = { joinIdentity: null, contractIdx: null, activeTab: 'contract' };
 
     function normCmp(v) {
       if (v === null || v === undefined) return '';
@@ -216,6 +243,11 @@ Note: This viewer does NOT execute any commands automatically.
 
     function isNullOrEmpty(v) {
       return v === null || v === undefined || String(v).trim() === '';
+    }
+
+    function normalizeToNull(v) {
+      if (v === undefined || (typeof v === 'string' && v.trim() === '')) return null;
+      return v;
     }
 
     function compareNullsLast(aVal, bVal) {
@@ -243,22 +275,55 @@ Note: This viewer does NOT execute any commands automatically.
       });
     }
 
-    function sortBySeverity(arr) {
+    function sortBySeverityFirst(arr, extraKeys = []) {
       const sevOrder = { blocking: 0, warning: 1, info: 2 };
       return [...arr].sort((a, b) => {
+        const aOrd = sevOrder[a.severity] ?? 3;
+        const bOrd = sevOrder[b.severity] ?? 3;
+        if (aOrd !== bOrd) return aOrd - bOrd;
         const ck = compareNullsLast(a.contract_key, b.contract_key);
         if (ck !== 0) return ck;
         const fu = compareNullsLast(a.file_url, b.file_url);
         if (fu !== 0) return fu;
         const fn = compareNullsLast(a.file_name, b.file_name);
         if (fn !== 0) return fn;
-        const aOrd = sevOrder[a.severity] ?? 3;
-        const bOrd = sevOrder[b.severity] ?? 3;
-        if (aOrd !== bOrd) return aOrd - bOrd;
-        const sh = normCmp(a.sheet).localeCompare(normCmp(b.sheet));
-        if (sh !== 0) return sh;
-        return normCmp(a.field).localeCompare(normCmp(b.field));
+        for (const key of extraKeys) {
+          const cmp = compareNullsLast(a[key], b[key]);
+          if (cmp !== 0) return cmp;
+        }
+        return 0;
       });
+    }
+
+    function getJoinIdentity(record) {
+      return {
+        contract_key: normalizeToNull(record.contract_key),
+        file_url: normalizeToNull(record.file_url),
+        file_name: normalizeToNull(record.file_name)
+      };
+    }
+
+    function joinIdentityEquals(a, b) {
+      if (!a || !b) return false;
+      const eq = (x, y) => {
+        const nx = normalizeToNull(x);
+        const ny = normalizeToNull(y);
+        if (nx === null && ny === null) return true;
+        if (nx === null || ny === null) return false;
+        return nx === ny;
+      };
+      return eq(a.contract_key, b.contract_key) && eq(a.file_url, b.file_url) && eq(a.file_name, b.file_name);
+    }
+
+    function formatJoinIdentityPill(identity) {
+      const ck = identity.contract_key ?? 'null';
+      const fu = identity.file_url ?? 'null';
+      const fn = identity.file_name ?? 'null';
+      return `ck=${ck} | fu=${fu} | fn=${fn}`;
+    }
+
+    function getRelatedRecords(identity, dataArray) {
+      return dataArray.filter(r => joinIdentityEquals(getJoinIdentity(r), identity));
     }
 
     function formatValue(v) {
@@ -332,9 +397,11 @@ Note: This viewer does NOT execute any commands automatically.
         </div>
       `;
       
-      container.querySelectorAll('tbody tr').forEach(tr => {
-        tr.addEventListener('click', () => openDrawer(type, parseInt(tr.dataset.idx)));
-      });
+      if (type === 'contractResults') {
+        container.querySelectorAll('tbody tr').forEach(tr => {
+          tr.addEventListener('click', () => openDrawer(parseInt(tr.dataset.idx)));
+        });
+      }
     }
 
     function renderAllTables() {
@@ -376,19 +443,180 @@ Note: This viewer does NOT execute any commands automatically.
         subtypes.map(s => `<option value="${s}">${s}</option>`).join('');
     }
 
-    function openDrawer(type, idx) {
-      const dataMap = { contractResults: allData.contractResults, issues: allData.issues, fieldActions: allData.fieldActions };
-      const record = dataMap[type][idx];
+    function renderDrawerTab(tab) {
+      const body = document.getElementById('drawer-body');
+      const identity = currentSelection.joinIdentity;
+      if (!identity) return;
+
+      let content = '';
+      let jsonData = null;
+
+      if (tab === 'contract') {
+        const contract = currentSelection.contractIdx !== null 
+          ? allData.contractResults[currentSelection.contractIdx]
+          : allData.contractResults.find(r => joinIdentityEquals(getJoinIdentity(r), identity));
+        if (contract) {
+          jsonData = contract;
+          content = `<pre class="drawer-json">${JSON.stringify(contract, null, 2)}</pre>`;
+        } else {
+          content = '<div class="drawer-empty">No contract record found for this join identity.</div>';
+        }
+      } else if (tab === 'issues') {
+        const related = sortBySeverityFirst(getRelatedRecords(identity, allData.issues), ['sheet', 'field', 'issue_type']);
+        jsonData = related;
+        if (related.length === 0) {
+          content = '<div class="drawer-empty">No related issues for this join identity.</div>';
+        } else {
+          content = renderDrawerTable(related, [
+            { key: 'severity', label: 'Severity' },
+            { key: 'sheet', label: 'Sheet' },
+            { key: 'field', label: 'Field' },
+            { key: 'issue_type', label: 'Type' },
+            { key: 'details', label: 'Details' }
+          ]);
+        }
+      } else if (tab === 'actions') {
+        const related = sortBySeverityFirst(getRelatedRecords(identity, allData.fieldActions), ['sheet', 'field', 'action']);
+        jsonData = related;
+        if (related.length === 0) {
+          content = '<div class="drawer-empty">No related field actions for this join identity.</div>';
+        } else {
+          content = renderDrawerTable(related, [
+            { key: 'severity', label: 'Severity' },
+            { key: 'sheet', label: 'Sheet' },
+            { key: 'field', label: 'Field' },
+            { key: 'action', label: 'Action' },
+            { key: 'proposed_value', label: 'Value' },
+            { key: 'reason_text', label: 'Reason' }
+          ]);
+        }
+      } else if (tab === 'changelog') {
+        const related = sortBySeverityFirst(getRelatedRecords(identity, allData.changeLog), ['sheet', 'field', 'notes']);
+        jsonData = related;
+        if (related.length === 0) {
+          content = '<div class="drawer-empty">No related change log entries for this join identity.</div>';
+        } else {
+          content = renderDrawerTable(related, [
+            { key: 'severity', label: 'Severity' },
+            { key: 'sheet', label: 'Sheet' },
+            { key: 'field', label: 'Field' },
+            { key: 'notes', label: 'Notes' }
+          ]);
+        }
+      }
+
+      body.innerHTML = content;
+      body.dataset.json = JSON.stringify(jsonData, null, 2);
+    }
+
+    function renderDrawerTable(data, columns) {
+      const headers = columns.map(c => `<th>${c.label}</th>`).join('');
+      const rows = data.map(row => {
+        const cells = columns.map(c => {
+          let val = formatValue(row[c.key]);
+          let cls = '';
+          if (c.key === 'severity') cls = `severity-${row.severity}`;
+          return `<td class="${cls}">${val}</td>`;
+        }).join('');
+        return `<tr>${cells}</tr>`;
+      }).join('');
+      return `<table class="drawer-table"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function updateTabCounts(identity) {
+      const issuesCount = getRelatedRecords(identity, allData.issues).length;
+      const actionsCount = getRelatedRecords(identity, allData.fieldActions).length;
+      const changelogCount = getRelatedRecords(identity, allData.changeLog).length;
+      document.getElementById('issues-count').textContent = issuesCount;
+      document.getElementById('actions-count').textContent = actionsCount;
+      document.getElementById('changelog-count').textContent = changelogCount;
+    }
+
+    function openDrawer(idx) {
+      const record = allData.contractResults[idx];
       if (!record) return;
-      
-      document.getElementById('drawer-json').textContent = JSON.stringify(record, null, 2);
+
+      const identity = getJoinIdentity(record);
+      currentSelection.joinIdentity = identity;
+      currentSelection.contractIdx = idx;
+      currentSelection.activeTab = 'contract';
+
+      document.getElementById('identity-pill').textContent = formatJoinIdentityPill(identity);
+      updateTabCounts(identity);
+
+      document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
+      document.querySelector('.drawer-tab[data-tab="contract"]').classList.add('active');
+
+      renderDrawerTab('contract');
+
       document.getElementById('drawer').classList.add('active');
       document.getElementById('drawer-overlay').classList.add('active');
+
+      saveSelection();
     }
 
     function closeDrawer() {
       document.getElementById('drawer').classList.remove('active');
       document.getElementById('drawer-overlay').classList.remove('active');
+      currentSelection.joinIdentity = null;
+      clearSelection();
+    }
+
+    function saveSelection() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentSelection));
+      } catch (e) {}
+    }
+
+    function clearSelection() {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {}
+    }
+
+    function restoreSelection() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) return;
+        const sel = JSON.parse(stored);
+        if (!sel.joinIdentity) return;
+
+        let contractIdx = sel.contractIdx;
+        if (contractIdx !== null && contractIdx !== undefined) {
+          const storedRecord = allData.contractResults[contractIdx];
+          if (!storedRecord || !joinIdentityEquals(getJoinIdentity(storedRecord), sel.joinIdentity)) {
+            contractIdx = allData.contractResults.findIndex(r => joinIdentityEquals(getJoinIdentity(r), sel.joinIdentity));
+          }
+        } else {
+          contractIdx = allData.contractResults.findIndex(r => joinIdentityEquals(getJoinIdentity(r), sel.joinIdentity));
+        }
+
+        if (contractIdx < 0) {
+          clearSelection();
+          return;
+        }
+
+        const validTabs = ['contract', 'issues', 'actions', 'changelog'];
+        if (!validTabs.includes(sel.activeTab)) {
+          sel.activeTab = 'contract';
+        }
+
+        sel.contractIdx = contractIdx;
+        currentSelection = sel;
+        document.getElementById('identity-pill').textContent = formatJoinIdentityPill(sel.joinIdentity);
+        updateTabCounts(sel.joinIdentity);
+
+        document.querySelectorAll('.drawer-tab').forEach(t => {
+          t.classList.toggle('active', t.dataset.tab === sel.activeTab);
+        });
+
+        renderDrawerTab(sel.activeTab);
+
+        document.getElementById('drawer').classList.add('active');
+        document.getElementById('drawer-overlay').classList.add('active');
+      } catch (e) {
+        clearSelection();
+      }
     }
 
     function openCommandModal(cmdKey) {
@@ -483,11 +711,13 @@ Note: This viewer does NOT execute any commands automatically.
       renderSummary(data.sf_summary || {});
       
       allData.contractResults = sortByJoinTriplet(data.sf_contract_results || []);
-      allData.issues = sortBySeverity(data.sf_issues || []);
-      allData.fieldActions = sortBySeverity(data.sf_field_actions || []);
+      allData.issues = sortBySeverityFirst(data.sf_issues || [], ['sheet', 'field', 'issue_type']);
+      allData.fieldActions = sortBySeverityFirst(data.sf_field_actions || [], ['sheet', 'field', 'action']);
+      allData.changeLog = sortBySeverityFirst(data.sf_change_log || [], ['sheet', 'field', 'notes']);
       
       populateSubtypeDropdown();
       renderAllTables();
+      restoreSelection();
     }
 
     document.getElementById('toolbar').addEventListener('click', async e => {
@@ -523,10 +753,31 @@ Note: This viewer does NOT execute any commands automatically.
 
     document.getElementById('drawer-close').addEventListener('click', closeDrawer);
     document.getElementById('drawer-overlay').addEventListener('click', closeDrawer);
+
+    document.getElementById('drawer-tabs').addEventListener('click', e => {
+      const tab = e.target.closest('.drawer-tab');
+      if (!tab) return;
+      const tabName = tab.dataset.tab;
+      currentSelection.activeTab = tabName;
+      document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      renderDrawerTab(tabName);
+      saveSelection();
+    });
+
     document.getElementById('drawer-copy').addEventListener('click', async () => {
-      const json = document.getElementById('drawer-json').textContent;
+      const json = document.getElementById('drawer-body').dataset.json || '{}';
       const success = await copyToClipboard(json);
       const btn = document.getElementById('drawer-copy');
+      const orig = btn.textContent;
+      btn.textContent = success ? 'Copied!' : 'Failed';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+
+    document.getElementById('identity-copy').addEventListener('click', async () => {
+      const pill = document.getElementById('identity-pill').textContent;
+      const success = await copyToClipboard(pill);
+      const btn = document.getElementById('identity-copy');
       const orig = btn.textContent;
       btn.textContent = success ? 'Copied!' : 'Failed';
       setTimeout(() => btn.textContent = orig, 1500);

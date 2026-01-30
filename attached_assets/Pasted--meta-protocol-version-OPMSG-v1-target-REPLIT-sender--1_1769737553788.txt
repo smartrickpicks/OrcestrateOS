@@ -1,0 +1,103 @@
+[
+  {
+    "meta": {
+      "protocol_version": "OPMSG_v1",
+      "target": "REPLIT",
+      "sender": "ZAC",
+      "repo": "smartrickpicks/kiwi-semantic-control",
+      "branch": "main",
+      "scope_lock": [
+        "Governance-only",
+        "Offline-first",
+        "Artifact I/O only (local files)",
+        "No APIs / no credentials / no runtime execution",
+        "No LLM prompts",
+        "Deterministic sorting preserved"
+      ]
+    },
+    "type": "TASK",
+    "task_id": "TASK-UI-03",
+    "title": "Viewer v0.3 — Record Workbench Drilldown (Related Issues/Actions/Changelog)",
+    "context": {
+      "current_state": "ui/viewer/index.html exists (v0.2) with toolbar, filters, drilldown drawer showing raw row JSON.",
+      "goal": "Turn the drilldown drawer into an operator workbench: when a contract row is selected, show all related records across sf_contract_results, sf_issues, sf_field_actions, sf_change_log for the same join identity (contract_key → file_url → file_name)."
+    },
+    "requirements": {
+      "join_identity": {
+        "definition": "Join identity is the triplet (contract_key, file_url, file_name). Nulls allowed. Match related items by exact equality on all three fields after normalizing undefined/missing to null.",
+        "precedence_note": "Join strategy remains contract_key → file_url → file_name, but in viewer matching we use the full triplet equality to avoid accidental cross-linking."
+      },
+      "determinism": {
+        "sort_contract_results": "contract_key asc, file_url asc, file_name asc (nulls last)",
+        "sort_issues": "severity order blocking>warn>info, then contract_key, file_url, file_name, sheet, field, issue_type (all asc, nulls last)",
+        "sort_field_actions": "severity order blocking>warn>info, then contract_key, file_url, file_name, sheet, field, action (asc, nulls last)",
+        "sort_change_log": "severity order blocking>warn>info, then contract_key, file_url, file_name, sheet, field, notes (asc, nulls last)"
+      },
+      "ui_changes": {
+        "drawer_tabs": [
+          "Contract",
+          "Issues",
+          "Field Actions",
+          "Change Log"
+        ],
+        "drawer_header": [
+          "Show a single join-identity pill string: ck=<...> | fu=<...> | fn=<...>",
+          "Copy button for join identity pill"
+        ],
+        "related_sections": [
+          "Issues tab shows a table of only related sf_issues rows",
+          "Field Actions tab shows a table of only related sf_field_actions rows",
+          "Change Log tab shows a table of only related sf_change_log rows"
+        ],
+        "empty_states": [
+          "If no related rows exist for a tab, show 'No related <type> for this join identity.'"
+        ],
+        "copy_buttons": [
+          "Each tab should have a 'Copy JSON (tab)' button that copies the filtered array JSON",
+          "Keep existing per-row JSON copy behavior if present"
+        ],
+        "filters_interaction": [
+          "Global filters (search/severity/status/subtype) should NOT hide related tab contents once a record is selected; selection is the truth for the drawer.",
+          "However, the main tables remain filtered as currently implemented."
+        ],
+        "state_persistence": [
+          "Persist the currently selected join identity + active drawer tab in localStorage.",
+          "On reload, rehydrate selection if the record still exists; otherwise clear selection."
+        ]
+      },
+      "artifact_inputs": {
+        "primary": "out/sf_packet.preview.json",
+        "fallback": "examples/expected_outputs/sf_packet.example.json"
+      },
+      "non_goals": [
+        "No automatic execution of shell commands",
+        "No patch authoring/export in viewer yet",
+        "No writing to config/ or examples/ from the viewer"
+      ]
+    },
+    "files_to_modify": [
+      "ui/viewer/index.html",
+      "ui/viewer/README.md"
+    ],
+    "optional_files": [
+      "ui/viewer/run_commands.json (only if you need to add new copy-to-clipboard command labels; do not add runnable execution)"
+    ],
+    "acceptance_criteria": [
+      "Selecting a Contract Results row opens drawer with tabs: Contract / Issues / Field Actions / Change Log.",
+      "Issues/Actions/Change Log tabs show ONLY items matching the selected join identity triplet (contract_key, file_url, file_name).",
+      "Drawer shows join identity pill and a copy button.",
+      "Deterministic sorting is applied inside each related tab list (severity order first where applicable).",
+      "Empty state messages appear when no related rows exist.",
+      "localStorage persists selection + active tab and restores on reload (if record still exists).",
+      "No new dependencies. No network requests. Viewer remains single-file vanilla HTML+JS."
+    ],
+    "operator_instructions": {
+      "how_to_verify": [
+        "Run: bash scripts/replit_smoke.sh (confirm deterministic preview still passes).",
+        "Open: ui/viewer/index.html and click each Contract Results row; verify related tabs show correct filtered lists.",
+        "Hard refresh the page; ensure selection + active tab restored."
+      ],
+      "commit_message": "chore(ui): add record workbench drilldown with related issues/actions/changelog"
+    }
+  }
+]

@@ -3,7 +3,7 @@
 ## Overview
 A read-only, single-file HTML viewer for sf_packet artifacts. No build step, no dependencies, no external network requests.
 
-**Version:** 0.2
+**Version:** 0.3
 
 ## How to Open
 
@@ -46,7 +46,7 @@ The toolbar provides quick access to common commands:
 | Smoke Baseline | Run smoke test against baseline expected output |
 | Smoke Edge | Run smoke test against edge expected output |
 
-**Copy-Only Default:** Clicking any toolbar button opens a modal displaying the full command. The default action is to **copy the command to clipboard**.
+**Copy-Only Default:** Clicking any toolbar button automatically copies the command to clipboard and opens a modal displaying the full command.
 
 **Confirm-Run Gate:** To enable the "Run" button, you must first check the **"I CONFIRM RUN"** checkbox in the toolbar. Even when enabled, execution is not available in the browser environment - you must paste and run the command in your terminal.
 
@@ -63,16 +63,53 @@ Located below the toolbar, filters allow you to narrow down table results:
 | **Status Chips** | Toggle visibility of ready/needs_review/blocked status rows |
 | **Subtype Dropdown** | Filter Contract Results by detected_subtype |
 
-Filters apply across all three tables. Click a chip to toggle it on/off (inactive chips appear faded).
+Filters apply across all three main tables. Click a chip to toggle it on/off (inactive chips appear faded).
 
-### Drilldown Drawer
+**Note:** Global filters do NOT affect the contents of the Record Workbench drawer once a record is selected. The drawer always shows all related records for the selected join identity.
 
-Click any row in any table to open a slide-out drawer on the right side. The drawer displays:
+### Record Workbench (Drilldown Drawer)
 
-- **Full record JSON**: The complete data object for that row
-- **Copy JSON button**: Copy the JSON to clipboard for use elsewhere
+Click any row in the Contract Results table to open the Record Workbench drawer.
 
-Press `Escape` or click outside the drawer to close it.
+#### Join Identity
+The drawer header displays a **join identity pill** showing the triplet:
+```
+ck=<contract_key> | fu=<file_url> | fn=<file_name>
+```
+Click "Copy ID" to copy this identifier to clipboard.
+
+#### Tabs
+The workbench has four tabs:
+
+| Tab | Content |
+|-----|---------|
+| **Contract** | Full JSON of the selected contract record |
+| **Issues** | All `sf_issues` rows matching the join identity |
+| **Actions** | All `sf_field_actions` rows matching the join identity |
+| **Change Log** | All `sf_change_log` rows matching the join identity |
+
+Each tab shows a count badge indicating how many related records exist.
+
+#### Join Identity Matching
+Records are matched by exact equality on the triplet `(contract_key, file_url, file_name)`. Missing/undefined values are normalized to `null` before comparison.
+
+#### Sorting Within Tabs
+- **Issues:** severity (blocking > warning > info), then contract_key, file_url, file_name, sheet, field, issue_type
+- **Actions:** severity (blocking > warning > info), then contract_key, file_url, file_name, sheet, field, action
+- **Change Log:** severity (blocking > warning > info), then contract_key, file_url, file_name, sheet, field, notes
+
+#### Empty States
+If no related records exist for a tab, the message "No related <type> for this join identity." is displayed.
+
+#### Copy JSON
+Click "Copy JSON (Current Tab)" to copy the data from the active tab to clipboard.
+
+### State Persistence
+The viewer persists your selection in localStorage:
+- **Selected join identity**
+- **Active tab**
+
+On page reload, if the previously selected record still exists in the data, the drawer reopens with the same selection and tab. If the record no longer exists, the selection is cleared.
 
 ### Summary Cards
 Displays counts from `sf_summary`:
@@ -82,16 +119,16 @@ Displays counts from `sf_summary`:
 - Blocked (red)
 
 ### Tables
-Three tables with deterministic sorting:
+Three main tables with deterministic sorting:
 
 1. **Contract Results** - `sf_contract_results`
    - Sorted by: contract_key (nulls last), file_url (nulls last), file_name (nulls last)
 
 2. **Issues** - `sf_issues`
-   - Sorted by: join triplet (nulls last), then severity (blocking > warning > info), then sheet, field
+   - Sorted by: severity (blocking > warning > info), then join triplet, then sheet, field, issue_type
 
 3. **Field Actions** - `sf_field_actions`
-   - Sorted by: join triplet (nulls last), then severity (blocking > warning > info), then sheet, field
+   - Sorted by: severity (blocking > warning > info), then join triplet, then sheet, field, action
 
 ### Diff Pane
 Instructions for running the smoke test to verify determinism:
@@ -124,3 +161,4 @@ To view different data, either:
 - **No network requests**: All data loaded from local filesystem
 - **Deterministic display**: Sorting matches run_local.py output ordering
 - **Keyboard shortcuts**: Press `Escape` to close modals and drawers
+- **State persistence**: Selection saved to localStorage
