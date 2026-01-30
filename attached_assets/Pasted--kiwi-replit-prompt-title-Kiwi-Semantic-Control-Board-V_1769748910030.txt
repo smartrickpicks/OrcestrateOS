@@ -1,0 +1,460 @@
+{
+  "kiwi_replit_prompt": {
+    "title": "Kiwi Semantic Control Board — V1 DataDash-style Dashboard + Plain-English UX",
+    "context": {
+      "current_problem": [
+        "The EMPTY state is a giant centered 'Load Data' hero and feels dumb/unfamiliar vs DataDash V1.",
+        "People liked the V1 operator flow (queues + analytics + workbench). We need that same muscle memory in React.",
+        "Role model is confusing: 'Operator' is redundant. We want Analyst + Reviewer as the work surface, plus Admin for governance.",
+        "Terminology is too technical (e.g., 'sf_packet'). Users need plain English explanations and info tooltips."
+      ],
+      "hard_constraints": [
+        "Offline-first, deterministic, config-driven.",
+        "No network calls. No runtime execution in UI. Copy-only exports.",
+        "Keep the V1 queue-centric work surface as the primary UI.",
+        "PDF viewer + highlights remain core (DataDash parity).",
+        "Patch editor should be an overlay inside the Field Editor (not a separate detached area)."
+      ]
+    },
+    "roles_and_views": {
+      "remove_role": "Operator",
+      "roles": {
+        "Analyst": {
+          "default_view": "Workbench",
+          "permissions": [
+            "load_artifacts_locally",
+            "triage_queues",
+            "open_record_drawer",
+            "view_pdf_and_highlights",
+            "edit_field_intent",
+            "open_patch_overlay_and_draft_patch",
+            "copy_patch_json",
+            "mark_submit_for_review"
+          ],
+          "restrictions": [
+            "cannot_final_approve_preflight",
+            "cannot_edit_base_config_in_ui",
+            "cannot_run_validator_or_smoke_in_ui",
+            "cannot_write_files"
+          ]
+        },
+        "Reviewer": {
+          "default_view": "Workbench",
+          "permissions": [
+            "load_artifacts_locally",
+            "triage_queues",
+            "open_record_drawer",
+            "view_pdf_and_highlights",
+            "inspect_patch_overlay_and_add_notes",
+            "accept_or_return_for_changes",
+            "mark_finalized",
+            "generate_pr_summary_copy"
+          ],
+          "restrictions": [
+            "cannot_edit_base_config_in_ui",
+            "cannot_run_validator_or_smoke_in_ui",
+            "cannot_write_files"
+          ]
+        },
+        "Admin": {
+          "default_view": "Governance",
+          "permissions": [
+            "view_audit_and_baselines",
+            "configure_ui_only_settings",
+            "set_allowed_actions_and_severity_profiles",
+            "set_version_bump_policy",
+            "override_with_governance_note"
+          ],
+          "restrictions": [
+            "cannot_add_connectors",
+            "cannot_enable_network_calls",
+            "cannot_write_files"
+          ]
+        }
+      }
+    },
+    "new_information_architecture": {
+      "app_shell": {
+        "layout": "DataDash V1-style dashboard (sidebar + topbar + main workbench). No centered hero screen.",
+        "grid": {
+          "left_sidebar_width": "280px",
+          "topbar_height": "56px",
+          "main_split": "PDF (60%) | Field/Record (40%)",
+          "record_drawer": "right-side slide-over 420px OR integrated as a collapsible panel above Field Editor (choose one and stay consistent)"
+        }
+      },
+      "left_sidebar": {
+        "sections": [
+          {
+            "name": "Queues",
+            "items": [
+              "To Do",
+              "Needs Review",
+              "Flagged",
+              "Blocked",
+              "Finalized"
+            ],
+            "each_item_shows": [
+              "count_badge",
+              "severity_mini_breakdown (blocking/warning/info as tiny chips)"
+            ]
+          },
+          {
+            "name": "Quick Filters",
+            "items": [
+              "Only Blocking",
+              "Only Warnings",
+              "Missing Join Key",
+              "Has Patch Draft",
+              "Needs PDF Review"
+            ]
+          },
+          {
+            "name": "Session",
+            "items": [
+              "Data Sources (opens drawer)",
+              "Evidence Status",
+              "Reset Session"
+            ]
+          }
+        ]
+      },
+      "topbar": {
+        "left": [
+          "App name: 'Semantic Control Board'",
+          "Mode selector: Analyst | Reviewer | Admin (role-aware routing)"
+        ],
+        "center": [
+          "Search box (contract_key / file_name / file_url)"
+        ],
+        "right": [
+          "Evidence chips strip (Validation / Conflicts / Smoke / Baseline) with green/yellow/gray states",
+          "Copy: Patch JSON",
+          "Copy: PR Summary",
+          "Help (?)"
+        ]
+      },
+      "main_workbench": {
+        "queue_table": {
+          "position": "Main column (left-center) under topbar when a queue is selected",
+          "columns": [
+            "severity",
+            "contract_key",
+            "file_name",
+            "detected_subtype",
+            "sf_contract_status",
+            "top_issue"
+          ],
+          "row_click": "opens Record Drawer + loads PDF context",
+          "sorting": "severity desc, then contract_key asc, file_url asc, file_name asc (nulls last)"
+        },
+        "pdf_viewer": {
+          "position": "Left pane of main split",
+          "requirements": [
+            "highlight overlays",
+            "next/prev highlight buttons",
+            "highlight list drawer (optional) sorted by page then y-position",
+            "click highlight focuses field",
+            "select field focuses highlight"
+          ],
+          "shortcuts": {
+            "n": "next_highlight",
+            "p": "prev_highlight"
+          }
+        },
+        "field_editor": {
+          "position": "Right pane of main split",
+          "tabs": [
+            "Fields",
+            "Issues",
+            "Patch Draft"
+          ],
+          "default_tab": "Fields",
+          "patch_overlay": {
+            "activation": [
+              "click 'Open Patch Overlay' on a field",
+              "press 'o' when a field is selected"
+            ],
+            "overlay_contents": [
+              "Plain-English Change Summary",
+              "Reason",
+              "Scope (field/sheet/contract)",
+              "Severity (info/warning/blocking)",
+              "Generated Patch JSON preview (read-only)",
+              "Copy Patch JSON button"
+            ],
+            "review_controls": [
+              "Reviewer: Accept",
+              "Reviewer: Request Changes (requires note)",
+              "Admin: Governance Note"
+            ],
+            "no_file_write": true
+          }
+        },
+        "record_drawer": {
+          "shows": [
+            "join triplet (contract_key / file_url / file_name) with tooltips",
+            "record state chips (To Do / Needs Review / Flagged / Blocked / Finalized)",
+            "issues list (by severity)",
+            "actions list",
+            "notes thread (Analyst/Reviewer/Admin)"
+          ],
+          "actions": [
+            "Jump to field",
+            "Jump to highlight",
+            "Open patch overlay"
+          ]
+        }
+      }
+    },
+    "replace_current_empty_state": {
+      "remove": [
+        "centered 'Load Data' hero experience"
+      ],
+      "replace_with": {
+        "default_queue": "To Do",
+        "empty_queue_message": "No records loaded yet. Open Data Sources to paste or drop your packet.",
+        "primary_cta_location": "Sidebar > Session > Data Sources"
+      }
+    },
+    "load_data_experience_redesign": {
+      "change_from": "modal",
+      "change_to": "right-side drawer titled 'Data Sources'",
+      "drawer_sections": [
+        {
+          "title": "1) Preview Packet (Required)",
+          "description": "This is the evidence packet used to triage issues and drive highlights.",
+          "inputs": [
+            "Paste JSON textarea",
+            "Drop file"
+          ],
+          "cta": "Load Preview"
+        },
+        {
+          "title": "2) Expected Packet (Optional)",
+          "description": "Use this to compare what you got vs what you expected (baseline).",
+          "inputs": [
+            "Paste JSON textarea",
+            "Drop file"
+          ],
+          "cta": "Load Expected"
+        },
+        {
+          "title": "3) PDF Files (Optional)",
+          "description": "Attach local PDFs so highlights and field context can be reviewed visually.",
+          "inputs": [
+            "Drop PDF(s)",
+            "Map PDFs by file_name/file_url (auto-suggest)"
+          ]
+        },
+        {
+          "title": "4) Remember This Session",
+          "description": "Save locally in this browser (no network).",
+          "inputs": [
+            "Checkbox: remember in localStorage"
+          ]
+        }
+      ],
+      "microcopy": {
+        "sf_packet_plain_english": "A Packet is a structured snapshot of what the system extracted + what needs verification. It powers queues, highlights, and patch drafts.",
+        "why_required": "We need the Preview Packet so we can deterministically show you what to fix and where it appears in the PDF."
+      }
+    },
+    "plain_english_tooltips_and_help": {
+      "add_info_icons_next_to": [
+        "Preview Packet",
+        "Expected Packet",
+        "contract_key",
+        "file_url",
+        "file_name",
+        "severity",
+        "ruleset_version",
+        "sf_contract_status",
+        "Patch Draft",
+        "Preflight"
+      ],
+      "tooltips": {
+        "Preview Packet": "The working packet used to triage issues. It contains extracted fields, issues, and highlight anchors.",
+        "Expected Packet": "Optional comparison baseline. Use it to validate that fixes match expectations.",
+        "contract_key": "Primary identifier used to join everything together. If missing, we fall back to URL then file name.",
+        "file_url": "Secondary join key used when contract_key is missing.",
+        "file_name": "Last-resort join key used only if others are missing.",
+        "severity": "Blocking issues must be resolved before a patch is ready. Warnings may be approved with notes. Info is non-blocking.",
+        "ruleset_version": "Which configuration version produced this packet.",
+        "sf_contract_status": "READY / NEEDS_REVIEW / BLOCKED based on issues + severity.",
+        "Patch Draft": "A copy-only JSON snippet you can paste into your patch file. Nothing is saved automatically.",
+        "Preflight": "A checklist to confirm evidence is present (validation/conflicts/smoke). UI does not run these—only records the evidence you paste."
+      },
+      "help_panel": {
+        "location": "Topbar > Help (?)",
+        "contents": [
+          "What is a Packet?",
+          "How queues work",
+          "How to read highlights",
+          "How patch drafts work (copy-only)",
+          "What 'offline-first' means here"
+        ]
+      }
+    },
+    "nomenclature_map_for_non_technical_users": {
+      "goal": "Replace internal filenames with human labels everywhere in UI. Keep filenames only in small gray subtext.",
+      "mapping": [
+        {
+          "internal": "sf_packet",
+          "label": "Preview Packet",
+          "subtitle": "Evidence Snapshot (JSON)"
+        },
+        {
+          "internal": "expected_sf_packet",
+          "label": "Expected Packet",
+          "subtitle": "Baseline Comparison (JSON)"
+        },
+        {
+          "internal": "ruleset / config_pack",
+          "label": "Rules & Mappings",
+          "subtitle": "How we interpret fields (Config)"
+        },
+        {
+          "internal": "glossary",
+          "label": "Field Dictionary",
+          "subtitle": "What each field means"
+        },
+        {
+          "internal": "hinges",
+          "label": "Decision Rules",
+          "subtitle": "If/then gates that change behavior"
+        },
+        {
+          "internal": "field_intelligence_guide",
+          "label": "How We Interpret Contracts",
+          "subtitle": "Inclusion/exclusion semantics"
+        },
+        {
+          "internal": "qa_packet",
+          "label": "QA Results",
+          "subtitle": "Checks + outcomes"
+        },
+        {
+          "internal": "validator_output",
+          "label": "Validation Report",
+          "subtitle": "Pasted evidence (text)"
+        },
+        {
+          "internal": "conflicts_output",
+          "label": "Conflict Report",
+          "subtitle": "Pasted evidence (text)"
+        },
+        {
+          "internal": "smoke_output",
+          "label": "Smoke Test Notes",
+          "subtitle": "Pasted evidence (text)"
+        },
+        {
+          "internal": "patch.json",
+          "label": "Patch Draft",
+          "subtitle": "Copy-only JSON"
+        },
+        {
+          "internal": "pr_summary",
+          "label": "PR Summary",
+          "subtitle": "Copy-only text"
+        }
+      ]
+    },
+    "dataDash_v1_parity_requirements": {
+      "must_have": [
+        "Queue-centric sidebar navigation",
+        "Visible counts + status chips",
+        "Fast triage workflow (j/k to move rows)",
+        "PDF viewer with highlights and next/prev",
+        "Record drawer with context + jump links",
+        "In-place editing (overlay) with copy-only output",
+        "Clear 'what is this' microcopy everywhere"
+      ],
+      "nice_to_have": [
+        "Mini analytics strip (queue totals, severity totals) at top of queue table",
+        "Recent items list",
+        "Pinned filters"
+      ]
+    },
+    "acceptance_criteria": [
+      "No centered hero 'Load Data' page remains; app opens to dashboard shell with sidebar + queues.",
+      "Operator role is removed; role selector is Analyst/Reviewer/Admin with correct routing and permissions.",
+      "Data Sources is a drawer (not modal) and uses plain English microcopy for Preview/Expected packets.",
+      "Workbench includes: Queue table + PDF viewer + Field editor + Record drawer.",
+      "Patch overlay is integrated into Field Editor and supports copy-only JSON export + reviewer notes.",
+      "All key internal terms have tooltips and are displayed using the nomenclature map labels.",
+      "Keyboard shortcuts: j/k for queue navigation; n/p for highlights; o opens patch overlay; esc closes."
+    ]
+  },
+  "list_of_project_config_artifacts_to_rename_in_ui": {
+    "instruction": "Return this list in the UI as 'System Files (Advanced)' but show the friendly label by default.",
+    "items": [
+      {
+        "internal_name": "sf_packet.preview",
+        "friendly_name": "Preview Packet",
+        "one_liner": "Evidence snapshot used to populate queues and highlights."
+      },
+      {
+        "internal_name": "sf_packet.expected",
+        "friendly_name": "Expected Packet",
+        "one_liner": "Optional baseline used to compare outcomes."
+      },
+      {
+        "internal_name": "config_pack / ruleset",
+        "friendly_name": "Rules & Mappings",
+        "one_liner": "Configuration that defines how fields, joins, and fixes are interpreted."
+      },
+      {
+        "internal_name": "mapping_glossary",
+        "friendly_name": "Field Dictionary",
+        "one_liner": "Human definitions for each Salesforce field and meaning."
+      },
+      {
+        "internal_name": "hinges",
+        "friendly_name": "Decision Rules",
+        "one_liner": "If/then gates that change validation and extraction behavior."
+      },
+      {
+        "internal_name": "field_intelligence_guide",
+        "friendly_name": "Contract Interpretation Guide",
+        "one_liner": "Plain semantics for when data is included/excluded."
+      },
+      {
+        "internal_name": "qa_packet",
+        "friendly_name": "QA Results",
+        "one_liner": "Checks, outcomes, and gating summary."
+      },
+      {
+        "internal_name": "validator_output",
+        "friendly_name": "Validation Report",
+        "one_liner": "Pasted log output used as evidence (UI does not run validation)."
+      },
+      {
+        "internal_name": "conflicts_output",
+        "friendly_name": "Conflict Report",
+        "one_liner": "Pasted conflict output used as evidence."
+      },
+      {
+        "internal_name": "smoke_output",
+        "friendly_name": "Smoke Test Notes",
+        "one_liner": "Pasted smoke output used as evidence."
+      },
+      {
+        "internal_name": "baseline_hashes",
+        "friendly_name": "Baseline Fingerprints",
+        "one_liner": "Deterministic identifiers proving what version you compared against."
+      },
+      {
+        "internal_name": "patch.json",
+        "friendly_name": "Patch Draft",
+        "one_liner": "Copy-only JSON snippet for submitting changes."
+      },
+      {
+        "internal_name": "pr_summary",
+        "friendly_name": "PR Summary",
+        "one_liner": "Copy-only summary explaining what changed and why."
+      }
+    ]
+  }
+}
