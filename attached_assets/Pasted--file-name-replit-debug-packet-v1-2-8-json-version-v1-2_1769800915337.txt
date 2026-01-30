@@ -1,0 +1,148 @@
+{
+  "file_name": "replit_debug_packet_v1.2.8.json",
+  "version": "v1.2.8",
+  "status": "triage_required",
+  "your_symptoms": [
+    "URL changes (you see routing in the URL bar) but the view does NOT change",
+    "Loader still shows the old 'Load Sample Dataset' button behavior (not the new Next Action panels)",
+    "Role switching (Analyst/Reviewer/Admin) does not update UI or unlock tools"
+  ],
+  "most_likely_root_causes_ranked": [
+    {
+      "rank": 1,
+      "cause": "Router outlet is not re-rendering / route content is not actually bound to location changes",
+      "common_patterns": [
+        "Using HashRouter but Links/guards are writing to history in a way the router doesn't observe",
+        "Routes are mounted outside the router or behind a stale memoized layout component",
+        "A single component (Loader) is rendered unconditionally regardless of route"
+      ]
+    },
+    {
+      "rank": 2,
+      "cause": "Route guard hard-redirect loop or immediate redirect back to Loader (but UI doesn’t show it clearly)",
+      "common_patterns": [
+        "Guard runs on every render because required state never becomes true",
+        "Guard sets location but also returns Loader (or returns null) causing a visual 'stuck' state"
+      ]
+    },
+    {
+      "rank": 3,
+      "cause": "An overlay/div is intercepting clicks or preventing scroll/paint updates (pointer-events / z-index)",
+      "common_patterns": [
+        "A full-screen panel or invisible backdrop remains mounted",
+        "Drawer/modal overlay remains open with opacity 0 but still blocks interaction"
+      ]
+    },
+    {
+      "rank": 4,
+      "cause": "Role state is stored but not in reactive state (written to localStorage/sessionStorage only)",
+      "common_patterns": [
+        "Role selector updates storage but UI reads from a different variable",
+        "Role is read only once on mount and never subscribed to changes"
+      ]
+    }
+  ],
+  "what_to_send_to_replit_now": {
+    "title": "Routing updates URL but content never changes + role switching not reactive",
+    "message": "The URL/hash changes but the UI does not update (stuck on Loader). Role switching also doesn’t re-render. This indicates the router outlet (Routes) isn’t responding to location changes OR something is always rendering the Loader regardless of route. Please do the debug steps below and fix whichever is true.",
+    "debug_tasks": [
+      {
+        "id": "DBG-ROUTER-001",
+        "goal": "Prove whether the router sees location changes",
+        "instructions": [
+          "Add a tiny debug HUD in the top-right of the app that shows:",
+          "- current location.pathname (or hash path)",
+          "- current route key (location.key if available)",
+          "- active page component name (string constant set by each page on mount)",
+          "Log to console on every route change via useLocation() + useEffect."
+        ],
+        "acceptance": [
+          "HUD changes immediately when clicking sidebar items",
+          "Console shows a route change event each click"
+        ]
+      },
+      {
+        "id": "DBG-ROUTES-002",
+        "goal": "Verify the app is not rendering Loader unconditionally",
+        "instructions": [
+          "Search for Loader component usage and ensure it is ONLY rendered on /loader route.",
+          "Confirm that <Routes> has an element for /triage, /patch-studio, etc.",
+          "Ensure Layout renders <Outlet /> (or equivalent) where page content should appear."
+        ],
+        "acceptance": [
+          "Navigating to /triage mounts the Triage component (confirmed by a console log on mount)"
+        ]
+      },
+      {
+        "id": "DBG-HASH-003",
+        "goal": "Ensure navigation method matches router type",
+        "instructions": [
+          "If using HashRouter, sidebar navigation must use <Link to=\"/triage\"> or navigate('/triage'), NOT window.location.pathname changes.",
+          "Ensure route guards redirect using navigate('/loader?...') (router) instead of window.location.assign (browser).",
+          "Confirm the actual URL format is #/triage (hash) and your route matching expects that."
+        ],
+        "acceptance": [
+          "Clicking sidebar changes hash AND router mounts the new page"
+        ]
+      },
+      {
+        "id": "DBG-OVERLAY-004",
+        "goal": "Detect a blocking overlay that prevents interaction or view updates",
+        "instructions": [
+          "Temporarily add CSS debug: outline: 2px solid red to any full-screen overlays/backdrops.",
+          "In devtools, inspect the DOM and check if any element covers the main content (position: fixed; top:0; left:0; width:100vw; height:100vh).",
+          "If found, ensure it unmounts properly or has pointer-events:none when inactive."
+        ],
+        "acceptance": [
+          "No invisible overlay remains after leaving a page/drawer"
+        ]
+      },
+      {
+        "id": "DBG-ROLE-005",
+        "goal": "Make role switching reactive everywhere",
+        "instructions": [
+          "Role must live in a single source of truth (React state/store), not only localStorage.",
+          "All role-gated components should read from the same hook/store (e.g., useRole()).",
+          "Add role to debug HUD so we can see it change instantly."
+        ],
+        "acceptance": [
+          "Switching role immediately updates UI and enables/disables actions without refresh"
+        ]
+      }
+    ],
+    "fix_targets": [
+      {
+        "if_router_not_updating": [
+          "Ensure <HashRouter> (or BrowserRouter) wraps the entire app once at the top.",
+          "Ensure Layout uses <Outlet /> and is not memoized in a way that blocks rerenders.",
+          "Remove any custom 'router state' that overrides route rendering."
+        ]
+      },
+      {
+        "if_guard_looping": [
+          "Guard should run ONLY in a useEffect and should render a minimal 'Redirecting…' screen (not Loader) to avoid confusing 'stuck' states.",
+          "Once dataset is activated, guard must stop firing and allow route render."
+        ]
+      },
+      {
+        "if_loader_panels_not_showing": [
+          "Confirm the correct Loader component version is actually mounted (no duplicate Loader file).",
+          "Add a visible version string on Loader page like 'Loader v1.2.7' so we can confirm deployment."
+        ]
+      }
+    ]
+  },
+  "your_requested_ux_change": {
+    "loader_default_action": "When there is no active dataset, the Loader should default to 'Load a file' / Import as the primary CTA (not a generic menu).",
+    "demo_default": "Sample dataset should still be available as a one-click option, but not the only obvious path.",
+    "recommended_loader_layout": [
+      "Primary CTA (top): Import CSV/XLSX (Load a file)",
+      "Secondary CTA: Load Sample Dataset",
+      "Tertiary: Attach PDF, Reset, Rebuild Field Index (collapsed)"
+    ]
+  },
+  "one_fast_verification_step": {
+    "ask_replit_to_add": "Put a small text label in the header of each page: 'PAGE: LOADER' / 'PAGE: TRIAGE' / 'PAGE: PATCH STUDIO' and a build tag like 'BUILD v1.2.7'.",
+    "why": "Right now we can’t tell if routing is broken or if the wrong build/component is mounted."
+  }
+}

@@ -1,5 +1,36 @@
 # CHANGELOG
 
+## Version: v1.2.8
+Date: 2026-01-30
+
+### Fixed (Navigation + Routing Debug)
+
+- Route Guard Simplified
+  - Changed checkRouteRequirements to use dataLoaded flag instead of bundle check
+  - More reliable routing - no longer depends on complex bundle creation
+  - Added currentPage tracking variable for state machine
+
+- Debug HUD Added
+  - Fixed position HUD in top-right showing: Route, Data, Mode
+  - updateDebugHUD() called on every navigation
+  - Console logging for navigation attempts and route guard decisions
+
+- Page Labels Added
+  - Each page shows "PAGE: X | BUILD v1.2.8" label for deployment verification
+  - Visible on Loader, Triage, Patch Studio pages
+
+- Loader UX Updated
+  - Primary CTA: Import CSV (dark panel, "Load a File")
+  - Secondary CTA: Load Sample Dataset (green bar)
+  - Continue panel shown when dataset is already loaded
+  - Collapsible "Other Actions" for PDF attach and test utilities
+
+- Navigation Debugging
+  - Console logs for every navigateTo call with page and dataLoaded state
+  - Console logs for route guard decisions
+
+---
+
 ## Version: v1.2.7
 Date: 2026-01-30
 

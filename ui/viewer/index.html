@@ -669,6 +669,9 @@
   </style>
 </head>
 <body>
+  <!-- Debug HUD (v1.2.8) -->
+  <div id="debug-hud" style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: #0f0; font-family: monospace; font-size: 11px; padding: 4px 8px; border-radius: 4px; z-index: 99999;">Route: - | Data: - | Mode: -</div>
+  
   <div class="app-layout">
     <nav class="nav-sidebar">
       <div class="nav-header">
@@ -800,9 +803,10 @@
         <button class="empty-queue-cta" id="empty-queue-load" onclick="navigateTo('loader')">Open Loader</button>
       </div>
       
-      <!-- Loader Page (v1.2.7 Next Action Layout) -->
+      <!-- Loader Page (v1.2.8 Next Action Layout) -->
       <div class="page-content" id="page-loader" style="display: none;">
         <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+          <div style="font-size: 0.75em; color: #999; text-align: right; margin-bottom: 10px;">PAGE: LOADER | BUILD v1.2.8</div>
           
           <!-- PRIMARY ACTION PANEL: Continue to Triage (shown when dataset active) -->
           <div id="loader-continue-panel" style="display: none; background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); border-radius: 12px; padding: 30px; margin-bottom: 30px; color: white; text-align: center;">
@@ -815,12 +819,20 @@
             </div>
           </div>
           
-          <!-- PRIMARY ACTION PANEL: Auto-Load Sample (shown when no dataset, demo mode) -->
-          <div id="loader-demo-panel" style="display: none; background: linear-gradient(135deg, #43a047 0%, #388e3c 100%); border-radius: 12px; padding: 30px; margin-bottom: 30px; color: white; text-align: center;">
-            <div style="font-size: 2em; margin-bottom: 10px;">📦</div>
-            <h2 style="margin: 0 0 8px 0; font-size: 1.4em; color: white;">Demo Mode</h2>
-            <p style="font-size: 0.95em; opacity: 0.9; margin: 0 0 20px 0;">Load the sample dataset to explore the full workflow.</p>
-            <button id="btn-load-sample-demo" class="empty-queue-cta" style="background: white; color: #388e3c; font-size: 1.1em; padding: 14px 28px; border-radius: 8px;">Load Sample Dataset</button>
+          <!-- PRIMARY ACTION PANEL: Import CSV (shown when no dataset) -->
+          <div id="loader-import-panel" style="display: none; background: linear-gradient(135deg, #455a64 0%, #37474f 100%); border-radius: 12px; padding: 30px; margin-bottom: 20px; color: white; text-align: center;">
+            <div style="font-size: 2em; margin-bottom: 10px;">📄</div>
+            <h2 style="margin: 0 0 8px 0; font-size: 1.4em; color: white;">Load a File</h2>
+            <p style="font-size: 0.95em; opacity: 0.9; margin: 0 0 20px 0;">Import a CSV file to start working with your data.</p>
+            <input type="file" id="file-import-csv-primary" accept=".csv" style="display: none;">
+            <button id="btn-import-csv-primary" class="empty-queue-cta" style="background: white; color: #37474f; font-size: 1.1em; padding: 14px 28px; border-radius: 8px;">Import CSV</button>
+          </div>
+          
+          <!-- SECONDARY ACTION: Load Sample Dataset -->
+          <div id="loader-sample-panel" style="display: none; background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 16px; margin-bottom: 20px; text-align: center;">
+            <span style="margin-right: 10px;">📦</span>
+            <span style="font-size: 0.95em; color: #333;">Or try the demo:</span>
+            <button id="btn-load-sample-secondary" class="top-toolbar-btn" style="margin-left: 10px; padding: 8px 16px;">Load Sample Dataset</button>
           </div>
           
           <!-- COLLAPSIBLE: Other Actions -->
@@ -878,7 +890,10 @@
       <!-- TRIAGE PAGE (default after data loaded) -->
       <div class="page" id="page-triage">
         <div class="page-header">
-          <h2>Triage</h2>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <h2>Triage</h2>
+            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.2.8</span>
+          </div>
           <p class="page-desc">View summary cards, filter issues by severity/status, and drill down into records.</p>
           <div class="triage-session-info" id="triage-session-info" style="margin-top: 10px; font-size: 0.85em; color: #666;"></div>
         </div>
@@ -924,7 +939,10 @@
       <!-- PATCH STUDIO PAGE -->
       <div class="page" id="page-patch">
         <div class="page-header">
-          <h2>Patch Studio</h2>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <h2>Patch Studio</h2>
+            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH STUDIO | BUILD v1.2.8</span>
+          </div>
           <p class="page-desc">Select records, build rule patches, validate with preflight gate, and export.</p>
         </div>
 
@@ -4469,39 +4487,44 @@
       });
     }
 
-    // ========== APP SESSION STATE MACHINE (V1.2.7) ==========
+    // ========== APP SESSION STATE MACHINE (V1.2.8) ==========
+    var currentPage = 'loader';
     
     function getAppSessionState() {
       // Returns current session state for route guard checks
-      var bundle = getCurrentBundle ? getCurrentBundle() : null;
+      // Use dataLoaded as primary check - simpler and more reliable than bundle check
       return {
         active_dataset_id: localStorage.getItem(STORAGE_KEY_ACTIVE_DATASET) || null,
-        active_dataset_revision: bundle ? bundle.dataset_revision : null,
-        active_bundle_present: bundle !== null && bundle.sheet_packets && bundle.sheet_packets.length > 0,
-        active_field_index_present: bundle && bundle.field_index && bundle.field_index.length > 0,
-        data_loaded: dataLoaded
+        data_loaded: dataLoaded,
+        current_page: currentPage,
+        current_mode: currentMode
       };
     }
     
     function checkRouteRequirements(page) {
       // Check if route requirements are met
-      var state = getAppSessionState();
+      // Use dataLoaded instead of bundle presence (more reliable)
       var requirements = {
-        'triage': ['active_bundle_present'],
-        'patch': ['active_bundle_present'],
-        'review': ['active_bundle_present'],
-        'admin': [],
-        'loader': []
+        'triage': { needsData: true },
+        'patch': { needsData: true },
+        'review': { needsData: true },
+        'admin': { needsData: false },
+        'loader': { needsData: false }
       };
       
-      var pageReqs = requirements[page] || [];
-      for (var i = 0; i < pageReqs.length; i++) {
-        var req = pageReqs[i];
-        if (!state[req]) {
-          return { valid: false, missing: req };
-        }
+      var pageReqs = requirements[page] || { needsData: false };
+      
+      if (pageReqs.needsData && !dataLoaded) {
+        return { valid: false, missing: 'data_loaded' };
       }
       return { valid: true };
+    }
+    
+    function updateDebugHUD() {
+      var hud = document.getElementById('debug-hud');
+      if (!hud) return;
+      var state = getAppSessionState();
+      hud.innerHTML = 'Route: ' + currentPage + ' | Data: ' + (dataLoaded ? 'Yes' : 'No') + ' | Mode: ' + currentMode;
     }
     
     function pageRequiresDataset(page) {
@@ -4512,6 +4535,8 @@
       options = options || {};
       var pages = ['loader', 'triage', 'patch', 'review', 'admin'];
       if (!pages.includes(page)) page = 'triage';
+      
+      console.log('[Navigate] Attempting navigation to: ' + page + ', dataLoaded: ' + dataLoaded);
       
       // HARD REDIRECT: Never render a page without required state
       var routeCheck = checkRouteRequirements(page);
@@ -4525,11 +4550,15 @@
       
       // Review page only accessible in reviewer mode
       if (page === 'admin' && currentMode !== 'admin') {
+        console.log('[Navigate] Admin page requires admin mode, ignoring');
         return; // Admin page requires admin mode
       }
       if (page === 'review' && currentMode !== 'reviewer' && currentMode !== 'admin') {
         page = 'triage';
       }
+      
+      // Update current page tracking
+      currentPage = page;
       
       // Clear all pages first
       document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
@@ -4538,6 +4567,8 @@
       
       var pageEl = document.getElementById('page-' + page);
       var navEl = document.querySelector('.nav-item[data-page="' + page + '"]');
+      
+      console.log('[Navigate] Showing page element: page-' + page + ', found: ' + (pageEl ? 'yes' : 'no'));
       
       if (pageEl) {
         pageEl.classList.add('active');
@@ -4549,7 +4580,16 @@
       if (page === 'loader') {
         document.getElementById('empty-queue-message')?.classList.add('hidden');
         updateLoaderPageUI();
+      } else {
+        // Show empty queue message on triage if no data
+        var emptyMsg = document.getElementById('empty-queue-message');
+        if (emptyMsg && page === 'triage' && !dataLoaded) {
+          emptyMsg.classList.remove('hidden');
+        }
       }
+      
+      // Update debug HUD
+      updateDebugHUD();
       
       window.location.hash = '#/' + page;
     }
@@ -8498,28 +8538,30 @@ Add any additional notes here.
     
     function updateLoaderPageUI() {
       var continuePanel = document.getElementById('loader-continue-panel');
-      var demoPanel = document.getElementById('loader-demo-panel');
+      var importPanel = document.getElementById('loader-import-panel');
+      var samplePanel = document.getElementById('loader-sample-panel');
       var activeDatasetInfo = document.getElementById('loader-active-dataset-info');
       
-      var bundle = getCurrentBundle ? getCurrentBundle() : null;
-      var hasDataset = bundle && bundle.sheet_packets && bundle.sheet_packets.length > 0;
+      console.log('[LoaderUI] Updating, dataLoaded: ' + dataLoaded);
       
-      if (hasDataset) {
-        // Show Continue panel, hide Demo panel
+      if (dataLoaded) {
+        // Show Continue panel, hide Import/Sample panels
         if (continuePanel) {
           continuePanel.style.display = 'block';
           if (activeDatasetInfo) {
-            var recordCount = 0;
-            bundle.sheet_packets.forEach(function(p) { recordCount += (p.rows || []).length; });
-            activeDatasetInfo.innerHTML = '<strong>' + (bundle.dataset_id || 'Dataset') + '</strong> | ' + 
-              bundle.sheet_packets.length + ' sheets, ' + recordCount + ' records';
+            var contractCount = (allData.contractResults || []).length;
+            var sheetCount = Object.keys(allData.sheets || {}).length;
+            activeDatasetInfo.innerHTML = '<strong>' + (currentArtifactPath || 'Dataset') + '</strong> | ' + 
+              sheetCount + ' sheets, ' + contractCount + ' records';
           }
         }
-        if (demoPanel) demoPanel.style.display = 'none';
+        if (importPanel) importPanel.style.display = 'none';
+        if (samplePanel) samplePanel.style.display = 'none';
       } else {
-        // Show Demo panel, hide Continue panel
+        // Show Import (primary) + Sample (secondary), hide Continue
         if (continuePanel) continuePanel.style.display = 'none';
-        if (demoPanel) demoPanel.style.display = 'block';
+        if (importPanel) importPanel.style.display = 'block';
+        if (samplePanel) samplePanel.style.display = 'block';
       }
     }
     
@@ -8545,10 +8587,24 @@ Add any additional notes here.
         });
       }
       
-      // Demo mode load button
-      var demoLoadBtn = document.getElementById('btn-load-sample-demo');
-      if (demoLoadBtn) {
-        demoLoadBtn.addEventListener('click', function() {
+      // Primary Import CSV button
+      var importBtnPrimary = document.getElementById('btn-import-csv-primary');
+      var fileInputPrimary = document.getElementById('file-import-csv-primary');
+      if (importBtnPrimary && fileInputPrimary) {
+        importBtnPrimary.addEventListener('click', function() {
+          fileInputPrimary.click();
+        });
+        fileInputPrimary.addEventListener('change', function(e) {
+          if (e.target.files && e.target.files[0]) {
+            importCSVFile(e.target.files[0]);
+          }
+        });
+      }
+      
+      // Secondary Sample Dataset button
+      var sampleBtn = document.getElementById('btn-load-sample-secondary');
+      if (sampleBtn) {
+        sampleBtn.addEventListener('click', function() {
           loadSampleDataset({ autoRedirect: true });
         });
       }
@@ -8590,32 +8646,6 @@ Add any additional notes here.
     function updateLoaderSummary() {
       // Legacy function - now handled by updateLoaderPageUI
       updateLoaderPageUI();
-        return;
-      }
-      
-      var sheets = allData.sheets || {};
-      var sheetNames = Object.keys(sheets);
-      var totalRows = 0;
-      var totalCols = 0;
-      
-      sheetNames.forEach(function(name) {
-        var sheet = sheets[name];
-        if (sheet && sheet.rows) totalRows += sheet.rows.length;
-        if (sheet && sheet.headers) totalCols += sheet.headers.length;
-      });
-      
-      var contractCount = allData.contractResults?.length || 0;
-      var issueCount = allData.issues?.length || 0;
-      
-      detailsEl.innerHTML = 
-        '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">' +
-        '<div><strong>Sheets:</strong> ' + sheetNames.length + ' (' + sheetNames.join(', ') + ')</div>' +
-        '<div><strong>Total Rows:</strong> ' + totalRows + '</div>' +
-        '<div><strong>Contracts:</strong> ' + contractCount + '</div>' +
-        '<div><strong>Issues:</strong> ' + issueCount + '</div>' +
-        '</div>';
-      
-      summaryEl.style.display = 'block';
     }
     
     function parseCSV(text, delimiter) {
