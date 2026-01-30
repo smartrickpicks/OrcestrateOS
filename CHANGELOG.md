@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## Version: v0.7.0
+Date: 2026-01-30
+
+### Added
+- Viewer v0.7 Comparison Mode
+  - Session Loader UI: Collapsible panel with primary and comparison artifact path inputs
+  - Delta Summary Cards: Visual display of contract status changes and row-level deltas
+  - Row Change Indicators: Green (added), orange (changed), red strikethrough (removed) for tables
+  - Copy Delta Summary button: Export delta statistics as Markdown
+  - Why: Enable operators to analyze semantic changes between artifact versions without external tools.
+
+### Technical Details
+- Join identity for change detection: `contract_key|file_url|file_name` (extended for issues/actions)
+- Content hash using JSON.stringify with sorted keys for deterministic comparison
+- All delta computations performed offline in the browser, no network requests
+
+---
+
 ## Version: v0.1.0
 Date: 2026-01-29
 

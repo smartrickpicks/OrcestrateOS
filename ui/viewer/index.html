@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Board Viewer v0.6</title>
+  <title>Control Board Viewer v0.7</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 20px; }
@@ -206,11 +206,87 @@
     .preflight-reset-row { display: flex; gap: 8px; margin-top: 15px; }
     .preflight-reset-btn { padding: 8px 14px; font-size: 0.85em; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; }
     .preflight-reset-btn:hover { background: #d32f2f; }
+
+    .session-loader { background: #e8eaf6; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .session-loader-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .session-loader-header h3 { margin: 0; font-size: 0.95em; color: #3f51b5; }
+    .session-loader-toggle { padding: 6px 12px; font-size: 0.8em; background: #3f51b5; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .session-loader-toggle:hover { background: #5c6bc0; }
+    .session-loader-body { display: none; }
+    .session-loader-body.active { display: block; }
+    .session-loader-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; }
+    .session-loader-field { flex: 1; min-width: 200px; }
+    .session-loader-field label { display: block; font-size: 0.75em; color: #666; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
+    .session-loader-field input { width: 100%; padding: 8px 10px; border: 1px solid #c5cae9; border-radius: 4px; font-size: 0.85em; font-family: 'Courier New', monospace; }
+    .session-loader-actions { display: flex; gap: 8px; }
+    .session-loader-btn { padding: 8px 14px; font-size: 0.85em; border: none; border-radius: 4px; cursor: pointer; }
+    .session-loader-btn-primary { background: #3f51b5; color: white; }
+    .session-loader-btn-primary:hover { background: #5c6bc0; }
+    .session-loader-btn-secondary { background: #e0e0e0; color: #333; }
+    .session-loader-btn-secondary:hover { background: #bdbdbd; }
+    .session-loader-status { margin-top: 10px; font-size: 0.85em; padding: 8px 12px; border-radius: 4px; }
+    .session-loader-status.success { background: #e8f5e9; color: #2e7d32; }
+    .session-loader-status.error { background: #ffebee; color: #c62828; }
+    .session-loader-status.info { background: #e3f2fd; color: #1565c0; }
+
+    .delta-summary { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+    .delta-card { background: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; min-width: 90px; border-left: 4px solid #9e9e9e; }
+    .delta-card.positive { border-left-color: #4caf50; }
+    .delta-card.negative { border-left-color: #f44336; }
+    .delta-card.neutral { border-left-color: #9e9e9e; }
+    .delta-card .delta-value { font-size: 1.5em; font-weight: bold; }
+    .delta-card .delta-value.positive { color: #4caf50; }
+    .delta-card .delta-value.negative { color: #f44336; }
+    .delta-card .delta-value.neutral { color: #9e9e9e; }
+    .delta-card .delta-label { font-size: 0.75em; color: #666; text-transform: uppercase; }
+    .delta-card .delta-detail { font-size: 0.7em; color: #999; margin-top: 2px; }
+
+    .row-added { background: #e8f5e9 !important; }
+    .row-added td:first-child::before { content: '+'; color: #4caf50; font-weight: bold; margin-right: 4px; }
+    .row-removed { background: #ffebee !important; text-decoration: line-through; opacity: 0.7; }
+    .row-removed td:first-child::before { content: '-'; color: #f44336; font-weight: bold; margin-right: 4px; }
+    .row-changed { background: #fff3e0 !important; }
+    .row-changed td:first-child::before { content: '~'; color: #ff9800; font-weight: bold; margin-right: 4px; }
+
+    .compare-legend { display: flex; gap: 15px; margin-bottom: 10px; font-size: 0.8em; }
+    .compare-legend-item { display: flex; align-items: center; gap: 4px; }
+    .compare-legend-dot { width: 12px; height: 12px; border-radius: 2px; }
+    .compare-legend-dot.added { background: #4caf50; }
+    .compare-legend-dot.changed { background: #ff9800; }
+    .compare-legend-dot.removed { background: #f44336; }
+
+    .compare-actions { display: flex; gap: 10px; margin-bottom: 15px; }
+    .compare-btn { padding: 8px 14px; font-size: 0.85em; background: #7c4dff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .compare-btn:hover { background: #651fff; }
   </style>
 </head>
 <body>
   <h1>Control Board Viewer</h1>
-  <p class="subtitle">v0.6 | Governance-only | Offline-first | Preflight Gate</p>
+  <p class="subtitle">v0.7 | Governance-only | Offline-first | Comparison Mode</p>
+
+  <div class="session-loader" id="session-loader">
+    <div class="session-loader-header">
+      <h3>Session Loader (Comparison Mode)</h3>
+      <button class="session-loader-toggle" id="session-loader-toggle">Show</button>
+    </div>
+    <div class="session-loader-body" id="session-loader-body">
+      <div class="session-loader-row">
+        <div class="session-loader-field">
+          <label>Primary Artifact Path</label>
+          <input type="text" id="primary-path" value="out/sf_packet.preview.json" placeholder="out/sf_packet.preview.json">
+        </div>
+        <div class="session-loader-field">
+          <label>Comparison Artifact Path (optional)</label>
+          <input type="text" id="compare-path" placeholder="out/sf_packet.preview.prev.json">
+        </div>
+        <div class="session-loader-actions">
+          <button class="session-loader-btn session-loader-btn-primary" id="load-session">Load</button>
+          <button class="session-loader-btn session-loader-btn-secondary" id="clear-compare">Clear Compare</button>
+        </div>
+      </div>
+      <div class="session-loader-status" id="session-status" style="display: none;"></div>
+    </div>
+  </div>
 
   <div class="toolbar" id="toolbar">
     <button class="toolbar-btn" data-cmd="validate">Validate</button>
@@ -257,6 +333,7 @@
   
   <div id="source-info" class="source-info"></div>
   <div id="error-container"></div>
+  <div id="delta-container" style="display: none;"></div>
   <div id="summary-container"></div>
   
   <div id="diff-container">
@@ -438,12 +515,16 @@ Note: This viewer does NOT execute any commands automatically.
     const RELATIVE_PRIMARY = '../../out/sf_packet.preview.json';
     const RELATIVE_FALLBACK = '../../examples/expected_outputs/sf_packet.example.json';
     const COMMANDS_PATH = 'run_commands.json';
-    const STORAGE_KEY = 'viewer_selection_v06';
-    const PREFLIGHT_STORAGE_KEY = 'viewer_preflight_v06';
-    const PATCH_STORAGE_KEY = 'viewer_patch_v06';
+    const STORAGE_KEY = 'viewer_selection_v07';
+    const PREFLIGHT_STORAGE_KEY = 'viewer_preflight_v07';
+    const PATCH_STORAGE_KEY = 'viewer_patch_v07';
+    const COMPARISON_PATH = '../../out/sf_packet.preview.prev.json';
 
     let commands = {};
     let allData = { contractResults: [], issues: [], fieldActions: [], changeLog: [] };
+    let compareData = null;
+    let rowChanges = { contractResults: {}, issues: {}, fieldActions: {} };
+    let deltaStats = null;
     let activeFilters = { search: '', severities: ['blocking', 'warning', 'info'], statuses: ['ready', 'needs_review', 'blocked'], subtype: '' };
     let currentSelection = { joinIdentity: null, contractIdx: null, activeTab: 'contract' };
     let selectedRecords = { issues: new Set(), actions: new Set(), changelog: new Set() };
@@ -456,6 +537,175 @@ Note: This viewer does NOT execute any commands automatically.
       smokeEdge: { raw: '', parsed: null, status: 'pending' },
       sha256: ''
     };
+
+    function getRecordHash(record) {
+      const sorted = sortObjectKeys(record);
+      return JSON.stringify(sorted);
+    }
+
+    function getJoinKey(record) {
+      const identity = getJoinIdentity(record);
+      return `${identity.contract_key || ''}|${identity.file_url || ''}|${identity.file_name || ''}`;
+    }
+
+    function getRowKey(record, type) {
+      const jk = getJoinKey(record);
+      if (type === 'contractResults') {
+        return jk;
+      } else if (type === 'issues') {
+        return `${jk}|${record.sheet || ''}|${record.field || ''}|${record.issue_type || ''}`;
+      } else if (type === 'fieldActions') {
+        return `${jk}|${record.sheet || ''}|${record.field || ''}|${record.action || ''}`;
+      }
+      return jk;
+    }
+
+    function computeRowChanges(primaryArr, compareArr, type) {
+      const changes = {};
+      const primaryMap = new Map();
+      const compareMap = new Map();
+      
+      primaryArr.forEach(r => {
+        const key = getRowKey(r, type);
+        primaryMap.set(key, { record: r, hash: getRecordHash(r) });
+      });
+      
+      compareArr.forEach(r => {
+        const key = getRowKey(r, type);
+        compareMap.set(key, { record: r, hash: getRecordHash(r) });
+      });
+      
+      primaryMap.forEach((val, key) => {
+        if (!compareMap.has(key)) {
+          changes[key] = 'added';
+        } else if (val.hash !== compareMap.get(key).hash) {
+          changes[key] = 'changed';
+        }
+      });
+      
+      compareMap.forEach((val, key) => {
+        if (!primaryMap.has(key)) {
+          changes[key] = 'removed';
+        }
+      });
+      
+      return changes;
+    }
+
+    function computeDeltaStats(primary, compare) {
+      const pSum = primary.sf_summary || {};
+      const cSum = compare.sf_summary || {};
+      
+      return {
+        contracts: (pSum.contracts || 0) - (cSum.contracts || 0),
+        ready: (pSum.ready || 0) - (cSum.ready || 0),
+        needsReview: (pSum.needs_review || 0) - (cSum.needs_review || 0),
+        blocked: (pSum.blocked || 0) - (cSum.blocked || 0),
+        issues: {
+          added: Object.values(rowChanges.issues).filter(v => v === 'added').length,
+          changed: Object.values(rowChanges.issues).filter(v => v === 'changed').length,
+          removed: Object.values(rowChanges.issues).filter(v => v === 'removed').length
+        },
+        actions: {
+          added: Object.values(rowChanges.fieldActions).filter(v => v === 'added').length,
+          changed: Object.values(rowChanges.fieldActions).filter(v => v === 'changed').length,
+          removed: Object.values(rowChanges.fieldActions).filter(v => v === 'removed').length
+        }
+      };
+    }
+
+    function renderDeltaSummary() {
+      const container = document.getElementById('delta-container');
+      if (!deltaStats) {
+        container.style.display = 'none';
+        return;
+      }
+      container.style.display = 'block';
+      
+      const formatDelta = (val) => val > 0 ? `+${val}` : val.toString();
+      const getClass = (val) => val > 0 ? 'positive' : val < 0 ? 'negative' : 'neutral';
+      
+      container.innerHTML = `
+        <h2>Delta Summary (vs. Previous)</h2>
+        <div class="compare-actions">
+          <button class="compare-btn" id="copy-delta-summary">Copy Delta Summary (Markdown)</button>
+        </div>
+        <div class="compare-legend">
+          <span class="compare-legend-item"><span class="compare-legend-dot added"></span> Added</span>
+          <span class="compare-legend-item"><span class="compare-legend-dot changed"></span> Changed</span>
+          <span class="compare-legend-item"><span class="compare-legend-dot removed"></span> Removed</span>
+        </div>
+        <div class="delta-summary">
+          <div class="delta-card ${getClass(deltaStats.contracts)}">
+            <div class="delta-value ${getClass(deltaStats.contracts)}">${formatDelta(deltaStats.contracts)}</div>
+            <div class="delta-label">Contracts</div>
+          </div>
+          <div class="delta-card ${getClass(deltaStats.ready)}">
+            <div class="delta-value ${getClass(deltaStats.ready)}">${formatDelta(deltaStats.ready)}</div>
+            <div class="delta-label">Ready</div>
+          </div>
+          <div class="delta-card ${getClass(deltaStats.needsReview)}">
+            <div class="delta-value ${getClass(deltaStats.needsReview)}">${formatDelta(deltaStats.needsReview)}</div>
+            <div class="delta-label">Needs Review</div>
+          </div>
+          <div class="delta-card ${getClass(deltaStats.blocked)}">
+            <div class="delta-value ${getClass(deltaStats.blocked)}">${formatDelta(deltaStats.blocked)}</div>
+            <div class="delta-label">Blocked</div>
+          </div>
+          <div class="delta-card ${deltaStats.issues.added > 0 ? 'positive' : 'neutral'}">
+            <div class="delta-value ${deltaStats.issues.added > 0 ? 'positive' : 'neutral'}">+${deltaStats.issues.added}</div>
+            <div class="delta-label">Issues Added</div>
+          </div>
+          <div class="delta-card ${deltaStats.issues.changed > 0 ? 'neutral' : 'neutral'}">
+            <div class="delta-value neutral">${deltaStats.issues.changed}</div>
+            <div class="delta-label">Issues Changed</div>
+          </div>
+          <div class="delta-card ${deltaStats.issues.removed > 0 ? 'negative' : 'neutral'}">
+            <div class="delta-value ${deltaStats.issues.removed > 0 ? 'negative' : 'neutral'}">${deltaStats.issues.removed > 0 ? '-' : ''}${deltaStats.issues.removed}</div>
+            <div class="delta-label">Issues Removed</div>
+          </div>
+          <div class="delta-card ${deltaStats.actions.added > 0 ? 'positive' : 'neutral'}">
+            <div class="delta-value ${deltaStats.actions.added > 0 ? 'positive' : 'neutral'}">+${deltaStats.actions.added}</div>
+            <div class="delta-label">Actions Added</div>
+          </div>
+          <div class="delta-card ${deltaStats.actions.removed > 0 ? 'negative' : 'neutral'}">
+            <div class="delta-value ${deltaStats.actions.removed > 0 ? 'negative' : 'neutral'}">${deltaStats.actions.removed > 0 ? '-' : ''}${deltaStats.actions.removed}</div>
+            <div class="delta-label">Actions Removed</div>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('copy-delta-summary').addEventListener('click', async () => {
+        const md = generateDeltaMarkdown();
+        const success = await copyToClipboard(md);
+        const btn = document.getElementById('copy-delta-summary');
+        const orig = btn.textContent;
+        btn.textContent = success ? 'Copied!' : 'Failed';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    }
+
+    function generateDeltaMarkdown() {
+      if (!deltaStats) return '# No comparison data\n';
+      
+      const formatDelta = (val) => val > 0 ? `+${val}` : val.toString();
+      
+      let md = `# Delta Summary\n\n`;
+      md += `## Contract Status Changes\n\n`;
+      md += `| Metric | Delta |\n`;
+      md += `|--------|-------|\n`;
+      md += `| Contracts | ${formatDelta(deltaStats.contracts)} |\n`;
+      md += `| Ready | ${formatDelta(deltaStats.ready)} |\n`;
+      md += `| Needs Review | ${formatDelta(deltaStats.needsReview)} |\n`;
+      md += `| Blocked | ${formatDelta(deltaStats.blocked)} |\n`;
+      md += `\n## Row-Level Changes\n\n`;
+      md += `| Type | Added | Changed | Removed |\n`;
+      md += `|------|-------|---------|----------|\n`;
+      md += `| Issues | ${deltaStats.issues.added} | ${deltaStats.issues.changed} | ${deltaStats.issues.removed} |\n`;
+      md += `| Field Actions | ${deltaStats.actions.added} | ${deltaStats.actions.changed} | ${deltaStats.actions.removed} |\n`;
+      
+      return md;
+    }
 
     function normCmp(v) {
       if (v === null || v === undefined) return '';
@@ -618,6 +868,8 @@ Note: This viewer does NOT execute any commands automatically.
       }
       
       const headers = columns.map(c => `<th>${c.label}</th>`).join('');
+      const changes = rowChanges[type] || {};
+      
       const rows = filtered.map((row, idx) => {
         const cells = columns.map(c => {
           let val = formatValue(row[c.key]);
@@ -626,19 +878,56 @@ Note: This viewer does NOT execute any commands automatically.
           if (c.key === 'sf_contract_status') cls = `status-${(row.sf_contract_status || '').toLowerCase()}`;
           return `<td class="${cls}">${val}</td>`;
         }).join('');
-        return `<tr data-type="${type}" data-idx="${data.indexOf(row)}">${cells}</tr>`;
+        const rowKey = getRowKey(row, type);
+        const changeType = changes[rowKey];
+        const rowClass = changeType ? `row-${changeType}` : '';
+        return `<tr data-type="${type}" data-idx="${data.indexOf(row)}" data-source="primary" class="${rowClass}">${cells}</tr>`;
       }).join('');
       
+      let removedRows = '';
+      if (compareData && Object.keys(changes).length > 0) {
+        const removedKeys = Object.entries(changes)
+          .filter(([k, v]) => v === 'removed')
+          .map(([k]) => k);
+        
+        if (removedKeys.length > 0) {
+          const compareArr = getCompareArray(type);
+          const removedRecords = compareArr.filter(r => removedKeys.includes(getRowKey(r, type)));
+          
+          removedRows = removedRecords.map((row, idx) => {
+            const cells = columns.map(c => {
+              let val = formatValue(row[c.key]);
+              let cls = '';
+              if (c.key === 'severity') cls = `severity-${row.severity}`;
+              if (c.key === 'sf_contract_status') cls = `status-${(row.sf_contract_status || '').toLowerCase()}`;
+              return `<td class="${cls}">${val}</td>`;
+            }).join('');
+            return `<tr data-type="${type}" data-idx="${idx}" data-source="compare" class="row-removed">${cells}</tr>`;
+          }).join('');
+        }
+      }
+      
+      const totalCount = data.length + (removedRows ? Object.values(changes).filter(v => v === 'removed').length : 0);
+      
       container.innerHTML = `
-        <h2>${title} (${filtered.length}/${data.length})</h2>
+        <h2>${title} (${filtered.length + (removedRows ? Object.values(changes).filter(v => v === 'removed').length : 0)}/${totalCount})</h2>
         <div class="table-container">
-          <table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>
+          <table><thead><tr>${headers}</tr></thead><tbody>${rows}${removedRows}</tbody></table>
         </div>
       `;
       
       container.querySelectorAll('tbody tr').forEach(tr => {
+        if (tr.dataset.source === 'compare') return;
         tr.addEventListener('click', () => openDrawerFromType(type, parseInt(tr.dataset.idx)));
       });
+    }
+
+    function getCompareArray(type) {
+      if (!compareData) return [];
+      if (type === 'contractResults') return compareData.sf_contract_results || [];
+      if (type === 'issues') return compareData.sf_issues || [];
+      if (type === 'fieldActions') return compareData.sf_field_actions || [];
+      return [];
     }
 
     function renderAllTables() {
@@ -1925,6 +2214,103 @@ Add any additional notes here.
       md += `- **SHA256**: ${sha256}\n`;
       return md;
     }
+
+    document.getElementById('session-loader-toggle').addEventListener('click', () => {
+      const body = document.getElementById('session-loader-body');
+      const btn = document.getElementById('session-loader-toggle');
+      body.classList.toggle('active');
+      btn.textContent = body.classList.contains('active') ? 'Hide' : 'Show';
+    });
+
+    async function loadArtifact(path) {
+      const relativePath = path.startsWith('../../') ? path : `../../${path}`;
+      const resp = await fetch(relativePath);
+      if (!resp.ok) throw new Error(`Failed to load ${path}`);
+      return await resp.json();
+    }
+
+    async function loadDataWithComparison(primaryPath, comparePath) {
+      const statusEl = document.getElementById('session-status');
+      const errorContainer = document.getElementById('error-container');
+      const sourceInfo = document.getElementById('source-info');
+      
+      try {
+        statusEl.style.display = 'block';
+        statusEl.className = 'session-loader-status info';
+        statusEl.textContent = 'Loading primary artifact...';
+        
+        const primaryData = await loadArtifact(primaryPath);
+        
+        renderSummary(primaryData.sf_summary || {});
+        allData.contractResults = sortByJoinTriplet(primaryData.sf_contract_results || []);
+        allData.issues = sortBySeverityFirst(primaryData.sf_issues || [], ['sheet', 'field', 'issue_type']);
+        allData.fieldActions = sortBySeverityFirst(primaryData.sf_field_actions || [], ['sheet', 'field', 'action']);
+        allData.changeLog = sortBySeverityFirst(primaryData.sf_change_log || [], ['sheet', 'field', 'notes']);
+        
+        sourceInfo.textContent = `Primary: ${primaryPath}`;
+        
+        if (comparePath && comparePath.trim()) {
+          statusEl.textContent = 'Loading comparison artifact...';
+          try {
+            compareData = await loadArtifact(comparePath);
+            
+            const compareContractResults = sortByJoinTriplet(compareData.sf_contract_results || []);
+            const compareIssues = sortBySeverityFirst(compareData.sf_issues || [], ['sheet', 'field', 'issue_type']);
+            const compareFieldActions = sortBySeverityFirst(compareData.sf_field_actions || [], ['sheet', 'field', 'action']);
+            
+            rowChanges.contractResults = computeRowChanges(allData.contractResults, compareContractResults, 'contractResults');
+            rowChanges.issues = computeRowChanges(allData.issues, compareIssues, 'issues');
+            rowChanges.fieldActions = computeRowChanges(allData.fieldActions, compareFieldActions, 'fieldActions');
+            
+            deltaStats = computeDeltaStats(primaryData, compareData);
+            
+            sourceInfo.textContent = `Primary: ${primaryPath} | Compare: ${comparePath}`;
+            statusEl.className = 'session-loader-status success';
+            statusEl.textContent = `Loaded with comparison. Found ${Object.keys(rowChanges.issues).length + Object.keys(rowChanges.fieldActions).length} row-level changes.`;
+          } catch (e) {
+            statusEl.className = 'session-loader-status error';
+            statusEl.textContent = `Comparison file not found: ${comparePath}. Showing primary only.`;
+            compareData = null;
+            rowChanges = { contractResults: {}, issues: {}, fieldActions: {} };
+            deltaStats = null;
+          }
+        } else {
+          compareData = null;
+          rowChanges = { contractResults: {}, issues: {}, fieldActions: {} };
+          deltaStats = null;
+          statusEl.className = 'session-loader-status success';
+          statusEl.textContent = 'Loaded primary artifact (no comparison).';
+        }
+        
+        populateSubtypeDropdown();
+        renderDeltaSummary();
+        renderAllTables();
+        restoreSelection();
+        
+        errorContainer.innerHTML = '';
+      } catch (e) {
+        statusEl.className = 'session-loader-status error';
+        statusEl.textContent = `Error: ${e.message}`;
+        errorContainer.innerHTML = `<div class="error">Could not load artifact: ${e.message}</div>`;
+      }
+    }
+
+    document.getElementById('load-session').addEventListener('click', () => {
+      const primaryPath = document.getElementById('primary-path').value.trim() || 'out/sf_packet.preview.json';
+      const comparePath = document.getElementById('compare-path').value.trim();
+      loadDataWithComparison(primaryPath, comparePath);
+    });
+
+    document.getElementById('clear-compare').addEventListener('click', () => {
+      document.getElementById('compare-path').value = '';
+      compareData = null;
+      rowChanges = { contractResults: {}, issues: {}, fieldActions: {} };
+      deltaStats = null;
+      renderDeltaSummary();
+      renderAllTables();
+      document.getElementById('session-status').style.display = 'none';
+      document.getElementById('source-info').textContent = `Data source: ${document.getElementById('primary-path').value || 'out/sf_packet.preview.json'}`;
+    });
 
     loadCommands();
     loadData();

@@ -1,0 +1,73 @@
+{
+  "type": "TASK",
+  "target": "REPLIT",
+  "task_id": "TASK-UI-08",
+  "title": "Artifact Session Loader + Comparison Mode",
+  "scope": "ui/viewer",
+  "constraints": {
+    "offline_only": true,
+    "governance_only": true,
+    "no_network_calls": true,
+    "no_file_writes": true,
+    "single_file_html": true,
+    "no_dependencies": true
+  },
+  "objective": "Enable operators to load and compare two sf_packet preview artifacts to understand semantic deltas over time without executing pipelines.",
+  "inputs": {
+    "primary_preview_path": "out/sf_packet.preview.json",
+    "comparison_preview_path": "out/sf_packet.preview.prev.json"
+  },
+  "features": [
+    {
+      "name": "Session Loader",
+      "description": "UI control to select a primary preview artifact and an optional comparison artifact by path (no uploads)."
+    },
+    {
+      "name": "Delta Summary Cards",
+      "description": "Show count deltas for contracts (ready / needs_review / blocked), issues by severity, and field actions."
+    },
+    {
+      "name": "Row-Level Change Flags",
+      "description": "Mark rows as added, changed, or removed based on join identity + content hash comparison."
+    },
+    {
+      "name": "Change Summary Export",
+      "description": "One-click copy of a markdown delta summary suitable for PR descriptions."
+    }
+  ],
+  "determinism": {
+    "join_identity_priority": [
+      "contract_key",
+      "file_url",
+      "file_name"
+    ],
+    "sorting": [
+      "severity blocking > warning > info",
+      "contract_key asc",
+      "file_url asc",
+      "file_name asc",
+      "sheet asc",
+      "field asc"
+    ],
+    "hashing": "Stable JSON stringify with sorted keys for record comparison"
+  },
+  "non_goals": [
+    "No streaming ingestion",
+    "No background processing",
+    "No backend services",
+    "No runtime execution",
+    "No mutation of artifacts"
+  ],
+  "acceptance_criteria": [
+    "Viewer can load two artifacts and render without errors",
+    "Delta counts are deterministic and reproducible",
+    "Row-level added/changed/removed states are correct",
+    "Copied summaries are stable across reloads",
+    "Existing v0.6 functionality remains unchanged when comparison is disabled"
+  ],
+  "outputs": [
+    "Updated ui/viewer/index.html",
+    "Optional ui/viewer/session_compare.md (documentation only)"
+  ],
+  "status_on_complete": "AWAITING_OPERATOR_REVIEW"
+}

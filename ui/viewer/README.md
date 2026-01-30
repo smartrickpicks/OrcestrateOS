@@ -3,7 +3,7 @@
 ## Overview
 A read-only, single-file HTML viewer for sf_packet artifacts. No build step, no dependencies, no external network requests.
 
-**Version:** 0.6
+**Version:** 0.7
 
 ## How to Open
 
@@ -270,10 +270,61 @@ Three main tables with deterministic sorting:
 - **Keyboard shortcuts**: Press `Escape` to close modals, drawers, and Patch Studio
 - **State persistence**: Selection, patch draft, and preflight evidence saved to localStorage
 
+### Comparison Mode (v0.7)
+
+Compare two sf_packet artifacts to analyze changes between versions.
+
+**Session Loader:**
+Click "Show" in the Session Loader panel to reveal artifact path inputs:
+
+| Field | Description |
+|-------|-------------|
+| Primary Artifact Path | The main artifact to display (default: out/sf_packet.preview.json) |
+| Comparison Artifact Path | Optional previous version for delta analysis |
+
+**Load/Clear Buttons:**
+- **Load**: Fetches both artifacts and computes deltas
+- **Clear Compare**: Removes comparison data, shows primary only
+
+**Delta Summary Cards:**
+When a comparison artifact is loaded, the Delta Summary section appears showing:
+
+| Card | Description |
+|------|-------------|
+| Contracts | Change in total contract count |
+| Ready | Change in ready status count |
+| Needs Review | Change in needs_review count |
+| Blocked | Change in blocked count |
+| Issues Added | New issues not in comparison |
+| Issues Changed | Issues with modified content |
+| Issues Removed | Issues no longer present |
+| Actions Added | New field actions not in comparison |
+| Actions Removed | Field actions no longer present |
+
+**Row Change Indicators:**
+Tables display visual indicators for row-level changes:
+
+| Color | Marker | Meaning |
+|-------|--------|---------|
+| Green (+) | `row-added` | New row not in comparison artifact |
+| Orange (~) | `row-changed` | Row exists but content differs |
+| Red strikethrough (-) | `row-removed` | Row in comparison but not in primary |
+
+**Change Detection Logic:**
+- Join identity: `contract_key|file_url|file_name` (plus sheet/field/type for issues/actions)
+- Content hash: JSON.stringify with sorted keys
+- Added: join key in primary but not in comparison
+- Changed: join key in both but different content hash
+- Removed: join key in comparison but not in primary
+
+**Copy Delta Summary:**
+Click "Copy Delta Summary (Markdown)" to copy a formatted markdown table of all delta statistics.
+
 ## Version History
 
 | Version | Features |
 |---------|----------|
+| 0.7 | Comparison Mode (Session Loader, Delta Summary Cards, row-level change indicators, Copy Delta Summary) |
 | 0.6 | Preflight Gate (4-step validation checklist, paste-in evidence parsing, PR Summary with Evidence section, localStorage persistence for preflight + patch draft) |
 | 0.5 | Patch Studio Lite (selectable records, grouped rule builder, full patch draft, evidence helper) |
 | 0.4 | Universal drilldown, Copy PR Kit, PRIMARY key indicator, duplicate identity warning |
