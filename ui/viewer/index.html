@@ -2350,11 +2350,11 @@
     function refreshSessionFromConfig() {
       console.log('Session config updated:', sessionConfig);
       
-      const configChip = document.getElementById('config-status-chip');
+      var configChip = document.getElementById('config-status-chip');
       if (configChip) {
-        const customCount = Object.keys(sessionConfig).length;
+        var customCount = Object.keys(sessionConfig).length;
         if (customCount > 0) {
-          configChip.textContent = `${customCount} custom config(s)`;
+          configChip.textContent = customCount + ' custom config(s)';
           configChip.style.background = '#e3f2fd';
           configChip.style.color = '#1565c0';
           configChip.style.display = 'inline-block';
@@ -2364,21 +2364,20 @@
       }
     }
     
-    function showToast(message, type = 'success') {
-      const existing = document.querySelector('.config-toast');
+    function showToast(message, type) {
+      type = type || 'success';
+      var existing = document.querySelector('.config-toast');
       if (existing) existing.remove();
       
-      const toast = document.createElement('div');
+      var toast = document.createElement('div');
       toast.className = 'config-toast';
-      toast.style.cssText = `
-        position: fixed; bottom: 20px; right: 20px; padding: 12px 20px;
-        background: ${type === 'error' ? '#c62828' : type === 'warning' ? '#f57c00' : '#2e7d32'};
-        color: white; border-radius: 6px; font-size: 0.9em; z-index: 10001;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: fadeIn 0.2s ease;
-      `;
+      var bgColor = '#2e7d32';
+      if (type === 'error') bgColor = '#c62828';
+      else if (type === 'warning') bgColor = '#f57c00';
+      toast.style.cssText = 'position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; background: ' + bgColor + '; color: white; border-radius: 6px; font-size: 0.9em; z-index: 10001; box-shadow: 0 4px 12px rgba(0,0,0,0.3);';
       toast.textContent = message;
       document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
+      setTimeout(function() { toast.remove(); }, 3000);
     }
     
     function selectConfigFlowStage(stage) {
