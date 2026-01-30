@@ -912,7 +912,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Triage</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.2.8</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.3.0</span>
           </div>
           <p class="page-desc">View summary cards, filter issues by severity/status, and drill down into records.</p>
           <div class="triage-session-info" id="triage-session-info" style="margin-top: 10px; font-size: 0.85em; color: #666;"></div>
@@ -961,7 +961,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Patch Studio</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH STUDIO | BUILD v1.2.8</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH-STUDIO | BUILD v1.3.0</span>
           </div>
           <p class="page-desc">Select records, build rule patches, validate with preflight gate, and export.</p>
         </div>
@@ -1029,7 +1029,10 @@
       <!-- REVIEW PAGE -->
       <div class="page" id="page-review">
         <div class="page-header">
-          <h2>Review</h2>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <h2>Review</h2>
+            <span style="font-size: 0.7em; color: #999;">PAGE: CONFIG-INSPECTOR | BUILD v1.3.0</span>
+          </div>
           <p class="page-desc">Inspect config deltas, compare artifact versions, and generate evidence summaries.</p>
         </div>
 
@@ -1097,12 +1100,15 @@
       <!-- ADMIN PAGE (Governance) -->
       <div class="page" id="page-admin">
         <div class="page-header">
-          <h2>Governance</h2>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <h2>Governance</h2>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-GOVERNANCE | BUILD v1.3.0</span>
+          </div>
           <p class="page-desc">View audit trails, manage baselines, and configure governance policies.</p>
         </div>
 
         <!-- Masterline / Artifact Registry Section -->
-        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h3 style="margin: 0; font-size: 1.1em; color: #333;">Artifact Registry <span class="info-icon" title="Manage the master artifacts that drive the semantic control board. When Dev Masterline is enabled, artifacts are auto-loaded from repository paths.">&#9432;</span></h3>
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -1123,14 +1129,14 @@
         </div>
 
         <!-- Workflow Map Section -->
-        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Workflow Map <span class="info-icon" title="Visual overview of the semantic governance pipeline. Each step shows required artifacts and their status.">&#9432;</span></h3>
           <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Understand the end-to-end governance pipeline at a glance. Click any step to navigate.</p>
           <div id="workflow-map" class="workflow-map"></div>
         </div>
 
         <!-- Patch Requests Console -->
-        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Patch Requests Console <span class="info-icon" title="Manage patch requests through their lifecycle. Track requests from creation through Kiwi processing to final application.">&#9432;</span></h3>
           <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Track and manage patch requests. Batch export to Kiwi, import returns, and apply changes.</p>
           
@@ -1259,7 +1265,7 @@
           </div>
         </div>
 
-        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Version & Baseline</h3>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
             <div>
@@ -1277,7 +1283,7 @@
           </div>
         </div>
 
-        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Evidence Gates</h3>
           <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Status of preflight checks. Evidence is pasted in (UI does not run these).</p>
           <div id="admin-evidence-gates" style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -1289,7 +1295,7 @@
         </div>
 
         <!-- Standardizer Section -->
-        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Standardizer <span class="info-icon" title="Convert CSV data into the canonical merged_dataset.json format. Headers are normalized and issues are tracked.">&#9432;</span></h3>
           <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Upload or paste CSV data to normalize into the standard merged dataset format.</p>
           
@@ -1330,7 +1336,7 @@
           </div>
         </div>
 
-        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Governance Notes</h3>
           <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Admin-level notes and overrides are recorded here.</p>
           <div id="admin-governance-notes" style="background: #f9f9f9; padding: 15px; border-radius: 6px; min-height: 60px;">
@@ -1338,7 +1344,7 @@
           </div>
         </div>
 
-        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Quick Actions</h3>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button class="toolbar-btn" onclick="document.getElementById('btn-run')?.click()">Run Commands</button>
@@ -4657,20 +4663,26 @@
       // For pages needing data, we still show the page but with empty state
       // No hard redirect - triage handles its own empty state with "Load Data" CTA
       
-      // Review page only accessible in reviewer mode
+      // RBAC route guards with toast notification
       if (page === 'admin' && currentMode !== 'admin') {
-        console.log('[Navigate] Admin page requires admin mode, ignoring');
-        return; // Admin page requires admin mode
+        console.log('[Navigate] Admin page requires admin mode, redirecting to triage');
+        showToast('Admin only - switch to Admin role to access this page', 'warning');
+        page = 'triage'; // Redirect to triage instead of returning
       }
       if (page === 'review' && currentMode !== 'reviewer' && currentMode !== 'admin') {
+        console.log('[Navigate] Review page requires reviewer/admin mode');
+        showToast('Reviewer access required', 'warning');
         page = 'triage';
       }
       
       // Update current page tracking
       currentPage = page;
       
-      // Clear all pages first
-      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+      // Clear all pages first - MUST reset both class AND inline style
+      document.querySelectorAll('.page').forEach(function(p) { 
+        p.classList.remove('active'); 
+        p.style.display = 'none';  // Reset inline style to ensure CSS takes over
+      });
       document.querySelectorAll('.page-content').forEach(function(p) { p.style.display = 'none'; });
       document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
       
@@ -4700,6 +4712,17 @@
       
       // Update debug HUD
       updateDebugHUD();
+      
+      // DEV-ONLY: Assert no admin sections render inside triage
+      if (page === 'triage') {
+        var triageEl = document.getElementById('page-triage');
+        if (triageEl) {
+          var adminSectionsInTriage = triageEl.querySelectorAll('[data-admin-section="true"]');
+          if (adminSectionsInTriage.length > 0) {
+            console.error('[DEV ASSERTION FAILED] Found ' + adminSectionsInTriage.length + ' admin sections inside triage page!');
+          }
+        }
+      }
       
       window.location.hash = '#/' + page;
     }

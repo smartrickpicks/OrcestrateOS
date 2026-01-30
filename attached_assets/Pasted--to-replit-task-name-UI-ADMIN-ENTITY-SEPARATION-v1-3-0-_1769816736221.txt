@@ -1,0 +1,73 @@
+{
+  "to": "replit",
+  "task_name": "UI-ADMIN-ENTITY-SEPARATION-v1.3.0",
+  "context": {
+    "problem_statement": "In Admin mode, tools are bleeding into the Triage surface. Admin panels appear as one long scaffold appended to Triage instead of separate entities/routes. Navigation works, but page composition is wrong.",
+    "goal_state": "Each Admin tool is its own distinct view (route + render boundary). Triage stays pure (queues + record workbench only). No Admin-only sections render inside Triage for any role."
+  },
+  "must_do": [
+    {
+      "id": "ADMIN-ROUTES-01",
+      "title": "Hard separate routes and render trees",
+      "requirements": [
+        "Create explicit routes: #/triage, #/patch-queue, #/admin/governance, #/admin/flows, #/admin/inspector (or equivalent)",
+        "Ensure router renders exactly ONE page component at a time (no fallthrough/append)",
+        "Remove any code that conditionally injects admin sections into the triage DOM when role==admin"
+      ]
+    },
+    {
+      "id": "TRIAGE-PURITY-02",
+      "title": "Triage page must be triage only",
+      "requirements": [
+        "Triage includes: queue table(s), filters, record drawer/workbench, issues/actions tables",
+        "Triage must NOT include: Standardizer, Workflow Map, Evidence Gates admin checklist, Config Inspector panels, Admin Quick Actions blocks",
+        "If a shared component is needed (e.g., Evidence chip strip), extract it and reuse; do not paste admin panels into triage"
+      ]
+    },
+    {
+      "id": "ADMIN-NAV-03",
+      "title": "Admin tool navigation goes to admin pages, not inline panels",
+      "requirements": [
+        "TOOLS section should link to pages: Governance, Config Flows, Patch Queue, Inspector (names can vary)",
+        "Clicking these updates hash route and re-renders the correct page only",
+        "No scrolling required to find admin tools inside triage; they are dedicated pages"
+      ]
+    },
+    {
+      "id": "RBAC-GUARDS-04",
+      "title": "Role guards are enforced by route (not just hidden UI)",
+      "requirements": [
+        "Non-admin navigating to #/admin/* is redirected to #/triage (or #/loader) with a toast/banner 'Admin only'",
+        "Patch Queue can be visible to Admin (full), Reviewer (limited), Analyst (create/submit only) depending on your existing permissions — but it must still be a separate route/page"
+      ]
+    },
+    {
+      "id": "SMOKE-05",
+      "title": "Regression prevention",
+      "requirements": [
+        "Add a simple dev-only assertion: when rendering triage, assert no elements with data-admin-section=true exist in DOM",
+        "Add page label in corner: PAGE: TRIAGE / PAGE: ADMIN-GOVERNANCE etc (you already do this—extend to new pages)"
+      ]
+    }
+  ],
+  "nice_to_have": [
+    {
+      "id": "ADMIN-TABS-06",
+      "title": "Admin pages can be tabbed but still route-backed",
+      "details": "If you prefer, Governance/Flows/Inspector can be tabs within one Admin page, but they must still NOT render within triage and should be deep-linkable (hash param or subroute)."
+    }
+  ],
+  "acceptance_criteria": [
+    "In Admin role, #/triage shows only triage UI—no workflow map, no standardizer, no inspector, no admin quick actions blocks.",
+    "Admin tools each open a distinct page (or route-backed tab) and do not appear appended under triage content.",
+    "Non-admin cannot access #/admin/* routes (redirect works).",
+    "No console errors; navigation remains stable; debug HUD (if any) stays Admin-only."
+  ],
+  "implementation_hint": {
+    "root_cause_guess": "Admin sections were implemented as conditional sections inside triage render instead of a router-level page swap. Fix by making 'renderPage(route)' return a single top-level template and clearing previous page container before mounting new page.",
+    "do_not_do": [
+      "Do not fix this by only hiding sections with CSS.",
+      "Do not keep admin panels inside triage and rely on collapse/accordion."
+    ]
+  }
+}
