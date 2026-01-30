@@ -2177,6 +2177,387 @@
     // Initialize comments on load
     loadComments();
     
+    // ========== PATCH REQUEST SYSTEM ==========
+    var PATCH_REQUESTS_STORAGE_KEY = 'orchestrate.patch_requests.v1';
+    
+    var PATCH_REQUEST_STATUSES = [
+      'Draft',
+      'Submitted', 
+      'ReviewerChangesRequested',
+      'ReviewerApproved',
+      'AdminHold',
+      'AdminApproved',
+      'SentToKiwi',
+      'KiwiReturned',
+      'Applied',
+      'Rejected',
+      'Cancelled'
+    ];
+    
+    var PATCH_REQUEST_QUEUE_TABS = [
+      { id: 'new', label: 'New', statuses: ['Draft', 'Submitted'] },
+      { id: 'needs_review', label: 'Needs Review', statuses: ['Submitted', 'ReviewerChangesRequested'] },
+      { id: 'approved', label: 'Approved', statuses: ['ReviewerApproved', 'AdminApproved'] },
+      { id: 'sent_to_kiwi', label: 'Sent to Kiwi', statuses: ['SentToKiwi'] },
+      { id: 'kiwi_returned', label: 'Kiwi Returned', statuses: ['KiwiReturned'] },
+      { id: 'applied', label: 'Applied', statuses: ['Applied'] },
+      { id: 'rejected', label: 'Rejected', statuses: ['Rejected'] }
+    ];
+    
+    var PATCH_REQUEST_TARGETS = ['salesforce', 'qa_rules', 'resolver_rules', 'truth_config', 'proposed_changes'];
+    
+    var patchRequestsStore = {
+      requests: [],
+      loaded: false,
+      selectedIds: []
+    };
+    
+    function generatePatchRequestId() {
+      return 'PR_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6);
+    }
+    
+    function loadPatchRequests() {
+      try {
+        var stored = localStorage.getItem(PATCH_REQUESTS_STORAGE_KEY);
+        if (stored) {
+          var parsed = JSON.parse(stored);
+          patchRequestsStore.requests = Array.isArray(parsed.requests) ? parsed.requests : [];
+        } else {
+          patchRequestsStore.requests = [];
+        }
+        patchRequestsStore.loaded = true;
+      } catch (e) {
+        console.error('Failed to load patch requests:', e);
+        patchRequestsStore.requests = [];
+        patchRequestsStore.loaded = true;
+      }
+      return patchRequestsStore.requests;
+    }
+    
+    function savePatchRequests() {
+      try {
+        var data = {
+          version: '1.0.0',
+          saved_at: new Date().toISOString(),
+          requests: patchRequestsStore.requests
+        };
+        localStorage.setItem(PATCH_REQUESTS_STORAGE_KEY, JSON.stringify(data));
+        return true;
+      } catch (e) {
+        console.error('Failed to save patch requests:', e);
+        return false;
+      }
+    }
+    
+    function createPatchRequest(options) {
+      var now = new Date().toISOString();
+      var request = {
+        request_id: generatePatchRequestId(),
+        created_at_utc: now,
+        updated_at_utc: now,
+        author: options.author || 'Unknown',
+        author_role: options.author_role || currentMode || 'Analyst',
+        status: options.status || 'Draft',
+        record_identity: {
+          contract_key: options.contract_key || null,
+          file_url: options.file_url || null,
+          file_name: options.file_name || null
+        },
+        target_scope: {
+          target: options.target || 'proposed_changes',
+          sheet: options.sheet || null,
+          field: options.field || null
+        },
+        proposed_change: {
+          intent: {
+            when: options.when || '',
+            then: options.then || '',
+            because: options.because || ''
+          },
+          rationale: options.rationale || ''
+        },
+        linked_comment_id: options.linked_comment_id || null,
+        kiwi_return: null,
+        history: [
+          {
+            at_utc: now,
+            actor: options.author || 'Unknown',
+            role: options.author_role || currentMode || 'Analyst',
+            action: 'Created',
+            from_status: null,
+            to_status: 'Draft',
+            notes: null
+          }
+        ]
+      };
+      patchRequestsStore.requests.push(request);
+      savePatchRequests();
+      return request;
+    }
+    
+    function getPatchRequest(requestId) {
+      return patchRequestsStore.requests.find(function(r) { return r.request_id === requestId; }) || null;
+    }
+    
+    function updatePatchRequestStatus(requestId, newStatus, actor, actorRole, notes) {
+      var request = getPatchRequest(requestId);
+      if (!request) return null;
+      if (!PATCH_REQUEST_STATUSES.includes(newStatus)) return null;
+      
+      var now = new Date().toISOString();
+      var oldStatus = request.status;
+      request.status = newStatus;
+      request.updated_at_utc = now;
+      request.history.push({
+        at_utc: now,
+        actor: actor || 'Unknown',
+        role: actorRole || currentMode || 'Analyst',
+        action: 'Status Changed',
+        from_status: oldStatus,
+        to_status: newStatus,
+        notes: notes || null
+      });
+      
+      savePatchRequests();
+      return request;
+    }
+    
+    function updatePatchRequest(requestId, updates, actor, actorRole) {
+      var request = getPatchRequest(requestId);
+      if (!request) return null;
+      
+      var now = new Date().toISOString();
+      var changes = [];
+      
+      if (updates.proposed_change) {
+        if (updates.proposed_change.intent) {
+          Object.assign(request.proposed_change.intent, updates.proposed_change.intent);
+          changes.push('intent updated');
+        }
+        if (updates.proposed_change.rationale !== undefined) {
+          request.proposed_change.rationale = updates.proposed_change.rationale;
+          changes.push('rationale updated');
+        }
+      }
+      if (updates.target_scope) {
+        Object.assign(request.target_scope, updates.target_scope);
+        changes.push('target updated');
+      }
+      
+      if (changes.length > 0) {
+        request.updated_at_utc = now;
+        request.history.push({
+          at_utc: now,
+          actor: actor || 'Unknown',
+          role: actorRole || currentMode || 'Analyst',
+          action: 'Updated',
+          from_status: request.status,
+          to_status: request.status,
+          notes: changes.join('; ')
+        });
+        savePatchRequests();
+      }
+      return request;
+    }
+    
+    function deletePatchRequest(requestId) {
+      var idx = patchRequestsStore.requests.findIndex(function(r) { return r.request_id === requestId; });
+      if (idx === -1) return false;
+      patchRequestsStore.requests.splice(idx, 1);
+      savePatchRequests();
+      return true;
+    }
+    
+    // Batch selection
+    function selectPatchRequest(requestId) {
+      if (!patchRequestsStore.selectedIds.includes(requestId)) {
+        patchRequestsStore.selectedIds.push(requestId);
+      }
+    }
+    
+    function deselectPatchRequest(requestId) {
+      var idx = patchRequestsStore.selectedIds.indexOf(requestId);
+      if (idx !== -1) {
+        patchRequestsStore.selectedIds.splice(idx, 1);
+      }
+    }
+    
+    function togglePatchRequestSelection(requestId) {
+      if (patchRequestsStore.selectedIds.includes(requestId)) {
+        deselectPatchRequest(requestId);
+      } else {
+        selectPatchRequest(requestId);
+      }
+    }
+    
+    function clearPatchRequestSelection() {
+      patchRequestsStore.selectedIds = [];
+    }
+    
+    function getSelectedPatchRequests() {
+      return patchRequestsStore.selectedIds.map(function(id) {
+        return getPatchRequest(id);
+      }).filter(function(r) { return r !== null; });
+    }
+    
+    function selectAllInQueue(queueId) {
+      var queue = PATCH_REQUEST_QUEUE_TABS.find(function(q) { return q.id === queueId; });
+      if (!queue) return;
+      patchRequestsStore.requests.forEach(function(r) {
+        if (queue.statuses.includes(r.status)) {
+          selectPatchRequest(r.request_id);
+        }
+      });
+    }
+    
+    // Queue queries
+    function getPatchRequestsByQueue(queueId) {
+      var queue = PATCH_REQUEST_QUEUE_TABS.find(function(q) { return q.id === queueId; });
+      if (!queue) return [];
+      return patchRequestsStore.requests.filter(function(r) {
+        return queue.statuses.includes(r.status);
+      }).sort(function(a, b) {
+        return b.updated_at_utc.localeCompare(a.updated_at_utc);
+      });
+    }
+    
+    function getPatchRequestsByStatus(status) {
+      return patchRequestsStore.requests.filter(function(r) { return r.status === status; });
+    }
+    
+    function getPatchRequestCounts() {
+      var counts = { total: patchRequestsStore.requests.length };
+      PATCH_REQUEST_QUEUE_TABS.forEach(function(queue) {
+        counts[queue.id] = 0;
+      });
+      patchRequestsStore.requests.forEach(function(r) {
+        PATCH_REQUEST_QUEUE_TABS.forEach(function(queue) {
+          if (queue.statuses.includes(r.status)) {
+            counts[queue.id]++;
+          }
+        });
+      });
+      return counts;
+    }
+    
+    // Kiwi handshake functions
+    function markSentToKiwi(requestIds, actor, actorRole) {
+      var updated = [];
+      requestIds.forEach(function(id) {
+        var result = updatePatchRequestStatus(id, 'SentToKiwi', actor, actorRole, 'Exported for Kiwi processing');
+        if (result) updated.push(result);
+      });
+      return updated;
+    }
+    
+    function applyKiwiReturn(requestId, kiwiPayload, actor, actorRole) {
+      var request = getPatchRequest(requestId);
+      if (!request) return null;
+      
+      var now = new Date().toISOString();
+      request.kiwi_return = {
+        returned_at_utc: now,
+        patch_payload_json: kiwiPayload.patch_payload_json || kiwiPayload,
+        notes: kiwiPayload.notes || null,
+        derived_target: kiwiPayload.derived_target || request.target_scope.target,
+        proposed_version: kiwiPayload.proposed_version || null
+      };
+      request.status = 'KiwiReturned';
+      request.updated_at_utc = now;
+      request.history.push({
+        at_utc: now,
+        actor: actor || 'Admin',
+        role: actorRole || 'Admin',
+        action: 'Kiwi Return Applied',
+        from_status: 'SentToKiwi',
+        to_status: 'KiwiReturned',
+        notes: 'Kiwi payload received'
+      });
+      
+      savePatchRequests();
+      return request;
+    }
+    
+    function markApplied(requestIds, actor, actorRole) {
+      var updated = [];
+      requestIds.forEach(function(id) {
+        var result = updatePatchRequestStatus(id, 'Applied', actor, actorRole, 'Patch applied to target artifact');
+        if (result) updated.push(result);
+      });
+      return updated;
+    }
+    
+    function markRejected(requestId, reason, actor, actorRole) {
+      return updatePatchRequestStatus(requestId, 'Rejected', actor, actorRole, reason);
+    }
+    
+    // Export functions
+    function exportPatchRequestsForKiwi(requestIds) {
+      var requests = requestIds.map(function(id) { return getPatchRequest(id); }).filter(function(r) { return r !== null; });
+      return JSON.stringify({
+        batch_id: 'BATCH_' + Date.now().toString(36),
+        exported_at_utc: new Date().toISOString(),
+        count: requests.length,
+        requests: requests.map(function(r) {
+          return {
+            request_id: r.request_id,
+            record_identity: r.record_identity,
+            target_scope: r.target_scope,
+            proposed_change: r.proposed_change,
+            author: r.author,
+            created_at_utc: r.created_at_utc
+          };
+        })
+      }, null, 2);
+    }
+    
+    function exportBatchCommitPack(requestIds) {
+      var requests = requestIds.map(function(id) { return getPatchRequest(id); }).filter(function(r) { return r !== null && r.kiwi_return; });
+      return JSON.stringify({
+        batch_id: 'COMMIT_' + Date.now().toString(36),
+        created_at_utc: new Date().toISOString(),
+        count: requests.length,
+        items: requests.map(function(r) {
+          return {
+            request_id: r.request_id,
+            target: r.target_scope.target,
+            patch_payload_json: r.kiwi_return.patch_payload_json,
+            suggested_files: getSuggestedFilesForTarget(r.target_scope.target),
+            changelog_entry: generateChangelogEntry(r),
+            pr_summary_markdown: generatePRSummary(r)
+          };
+        })
+      }, null, 2);
+    }
+    
+    function getSuggestedFilesForTarget(target) {
+      var fileMap = {
+        'salesforce': ['config/sf_rules.json'],
+        'qa_rules': ['config/qa_rules.json'],
+        'resolver_rules': ['config/resolver_rules.json'],
+        'truth_config': ['config/config_pack.base.json'],
+        'proposed_changes': ['config/config_pack.patch.json']
+      };
+      return fileMap[target] || ['config/config_pack.patch.json'];
+    }
+    
+    function generateChangelogEntry(request) {
+      var intent = request.proposed_change.intent;
+      return '- ' + (intent.then || 'Update') + ' when ' + (intent.when || 'condition met') + ' (' + request.request_id + ')';
+    }
+    
+    function generatePRSummary(request) {
+      var intent = request.proposed_change.intent;
+      return '## Patch Request: ' + request.request_id + '\n\n' +
+        '**When:** ' + (intent.when || 'N/A') + '\n' +
+        '**Then:** ' + (intent.then || 'N/A') + '\n' +
+        '**Because:** ' + (intent.because || 'N/A') + '\n\n' +
+        '**Rationale:** ' + (request.proposed_change.rationale || 'N/A') + '\n';
+    }
+    
+    // Initialize patch requests on load
+    loadPatchRequests();
+    
     // ========== STANDARDIZER (D3) ==========
     let standardizerResult = {
       mergedDataset: null,
