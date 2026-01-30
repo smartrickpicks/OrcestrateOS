@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Board Viewer v0.4</title>
+  <title>Control Board Viewer v0.5</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 20px; }
@@ -117,11 +117,50 @@
     .drawer-warning { background: #fff3e0; color: #e65100; padding: 10px 15px; font-size: 0.85em; border-bottom: 1px solid #ffe0b2; }
     .identity-primary { color: #4caf50; font-weight: bold; }
     .identity-fallback { color: #90a4ae; }
+
+    .selection-controls { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+    .selection-btn { padding: 4px 10px; font-size: 0.75em; border: 1px solid #ddd; background: #f5f5f5; border-radius: 4px; cursor: pointer; }
+    .selection-btn:hover { background: #e0e0e0; }
+    .selection-count { font-size: 0.8em; color: #666; margin-left: auto; }
+    .drawer-table input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+    .drawer-table th:first-child, .drawer-table td:first-child { width: 30px; text-align: center; }
+
+    .patch-studio { position: fixed; top: 0; right: -450px; width: 450px; height: 100vh; background: white; box-shadow: -4px 0 20px rgba(0,0,0,0.2); z-index: 902; transition: right 0.3s ease; display: flex; flex-direction: column; }
+    .patch-studio.active { right: 0; }
+    .patch-studio-header { background: #2e7d32; color: white; padding: 15px 20px; flex-shrink: 0; }
+    .patch-studio-header h3 { margin: 0 0 5px 0; font-size: 1em; }
+    .patch-studio-header-row { display: flex; justify-content: space-between; align-items: center; }
+    .patch-studio-close { background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; line-height: 1; }
+    .patch-studio-body { padding: 15px; overflow-y: auto; flex-grow: 1; }
+    .patch-field { margin-bottom: 15px; }
+    .patch-field label { display: block; font-size: 0.8em; color: #666; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
+    .patch-field input, .patch-field textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; font-family: inherit; }
+    .patch-field textarea { min-height: 60px; resize: vertical; }
+    .patch-changes-header { display: flex; justify-content: space-between; align-items: center; margin: 15px 0 10px; }
+    .patch-changes-header h4 { margin: 0; font-size: 0.9em; color: #333; }
+    .patch-changes-list { background: #f9f9f9; border-radius: 6px; max-height: 250px; overflow-y: auto; }
+    .patch-change-item { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 0.85em; }
+    .patch-change-item:last-child { border-bottom: none; }
+    .patch-change-info { flex-grow: 1; }
+    .patch-change-remove { background: none; border: none; color: #c62828; cursor: pointer; font-size: 1.1em; padding: 4px 8px; }
+    .patch-change-remove:hover { background: #ffebee; border-radius: 4px; }
+    .patch-studio-actions { padding: 15px 20px; border-top: 1px solid #eee; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+    .patch-studio-btn { padding: 10px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85em; }
+    .patch-studio-btn-primary { background: #2e7d32; color: white; }
+    .patch-studio-btn-primary:hover { background: #388e3c; }
+    .patch-studio-btn-secondary { background: #455a64; color: white; }
+    .patch-studio-btn-secondary:hover { background: #546e7a; }
+    .patch-empty { color: #666; font-style: italic; padding: 20px; text-align: center; }
+    .evidence-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
+    .evidence-section h4 { margin: 0 0 10px 0; font-size: 0.85em; color: #666; text-transform: uppercase; }
+    .evidence-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+    .evidence-btn { padding: 6px 10px; font-size: 0.75em; background: #e0e0e0; border: none; border-radius: 4px; cursor: pointer; }
+    .evidence-btn:hover { background: #bdbdbd; }
   </style>
 </head>
 <body>
   <h1>Control Board Viewer</h1>
-  <p class="subtitle">v0.4 | Governance-only | Offline-first | Universal Drilldown + Copy PR Kit</p>
+  <p class="subtitle">v0.5 | Governance-only | Offline-first | Patch Studio Lite</p>
 
   <div class="toolbar" id="toolbar">
     <button class="toolbar-btn" data-cmd="validate">Validate</button>
@@ -229,9 +268,53 @@ Note: This viewer does NOT execute any commands automatically.
       <div class="drawer-actions-grid">
         <button class="drawer-btn" id="drawer-copy">Copy JSON</button>
         <button class="drawer-btn drawer-btn-secondary" id="copy-pr-summary">Copy PR Summary</button>
-        <button class="drawer-btn drawer-btn-secondary" id="copy-patch-skeleton">Copy Patch Skeleton</button>
         <button class="drawer-btn drawer-btn-secondary" id="copy-rule-draft">Copy Rule Draft</button>
+        <button class="drawer-btn" id="open-patch-studio" style="background: #2e7d32;">Patch Studio</button>
       </div>
+    </div>
+  </div>
+
+  <div class="patch-studio" id="patch-studio">
+    <div class="patch-studio-header">
+      <div class="patch-studio-header-row">
+        <h3>Patch Studio Lite</h3>
+        <button class="patch-studio-close" id="patch-studio-close">&times;</button>
+      </div>
+      <span style="font-size: 0.8em; opacity: 0.8;">Build patch drafts from selected records</span>
+    </div>
+    <div class="patch-studio-body">
+      <div class="patch-field">
+        <label>Base Version</label>
+        <input type="text" id="patch-base-version" placeholder="0.1.0" value="0.1.0">
+      </div>
+      <div class="patch-field">
+        <label>Author</label>
+        <input type="text" id="patch-author" placeholder="operator@example.com">
+      </div>
+      <div class="patch-field">
+        <label>Rationale</label>
+        <textarea id="patch-rationale" placeholder="Describe why this patch is needed..."></textarea>
+      </div>
+      <div class="patch-changes-header">
+        <h4>Changes (<span id="patch-changes-count">0</span>)</h4>
+        <button class="selection-btn" id="clear-patch-changes">Clear All</button>
+      </div>
+      <div class="patch-changes-list" id="patch-changes-list">
+        <div class="patch-empty">No changes added. Select issues/actions in the Workbench tabs and add them here.</div>
+      </div>
+      <div class="evidence-section">
+        <h4>Evidence Helper (Copy Only)</h4>
+        <div class="evidence-btns">
+          <button class="evidence-btn" id="copy-smoke-baseline">Smoke Baseline</button>
+          <button class="evidence-btn" id="copy-smoke-edge">Smoke Edge</button>
+          <button class="evidence-btn" id="copy-evidence-template">Evidence Template</button>
+        </div>
+      </div>
+    </div>
+    <div class="patch-studio-actions">
+      <button class="patch-studio-btn patch-studio-btn-primary" id="copy-full-patch">Copy Full Patch Draft (JSON)</button>
+      <button class="patch-studio-btn patch-studio-btn-secondary" id="copy-rule-mapping">Copy Rule Mapping (JSON)</button>
+      <button class="patch-studio-btn patch-studio-btn-secondary" id="copy-grouped-rules">Copy Grouped Rule Draft</button>
     </div>
   </div>
 
@@ -241,12 +324,14 @@ Note: This viewer does NOT execute any commands automatically.
     const RELATIVE_PRIMARY = '../../out/sf_packet.preview.json';
     const RELATIVE_FALLBACK = '../../examples/expected_outputs/sf_packet.example.json';
     const COMMANDS_PATH = 'run_commands.json';
-    const STORAGE_KEY = 'viewer_selection_v04';
+    const STORAGE_KEY = 'viewer_selection_v05';
 
     let commands = {};
     let allData = { contractResults: [], issues: [], fieldActions: [], changeLog: [] };
     let activeFilters = { search: '', severities: ['blocking', 'warning', 'info'], statuses: ['ready', 'needs_review', 'blocked'], subtype: '' };
     let currentSelection = { joinIdentity: null, contractIdx: null, activeTab: 'contract' };
+    let selectedRecords = { issues: new Set(), actions: new Set(), changelog: new Set() };
+    let patchDraft = { baseVersion: '0.1.0', author: '', rationale: '', changes: [] };
 
     function normCmp(v) {
       if (v === null || v === undefined) return '';
@@ -495,13 +580,13 @@ Note: This viewer does NOT execute any commands automatically.
         if (related.length === 0) {
           content = '<div class="drawer-empty">No related issues for this join identity.</div>';
         } else {
-          content = renderDrawerTable(related, [
+          content = renderSelectionControls('issues', related.length) + renderDrawerTable(related, [
             { key: 'severity', label: 'Severity' },
             { key: 'sheet', label: 'Sheet' },
             { key: 'field', label: 'Field' },
             { key: 'issue_type', label: 'Type' },
             { key: 'details', label: 'Details' }
-          ]);
+          ], 'issues');
         }
       } else if (tab === 'actions') {
         const related = sortBySeverityFirst(getRelatedRecords(identity, allData.fieldActions), ['sheet', 'field', 'action']);
@@ -509,14 +594,14 @@ Note: This viewer does NOT execute any commands automatically.
         if (related.length === 0) {
           content = '<div class="drawer-empty">No related field actions for this join identity.</div>';
         } else {
-          content = renderDrawerTable(related, [
+          content = renderSelectionControls('actions', related.length) + renderDrawerTable(related, [
             { key: 'severity', label: 'Severity' },
             { key: 'sheet', label: 'Sheet' },
             { key: 'field', label: 'Field' },
             { key: 'action', label: 'Action' },
             { key: 'proposed_value', label: 'Value' },
             { key: 'reason_text', label: 'Reason' }
-          ]);
+          ], 'actions');
         }
       } else if (tab === 'changelog') {
         const related = sortBySeverityFirst(getRelatedRecords(identity, allData.changeLog), ['sheet', 'field', 'notes']);
@@ -524,31 +609,59 @@ Note: This viewer does NOT execute any commands automatically.
         if (related.length === 0) {
           content = '<div class="drawer-empty">No related change log entries for this join identity.</div>';
         } else {
-          content = renderDrawerTable(related, [
+          content = renderSelectionControls('changelog', related.length) + renderDrawerTable(related, [
             { key: 'severity', label: 'Severity' },
             { key: 'sheet', label: 'Sheet' },
             { key: 'field', label: 'Field' },
             { key: 'notes', label: 'Notes' }
-          ]);
+          ], 'changelog');
         }
       }
 
       body.innerHTML = content;
       body.dataset.json = JSON.stringify(jsonData, null, 2);
+      body.dataset.tabType = tab;
+      body.dataset.records = JSON.stringify(jsonData);
     }
 
-    function renderDrawerTable(data, columns) {
-      const headers = columns.map(c => `<th>${c.label}</th>`).join('');
-      const rows = data.map(row => {
+    function getRecordKey(record) {
+      const ck = normalizeToNull(record.contract_key) ?? '';
+      const fu = normalizeToNull(record.file_url) ?? '';
+      const fn = normalizeToNull(record.file_name) ?? '';
+      const sh = record.sheet ?? '';
+      const fi = record.field ?? '';
+      const ty = record.issue_type ?? record.action ?? record.notes ?? '';
+      return `${ck}|${fu}|${fn}|${sh}|${fi}|${ty}`;
+    }
+
+    function renderDrawerTable(data, columns, tabType) {
+      const selectionSet = selectedRecords[tabType];
+      const headers = (tabType ? '<th></th>' : '') + columns.map(c => `<th>${c.label}</th>`).join('');
+      const rows = data.map((row, idx) => {
+        const key = getRecordKey(row);
+        const checked = selectionSet?.has(key) ? 'checked' : '';
+        const checkbox = tabType ? `<td><input type="checkbox" data-key="${key}" data-idx="${idx}" ${checked}></td>` : '';
         const cells = columns.map(c => {
           let val = formatValue(row[c.key]);
           let cls = '';
           if (c.key === 'severity') cls = `severity-${row.severity}`;
           return `<td class="${cls}">${val}</td>`;
         }).join('');
-        return `<tr>${cells}</tr>`;
+        return `<tr>${checkbox}${cells}</tr>`;
       }).join('');
       return `<table class="drawer-table"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function renderSelectionControls(tabType, totalCount) {
+      const selectedCount = selectedRecords[tabType]?.size || 0;
+      return `
+        <div class="selection-controls">
+          <button class="selection-btn" data-action="select-all" data-tab="${tabType}">Select All</button>
+          <button class="selection-btn" data-action="clear" data-tab="${tabType}">Clear</button>
+          <button class="selection-btn" data-action="add-to-patch" data-tab="${tabType}" style="background: #2e7d32; color: white; border-color: #2e7d32;">Add Selected to Patch</button>
+          <span class="selection-count">${selectedCount} of ${totalCount} selected</span>
+        </div>
+      `;
     }
 
     function updateTabCounts(identity) {
@@ -925,15 +1038,6 @@ Note: This viewer does NOT execute any commands automatically.
       setTimeout(() => btn.textContent = orig, 1500);
     });
 
-    document.getElementById('copy-patch-skeleton').addEventListener('click', async () => {
-      const text = generatePatchSkeleton();
-      const success = await copyToClipboard(text);
-      const btn = document.getElementById('copy-patch-skeleton');
-      const orig = btn.textContent;
-      btn.textContent = success ? 'Copied!' : 'Failed';
-      setTimeout(() => btn.textContent = orig, 1500);
-    });
-
     document.getElementById('copy-rule-draft').addEventListener('click', async () => {
       const text = generateRuleDraft();
       const success = await copyToClipboard(text);
@@ -987,7 +1091,323 @@ Note: This viewer does NOT execute any commands automatically.
       if (e.key === 'Escape') {
         closeModal();
         closeDrawer();
+        closePatchStudio();
       }
+    });
+
+    document.getElementById('drawer-body').addEventListener('change', e => {
+      if (e.target.type !== 'checkbox') return;
+      const key = e.target.dataset.key;
+      const tabType = document.getElementById('drawer-body').dataset.tabType;
+      if (!tabType || tabType === 'contract') return;
+      
+      const selectionSet = selectedRecords[tabType];
+      if (!selectionSet) return;
+      
+      if (e.target.checked) {
+        selectionSet.add(key);
+      } else {
+        selectionSet.delete(key);
+      }
+      updateSelectionCount(tabType);
+    });
+
+    document.getElementById('drawer-body').addEventListener('click', e => {
+      const btn = e.target.closest('.selection-btn');
+      if (!btn) return;
+      
+      const action = btn.dataset.action;
+      const tabType = btn.dataset.tab;
+      const records = JSON.parse(document.getElementById('drawer-body').dataset.records || '[]');
+      
+      if (action === 'select-all') {
+        records.forEach(r => selectedRecords[tabType].add(getRecordKey(r)));
+        renderDrawerTab(currentSelection.activeTab);
+      } else if (action === 'clear') {
+        selectedRecords[tabType].clear();
+        renderDrawerTab(currentSelection.activeTab);
+      } else if (action === 'add-to-patch') {
+        addSelectedToPatch(tabType);
+      }
+    });
+
+    function updateSelectionCount(tabType) {
+      const countEl = document.querySelector(`.selection-count`);
+      if (countEl) {
+        const records = JSON.parse(document.getElementById('drawer-body').dataset.records || '[]');
+        countEl.textContent = `${selectedRecords[tabType]?.size || 0} of ${records.length} selected`;
+      }
+    }
+
+    function addSelectedToPatch(tabType) {
+      const records = JSON.parse(document.getElementById('drawer-body').dataset.records || '[]');
+      const selectionSet = selectedRecords[tabType];
+      const selected = records.filter(r => selectionSet.has(getRecordKey(r)));
+      
+      selected.forEach(record => {
+        const key = getRecordKey(record);
+        const exists = patchDraft.changes.some(c => c._key === key);
+        if (!exists) {
+          patchDraft.changes.push({
+            _key: key,
+            _source: tabType,
+            record: record
+          });
+        }
+      });
+      
+      renderPatchChanges();
+      document.getElementById('patch-studio').classList.add('active');
+    }
+
+    function renderPatchChanges() {
+      const list = document.getElementById('patch-changes-list');
+      const count = document.getElementById('patch-changes-count');
+      count.textContent = patchDraft.changes.length;
+      
+      if (patchDraft.changes.length === 0) {
+        list.innerHTML = '<div class="patch-empty">No changes added. Select issues/actions in the Workbench tabs and add them here.</div>';
+        return;
+      }
+      
+      const sorted = sortBySeverityFirst([...patchDraft.changes].map(c => c.record), ['sheet', 'field']);
+      const sortedChanges = sorted.map(r => patchDraft.changes.find(c => c._key === getRecordKey(r)));
+      
+      list.innerHTML = sortedChanges.map((change, idx) => {
+        const r = change.record;
+        const typeLabel = change._source === 'issues' ? 'Issue' : change._source === 'actions' ? 'Action' : 'Log';
+        const desc = r.issue_type || r.action || r.notes || 'unknown';
+        return `
+          <div class="patch-change-item" data-idx="${idx}">
+            <div class="patch-change-info">
+              <strong>${typeLabel}:</strong> ${desc}<br>
+              <small>${r.sheet || '-'} / ${r.field || '-'} (${r.severity || 'info'})</small>
+            </div>
+            <button class="patch-change-remove" data-key="${change._key}">&times;</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('patch-changes-list').addEventListener('click', e => {
+      const btn = e.target.closest('.patch-change-remove');
+      if (!btn) return;
+      const key = btn.dataset.key;
+      patchDraft.changes = patchDraft.changes.filter(c => c._key !== key);
+      renderPatchChanges();
+    });
+
+    document.getElementById('clear-patch-changes').addEventListener('click', () => {
+      patchDraft.changes = [];
+      renderPatchChanges();
+    });
+
+    document.getElementById('open-patch-studio').addEventListener('click', () => {
+      document.getElementById('patch-studio').classList.add('active');
+    });
+
+    document.getElementById('patch-studio-close').addEventListener('click', closePatchStudio);
+
+    function closePatchStudio() {
+      document.getElementById('patch-studio').classList.remove('active');
+    }
+
+    document.getElementById('patch-base-version').addEventListener('input', e => {
+      patchDraft.baseVersion = e.target.value;
+    });
+
+    document.getElementById('patch-author').addEventListener('input', e => {
+      patchDraft.author = e.target.value;
+    });
+
+    document.getElementById('patch-rationale').addEventListener('input', e => {
+      patchDraft.rationale = e.target.value;
+    });
+
+    function generateGroupedRules() {
+      const changes = patchDraft.changes;
+      if (changes.length === 0) return '';
+      
+      const sorted = sortBySeverityFirst(changes.map(c => c.record), ['sheet', 'field']);
+      const groups = new Map();
+      
+      sorted.forEach(record => {
+        const whenKey = `${record.sheet || ''}|${record.field || ''}`;
+        if (!groups.has(whenKey)) {
+          groups.set(whenKey, []);
+        }
+        groups.get(whenKey).push(record);
+      });
+      
+      let draft = `# Grouped Rule Draft\n\n`;
+      let ruleNum = 1;
+      
+      groups.forEach((records, whenKey) => {
+        const [sheet, field] = whenKey.split('|');
+        draft += `## Rule ${ruleNum}\n\n`;
+        draft += `**WHEN**\n`;
+        draft += `- Sheet: ${sheet || 'any'}\n`;
+        draft += `- Field: ${field || 'any'}\n\n`;
+        draft += `**THEN**\n`;
+        records.forEach(r => {
+          const actionType = r.issue_type || r.action || 'REQUIRE_PRESENT';
+          draft += `- ${actionType} (${r.severity || 'warning'})\n`;
+        });
+        draft += `\n**BECAUSE**\n`;
+        records.forEach(r => {
+          draft += `- ${r.details || r.reason_text || r.notes || 'Issue detected'}\n`;
+        });
+        draft += `\n`;
+        ruleNum++;
+      });
+      
+      return draft;
+    }
+
+    function getRuleIdPrefix(record) {
+      const identity = getJoinIdentity(record);
+      const primary = getPrimaryKey(identity);
+      const primaryVal = identity[primary] || 'unknown';
+      return String(primaryVal).replace(/[^a-zA-Z0-9]/g, '_').substring(0, 15);
+    }
+
+    function generateRuleMapping() {
+      const changes = patchDraft.changes;
+      if (changes.length === 0) return '[]';
+      
+      const sorted = sortBySeverityFirst(changes.map(c => c.record), ['sheet', 'field']);
+      
+      const rules = sorted.map((record, idx) => ({
+        op: 'add_rule',
+        rule_id: `RULE_${getRuleIdPrefix(record)}_${idx + 1}`,
+        description: `Fix: ${record.issue_type || record.action || 'unknown'} on ${record.field || 'unknown'}`,
+        when: {
+          sheet: record.sheet || '',
+          field: record.field || '',
+          operator: 'EXISTS',
+          value: null
+        },
+        then: {
+          action: record.action || 'REQUIRE_PRESENT',
+          sheet: record.sheet || '',
+          field: record.field || '',
+          severity: record.severity || 'warning'
+        }
+      }));
+      
+      return JSON.stringify(sortObjectKeys(rules), null, 2);
+    }
+
+    function generateFullPatchDraft() {
+      const baseVersion = document.getElementById('patch-base-version').value || null;
+      const author = document.getElementById('patch-author').value || null;
+      const rationale = document.getElementById('patch-rationale').value || null;
+      
+      const changes = patchDraft.changes;
+      const sorted = sortBySeverityFirst(changes.map(c => c.record), ['sheet', 'field']);
+      
+      const changesArray = sorted.map((record, idx) => ({
+        op: 'add_rule',
+        rule_id: `RULE_${getRuleIdPrefix(record)}_${idx + 1}`,
+        description: `Fix: ${record.issue_type || record.action || 'unknown'} on ${record.field || 'unknown'}`,
+        when: {
+          sheet: record.sheet || '',
+          field: record.field || '',
+          operator: 'EXISTS',
+          value: null
+        },
+        then: {
+          action: record.action || 'REQUIRE_PRESENT',
+          sheet: record.sheet || '',
+          field: record.field || '',
+          severity: record.severity || 'warning'
+        }
+      }));
+      
+      const patch = {
+        base_version: baseVersion,
+        author: author,
+        rationale: rationale,
+        changes: changesArray
+      };
+      
+      return JSON.stringify(sortObjectKeys(patch), null, 2);
+    }
+
+    document.getElementById('copy-full-patch').addEventListener('click', async () => {
+      const text = generateFullPatchDraft();
+      const success = await copyToClipboard(text);
+      const btn = document.getElementById('copy-full-patch');
+      const orig = btn.textContent;
+      btn.textContent = success ? 'Copied!' : 'Failed';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+
+    document.getElementById('copy-rule-mapping').addEventListener('click', async () => {
+      const text = generateRuleMapping();
+      const success = await copyToClipboard(text);
+      const btn = document.getElementById('copy-rule-mapping');
+      const orig = btn.textContent;
+      btn.textContent = success ? 'Copied!' : 'Failed';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+
+    document.getElementById('copy-grouped-rules').addEventListener('click', async () => {
+      const text = generateGroupedRules();
+      const success = await copyToClipboard(text);
+      const btn = document.getElementById('copy-grouped-rules');
+      const orig = btn.textContent;
+      btn.textContent = success ? 'Copied!' : 'Failed';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+
+    document.getElementById('copy-smoke-baseline').addEventListener('click', async () => {
+      const cmd = commands.commands?.smoke_baseline || 'bash scripts/replit_smoke.sh';
+      const success = await copyToClipboard(cmd);
+      const btn = document.getElementById('copy-smoke-baseline');
+      const orig = btn.textContent;
+      btn.textContent = success ? 'Copied!' : 'Failed';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+
+    document.getElementById('copy-smoke-edge').addEventListener('click', async () => {
+      const cmd = commands.commands?.smoke_edge || 'bash scripts/replit_smoke.sh edge';
+      const success = await copyToClipboard(cmd);
+      const btn = document.getElementById('copy-smoke-edge');
+      const orig = btn.textContent;
+      btn.textContent = success ? 'Copied!' : 'Failed';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+
+    document.getElementById('copy-evidence-template').addEventListener('click', async () => {
+      const identity = currentSelection.joinIdentity;
+      const primary = identity ? getPrimaryKey(identity) : null;
+      const primaryVal = identity?.[primary] || 'unknown';
+      
+      const template = `# Evidence for Patch
+
+## Commit
+- **SHA**: <COMMIT_SHA>
+- **Branch**: main
+
+## Verification
+- [ ] Smoke baseline passed
+- [ ] Smoke edge passed
+- [ ] Manual review completed
+
+## Artifacts
+- **Join Identity**: ${identity ? formatJoinIdentityText(identity) : 'N/A'}
+- **Primary Key**: ${primary || 'N/A'}=${primaryVal}
+- **Patch File SHA256**: <SHA256_HASH>
+
+## Notes
+Add any additional notes here.
+`;
+      const success = await copyToClipboard(template);
+      const btn = document.getElementById('copy-evidence-template');
+      const orig = btn.textContent;
+      btn.textContent = success ? 'Copied!' : 'Failed';
+      setTimeout(() => btn.textContent = orig, 1500);
     });
 
     loadCommands();

@@ -3,7 +3,7 @@
 ## Overview
 A read-only, single-file HTML viewer for sf_packet artifacts. No build step, no dependencies, no external network requests.
 
-**Version:** 0.4
+**Version:** 0.5
 
 ## How to Open
 
@@ -46,11 +46,7 @@ The toolbar provides quick access to common commands:
 | Smoke Baseline | Run smoke test against baseline expected output |
 | Smoke Edge | Run smoke test against edge expected output |
 
-**Copy-Only Default:** Clicking any toolbar button automatically copies the command to clipboard and opens a modal displaying the full command.
-
-**Confirm-Run Gate:** To enable the "Run" button, you must first check the **"I CONFIRM RUN"** checkbox in the toolbar. Even when enabled, execution is not available in the browser environment - you must paste and run the command in your terminal.
-
-Commands are stored in `run_commands.json` and can be customized.
+**Copy-Only Default:** Clicking any toolbar button automatically copies the command to clipboard.
 
 ### Filters
 
@@ -63,13 +59,9 @@ Located below the toolbar, filters allow you to narrow down table results:
 | **Status Chips** | Toggle visibility of ready/needs_review/blocked status rows |
 | **Subtype Dropdown** | Filter Contract Results by detected_subtype |
 
-Filters apply across all three main tables. Click a chip to toggle it on/off (inactive chips appear faded).
+### Universal Drilldown
 
-**Note:** Global filters do NOT affect the contents of the Record Workbench drawer once a record is selected. The drawer always shows all related records for the selected join identity.
-
-### Universal Drilldown (v0.4)
-
-Click any row in **any table** (Contract Results, Issues, or Field Actions) to open the Record Workbench drawer. The workbench displays all related records sharing the same join identity.
+Click any row in **any table** (Contract Results, Issues, or Field Actions) to open the Record Workbench drawer.
 
 ### Record Workbench
 
@@ -79,19 +71,6 @@ The drawer header displays a **join identity pill** with visual emphasis on the 
 - **Gray (fallback):** Secondary keys in the identity
 
 Priority order: `contract_key` → `file_url` → `file_name`
-
-Example display:
-```
-ck=ABC123 | fu=null | fn=null (PRIMARY: contract_key)
-```
-
-Click "Copy ID" to copy the full identity string including PRIMARY indicator.
-
-#### Duplicate Join Identity Warning (v0.4)
-If multiple contracts share the same join identity, a warning banner appears:
-```
-Warning: N contracts share this join identity. Showing first match deterministically.
-```
 
 #### Tabs
 The workbench has four tabs:
@@ -103,73 +82,78 @@ The workbench has four tabs:
 | **Actions** | All `sf_field_actions` rows matching the join identity |
 | **Change Log** | All `sf_change_log` rows matching the join identity |
 
-Each tab shows a count badge indicating how many related records exist.
+### Selectable Records (v0.5)
 
-#### Sorting Within Tabs
-- **Issues:** severity (blocking > warning > info), then contract_key, file_url, file_name, sheet, field, issue_type
-- **Actions:** severity (blocking > warning > info), then contract_key, file_url, file_name, sheet, field, action
-- **Change Log:** severity (blocking > warning > info), then contract_key, file_url, file_name, sheet, field, notes
+In the Issues, Actions, and Change Log tabs, each row has a checkbox for selection:
 
-#### Empty States
-If no related records exist for a tab, the message "No related <type> for this join identity." is displayed.
+| Control | Action |
+|---------|--------|
+| **Checkbox** | Toggle individual record selection |
+| **Select All** | Select all records in the current tab |
+| **Clear** | Deselect all records in the current tab |
+| **Add Selected to Patch** | Add selected records to the Patch Studio draft |
 
-### Copy PR Kit (v0.4)
+Selection persists within the current workbench session.
 
-The workbench footer includes four copy buttons for generating PR artifacts:
+### Patch Studio Lite (v0.5)
+
+Access Patch Studio by clicking the green "Patch Studio" button in the Record Workbench.
+
+#### Draft Fields
+| Field | Description |
+|-------|-------------|
+| **Base Version** | Version this patch applies to (e.g., "0.1.0") |
+| **Author** | Your email or identifier |
+| **Rationale** | Description of why this patch is needed |
+
+#### Changes Preview
+- Shows all records added to the patch draft
+- Sorted by severity (blocking > warning > info), then sheet/field
+- Remove individual items with the × button
+- Clear all changes with the "Clear All" button
+
+#### Copy Outputs
+
+| Button | Output Format |
+|--------|---------------|
+| **Copy Full Patch Draft (JSON)** | Complete `config_pack.patch.json` structure with sorted keys |
+| **Copy Rule Mapping (JSON)** | Array of rule objects in patch-rule shape |
+| **Copy Grouped Rule Draft** | WHEN/THEN/BECAUSE text with grouped rules |
+
+All outputs are deterministic with sorted keys and stable ordering.
+
+### Evidence Helper (v0.5)
+
+Located in Patch Studio, provides copy-only buttons for:
+
+| Button | Content |
+|--------|---------|
+| **Smoke Baseline** | Baseline smoke test command |
+| **Smoke Edge** | Edge case smoke test command |
+| **Evidence Template** | Markdown template with placeholders for SHA256, commit, verification checklist |
+
+### Copy PR Kit
 
 | Button | Output |
 |--------|--------|
 | **Copy JSON** | Current tab's data as JSON (sorted keys) |
-| **Copy PR Summary** | Markdown summary with title, WHY section, affected artifacts, smoke status |
-| **Copy Patch Skeleton** | JSON patch template with `add_rule` entries for each issue |
+| **Copy PR Summary** | Markdown summary with title, WHY section, affected artifacts |
 | **Copy Rule Draft** | WHEN / THEN / BECAUSE format for each issue |
 
-All copied JSON has sorted keys for deterministic output.
+### Determinism Guarantees
 
-#### PR Summary Format
-```markdown
-# PR: Fix issues for <primary_key>=<value>
-
-## WHY
-This record has N issue(s) and M pending action(s) that need resolution.
-
-## Affected Artifacts
-- **Join Identity**: ck=... | fu=... | fn=... (PRIMARY: ...)
-- **Contract Status**: ready/needs_review/blocked
-- **Detected Subtype**: ...
-- **Issues**: issue_type_1, issue_type_2, ...
-
-## Smoke Status
-unknown (run `bash scripts/replit_smoke.sh` to verify)
-```
-
-#### Rule Draft Format
-```markdown
-# Rule Draft
-
-## Rule 1
-
-**WHEN**
-- Sheet: ...
-- Field: ...
-- Condition: ...
-
-**THEN**
-- Action: REQUIRE_PRESENT
-- Severity: warning
-
-**BECAUSE**
-- Issue details...
-- Primary key: contract_key=ABC123
-```
+All outputs follow these ordering rules:
+- **Severity order:** blocking > warning > info
+- **Join triplet:** contract_key → file_url → file_name (nulls last)
+- **Secondary sort:** sheet, field, then type-specific fields
+- **JSON:** All keys sorted alphabetically
+- **Rule IDs:** Based on primary key + index (no timestamps)
 
 ### State Persistence
 The viewer persists your selection in localStorage:
-- **Selected join identity**
-- **Active tab**
-- **Source type** (which table was clicked)
-
-On page reload, if the previously selected record still exists in the data, the drawer reopens with the same selection and tab. If the record no longer exists, the selection is cleared.
+- Selected join identity
+- Active tab
+- Source type
 
 ### Summary Cards
 Displays counts from `sf_summary`:
@@ -182,28 +166,33 @@ Displays counts from `sf_summary`:
 Three main tables with deterministic sorting:
 
 1. **Contract Results** - `sf_contract_results`
-   - Sorted by: contract_key (nulls last), file_url (nulls last), file_name (nulls last)
+   - Sorted by: contract_key (nulls last), file_url, file_name
 
 2. **Issues** - `sf_issues`
-   - Sorted by: severity (blocking > warning > info), then join triplet, then sheet, field, issue_type
+   - Sorted by: severity, join triplet, sheet, field, issue_type
 
 3. **Field Actions** - `sf_field_actions`
-   - Sorted by: severity (blocking > warning > info), then join triplet, then sheet, field, action
+   - Sorted by: severity, join triplet, sheet, field, action
 
-### Diff Pane
-Instructions for running the smoke test to verify determinism:
-```bash
-bash scripts/replit_smoke.sh
-```
+## Workflow
 
-The viewer does NOT execute commands automatically.
+### Building a Patch Draft
 
-## Swapping Artifacts
+1. Click any row in a table to open the Record Workbench
+2. Navigate to the Issues or Actions tab
+3. Check the records you want to include in the patch
+4. Click "Add Selected to Patch"
+5. Patch Studio opens showing your selected changes
+6. Fill in Base Version, Author, and Rationale
+7. Click "Copy Full Patch Draft (JSON)" to copy the complete patch
+8. Paste into your patch file and review
 
-To view different data, either:
-1. Generate new preview: `python3 local_runner/run_local.py --base ... --out out/sf_packet.preview.json`
-2. Copy your JSON to `out/sf_packet.preview.json`
-3. Edit `sample_data_links.json` and modify the viewer to use different paths
+### Generating Evidence
+
+1. After creating a patch, use Evidence Helper buttons
+2. Copy smoke commands and run them in terminal
+3. Copy Evidence Template and fill in commit SHA, file hash
+4. Include evidence in your PR
 
 ## Files
 
@@ -219,16 +208,17 @@ To view different data, either:
 - **No build step**: Open index.html directly
 - **No dependencies**: Vanilla HTML, CSS, JavaScript
 - **No network requests**: All data loaded from local filesystem
+- **No file writes**: All output is copy-to-clipboard only
 - **Deterministic display**: Sorting matches run_local.py output ordering
-- **Keyboard shortcuts**: Press `Escape` to close modals and drawers
+- **Keyboard shortcuts**: Press `Escape` to close modals, drawers, and Patch Studio
 - **State persistence**: Selection saved to localStorage
-- **Normalized output**: All copied JSON has sorted keys for reproducibility
 
 ## Version History
 
 | Version | Features |
 |---------|----------|
-| 0.4 | Universal drilldown from all tables, Copy PR Kit (Summary/Patch/Rule), PRIMARY key indicator, duplicate identity warning |
+| 0.5 | Patch Studio Lite (selectable records, grouped rule builder, full patch draft, evidence helper) |
+| 0.4 | Universal drilldown, Copy PR Kit, PRIMARY key indicator, duplicate identity warning |
 | 0.3 | Record Workbench with tabbed drawer, join identity matching, localStorage persistence |
 | 0.2 | Toolbar with copy-only commands, filters, basic drilldown |
 | 0.1 | Initial viewer with summary, tables |

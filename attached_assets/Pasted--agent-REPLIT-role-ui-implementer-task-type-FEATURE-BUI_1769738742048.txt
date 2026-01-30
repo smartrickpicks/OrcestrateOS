@@ -1,0 +1,85 @@
+{
+  "agent": "REPLIT",
+  "role": "ui_implementer",
+  "task_type": "FEATURE_BUILD",
+  "task_id": "CBV-0.5",
+  "title": "Control Board Viewer v0.5 — Patch Studio Lite (Copy-only Draft Builder)",
+  "scope_lock": [
+    "Governance-only",
+    "Offline-first",
+    "No runtime execution",
+    "No network calls",
+    "No file writes from UI",
+    "Copy-to-clipboard only"
+  ],
+  "objective": "Enable operators to assemble a deterministic patch draft directly from selected issues/actions without leaving the viewer.",
+  "features": [
+    {
+      "name": "Selectable Records",
+      "requirements": [
+        "Add checkbox selection to Issues and Field Actions tables (and optionally Change Log)",
+        "Selection persists within the open Workbench session",
+        "Add 'Select all in tab' and 'Clear selection' controls"
+      ]
+    },
+    {
+      "name": "Rule Draft Builder",
+      "requirements": [
+        "Generate Rule Draft(s) from selected records",
+        "Prefer grouping: if multiple selected items share the same inferred WHEN, generate one combined rule with multiple THEN entries",
+        "Generate deterministic rule_id values (no timestamps)",
+        "Output formats:",
+        "1) Copy Rule Draft (WHEN/THEN/BECAUSE text)",
+        "2) Copy Rule Mapping (patch-rule JSON shape)"
+      ]
+    },
+    {
+      "name": "Patch Studio Lite Panel",
+      "requirements": [
+        "Add a Patch Draft panel (modal or right-side drawer) with fields:",
+        "base_version, author, rationale",
+        "Show changes[] preview with stable ordering",
+        "Allow removing an item from the draft list deterministically"
+      ]
+    },
+    {
+      "name": "Copy Full Patch Draft (JSON)",
+      "requirements": [
+        "Copy full config_pack.patch.json-shaped JSON with sorted keys",
+        "changes[] ordering must be stable and deterministic across reloads given same selected records",
+        "If base_version is missing, copy must still work but include base_version: null"
+      ]
+    },
+    {
+      "name": "Evidence Helper (Copy-only)",
+      "requirements": [
+        "Add copy buttons for:",
+        "Smoke commands (baseline + edge)",
+        "Evidence markdown template (placeholders for SHA256 + commit)",
+        "No command execution; informational copy only"
+      ]
+    }
+  ],
+  "determinism": {
+    "join_triplet": "contract_key -> file_url -> file_name",
+    "severity_order": [
+      "blocking",
+      "warning",
+      "info"
+    ],
+    "stable_sorting": "Severity first, then join triplet (nulls last), then sheet, field, type"
+  },
+  "acceptance_criteria": [
+    "Operator can select issues/actions and generate a grouped rule draft",
+    "Operator can assemble a patch draft with changes[] preview",
+    "All copied JSON is stable (sorted keys, deterministic ordering)",
+    "No dependencies added",
+    "No file writes and no network calls",
+    "README updated with v0.5 usage"
+  ],
+  "expected_outputs": [
+    "Updated ui/viewer/index.html",
+    "Updated ui/viewer/README.md"
+  ],
+  "completion_signal": "Control Board Viewer v0.5 complete; Patch Studio Lite works end-to-end (copy-only)."
+}
