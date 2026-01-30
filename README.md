@@ -81,11 +81,12 @@ Join strategy (global): contract_key → file_url → file_name. No fabricated i
 
 Primary navigation: see docs/INDEX.md.
 
-## Control Board Viewer (v1.0)
+## Control Board Viewer (v1.1)
 
 A single-file, zero-dependency HTML viewer for sf_packet artifacts. See `ui/viewer/README.md` for details.
 
 **Features:**
+- **v1.1**: Upload-First Flow + Modal Wizards (Load Data CTA, triage-first landing)
 - **v1.0**: Multi-Page Navigation + Mode Toggle (Run/Triage/Patch Studio/Review pages)
 - **v0.9**: Session + Stream Model (conceptual streaming semantics, record states, reconsolidation rules)
 - **v0.8**: Config + Patch Inspector (ruleset loader, version match, changes table)

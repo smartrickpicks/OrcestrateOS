@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Board Viewer v1.0</title>
+  <title>Control Board Viewer v1.1</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; margin: 0; padding: 0; }
@@ -97,6 +97,49 @@
     .modal-status.success { background: #e8f5e9; color: #2e7d32; }
     .modal-status.error { background: #ffebee; color: #c62828; }
     .modal-status.info { background: #e3f2fd; color: #1565c0; }
+
+    /* Welcome Hero (no data loaded) */
+    .welcome-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; padding: 40px; }
+    .welcome-hero.hidden { display: none; }
+    .welcome-hero h2 { font-size: 1.8em; color: #1a1a2e; margin-bottom: 10px; }
+    .welcome-hero p { color: #666; margin-bottom: 30px; max-width: 500px; }
+    .welcome-cta { background: #1565c0; color: white; border: none; padding: 16px 32px; border-radius: 8px; font-size: 1.1em; cursor: pointer; transition: background 0.2s; }
+    .welcome-cta:hover { background: #1976d2; }
+    .welcome-hint { margin-top: 20px; font-size: 0.85em; color: #888; }
+
+    /* Top Toolbar (fixed) */
+    .top-toolbar { background: white; border-bottom: 1px solid #ddd; padding: 10px 20px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+    .top-toolbar-left { display: flex; align-items: center; gap: 10px; }
+    .top-toolbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .top-toolbar-btn { background: #e8f4fd; color: #1565c0; border: 1px solid #bbdefb; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85em; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+    .top-toolbar-btn:hover { background: #1565c0; color: white; border-color: #1565c0; }
+    .top-toolbar-btn.primary { background: #1565c0; color: white; border-color: #1565c0; }
+    .top-toolbar-btn.primary:hover { background: #0d47a1; }
+    .data-indicator { display: flex; align-items: center; gap: 8px; font-size: 0.85em; color: #666; }
+    .data-indicator .dot { width: 10px; height: 10px; border-radius: 50%; background: #4caf50; }
+    .data-indicator .dot.no-data { background: #ff9800; }
+    .data-indicator-path { font-family: monospace; background: #f5f5f5; padding: 4px 8px; border-radius: 4px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Wizard Modal */
+    .wizard-modal { max-width: 600px; }
+    .wizard-field { margin-bottom: 20px; }
+    .wizard-field label { display: block; font-weight: 600; margin-bottom: 6px; color: #333; font-size: 0.9em; }
+    .wizard-field input, .wizard-field select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em; }
+    .wizard-field input:focus, .wizard-field select:focus { border-color: #1565c0; outline: none; }
+    .wizard-field .hint { font-size: 0.8em; color: #888; margin-top: 4px; }
+    .wizard-section { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .wizard-section h4 { margin: 0 0 10px; font-size: 0.95em; color: #1a1a2e; }
+    .wizard-divider { border-top: 1px solid #eee; margin: 20px 0; }
+    .wizard-row { display: flex; gap: 15px; }
+    .wizard-row .wizard-field { flex: 1; }
+    .wizard-preset { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .wizard-preset-btn { padding: 6px 12px; background: #e0e0e0; border: none; border-radius: 4px; font-size: 0.8em; cursor: pointer; transition: background 0.2s; }
+    .wizard-preset-btn:hover { background: #bdbdbd; }
+    .wizard-preset-btn.active { background: #1565c0; color: white; }
+
+    /* Nav item mode visibility */
+    .nav-item.reviewer-only { display: none; }
+    .mode-reviewer .nav-item.reviewer-only { display: flex; }
 
     .filters { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .filters-row { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
@@ -409,14 +452,10 @@
     <nav class="nav-sidebar">
       <div class="nav-header">
         <h1>Control Board</h1>
-        <div class="version">v1.0 | Governance-only</div>
+        <div class="version">v1.1 | Governance-only</div>
       </div>
       <div class="nav-menu">
-        <a class="nav-item active" data-page="run" href="#/run">
-          <span class="nav-icon">▶</span>
-          <span class="nav-label">Run</span>
-        </a>
-        <a class="nav-item" data-page="triage" href="#/triage">
+        <a class="nav-item active" data-page="triage" href="#/triage">
           <span class="nav-icon">⚡</span>
           <span class="nav-label">Triage</span>
         </a>
@@ -424,7 +463,7 @@
           <span class="nav-icon">✎</span>
           <span class="nav-label">Patch Studio</span>
         </a>
-        <a class="nav-item" data-page="review" href="#/review">
+        <a class="nav-item reviewer-only" data-page="review" href="#/review">
           <span class="nav-icon">✓</span>
           <span class="nav-label">Review</span>
         </a>
@@ -440,154 +479,31 @@
     </nav>
 
     <main class="main-content">
-      <!-- RUN PAGE -->
-      <div class="page active" id="page-run">
-        <div class="page-header">
-          <h2>Run</h2>
-          <p class="page-desc">Execute validation and preview commands, view dataset paths and last-run status.</p>
-        </div>
-
-        <div class="toolbar" id="toolbar">
-          <button class="toolbar-btn" data-cmd="validate">Validate</button>
-          <button class="toolbar-btn" data-cmd="preview_baseline">Preview Baseline</button>
-          <button class="toolbar-btn" data-cmd="preview_edge">Preview Edge</button>
-          <button class="toolbar-btn" data-cmd="smoke_baseline">Smoke Baseline</button>
-          <button class="toolbar-btn" data-cmd="smoke_edge">Smoke Edge</button>
-          <div class="toolbar-confirm">
-            <input type="checkbox" id="confirm-run">
-            <label for="confirm-run">I CONFIRM RUN</label>
+      <!-- Top Toolbar (visible when data loaded) -->
+      <div class="top-toolbar" id="top-toolbar" style="display: none;">
+        <div class="top-toolbar-left">
+          <button class="top-toolbar-btn primary" id="btn-load-data">Load Data</button>
+          <div class="data-indicator" id="data-indicator">
+            <span class="dot no-data"></span>
+            <span class="data-indicator-path" id="data-path-display">No data loaded</span>
           </div>
         </div>
-
-        <div id="source-info" class="source-info"></div>
-        <div id="error-container"></div>
-        
-        <div id="run-summary-container"></div>
-
-        <div id="diff-container">
-          <h2>Diff Verification</h2>
-          <div class="diff-pane">
-To verify determinism, run the smoke test in your terminal:
-<code>bash scripts/replit_smoke.sh</code>
-This compares out/sf_packet.preview.json against expected output.
-If differences are found, the script will show a unified diff.
-
-Note: This viewer does NOT execute any commands automatically.
-          </div>
-        </div>
-
-        <div class="stream-panel" id="stream-panel">
-    <div class="stream-panel-header">
-      <h3>Session + Stream Model (Conceptual)</h3>
-      <button class="stream-panel-toggle" id="stream-panel-toggle">Show</button>
-    </div>
-    <div class="stream-panel-body" id="stream-panel-body">
-      <div class="stream-concept">
-        <h4>Never-Stop Flow (Open Faucet Model)</h4>
-        <p>In a continuous pipeline, records flow like water through an open faucet. <strong>Good records</strong> (CONSOLIDATED) pass through immediately. <strong>Partial records</strong> wait in a holding area until missing data arrives in later sessions, then rejoin the flow. <strong>Blocked records</strong> require manual intervention before proceeding.</p>
-        <p>This model prevents backlogs: instead of stopping the entire pipeline for one problem, issues are isolated and resolved asynchronously while the rest of the data flows through.</p>
-      </div>
-
-      <div class="flow-diagram">
-        <div class="flow-diagram-title">Flow Visualization</div>
-        <div class="flow-stages">
-          <div class="flow-stage source">
-            <div class="flow-stage-name">Ingest</div>
-            <div class="flow-stage-desc">New records arrive</div>
-          </div>
-          <span class="flow-arrow">→</span>
-          <div class="flow-stage process">
-            <div class="flow-stage-name">Validate</div>
-            <div class="flow-stage-desc">Apply semantic rules</div>
-          </div>
-          <span class="flow-arrow">→</span>
-          <div class="flow-stage output">
-            <div class="flow-stage-name">Consolidated</div>
-            <div class="flow-stage-desc">Ready for downstream</div>
-          </div>
-          <span class="flow-arrow" style="opacity: 0.3;">↓</span>
-          <div class="flow-stage hold">
-            <div class="flow-stage-name">Holding</div>
-            <div class="flow-stage-desc">Partial/Waiting records</div>
-          </div>
-          <span class="flow-arrow">→</span>
-          <div class="flow-stage process">
-            <div class="flow-stage-name">Reconsolidate</div>
-            <div class="flow-stage-desc">Later session resolves</div>
-          </div>
+        <div class="top-toolbar-right">
+          <button class="top-toolbar-btn" id="btn-ruleset">Ruleset</button>
+          <button class="top-toolbar-btn" id="btn-compare">Compare</button>
+          <button class="top-toolbar-btn" id="btn-run">Run Commands</button>
         </div>
       </div>
 
-      <div class="stream-concept">
-        <h4>Record State Model</h4>
-        <div class="state-legend">
-          <div class="state-legend-item"><span class="state-chip consolidated">CONSOLIDATED</span> No blocking/warning issues - flows through</div>
-          <div class="state-legend-item"><span class="state-chip partial">PARTIAL</span> Has warnings - usable but incomplete</div>
-          <div class="state-legend-item"><span class="state-chip waiting">WAITING</span> Missing required data - held for later</div>
-          <div class="state-legend-item"><span class="state-chip blocked">BLOCKED</span> Blocking issues - requires manual fix</div>
-        </div>
+      <!-- Welcome Hero (visible when no data loaded) -->
+      <div class="welcome-hero" id="welcome-hero">
+        <h2>Semantic Control Board</h2>
+        <p>Load an sf_packet artifact to begin triaging issues, building patches, and validating semantic rules.</p>
+        <button class="welcome-cta" id="welcome-load-data">Load Data</button>
+        <div class="welcome-hint">Select a preview artifact or known path to get started</div>
       </div>
 
-      <div class="stream-concept">
-        <h4>Current Dataset State Summary</h4>
-        <div id="record-state-summary" class="record-state-summary"></div>
-      </div>
-
-      <div class="stream-concept">
-        <h4>Simulated Session Timeline</h4>
-        <p style="margin-bottom: 10px;">This timeline models how records would arrive and be processed across multiple ingest waves. Each session shows the state distribution at that point in time.</p>
-        <div id="session-timeline" class="session-timeline"></div>
-      </div>
-
-      <div class="stream-concept">
-        <h4>Reconsolidation Rules</h4>
-        <table class="reconsolidation-table">
-          <thead>
-            <tr>
-              <th>Current State</th>
-              <th>Condition</th>
-              <th>New State</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><span class="state-chip partial">PARTIAL</span></td>
-              <td>All warnings resolved in later session</td>
-              <td><span class="state-chip consolidated">CONSOLIDATED</span></td>
-              <td>Release to downstream</td>
-            </tr>
-            <tr>
-              <td><span class="state-chip waiting">WAITING</span></td>
-              <td>Missing data arrives</td>
-              <td><span class="state-chip partial">PARTIAL</span> or <span class="state-chip consolidated">CONSOLIDATED</span></td>
-              <td>Re-evaluate with new data</td>
-            </tr>
-            <tr>
-              <td><span class="state-chip blocked">BLOCKED</span></td>
-              <td>Manual intervention + re-submit</td>
-              <td><span class="state-chip consolidated">CONSOLIDATED</span></td>
-              <td>Operator action required</td>
-            </tr>
-            <tr>
-              <td><span class="state-chip consolidated">CONSOLIDATED</span></td>
-              <td>New blocking issue detected</td>
-              <td><span class="state-chip blocked">BLOCKED</span></td>
-              <td>Hold and notify</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="stream-actions">
-        <button class="stream-btn" id="copy-stream-semantics">Copy Stream Semantics (Markdown)</button>
-        <button class="stream-btn" id="simulate-sessions">Simulate Sessions from Data</button>
-      </div>
-    </div>
-  </div>
-      </div><!-- end page-run -->
-
-      <!-- TRIAGE PAGE -->
+      <!-- TRIAGE PAGE (default after data loaded) -->
       <div class="page" id="page-triage">
         <div class="page-header">
           <h2>Triage</h2>
@@ -772,6 +688,129 @@ Note: This viewer does NOT execute any commands automatically.
   </div><!-- end app-layout -->
 
   <!-- Global Modals and Drawers (outside pages) -->
+  <!-- Data Source Modal -->
+  <div class="modal-overlay" id="data-source-modal">
+    <div class="modal wizard-modal">
+      <div class="modal-header">
+        <h3>Load Data</h3>
+        <button class="modal-close" onclick="closeDataSourceModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="wizard-section">
+          <h4>Select Artifact Path</h4>
+          <div class="wizard-field">
+            <label>sf_packet Artifact Path</label>
+            <input type="text" id="wizard-artifact-path" value="out/sf_packet.preview.json" placeholder="out/sf_packet.preview.json">
+            <div class="hint">Path to the sf_packet.preview.json output file</div>
+          </div>
+          <div class="wizard-preset">
+            <button class="wizard-preset-btn active" data-path="out/sf_packet.preview.json">Preview Output</button>
+            <button class="wizard-preset-btn" data-path="examples/expected_outputs/sf_packet.example.json">Example Output</button>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-primary" id="wizard-load-artifact">Load Artifact</button>
+          <button class="modal-btn modal-btn-secondary" onclick="closeDataSourceModal()">Cancel</button>
+        </div>
+        <div class="modal-status" id="data-source-status" style="display: none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ruleset Modal -->
+  <div class="modal-overlay" id="ruleset-modal">
+    <div class="modal wizard-modal">
+      <div class="modal-header">
+        <h3>Ruleset Configuration</h3>
+        <button class="modal-close" onclick="closeRulesetModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="wizard-section">
+          <h4>Base (Truth)</h4>
+          <div class="wizard-field">
+            <label>Base Config Path</label>
+            <input type="text" id="wizard-base-config" value="config/config_pack.base.json" placeholder="config/config_pack.base.json">
+            <div class="hint">The authoritative semantic ruleset</div>
+          </div>
+        </div>
+        <div class="wizard-section">
+          <h4>Patch (Proposed)</h4>
+          <div class="wizard-field">
+            <label>Patch Path</label>
+            <input type="text" id="wizard-patch-config" value="config/config_pack.example.patch.json" placeholder="config/config_pack.example.patch.json">
+            <div class="hint">Optional patch file with proposed changes</div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-primary" id="wizard-load-ruleset">Load Ruleset</button>
+          <button class="modal-btn modal-btn-secondary" onclick="closeRulesetModal()">Cancel</button>
+        </div>
+        <div class="modal-status" id="ruleset-status" style="display: none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compare Modal -->
+  <div class="modal-overlay" id="compare-modal">
+    <div class="modal wizard-modal">
+      <div class="modal-header">
+        <h3>Comparison Mode</h3>
+        <button class="modal-close" onclick="closeCompareModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="wizard-section">
+          <h4>Compare Artifact (Optional)</h4>
+          <div class="wizard-field">
+            <label>Comparison Artifact Path</label>
+            <input type="text" id="wizard-compare-path" placeholder="out/sf_packet.preview.prev.json">
+            <div class="hint">Load a previous artifact to compare changes and view deltas</div>
+          </div>
+          <div class="wizard-preset">
+            <button class="wizard-preset-btn" data-compare="out/sf_packet.preview.prev.json">Previous Preview</button>
+            <button class="wizard-preset-btn" data-compare="">Clear Compare</button>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-primary" id="wizard-load-compare">Load Comparison</button>
+          <button class="modal-btn modal-btn-secondary" onclick="closeCompareModal()">Cancel</button>
+        </div>
+        <div class="modal-status" id="compare-status" style="display: none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Run Commands Modal -->
+  <div class="modal-overlay" id="run-modal">
+    <div class="modal wizard-modal">
+      <div class="modal-header">
+        <h3>Run Commands</h3>
+        <button class="modal-close" onclick="closeRunModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 15px; color: #666;">Copy validation and preview commands to run in your terminal. This viewer does not execute commands directly.</p>
+        <div class="wizard-section">
+          <h4>Validation &amp; Preview Commands</h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+            <button class="toolbar-btn" data-cmd="validate">Validate</button>
+            <button class="toolbar-btn" data-cmd="preview_baseline">Preview Baseline</button>
+            <button class="toolbar-btn" data-cmd="preview_edge">Preview Edge</button>
+            <button class="toolbar-btn" data-cmd="smoke_baseline">Smoke Baseline</button>
+            <button class="toolbar-btn" data-cmd="smoke_edge">Smoke Edge</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="checkbox" id="run-modal-confirm">
+            <label for="run-modal-confirm" style="color: #f57c00; font-size: 0.9em;">I CONFIRM RUN</label>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-secondary" onclick="closeRunModal()">Close</button>
+        </div>
+        <div class="modal-status" id="run-modal-status" style="display: none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Command Modal (legacy) -->
   <div class="modal-overlay" id="command-modal">
     <div class="modal">
       <div class="modal-header">
@@ -816,7 +855,7 @@ Note: This viewer does NOT execute any commands automatically.
         <button class="drawer-btn" id="drawer-copy">Copy JSON</button>
         <button class="drawer-btn drawer-btn-secondary" id="copy-pr-summary">Copy PR Summary</button>
         <button class="drawer-btn drawer-btn-secondary" id="copy-rule-draft">Copy Rule Draft</button>
-        <button class="drawer-btn" id="open-patch-studio" style="background: #2e7d32;">Patch Studio</button>
+        <button class="drawer-btn" id="open-patch-studio" style="background: #2e7d32;">Build Patch</button>
       </div>
     </div>
   </div>
@@ -963,10 +1002,17 @@ Note: This viewer does NOT execute any commands automatically.
     };
 
     let currentMode = 'operator';
+    let dataLoaded = false;
+    let currentArtifactPath = '';
 
     function navigateTo(page) {
-      const pages = ['run', 'triage', 'patch', 'review'];
-      if (!pages.includes(page)) page = 'run';
+      const pages = ['triage', 'patch', 'review'];
+      if (!pages.includes(page)) page = 'triage';
+      
+      // Review page only accessible in reviewer mode
+      if (page === 'review' && currentMode !== 'reviewer') {
+        page = 'triage';
+      }
       
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -989,6 +1035,12 @@ Note: This viewer does NOT execute any commands automatically.
       const modeBtn = document.querySelector(`.mode-btn[data-mode="${mode}"]`);
       if (modeBtn) modeBtn.classList.add('active');
       
+      // Toggle Review nav visibility based on mode
+      const reviewNav = document.querySelector('.nav-item.reviewer-only');
+      if (reviewNav) {
+        reviewNav.style.display = mode === 'reviewer' ? 'flex' : 'none';
+      }
+      
       applyModeVisibility(mode);
       localStorage.setItem('viewer_mode_v10', mode);
     }
@@ -1009,6 +1061,52 @@ Note: This viewer does NOT execute any commands automatically.
       });
     }
 
+    function updateUIForDataState() {
+      const welcomeHero = document.getElementById('welcome-hero');
+      const topToolbar = document.getElementById('top-toolbar');
+      const dataIndicator = document.getElementById('data-indicator');
+      const dataPathDisplay = document.getElementById('data-path-display');
+      const dot = dataIndicator ? dataIndicator.querySelector('.dot') : null;
+      
+      if (dataLoaded) {
+        if (welcomeHero) welcomeHero.classList.add('hidden');
+        if (topToolbar) topToolbar.style.display = 'flex';
+        if (dot) dot.classList.remove('no-data');
+        if (dataPathDisplay) dataPathDisplay.textContent = currentArtifactPath || 'Data loaded';
+      } else {
+        if (welcomeHero) welcomeHero.classList.remove('hidden');
+        if (topToolbar) topToolbar.style.display = 'none';
+        if (dot) dot.classList.add('no-data');
+        if (dataPathDisplay) dataPathDisplay.textContent = 'No data loaded';
+      }
+    }
+
+    // Modal functions
+    function openDataSourceModal() {
+      document.getElementById('data-source-modal').classList.add('active');
+    }
+    function closeDataSourceModal() {
+      document.getElementById('data-source-modal').classList.remove('active');
+    }
+    function openRulesetModal() {
+      document.getElementById('ruleset-modal').classList.add('active');
+    }
+    function closeRulesetModal() {
+      document.getElementById('ruleset-modal').classList.remove('active');
+    }
+    function openCompareModal() {
+      document.getElementById('compare-modal').classList.add('active');
+    }
+    function closeCompareModal() {
+      document.getElementById('compare-modal').classList.remove('active');
+    }
+    function openRunModal() {
+      document.getElementById('run-modal').classList.add('active');
+    }
+    function closeRunModal() {
+      document.getElementById('run-modal').classList.remove('active');
+    }
+
     function initRouter() {
       document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', (e) => {
@@ -1025,14 +1123,15 @@ Note: This viewer does NOT execute any commands automatically.
       });
       
       window.addEventListener('hashchange', () => {
-        const hash = window.location.hash.replace('#/', '') || 'run';
+        const hash = window.location.hash.replace('#/', '') || 'triage';
         navigateTo(hash);
       });
       
       const savedMode = localStorage.getItem('viewer_mode_v10');
       if (savedMode) setMode(savedMode);
+      else setMode('operator');
       
-      const hash = window.location.hash.replace('#/', '') || 'run';
+      const hash = window.location.hash.replace('#/', '') || 'triage';
       navigateTo(hash);
     }
 
@@ -1787,6 +1886,12 @@ Note: This viewer does NOT execute any commands automatically.
       allData.issues = sortBySeverityFirst(data.sf_issues || [], ['sheet', 'field', 'issue_type']);
       allData.fieldActions = sortBySeverityFirst(data.sf_field_actions || [], ['sheet', 'field', 'action']);
       allData.changeLog = sortBySeverityFirst(data.sf_change_log || [], ['sheet', 'field', 'notes']);
+      allData.summary = data.sf_summary || {};
+      
+      // Set data loaded state
+      dataLoaded = true;
+      currentArtifactPath = source;
+      updateUIForDataState();
       
       populateSubtypeDropdown();
       renderAllTables();
@@ -3294,11 +3399,151 @@ Add any additional notes here.
       document.getElementById('source-info').textContent = `Data source: ${document.getElementById('primary-path').value || 'out/sf_packet.preview.json'}`;
     });
 
+    // Welcome hero and top toolbar event listeners
+    document.getElementById('welcome-load-data').addEventListener('click', openDataSourceModal);
+    document.getElementById('btn-load-data').addEventListener('click', openDataSourceModal);
+    document.getElementById('btn-ruleset').addEventListener('click', openRulesetModal);
+    document.getElementById('btn-compare').addEventListener('click', openCompareModal);
+    document.getElementById('btn-run').addEventListener('click', openRunModal);
+
+    // Data source modal events
+    document.getElementById('data-source-modal').addEventListener('click', e => {
+      if (e.target.id === 'data-source-modal') closeDataSourceModal();
+    });
+    document.querySelectorAll('#data-source-modal .wizard-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#data-source-modal .wizard-preset-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('wizard-artifact-path').value = btn.dataset.path;
+      });
+    });
+    document.getElementById('wizard-load-artifact').addEventListener('click', async () => {
+      const path = document.getElementById('wizard-artifact-path').value.trim();
+      if (!path) {
+        showWizardStatus('data-source-status', 'Please enter an artifact path', 'error');
+        return;
+      }
+      const relativePath = '../../' + path;
+      try {
+        const response = await fetch(relativePath);
+        if (!response.ok) throw new Error('File not found');
+        const data = await response.json();
+        if (data.sf_summary || data.sf_contract_results || data.sf_issues || data.sf_field_actions) {
+          allData.contractResults = data.sf_contract_results || [];
+          allData.issues = data.sf_issues || [];
+          allData.fieldActions = data.sf_field_actions || [];
+          allData.summary = data.sf_summary || {};
+          allData.changeLog = data.sf_changelog || [];
+          dataLoaded = true;
+          currentArtifactPath = path;
+          updateUIForDataState();
+          renderAllTables();
+          closeDataSourceModal();
+          navigateTo('triage');
+          showWizardStatus('data-source-status', 'Data loaded successfully!', 'success');
+        } else {
+          throw new Error('Invalid sf_packet format');
+        }
+      } catch (e) {
+        showWizardStatus('data-source-status', 'Failed to load: ' + e.message, 'error');
+      }
+    });
+
+    // Ruleset modal events
+    document.getElementById('ruleset-modal').addEventListener('click', e => {
+      if (e.target.id === 'ruleset-modal') closeRulesetModal();
+    });
+    document.getElementById('wizard-load-ruleset').addEventListener('click', async () => {
+      const basePath = document.getElementById('wizard-base-config').value.trim();
+      const patchPath = document.getElementById('wizard-patch-config').value.trim();
+      if (!basePath) {
+        showWizardStatus('ruleset-status', 'Please enter a base config path', 'error');
+        return;
+      }
+      try {
+        // Use existing config loading logic
+        document.getElementById('base-config-path').value = basePath;
+        document.getElementById('patch-path').value = patchPath;
+        await loadConfigAndPatch();
+        closeRulesetModal();
+        showWizardStatus('ruleset-status', 'Ruleset loaded!', 'success');
+      } catch (e) {
+        showWizardStatus('ruleset-status', 'Failed to load ruleset: ' + e.message, 'error');
+      }
+    });
+
+    // Compare modal events
+    document.getElementById('compare-modal').addEventListener('click', e => {
+      if (e.target.id === 'compare-modal') closeCompareModal();
+    });
+    document.querySelectorAll('#compare-modal .wizard-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#compare-modal .wizard-preset-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('wizard-compare-path').value = btn.dataset.compare || '';
+      });
+    });
+    document.getElementById('wizard-load-compare').addEventListener('click', async () => {
+      const comparePath = document.getElementById('wizard-compare-path').value.trim();
+      if (!comparePath) {
+        compareData = null;
+        rowChanges = { contractResults: {}, issues: {}, fieldActions: {} };
+        deltaStats = null;
+        renderDeltaSummary();
+        renderAllTables();
+        closeCompareModal();
+        return;
+      }
+      const relativePath = '../../' + comparePath;
+      try {
+        const response = await fetch(relativePath);
+        if (!response.ok) throw new Error('File not found');
+        compareData = await response.json();
+        rowChanges.contractResults = computeRowChanges(allData.contractResults, compareData.sf_contract_results || [], 'contractResults');
+        rowChanges.issues = computeRowChanges(allData.issues, compareData.sf_issues || [], 'issues');
+        rowChanges.fieldActions = computeRowChanges(allData.fieldActions, compareData.sf_field_actions || [], 'fieldActions');
+        deltaStats = computeDeltaStats({ sf_summary: allData.summary }, compareData);
+        renderDeltaSummary();
+        renderAllTables();
+        closeCompareModal();
+      } catch (e) {
+        showWizardStatus('compare-status', 'Failed to load comparison: ' + e.message, 'error');
+      }
+    });
+
+    // Run modal events
+    document.getElementById('run-modal').addEventListener('click', e => {
+      if (e.target.id === 'run-modal') closeRunModal();
+    });
+    document.querySelectorAll('#run-modal .toolbar-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cmdKey = btn.dataset.cmd;
+        if (commands[cmdKey]) {
+          const cmd = commands[cmdKey];
+          document.getElementById('modal-title').textContent = cmd.label || cmdKey;
+          document.getElementById('modal-description').textContent = cmd.description || '';
+          document.getElementById('modal-command').textContent = cmd.command;
+          document.getElementById('command-modal').classList.add('active');
+        }
+      });
+    });
+
+    function showWizardStatus(id, message, type) {
+      const status = document.getElementById(id);
+      if (status) {
+        status.textContent = message;
+        status.className = 'modal-status ' + type;
+        status.style.display = 'block';
+        setTimeout(() => { status.style.display = 'none'; }, 3000);
+      }
+    }
+
     initRouter();
     loadCommands();
     loadData();
     restorePreflightEvidence();
     restorePatchDraft();
+    updateUIForDataState();
   </script>
 </body>
 </html>

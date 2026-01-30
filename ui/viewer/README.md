@@ -3,7 +3,7 @@
 ## Overview
 A read-only, single-file HTML viewer for sf_packet artifacts. No build step, no dependencies, no external network requests.
 
-**Version:** 1.0
+**Version:** 1.1
 
 ## How to Open
 
@@ -390,29 +390,43 @@ Changes are sorted by:
 
 ## Version History
 
-### Multi-Page Navigation + Mode Toggle (v1.0)
+### Upload-First Flow + Modal Wizards (v1.1)
 
-The viewer now uses a 4-page navigation structure with hash-based routing.
+The viewer now starts with a clear "Load Data" action and uses modal wizards for configuration, giving a more product-like feel.
+
+**Operator Journey:**
+1. **Load Data** - Click "Load Data" to open the Data Source modal and select an artifact path
+2. **Triage** - View summary cards, filter issues, and drill down into records
+3. **Workbench** - Click any record row to open the Workbench drawer for details
+4. **Build Patch** - Click "Build Patch" button to add selected issues/actions to a patch
+5. **Preflight** - Validate the patch using the Preflight Gate checklist
+6. **Copy Artifacts** - Copy patch JSON, PR summary, and evidence for submission
+
+**Modals:**
+| Modal | Button | Purpose |
+|-------|--------|---------|
+| Data Source | Load Data | Select sf_packet artifact path |
+| Ruleset | Ruleset | Configure base config + patch paths |
+| Compare | Compare | Load comparison artifact for delta view |
+| Run | Run Commands | Copy validation/preview/smoke commands |
 
 **Pages:**
 | Page | Path | Purpose |
 |------|------|---------|
-| Run | #/run | Execute validation/preview commands, view dataset paths, status summary |
 | Triage | #/triage | Summary cards, filters, issues/actions queues, workbench drilldown |
 | Patch Studio | #/patch | Preflight Gate, Patch Draft Builder, copy outputs |
-| Review | #/review | Config+Patch Inspector, Comparison Mode, Evidence summary |
+| Review | #/review | Config+Patch Inspector, Comparison Mode (Reviewer mode only) |
 
 **Mode Toggle:**
 | Mode | Description |
 |------|-------------|
-| Operator | Default view for running commands and monitoring status |
-| Reviewer | Focused view for reviewing changes and evidence |
-| Analyst | Focused view for data analysis and triage |
+| Operator | Default view for triaging and building patches |
+| Reviewer | Unlocks Review page for config inspection and comparison |
+| Analyst | Focused view for data analysis |
 
-**Navigation:**
-- Click nav items in the left sidebar to switch pages
-- Use browser back/forward buttons with hash URLs
-- Mode selection is persisted to localStorage
+### Multi-Page Navigation + Mode Toggle (v1.0)
+
+Legacy: 4-page navigation structure with hash-based routing.
 
 ### Session + Stream Model (v0.9)
 
@@ -464,6 +478,7 @@ Click to copy a PR-ready explanation of the stream model.
 
 | Version | Features |
 |---------|----------|
+| 1.1 | Upload-First Flow + Modal Wizards (Load Data CTA, Data Source/Ruleset/Compare/Run modals, triage-first landing, contextual patching) |
 | 1.0 | Multi-Page Navigation + Mode Toggle (Run/Triage/Patch Studio/Review pages, Operator/Reviewer/Analyst modes) |
 | 0.9 | Session + Stream Model (Session Timeline, Record States, Never-Stop Flow, Reconsolidation Rules, Copy Stream Semantics) |
 | 0.8 | Config + Patch Inspector (Ruleset Loader, Patch Summary, Version Match, Changes Table, Ruleset Delta Counts, Copy Ruleset Delta Markdown, Preflight Integration) |

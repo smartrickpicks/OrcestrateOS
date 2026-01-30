@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## Version: v1.1.0
+Date: 2026-01-30
+
+### Added
+- Viewer v1.1 Upload-First Flow + Modal Wizards
+  - Welcome Hero: Clear "Load Data" CTA when no data is loaded
+  - Data Source Modal: Select artifact path from presets or custom path
+  - Ruleset Modal: Configure base config (Truth) + patch (Proposed) paths
+  - Compare Modal: Load comparison artifact for delta visualization
+  - Run Modal: Copy validation/preview/smoke commands to terminal
+  - Triage-first landing: After loading data, user lands on Triage page by default
+  - Review page hidden behind Reviewer mode toggle
+  - "Build Patch" button in Workbench for contextual patching
+
+### Changed
+- Removed Run page from navigation (commands now in Run modal)
+- Default route changed from #/run to #/triage
+- Top toolbar appears after data is loaded with Load Data, Ruleset, Compare, Run buttons
+
+### Technical Details
+- No new dependencies or build step
+- All existing determinism guarantees unchanged
+- Copy-to-clipboard only (no file writes from browser)
+
+---
+
 ## Version: v1.0.0
 Date: 2026-01-30
 

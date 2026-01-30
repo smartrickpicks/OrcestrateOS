@@ -1,0 +1,64 @@
+{
+  "recipient": "REPLIT",
+  "mode": "IMPLEMENTATION_TASK",
+  "task_id": "UI-REORIENT-001",
+  "title": "Re-orient Control Board Viewer to Upload-first + modal wizards (DataDash-style ergonomics)",
+  "intent": {
+    "goal": "Make the UI feel like a product: one start action (Upload/Select Data), triage-first workflow, contextual patching.",
+    "non_goals": [
+      "No network calls",
+      "No file writes from the browser (copy-to-clipboard only)",
+      "No new dependencies/build step"
+    ]
+  },
+  "acceptance_criteria": [
+    "Landing experience starts with a clear 'Load Data' (upload/select) action",
+    "After data is loaded, user lands on Triage view by default",
+    "Ruleset selection (base+patch), comparison loader, and run commands are moved into modals (not always-visible panels)",
+    "Patch Studio is opened contextually from Workbench selections (not pinned by default)",
+    "Existing determinism guarantees remain unchanged (severity ordering + join triplet sorting, nulls last)",
+    "Smoke test still passes"
+  ],
+  "required_ui_changes": [
+    {
+      "change": "Navigation",
+      "details": [
+        "Set default route to Triage once data is loaded",
+        "Replace 'Run' page with a small 'Run' modal accessible from a top toolbar button",
+        "Keep Review page but hide it behind Reviewer mode toggle"
+      ]
+    },
+    {
+      "change": "Upload-first flow",
+      "details": [
+        "Add a primary CTA: 'Load Data' (top-left or center hero when nothing loaded)",
+        "Support: choose from known artifact paths OR upload a local file (if feasible in browser sandbox); if upload is not feasible, keep path selection but wrap it in the modal wizard"
+      ]
+    },
+    {
+      "change": "Modals/Wizards",
+      "details": [
+        "Data Source Modal: dataset + expected output selection",
+        "Ruleset Modal: base config + patch selection, with clear labels: 'Base (Truth)' and 'Patch (Proposed)'",
+        "Compare Modal: optional compare artifact path",
+        "Run Modal: validate/preview/smoke buttons that copy commands + show last parsed evidence (if present)"
+      ]
+    },
+    {
+      "change": "Patch Studio behavior",
+      "details": [
+        "Patch Studio opens from Workbench via 'Build Patch' button after selecting issues/actions",
+        "Patch Studio can still be opened from nav, but defaults to closed/minimized"
+      ]
+    }
+  ],
+  "deliverables": [
+    "Updated ui/viewer/index.html implementing the new IA + modal flow",
+    "Short update to ui/viewer/README.md describing the new operator journey (Load Data → Triage → Workbench → Patch Studio → Preflight → Copy PR artifacts)"
+  ],
+  "do_not_change": [
+    "Sorting logic and determinism rules",
+    "Existing copy-to-clipboard outputs (patch JSON, PR summary, rule drafts)",
+    "Smoke scripts and harness behavior"
+  ]
+}
