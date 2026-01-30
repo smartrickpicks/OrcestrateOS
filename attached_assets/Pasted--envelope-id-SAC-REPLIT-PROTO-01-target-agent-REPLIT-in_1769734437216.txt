@@ -1,0 +1,62 @@
+{
+  "envelope_id": "SAC-REPLIT-PROTO-01",
+  "target": { "agent": "REPLIT" },
+  "intent": "TASK",
+  "operator_action": "NONE",
+  "payload": {
+    "goal": "Add a communication protocol doc and materialize a UI folder skeleton (placeholders only) aligned to docs/08–10. No runtime UI, no deps, no servers.",
+    "scope_lock": [
+      "Governance-only",
+      "Offline-first",
+      "Artifact-driven (files only)",
+      "No APIs/credentials/prompts",
+      "No runnable UI implementation yet"
+    ],
+    "deliverables": [
+      {
+        "path": "docs/11_operator_message_protocol.md",
+        "content_requirements": [
+          "Define the JSON envelope standard (target.agent, intent, operator_action)",
+          "Give 3 examples: TASK to REPLIT, TASK to KIWI, REVIEW to ZAC_REVIEW",
+          "Define how to handle AWAITING_OPERATOR_INPUT (what Replit should do vs what operator must do)",
+          "Rules: never block on operator unless operator_action=RUN_COMMANDS|PASTE_OUTPUT"
+        ]
+      },
+      {
+        "path": "ui/README.md",
+        "content_requirements": [
+          "State this is a placeholder UI skeleton only (non-executing)",
+          "List planned screens from docs/08",
+          "State I/O contracts are docs/09",
+          "State UI will call harness via shell commands later (no network)"
+        ]
+      },
+      {
+        "path": "ui/.gitkeep",
+        "content": ""
+      },
+      {
+        "path": "ui/src/pages/.gitkeep",
+        "content": ""
+      },
+      {
+        "path": "ui/src/components/.gitkeep",
+        "content": ""
+      },
+      {
+        "path": "ui/src/lib/.gitkeep",
+        "content": ""
+      },
+      {
+        "path": "ui/scripts/.gitkeep",
+        "content": ""
+      }
+    ],
+    "acceptance_criteria": [
+      "No new dependencies added (requirements.txt unchanged)",
+      "No runnable UI introduced (no package.json, no servers)",
+      "All files created exactly as specified",
+      "Commit message: chore(ui): add placeholder control board ui skeleton + operator protocol"
+    ]
+  }
+}
