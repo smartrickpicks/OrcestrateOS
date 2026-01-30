@@ -2240,6 +2240,16 @@
       masterEditMode = false;
     }
     
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+    
     function getMasterConfig(stage) {
       if (sessionConfig[stage]) return sessionConfig[stage];
       const defaults = {
