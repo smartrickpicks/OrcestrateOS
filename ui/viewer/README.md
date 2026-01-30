@@ -3,7 +3,7 @@
 ## Overview
 A read-only, single-file HTML viewer for sf_packet artifacts. No build step, no dependencies, no external network requests.
 
-**Version:** 0.7
+**Version:** 0.8
 
 ## How to Open
 
@@ -322,8 +322,77 @@ Click "Copy Delta Summary (Markdown)" to copy a formatted markdown table of all 
 
 ## Version History
 
+### Config + Patch Inspector (v0.8)
+
+Inspect base config and patch files to view ruleset semantic changes.
+
+**Ruleset Loader Panel:**
+Click "Show" in the Config + Patch Inspector panel to reveal config path inputs:
+
+| Field | Description |
+|-------|-------------|
+| Base Config Path | Path to base config (default: config/config_pack.base.json) |
+| Patch Path | Path to patch file (default: config/config_pack.example.patch.json) |
+
+**Load/Clear Buttons:**
+- **Load Config**: Fetches both files and renders the ruleset delta
+- **Clear**: Removes loaded config data
+
+**Patch Summary:**
+Displays key patch metadata:
+
+| Field | Description |
+|-------|-------------|
+| base.version | Version from base config |
+| patch.base_version | Target version in patch |
+| Author | Patch author identifier |
+| Rationale | Description of why patch is needed |
+| Changes Count | Number of changes in patch |
+
+**Version Match Chip:**
+- **GREEN (MATCH)**: base.version equals patch.base_version
+- **RED (MISMATCH)**: Versions differ - blocks Preflight Base Version Check
+
+**Ruleset Delta Counts:**
+Shows Added/Deprecated counts per target:
+- salesforce_rules
+- qa_rules
+- resolver_rules
+
+**Changes[] Table:**
+Deterministic table of patch changes with columns:
+
+| Column | Description |
+|--------|-------------|
+| Action | add_rule or deprecate_rule |
+| Target | Target ruleset (salesforce/qa/resolver) |
+| Rule ID | Rule identifier (if any) |
+| When | Condition tuple (sheet.field operator value) |
+| Then | Action(s) to perform |
+| Severity | blocking/warning/info |
+
+**Copy Ruleset Delta Markdown:**
+Click to copy a PR-ready markdown description of semantic changes.
+
+**Preflight Integration:**
+When configs are loaded and versions match, the Preflight Base Version Check is automatically populated.
+
+**Deterministic Sorting:**
+Changes are sorted by:
+1. target asc
+2. action asc
+3. rule_id asc (nulls last)
+4. when.sheet asc
+5. when.field asc
+6. severity order (blocking > warning > info)
+7. then[0].sheet asc
+8. then[0].field asc
+
+## Version History
+
 | Version | Features |
 |---------|----------|
+| 0.8 | Config + Patch Inspector (Ruleset Loader, Patch Summary, Version Match, Changes Table, Ruleset Delta Counts, Copy Ruleset Delta Markdown, Preflight Integration) |
 | 0.7 | Comparison Mode (Session Loader, Delta Summary Cards, row-level change indicators, Copy Delta Summary) |
 | 0.6 | Preflight Gate (4-step validation checklist, paste-in evidence parsing, PR Summary with Evidence section, localStorage persistence for preflight + patch draft) |
 | 0.5 | Patch Studio Lite (selectable records, grouped rule builder, full patch draft, evidence helper) |

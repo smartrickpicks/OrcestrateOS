@@ -1,0 +1,79 @@
+{
+  "type": "TASK",
+  "target": "REPLIT",
+  "task_id": "TASK-UI-10",
+  "title": "v0.8 Config + Patch Inspector (Ruleset Delta Viewer)",
+  "scope": "ui/viewer",
+  "constraints": {
+    "offline_only": true,
+    "governance_only": true,
+    "no_network_calls": true,
+    "no_file_writes": true,
+    "single_file_html": true,
+    "no_dependencies": true
+  },
+  "objective": "Add an inspector that loads base + patch artifacts and renders an operator-readable ruleset delta (what semantics would change) alongside preview deltas (what outputs changed).",
+  "inputs": {
+    "base_config_path_default": "config/config_pack.base.json",
+    "patch_path_default": "config/config_pack.example.patch.json",
+    "optional_patch_paths": [
+      "config/config_pack.v0.1.3.patch.json"
+    ]
+  },
+  "features": [
+    {
+      "name": "Ruleset Loader Panel",
+      "description": "Collapsible UI to set base + patch paths and load them (no uploads)."
+    },
+    {
+      "name": "Patch Summary",
+      "description": "Render: base.version, patch.base_version, rationale, author, changes_count; show a red status chip if base_version mismatch."
+    },
+    {
+      "name": "Changes[] Table",
+      "description": "Deterministically list each patch change with columns: action, target, rule_id (if any), when tuple, then actions, severity."
+    },
+    {
+      "name": "Rule Diff",
+      "description": "Compute a normalized in-memory 'effective ruleset' = base + patch (add/deprecate only). Display Added/Deprecated counts per target (salesforce_rules/qa_rules/resolver_rules)."
+    },
+    {
+      "name": "Copy Ruleset Delta Markdown",
+      "description": "One-click copy of a PR-ready markdown section describing semantic delta (what changed in rules), separate from preview delta (what changed in outputs)."
+    },
+    {
+      "name": "Gating Hook Into Preflight",
+      "description": "Preflight Base Version Check uses loaded base.version + patch.base_version (no pasted evidence required for this step)."
+    }
+  ],
+  "determinism": {
+    "sorting": [
+      "target asc",
+      "action asc",
+      "rule_id asc (nulls last)",
+      "when.sheet asc",
+      "when.field asc",
+      "then[0].severity order: blocking > warning > info",
+      "then[0].sheet asc",
+      "then[0].field asc"
+    ],
+    "normalization": "Stable JSON stringify with sorted keys for comparisons and copy outputs"
+  },
+  "non_goals": [
+    "No execution of validator or smoke tests from browser",
+    "No patch file writing",
+    "No edits to base config"
+  ],
+  "acceptance_criteria": [
+    "Loading base+patch renders a deterministic Changes[] table",
+    "Base version mismatch shows RED chip and blocks Preflight step",
+    "Copy Ruleset Delta Markdown is stable across reloads",
+    "Existing v0.7 comparison mode still works unchanged"
+  ],
+  "outputs": [
+    "Updated ui/viewer/index.html",
+    "Updated ui/viewer/README.md (document new panel + paths)",
+    "Updated CHANGELOG.md (v0.8 entry, governance-only)"
+  ],
+  "status_on_complete": "AWAITING_OPERATOR_REVIEW"
+}

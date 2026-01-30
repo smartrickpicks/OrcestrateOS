@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Board Viewer v0.7</title>
+  <title>Control Board Viewer v0.8</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 20px; }
@@ -258,11 +258,99 @@
     .compare-actions { display: flex; gap: 10px; margin-bottom: 15px; }
     .compare-btn { padding: 8px 14px; font-size: 0.85em; background: #7c4dff; color: white; border: none; border-radius: 4px; cursor: pointer; }
     .compare-btn:hover { background: #651fff; }
+
+    .config-inspector { background: #fce4ec; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .config-inspector-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .config-inspector-header h3 { margin: 0; font-size: 0.95em; color: #880e4f; }
+    .config-inspector-toggle { padding: 6px 12px; font-size: 0.8em; background: #880e4f; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .config-inspector-toggle:hover { background: #ad1457; }
+    .config-inspector-body { display: none; }
+    .config-inspector-body.active { display: block; }
+    .config-inspector-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; }
+    .config-inspector-field { flex: 1; min-width: 200px; }
+    .config-inspector-field label { display: block; font-size: 0.75em; color: #666; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
+    .config-inspector-field input { width: 100%; padding: 8px 10px; border: 1px solid #f8bbd9; border-radius: 4px; font-size: 0.85em; font-family: 'Courier New', monospace; }
+    .config-inspector-actions { display: flex; gap: 8px; }
+    .config-inspector-btn { padding: 8px 14px; font-size: 0.85em; border: none; border-radius: 4px; cursor: pointer; }
+    .config-inspector-btn-primary { background: #880e4f; color: white; }
+    .config-inspector-btn-primary:hover { background: #ad1457; }
+    .config-inspector-btn-secondary { background: #e0e0e0; color: #333; }
+    .config-inspector-btn-secondary:hover { background: #bdbdbd; }
+    .config-inspector-status { margin-top: 10px; font-size: 0.85em; padding: 8px 12px; border-radius: 4px; }
+    .config-inspector-status.success { background: #e8f5e9; color: #2e7d32; }
+    .config-inspector-status.error { background: #ffebee; color: #c62828; }
+    .config-inspector-status.info { background: #e3f2fd; color: #1565c0; }
+
+    .patch-summary { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .patch-summary-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .patch-summary-header h4 { margin: 0; font-size: 0.95em; color: #333; }
+    .patch-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    .patch-summary-item { }
+    .patch-summary-item label { display: block; font-size: 0.7em; color: #666; text-transform: uppercase; margin-bottom: 2px; }
+    .patch-summary-item .value { font-family: 'Courier New', monospace; font-size: 0.9em; }
+    .version-chip { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75em; font-weight: 600; }
+    .version-chip.match { background: #c8e6c9; color: #2e7d32; }
+    .version-chip.mismatch { background: #ffcdd2; color: #c62828; }
+
+    .ruleset-delta { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .ruleset-delta h4 { margin: 0 0 10px 0; font-size: 0.95em; color: #333; }
+    .ruleset-delta-counts { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 10px; }
+    .ruleset-count-card { background: #f5f5f5; padding: 8px 12px; border-radius: 6px; text-align: center; min-width: 80px; }
+    .ruleset-count-card .count { font-size: 1.3em; font-weight: bold; }
+    .ruleset-count-card .count.added { color: #4caf50; }
+    .ruleset-count-card .count.deprecated { color: #f44336; }
+    .ruleset-count-card .label { font-size: 0.7em; color: #666; text-transform: uppercase; }
+
+    .changes-table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+    .changes-table th, .changes-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #eee; }
+    .changes-table th { background: #880e4f; color: white; font-weight: 600; }
+    .changes-table tr:hover { background: #fce4ec; }
+    .action-chip { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75em; font-weight: 600; }
+    .action-chip.add_rule { background: #c8e6c9; color: #2e7d32; }
+    .action-chip.deprecate_rule { background: #ffcdd2; color: #c62828; }
+
+    .config-inspector-copy-actions { display: flex; gap: 10px; margin-top: 15px; }
+    .config-copy-btn { padding: 8px 14px; font-size: 0.85em; background: #880e4f; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .config-copy-btn:hover { background: #ad1457; }
   </style>
 </head>
 <body>
   <h1>Control Board Viewer</h1>
-  <p class="subtitle">v0.7 | Governance-only | Offline-first | Comparison Mode</p>
+  <p class="subtitle">v0.8 | Governance-only | Offline-first | Config Inspector</p>
+
+  <div class="config-inspector" id="config-inspector">
+    <div class="config-inspector-header">
+      <h3>Config + Patch Inspector (Ruleset Delta)</h3>
+      <button class="config-inspector-toggle" id="config-inspector-toggle">Show</button>
+    </div>
+    <div class="config-inspector-body" id="config-inspector-body">
+      <div class="config-inspector-row">
+        <div class="config-inspector-field">
+          <label>Base Config Path</label>
+          <input type="text" id="base-config-path" value="config/config_pack.base.json" placeholder="config/config_pack.base.json">
+        </div>
+        <div class="config-inspector-field">
+          <label>Patch Path</label>
+          <input type="text" id="patch-path" value="config/config_pack.example.patch.json" placeholder="config/config_pack.example.patch.json">
+        </div>
+        <div class="config-inspector-actions">
+          <button class="config-inspector-btn config-inspector-btn-primary" id="load-config">Load Config</button>
+          <button class="config-inspector-btn config-inspector-btn-secondary" id="clear-config">Clear</button>
+        </div>
+      </div>
+      <div class="config-inspector-status" id="config-status" style="display: none;"></div>
+      <div id="config-results" style="display: none;">
+        <div class="patch-summary" id="patch-summary"></div>
+        <div class="ruleset-delta" id="ruleset-delta"></div>
+        <div class="table-container">
+          <table class="changes-table" id="changes-table"></table>
+        </div>
+        <div class="config-inspector-copy-actions">
+          <button class="config-copy-btn" id="copy-ruleset-delta">Copy Ruleset Delta (Markdown)</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="session-loader" id="session-loader">
     <div class="session-loader-header">
@@ -515,10 +603,14 @@ Note: This viewer does NOT execute any commands automatically.
     const RELATIVE_PRIMARY = '../../out/sf_packet.preview.json';
     const RELATIVE_FALLBACK = '../../examples/expected_outputs/sf_packet.example.json';
     const COMMANDS_PATH = 'run_commands.json';
-    const STORAGE_KEY = 'viewer_selection_v07';
-    const PREFLIGHT_STORAGE_KEY = 'viewer_preflight_v07';
-    const PATCH_STORAGE_KEY = 'viewer_patch_v07';
+    const STORAGE_KEY = 'viewer_selection_v08';
+    const PREFLIGHT_STORAGE_KEY = 'viewer_preflight_v08';
+    const PATCH_STORAGE_KEY = 'viewer_patch_v08';
     const COMPARISON_PATH = '../../out/sf_packet.preview.prev.json';
+
+    let loadedBaseConfig = null;
+    let loadedPatch = null;
+    let configVersionMatch = null;
 
     let commands = {};
     let allData = { contractResults: [], issues: [], fieldActions: [], changeLog: [] };
@@ -2214,6 +2306,299 @@ Add any additional notes here.
       md += `- **SHA256**: ${sha256}\n`;
       return md;
     }
+
+    document.getElementById('config-inspector-toggle').addEventListener('click', () => {
+      const body = document.getElementById('config-inspector-body');
+      const btn = document.getElementById('config-inspector-toggle');
+      body.classList.toggle('active');
+      btn.textContent = body.classList.contains('active') ? 'Hide' : 'Show';
+    });
+
+    async function loadConfigFile(path) {
+      const relativePath = path.startsWith('../../') ? path : `../../${path}`;
+      const resp = await fetch(relativePath);
+      if (!resp.ok) throw new Error(`Failed to load ${path}`);
+      return await resp.json();
+    }
+
+    function sortChangesArray(changes) {
+      const sevOrder = { blocking: 0, warning: 1, info: 2 };
+      return [...changes].sort((a, b) => {
+        const targetCmp = (a.target || '').localeCompare(b.target || '');
+        if (targetCmp !== 0) return targetCmp;
+        const actionCmp = (a.action || '').localeCompare(b.action || '');
+        if (actionCmp !== 0) return actionCmp;
+        const ruleIdA = a.rule?.rule_id || a.rule_id || null;
+        const ruleIdB = b.rule?.rule_id || b.rule_id || null;
+        if (ruleIdA === null && ruleIdB !== null) return 1;
+        if (ruleIdA !== null && ruleIdB === null) return -1;
+        if (ruleIdA !== null && ruleIdB !== null) {
+          const ruleIdCmp = ruleIdA.localeCompare(ruleIdB);
+          if (ruleIdCmp !== 0) return ruleIdCmp;
+        }
+        const whenSheetA = a.rule?.when?.sheet || '';
+        const whenSheetB = b.rule?.when?.sheet || '';
+        const whenSheetCmp = whenSheetA.localeCompare(whenSheetB);
+        if (whenSheetCmp !== 0) return whenSheetCmp;
+        const whenFieldA = a.rule?.when?.field || '';
+        const whenFieldB = b.rule?.when?.field || '';
+        const whenFieldCmp = whenFieldA.localeCompare(whenFieldB);
+        if (whenFieldCmp !== 0) return whenFieldCmp;
+        const thenArrA = a.rule?.then || [];
+        const thenArrB = b.rule?.then || [];
+        const minLen = Math.min(thenArrA.length, thenArrB.length);
+        for (let i = 0; i < minLen; i++) {
+          const thenA = thenArrA[i] || {};
+          const thenB = thenArrB[i] || {};
+          const sevA = sevOrder[thenA.severity] ?? 3;
+          const sevB = sevOrder[thenB.severity] ?? 3;
+          if (sevA !== sevB) return sevA - sevB;
+          const thenSheetCmp = (thenA.sheet || '').localeCompare(thenB.sheet || '');
+          if (thenSheetCmp !== 0) return thenSheetCmp;
+          const thenFieldCmp = (thenA.field || '').localeCompare(thenB.field || '');
+          if (thenFieldCmp !== 0) return thenFieldCmp;
+        }
+        return thenArrA.length - thenArrB.length;
+      });
+    }
+
+    function computeRulesetDelta(baseConfig, patch) {
+      const delta = {
+        salesforce_rules: { added: 0, deprecated: 0 },
+        qa_rules: { added: 0, deprecated: 0 },
+        resolver_rules: { added: 0, deprecated: 0 }
+      };
+      
+      (patch.changes || []).forEach(change => {
+        const target = change.target;
+        if (!delta[target]) return;
+        if (change.action === 'add_rule') delta[target].added++;
+        if (change.action === 'deprecate_rule') delta[target].deprecated++;
+      });
+      
+      return delta;
+    }
+
+    function renderPatchSummary(baseConfig, patch) {
+      const container = document.getElementById('patch-summary');
+      const baseVersion = baseConfig.version || '(unknown)';
+      const patchBaseVersion = patch.base_version || '(unknown)';
+      configVersionMatch = baseVersion === patchBaseVersion;
+      const chipClass = configVersionMatch ? 'match' : 'mismatch';
+      const chipText = configVersionMatch ? 'MATCH' : 'MISMATCH';
+      
+      container.innerHTML = `
+        <div class="patch-summary-header">
+          <h4>Patch Summary</h4>
+          <span class="version-chip ${chipClass}">${chipText}</span>
+        </div>
+        <div class="patch-summary-grid">
+          <div class="patch-summary-item">
+            <label>base.version</label>
+            <div class="value">${baseVersion}</div>
+          </div>
+          <div class="patch-summary-item">
+            <label>patch.base_version</label>
+            <div class="value">${patchBaseVersion}</div>
+          </div>
+          <div class="patch-summary-item">
+            <label>Author</label>
+            <div class="value">${patch.author || '(not set)'}</div>
+          </div>
+          <div class="patch-summary-item">
+            <label>Rationale</label>
+            <div class="value">${patch.rationale || '(not set)'}</div>
+          </div>
+          <div class="patch-summary-item">
+            <label>Changes Count</label>
+            <div class="value">${(patch.changes || []).length}</div>
+          </div>
+        </div>
+      `;
+      
+      updatePreflightFromLoadedConfig(baseVersion, patchBaseVersion, configVersionMatch);
+    }
+
+    function updatePreflightFromLoadedConfig(baseVersion, patchBaseVersion, isMatch) {
+      preflightEvidence.baseVersion.raw = `base.version: ${baseVersion}, patch.base_version: ${patchBaseVersion}`;
+      preflightEvidence.baseVersion.parsed = {
+        version: baseVersion,
+        patchBaseVersion: patchBaseVersion,
+        match: isMatch
+      };
+      preflightEvidence.baseVersion.status = isMatch ? 'pass' : 'fail';
+      
+      preflightEvidence.validation.parsed = preflightEvidence.validation.parsed || {};
+      preflightEvidence.validation.parsed.baseVersion = baseVersion;
+      preflightEvidence.validation.parsed.patchBaseVersion = patchBaseVersion;
+      
+      savePreflightEvidence();
+    }
+
+    function renderRulesetDelta(delta) {
+      const container = document.getElementById('ruleset-delta');
+      const targets = ['salesforce_rules', 'qa_rules', 'resolver_rules'];
+      
+      let cardsHtml = '';
+      targets.forEach(t => {
+        const d = delta[t] || { added: 0, deprecated: 0 };
+        cardsHtml += `
+          <div class="ruleset-count-card">
+            <div class="count added">+${d.added}</div>
+            <div class="label">${t.replace('_rules', '')} Added</div>
+          </div>
+          <div class="ruleset-count-card">
+            <div class="count deprecated">-${d.deprecated}</div>
+            <div class="label">${t.replace('_rules', '')} Deprecated</div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = `
+        <h4>Ruleset Delta</h4>
+        <div class="ruleset-delta-counts">${cardsHtml}</div>
+      `;
+    }
+
+    function renderChangesTable(changes) {
+      const container = document.getElementById('changes-table');
+      const sorted = sortChangesArray(changes);
+      
+      let rowsHtml = sorted.map(change => {
+        const action = change.action || '';
+        const target = change.target || '';
+        const ruleId = change.rule?.rule_id || change.rule_id || '';
+        const when = change.rule?.when || {};
+        const whenStr = when.sheet && when.field ? `${when.sheet}.${when.field} ${when.operator || ''} ${JSON.stringify(when.value || '')}` : (change.reason || '');
+        const then = change.rule?.then || [];
+        const thenStr = then.map(t => `${t.action || ''} ${t.sheet || ''}.${t.field || ''}`).join('; ') || '';
+        const severity = then[0]?.severity || '';
+        
+        return `
+          <tr>
+            <td><span class="action-chip ${action}">${action}</span></td>
+            <td>${target}</td>
+            <td>${ruleId || '<span class="null-value">null</span>'}</td>
+            <td style="font-size: 0.8em; font-family: monospace;">${whenStr}</td>
+            <td style="font-size: 0.8em; font-family: monospace;">${thenStr}</td>
+            <td><span class="severity-${severity}">${severity}</span></td>
+          </tr>
+        `;
+      }).join('');
+      
+      container.innerHTML = `
+        <thead><tr>
+          <th>Action</th>
+          <th>Target</th>
+          <th>Rule ID</th>
+          <th>When</th>
+          <th>Then</th>
+          <th>Severity</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      `;
+    }
+
+    function generateRulesetDeltaMarkdown() {
+      if (!loadedBaseConfig || !loadedPatch) return '# No config loaded\n';
+      
+      const baseVersion = loadedBaseConfig.version || '(unknown)';
+      const patchBaseVersion = loadedPatch.base_version || '(unknown)';
+      const delta = computeRulesetDelta(loadedBaseConfig, loadedPatch);
+      const sorted = sortChangesArray(loadedPatch.changes || []);
+      
+      let md = `# Ruleset Delta\n\n`;
+      md += `## Summary\n\n`;
+      md += `| Field | Value |\n`;
+      md += `|-------|-------|\n`;
+      md += `| base.version | ${baseVersion} |\n`;
+      md += `| patch.base_version | ${patchBaseVersion} |\n`;
+      md += `| Version Match | ${configVersionMatch ? 'YES' : 'NO'} |\n`;
+      md += `| Author | ${loadedPatch.author || '(not set)'} |\n`;
+      md += `| Changes Count | ${(loadedPatch.changes || []).length} |\n`;
+      md += `\n## Rule Counts by Target\n\n`;
+      md += `| Target | Added | Deprecated |\n`;
+      md += `|--------|-------|------------|\n`;
+      ['salesforce_rules', 'qa_rules', 'resolver_rules'].forEach(t => {
+        const d = delta[t] || { added: 0, deprecated: 0 };
+        md += `| ${t} | +${d.added} | -${d.deprecated} |\n`;
+      });
+      md += `\n## Changes Detail\n\n`;
+      md += `| Action | Target | Rule ID | Severity |\n`;
+      md += `|--------|--------|---------|----------|\n`;
+      sorted.forEach(change => {
+        const action = change.action || '';
+        const target = change.target || '';
+        const ruleId = change.rule?.rule_id || change.rule_id || '(null)';
+        const severity = change.rule?.then?.[0]?.severity || '';
+        md += `| ${action} | ${target} | ${ruleId} | ${severity} |\n`;
+      });
+      md += `\n## Rationale\n\n${loadedPatch.rationale || '(not set)'}\n`;
+      
+      return md;
+    }
+
+    async function loadConfigWithPatch() {
+      const basePath = document.getElementById('base-config-path').value.trim();
+      const patchPath = document.getElementById('patch-path').value.trim();
+      const statusEl = document.getElementById('config-status');
+      const resultsEl = document.getElementById('config-results');
+      
+      if (!basePath) {
+        statusEl.style.display = 'block';
+        statusEl.className = 'config-inspector-status error';
+        statusEl.textContent = 'Base config path is required.';
+        return;
+      }
+      
+      try {
+        statusEl.style.display = 'block';
+        statusEl.className = 'config-inspector-status info';
+        statusEl.textContent = 'Loading base config...';
+        
+        loadedBaseConfig = await loadConfigFile(basePath);
+        
+        if (patchPath) {
+          statusEl.textContent = 'Loading patch...';
+          loadedPatch = await loadConfigFile(patchPath);
+        } else {
+          loadedPatch = { base_version: loadedBaseConfig.version, changes: [], author: '', rationale: '' };
+        }
+        
+        renderPatchSummary(loadedBaseConfig, loadedPatch);
+        const delta = computeRulesetDelta(loadedBaseConfig, loadedPatch);
+        renderRulesetDelta(delta);
+        renderChangesTable(loadedPatch.changes || []);
+        
+        resultsEl.style.display = 'block';
+        statusEl.className = 'config-inspector-status success';
+        statusEl.textContent = `Loaded: ${basePath} + ${patchPath || '(no patch)'}`;
+        
+      } catch (e) {
+        statusEl.className = 'config-inspector-status error';
+        statusEl.textContent = `Error: ${e.message}`;
+        resultsEl.style.display = 'none';
+      }
+    }
+
+    document.getElementById('load-config').addEventListener('click', loadConfigWithPatch);
+    
+    document.getElementById('clear-config').addEventListener('click', () => {
+      loadedBaseConfig = null;
+      loadedPatch = null;
+      configVersionMatch = null;
+      document.getElementById('config-results').style.display = 'none';
+      document.getElementById('config-status').style.display = 'none';
+    });
+
+    document.getElementById('copy-ruleset-delta').addEventListener('click', async () => {
+      const md = generateRulesetDeltaMarkdown();
+      const success = await copyToClipboard(md);
+      const btn = document.getElementById('copy-ruleset-delta');
+      const orig = btn.textContent;
+      btn.textContent = success ? 'Copied!' : 'Failed';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
 
     document.getElementById('session-loader-toggle').addEventListener('click', () => {
       const body = document.getElementById('session-loader-body');

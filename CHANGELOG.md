@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## Version: v0.8.0
+Date: 2026-01-30
+
+### Added
+- Viewer v0.8 Config + Patch Inspector (Ruleset Delta Viewer)
+  - Ruleset Loader Panel: Collapsible UI to load base config + patch files
+  - Patch Summary: Displays base.version, patch.base_version, author, rationale, changes_count
+  - Version Match Chip: RED mismatch indicator when base_version differs
+  - Changes[] Table: Deterministic table of patch changes with action, target, rule_id, when, then, severity
+  - Ruleset Delta Counts: Added/Deprecated counts per target (salesforce/qa/resolver)
+  - Copy Ruleset Delta Markdown: One-click export of PR-ready semantic delta description
+  - Preflight Integration: Loaded config versions auto-populate Preflight Base Version Check
+  - Why: Enable operators to inspect semantic ruleset changes before submitting PRs.
+
+### Technical Details
+- Deterministic change sorting: target asc, action asc, rule_id asc (nulls last), when.sheet, when.field, severity order, then fields
+- All computations performed offline in the browser, no network requests
+- Base + patch loaded via relative paths, no file uploads
+
+---
+
 ## Version: v0.7.0
 Date: 2026-01-30
 
