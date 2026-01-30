@@ -1,5 +1,41 @@
 # CHANGELOG
 
+## Version: v1.2.9
+Date: 2026-01-30
+
+### Added (UX Refactoring + RBAC)
+
+- Loader Drawer
+  - Converted Loader from full page to right-side drawer (460px width)
+  - "Load Data" button in topbar opens drawer
+  - Slide animation for smooth UX
+  - CSV import with automatic standardization
+
+- Role-Based Access Control (RBAC)
+  - Admin-only content hidden from Analyst/Reviewer modes via .admin-only-content CSS
+  - Debug HUD only visible to Admin role
+  - Configure, Ruleset, Run Commands topbar buttons admin-only
+  - Standardizer, Workflow Map, Config Inspector sections admin-only
+
+- Navigation Flow
+  - Default route changed from loader to triage
+  - Demo mode auto-loads sample dataset on first run
+  - Loader page deprecated (display:none !important)
+  - Sidebar restructured: Load Data in DATA section with status chip
+
+- handleCSVImport function
+  - Parses CSV using parseCSV()
+  - Creates standardized dataset structure
+  - Saves to localStorage and upload library
+  - Auto-updates UI after import
+
+### Fixed
+
+- setupLoaderHandlers null guards for missing DOM elements
+- Consolidated duplicate parseCSV functions into single implementation (line ~3931)
+
+---
+
 ## Version: v1.2.8
 Date: 2026-01-30
 

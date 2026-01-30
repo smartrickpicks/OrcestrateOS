@@ -1,0 +1,220 @@
+{
+  "to": "Replit",
+  "project": "Orchestrate OS (kiwi-semantic-control repo) — Viewer UI",
+  "intent": "Finish the pre-staging funnel so the app flows cleanly: Loader → Standardize → Triage (Queues). Clean up role-based visibility and remove admin-only content leaking into Analyst/Reviewer surfaces.",
+  "context": {
+    "current_build": "v1.2.8",
+    "primary_problem": "Pre-staging UX is confused: Loader is treated like a primary page/button, Standardizer + Patch Studio content is bleeding into Triage, and role-based surfaces are not separated enough. Analyst/Reviewer should feel like DataDash (spreadsheet triage + record drilldown), while Admin owns configuration/diagnostics/patch console.",
+    "principles": {
+      "offline_first": true,
+      "deterministic": true,
+      "copy_only_exports": true,
+      "no_network_calls": true
+    }
+  },
+  "requested_changes": [
+    {
+      "id": "FLOW-01",
+      "title": "Default route should be Triage (with sample data auto-loaded in dev/demo mode)",
+      "why": "Triage is the operator starting point. Loader is a modal/drawer action, not a destination page in normal use.",
+      "spec": {
+        "default_route": "#/triage",
+        "demo_mode": {
+          "behavior": "If no user-loaded dataset exists AND demo_mode=true, auto-load the sample dataset so Triage is populated immediately.",
+          "notes": "Later we can remove demo_mode; for now it keeps the app usable without forcing Loader first."
+        },
+        "non_demo_mode": {
+          "behavior": "If demo_mode=false and no dataset is loaded, Triage still loads but shows an empty-state banner + CTA: 'Load Data' (opens Loader modal)."
+        }
+      },
+      "acceptance_criteria": [
+        "Hard refresh lands on #/triage",
+        "If demo_mode=true, Triage shows populated queues without clicking Loader",
+        "If demo_mode=false and no dataset is loaded, Triage shows empty-state with a single primary CTA to Load Data"
+      ]
+    },
+    {
+      "id": "FLOW-02",
+      "title": "Convert 'Loader' into a modal/drawer, not a primary nav page",
+      "why": "Loader is step 1 of the workflow but should not feel like a separate app section. It should be an action you open when needed.",
+      "spec": {
+        "ui_change": {
+          "sidebar": "Remove 'Loader' from the START section (or keep it as a secondary action button that opens the Loader modal/drawer instead of navigating).",
+          "primary_entrypoints": [
+            "Topbar: 'Load Data' button opens Loader modal/drawer",
+            "Empty-state CTA on Triage opens Loader modal/drawer"
+          ]
+        },
+        "loader_view": {
+          "presentation": "Right-side slide-over drawer OR centered modal (your choice, but must not be a routed page).",
+          "primary_action": "Import CSV",
+          "secondary_action": "Use Sample Dataset (dev/demo only)",
+          "continue_state": "If dataset already loaded, show a small 'Replace dataset' confirm flow"
+        }
+      },
+      "acceptance_criteria": [
+        "Clicking Loader does not change route; it opens a modal/drawer",
+        "User can load/replace dataset from anywhere via Load Data",
+        "Route guard no longer depends on visiting a Loader page"
+      ]
+    },
+    {
+      "id": "RBAC-01",
+      "title": "Role-based UI separation (Analyst/Reviewer vs Admin)",
+      "why": "Analyst/Reviewer are end users. Admin owns diagnostics, configuration, and patch queue management. Remove dev/debug/test buttons from Analyst/Reviewer surfaces.",
+      "spec": {
+        "analyst_reviewer_visible": [
+          "Queues (To Do / Needs Review / Flagged / Blocked / Finalized)",
+          "Triage table(s): Records + Issues + Field Actions (operator-centric)",
+          "Record drilldown (record drawer / spreadsheet-like viewer stub)",
+          "Comment/RFI style notes entry (where applicable)",
+          "Patch Request creation entrypoint (submit request, not manage system config)"
+        ],
+        "admin_only_visible": [
+          "Patch Request Queue Console (tabs: New, Needs Review, Approved, Sent to Kiwi, Kiwi Returned, Applied, Rejected)",
+          "Config Inspector / Ruleset Inspector",
+          "Workflow Map / Artifact Registry / Evidence Gates / Version Baseline",
+          "Standardizer testing utilities (paste CSV, generate sample CSV, debug outputs)",
+          "Any buttons labeled debug/test/copy diagnostics"
+        ],
+        "reviewer_specific": [
+          "Approve/Request changes on Patch Requests",
+          "No config editing; read-only config viewer allowed if needed"
+        ]
+      },
+      "acceptance_criteria": [
+        "Analyst/Reviewer do NOT see Standardizer panel, Workflow Map, Artifact Registry, Config Inspector, or admin debug buttons",
+        "Admin sees those in a consolidated Admin area (tabs/sections), not sprinkled through Triage",
+        "Role switch immediately re-renders allowed sections without route breakage"
+      ]
+    },
+    {
+      "id": "UI-01",
+      "title": "Triage page cleanup: remove Patch Studio + Preflight content from Triage",
+      "why": "Triage should be queue-first (DataDash vibe). Patch Studio is a tool area (admin-owned console + patch requests).",
+      "spec": {
+        "triage_structure": [
+          "Summary cards (optional)",
+          "Filters (search, severity, status, subtype)",
+          "Records table (spreadsheet-like, more columns visible)",
+          "Issues table",
+          "Field Actions table",
+          "Record open action (drawer) leading to detail view"
+        ],
+        "move_out_of_triage": [
+          "Preflight Gate checklist",
+          "Paste Evidence box",
+          "Patch Draft Builder",
+          "Patch Request Queue Console",
+          "Standardizer UI"
+        ],
+        "navigation": {
+          "tools_section": [
+            "Patch Studio (or rename to Patch Requests)",
+            "Admin Console (or Configure)"
+          ]
+        }
+      },
+      "acceptance_criteria": [
+        "Triage contains only triage-related UI (queues + tables + record drilldown)",
+        "Patch Studio content appears only under Tools > Patch Studio (or Admin area)"
+      ]
+    },
+    {
+      "id": "PIPE-01",
+      "title": "Standardizer runs before Triage (behind the scenes), not as a visible Analyst/Reviewer panel",
+      "why": "Standardization is a pipeline step; operators shouldn’t manage it unless they’re Admin/testing.",
+      "spec": {
+        "behavior": {
+          "on_dataset_load": "Run standardizer automatically and store merged_dataset in memory/localStorage for downstream tables.",
+          "fallback": "If standardizer fails, route record(s) to Blocked (or show a single error banner on Triage) and log details to Admin-only diagnostics."
+        },
+        "admin_tools": "Keep the Standardizer UI only in Admin for testing and inspection."
+      },
+      "acceptance_criteria": [
+        "After loading dataset, triage is available without manually running Standardizer",
+        "Analyst/Reviewer never see Standardizer controls",
+        "Admin can still open Standardizer tooling for tests"
+      ]
+    },
+    {
+      "id": "UI-02",
+      "title": "Make Triage tables feel like a spreadsheet viewer (DataDash vibe)",
+      "why": "We need a CSV/Excel visualizer feel: many columns visible, horizontal scrolling, sticky header, row click opens record details.",
+      "spec": {
+        "table_requirements": {
+          "horizontal_scroll": true,
+          "sticky_header": true,
+          "dense_rows": true,
+          "column_visibility": "Show more columns by default; avoid overly narrow 5-column view",
+          "row_interaction": "Row click opens Record Drawer; shift-click or checkbox supports multi-select later"
+        },
+        "record_drawer_stub": {
+          "content": [
+            "Identity keys (contract_key/file_url/file_name)",
+            "Subtype + Status",
+            "Issues list",
+            "Field actions list",
+            "Notes/comments thread (RFI style)"
+          ],
+          "actions": [
+            "Create Patch Request from selected issue/action",
+            "Add comment"
+          ]
+        }
+      },
+      "acceptance_criteria": [
+        "Triage reads like a spreadsheet with more data density",
+        "Row click reliably opens a record drawer with key context",
+        "No admin controls appear in this view for Analyst/Reviewer"
+      ]
+    },
+    {
+      "id": "ADMIN-01",
+      "title": "Consolidate Admin into a single Admin area with tabs (instead of long scroll + scattered pages)",
+      "why": "Admin currently feels like a long page; needs a snapshot + drilldown structure.",
+      "spec": {
+        "admin_tabs": [
+          "Status (snapshot metrics, dataset health, flagged counts)",
+          "Patch Requests (queue console + send-to-kiwi workflow)",
+          "Config & Rules (pretty JSON viewer + inspector; read-only unless explicitly enabled)",
+          "Evidence (validation/smoke/conflicts paste & parse)",
+          "Workflow (workflow map + artifact registry)"
+        ],
+        "ui_notes": [
+          "Fix info tooltips that currently show '?' with no content",
+          "Keep Version & Baseline as a top-of-admin snapshot card"
+        ]
+      },
+      "acceptance_criteria": [
+        "Admin is no longer one huge scroll; it is tabbed/sectioned",
+        "Tooltips work (no '?' placeholders)",
+        "Config Inspector is accessible from Admin (not as a confusing separate page)"
+      ]
+    }
+  ],
+  "implementation_notes": {
+    "do_not_change": [
+      "Determinism rules",
+      "Offline-only constraints",
+      "Copy-only export behavior"
+    ],
+    "ok_to_change": [
+      "Routing defaults and nav structure",
+      "Visibility of panels by role",
+      "Where Loader and Standardizer live in the UX"
+    ],
+    "recommended_flags": {
+      "demo_mode": "localStorage flag so we can easily turn sample autoload on/off",
+      "dev_hud": "keep HUD but make it Admin-only or a dev flag"
+    }
+  },
+  "definition_of_done": [
+    "Hard refresh → Triage works (demo autoload optional via flag)",
+    "Loader is a modal/drawer action (not required as a page)",
+    "Analyst/Reviewer see only triage + record drilldown + create patch request",
+    "Admin has a clean tabbed console for patch requests + config + evidence + workflow",
+    "No Patch Studio / Standardizer / Config Inspector content leaks into Triage",
+    "Navigation no longer gets stuck when switching between pages/roles"
+  ]
+}

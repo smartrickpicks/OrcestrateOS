@@ -210,6 +210,25 @@
     .mode-reviewer .nav-item.reviewer-only { display: flex; }
     .mode-admin .nav-item.reviewer-only { display: flex; }
     .mode-admin .nav-item.admin-only { display: flex; }
+    
+    /* Role-based visibility for any element */
+    .admin-only-content { display: none !important; }
+    .reviewer-only-content { display: none !important; }
+    .mode-admin .admin-only-content { display: block !important; }
+    .mode-admin .admin-only-content.flex { display: flex !important; }
+    .mode-reviewer .reviewer-only-content { display: block !important; }
+    .mode-admin .reviewer-only-content { display: block !important; }
+    
+    /* Loader Drawer */
+    .loader-drawer { position: fixed; top: 0; right: -480px; width: 460px; height: 100vh; background: white; box-shadow: -4px 0 20px rgba(0,0,0,0.2); z-index: 1002; transition: right 0.25s ease-out; display: flex; flex-direction: column; }
+    .loader-drawer.active { right: 0; }
+    .loader-drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: none; z-index: 1001; }
+    .loader-drawer-overlay.active { display: block; }
+    .loader-drawer-header { background: #1565c0; color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+    .loader-drawer-header h3 { margin: 0; font-size: 1em; }
+    .loader-drawer-close { background: none; border: none; color: white; font-size: 1.3em; cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+    .loader-drawer-close:hover { background: rgba(255,255,255,0.2); }
+    .loader-drawer-body { flex: 1; overflow-y: auto; padding: 20px; }
 
     /* Session Status Chip */
     .session-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; }
@@ -670,7 +689,7 @@
 </head>
 <body>
   <!-- Debug HUD (v1.2.8) -->
-  <div id="debug-hud" style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: #0f0; font-family: monospace; font-size: 11px; padding: 4px 8px; border-radius: 4px; z-index: 99999;">Route: - | Data: - | Mode: -</div>
+  <div id="debug-hud" class="admin-only-content" style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: #0f0; font-family: monospace; font-size: 11px; padding: 4px 8px; border-radius: 4px; z-index: 99999;">Route: - | Data: - | Mode: -</div>
   
   <div class="app-layout">
     <nav class="nav-sidebar">
@@ -680,10 +699,11 @@
       </div>
       <div class="nav-menu">
         <div class="nav-section">
-          <div class="nav-section-header">Start</div>
-          <a class="nav-item" data-page="loader" href="#/loader">
+          <div class="nav-section-header">Data</div>
+          <a class="nav-item" id="nav-load-data" href="#" onclick="openLoaderDrawer(); return false;">
             <span class="nav-icon">📥</span>
-            <span class="nav-label">Loader</span>
+            <span class="nav-label">Load Data</span>
+            <span class="nav-count" id="data-status-chip">--</span>
           </a>
         </div>
 
@@ -781,15 +801,15 @@
           <span class="session-meta" id="session-meta"></span>
         </div>
         <div class="top-toolbar-right">
-          <button class="top-toolbar-btn configure-btn" id="btn-configure" title="Configure Kiwi settings and defaults">Configure</button>
-          <button class="top-toolbar-btn" id="btn-ruleset">Ruleset</button>
+          <button class="top-toolbar-btn configure-btn admin-only-content" id="btn-configure" title="Configure Kiwi settings and defaults">Configure</button>
+          <button class="top-toolbar-btn admin-only-content" id="btn-ruleset">Ruleset</button>
           <button class="top-toolbar-btn" id="btn-compare">Compare</button>
-          <button class="top-toolbar-btn" id="btn-run">Run Commands</button>
+          <button class="top-toolbar-btn admin-only-content" id="btn-run">Run Commands</button>
         </div>
       </div>
       
-      <!-- First-Run Banner -->
-      <div class="first-run-banner" id="first-run-banner" style="display: none;">
+      <!-- First-Run Banner (admin-only - refers to config) -->
+      <div class="first-run-banner admin-only-content" id="first-run-banner" style="display: none;">
         <span class="banner-icon">&#9881;</span>
         <span class="banner-text">Using default setup. Click <strong>Configure</strong> to connect your local files and set your workflow defaults.</span>
         <button class="banner-dismiss" onclick="dismissFirstRunBanner()" title="Dismiss">&times;</button>
@@ -799,12 +819,12 @@
       <div class="empty-queue-message" id="empty-queue-message">
         <div class="empty-queue-icon">📋</div>
         <h3>No records loaded yet</h3>
-        <p>Open <strong>Loader</strong> in the sidebar to import your dataset.</p>
-        <button class="empty-queue-cta" id="empty-queue-load" onclick="navigateTo('loader')">Open Loader</button>
+        <p>Import a dataset to start working.</p>
+        <button class="empty-queue-cta" id="empty-queue-load" onclick="openLoaderDrawer()">Load Data</button>
       </div>
       
-      <!-- Loader Page (v1.2.8 Next Action Layout) -->
-      <div class="page-content" id="page-loader" style="display: none;">
+      <!-- Loader Page (DEPRECATED - v1.2.9 uses drawer instead) -->
+      <div class="page-content" id="page-loader" style="display: none !important;">
         <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
           <div style="font-size: 0.75em; color: #999; text-align: right; margin-bottom: 10px;">PAGE: LOADER | BUILD v1.2.8</div>
           
@@ -874,7 +894,7 @@
                 <div id="pdf-attachments-list" style="font-size: 0.85em; color: #666; padding-left: 30px;"></div>
               </div>
               
-              <div style="border-top: 1px solid #e0e0e0; margin-top: 15px; padding-top: 15px;">
+              <div class="admin-only-content" style="border-top: 1px solid #e0e0e0; margin-top: 15px; padding-top: 15px;">
                 <div style="font-weight: 600; font-size: 0.85em; color: #666; margin-bottom: 10px;">Test Utilities</div>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                   <button class="top-toolbar-btn" id="btn-reset-demo-state" style="font-size: 0.85em;">Reset Demo State</button>
@@ -1350,7 +1370,7 @@
           <div class="upload-library-empty" style="text-align: center; padding: 40px 20px; color: #888; background: #f5f5f5; border-radius: 8px; border: 2px dashed #ddd;">
             <div style="font-size: 2em; margin-bottom: 10px;">📁</div>
             <p style="margin: 0 0 15px;">No datasets saved yet.</p>
-            <button class="modal-btn modal-btn-primary" onclick="closeDataSourceDrawer(); navigateTo('loader');">Go to Loader</button>
+            <button class="modal-btn modal-btn-primary" onclick="closeDataSourceDrawer(); openLoaderDrawer();">Load Data</button>
           </div>
         </div>
         
@@ -1360,6 +1380,64 @@
         <div style="display: flex; gap: 10px; justify-content: space-between;">
           <button class="modal-btn reset-session-btn" id="reset-session-btn">Reset Session</button>
           <button class="modal-btn modal-btn-secondary" onclick="closeDataSourceDrawer()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loader Drawer (right-side slide-over for data loading) -->
+  <div class="loader-drawer-overlay" id="loader-drawer-overlay" onclick="closeLoaderDrawer()">
+    <div class="loader-drawer" id="loader-drawer" onclick="event.stopPropagation()">
+      <div class="loader-drawer-header">
+        <h3>Load Data</h3>
+        <button class="loader-drawer-close" onclick="closeLoaderDrawer()">&times;</button>
+      </div>
+      <div class="loader-drawer-body">
+        <!-- Dataset Status -->
+        <div id="loader-drawer-status" style="margin-bottom: 20px; padding: 15px; background: #e8f5e9; border-radius: 8px; display: none;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.2em;">✅</span>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; color: #2e7d32;">Dataset Loaded</div>
+              <div id="loader-drawer-dataset-name" style="font-size: 0.85em; color: #666;"></div>
+            </div>
+          </div>
+          <div style="margin-top: 12px; display: flex; gap: 10px;">
+            <button class="top-toolbar-btn" onclick="closeLoaderDrawer(); navigateTo('triage');">Continue to Triage</button>
+            <button class="top-toolbar-btn" onclick="copyBundleJSON()">Copy Bundle</button>
+          </div>
+        </div>
+        
+        <!-- Import CSV Section -->
+        <div style="margin-bottom: 20px;">
+          <div style="font-weight: 600; margin-bottom: 10px; color: #333;">Import from File</div>
+          <div class="drop-zone" id="loader-drawer-dropzone" onclick="document.getElementById('loader-drawer-file').click();">
+            <div class="drop-zone-icon">📄</div>
+            <div class="drop-zone-text">Drop CSV file here or click to browse</div>
+            <div class="drop-zone-file" id="loader-drawer-file-name" style="display: none;"></div>
+          </div>
+          <input type="file" id="loader-drawer-file" accept=".csv,.xlsx" style="display: none;">
+        </div>
+        
+        <!-- Sample Dataset Section -->
+        <div id="loader-drawer-sample-section" style="margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px; border: 1px dashed #ccc;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 1.2em;">📦</span>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; font-size: 0.9em;">Demo Dataset</div>
+              <div style="font-size: 0.8em; color: #666;">5 sample contracts for testing</div>
+            </div>
+            <button class="top-toolbar-btn" id="btn-load-sample-drawer" style="padding: 8px 16px;">Load Sample</button>
+          </div>
+        </div>
+        
+        <!-- Admin Utilities (admin-only) -->
+        <div class="admin-only-content" style="border-top: 1px solid #e0e0e0; padding-top: 15px; margin-top: 15px;">
+          <div style="font-weight: 600; margin-bottom: 10px; color: #888; font-size: 0.85em;">ADMIN UTILITIES</div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="top-toolbar-btn" onclick="resetDemoState(); updateLoaderDrawerUI();">Reset Demo State</button>
+            <button class="top-toolbar-btn" onclick="rebuildFieldIndex();">Rebuild Index</button>
+          </div>
         </div>
       </div>
     </div>
@@ -4340,151 +4418,187 @@
           tab.classList.add('active');
           
           const section = tabContainer.closest('.loader-section');
-          section.querySelectorAll('.loader-panel').forEach(p => p.classList.remove('active'));
+          if (section) {
+            section.querySelectorAll('.loader-panel').forEach(p => p.classList.remove('active'));
+          }
           document.getElementById(panelId)?.classList.add('active');
         });
       });
       
-      // Preview paste load
-      document.getElementById('preview-paste-load').addEventListener('click', () => {
-        const text = document.getElementById('preview-paste-area').value.trim();
-        if (!text) {
-          showWizardStatus('data-source-status', 'Please paste JSON first', 'error');
-          return;
-        }
-        try {
-          const data = JSON.parse(text);
-          loadFromData(data, 'paste', null);
-        } catch (e) {
-          showWizardStatus('data-source-status', 'Invalid JSON: ' + e.message, 'error');
-        }
-      });
-      
-      // Preview drop zone
-      const previewDropZone = document.getElementById('preview-drop-zone');
-      const previewFileInput = document.getElementById('preview-file-input');
-      let previewFileData = null;
-      
-      previewDropZone.addEventListener('click', () => previewFileInput.click());
-      previewDropZone.addEventListener('dragover', e => {
-        e.preventDefault();
-        previewDropZone.classList.add('drag-over');
-      });
-      previewDropZone.addEventListener('dragleave', () => {
-        previewDropZone.classList.remove('drag-over');
-      });
-      previewDropZone.addEventListener('drop', e => {
-        e.preventDefault();
-        previewDropZone.classList.remove('drag-over');
-        const file = e.dataTransfer.files[0];
-        if (file) handlePreviewFile(file);
-      });
-      previewFileInput.addEventListener('change', e => {
-        const file = e.target.files[0];
-        if (file) handlePreviewFile(file);
-      });
-      
-      function handlePreviewFile(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            previewFileData = JSON.parse(e.target.result);
-            document.getElementById('preview-drop-file').textContent = file.name;
-            previewDropZone.classList.add('has-file');
-            document.getElementById('preview-drop-load').disabled = false;
-            sessionState.fileName = file.name;
-          } catch (err) {
-            showWizardStatus('data-source-status', 'Invalid JSON file: ' + err.message, 'error');
+      // Preview paste load (guard with null check - may not exist)
+      var previewPasteBtn = document.getElementById('preview-paste-load');
+      if (previewPasteBtn) {
+        previewPasteBtn.addEventListener('click', function() {
+          var text = document.getElementById('preview-paste-area').value.trim();
+          if (!text) {
+            showWizardStatus('data-source-status', 'Please paste JSON first', 'error');
+            return;
           }
-        };
-        reader.readAsText(file);
+          try {
+            var data = JSON.parse(text);
+            loadFromData(data, 'paste', null);
+          } catch (e) {
+            showWizardStatus('data-source-status', 'Invalid JSON: ' + e.message, 'error');
+          }
+        });
       }
       
-      document.getElementById('preview-drop-load').addEventListener('click', () => {
-        if (previewFileData) {
-          loadFromData(previewFileData, 'drop', sessionState.fileName);
+      // Preview drop zone (guard with null check - may not exist)
+      var previewDropZone = document.getElementById('preview-drop-zone');
+      var previewFileInput = document.getElementById('preview-file-input');
+      var previewFileData = null;
+      
+      if (previewDropZone && previewFileInput) {
+        var previewFileData = null;
+        
+        previewDropZone.addEventListener('click', function() { previewFileInput.click(); });
+        previewDropZone.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          previewDropZone.classList.add('drag-over');
+        });
+        previewDropZone.addEventListener('dragleave', function() {
+          previewDropZone.classList.remove('drag-over');
+        });
+        previewDropZone.addEventListener('drop', function(e) {
+          e.preventDefault();
+          previewDropZone.classList.remove('drag-over');
+          var file = e.dataTransfer.files[0];
+          if (file) handlePreviewFile(file);
+        });
+        previewFileInput.addEventListener('change', function(e) {
+          var file = e.target.files[0];
+          if (file) handlePreviewFile(file);
+        });
+        
+        function handlePreviewFile(file) {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            try {
+              previewFileData = JSON.parse(e.target.result);
+              var fileEl = document.getElementById('preview-drop-file');
+              if (fileEl) fileEl.textContent = file.name;
+              previewDropZone.classList.add('has-file');
+              var loadBtn = document.getElementById('preview-drop-load');
+              if (loadBtn) loadBtn.disabled = false;
+              sessionState.fileName = file.name;
+            } catch (err) {
+              showWizardStatus('data-source-status', 'Invalid JSON file: ' + err.message, 'error');
+            }
+          };
+          reader.readAsText(file);
         }
-      });
-      
-      // Expected paste load
-      document.getElementById('expected-paste-load').addEventListener('click', () => {
-        const text = document.getElementById('expected-paste-area').value.trim();
-        if (!text) {
-          showWizardStatus('data-source-status', 'Please paste expected JSON first', 'error');
-          return;
+        
+        var previewLoadBtn = document.getElementById('preview-drop-load');
+        if (previewLoadBtn) {
+          previewLoadBtn.addEventListener('click', function() {
+            if (previewFileData) {
+              loadFromData(previewFileData, 'drop', sessionState.fileName);
+            }
+          });
         }
-        try {
-          const data = JSON.parse(text);
-          sessionState.expectedData = data;
-          document.getElementById('expected-status').textContent = 'Loaded';
-          document.getElementById('expected-status').className = 'loader-section-status loaded';
-          showWizardStatus('data-source-status', 'Expected data loaded for comparison', 'success');
-        } catch (e) {
-          showWizardStatus('data-source-status', 'Invalid JSON: ' + e.message, 'error');
-        }
-      });
-      
-      // Expected drop zone
-      const expectedDropZone = document.getElementById('expected-drop-zone');
-      const expectedFileInput = document.getElementById('expected-file-input');
-      let expectedFileData = null;
-      
-      expectedDropZone.addEventListener('click', () => expectedFileInput.click());
-      expectedDropZone.addEventListener('dragover', e => {
-        e.preventDefault();
-        expectedDropZone.classList.add('drag-over');
-      });
-      expectedDropZone.addEventListener('dragleave', () => {
-        expectedDropZone.classList.remove('drag-over');
-      });
-      expectedDropZone.addEventListener('drop', e => {
-        e.preventDefault();
-        expectedDropZone.classList.remove('drag-over');
-        const file = e.dataTransfer.files[0];
-        if (file) handleExpectedFile(file);
-      });
-      expectedFileInput.addEventListener('change', e => {
-        const file = e.target.files[0];
-        if (file) handleExpectedFile(file);
-      });
-      
-      function handleExpectedFile(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            expectedFileData = JSON.parse(e.target.result);
-            document.getElementById('expected-drop-file').textContent = file.name;
-            expectedDropZone.classList.add('has-file');
-            document.getElementById('expected-drop-load').disabled = false;
-          } catch (err) {
-            showWizardStatus('data-source-status', 'Invalid JSON file: ' + err.message, 'error');
-          }
-        };
-        reader.readAsText(file);
       }
       
-      document.getElementById('expected-drop-load').addEventListener('click', () => {
-        if (expectedFileData) {
-          sessionState.expectedData = expectedFileData;
-          document.getElementById('expected-status').textContent = 'Loaded';
-          document.getElementById('expected-status').className = 'loader-section-status loaded';
-          showWizardStatus('data-source-status', 'Expected data loaded for comparison', 'success');
+      // Expected paste load (guard all with null checks)
+      var expectedPasteBtn = document.getElementById('expected-paste-load');
+      if (expectedPasteBtn) {
+        expectedPasteBtn.addEventListener('click', function() {
+          var textarea = document.getElementById('expected-paste-area');
+          var text = textarea ? textarea.value.trim() : '';
+          if (!text) {
+            showWizardStatus('data-source-status', 'Please paste expected JSON first', 'error');
+            return;
+          }
+          try {
+            var data = JSON.parse(text);
+            sessionState.expectedData = data;
+            var statusEl = document.getElementById('expected-status');
+            if (statusEl) {
+              statusEl.textContent = 'Loaded';
+              statusEl.className = 'loader-section-status loaded';
+            }
+            showWizardStatus('data-source-status', 'Expected data loaded for comparison', 'success');
+          } catch (e) {
+            showWizardStatus('data-source-status', 'Invalid JSON: ' + e.message, 'error');
+          }
+        });
+      }
+      
+      // Expected drop zone (guard all with null checks)
+      var expectedDropZone = document.getElementById('expected-drop-zone');
+      var expectedFileInput = document.getElementById('expected-file-input');
+      
+      if (expectedDropZone && expectedFileInput) {
+        var expectedFileData = null;
+        
+        expectedDropZone.addEventListener('click', function() { expectedFileInput.click(); });
+        expectedDropZone.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          expectedDropZone.classList.add('drag-over');
+        });
+        expectedDropZone.addEventListener('dragleave', function() {
+          expectedDropZone.classList.remove('drag-over');
+        });
+        expectedDropZone.addEventListener('drop', function(e) {
+          e.preventDefault();
+          expectedDropZone.classList.remove('drag-over');
+          var file = e.dataTransfer.files[0];
+          if (file) handleExpectedFile(file);
+        });
+        expectedFileInput.addEventListener('change', function(e) {
+          var file = e.target.files[0];
+          if (file) handleExpectedFile(file);
+        });
+        
+        function handleExpectedFile(file) {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            try {
+              expectedFileData = JSON.parse(e.target.result);
+              var fileEl = document.getElementById('expected-drop-file');
+              if (fileEl) fileEl.textContent = file.name;
+              expectedDropZone.classList.add('has-file');
+              var loadBtn = document.getElementById('expected-drop-load');
+              if (loadBtn) loadBtn.disabled = false;
+            } catch (err) {
+              showWizardStatus('data-source-status', 'Invalid JSON file: ' + err.message, 'error');
+            }
+          };
+          reader.readAsText(file);
         }
-      });
+        
+        var expectedLoadBtn = document.getElementById('expected-drop-load');
+        if (expectedLoadBtn) {
+          expectedLoadBtn.addEventListener('click', function() {
+            if (expectedFileData) {
+              sessionState.expectedData = expectedFileData;
+              var statusEl = document.getElementById('expected-status');
+              if (statusEl) {
+                statusEl.textContent = 'Loaded';
+                statusEl.className = 'loader-section-status loaded';
+              }
+              showWizardStatus('data-source-status', 'Expected data loaded for comparison', 'success');
+            }
+          });
+        }
+      }
       
       // Path hint preset buttons
-      document.querySelectorAll('#preview-path .wizard-preset-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.getElementById('preview-path-input').value = btn.dataset.path;
+      document.querySelectorAll('#preview-path .wizard-preset-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var input = document.getElementById('preview-path-input');
+          if (input) input.value = btn.dataset.path;
         });
       });
       
-      // Reset session button
-      document.getElementById('reset-session-btn').addEventListener('click', () => {
-        if (confirm('Reset session? This clears loaded artifacts but keeps your patch draft.')) {
-          resetSession();
-        }
-      });
+      // Reset session button (guard with null check)
+      var resetBtn = document.getElementById('reset-session-btn');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+          if (confirm('Reset session? This clears loaded artifacts but keeps your patch draft.')) {
+            resetSession();
+          }
+        });
+      }
     }
 
     // ========== APP SESSION STATE MACHINE (V1.2.8) ==========
@@ -4533,20 +4647,15 @@
 
     function navigateTo(page, options) {
       options = options || {};
-      var pages = ['loader', 'triage', 'patch', 'review', 'admin'];
+      // Loader is now a drawer, not a page - redirect loader requests to triage
+      if (page === 'loader') page = 'triage';
+      var pages = ['triage', 'patch', 'review', 'admin'];
       if (!pages.includes(page)) page = 'triage';
       
       console.log('[Navigate] Attempting navigation to: ' + page + ', dataLoaded: ' + dataLoaded);
       
-      // HARD REDIRECT: Never render a page without required state
-      var routeCheck = checkRouteRequirements(page);
-      if (!routeCheck.valid && !options.bypassGuard) {
-        console.log('[RouteGuard] Page "' + page + '" missing requirement: ' + routeCheck.missing + ', hard redirect to loader');
-        // Store intended destination BEFORE changing page variable
-        var intendedDestination = page;
-        page = 'loader';
-        sessionStorage.setItem('kiwi_next_route', intendedDestination);
-      }
+      // For pages needing data, we still show the page but with empty state
+      // No hard redirect - triage handles its own empty state with "Load Data" CTA
       
       // Review page only accessible in reviewer mode
       if (page === 'admin' && currentMode !== 'admin') {
@@ -4576,17 +4685,18 @@
       }
       if (navEl) navEl.classList.add('active');
       
-      // Hide empty queue message when on loader page
-      if (page === 'loader') {
-        document.getElementById('empty-queue-message')?.classList.add('hidden');
-        updateLoaderPageUI();
-      } else {
-        // Show empty queue message on triage if no data
-        var emptyMsg = document.getElementById('empty-queue-message');
-        if (emptyMsg && page === 'triage' && !dataLoaded) {
+      // Show empty queue message on triage if no data loaded
+      var emptyMsg = document.getElementById('empty-queue-message');
+      if (emptyMsg) {
+        if (page === 'triage' && !dataLoaded) {
           emptyMsg.classList.remove('hidden');
+        } else {
+          emptyMsg.classList.add('hidden');
         }
       }
+      
+      // Update data status chip in sidebar
+      updateLoaderDrawerUI();
       
       // Update debug HUD
       updateDebugHUD();
@@ -4596,13 +4706,11 @@
     
     function recoverNavigation() {
       var currentHash = window.location.hash.replace('#/', '') || 'triage';
-      var routeCheck = checkRouteRequirements(currentHash);
-      if (!routeCheck.valid) {
-        console.log('[RecoverNav] Route requirements not met, hard redirect to loader');
-        navigateTo('loader');
-        return true;
-      }
-      return false;
+      // Loader is now a drawer, redirect to triage
+      if (currentHash === 'loader') currentHash = 'triage';
+      console.log('[RecoverNav] Recovering to: ' + currentHash);
+      navigateTo(currentHash);
+      return true;
     }
 
     function setMode(mode) {
@@ -4708,6 +4816,105 @@
     
     function closeDataSourceDrawer() {
       document.getElementById('data-source-drawer').classList.remove('active');
+    }
+    
+    // Loader Drawer functions
+    function openLoaderDrawer() {
+      updateLoaderDrawerUI();
+      document.getElementById('loader-drawer-overlay').classList.add('active');
+      document.getElementById('loader-drawer').classList.add('active');
+    }
+    
+    function closeLoaderDrawer() {
+      document.getElementById('loader-drawer-overlay').classList.remove('active');
+      document.getElementById('loader-drawer').classList.remove('active');
+    }
+    
+    function updateLoaderDrawerUI() {
+      var statusEl = document.getElementById('loader-drawer-status');
+      var nameEl = document.getElementById('loader-drawer-dataset-name');
+      var sampleSection = document.getElementById('loader-drawer-sample-section');
+      var dataStatusChip = document.getElementById('data-status-chip');
+      
+      if (dataLoaded && allData.contractResults && allData.contractResults.length > 0) {
+        statusEl.style.display = 'block';
+        var activeDataset = localStorage.getItem(STORAGE_KEY_ACTIVE_DATASET);
+        var parsed = activeDataset ? JSON.parse(activeDataset) : null;
+        nameEl.textContent = parsed ? (parsed.filename || 'Active Dataset') : 'Active Dataset';
+        if (dataStatusChip) {
+          dataStatusChip.textContent = allData.contractResults.length;
+          dataStatusChip.classList.add('has-items');
+        }
+      } else {
+        statusEl.style.display = 'none';
+        if (dataStatusChip) {
+          dataStatusChip.textContent = '--';
+          dataStatusChip.classList.remove('has-items');
+        }
+      }
+    }
+    
+    function setupLoaderDrawerEvents() {
+      // File input
+      var fileInput = document.getElementById('loader-drawer-file');
+      if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+          var file = e.target.files[0];
+          if (file) {
+            handleCSVImport(file, function() {
+              updateLoaderDrawerUI();
+              closeLoaderDrawer();
+              navigateTo('triage');
+            });
+          }
+        });
+      }
+      
+      // Drop zone
+      var dropzone = document.getElementById('loader-drawer-dropzone');
+      if (dropzone) {
+        dropzone.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          dropzone.classList.add('drag-over');
+        });
+        dropzone.addEventListener('dragleave', function() {
+          dropzone.classList.remove('drag-over');
+        });
+        dropzone.addEventListener('drop', function(e) {
+          e.preventDefault();
+          dropzone.classList.remove('drag-over');
+          var file = e.dataTransfer.files[0];
+          if (file) {
+            handleCSVImport(file, function() {
+              updateLoaderDrawerUI();
+              closeLoaderDrawer();
+              navigateTo('triage');
+            });
+          }
+        });
+      }
+      
+      // Sample button
+      var sampleBtn = document.getElementById('btn-load-sample-drawer');
+      if (sampleBtn) {
+        sampleBtn.addEventListener('click', function() {
+          loadSampleDataset({ autoRedirect: false });
+          updateLoaderDrawerUI();
+          closeLoaderDrawer();
+          navigateTo('triage');
+        });
+      }
+    }
+    
+    // Demo mode flag
+    var DEMO_MODE_KEY = 'orchestrate.demo_mode';
+    function isDemoMode() {
+      var stored = localStorage.getItem(DEMO_MODE_KEY);
+      return stored === null ? true : stored === 'true'; // Default to true
+    }
+    
+    function setDemoMode(enabled) {
+      localStorage.setItem(DEMO_MODE_KEY, enabled ? 'true' : 'false');
     }
     
     // Record Drawer functions
@@ -5474,19 +5681,26 @@
       loadUserSettings();
       checkFirstRun();
       
+      // Setup loader drawer events
+      setupLoaderDrawerEvents();
+      
       let savedMode = localStorage.getItem('viewer_mode_v10');
       // Convert legacy 'operator' mode to 'analyst'
       if (savedMode === 'operator') savedMode = 'analyst';
       if (savedMode) setMode(savedMode);
       else setMode('analyst');
       
+      // Default route is always triage
       const hash = window.location.hash.replace('#/', '') || 'triage';
-      navigateTo(hash);
+      navigateTo(hash === 'loader' ? 'triage' : hash);
       
       // Auto-setup repo masters if enabled
       if (userSettings.use_repo_masters && !dataLoaded) {
         autoSetupRepoMasters();
       }
+      
+      // Update initial data status
+      updateLoaderDrawerUI();
     }
 
     function getRecordHash(record) {
@@ -8538,6 +8752,73 @@ Add any additional notes here.
       }
     }
     
+    // Handle CSV import with standardization
+    function handleCSVImport(file, callback) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var csvText = e.target.result;
+          var parsed = parseCSV(csvText);
+          
+          if (!parsed.rows || parsed.rows.length === 0) {
+            showToast('No data rows found in CSV', 'error');
+            return;
+          }
+          
+          // Create a standardized dataset structure
+          var standardizedData = {
+            contract_results: parsed.rows.map(function(row, idx) {
+              return {
+                contract_key: row.contract_key || row.ck || 'ROW_' + (idx + 1),
+                file_name: row.file_name || row.filename || null,
+                file_url: row.file_url || row.url || null,
+                subtype: row.subtype || row.type || { value: 'unknown', confidence: null },
+                status: row.status || 'needs_review'
+              };
+            }),
+            issues: [],
+            field_actions: [],
+            sheets: { imported: parsed.headers },
+            summary: {
+              total_contracts: parsed.rows.length,
+              ready: 0,
+              needs_review: parsed.rows.length,
+              blocked: 0
+            }
+          };
+          
+          // Load the standardized data
+          allData = {
+            contractResults: standardizedData.contract_results,
+            issues: standardizedData.issues,
+            fieldActions: standardizedData.field_actions,
+            changeLog: [],
+            summary: standardizedData.summary,
+            sheets: standardizedData.sheets
+          };
+          
+          // Save to localStorage
+          localStorage.setItem(STORAGE_KEY_DATASET, JSON.stringify(standardizedData));
+          saveToUploadLibrary(standardizedData, file.name, 'csv');
+          
+          dataLoaded = true;
+          currentArtifactPath = file.name;
+          updateUIForDataState();
+          updateSessionChip();
+          populateSubtypeDropdown();
+          renderAllTables();
+          
+          showToast('CSV imported: ' + parsed.rows.length + ' rows', 'success');
+          
+          if (callback) callback();
+        } catch (err) {
+          console.error('CSV import error:', err);
+          showToast('Failed to import CSV: ' + err.message, 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+    
     // ========== LOADER PAGE UI (V1.2.7) ==========
     
     function updateLoaderPageUI() {
@@ -8650,32 +8931,6 @@ Add any additional notes here.
     function updateLoaderSummary() {
       // Legacy function - now handled by updateLoaderPageUI
       updateLoaderPageUI();
-    }
-    
-    function parseCSV(text, delimiter) {
-      if (!delimiter) {
-        var commaCount = (text.match(/,/g) || []).length;
-        var tabCount = (text.match(/\t/g) || []).length;
-        var semiCount = (text.match(/;/g) || []).length;
-        delimiter = commaCount >= tabCount && commaCount >= semiCount ? ',' : (tabCount >= semiCount ? '\t' : ';');
-      }
-      
-      var lines = text.split(/\r?\n/).filter(function(line) { return line.trim().length > 0; });
-      if (lines.length === 0) return { headers: [], rows: [] };
-      
-      var headers = lines[0].split(delimiter).map(function(h) { return h.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_'); });
-      var rows = [];
-      
-      for (var i = 1; i < lines.length; i++) {
-        var values = lines[i].split(delimiter);
-        var row = {};
-        headers.forEach(function(h, idx) {
-          row[h] = (values[idx] || '').trim();
-        });
-        rows.push(row);
-      }
-      
-      return { headers: headers, rows: rows };
     }
     
     function importCSVFile(file) {
