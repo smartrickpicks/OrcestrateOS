@@ -1,4 +1,4 @@
-# Kiwi Semantic Control Board (v1.1)
+# Kiwi Semantic Control Board (v1.2)
 
 ## Overview
 
@@ -8,7 +8,13 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 - Single source of semantic truth: rules, templates, examples, and governance documents
 - Offline harness to validate and preview semantics deterministically
 - Rule authoring and review as configuration (not code)
-- Operator-first reference with clear interfaces and checklists
+- Analyst-first reference with clear interfaces and checklists
+
+**v1.2 Dashboard Shell:**
+- Queue-centric sidebar: To Do, Needs Review, Flagged, Blocked, Finalized with live counts
+- Right-side drawers: Data Sources Drawer, Record Detail Drawer
+- Role-based navigation: Analyst (default), Reviewer, Admin
+- Session management: Data Sources, Evidence Status, Reset Session
 
 **What This Is NOT:**
 - Not a runtime system
