@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## Version: v1.2.6
+Date: 2026-01-30
+
+### Added (Bundle Model + Navigation Guards)
+
+- Navigation Route Guards
+  - Pages requiring dataset (triage, patch, review) redirect to loader if not loaded
+  - Reset Session navigates to loader after clearing data
+  - recoverNavigation() helper for stuck state recovery
+
+- Upload Library (replaces Data Sources JSON paste)
+  - List view of cached datasets with dataset_id, filename, created_at, revision
+  - Actions: Activate, Duplicate as New Revision, Delete
+  - localStorage persistence (STORAGE_KEY_LIBRARY)
+  - Datasets saved automatically when loaded via Loader
+
+- DatasetBundle Internal Model
+  - createDatasetBundle() produces structured bundle with sheet_packets[]
+  - computeFieldIndex() generates field_index from sheet_packets
+  - getCurrentBundle() returns current dataset as bundle
+  - Copy Bundle JSON button on Loader page
+
+- Packager (record_id generation)
+  - generateRecordId() creates stable IDs: dataset_id|sheet_name|row_number|contract_key
+  - packageBundle() processes bundle into record_index with queue distribution
+  - Record IDs stable across refresh for patch request attachment
+
+### Changed
+- Target Field dropdown now uses field_index from bundle (all sheet.field combinations)
+- Data Sources drawer renamed to Upload Library
+- resetDemoState() clears library and active dataset keys
+
+---
+
 ## Version: v1.2.5
 Date: 2026-01-30
 

@@ -1,0 +1,77 @@
+"instruction_packet": {
+      "priority_order": [
+        "Fix navigation/session lockups with route guards + rehydrate logic",
+        "Replace Data Sources JSON paste with Upload Library shell (IndexedDB/localStorage)",
+        "Implement DatasetBundle concept in Loader output as an internal model (even if schema names change later)",
+        "Update Packager input to accept bundle container + produce stable record_id index"
+      ],
+      "do_not_block_on_kiwi": [
+        "Use a temporary interface type DatasetBundleDraft with sheet_packets[] and field_index computed at runtime",
+        "Add TODO to align exact schema keys once Kiwi returns"
+      ]
+    },
+    "tasks": [
+      {
+        "id": "V1-NAV-STATE-001",
+        "title": "Navigation/session lockup fix (route guards + recovery)",
+        "scope": [
+          "If dataset missing and route requires it -> redirect to /loader",
+          "Reset Session always returns to Loader and clears app namespace keys only",
+          "Add a lightweight 'Recover Navigation' if mismatch detected"
+        ],
+        "acceptance": [
+          "Cannot get stuck clicking around with broken nav",
+          "A refresh never strands user on Patch Studio without dataset"
+        ]
+      },
+      {
+        "id": "V1-DATASOURCES-LIBRARY-000",
+        "title": "Data Sources -> Upload Library shell (cached uploads)",
+        "scope": [
+          "Replace legacy JSON paste with list view: dataset_id, filename, created_at, revision",
+          "Actions: Activate, Duplicate as New Revision, Delete",
+          "Storage: IndexedDB preferred; localStorage fallback OK"
+        ],
+        "acceptance": [
+          "User can reopen prior uploaded dataset",
+          "Switching dataset rehydrates dropdowns + spreadsheet"
+        ]
+      },
+      {
+        "id": "V1-LOADER-BUNDLE-000",
+        "title": "Loader emits multi-sheet bundle internal model + copy preview",
+        "bundle_shape_draft": {
+          "dataset_id": "string",
+          "dataset_revision": "integer",
+          "created_at_utc": "string",
+          "source": { "dataset_type": "csv|xlsx", "source_file_name": "string" },
+          "sheet_packets": [
+            {
+              "packet_version": "DatasetPacketV1",
+              "sheet_name": "string",
+              "header_map": "object",
+              "rows": "array<object>"
+            }
+          ],
+          "field_index": "computed list of sheet.field",
+          "audit_log": "append-only events"
+        },
+        "acceptance": [
+          "Sample dataset loads as 3 sheet_packets",
+          "Copy Bundle JSON button works",
+          "Target Field dropdown uses field_index"
+        ]
+      },
+      {
+        "id": "V1-PACKAGER-BUNDLE-000",
+        "title": "Packager consumes bundle + generates stable record_id index",
+        "scope": [
+          "record_id generation uses dataset_id + sheet_name + row_number (+ optional stable columns)",
+          "Queues seed deterministically: all records -> To Do (or issues->Needs Review if available)"
+        ],
+        "acceptance": [
+          "Record IDs stable across refresh",
+          "Patch requests attach to record_id correctly"
+        ]
+      }
+    ]

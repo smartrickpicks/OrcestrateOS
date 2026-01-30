@@ -844,7 +844,10 @@
               <h3 style="margin: 0; font-size: 1.1em;">Dataset Loaded</h3>
             </div>
             <div id="loader-summary-details" style="font-size: 0.9em; color: #333; margin-bottom: 15px;"></div>
-            <button class="empty-queue-cta" id="btn-open-spreadsheet" style="width: 100%;">Open Spreadsheet View</button>
+            <div style="display: flex; gap: 10px;">
+              <button class="empty-queue-cta" id="btn-open-spreadsheet" style="flex: 1;">Open Spreadsheet View</button>
+              <button class="top-toolbar-btn" id="btn-copy-bundle" style="padding: 12px 16px;" onclick="copyBundleJSON()">Copy Bundle JSON</button>
+            </div>
           </div>
           
           <div style="background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-top: 20px;">
@@ -1295,90 +1298,30 @@
   </div><!-- end app-layout -->
 
   <!-- Global Modals and Drawers (outside pages) -->
-  <!-- Data Sources Drawer (right-side slide-over) -->
+  <!-- Upload Library Drawer (right-side slide-over) -->
   <div class="drawer-overlay" id="data-source-drawer">
     <div class="drawer">
       <div class="drawer-header">
-        <h3>Data Sources</h3>
+        <h3>Upload Library</h3>
         <button class="drawer-close" onclick="closeDataSourceDrawer()">&times;</button>
       </div>
       <div class="drawer-body">
-        <!-- Preview Evidence Section (Required) -->
-        <div class="loader-section" id="loader-preview-section">
-          <h4>Preview Evidence <span class="required">*required</span>
-            <span class="loader-section-status empty" id="preview-status">Not Loaded</span>
-          </h4>
-          
-          <div class="loader-tabs">
-            <button class="loader-tab active" data-panel="preview-paste">Paste JSON</button>
-            <button class="loader-tab" data-panel="preview-drop">Drop File</button>
-            <button class="loader-tab" data-panel="preview-path">Path Hint</button>
-          </div>
-          
-          <div class="loader-panel active" id="preview-paste">
-            <textarea class="paste-area" id="preview-paste-area" placeholder="Paste your Preview Packet JSON here..."></textarea>
-            <button class="modal-btn modal-btn-primary" id="preview-paste-load">Load from Paste</button>
-          </div>
-          
-          <div class="loader-panel" id="preview-drop">
-            <div class="drop-zone" id="preview-drop-zone">
-              <div class="drop-zone-icon">+</div>
-              <div class="drop-zone-text">Drag & drop your Preview Packet file here, or click to select</div>
-              <div class="drop-zone-file" id="preview-drop-file"></div>
-            </div>
-            <input type="file" id="preview-file-input" accept=".json" style="display: none;">
-            <button class="modal-btn modal-btn-primary" id="preview-drop-load" disabled>Load from File</button>
-          </div>
-          
-          <div class="loader-panel" id="preview-path">
-            <div class="path-hint-container">
-              <span class="path-hint-label">Path</span>
-              <input type="text" class="path-hint-input" id="preview-path-input" value="out/sf_packet.preview.json" placeholder="out/sf_packet.preview.json">
-            </div>
-            <div class="path-hint-warning">
-              <span>!</span> Path is a hint only in static mode. Paste or drop file to load actual data.
-            </div>
-            <div class="wizard-preset" style="margin-top: 10px;">
-              <button class="wizard-preset-btn" data-path="out/sf_packet.preview.json">Preview Output</button>
-              <button class="wizard-preset-btn" data-path="examples/expected_outputs/sf_packet.example.json">Example Output</button>
-            </div>
+        <!-- Library Header -->
+        <div style="margin-bottom: 20px;">
+          <p style="color: #666; font-size: 0.9em; margin: 0;">Previously uploaded datasets are stored here. Select one to activate it.</p>
+        </div>
+        
+        <!-- Dataset List -->
+        <div id="upload-library-list" style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- Populated by renderUploadLibrary() -->
+          <div class="upload-library-empty" style="text-align: center; padding: 40px 20px; color: #888; background: #f5f5f5; border-radius: 8px; border: 2px dashed #ddd;">
+            <div style="font-size: 2em; margin-bottom: 10px;">📁</div>
+            <p style="margin: 0 0 15px;">No datasets saved yet.</p>
+            <button class="modal-btn modal-btn-primary" onclick="closeDataSourceDrawer(); navigateTo('loader');">Go to Loader</button>
           </div>
         </div>
-
-        <!-- Reference Expected Section (Optional) -->
-        <div class="loader-section" id="loader-expected-section">
-          <h4>Reference Expected <span class="optional">(optional)</span>
-            <span class="loader-section-status empty" id="expected-status">Not Loaded</span>
-          </h4>
-          
-          <div class="loader-tabs">
-            <button class="loader-tab active" data-panel="expected-paste">Paste JSON</button>
-            <button class="loader-tab" data-panel="expected-drop">Drop File</button>
-          </div>
-          
-          <div class="loader-panel active" id="expected-paste">
-            <textarea class="paste-area" id="expected-paste-area" placeholder="Paste comparison data (previous version) here..."></textarea>
-            <button class="modal-btn modal-btn-secondary" id="expected-paste-load">Load Expected</button>
-          </div>
-          
-          <div class="loader-panel" id="expected-drop">
-            <div class="drop-zone" id="expected-drop-zone">
-              <div class="drop-zone-icon">+</div>
-              <div class="drop-zone-text">Drag & drop expected JSON here</div>
-              <div class="drop-zone-file" id="expected-drop-file"></div>
-            </div>
-            <input type="file" id="expected-file-input" accept=".json" style="display: none;">
-            <button class="modal-btn modal-btn-secondary" id="expected-drop-load" disabled>Load from File</button>
-          </div>
-        </div>
-
-        <!-- Session Options -->
-        <div class="remember-toggle">
-          <input type="checkbox" id="remember-session" checked>
-          <label for="remember-session">Remember in this browser (saves to localStorage)</label>
-        </div>
-
-        <div class="modal-status" id="data-source-status" style="display: none;"></div>
+        
+        <div class="modal-status" id="data-source-status" style="display: none; margin-top: 15px;"></div>
       </div>
       <div class="drawer-footer">
         <div style="display: flex; gap: 10px; justify-content: space-between;">
@@ -1908,6 +1851,8 @@
     const ARTIFACT_REGISTRY_KEY = 'orchestrateos.artifacts.v1';
     const STORAGE_KEY_DATASET = 'orchestrate.dataset.v1';
     const STORAGE_KEY_PDF_ATTACHMENTS = 'orchestrate.pdf_attachments.v1';
+    const STORAGE_KEY_LIBRARY = 'orchestrate.upload_library.v1';
+    const STORAGE_KEY_ACTIVE_DATASET = 'orchestrate.active_dataset_id.v1';
     
     // ========== SAMPLE DATASET (V1.2.5) ==========
     const SAMPLE_DATASET = {"dataset_id":"sample_v1","version":"1.0.0","created_at":"2026-01-30T00:00:00Z","description":"Deterministic demo dataset for testing structured intent and the full workflow.","sheets":{"contracts":{"headers":["contract_key","file_url","file_name","label_name","artist_name","subtype","status","effective_date"],"rows":[{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","label_name":"Acme Records","artist_name":"The Samples","subtype":"exclusive","status":"active","effective_date":"2024-01-15"},{"contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","label_name":"Various Artists","artist_name":"","subtype":"compilation","status":"active","effective_date":"2024-02-20"},{"contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","label_name":"Indie House","artist_name":"Solo Artist","subtype":"non-exclusive","status":"pending","effective_date":""},{"contract_key":"","file_url":"https://example.org/contract_d.pdf","file_name":"contract_d.pdf","label_name":"Beta Music","artist_name":"Beta Band","subtype":"exclusive","status":"draft","effective_date":"2024-03-01"},{"contract_key":"CK-005","file_url":"","file_name":"contract_e.pdf","label_name":"Gamma Tunes","artist_name":"","subtype":"exclusive","status":"active","effective_date":"2024-04-10"}]},"catalog":{"headers":["contract_key","file_url","file_name","track_title","artist_name","isrc","release_date","genre"],"rows":[{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","track_title":"Sample Song One","artist_name":"The Samples","isrc":"US-ABC-24-00001","release_date":"2024-05-01","genre":"Rock"},{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","track_title":"Sample Song Two","artist_name":"The Samples","isrc":"US-ABC-24-00002","release_date":"2024-05-01","genre":"Rock"},{"contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","track_title":"Compilation Hit","artist_name":"","isrc":"","release_date":"2024-06-15","genre":"Pop"},{"contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","track_title":"","artist_name":"Solo Artist","isrc":"US-DEF-24-00003","release_date":"","genre":"Jazz"},{"contract_key":"CK-005","file_url":"","file_name":"contract_e.pdf","track_title":"Gamma Track","artist_name":"Gamma Star","isrc":"US-GHI-24-00004","release_date":"2024-07-20","genre":"Electronic"}]},"royalties":{"headers":["contract_key","file_url","file_name","period","gross_revenue","artist_share_pct","net_payable"],"rows":[{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","period":"2024-Q1","gross_revenue":"15000.00","artist_share_pct":"50","net_payable":"7500.00"},{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","period":"2024-Q2","gross_revenue":"18500.00","artist_share_pct":"50","net_payable":"9250.00"},{"contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","period":"2024-Q1","gross_revenue":"8000.00","artist_share_pct":"","net_payable":""},{"contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","period":"2024-Q2","gross_revenue":"","artist_share_pct":"40","net_payable":""}]}},"issues":[{"issue_id":"ISS-001","contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","sheet":"contracts","field":"artist_name","issue_type":"MISSING_REQUIRED","severity":"warning","message":"Compilation contract missing artist attribution"},{"issue_id":"ISS-002","contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","sheet":"contracts","field":"effective_date","issue_type":"MISSING_REQUIRED","severity":"blocking","message":"Contract missing effective date"},{"issue_id":"ISS-003","contract_key":"","file_url":"https://example.org/contract_d.pdf","file_name":"contract_d.pdf","sheet":"contracts","field":"contract_key","issue_type":"MISSING_REQUIRED","severity":"blocking","message":"Contract key is missing"},{"issue_id":"ISS-004","contract_key":"CK-005","file_url":"","file_name":"contract_e.pdf","sheet":"contracts","field":"file_url","issue_type":"MISSING_REQUIRED","severity":"warning","message":"File URL is missing"},{"issue_id":"ISS-005","contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","sheet":"catalog","field":"isrc","issue_type":"MISSING_REQUIRED","severity":"warning","message":"ISRC code missing for track"},{"issue_id":"ISS-006","contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","sheet":"catalog","field":"track_title","issue_type":"MISSING_REQUIRED","severity":"blocking","message":"Track title is missing"},{"issue_id":"ISS-007","contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","sheet":"royalties","field":"artist_share_pct","issue_type":"MISSING_REQUIRED","severity":"warning","message":"Artist share percentage missing"}],"field_actions":[{"action_id":"FA-001","contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","sheet":"contracts","field":"label_name","action":"REVIEW","triggered_by":"SF_R1_LABEL_NOT_ARTIST"},{"action_id":"FA-002","contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","sheet":"catalog","field":"artist_name","action":"VALIDATE","triggered_by":"SF_R2_ARTIST_REQUIRED"}],"contract_results":[{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","status":"ready","subtype":"exclusive","issue_count":0},{"contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","status":"needs_review","subtype":"compilation","issue_count":3},{"contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","status":"blocked","subtype":"non-exclusive","issue_count":2},{"contract_key":"","file_url":"https://example.org/contract_d.pdf","file_name":"contract_d.pdf","status":"blocked","subtype":"exclusive","issue_count":1},{"contract_key":"CK-005","file_url":"","file_name":"contract_e.pdf","status":"needs_review","subtype":"exclusive","issue_count":1}],"summary":{"total_contracts":5,"ready":1,"needs_review":2,"blocked":2,"total_issues":7,"blocking_issues":3,"warning_issues":4}};
@@ -4267,27 +4212,44 @@
       allData.changeLog = [];
       allData.summary = {};
       
-      // Clear localStorage session (keep patch draft)
+      // Clear only app-namespaced localStorage keys (keep patch draft)
       try {
         localStorage.removeItem(STORAGE_KEY_SESSION);
+        localStorage.removeItem('orchestrate.dataset.v1');
+        localStorage.removeItem('orchestrate.pdf_attachments.v1');
       } catch (e) {}
       
       updateUIForDataState();
       updateSessionChip();
       renderAllTables();
       
-      // Reset modal fields
-      document.getElementById('preview-paste-area').value = '';
-      document.getElementById('expected-paste-area').value = '';
-      document.getElementById('preview-drop-file').textContent = '';
-      document.getElementById('expected-drop-file').textContent = '';
-      document.getElementById('preview-drop-load').disabled = true;
-      document.getElementById('expected-drop-load').disabled = true;
-      document.getElementById('preview-status').textContent = 'Not Loaded';
-      document.getElementById('preview-status').className = 'loader-section-status empty';
-      document.getElementById('expected-status').textContent = 'Not Loaded';
-      document.getElementById('expected-status').className = 'loader-section-status empty';
+      // Reset modal fields (if they exist)
+      const previewPaste = document.getElementById('preview-paste-area');
+      const expectedPaste = document.getElementById('expected-paste-area');
+      const previewDropFile = document.getElementById('preview-drop-file');
+      const expectedDropFile = document.getElementById('expected-drop-file');
+      const previewDropLoad = document.getElementById('preview-drop-load');
+      const expectedDropLoad = document.getElementById('expected-drop-load');
+      const previewStatus = document.getElementById('preview-status');
+      const expectedStatus = document.getElementById('expected-status');
       
+      if (previewPaste) previewPaste.value = '';
+      if (expectedPaste) expectedPaste.value = '';
+      if (previewDropFile) previewDropFile.textContent = '';
+      if (expectedDropFile) expectedDropFile.textContent = '';
+      if (previewDropLoad) previewDropLoad.disabled = true;
+      if (expectedDropLoad) expectedDropLoad.disabled = true;
+      if (previewStatus) {
+        previewStatus.textContent = 'Not Loaded';
+        previewStatus.className = 'loader-section-status empty';
+      }
+      if (expectedStatus) {
+        expectedStatus.textContent = 'Not Loaded';
+        expectedStatus.className = 'loader-section-status empty';
+      }
+      
+      // Navigate to loader after reset
+      navigateTo('loader');
       showWizardStatus('data-source-status', 'Session reset. Patch draft preserved.', 'info');
     }
     
@@ -4492,9 +4454,19 @@
       });
     }
 
-    function navigateTo(page) {
+    function pageRequiresDataset(page) {
+      return ['triage', 'patch', 'review'].includes(page);
+    }
+
+    function navigateTo(page, options = {}) {
       const pages = ['loader', 'triage', 'patch', 'review', 'admin'];
       if (!pages.includes(page)) page = 'triage';
+      
+      // Route guard: redirect to loader if dataset required but not loaded
+      if (pageRequiresDataset(page) && !dataLoaded && !options.bypassGuard) {
+        console.log(`[RouteGuard] Page "${page}" requires dataset, redirecting to loader`);
+        page = 'loader';
+      }
       
       // Review page only accessible in reviewer mode
       if (page === 'admin' && currentMode !== 'admin') {
@@ -4523,6 +4495,16 @@
       }
       
       window.location.hash = `#/${page}`;
+    }
+    
+    function recoverNavigation() {
+      const currentHash = window.location.hash.replace('#/', '') || 'triage';
+      if (pageRequiresDataset(currentHash) && !dataLoaded) {
+        console.log('[RecoverNav] Dataset missing, redirecting to loader');
+        navigateTo('loader');
+        return true;
+      }
+      return false;
     }
 
     function setMode(mode) {
@@ -4620,9 +4602,10 @@
       });
     }
 
-    // Data Sources Drawer functions
+    // Data Sources Drawer functions (now Upload Library)
     function openDataSourceDrawer() {
       document.getElementById('data-source-drawer').classList.add('active');
+      renderUploadLibrary();
     }
     
     function closeDataSourceDrawer() {
@@ -5346,30 +5329,8 @@
       contentEl.innerHTML = html;
     }
     
-    function resetSession() {
-      if (!confirm('Reset session? This will clear all loaded data and evidence.')) return;
-      
-      // Clear data
-      allData = { contractResults: [], issues: [], fieldActions: [], changeLog: [], summary: {} };
-      sessionState = { status: 'not_loaded', sourceType: null, loadedAt: null };
-      dataLoaded = false;
-      currentArtifactPath = '';
-      
-      // Clear localStorage
-      localStorage.removeItem('viewer_session_data_v11');
-      localStorage.removeItem('viewer_remember_v11');
-      localStorage.removeItem(PREFLIGHT_STORAGE_KEY);
-      
-      // Reset UI
-      updateUIForDataState();
-      
-      // Clear containers
-      const containers = ['summary-container', 'contract-results-container', 'issues-container', 'field-actions-container'];
-      containers.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.innerHTML = '';
-      });
-    }
+    // Note: Primary resetSession is defined earlier. This is a legacy duplicate kept for reference.
+    // The main resetSession() navigates to loader after clearing data.
 
     // Modal functions
     function openRulesetModal() {
@@ -6340,6 +6301,15 @@
       select.innerHTML = '<option value="">-- Select field --</option>';
       var fields = new Set();
       
+      // Primary source: use field_index from bundle (computed from sheet_packets)
+      var bundle = getCurrentBundle();
+      if (bundle && bundle.field_index) {
+        bundle.field_index.forEach(function(entry) {
+          fields.add(entry.full_path);
+        });
+      }
+      
+      // Fallback: also add fields from issues and field_actions
       if (allData.issues) {
         allData.issues.forEach(function(issue) {
           if (issue.sheet && issue.field) {
@@ -6347,8 +6317,8 @@
           }
         });
       }
-      if (allData.field_actions) {
-        allData.field_actions.forEach(function(action) {
+      if (allData.fieldActions) {
+        allData.fieldActions.forEach(function(action) {
           if (action.sheet && action.field) {
             fields.add(action.sheet + '.' + action.field);
           }
@@ -8093,6 +8063,334 @@ Add any additional notes here.
       document.getElementById('source-info').textContent = `Data source: ${document.getElementById('primary-path').value || 'out/sf_packet.preview.json'}`;
     });
 
+    // ========== DATASET BUNDLE (V1.2.6) ==========
+    // DatasetBundleDraft: internal model for multi-sheet dataset with computed field_index
+    // TODO: Align exact schema keys once Kiwi returns
+    
+    function createDatasetBundle(dataset, source) {
+      var sheets = dataset.sheets || {};
+      var sheetNames = Object.keys(sheets);
+      
+      var bundle = {
+        dataset_id: dataset.dataset_id || ('ds_' + Date.now()),
+        dataset_revision: 1,
+        created_at_utc: new Date().toISOString(),
+        source: {
+          dataset_type: source?.type || 'unknown',
+          source_file_name: source?.filename || 'unknown'
+        },
+        sheet_packets: sheetNames.map(function(name) {
+          var sheet = sheets[name];
+          return {
+            packet_version: 'DatasetPacketV1',
+            sheet_name: name,
+            header_map: (sheet.headers || []).reduce(function(acc, h, i) { acc[h] = i; return acc; }, {}),
+            rows: sheet.rows || []
+          };
+        }),
+        field_index: [],
+        audit_log: [
+          { event: 'bundle_created', timestamp: new Date().toISOString(), source: source?.type || 'unknown' }
+        ]
+      };
+      
+      // Compute field_index from sheet_packets
+      bundle.field_index = computeFieldIndex(bundle.sheet_packets);
+      
+      return bundle;
+    }
+    
+    function computeFieldIndex(sheetPackets) {
+      var index = [];
+      (sheetPackets || []).forEach(function(packet) {
+        var headers = Object.keys(packet.header_map || {});
+        headers.forEach(function(field) {
+          index.push({
+            sheet: packet.sheet_name,
+            field: field,
+            full_path: packet.sheet_name + '.' + field
+          });
+        });
+      });
+      return index;
+    }
+    
+    function getCurrentBundle() {
+      if (!dataLoaded || !allData) return null;
+      
+      var source = { type: 'loaded', filename: currentArtifactPath || 'unknown' };
+      var dataset = {
+        dataset_id: localStorage.getItem(STORAGE_KEY_ACTIVE_DATASET) || 'current',
+        sheets: allData.sheets || {}
+      };
+      
+      return createDatasetBundle(dataset, source);
+    }
+    
+    function copyBundleJSON() {
+      var bundle = getCurrentBundle();
+      if (!bundle) {
+        showToast('No dataset loaded', 'error');
+        return;
+      }
+      
+      var json = JSON.stringify(bundle, null, 2);
+      navigator.clipboard.writeText(json).then(function() {
+        showToast('Bundle JSON copied to clipboard', 'success');
+      }).catch(function(err) {
+        console.error('Failed to copy:', err);
+        showToast('Failed to copy to clipboard', 'error');
+      });
+    }
+    
+    // ========== PACKAGER (V1.2.6) ==========
+    // Consumes DatasetBundle and generates stable record_id index
+    
+    function generateRecordId(datasetId, sheetName, rowNumber, stableColumns) {
+      // Generate stable record_id: dataset_id + sheet_name + row_number + optional stable columns
+      var base = datasetId + '|' + sheetName + '|' + rowNumber;
+      if (stableColumns && stableColumns.contract_key) {
+        base += '|' + stableColumns.contract_key;
+      }
+      return base;
+    }
+    
+    function packageBundle(bundle) {
+      if (!bundle || !bundle.sheet_packets) return null;
+      
+      var recordIndex = [];
+      var queueRecords = { todo: [], needs_review: [] };
+      
+      bundle.sheet_packets.forEach(function(packet) {
+        (packet.rows || []).forEach(function(row, idx) {
+          var recordId = generateRecordId(
+            bundle.dataset_id,
+            packet.sheet_name,
+            idx,
+            { contract_key: row.contract_key }
+          );
+          
+          var record = {
+            record_id: recordId,
+            dataset_id: bundle.dataset_id,
+            sheet_name: packet.sheet_name,
+            row_number: idx,
+            contract_key: row.contract_key || '',
+            file_url: row.file_url || '',
+            file_name: row.file_name || '',
+            status: 'needs_review',
+            data: row
+          };
+          
+          recordIndex.push(record);
+          
+          // Route to queue: if has issues -> Needs Review, else -> To Do
+          if (row._has_issue) {
+            queueRecords.needs_review.push(record);
+          } else {
+            queueRecords.todo.push(record);
+          }
+        });
+      });
+      
+      return {
+        dataset_id: bundle.dataset_id,
+        dataset_revision: bundle.dataset_revision,
+        record_count: recordIndex.length,
+        record_index: recordIndex,
+        queue_distribution: {
+          todo: queueRecords.todo.length,
+          needs_review: queueRecords.needs_review.length
+        },
+        packaged_at: new Date().toISOString()
+      };
+    }
+    
+    function repackageCurrentDataset() {
+      var bundle = getCurrentBundle();
+      if (!bundle) {
+        showToast('No dataset to package', 'error');
+        return null;
+      }
+      
+      var packageResult = packageBundle(bundle);
+      
+      // Update allData.contractResults with stable record_ids
+      allData.contractResults = packageResult.record_index.map(function(rec) {
+        return {
+          record_id: rec.record_id,
+          contract_key: rec.contract_key,
+          file_url: rec.file_url,
+          file_name: rec.file_name,
+          status: rec.status,
+          sheet_name: rec.sheet_name,
+          row_number: rec.row_number
+        };
+      });
+      
+      // Re-render tables
+      renderAllTables();
+      updateQueueCounts();
+      
+      showToast('Dataset packaged with ' + packageResult.record_count + ' records', 'success');
+      return packageResult;
+    }
+    
+    // ========== UPLOAD LIBRARY (V1.2.6) ==========
+    function getUploadLibrary() {
+      try {
+        var stored = localStorage.getItem(STORAGE_KEY_LIBRARY);
+        return stored ? JSON.parse(stored) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+    
+    function saveUploadLibrary(library) {
+      try {
+        localStorage.setItem(STORAGE_KEY_LIBRARY, JSON.stringify(library));
+      } catch (e) {
+        console.error('Failed to save upload library:', e);
+      }
+    }
+    
+    function saveToUploadLibrary(dataset, filename, source) {
+      var library = getUploadLibrary();
+      var existingIndex = library.findIndex(function(d) { return d.dataset_id === dataset.dataset_id; });
+      
+      var entry = {
+        dataset_id: dataset.dataset_id || ('ds_' + Date.now()),
+        filename: filename || 'Untitled',
+        source: source || 'unknown',
+        revision: existingIndex >= 0 ? (library[existingIndex].revision + 1) : 1,
+        created_at: new Date().toISOString(),
+        sheet_count: Object.keys(dataset.sheets || {}).length,
+        row_count: Object.values(dataset.sheets || {}).reduce(function(acc, s) { return acc + (s.rows?.length || 0); }, 0)
+      };
+      
+      if (existingIndex >= 0) {
+        library[existingIndex] = entry;
+      } else {
+        library.unshift(entry);
+      }
+      
+      saveUploadLibrary(library);
+      localStorage.setItem(STORAGE_KEY_ACTIVE_DATASET, entry.dataset_id);
+      return entry;
+    }
+    
+    function renderUploadLibrary() {
+      var listEl = document.getElementById('upload-library-list');
+      if (!listEl) return;
+      
+      var library = getUploadLibrary();
+      var activeId = localStorage.getItem(STORAGE_KEY_ACTIVE_DATASET);
+      
+      if (library.length === 0) {
+        listEl.innerHTML = '<div class="upload-library-empty" style="text-align: center; padding: 40px 20px; color: #888; background: #f5f5f5; border-radius: 8px; border: 2px dashed #ddd;">' +
+          '<div style="font-size: 2em; margin-bottom: 10px;">📁</div>' +
+          '<p style="margin: 0 0 15px;">No datasets saved yet.</p>' +
+          '<button class="modal-btn modal-btn-primary" onclick="closeDataSourceDrawer(); navigateTo(\'loader\');">Go to Loader</button>' +
+          '</div>';
+        return;
+      }
+      
+      var html = library.map(function(entry) {
+        var isActive = entry.dataset_id === activeId;
+        var dateStr = new Date(entry.created_at).toLocaleDateString();
+        return '<div class="upload-library-item" style="background: ' + (isActive ? '#e3f2fd' : 'white') + '; border: 1px solid ' + (isActive ? '#1976d2' : '#e0e0e0') + '; border-radius: 8px; padding: 15px;">' +
+          '<div style="display: flex; justify-content: space-between; align-items: flex-start;">' +
+            '<div>' +
+              '<div style="font-weight: 600; margin-bottom: 4px;">' + entry.filename + (isActive ? ' <span style="color: #1976d2; font-size: 0.8em;">(Active)</span>' : '') + '</div>' +
+              '<div style="font-size: 0.85em; color: #666;">' +
+                'ID: ' + entry.dataset_id + ' | Rev ' + entry.revision + ' | ' + dateStr +
+              '</div>' +
+              '<div style="font-size: 0.85em; color: #888; margin-top: 4px;">' +
+                entry.sheet_count + ' sheets, ' + entry.row_count + ' rows | Source: ' + entry.source +
+              '</div>' +
+            '</div>' +
+            '<div style="display: flex; gap: 8px;">' +
+              (isActive ? '' : '<button class="modal-btn modal-btn-primary" style="padding: 6px 12px; font-size: 0.85em;" onclick="activateDataset(\'' + entry.dataset_id + '\')">Activate</button>') +
+              '<button class="modal-btn modal-btn-secondary" style="padding: 6px 12px; font-size: 0.85em;" onclick="duplicateDataset(\'' + entry.dataset_id + '\')">Duplicate</button>' +
+              '<button class="modal-btn" style="padding: 6px 12px; font-size: 0.85em; background: #ffebee; color: #c62828;" onclick="deleteDataset(\'' + entry.dataset_id + '\')">Delete</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      
+      listEl.innerHTML = html;
+    }
+    
+    function activateDataset(datasetId) {
+      try {
+        var stored = localStorage.getItem(STORAGE_KEY_DATASET);
+        var dataset = stored ? JSON.parse(stored) : null;
+        
+        if (!dataset || dataset.dataset_id !== datasetId) {
+          showToast('Dataset not found in cache. Please reload from Loader.', 'error');
+          return;
+        }
+        
+        allData = {
+          contractResults: dataset.contract_results || [],
+          issues: dataset.issues || [],
+          fieldActions: dataset.field_actions || [],
+          changeLog: [],
+          summary: dataset.summary || {},
+          sheets: dataset.sheets || {}
+        };
+        
+        localStorage.setItem(STORAGE_KEY_ACTIVE_DATASET, datasetId);
+        dataLoaded = true;
+        currentArtifactPath = datasetId;
+        updateUIForDataState();
+        updateSessionChip();
+        populateSubtypeDropdown();
+        renderAllTables();
+        populateTargetFieldDropdown();
+        renderUploadLibrary();
+        
+        showToast('Dataset activated: ' + datasetId, 'success');
+      } catch (e) {
+        console.error('Failed to activate dataset:', e);
+        showToast('Failed to activate dataset', 'error');
+      }
+    }
+    
+    function duplicateDataset(datasetId) {
+      var library = getUploadLibrary();
+      var entry = library.find(function(d) { return d.dataset_id === datasetId; });
+      if (!entry) return;
+      
+      var newEntry = Object.assign({}, entry, {
+        dataset_id: 'ds_' + Date.now(),
+        revision: 1,
+        created_at: new Date().toISOString(),
+        filename: entry.filename + ' (copy)'
+      });
+      
+      library.unshift(newEntry);
+      saveUploadLibrary(library);
+      renderUploadLibrary();
+      showToast('Duplicated as new dataset', 'success');
+    }
+    
+    function deleteDataset(datasetId) {
+      if (!confirm('Delete this dataset from the library?')) return;
+      
+      var library = getUploadLibrary();
+      library = library.filter(function(d) { return d.dataset_id !== datasetId; });
+      saveUploadLibrary(library);
+      
+      var activeId = localStorage.getItem(STORAGE_KEY_ACTIVE_DATASET);
+      if (activeId === datasetId) {
+        localStorage.removeItem(STORAGE_KEY_ACTIVE_DATASET);
+      }
+      
+      renderUploadLibrary();
+      showToast('Dataset deleted', 'success');
+    }
+    
     // ========== LOADER HANDLERS (V1.2.5) ==========
     function loadSampleDataset() {
       try {
@@ -8108,6 +8406,9 @@ Add any additional notes here.
         
         // Save to localStorage
         localStorage.setItem(STORAGE_KEY_DATASET, JSON.stringify(SAMPLE_DATASET));
+        
+        // Save to upload library
+        saveToUploadLibrary(SAMPLE_DATASET, 'Sample Dataset', 'sample');
         
         dataLoaded = true;
         currentArtifactPath = 'sample_v1';
@@ -8232,6 +8533,9 @@ Add any additional notes here.
           
           localStorage.setItem(STORAGE_KEY_DATASET, JSON.stringify(dataset));
           
+          // Save to upload library
+          saveToUploadLibrary(dataset, file.name, 'csv');
+          
           dataLoaded = true;
           currentArtifactPath = file.name;
           updateUIForDataState();
@@ -8298,6 +8602,8 @@ Add any additional notes here.
         STORAGE_KEY_DATASET,
         STORAGE_KEY_PDF_ATTACHMENTS,
         STORAGE_KEY_SESSION,
+        STORAGE_KEY_LIBRARY,
+        STORAGE_KEY_ACTIVE_DATASET,
         'orchestrate.comments.v1',
         'orchestrate.patch_requests.v1'
       ];
@@ -8318,6 +8624,8 @@ Add any additional notes here.
       renderPDFAttachmentsList();
       updatePatchQueueCounts();
       
+      // Navigate to loader after reset
+      navigateTo('loader');
       showToast('Demo state reset', 'success');
     }
     
