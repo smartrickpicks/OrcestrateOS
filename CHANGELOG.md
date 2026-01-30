@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## Version: v1.3.0
+Date: 2026-01-30
+
+### Changed (UI-ADMIN-ENTITY-SEPARATION)
+
+- Hard Page Separation
+  - Fixed page visibility bug: navigateTo() now properly hides all pages (style.display='none') before showing target
+  - Pages no longer "bleed through" - each route renders exactly ONE page component
+  - Admin sections no longer appear appended to Triage when in Admin mode
+
+- RBAC Route Guards
+  - Non-admin users navigating to #/admin are redirected to #/triage with toast: "Admin only"
+  - Non-reviewer users navigating to #/review are redirected to #/triage with toast
+  - Route guards now redirect instead of silently returning
+
+- Admin Section Markers
+  - Added data-admin-section="true" attribute to all admin sections (8 sections)
+  - Dev-only assertion: console.error if admin sections found in triage DOM
+  - Enables automated smoke test detection of admin content in wrong context
+
+- Page Labels
+  - Updated all page headers with explicit route context (PAGE: TRIAGE, PAGE: ADMIN-GOVERNANCE, etc)
+  - Build version bumped to v1.3.0 across all pages
+  - PAGE: PATCH-STUDIO, PAGE: CONFIG-INSPECTOR labels added
+
+---
+
 ## Version: v1.2.9
 Date: 2026-01-30
 

@@ -1,4 +1,4 @@
-# Kiwi Semantic Control Board (v1.2.8)
+# Kiwi Semantic Control Board (v1.3.0)
 
 ## Overview
 
@@ -58,6 +58,13 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 - Test Utilities: Reset Demo State, Rebuild Field Index
 - Dataset summary card after load with CTA to Spreadsheet View
 - CSV import with delimiter inference and header normalization
+
+**v1.3.0 UI-ADMIN-ENTITY-SEPARATION:**
+- Hard page separation: navigateTo() properly hides all pages before showing target (no bleed-through)
+- RBAC route guards: Non-admin redirected to triage with toast notification
+- Admin section markers: data-admin-section="true" for smoke test assertions
+- Dev-only assertion: console.error if admin sections found in triage DOM
+- Page labels: Explicit route context (PAGE: TRIAGE, PAGE: ADMIN-GOVERNANCE, etc)
 
 **What This Is NOT:**
 - Not a runtime system
