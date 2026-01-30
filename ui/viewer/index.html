@@ -2388,38 +2388,44 @@
       restoreSelection();
     }
 
-    document.getElementById('toolbar').addEventListener('click', async e => {
-      const btn = e.target.closest('.toolbar-btn');
-      if (btn) {
-        const cmdKey = btn.dataset.cmd;
-        const cmd = commands.commands?.[cmdKey];
-        if (cmd) {
-          const success = await copyToClipboard(cmd);
-          openCommandModal(cmdKey);
-          showModalStatus(success ? 'Command copied to clipboard!' : 'Could not auto-copy', success ? 'success' : 'error');
+    // Legacy toolbar handler (Run page was removed, but keep for safety)
+    const legacyToolbar = document.getElementById('toolbar');
+    if (legacyToolbar) {
+      legacyToolbar.addEventListener('click', async e => {
+        const btn = e.target.closest('.toolbar-btn');
+        if (btn) {
+          const cmdKey = btn.dataset.cmd;
+          const cmd = commands.commands?.[cmdKey];
+          if (cmd) {
+            const success = await copyToClipboard(cmd);
+            openCommandModal(cmdKey);
+            showModalStatus(success ? 'Command copied to clipboard!' : 'Could not auto-copy', success ? 'success' : 'error');
+          }
         }
-      }
-    });
+      });
+    }
 
-    document.getElementById('modal-close').addEventListener('click', closeModal);
-    document.getElementById('modal-cancel').addEventListener('click', closeModal);
-    document.getElementById('command-modal').addEventListener('click', e => {
+    document.getElementById('modal-close')?.addEventListener('click', closeModal);
+    document.getElementById('modal-cancel')?.addEventListener('click', closeModal);
+    document.getElementById('command-modal')?.addEventListener('click', e => {
       if (e.target.id === 'command-modal') closeModal();
     });
 
-    document.getElementById('modal-copy').addEventListener('click', async () => {
-      const cmd = document.getElementById('modal-command').textContent;
-      const success = await copyToClipboard(cmd);
-      showModalStatus(success ? 'Copied to clipboard!' : 'Copy failed', success ? 'success' : 'error');
+    document.getElementById('modal-copy')?.addEventListener('click', async () => {
+      const cmd = document.getElementById('modal-command')?.textContent;
+      if (cmd) {
+        const success = await copyToClipboard(cmd);
+        showModalStatus(success ? 'Copied to clipboard!' : 'Copy failed', success ? 'success' : 'error');
+      }
     });
 
-    document.getElementById('modal-run').addEventListener('click', () => {
+    document.getElementById('modal-run')?.addEventListener('click', () => {
       showModalStatus('Execution is not available in browser environment. Please run the copied command in your terminal.', 'info');
     });
 
-    document.getElementById('confirm-run').addEventListener('change', updateRunButton);
+    document.getElementById('confirm-run')?.addEventListener('change', updateRunButton);
 
-    document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+    document.getElementById('drawer-close')?.addEventListener('click', closeDrawer);
     document.getElementById('drawer-overlay').addEventListener('click', closeDrawer);
 
     document.getElementById('drawer-tabs').addEventListener('click', e => {
