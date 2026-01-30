@@ -4839,8 +4839,16 @@
       if (dataLoaded && allData.contractResults && allData.contractResults.length > 0) {
         statusEl.style.display = 'block';
         var activeDataset = localStorage.getItem(STORAGE_KEY_ACTIVE_DATASET);
-        var parsed = activeDataset ? JSON.parse(activeDataset) : null;
-        nameEl.textContent = parsed ? (parsed.filename || 'Active Dataset') : 'Active Dataset';
+        var datasetName = 'Active Dataset';
+        if (activeDataset) {
+          try {
+            var parsed = JSON.parse(activeDataset);
+            datasetName = parsed && parsed.filename ? parsed.filename : activeDataset;
+          } catch (e) {
+            datasetName = activeDataset;
+          }
+        }
+        nameEl.textContent = datasetName;
         if (dataStatusChip) {
           dataStatusChip.textContent = allData.contractResults.length;
           dataStatusChip.classList.add('has-items');
@@ -5657,12 +5665,30 @@
       document.getElementById('run-modal').classList.remove('active');
     }
 
+    function setActiveQueue(queue) {
+      document.querySelectorAll('.nav-item.queue-item').forEach(item => {
+        if (item.dataset.queue === queue) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+      // Optionally filter the triage table by queue status
+      if (typeof filterTriageByQueue === 'function') {
+        filterTriageByQueue(queue);
+      }
+    }
+    
     function initRouter() {
-      document.querySelectorAll('.nav-item').forEach(item => {
+      document.querySelectorAll('.nav-item[data-page]').forEach(item => {
         item.addEventListener('click', (e) => {
           e.preventDefault();
           const page = item.dataset.page;
+          const queue = item.dataset.queue;
           navigateTo(page);
+          if (queue) {
+            setActiveQueue(queue);
+          }
         });
       });
       
