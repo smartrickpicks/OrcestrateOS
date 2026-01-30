@@ -566,6 +566,25 @@
     .state-chip.waiting { background: #e3f2fd; color: #1565c0; }
     .state-chip.blocked { background: #ffcdd2; color: #c62828; }
     
+    /* Queue Tab Styles */
+    .queue-tab { padding: 8px 14px; border: 1px solid #ddd; border-radius: 20px; background: #f5f5f5; cursor: pointer; font-size: 0.85em; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .queue-tab:hover { background: #e0e0e0; }
+    .queue-tab.active { background: #1976d2; color: white; border-color: #1976d2; }
+    .queue-tab .queue-count { background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 10px; font-size: 0.85em; min-width: 20px; text-align: center; }
+    .queue-tab.active .queue-count { background: rgba(255,255,255,0.2); }
+    
+    /* Patch Console Table Styles */
+    #patch-console-table tr:hover { background: #f5f5f5; }
+    #patch-console-table td { padding: 8px; border-bottom: 1px solid #eee; }
+    .patch-status-chip { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75em; font-weight: 600; }
+    .patch-status-chip.draft { background: #e3f2fd; color: #1565c0; }
+    .patch-status-chip.submitted { background: #fff3e0; color: #e65100; }
+    .patch-status-chip.approved { background: #e8f5e9; color: #2e7d32; }
+    .patch-status-chip.sent { background: #ede7f6; color: #5e35b1; }
+    .patch-status-chip.returned { background: #fce4ec; color: #c2185b; }
+    .patch-status-chip.applied { background: #c8e6c9; color: #1b5e20; }
+    .patch-status-chip.rejected { background: #ffcdd2; color: #b71c1c; }
+    
     /* Masterline / Artifact Registry Styles */
     .toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; }
     .toggle-switch input { opacity: 0; width: 0; height: 0; }
@@ -986,6 +1005,79 @@
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Workflow Map <span class="info-icon" title="Visual overview of the semantic governance pipeline. Each step shows required artifacts and their status.">&#9432;</span></h3>
           <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Understand the end-to-end governance pipeline at a glance. Click any step to navigate.</p>
           <div id="workflow-map" class="workflow-map"></div>
+        </div>
+
+        <!-- Patch Requests Console -->
+        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Patch Requests Console <span class="info-icon" title="Manage patch requests through their lifecycle. Track requests from creation through Kiwi processing to final application.">&#9432;</span></h3>
+          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Track and manage patch requests. Batch export to Kiwi, import returns, and apply changes.</p>
+          
+          <!-- Queue Tabs -->
+          <div id="patch-queue-tabs" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px;">
+            <button class="queue-tab active" data-queue="new" onclick="switchPatchQueueTab('new')">New <span class="queue-count">0</span></button>
+            <button class="queue-tab" data-queue="needs_review" onclick="switchPatchQueueTab('needs_review')">Needs Review <span class="queue-count">0</span></button>
+            <button class="queue-tab" data-queue="approved" onclick="switchPatchQueueTab('approved')">Approved <span class="queue-count">0</span></button>
+            <button class="queue-tab" data-queue="sent_to_kiwi" onclick="switchPatchQueueTab('sent_to_kiwi')">Sent to Kiwi <span class="queue-count">0</span></button>
+            <button class="queue-tab" data-queue="kiwi_returned" onclick="switchPatchQueueTab('kiwi_returned')">Kiwi Returned <span class="queue-count">0</span></button>
+            <button class="queue-tab" data-queue="applied" onclick="switchPatchQueueTab('applied')">Applied <span class="queue-count">0</span></button>
+            <button class="queue-tab" data-queue="rejected" onclick="switchPatchQueueTab('rejected')">Rejected <span class="queue-count">0</span></button>
+          </div>
+          
+          <!-- Batch Actions -->
+          <div id="patch-batch-actions" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+            <button class="toolbar-btn" onclick="selectAllCurrentQueue()">Select All</button>
+            <button class="toolbar-btn" onclick="clearPatchRequestSelection(); renderPatchConsoleTable();">Clear Selection</button>
+            <button class="toolbar-btn" onclick="batchMarkSentToKiwi()" style="background: #1565c0;">Export to Kiwi (Copy)</button>
+            <button class="toolbar-btn" onclick="openKiwiReturnInbox()" style="background: #7b1fa2;">Paste Kiwi Return</button>
+            <button class="toolbar-btn" onclick="batchMarkApplied()" style="background: #2e7d32;">Mark Applied</button>
+            <button class="toolbar-btn" onclick="batchCopyCommitPack()" style="background: #f57c00;">Copy Batch Commit Pack</button>
+          </div>
+          
+          <!-- Compact Table -->
+          <div id="patch-console-table-container" style="max-height: 300px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px;">
+            <table id="patch-console-table" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+              <thead style="background: #f5f5f5; position: sticky; top: 0;">
+                <tr>
+                  <th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 40px;"><input type="checkbox" id="patch-select-all" onchange="toggleSelectAllPatches(this.checked)"></th>
+                  <th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">ID</th>
+                  <th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Intent</th>
+                  <th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Target</th>
+                  <th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Status</th>
+                  <th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Updated</th>
+                  <th style="padding: 10px 8px; text-align: center; border-bottom: 1px solid #e0e0e0;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="patch-console-tbody">
+                <tr><td colspan="7" style="padding: 20px; text-align: center; color: #888;">No patch requests in this queue</td></tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Summary Stats -->
+          <div id="patch-console-summary" style="margin-top: 15px; display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.85em; color: #666;">
+            <span>Total: <strong id="patch-total-count">0</strong></span>
+            <span>Selected: <strong id="patch-selected-count">0</strong></span>
+            <span>Comments Open: <strong id="comments-open-count">0</strong></span>
+          </div>
+        </div>
+        
+        <!-- Kiwi Return Inbox Modal -->
+        <div id="kiwi-return-inbox-modal" class="modal-overlay" style="display: none;">
+          <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+              <h3>Paste Kiwi Return</h3>
+              <button class="modal-close" onclick="closeKiwiReturnInbox()">&times;</button>
+            </div>
+            <div class="modal-body">
+              <p style="font-size: 0.9em; color: #666; margin-bottom: 15px;">Paste the JSON returned from Kiwi. Each request will be matched by request_id and updated.</p>
+              <textarea id="kiwi-return-textarea" placeholder="Paste Kiwi return JSON here..." style="width: 100%; height: 200px; font-family: monospace; font-size: 0.85em; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"></textarea>
+              <div id="kiwi-return-status" style="margin-top: 10px; display: none; padding: 10px; border-radius: 6px;"></div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
+              <button class="toolbar-btn" onclick="closeKiwiReturnInbox()">Cancel</button>
+              <button class="toolbar-btn" onclick="processKiwiReturn()" style="background: #7b1fa2;">Process Return</button>
+            </div>
+          </div>
         </div>
 
         <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -2557,6 +2649,247 @@
     
     // Initialize patch requests on load
     loadPatchRequests();
+    
+    // ========== PATCH CONSOLE UI ==========
+    var currentPatchQueue = 'new';
+    
+    function switchPatchQueueTab(queueId) {
+      currentPatchQueue = queueId;
+      document.querySelectorAll('.queue-tab').forEach(function(tab) {
+        tab.classList.toggle('active', tab.dataset.queue === queueId);
+      });
+      renderPatchConsoleTable();
+    }
+    
+    function updatePatchQueueCounts() {
+      var counts = getPatchRequestCounts();
+      document.querySelectorAll('.queue-tab').forEach(function(tab) {
+        var queueId = tab.dataset.queue;
+        var countSpan = tab.querySelector('.queue-count');
+        if (countSpan && counts[queueId] !== undefined) {
+          countSpan.textContent = counts[queueId];
+        }
+      });
+      var totalEl = document.getElementById('patch-total-count');
+      if (totalEl) totalEl.textContent = counts.total;
+      
+      var selectedEl = document.getElementById('patch-selected-count');
+      if (selectedEl) selectedEl.textContent = patchRequestsStore.selectedIds.length;
+      
+      var commentsEl = document.getElementById('comments-open-count');
+      if (commentsEl) {
+        var commentCounts = getCommentCounts();
+        commentsEl.textContent = commentCounts.open + commentCounts.reviewer_responded;
+      }
+    }
+    
+    function renderPatchConsoleTable() {
+      var tbody = document.getElementById('patch-console-tbody');
+      if (!tbody) return;
+      
+      var requests = getPatchRequestsByQueue(currentPatchQueue);
+      updatePatchQueueCounts();
+      
+      if (requests.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="padding: 20px; text-align: center; color: #888;">No patch requests in this queue</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = requests.map(function(r) {
+        var isSelected = patchRequestsStore.selectedIds.includes(r.request_id);
+        var intent = r.proposed_change.intent;
+        var intentSummary = (intent.then || 'No intent').substring(0, 40) + ((intent.then || '').length > 40 ? '...' : '');
+        var statusClass = getStatusClass(r.status);
+        var updatedDate = new Date(r.updated_at_utc).toLocaleDateString();
+        
+        return '<tr>' +
+          '<td><input type="checkbox" ' + (isSelected ? 'checked' : '') + ' onchange="togglePatchRequestSelection(\'' + r.request_id + '\'); renderPatchConsoleTable();"></td>' +
+          '<td style="font-family: monospace; font-size: 0.85em;">' + escapeHtml(r.request_id.substring(0, 12)) + '</td>' +
+          '<td>' + escapeHtml(intentSummary) + '</td>' +
+          '<td>' + escapeHtml(humanLabel(r.target_scope.target) || 'N/A') + '</td>' +
+          '<td><span class="patch-status-chip ' + statusClass + '">' + escapeHtml(r.status) + '</span></td>' +
+          '<td style="font-size: 0.85em;">' + updatedDate + '</td>' +
+          '<td style="text-align: center;"><button class="toolbar-btn" style="padding: 4px 8px; font-size: 0.8em;" onclick="viewPatchRequestDetail(\'' + r.request_id + '\')">View</button></td>' +
+          '</tr>';
+      }).join('');
+    }
+    
+    function getStatusClass(status) {
+      var classMap = {
+        'Draft': 'draft',
+        'Submitted': 'submitted',
+        'ReviewerChangesRequested': 'submitted',
+        'ReviewerApproved': 'approved',
+        'AdminHold': 'submitted',
+        'AdminApproved': 'approved',
+        'SentToKiwi': 'sent',
+        'KiwiReturned': 'returned',
+        'Applied': 'applied',
+        'Rejected': 'rejected',
+        'Cancelled': 'rejected'
+      };
+      return classMap[status] || 'draft';
+    }
+    
+    function toggleSelectAllPatches(checked) {
+      var requests = getPatchRequestsByQueue(currentPatchQueue);
+      if (checked) {
+        requests.forEach(function(r) { selectPatchRequest(r.request_id); });
+      } else {
+        requests.forEach(function(r) { deselectPatchRequest(r.request_id); });
+      }
+      renderPatchConsoleTable();
+    }
+    
+    function selectAllCurrentQueue() {
+      selectAllInQueue(currentPatchQueue);
+      renderPatchConsoleTable();
+    }
+    
+    function batchMarkSentToKiwi() {
+      var selected = getSelectedPatchRequests();
+      if (selected.length === 0) {
+        showToast('No requests selected', 'warning');
+        return;
+      }
+      
+      var approvedOnly = selected.filter(function(r) {
+        return r.status === 'ReviewerApproved' || r.status === 'AdminApproved';
+      });
+      
+      if (approvedOnly.length === 0) {
+        showToast('Selected requests must be Approved to send to Kiwi', 'warning');
+        return;
+      }
+      
+      var exportJson = exportPatchRequestsForKiwi(approvedOnly.map(function(r) { return r.request_id; }));
+      navigator.clipboard.writeText(exportJson).then(function() {
+        markSentToKiwi(approvedOnly.map(function(r) { return r.request_id; }), 'Admin', 'Admin');
+        clearPatchRequestSelection();
+        renderPatchConsoleTable();
+        showToast('Exported ' + approvedOnly.length + ' requests to clipboard and marked as Sent to Kiwi', 'success');
+      });
+    }
+    
+    function openKiwiReturnInbox() {
+      document.getElementById('kiwi-return-inbox-modal').style.display = 'flex';
+      document.getElementById('kiwi-return-textarea').value = '';
+      document.getElementById('kiwi-return-status').style.display = 'none';
+    }
+    
+    function closeKiwiReturnInbox() {
+      document.getElementById('kiwi-return-inbox-modal').style.display = 'none';
+    }
+    
+    function processKiwiReturn() {
+      var textarea = document.getElementById('kiwi-return-textarea');
+      var statusEl = document.getElementById('kiwi-return-status');
+      var text = textarea.value.trim();
+      
+      if (!text) {
+        statusEl.textContent = 'Please paste Kiwi return JSON';
+        statusEl.style.display = 'block';
+        statusEl.style.background = '#ffebee';
+        statusEl.style.color = '#c62828';
+        return;
+      }
+      
+      try {
+        var data = JSON.parse(text);
+        var items = data.items || data.requests || (Array.isArray(data) ? data : [data]);
+        var matched = 0;
+        var notFound = 0;
+        
+        items.forEach(function(item) {
+          var requestId = item.request_id;
+          if (requestId) {
+            var result = applyKiwiReturn(requestId, item, 'Admin', 'Admin');
+            if (result) matched++;
+            else notFound++;
+          }
+        });
+        
+        statusEl.textContent = 'Processed: ' + matched + ' matched, ' + notFound + ' not found';
+        statusEl.style.display = 'block';
+        statusEl.style.background = matched > 0 ? '#e8f5e9' : '#fff3e0';
+        statusEl.style.color = matched > 0 ? '#2e7d32' : '#e65100';
+        
+        if (matched > 0) {
+          renderPatchConsoleTable();
+          setTimeout(function() { closeKiwiReturnInbox(); }, 1500);
+        }
+      } catch (e) {
+        statusEl.textContent = 'Invalid JSON: ' + e.message;
+        statusEl.style.display = 'block';
+        statusEl.style.background = '#ffebee';
+        statusEl.style.color = '#c62828';
+      }
+    }
+    
+    function batchMarkApplied() {
+      var selected = getSelectedPatchRequests();
+      if (selected.length === 0) {
+        showToast('No requests selected', 'warning');
+        return;
+      }
+      
+      var returnedOnly = selected.filter(function(r) { return r.status === 'KiwiReturned'; });
+      if (returnedOnly.length === 0) {
+        showToast('Selected requests must be in Kiwi Returned status', 'warning');
+        return;
+      }
+      
+      markApplied(returnedOnly.map(function(r) { return r.request_id; }), 'Admin', 'Admin');
+      clearPatchRequestSelection();
+      renderPatchConsoleTable();
+      showToast('Marked ' + returnedOnly.length + ' requests as Applied', 'success');
+    }
+    
+    function batchCopyCommitPack() {
+      var selected = getSelectedPatchRequests();
+      if (selected.length === 0) {
+        showToast('No requests selected', 'warning');
+        return;
+      }
+      
+      var returnedOnly = selected.filter(function(r) { return r.status === 'KiwiReturned' && r.kiwi_return; });
+      if (returnedOnly.length === 0) {
+        showToast('Selected requests must have Kiwi returns', 'warning');
+        return;
+      }
+      
+      var commitPack = exportBatchCommitPack(returnedOnly.map(function(r) { return r.request_id; }));
+      navigator.clipboard.writeText(commitPack).then(function() {
+        showToast('Copied commit pack for ' + returnedOnly.length + ' requests', 'success');
+      });
+    }
+    
+    function viewPatchRequestDetail(requestId) {
+      var request = getPatchRequest(requestId);
+      if (!request) return;
+      
+      // For now, show in an alert - will be replaced by drawer in Stage 6
+      var intent = request.proposed_change.intent;
+      var detail = 'Patch Request: ' + request.request_id + '\n\n' +
+        'Status: ' + request.status + '\n' +
+        'Target: ' + request.target_scope.target + '\n\n' +
+        'WHEN: ' + (intent.when || 'N/A') + '\n' +
+        'THEN: ' + (intent.then || 'N/A') + '\n' +
+        'BECAUSE: ' + (intent.because || 'N/A') + '\n\n' +
+        'Rationale: ' + (request.proposed_change.rationale || 'N/A');
+      
+      if (request.kiwi_return) {
+        detail += '\n\n--- KIWI RETURN ---\n' + JSON.stringify(request.kiwi_return, null, 2);
+      }
+      
+      alert(detail);
+    }
+    
+    // Initialize patch console when admin view loads
+    function initPatchConsole() {
+      renderPatchConsoleTable();
+      updatePatchQueueCounts();
+    }
     
     // ========== STANDARDIZER (D3) ==========
     let standardizerResult = {
@@ -6565,6 +6898,7 @@ Add any additional notes here.
     renderArtifactRegistryTable();
     renderWorkflowMap();
     setupStandardizerDropZone();
+    initPatchConsole();
     
     // If Dev Masterline is enabled, auto-load artifacts instead of default loadData
     if (artifactRegistry.devMasterlineEnabled) {
