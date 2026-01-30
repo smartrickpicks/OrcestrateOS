@@ -10,25 +10,37 @@
     h1 { margin-bottom: 10px; color: #1a1a2e; }
 
     .app-layout { display: flex; min-height: 100vh; }
-    .nav-sidebar { width: 200px; background: #1a1a2e; color: white; flex-shrink: 0; display: flex; flex-direction: column; }
-    .nav-header { padding: 20px; border-bottom: 1px solid #2d2d4a; }
-    .nav-header h1 { font-size: 1.1em; color: white; margin: 0; }
-    .nav-header .version { font-size: 0.75em; color: #888; margin-top: 4px; }
-    .nav-menu { flex-grow: 1; padding: 15px 0; }
-    .nav-item { display: flex; align-items: center; padding: 12px 20px; color: #aaa; text-decoration: none; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
+    .nav-sidebar { width: 280px; background: #1a1a2e; color: white; flex-shrink: 0; display: flex; flex-direction: column; overflow-y: auto; }
+    .nav-header { padding: 16px 20px; border-bottom: 1px solid #2d2d4a; }
+    .nav-header h1 { font-size: 1em; color: white; margin: 0; }
+    .nav-header .version { font-size: 0.7em; color: #888; margin-top: 4px; }
+    .nav-menu { flex-grow: 1; padding: 10px 0; overflow-y: auto; }
+    .nav-section { margin-bottom: 8px; }
+    .nav-section-header { padding: 8px 20px 6px; font-size: 0.65em; color: #666; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .nav-item { display: flex; align-items: center; padding: 10px 20px; color: #aaa; text-decoration: none; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
     .nav-item:hover { background: #2d2d4a; color: white; }
     .nav-item.active { background: #0f3460; color: white; border-left-color: #1565c0; }
-    .nav-icon { width: 20px; margin-right: 12px; text-align: center; }
-    .nav-label { font-size: 0.9em; }
-    .nav-mode-section { padding: 15px 20px; border-top: 1px solid #2d2d4a; }
-    .nav-mode-label { font-size: 0.7em; color: #888; text-transform: uppercase; margin-bottom: 8px; }
-    .mode-toggle { display: flex; gap: 5px; flex-wrap: wrap; }
-    .mode-btn { padding: 5px 10px; font-size: 0.75em; border: 1px solid #555; background: transparent; color: #aaa; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+    .nav-item.queue-item { padding: 8px 20px; }
+    .nav-icon { width: 18px; margin-right: 10px; text-align: center; font-size: 0.9em; }
+    .nav-label { font-size: 0.85em; flex-grow: 1; }
+    .nav-count { background: #3d3d5c; color: #aaa; padding: 2px 8px; border-radius: 10px; font-size: 0.7em; font-weight: 600; margin-left: 8px; }
+    .nav-count.has-items { background: #1565c0; color: white; }
+    .nav-count.blocking { background: #c62828; color: white; }
+    .nav-severity-chips { display: flex; gap: 3px; margin-left: 8px; }
+    .nav-severity-chip { width: 6px; height: 6px; border-radius: 50%; }
+    .nav-severity-chip.blocking { background: #c62828; }
+    .nav-severity-chip.warning { background: #f57c00; }
+    .nav-severity-chip.info { background: #1565c0; }
+    .nav-divider { height: 1px; background: #2d2d4a; margin: 8px 20px; }
+    .nav-mode-section { padding: 12px 20px; border-top: 1px solid #2d2d4a; }
+    .nav-mode-label { font-size: 0.65em; color: #666; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
+    .mode-toggle { display: flex; gap: 4px; flex-wrap: wrap; }
+    .mode-btn { padding: 6px 12px; font-size: 0.75em; border: 1px solid #555; background: transparent; color: #aaa; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
     .mode-btn:hover { border-color: #888; color: white; }
     .mode-btn.active { background: #1565c0; border-color: #1565c0; color: white; }
-    .mode-btn.mode-operator { }
-    .mode-btn.mode-reviewer { }
     .mode-btn.mode-analyst { }
+    .mode-btn.mode-reviewer { }
+    .mode-btn.mode-admin { }
 
     .main-content { flex-grow: 1; padding: 20px; overflow-y: auto; max-height: 100vh; }
     .page { display: none; }
@@ -139,7 +151,10 @@
 
     /* Nav item mode visibility */
     .nav-item.reviewer-only { display: none; }
+    .nav-item.admin-only { display: none; }
     .mode-reviewer .nav-item.reviewer-only { display: flex; }
+    .mode-admin .nav-item.reviewer-only { display: flex; }
+    .mode-admin .nav-item.admin-only { display: flex; }
 
     /* Session Status Chip */
     .session-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; }
@@ -197,6 +212,32 @@
 
     /* Reset Button */
     .reset-session-btn { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+
+    /* Empty Queue Message */
+    .empty-queue-message { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; text-align: center; padding: 40px; background: #fafafa; border-radius: 12px; margin: 20px 0; }
+    .empty-queue-message.hidden { display: none; }
+    .empty-queue-icon { font-size: 3em; margin-bottom: 15px; }
+    .empty-queue-message h3 { font-size: 1.3em; color: #333; margin-bottom: 10px; }
+    .empty-queue-message p { color: #666; margin-bottom: 20px; max-width: 400px; line-height: 1.5; }
+    .empty-queue-cta { background: #1565c0; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 1em; cursor: pointer; transition: background 0.2s; }
+    .empty-queue-cta:hover { background: #1976d2; }
+
+    /* Data Sources Drawer (right-side slide-over) */
+    .data-drawer { position: fixed; top: 0; right: -420px; width: 420px; height: 100vh; background: white; box-shadow: -4px 0 20px rgba(0,0,0,0.2); z-index: 950; transition: right 0.3s ease; display: flex; flex-direction: column; }
+    .data-drawer.active { right: 0; }
+    .data-drawer-header { background: #1a1a2e; color: white; padding: 16px 20px; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
+    .data-drawer-header h3 { margin: 0; font-size: 1.1em; }
+    .data-drawer-close { background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; line-height: 1; }
+    .data-drawer-body { padding: 20px; overflow-y: auto; flex-grow: 1; }
+    .data-drawer-section { background: #f9f9f9; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .data-drawer-section h4 { margin: 0 0 8px; font-size: 0.95em; color: #333; display: flex; align-items: center; gap: 8px; }
+    .data-drawer-section h4 .required { color: #c62828; font-size: 0.75em; font-weight: 600; }
+    .data-drawer-section h4 .optional { color: #888; font-size: 0.75em; font-weight: normal; }
+    .data-drawer-section p { font-size: 0.8em; color: #666; margin: 0 0 12px; line-height: 1.4; }
+    .data-drawer-section .info-tooltip { display: inline-block; width: 14px; height: 14px; background: #1565c0; color: white; border-radius: 50%; font-size: 0.65em; text-align: center; line-height: 14px; cursor: help; margin-left: 4px; }
+    .data-drawer-actions { padding: 16px 20px; border-top: 1px solid #eee; flex-shrink: 0; }
+    .data-drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); display: none; z-index: 940; }
+    .data-drawer-overlay.active { display: block; }
 
     .filters { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .filters-row { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
@@ -508,29 +549,81 @@
   <div class="app-layout">
     <nav class="nav-sidebar">
       <div class="nav-header">
-        <h1>Control Board</h1>
-        <div class="version">v1.1 | Governance-only</div>
+        <h1>Semantic Control Board</h1>
+        <div class="version">v1.2 | Governance-only</div>
       </div>
       <div class="nav-menu">
-        <a class="nav-item active" data-page="triage" href="#/triage">
-          <span class="nav-icon">⚡</span>
-          <span class="nav-label">Triage</span>
-        </a>
-        <a class="nav-item" data-page="patch" href="#/patch">
-          <span class="nav-icon">✎</span>
-          <span class="nav-label">Patch Studio</span>
-        </a>
-        <a class="nav-item reviewer-only" data-page="review" href="#/review">
-          <span class="nav-icon">✓</span>
-          <span class="nav-label">Review</span>
-        </a>
+        <div class="nav-section">
+          <div class="nav-section-header">Queues</div>
+          <a class="nav-item queue-item active" data-page="triage" data-queue="todo" href="#/triage">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">To Do</span>
+            <span class="nav-count" id="queue-count-todo">0</span>
+          </a>
+          <a class="nav-item queue-item" data-page="triage" data-queue="needs_review" href="#/triage?queue=needs_review">
+            <span class="nav-icon">👁</span>
+            <span class="nav-label">Needs Review</span>
+            <span class="nav-count" id="queue-count-needs_review">0</span>
+          </a>
+          <a class="nav-item queue-item" data-page="triage" data-queue="flagged" href="#/triage?queue=flagged">
+            <span class="nav-icon">🚩</span>
+            <span class="nav-label">Flagged</span>
+            <span class="nav-count" id="queue-count-flagged">0</span>
+          </a>
+          <a class="nav-item queue-item" data-page="triage" data-queue="blocked" href="#/triage?queue=blocked">
+            <span class="nav-icon">⛔</span>
+            <span class="nav-label">Blocked</span>
+            <span class="nav-count" id="queue-count-blocked">0</span>
+          </a>
+          <a class="nav-item queue-item" data-page="triage" data-queue="finalized" href="#/triage?queue=finalized">
+            <span class="nav-icon">✅</span>
+            <span class="nav-label">Finalized</span>
+            <span class="nav-count" id="queue-count-finalized">0</span>
+          </a>
+        </div>
+
+        <div class="nav-divider"></div>
+
+        <div class="nav-section">
+          <div class="nav-section-header">Session</div>
+          <a class="nav-item" id="nav-data-sources" href="#" onclick="openDataSourceDrawer(); return false;">
+            <span class="nav-icon">📁</span>
+            <span class="nav-label">Data Sources</span>
+          </a>
+          <a class="nav-item" id="nav-evidence-status" href="#" onclick="showEvidenceStatus(); return false;">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Evidence Status</span>
+          </a>
+          <a class="nav-item" id="nav-reset-session" href="#" onclick="resetSession(); return false;">
+            <span class="nav-icon">🔄</span>
+            <span class="nav-label">Reset Session</span>
+          </a>
+        </div>
+
+        <div class="nav-divider"></div>
+
+        <div class="nav-section">
+          <div class="nav-section-header">Tools</div>
+          <a class="nav-item" data-page="patch" href="#/patch">
+            <span class="nav-icon">✎</span>
+            <span class="nav-label">Patch Studio</span>
+          </a>
+          <a class="nav-item reviewer-only" data-page="review" href="#/review">
+            <span class="nav-icon">🔍</span>
+            <span class="nav-label">Config Inspector</span>
+          </a>
+          <a class="nav-item admin-only" data-page="admin" href="#/admin">
+            <span class="nav-icon">⚙</span>
+            <span class="nav-label">Governance</span>
+          </a>
+        </div>
       </div>
       <div class="nav-mode-section">
-        <div class="nav-mode-label">View Mode</div>
+        <div class="nav-mode-label">Role</div>
         <div class="mode-toggle">
-          <button class="mode-btn mode-operator active" data-mode="operator">Operator</button>
+          <button class="mode-btn mode-analyst active" data-mode="analyst">Analyst</button>
           <button class="mode-btn mode-reviewer" data-mode="reviewer">Reviewer</button>
-          <button class="mode-btn mode-analyst" data-mode="analyst">Analyst</button>
+          <button class="mode-btn mode-admin" data-mode="admin">Admin</button>
         </div>
       </div>
     </nav>
@@ -553,12 +646,12 @@
         </div>
       </div>
 
-      <!-- Welcome Hero (visible when no data loaded) -->
-      <div class="welcome-hero" id="welcome-hero">
-        <h2>Semantic Control Board</h2>
-        <p>Load an sf_packet artifact to begin triaging issues, building patches, and validating semantic rules.</p>
-        <button class="welcome-cta" id="welcome-load-data">Load Data</button>
-        <div class="welcome-hint">Select a preview artifact or known path to get started</div>
+      <!-- Empty Queue Message (visible when no data loaded) -->
+      <div class="empty-queue-message" id="empty-queue-message">
+        <div class="empty-queue-icon">📋</div>
+        <h3>No records loaded yet</h3>
+        <p>Open <strong>Data Sources</strong> in the sidebar to paste or drop your Preview Packet.</p>
+        <button class="empty-queue-cta" id="empty-queue-load" onclick="openDataSourceDrawer()">Open Data Sources</button>
       </div>
 
       <!-- TRIAGE PAGE (default after data loaded) -->
@@ -742,6 +835,59 @@
 
         <div id="review-evidence-summary" class="evidence-summary-panel"></div>
       </div><!-- end page-review -->
+
+      <!-- ADMIN PAGE (Governance) -->
+      <div class="page" id="page-admin">
+        <div class="page-header">
+          <h2>Governance</h2>
+          <p class="page-desc">View audit trails, manage baselines, and configure governance policies.</p>
+        </div>
+
+        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Version & Baseline</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div>
+              <label style="font-size: 0.75em; color: #666; text-transform: uppercase;">Current Base Version</label>
+              <div style="font-family: monospace; font-size: 1em; margin-top: 4px;" id="admin-base-version">--</div>
+            </div>
+            <div>
+              <label style="font-size: 0.75em; color: #666; text-transform: uppercase;">Patch Target Version</label>
+              <div style="font-family: monospace; font-size: 1em; margin-top: 4px;" id="admin-patch-version">--</div>
+            </div>
+            <div>
+              <label style="font-size: 0.75em; color: #666; text-transform: uppercase;">Last Smoke Test</label>
+              <div style="font-size: 0.9em; margin-top: 4px;" id="admin-last-smoke">Not Run</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Evidence Gates</h3>
+          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Status of preflight checks. Evidence is pasted in (UI does not run these).</p>
+          <div id="admin-evidence-gates" style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <div class="state-chip pending">Validation: Pending</div>
+            <div class="state-chip pending">Conflicts: Pending</div>
+            <div class="state-chip pending">Smoke Baseline: Pending</div>
+            <div class="state-chip pending">Smoke Edge: Pending</div>
+          </div>
+        </div>
+
+        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Governance Notes</h3>
+          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Admin-level notes and overrides are recorded here.</p>
+          <div id="admin-governance-notes" style="background: #f9f9f9; padding: 15px; border-radius: 6px; min-height: 60px;">
+            <em style="color: #888;">No governance notes recorded.</em>
+          </div>
+        </div>
+
+        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Quick Actions</h3>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="toolbar-btn" onclick="document.getElementById('btn-run')?.click()">Run Commands</button>
+            <button class="toolbar-btn" onclick="document.getElementById('config-inspector-toggle')?.click()">Open Config Inspector</button>
+          </div>
+        </div>
+      </div><!-- end page-admin -->
 
     </main><!-- end main-content -->
   </div><!-- end app-layout -->
@@ -1123,7 +1269,8 @@
       sha256: ''
     };
 
-    let currentMode = 'operator';
+    let currentMode = 'analyst';
+    let currentQueue = 'todo';
     let dataLoaded = false;
     let currentArtifactPath = '';
     
@@ -1479,11 +1626,14 @@
     }
 
     function navigateTo(page) {
-      const pages = ['triage', 'patch', 'review'];
+      const pages = ['triage', 'patch', 'review', 'admin'];
       if (!pages.includes(page)) page = 'triage';
       
       // Review page only accessible in reviewer mode
-      if (page === 'review' && currentMode !== 'reviewer') {
+      if (page === 'admin' && currentMode !== 'admin') {
+        return; // Admin page requires admin mode
+      }
+      if (page === 'review' && currentMode !== 'reviewer' && currentMode !== 'admin') {
         page = 'triage';
       }
       
@@ -1500,18 +1650,28 @@
     }
 
     function setMode(mode) {
-      const modes = ['operator', 'reviewer', 'analyst'];
-      if (!modes.includes(mode)) mode = 'operator';
+      const modes = ['analyst', 'reviewer', 'admin'];
+      if (!modes.includes(mode)) mode = 'analyst';
       currentMode = mode;
       
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
       const modeBtn = document.querySelector(`.mode-btn[data-mode="${mode}"]`);
       if (modeBtn) modeBtn.classList.add('active');
       
-      // Toggle Review nav visibility based on mode
-      const reviewNav = document.querySelector('.nav-item.reviewer-only');
-      if (reviewNav) {
-        reviewNav.style.display = mode === 'reviewer' ? 'flex' : 'none';
+      // Toggle nav visibility based on mode using CSS classes
+      const appLayout = document.querySelector('.app-layout');
+      if (appLayout) {
+        appLayout.classList.remove('mode-analyst', 'mode-reviewer', 'mode-admin');
+        appLayout.classList.add(`mode-${mode}`);
+      }
+      
+      // If on admin page but not admin mode, redirect to triage
+      if (window.location.hash.includes('admin') && mode !== 'admin') {
+        navigateToPage('triage');
+      }
+      // If on review page but not reviewer or admin mode, redirect to triage
+      if (window.location.hash.includes('review') && mode === 'analyst') {
+        navigateToPage('triage');
       }
       
       applyModeVisibility(mode);
@@ -1519,35 +1679,107 @@
     }
 
     function applyModeVisibility(mode) {
-      const opElements = document.querySelectorAll('[data-mode-operator]');
       const revElements = document.querySelectorAll('[data-mode-reviewer]');
       const anlElements = document.querySelectorAll('[data-mode-analyst]');
+      const admElements = document.querySelectorAll('[data-mode-admin]');
       
-      opElements.forEach(el => {
-        el.classList.toggle('mode-hidden', mode !== 'operator' && !el.dataset.modeReviewer && !el.dataset.modeAnalyst);
-      });
       revElements.forEach(el => {
-        el.classList.toggle('mode-hidden', mode !== 'reviewer' && !el.dataset.modeOperator && !el.dataset.modeAnalyst);
+        el.classList.toggle('mode-hidden', mode !== 'reviewer' && mode !== 'admin');
       });
       anlElements.forEach(el => {
-        el.classList.toggle('mode-hidden', mode !== 'analyst' && !el.dataset.modeOperator && !el.dataset.modeReviewer);
+        el.classList.toggle('mode-hidden', mode !== 'analyst');
+      });
+      admElements.forEach(el => {
+        el.classList.toggle('mode-hidden', mode !== 'admin');
       });
     }
 
     function updateUIForDataState() {
-      const welcomeHero = document.getElementById('welcome-hero');
+      const emptyQueueMsg = document.getElementById('empty-queue-message');
       const topToolbar = document.getElementById('top-toolbar');
       
       if (dataLoaded) {
-        if (welcomeHero) welcomeHero.classList.add('hidden');
+        if (emptyQueueMsg) emptyQueueMsg.classList.add('hidden');
         if (topToolbar) topToolbar.style.display = 'flex';
       } else {
-        if (welcomeHero) welcomeHero.classList.remove('hidden');
+        if (emptyQueueMsg) emptyQueueMsg.classList.remove('hidden');
         if (topToolbar) topToolbar.style.display = 'none';
       }
       
       // Update session chip (handles status display)
       updateSessionChip();
+      // Update queue counts
+      updateQueueCounts();
+    }
+
+    function updateQueueCounts() {
+      const results = allData.contractResults || [];
+      const counts = {
+        todo: 0,
+        needs_review: 0,
+        flagged: 0,
+        blocked: 0,
+        finalized: 0
+      };
+      
+      results.forEach(r => {
+        const status = (r.sf_contract_status || '').toLowerCase();
+        if (status === 'needs_review') counts.needs_review++;
+        else if (status === 'blocked') counts.blocked++;
+        else if (status === 'ready') counts.finalized++;
+        else counts.todo++;
+      });
+      
+      // Total unfinished = todo + needs_review (the main work queue)
+      counts.todo = results.length - counts.finalized;
+      
+      // Update count badges
+      Object.entries(counts).forEach(([queue, count]) => {
+        const el = document.getElementById(`queue-count-${queue}`);
+        if (el) {
+          el.textContent = count;
+          el.classList.toggle('has-items', count > 0);
+          el.classList.toggle('blocking', queue === 'blocked' && count > 0);
+        }
+      });
+    }
+
+    // Data Sources Drawer functions
+    function openDataSourceDrawer() {
+      // Use the existing modal for now, will convert to drawer later
+      openDataSourceModal();
+    }
+    
+    function showEvidenceStatus() {
+      // Navigate to patch studio to show preflight status
+      navigateToPage('patch');
+      const preflightToggle = document.getElementById('preflight-toggle');
+      if (preflightToggle) preflightToggle.click();
+    }
+    
+    function resetSession() {
+      if (!confirm('Reset session? This will clear all loaded data and evidence.')) return;
+      
+      // Clear data
+      allData = { contractResults: [], issues: [], fieldActions: [], changeLog: [], summary: {} };
+      sessionState = { status: 'not_loaded', sourceType: null, loadedAt: null };
+      dataLoaded = false;
+      currentArtifactPath = '';
+      
+      // Clear localStorage
+      localStorage.removeItem('viewer_session_data_v11');
+      localStorage.removeItem('viewer_remember_v11');
+      localStorage.removeItem(PREFLIGHT_STORAGE_KEY);
+      
+      // Reset UI
+      updateUIForDataState();
+      
+      // Clear containers
+      const containers = ['summary-container', 'contract-results-container', 'issues-container', 'field-actions-container'];
+      containers.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '';
+      });
     }
 
     // Modal functions
@@ -1596,9 +1828,11 @@
         navigateTo(hash);
       });
       
-      const savedMode = localStorage.getItem('viewer_mode_v10');
+      let savedMode = localStorage.getItem('viewer_mode_v10');
+      // Convert legacy 'operator' mode to 'analyst'
+      if (savedMode === 'operator') savedMode = 'analyst';
       if (savedMode) setMode(savedMode);
-      else setMode('operator');
+      else setMode('analyst');
       
       const hash = window.location.hash.replace('#/', '') || 'triage';
       navigateTo(hash);

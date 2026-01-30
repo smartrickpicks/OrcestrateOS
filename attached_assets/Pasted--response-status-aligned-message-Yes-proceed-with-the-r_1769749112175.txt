@@ -1,0 +1,138 @@
+{
+  "response": {
+    "status": "aligned",
+    "message": "Yes — proceed with the redesign as planned, but DO NOT trash existing Admin/Patch Studio capabilities. Treat this as a re-shell + re-layout that preserves core features and re-homes them into the new dashboard/Workbench model."
+  },
+  "guardrails": {
+    "keep_existing_features": [
+      "Admin governance views (gates, versions, baselines, policies, audit)",
+      "Patch Studio / Preflight Gate logic (PR checklist, evidence parsing, copy PR summary)",
+      "Evidence parsing (paste terminal output → auto-parse evidence summary)",
+      "Copy Patch JSON + Copy PR Summary behaviors",
+      "Deterministic queue sorting rules and severity chips",
+      "Offline-first guarantees (no network calls, no runtime execution, copy-only outputs)"
+    ],
+    "do_not_regress": [
+      "Any existing ability to copy artifacts (patch/pr summary/evidence)",
+      "Any existing preflight gating checklist semantics",
+      "Any existing evidence chip/status functionality",
+      "Any existing record triage affordances (flag/finalize/blocked flows)"
+    ],
+    "allowed_changes": [
+      "Replace hero screen with dashboard shell",
+      "Replace modal with drawer",
+      "Rename terms in UI to plain English",
+      "Merge patch overlay into Field Editor",
+      "Remove Operator role and map workflows to Analyst/Reviewer/Admin"
+    ]
+  },
+  "migration_strategy": {
+    "principle": "Refactor-by-wrapping: keep the working components and move them into the new shell before deleting anything.",
+    "sequence_rule": "Move UI structure first, then re-home features, then delete dead UI last.",
+    "definition_of_done": [
+      "All prior features still reachable (even if via temporary nav links) inside new shell",
+      "No feature loss in Admin + Patch Studio",
+      "New Workbench becomes default landing state"
+    ]
+  },
+  "instructions_to_kiwi_for_next_move": {
+    "title": "Proceed with redesign WITHOUT losing Admin/Patch Studio — implement as re-shell + feature re-home",
+    "non_negotiables": [
+      "Preserve Admin features and Patch Studio features; do not delete them.",
+      "Implement dashboard shell first (sidebar/topbar/workbench).",
+      "Ensure old Patch Studio and Admin are accessible from new nav immediately (even if temporarily in a 'Legacy' section).",
+      "After re-homing is complete, remove only the hero screen and redundant operator role."
+    ],
+    "implementation_phases": [
+      {
+        "phase": "0 — Inventory + Preserve",
+        "deliverables": [
+          "List all current UI panels/features (Admin, Patch Studio, Evidence Parser, Load Data modal, etc.)",
+          "Mark each as KEEP, REHOME, or REMOVE",
+          "Create temporary navigation entries: 'Admin', 'Patch Studio', 'Workbench', 'Legacy (if needed)'"
+        ],
+        "exit_criteria": [
+          "Nothing is deleted",
+          "All current screens still open via nav"
+        ]
+      },
+      {
+        "phase": "1 — Dashboard Shell (No Feature Loss)",
+        "deliverables": [
+          "Replace centered hero with dashboard shell layout (sidebar + topbar + main content)",
+          "Sidebar includes Queues, Quick Filters, Session, plus Admin + Patch Studio links",
+          "Topbar includes Role selector (Analyst/Reviewer/Admin), Search, Evidence chips"
+        ],
+        "exit_criteria": [
+          "App loads directly into shell",
+          "Old screens still accessible from nav"
+        ]
+      },
+      {
+        "phase": "2 — Data Sources Drawer (Replace Modal)",
+        "deliverables": [
+          "Convert Load Data modal into right-side drawer",
+          "Keep existing paste/drop functionality intact",
+          "Add plain-English microcopy + tooltips",
+          "Preserve localStorage 'remember session' toggle"
+        ],
+        "exit_criteria": [
+          "All load flows work",
+          "No regressions vs modal behavior"
+        ]
+      },
+      {
+        "phase": "3 — Workbench as Default (Queues + Table)",
+        "deliverables": [
+          "Queue table view for selected queue",
+          "Counts and severity chips visible in sidebar",
+          "Row click opens Record Drawer placeholder (even if minimal initially)"
+        ],
+        "exit_criteria": [
+          "User can triage records in the Workbench without touching legacy view"
+        ]
+      },
+      {
+        "phase": "4 — Re-home Patch Studio Into Workbench",
+        "deliverables": [
+          "Move Preflight Gate + Evidence Parser into Workbench context (or as Workbench subpanel)",
+          "Keep 'Copy Patch JSON' and 'Copy PR Summary' identical",
+          "Expose Preflight status as chips in topbar Evidence strip"
+        ],
+        "exit_criteria": [
+          "Everything Patch Studio did is now reachable from Workbench"
+        ]
+      },
+      {
+        "phase": "5 — PDF Viewer + Field Editor Split",
+        "deliverables": [
+          "Split layout: PDF 60% / Field Editor 40%",
+          "Field Editor has tabs (Fields / Issues / Patch Draft)",
+          "Patch overlay lives inside Field Editor (not separate page)"
+        ],
+        "exit_criteria": [
+          "Parity with DataDash V1 mental model is achieved"
+        ]
+      },
+      {
+        "phase": "6 — Admin View Preservation + Cleanup",
+        "deliverables": [
+          "Admin 'Governance' section remains intact",
+          "Operator role removed (only Analyst/Reviewer/Admin)",
+          "Hero screen removed",
+          "Legacy links removed ONLY after all features are re-homed"
+        ],
+        "exit_criteria": [
+          "No redundant role/screen remains",
+          "Admin features still present and easy to find"
+        ]
+      }
+    ],
+    "role_mapping_rule": {
+      "Analyst": "Workbench editing + patch drafting",
+      "Reviewer": "Workbench review + finalize + preflight approval actions",
+      "Admin": "Governance settings + audits + policy oversight",
+      "removed": "Operator (folded into Analyst/Reviewer)"
+    }
+  }
+}
