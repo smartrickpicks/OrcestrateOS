@@ -1,4 +1,4 @@
-# Kiwi Semantic Control Board (v1.2.2)
+# Kiwi Semantic Control Board (v1.2.3)
 
 ## Overview
 
@@ -13,7 +13,7 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 **v1.2 Dashboard Shell:**
 - Queue-centric sidebar: To Do, Needs Review, Flagged, Blocked, Finalized with live counts
 - Right-side drawers: Data Sources Drawer, Record Detail Drawer
-- Role-based navigation: Analyst (default), Reviewer, Admin
+- Role-based navigation: Analyst (default), Verifier, Admin
 - Session management: Data Sources, Evidence Status, Reset Session
 - First-Run Configure Wizard: Multi-step setup for data sources and workflow defaults
 - Admin Config Flows: Workflow-ordered view of config artifacts with Plain-English, Payload, Master tabs
@@ -30,6 +30,18 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 - Admin Patch Console: 7 queue tabs with live counts, batch selection, export/import actions
 - Patch Request Detail Drawer: Plain-English Intent, Kiwi Payload viewer, Apply Checklist
 - Comment UI: Add Comment modal, Elevate to Patch Request flow, Comments panel in Record Drawer
+
+**v1.2.3 Patch Studio + Role-Gated Review Pipeline:**
+- Role-Based Access Control: Analyst, Verifier, Admin with permission gating
+- Extended 12-status lifecycle: Needs_Clarification, Reviewer_Responded, Admin_Hold
+- Patch Studio as Workbench Tab: Draft, Preflight, Evidence Pack sub-tabs
+- Submit to Patch Queue CTA with audit logging
+- Preflight Checks with pass/warn/fail badges and Copy Report
+- Evidence Pack: 4 structured blocks (Observation, Expected, Justification, Repro)
+- Verifier Actions: Request Clarification, Approve, Reject, Review Notes
+- Admin Actions: Admin Approve, Admin Hold, Export to Kiwi, Paste Return, Mark Applied
+- Revision Tracking: revisions array with diff summaries and snapshots
+- Append-only Audit Log with event types
 
 **What This Is NOT:**
 - Not a runtime system

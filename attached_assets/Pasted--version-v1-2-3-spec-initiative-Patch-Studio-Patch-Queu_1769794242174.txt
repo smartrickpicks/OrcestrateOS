@@ -1,0 +1,351 @@
+{
+  "version": "v1.2.3-spec",
+  "initiative": "Patch Studio -> Patch Queue submission + role-gated review + admin-to-kiwi handoff (offline-first)",
+  "roles": {
+    "Analyst": {
+      "can": [
+        "create_draft",
+        "edit_own_draft",
+        "submit_to_patch_queue",
+        "respond_to_clarification",
+        "cancel_own_draft_or_submitted"
+      ],
+      "cannot": [
+        "reviewer_approve",
+        "admin_approve",
+        "send_to_kiwi",
+        "paste_kiwi_return",
+        "mark_applied",
+        "admin_hold"
+      ]
+    },
+    "Verifier": {
+      "can": [
+        "comment_rfi",
+        "request_clarification",
+        "edit_review_fields",
+        "reviewer_approve",
+        "reject",
+        "send_back_to_submitted_after_edits"
+      ],
+      "cannot": [
+        "send_to_kiwi",
+        "paste_kiwi_return",
+        "mark_applied",
+        "admin_approve",
+        "edit_patch_payload_directly"
+      ],
+      "edit_review_fields_allowlist": [
+        "intent.when",
+        "intent.then",
+        "intent.because",
+        "target_scope",
+        "risk",
+        "review_notes",
+        "evidence.checklist_status",
+        "clarification_questions"
+      ]
+    },
+    "Admin": {
+      "can": [
+        "everything_verifier_can",
+        "admin_approve",
+        "send_to_kiwi",
+        "paste_kiwi_return",
+        "mark_applied",
+        "admin_hold",
+        "cancel_any",
+        "export_commit_pack"
+      ]
+    }
+  },
+  "status_model": {
+    "statuses": [
+      "Draft",
+      "Submitted",
+      "Needs_Clarification",
+      "Reviewer_Responded",
+      "Reviewer_Approved",
+      "Admin_Approved",
+      "Sent_to_Kiwi",
+      "Kiwi_Returned",
+      "Applied",
+      "Rejected",
+      "Cancelled",
+      "Admin_Hold"
+    ],
+    "queue_tabs_as_views": [
+      {
+        "tab": "New",
+        "filter_status": ["Submitted"]
+      },
+      {
+        "tab": "Needs Review",
+        "filter_status": ["Needs_Clarification", "Reviewer_Responded"]
+      },
+      {
+        "tab": "Approved",
+        "filter_status": ["Reviewer_Approved", "Admin_Approved"]
+      },
+      {
+        "tab": "Sent to Kiwi",
+        "filter_status": ["Sent_to_Kiwi"]
+      },
+      {
+        "tab": "Kiwi Returned",
+        "filter_status": ["Kiwi_Returned"]
+      },
+      {
+        "tab": "Applied",
+        "filter_status": ["Applied"]
+      },
+      {
+        "tab": "Rejected",
+        "filter_status": ["Rejected", "Cancelled"]
+      }
+    ],
+    "transitions": [
+      {
+        "from": "Draft",
+        "to": "Submitted",
+        "allowed_roles": ["Analyst"],
+        "action": "submit_to_patch_queue",
+        "audit_event": "PATCH_REQUEST_SUBMITTED"
+      },
+      {
+        "from": "Submitted",
+        "to": "Needs_Clarification",
+        "allowed_roles": ["Verifier", "Admin"],
+        "action": "request_clarification",
+        "audit_event": "CLARIFICATION_REQUESTED"
+      },
+      {
+        "from": "Needs_Clarification",
+        "to": "Reviewer_Responded",
+        "allowed_roles": ["Analyst"],
+        "action": "respond_to_clarification",
+        "audit_event": "CLARIFICATION_RESPONDED"
+      },
+      {
+        "from": "Reviewer_Responded",
+        "to": "Reviewer_Approved",
+        "allowed_roles": ["Verifier"],
+        "action": "reviewer_approve",
+        "audit_event": "REVIEWER_APPROVED"
+      },
+      {
+        "from": "Submitted",
+        "to": "Reviewer_Approved",
+        "allowed_roles": ["Verifier"],
+        "action": "reviewer_approve",
+        "audit_event": "REVIEWER_APPROVED"
+      },
+      {
+        "from": "Reviewer_Approved",
+        "to": "Admin_Approved",
+        "allowed_roles": ["Admin"],
+        "action": "admin_approve",
+        "audit_event": "ADMIN_APPROVED"
+      },
+      {
+        "from": "Admin_Approved",
+        "to": "Sent_to_Kiwi",
+        "allowed_roles": ["Admin"],
+        "action": "send_to_kiwi",
+        "audit_event": "SENT_TO_KIWI"
+      },
+      {
+        "from": "Sent_to_Kiwi",
+        "to": "Kiwi_Returned",
+        "allowed_roles": ["Admin"],
+        "action": "paste_kiwi_return",
+        "audit_event": "KIWI_RETURN_INGESTED"
+      },
+      {
+        "from": "Kiwi_Returned",
+        "to": "Applied",
+        "allowed_roles": ["Admin"],
+        "action": "mark_applied",
+        "audit_event": "PATCH_APPLIED"
+      },
+      {
+        "from": "Submitted",
+        "to": "Rejected",
+        "allowed_roles": ["Verifier", "Admin"],
+        "action": "reject",
+        "audit_event": "PATCH_REJECTED"
+      },
+      {
+        "from": "Reviewer_Responded",
+        "to": "Rejected",
+        "allowed_roles": ["Verifier", "Admin"],
+        "action": "reject",
+        "audit_event": "PATCH_REJECTED"
+      },
+      {
+        "from": "Draft",
+        "to": "Cancelled",
+        "allowed_roles": ["Analyst", "Admin"],
+        "action": "cancel",
+        "audit_event": "PATCH_CANCELLED"
+      },
+      {
+        "from": "Submitted",
+        "to": "Cancelled",
+        "allowed_roles": ["Analyst", "Admin"],
+        "action": "cancel",
+        "audit_event": "PATCH_CANCELLED"
+      },
+      {
+        "from": "Reviewer_Approved",
+        "to": "Admin_Hold",
+        "allowed_roles": ["Admin"],
+        "action": "admin_hold",
+        "audit_event": "ADMIN_HOLD_SET"
+      },
+      {
+        "from": "Admin_Hold",
+        "to": "Admin_Approved",
+        "allowed_roles": ["Admin"],
+        "action": "release_hold",
+        "audit_event": "ADMIN_HOLD_RELEASED"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "T-PS-001",
+      "owner_role": "Frontend",
+      "title": "Add Patch Studio primary CTA: Submit to Patch Queue",
+      "description": "Implement 'Submit to Patch Queue' in Patch Studio footer. Creates PatchRequestV1 (or updates existing Draft) and sets status to Submitted.",
+      "acceptance_criteria": [
+        "Button visible in Patch Studio footer",
+        "On click: PatchRequest stored (localStorage) with status=Submitted",
+        "Request appears in Admin Patch Console tab 'New'",
+        "Audit log entry appended: PATCH_REQUEST_SUBMITTED"
+      ],
+      "depends_on": ["T-DATA-001"]
+    },
+    {
+      "task_id": "T-PS-002",
+      "owner_role": "Frontend",
+      "title": "Convert Patch Studio into a tab within Record Workbench",
+      "description": "Move Patch Studio from stacked drawers to a Workbench tab (Patch Studio) with sub-tabs Draft/Preflight/Evidence.",
+      "acceptance_criteria": [
+        "Record Workbench contains 'Patch Studio' tab",
+        "Sub-tabs exist: Draft, Preflight, Evidence Pack",
+        "No stacked side panels occur",
+        "Footer actions persist across sub-tabs"
+      ]
+    },
+    {
+      "task_id": "T-DOC-001",
+      "owner_role": "Docs",
+      "title": "Add in-product tooltips + legend for Patch Studio buttons",
+      "description": "Add 1-sentence tooltip per button and a 'Copy-only vs Submit' legend panel in Patch Studio.",
+      "acceptance_criteria": [
+        "Every Patch Studio action has tooltip text",
+        "Legend explains: Copy-only exports vs Submit creates queue artifact",
+        "Non-technical phrasing (no dev jargon)"
+      ]
+    },
+    {
+      "task_id": "T-PF-001",
+      "owner_role": "Frontend",
+      "title": "Preflight tab: implement checks summary + Copy Preflight Report",
+      "description": "Preflight tab displays Diff Summary, Schema/Type checks, Collision checks, Determinism checks, Blast Radius estimate. Add Copy Preflight Report.",
+      "acceptance_criteria": [
+        "Preflight renders 3-5 checks with pass/fail/warn badges",
+        "Copy Preflight Report copies a deterministic JSON snapshot",
+        "Snapshot saved into PatchRequest.evidence.validation (or preflight_results)"
+      ]
+    },
+    {
+      "task_id": "T-EVID-001",
+      "owner_role": "Frontend",
+      "title": "Rename Evidence Helpers -> Evidence Pack and add structured blocks",
+      "description": "Rename and implement four structured evidence blocks with copy buttons: Observation, Expected Behavior, Rule Justification, Repro Steps.",
+      "acceptance_criteria": [
+        "UI label is 'Evidence Pack (Copy-only)'",
+        "4 blocks exist with copy buttons",
+        "Evidence Pack included in PatchRequest payload on Submit"
+      ]
+    },
+    {
+      "task_id": "T-ADM-001",
+      "owner_role": "Frontend",
+      "title": "Verifier role: allow review edits + approve/reject + clarification loop",
+      "description": "Implement role-gated edit allowlist for Verifier and actions to request clarification, approve, reject.",
+      "acceptance_criteria": [
+        "Verifier can edit only allowlisted fields",
+        "Verifier can request clarification (status -> Needs_Clarification)",
+        "Analyst can respond (status -> Reviewer_Responded)",
+        "Verifier can approve (status -> Reviewer_Approved) or reject"
+      ],
+      "depends_on": ["T-DATA-002"]
+    },
+    {
+      "task_id": "T-ADM-002",
+      "owner_role": "Frontend",
+      "title": "Admin actions gating: Admin Approve -> Export to Kiwi -> Paste Kiwi Return -> Mark Applied",
+      "description": "Ensure admin-only actions appear only at correct statuses: Export only when Admin_Approved; Paste only when Sent_to_Kiwi; Mark Applied only when Kiwi_Returned.",
+      "acceptance_criteria": [
+        "Admin Approve transitions Reviewer_Approved -> Admin_Approved",
+        "Export to Kiwi generates submit_batch JSON (copy-only) with batch_id",
+        "Paste Kiwi Return ingests get_results JSON and updates statuses to Kiwi_Returned",
+        "Mark Applied sets Applied and records audit event"
+      ],
+      "depends_on": ["T-DATA-003"]
+    },
+    {
+      "task_id": "T-DATA-001",
+      "owner_role": "Data",
+      "title": "Define PatchRequestV1 storage schema + localStorage keys",
+      "description": "Create PatchRequestV1 schema, canonicalization rules (sorted keys), and localStorage storage layout (requests store + audit log store).",
+      "acceptance_criteria": [
+        "Schema includes request_id, status, intent, target_scope, evidence, revisions, audit_log",
+        "Canonical JSON generator exists (sorted keys)",
+        "LocalStorage keys documented"
+      ]
+    },
+    {
+      "task_id": "T-DATA-002",
+      "owner_role": "Data",
+      "title": "Implement revision model + audit log append-only semantics",
+      "description": "Every edit after submit creates revision_id with diff summary; audit log is append-only with actor + role + timestamp + action.",
+      "acceptance_criteria": [
+        "Revisions array exists and is populated on edits",
+        "Audit log cannot be overwritten by UI",
+        "UI can render 'original submission vs verifier edits'"
+      ]
+    },
+    {
+      "task_id": "T-DATA-003",
+      "owner_role": "Data",
+      "title": "Outbox/Inbox batch artifact model (stubbed local mode)",
+      "description": "Implement Outbox and Inbox as batch artifacts in localStorage (and/or repo directories later). Support batch-of-1 as default.",
+      "acceptance_criteria": [
+        "Outbox can create batch payload for submit_batch",
+        "Inbox can ingest get_results payload",
+        "Batch_id is deterministic or user-specified",
+        "All operations remain offline-first"
+      ]
+    }
+  ],
+  "mcp_alignment": {
+    "phase_0_local_only": {
+      "mode": "copy_only",
+      "artifacts": ["outbox_batches", "inbox_batches"],
+      "no_secrets_in_browser": true
+    },
+    "phase_1_mcp_transport": {
+      "tools": [
+        "patch_requests.submit_batch",
+        "patch_requests.get_results",
+        "patches.validate_and_sign"
+      ],
+      "auth": "token stored in MCP host only",
+      "ui_behavior": "unchanged UX; buttons switch from copy-only to MCP-send when enabled"
+    }
+  }
+}

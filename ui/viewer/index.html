@@ -1593,15 +1593,131 @@
       <button class="drawer-tab" data-tab="issues">Issues <span class="drawer-tab-count" id="issues-count">0</span></button>
       <button class="drawer-tab" data-tab="actions">Actions <span class="drawer-tab-count" id="actions-count">0</span></button>
       <button class="drawer-tab" data-tab="changelog">Change Log <span class="drawer-tab-count" id="changelog-count">0</span></button>
+      <button class="drawer-tab" data-tab="patch-studio" style="background: #2e7d32; color: white;">Patch Studio</button>
     </div>
     <div class="drawer-warning" id="drawer-warning" style="display: none;"></div>
     <div class="drawer-body" id="drawer-body"></div>
-    <div class="drawer-actions">
+    <div class="drawer-panel" id="patch-studio-panel" style="display: none; flex: 1; overflow-y: auto; padding: 0;">
+      <div class="patch-studio-sub-tabs" style="display: flex; background: #263238; flex-shrink: 0;">
+        <button class="patch-studio-sub-tab active" data-subtab="draft" style="flex: 1; padding: 10px; border: none; background: #1a1a2e; color: white; cursor: pointer; font-size: 0.85em;">Draft</button>
+        <button class="patch-studio-sub-tab" data-subtab="preflight" style="flex: 1; padding: 10px; border: none; background: #263238; color: #aaa; cursor: pointer; font-size: 0.85em;">Preflight</button>
+        <button class="patch-studio-sub-tab" data-subtab="evidence" style="flex: 1; padding: 10px; border: none; background: #263238; color: #aaa; cursor: pointer; font-size: 0.85em;">Evidence Pack</button>
+      </div>
+      <div class="patch-studio-sub-panel" id="subtab-draft" style="padding: 15px;">
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85em;">WHEN (condition)</label>
+          <textarea id="ps-intent-when" placeholder="e.g., label_name field contains 'Various Artists'" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 60px;"></textarea>
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85em;">THEN (action)</label>
+          <textarea id="ps-intent-then" placeholder="e.g., require artist_name to be present" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 60px;"></textarea>
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85em;">BECAUSE (justification)</label>
+          <textarea id="ps-intent-because" placeholder="e.g., compilation albums need explicit artist attribution" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 60px;"></textarea>
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85em;">Target Artifact</label>
+          <select id="ps-target" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+            <option value="proposed_changes">Proposed Changes</option>
+            <option value="salesforce">Salesforce Rules</option>
+            <option value="qa_rules">QA Rules</option>
+            <option value="resolver_rules">Resolver Rules</option>
+            <option value="truth_config">Truth Config</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85em;">Risk Level</label>
+          <select id="ps-risk" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+            <option value="low">Low - minor adjustment</option>
+            <option value="medium">Medium - affects multiple records</option>
+            <option value="high">High - significant system change</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85em;">Rationale (optional)</label>
+          <textarea id="ps-rationale" placeholder="Additional context or notes..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 40px;"></textarea>
+        </div>
+      </div>
+      <div class="patch-studio-sub-panel" id="subtab-preflight" style="display: none; padding: 15px;">
+        <h4 style="margin: 0 0 15px 0; font-size: 0.95em;">Preflight Checks</h4>
+        <div id="ps-preflight-checks" style="display: flex; flex-direction: column; gap: 10px;">
+          <div class="preflight-check" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #f5f5f5; border-radius: 6px;">
+            <span class="preflight-badge" style="padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: #e8f5e9; color: #2e7d32;">PASS</span>
+            <span style="font-size: 0.9em;">Intent fields populated</span>
+          </div>
+          <div class="preflight-check" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #f5f5f5; border-radius: 6px;">
+            <span class="preflight-badge" style="padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: #fff3e0; color: #e65100;">WARN</span>
+            <span style="font-size: 0.9em;">Evidence pack incomplete</span>
+          </div>
+          <div class="preflight-check" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #f5f5f5; border-radius: 6px;">
+            <span class="preflight-badge" style="padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: #e3f2fd; color: #1565c0;">INFO</span>
+            <span style="font-size: 0.9em;">Target: Proposed Changes</span>
+          </div>
+        </div>
+        <div style="margin-top: 20px;">
+          <button class="toolbar-btn" id="ps-run-preflight" style="width: 100%;">Run Preflight Checks</button>
+        </div>
+        <div style="margin-top: 15px;">
+          <button class="toolbar-btn" id="ps-copy-preflight" style="width: 100%; background: #455a64;">Copy Preflight Report</button>
+        </div>
+      </div>
+      <div class="patch-studio-sub-panel" id="subtab-evidence" style="display: none; padding: 15px;">
+        <h4 style="margin: 0 0 10px 0; font-size: 0.95em;">Evidence Pack (Copy-only)</h4>
+        <p style="font-size: 0.8em; color: #666; margin-bottom: 15px;">Structured evidence blocks to support your patch request.</p>
+        <div style="margin-bottom: 15px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="font-weight: 600; font-size: 0.85em;">Observation</label>
+            <button class="toolbar-btn" onclick="copyEvidenceBlock('observation')" style="padding: 2px 8px; font-size: 0.75em;">Copy</button>
+          </div>
+          <textarea id="ps-evidence-observation" placeholder="What did you observe that prompted this change?" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 50px;"></textarea>
+        </div>
+        <div style="margin-bottom: 15px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="font-weight: 600; font-size: 0.85em;">Expected Behavior</label>
+            <button class="toolbar-btn" onclick="copyEvidenceBlock('expected')" style="padding: 2px 8px; font-size: 0.75em;">Copy</button>
+          </div>
+          <textarea id="ps-evidence-expected" placeholder="What should happen instead?" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 50px;"></textarea>
+        </div>
+        <div style="margin-bottom: 15px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="font-weight: 600; font-size: 0.85em;">Rule Justification</label>
+            <button class="toolbar-btn" onclick="copyEvidenceBlock('justification')" style="padding: 2px 8px; font-size: 0.75em;">Copy</button>
+          </div>
+          <textarea id="ps-evidence-justification" placeholder="Why is this rule change justified?" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 50px;"></textarea>
+        </div>
+        <div style="margin-bottom: 15px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="font-weight: 600; font-size: 0.85em;">Repro Steps</label>
+            <button class="toolbar-btn" onclick="copyEvidenceBlock('repro')" style="padding: 2px 8px; font-size: 0.75em;">Copy</button>
+          </div>
+          <textarea id="ps-evidence-repro" placeholder="How can this issue be reproduced?" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 50px;"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-actions" id="drawer-actions-default">
       <div class="drawer-actions-grid">
         <button class="drawer-btn" id="drawer-copy">Copy JSON</button>
         <button class="drawer-btn drawer-btn-secondary" id="copy-pr-summary">Copy PR Summary</button>
         <button class="drawer-btn drawer-btn-secondary" id="copy-rule-draft">Copy Rule Draft</button>
         <button class="drawer-btn" id="open-patch-studio" style="background: #2e7d32;">Build Patch</button>
+      </div>
+    </div>
+    <div class="drawer-actions" id="drawer-actions-patch-studio" style="display: none;">
+      <div style="padding: 10px; background: #f0f0f0; border-top: 1px solid #ddd;">
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+          <span style="font-size: 0.75em; background: #e3f2fd; color: #1565c0; padding: 3px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px;" title="These buttons copy data to clipboard without creating queue artifacts">
+            <span style="font-size: 1em;">&#128203;</span> Copy-only
+          </span>
+          <span style="font-size: 0.75em; background: #e8f5e9; color: #2e7d32; padding: 3px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px;" title="Submit creates a tracked artifact in the Patch Queue">
+            <span style="font-size: 1em;">&#10003;</span> Submit creates queue artifact
+          </span>
+        </div>
+      </div>
+      <div class="drawer-actions-grid" style="padding: 10px;">
+        <button class="drawer-btn drawer-btn-secondary" id="ps-copy-draft" title="Copy the current draft to clipboard">Copy Draft</button>
+        <button class="drawer-btn drawer-btn-secondary" id="ps-save-local" title="Save draft to browser storage">Save Draft</button>
+        <button class="drawer-btn" id="ps-submit-to-queue" style="background: #2e7d32; grid-column: span 2;" title="Submit this patch request to the review queue">Submit to Patch Queue</button>
       </div>
     </div>
   </div>
@@ -2346,29 +2462,96 @@
     
     var PATCH_REQUEST_STATUSES = [
       'Draft',
-      'Submitted', 
-      'ReviewerChangesRequested',
-      'ReviewerApproved',
-      'AdminHold',
-      'AdminApproved',
-      'SentToKiwi',
-      'KiwiReturned',
+      'Submitted',
+      'Needs_Clarification',
+      'Reviewer_Responded',
+      'Reviewer_Approved',
+      'Admin_Approved',
+      'Sent_to_Kiwi',
+      'Kiwi_Returned',
       'Applied',
       'Rejected',
-      'Cancelled'
+      'Cancelled',
+      'Admin_Hold'
     ];
     
     var PATCH_REQUEST_QUEUE_TABS = [
-      { id: 'new', label: 'New', statuses: ['Draft', 'Submitted'] },
-      { id: 'needs_review', label: 'Needs Review', statuses: ['Submitted', 'ReviewerChangesRequested'] },
-      { id: 'approved', label: 'Approved', statuses: ['ReviewerApproved', 'AdminApproved'] },
-      { id: 'sent_to_kiwi', label: 'Sent to Kiwi', statuses: ['SentToKiwi'] },
-      { id: 'kiwi_returned', label: 'Kiwi Returned', statuses: ['KiwiReturned'] },
+      { id: 'new', label: 'New', statuses: ['Submitted'] },
+      { id: 'needs_review', label: 'Needs Review', statuses: ['Needs_Clarification', 'Reviewer_Responded'] },
+      { id: 'approved', label: 'Approved', statuses: ['Reviewer_Approved', 'Admin_Approved'] },
+      { id: 'sent_to_kiwi', label: 'Sent to Kiwi', statuses: ['Sent_to_Kiwi'] },
+      { id: 'kiwi_returned', label: 'Kiwi Returned', statuses: ['Kiwi_Returned'] },
       { id: 'applied', label: 'Applied', statuses: ['Applied'] },
-      { id: 'rejected', label: 'Rejected', statuses: ['Rejected'] }
+      { id: 'rejected', label: 'Rejected', statuses: ['Rejected', 'Cancelled'] }
     ];
     
     var PATCH_REQUEST_TARGETS = ['salesforce', 'qa_rules', 'resolver_rules', 'truth_config', 'proposed_changes'];
+    
+    var ROLE_PERMISSIONS = {
+      'Analyst': {
+        can: ['create_draft', 'edit_own_draft', 'submit_to_patch_queue', 'respond_to_clarification', 'cancel_own_draft_or_submitted'],
+        cannot: ['reviewer_approve', 'admin_approve', 'send_to_kiwi', 'paste_kiwi_return', 'mark_applied', 'admin_hold']
+      },
+      'Verifier': {
+        can: ['comment_rfi', 'request_clarification', 'edit_review_fields', 'reviewer_approve', 'reject', 'send_back_to_submitted_after_edits'],
+        cannot: ['send_to_kiwi', 'paste_kiwi_return', 'mark_applied', 'admin_approve', 'edit_patch_payload_directly'],
+        edit_allowlist: ['intent.when', 'intent.then', 'intent.because', 'target_scope', 'risk', 'review_notes', 'evidence.checklist_status', 'clarification_questions']
+      },
+      'Admin': {
+        can: ['everything_verifier_can', 'admin_approve', 'send_to_kiwi', 'paste_kiwi_return', 'mark_applied', 'admin_hold', 'cancel_any', 'export_commit_pack']
+      }
+    };
+    
+    var STATUS_TRANSITIONS = [
+      { from: 'Draft', to: 'Submitted', roles: ['Analyst'], action: 'submit_to_patch_queue', audit: 'PATCH_REQUEST_SUBMITTED' },
+      { from: 'Submitted', to: 'Needs_Clarification', roles: ['Verifier', 'Admin'], action: 'request_clarification', audit: 'CLARIFICATION_REQUESTED' },
+      { from: 'Needs_Clarification', to: 'Reviewer_Responded', roles: ['Analyst'], action: 'respond_to_clarification', audit: 'CLARIFICATION_RESPONDED' },
+      { from: 'Reviewer_Responded', to: 'Reviewer_Approved', roles: ['Verifier'], action: 'reviewer_approve', audit: 'REVIEWER_APPROVED' },
+      { from: 'Submitted', to: 'Reviewer_Approved', roles: ['Verifier'], action: 'reviewer_approve', audit: 'REVIEWER_APPROVED' },
+      { from: 'Reviewer_Approved', to: 'Admin_Approved', roles: ['Admin'], action: 'admin_approve', audit: 'ADMIN_APPROVED' },
+      { from: 'Admin_Approved', to: 'Sent_to_Kiwi', roles: ['Admin'], action: 'send_to_kiwi', audit: 'SENT_TO_KIWI' },
+      { from: 'Sent_to_Kiwi', to: 'Kiwi_Returned', roles: ['Admin'], action: 'paste_kiwi_return', audit: 'KIWI_RETURN_INGESTED' },
+      { from: 'Kiwi_Returned', to: 'Applied', roles: ['Admin'], action: 'mark_applied', audit: 'PATCH_APPLIED' },
+      { from: 'Submitted', to: 'Rejected', roles: ['Verifier', 'Admin'], action: 'reject', audit: 'PATCH_REJECTED' },
+      { from: 'Reviewer_Responded', to: 'Rejected', roles: ['Verifier', 'Admin'], action: 'reject', audit: 'PATCH_REJECTED' },
+      { from: 'Draft', to: 'Cancelled', roles: ['Analyst', 'Admin'], action: 'cancel', audit: 'PATCH_CANCELLED' },
+      { from: 'Submitted', to: 'Cancelled', roles: ['Analyst', 'Admin'], action: 'cancel', audit: 'PATCH_CANCELLED' },
+      { from: 'Reviewer_Approved', to: 'Admin_Hold', roles: ['Admin'], action: 'admin_hold', audit: 'ADMIN_HOLD_SET' },
+      { from: 'Admin_Hold', to: 'Admin_Approved', roles: ['Admin'], action: 'release_hold', audit: 'ADMIN_HOLD_RELEASED' }
+    ];
+    
+    function canTransition(fromStatus, toStatus, role) {
+      var transition = STATUS_TRANSITIONS.find(function(t) {
+        return t.from === fromStatus && t.to === toStatus;
+      });
+      if (!transition) return false;
+      if (role === 'Admin' && transition.roles.includes('Verifier')) return true;
+      return transition.roles.includes(role);
+    }
+    
+    function getAuditEventForTransition(fromStatus, toStatus) {
+      var transition = STATUS_TRANSITIONS.find(function(t) {
+        return t.from === fromStatus && t.to === toStatus;
+      });
+      return transition ? transition.audit : 'STATUS_CHANGED';
+    }
+    
+    function getAvailableTransitions(currentStatus, role) {
+      return STATUS_TRANSITIONS.filter(function(t) {
+        if (t.from !== currentStatus) return false;
+        if (role === 'Admin') return true;
+        if (role === 'Verifier' && (t.roles.includes('Verifier') || t.roles.includes('Admin'))) return false;
+        return t.roles.includes(role);
+      }).map(function(t) { return t.to; });
+    }
+    
+    function canEditField(role, fieldPath) {
+      if (role === 'Admin') return true;
+      if (role === 'Verifier') {
+        return ROLE_PERMISSIONS.Verifier.edit_allowlist.includes(fieldPath);
+      }
+      return false;
+    }
     
     var patchRequestsStore = {
       requests: [],
@@ -2419,8 +2602,10 @@
         request_id: generatePatchRequestId(),
         created_at_utc: now,
         updated_at_utc: now,
+        submitted_at_utc: null,
         author: options.author || 'Unknown',
         author_role: options.author_role || currentMode || 'Analyst',
+        assigned_to: null,
         status: options.status || 'Draft',
         record_identity: {
           contract_key: options.contract_key || null,
@@ -2432,6 +2617,7 @@
           sheet: options.sheet || null,
           field: options.field || null
         },
+        risk: options.risk || 'low',
         proposed_change: {
           intent: {
             when: options.when || '',
@@ -2440,8 +2626,28 @@
           },
           rationale: options.rationale || ''
         },
+        evidence: {
+          observation: options.evidence_observation || '',
+          expected_behavior: options.evidence_expected || '',
+          rule_justification: options.evidence_justification || '',
+          repro_steps: options.evidence_repro || '',
+          preflight_results: null,
+          checklist_status: {}
+        },
+        review_notes: '',
+        clarification_questions: [],
+        revisions: [],
         linked_comment_id: options.linked_comment_id || null,
         kiwi_return: null,
+        audit_log: [
+          {
+            at_utc: now,
+            actor: options.author || 'Unknown',
+            role: options.author_role || currentMode || 'Analyst',
+            event: 'PATCH_REQUEST_CREATED',
+            details: null
+          }
+        ],
         history: [
           {
             at_utc: now,
@@ -2468,18 +2674,40 @@
       if (!request) return null;
       if (!PATCH_REQUEST_STATUSES.includes(newStatus)) return null;
       
+      var role = actorRole || currentMode || 'Analyst';
+      if (!canTransition(request.status, newStatus, role)) {
+        console.warn('Transition not allowed:', request.status, '->', newStatus, 'for role', role);
+        return null;
+      }
+      
       var now = new Date().toISOString();
       var oldStatus = request.status;
+      var auditEvent = getAuditEventForTransition(oldStatus, newStatus);
+      
       request.status = newStatus;
       request.updated_at_utc = now;
+      
+      if (newStatus === 'Submitted' && !request.submitted_at_utc) {
+        request.submitted_at_utc = now;
+      }
+      
       request.history.push({
         at_utc: now,
         actor: actor || 'Unknown',
-        role: actorRole || currentMode || 'Analyst',
+        role: role,
         action: 'Status Changed',
         from_status: oldStatus,
         to_status: newStatus,
         notes: notes || null
+      });
+      
+      if (!request.audit_log) request.audit_log = [];
+      request.audit_log.push({
+        at_utc: now,
+        actor: actor || 'Unknown',
+        role: role,
+        event: auditEvent,
+        details: notes || null
       });
       
       savePatchRequests();
@@ -2491,37 +2719,158 @@
       if (!request) return null;
       
       var now = new Date().toISOString();
+      var role = actorRole || currentMode || 'Analyst';
       var changes = [];
+      var oldSnapshot = null;
+      
+      if (request.status !== 'Draft') {
+        oldSnapshot = JSON.parse(JSON.stringify({
+          proposed_change: request.proposed_change,
+          target_scope: request.target_scope,
+          evidence: request.evidence,
+          review_notes: request.review_notes
+        }));
+      }
       
       if (updates.proposed_change) {
         if (updates.proposed_change.intent) {
-          Object.assign(request.proposed_change.intent, updates.proposed_change.intent);
-          changes.push('intent updated');
+          if (role === 'Verifier') {
+            ['when', 'then', 'because'].forEach(function(field) {
+              if (updates.proposed_change.intent[field] !== undefined && canEditField(role, 'intent.' + field)) {
+                request.proposed_change.intent[field] = updates.proposed_change.intent[field];
+                changes.push('intent.' + field + ' updated');
+              }
+            });
+          } else {
+            Object.assign(request.proposed_change.intent, updates.proposed_change.intent);
+            changes.push('intent updated');
+          }
         }
         if (updates.proposed_change.rationale !== undefined) {
           request.proposed_change.rationale = updates.proposed_change.rationale;
           changes.push('rationale updated');
         }
       }
-      if (updates.target_scope) {
+      if (updates.target_scope && canEditField(role, 'target_scope')) {
         Object.assign(request.target_scope, updates.target_scope);
         changes.push('target updated');
+      }
+      if (updates.risk !== undefined && canEditField(role, 'risk')) {
+        request.risk = updates.risk;
+        changes.push('risk updated');
+      }
+      if (updates.review_notes !== undefined && canEditField(role, 'review_notes')) {
+        request.review_notes = updates.review_notes;
+        changes.push('review notes updated');
+      }
+      if (updates.evidence) {
+        if (!request.evidence) request.evidence = {};
+        Object.assign(request.evidence, updates.evidence);
+        changes.push('evidence updated');
+      }
+      if (updates.clarification_questions) {
+        request.clarification_questions = updates.clarification_questions;
+        changes.push('clarification questions updated');
       }
       
       if (changes.length > 0) {
         request.updated_at_utc = now;
+        
+        if (oldSnapshot && request.status !== 'Draft') {
+          if (!request.revisions) request.revisions = [];
+          request.revisions.push({
+            revision_id: 'REV_' + Date.now().toString(36),
+            at_utc: now,
+            actor: actor || 'Unknown',
+            role: role,
+            diff_summary: changes.join('; '),
+            previous_snapshot: oldSnapshot
+          });
+        }
+        
         request.history.push({
           at_utc: now,
           actor: actor || 'Unknown',
-          role: actorRole || currentMode || 'Analyst',
+          role: role,
           action: 'Updated',
           from_status: request.status,
           to_status: request.status,
           notes: changes.join('; ')
         });
+        
+        if (!request.audit_log) request.audit_log = [];
+        request.audit_log.push({
+          at_utc: now,
+          actor: actor || 'Unknown',
+          role: role,
+          event: 'PATCH_REQUEST_UPDATED',
+          details: changes.join('; ')
+        });
+        
         savePatchRequests();
       }
       return request;
+    }
+    
+    function submitPatchRequest(requestId, actor, actorRole) {
+      var request = getPatchRequest(requestId);
+      if (!request) return null;
+      if (request.status !== 'Draft') return null;
+      return updatePatchRequestStatus(requestId, 'Submitted', actor, actorRole, 'Submitted to patch queue');
+    }
+    
+    function requestClarification(requestId, questions, actor, actorRole) {
+      var request = getPatchRequest(requestId);
+      if (!request) return null;
+      if (request.status !== 'Submitted') return null;
+      
+      request.clarification_questions = questions || [];
+      var result = updatePatchRequestStatus(requestId, 'Needs_Clarification', actor, actorRole, 'Clarification requested');
+      return result;
+    }
+    
+    function respondToClarification(requestId, response, actor, actorRole) {
+      var request = getPatchRequest(requestId);
+      if (!request) return null;
+      if (request.status !== 'Needs_Clarification') return null;
+      
+      if (!request.clarification_questions) request.clarification_questions = [];
+      request.clarification_questions.push({
+        type: 'response',
+        from: actor || 'Analyst',
+        at_utc: new Date().toISOString(),
+        text: response
+      });
+      
+      return updatePatchRequestStatus(requestId, 'Reviewer_Responded', actor, actorRole, 'Clarification provided');
+    }
+    
+    function reviewerApprove(requestId, actor, actorRole) {
+      var request = getPatchRequest(requestId);
+      if (!request) return null;
+      if (!['Submitted', 'Reviewer_Responded'].includes(request.status)) return null;
+      return updatePatchRequestStatus(requestId, 'Reviewer_Approved', actor, actorRole, 'Approved by reviewer');
+    }
+    
+    function adminApprove(requestId, actor, actorRole) {
+      var request = getPatchRequest(requestId);
+      if (!request) return null;
+      if (request.status !== 'Reviewer_Approved') return null;
+      return updatePatchRequestStatus(requestId, 'Admin_Approved', actor, actorRole, 'Approved by admin');
+    }
+    
+    function setAdminHold(requestId, reason, actor, actorRole) {
+      var request = getPatchRequest(requestId);
+      if (!request) return null;
+      if (request.status !== 'Reviewer_Approved') return null;
+      return updatePatchRequestStatus(requestId, 'Admin_Hold', actor, actorRole, reason || 'Placed on admin hold');
+    }
+    
+    function releaseAdminHold(requestId, actor, actorRole) {
+      var request = getPatchRequest(requestId);
+      if (!request) return null;
+      if (request.status !== 'Admin_Hold') return null;
+      return updatePatchRequestStatus(requestId, 'Admin_Approved', actor, actorRole, 'Released from admin hold');
     }
     
     function deletePatchRequest(requestId) {
@@ -2608,7 +2957,7 @@
     function markSentToKiwi(requestIds, actor, actorRole) {
       var updated = [];
       requestIds.forEach(function(id) {
-        var result = updatePatchRequestStatus(id, 'SentToKiwi', actor, actorRole, 'Exported for Kiwi processing');
+        var result = updatePatchRequestStatus(id, 'Sent_to_Kiwi', actor, actorRole, 'Exported for Kiwi processing');
         if (result) updated.push(result);
       });
       return updated;
@@ -2617,6 +2966,7 @@
     function applyKiwiReturn(requestId, kiwiPayload, actor, actorRole) {
       var request = getPatchRequest(requestId);
       if (!request) return null;
+      if (request.status !== 'Sent_to_Kiwi') return null;
       
       var now = new Date().toISOString();
       request.kiwi_return = {
@@ -2626,16 +2976,25 @@
         derived_target: kiwiPayload.derived_target || request.target_scope.target,
         proposed_version: kiwiPayload.proposed_version || null
       };
-      request.status = 'KiwiReturned';
+      request.status = 'Kiwi_Returned';
       request.updated_at_utc = now;
       request.history.push({
         at_utc: now,
         actor: actor || 'Admin',
         role: actorRole || 'Admin',
         action: 'Kiwi Return Applied',
-        from_status: 'SentToKiwi',
-        to_status: 'KiwiReturned',
+        from_status: 'Sent_to_Kiwi',
+        to_status: 'Kiwi_Returned',
         notes: 'Kiwi payload received'
+      });
+      
+      if (!request.audit_log) request.audit_log = [];
+      request.audit_log.push({
+        at_utc: now,
+        actor: actor || 'Admin',
+        role: actorRole || 'Admin',
+        event: 'KIWI_RETURN_INGESTED',
+        details: 'Kiwi payload received'
       });
       
       savePatchRequests();
@@ -2790,12 +3149,13 @@
       var classMap = {
         'Draft': 'draft',
         'Submitted': 'submitted',
-        'ReviewerChangesRequested': 'submitted',
-        'ReviewerApproved': 'approved',
-        'AdminHold': 'submitted',
-        'AdminApproved': 'approved',
-        'SentToKiwi': 'sent',
-        'KiwiReturned': 'returned',
+        'Needs_Clarification': 'submitted',
+        'Reviewer_Responded': 'submitted',
+        'Reviewer_Approved': 'approved',
+        'Admin_Hold': 'submitted',
+        'Admin_Approved': 'approved',
+        'Sent_to_Kiwi': 'sent',
+        'Kiwi_Returned': 'returned',
         'Applied': 'applied',
         'Rejected': 'rejected',
         'Cancelled': 'rejected'
@@ -2826,7 +3186,7 @@
       }
       
       var approvedOnly = selected.filter(function(r) {
-        return r.status === 'ReviewerApproved' || r.status === 'AdminApproved';
+        return r.status === 'Reviewer_Approved' || r.status === 'Admin_Approved';
       });
       
       if (approvedOnly.length === 0) {
@@ -2905,7 +3265,7 @@
         return;
       }
       
-      var returnedOnly = selected.filter(function(r) { return r.status === 'KiwiReturned'; });
+      var returnedOnly = selected.filter(function(r) { return r.status === 'Kiwi_Returned'; });
       if (returnedOnly.length === 0) {
         showToast('Selected requests must be in Kiwi Returned status', 'warning');
         return;
@@ -2924,7 +3284,7 @@
         return;
       }
       
-      var returnedOnly = selected.filter(function(r) { return r.status === 'KiwiReturned' && r.kiwi_return; });
+      var returnedOnly = selected.filter(function(r) { return r.status === 'Kiwi_Returned' && r.kiwi_return; });
       if (returnedOnly.length === 0) {
         showToast('Selected requests must have Kiwi returns', 'warning');
         return;
@@ -2989,7 +3349,7 @@
       }
       
       // Kiwi Payload section (if sent or returned)
-      if (request.status === 'SentToKiwi' || request.status === 'KiwiReturned' || request.status === 'Applied') {
+      if (request.status === 'Sent_to_Kiwi' || request.status === 'Kiwi_Returned' || request.status === 'Applied') {
         html += '<div style="margin-bottom: 20px; border-top: 1px solid #e0e0e0; padding-top: 15px;">' +
           '<h4 style="margin: 0 0 10px 0; font-size: 0.9em; text-transform: uppercase; color: #7b1fa2;">Kiwi Integration</h4>';
         
@@ -3010,8 +3370,8 @@
         html += '</div>';
       }
       
-      // Apply Checklist (for KiwiReturned status)
-      if (request.status === 'KiwiReturned') {
+      // Apply Checklist (for Kiwi_Returned status)
+      if (request.status === 'Kiwi_Returned') {
         html += '<div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">' +
           '<h4 style="margin: 0 0 12px 0; font-size: 0.9em; text-transform: uppercase; color: #2e7d32;">Apply Checklist</h4>' +
           '<label style="display: flex; align-items: center; gap: 8px; font-size: 0.9em; margin-bottom: 8px;">' +
@@ -3026,19 +3386,95 @@
           '</div>';
       }
       
+      // Clarification questions section (if any)
+      if (request.clarification_questions && request.clarification_questions.length > 0) {
+        html += '<div style="margin-bottom: 20px; border-top: 1px solid #e0e0e0; padding-top: 15px;">' +
+          '<h4 style="margin: 0 0 10px 0; font-size: 0.9em; text-transform: uppercase; color: #e65100;">Clarification Thread</h4>';
+        request.clarification_questions.forEach(function(q) {
+          if (typeof q === 'string') {
+            html += '<div style="background: #fff3e0; padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 0.9em;">' + escapeHtml(q) + '</div>';
+          } else if (q.type === 'response') {
+            html += '<div style="background: #e3f2fd; padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 0.9em;">' +
+              '<strong>' + escapeHtml(q.from || 'Analyst') + ':</strong> ' + escapeHtml(q.text) + '</div>';
+          } else {
+            html += '<div style="background: #fff3e0; padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 0.9em;">' + escapeHtml(q.text || q) + '</div>';
+          }
+        });
+        html += '</div>';
+      }
+      
+      // Review notes section (editable for Verifier/Admin)
+      if ((currentMode === 'Verifier' || currentMode === 'Admin') && 
+          ['Submitted', 'Needs_Clarification', 'Reviewer_Responded'].includes(request.status)) {
+        html += '<div style="margin-bottom: 20px; border-top: 1px solid #e0e0e0; padding-top: 15px;">' +
+          '<h4 style="margin: 0 0 10px 0; font-size: 0.9em; text-transform: uppercase; color: #1565c0;">Review Notes (Verifier)</h4>' +
+          '<textarea id="pr-review-notes" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 60px;" placeholder="Add review notes...">' + escapeHtml(request.review_notes || '') + '</textarea>' +
+          '</div>';
+      }
+      
+      // Revisions section
+      if (request.revisions && request.revisions.length > 0) {
+        html += '<div style="margin-bottom: 20px; border-top: 1px solid #e0e0e0; padding-top: 15px;">' +
+          '<details>' +
+          '<summary style="cursor: pointer; font-weight: 600; font-size: 0.9em; color: #333;">Revisions (' + request.revisions.length + ')</summary>' +
+          '<div style="margin-top: 10px; font-size: 0.85em;">';
+        request.revisions.forEach(function(rev) {
+          html += '<div style="background: #f9f9f9; padding: 8px; border-radius: 4px; margin-bottom: 6px;">' +
+            '<div style="color: #666;">' + new Date(rev.at_utc).toLocaleString() + ' by ' + escapeHtml(rev.actor) + ' (' + escapeHtml(rev.role) + ')</div>' +
+            '<div style="color: #333;">' + escapeHtml(rev.diff_summary) + '</div>' +
+            '</div>';
+        });
+        html += '</div></details></div>';
+      }
+      
       document.getElementById('patch-detail-title').textContent = 'Patch Request';
       document.getElementById('patch-detail-content').innerHTML = html;
       
-      // Footer actions based on status
-      var footerHtml = '<div style="display: flex; gap: 10px; justify-content: flex-end;">';
-      if (request.status === 'Draft') {
-        footerHtml += '<button class="toolbar-btn" onclick="submitPatchForReview(\'' + requestId + '\')" style="background: #1976d2;">Submit for Review</button>';
-      } else if (request.status === 'ReviewerApproved' || request.status === 'AdminApproved') {
-        footerHtml += '<button class="toolbar-btn" onclick="copyPatchForKiwi(\'' + requestId + '\')" style="background: #7b1fa2;">Copy for Kiwi</button>';
-      } else if (request.status === 'KiwiReturned') {
-        footerHtml += '<button class="toolbar-btn" onclick="copyCommitPack(\'' + requestId + '\')">Copy Commit Pack</button>';
-        footerHtml += '<button class="toolbar-btn" onclick="markSingleApplied(\'' + requestId + '\')" style="background: #388e3c;">Mark Applied</button>';
+      // Footer actions based on status and role
+      var role = currentMode || 'Analyst';
+      var footerHtml = '<div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">';
+      
+      // Analyst actions
+      if (role === 'Analyst') {
+        if (request.status === 'Draft') {
+          footerHtml += '<button class="toolbar-btn" onclick="submitPatchForReview(\'' + requestId + '\')" style="background: #1976d2;" title="Submit this patch request for review">Submit for Review</button>';
+        } else if (request.status === 'Needs_Clarification') {
+          footerHtml += '<button class="toolbar-btn" onclick="openClarificationResponseModal(\'' + requestId + '\')" style="background: #e65100;" title="Respond to clarification request">Respond to Clarification</button>';
+        }
+        if (['Draft', 'Submitted'].includes(request.status)) {
+          footerHtml += '<button class="toolbar-btn" onclick="cancelPatchRequest(\'' + requestId + '\')" style="background: #c62828;" title="Cancel this patch request">Cancel</button>';
+        }
       }
+      
+      // Verifier actions
+      if (role === 'Verifier' || role === 'Admin') {
+        if (request.status === 'Submitted') {
+          footerHtml += '<button class="toolbar-btn" onclick="openClarificationModal(\'' + requestId + '\')" style="background: #e65100;" title="Request more information from the analyst">Request Clarification</button>';
+          footerHtml += '<button class="toolbar-btn" onclick="approveAsReviewer(\'' + requestId + '\')" style="background: #388e3c;" title="Approve this patch request">Approve</button>';
+          footerHtml += '<button class="toolbar-btn" onclick="rejectPatchRequest(\'' + requestId + '\')" style="background: #c62828;" title="Reject this patch request">Reject</button>';
+        } else if (request.status === 'Reviewer_Responded') {
+          footerHtml += '<button class="toolbar-btn" onclick="approveAsReviewer(\'' + requestId + '\')" style="background: #388e3c;" title="Approve this patch request">Approve</button>';
+          footerHtml += '<button class="toolbar-btn" onclick="rejectPatchRequest(\'' + requestId + '\')" style="background: #c62828;" title="Reject this patch request">Reject</button>';
+        }
+      }
+      
+      // Admin-only actions
+      if (role === 'Admin') {
+        if (request.status === 'Reviewer_Approved') {
+          footerHtml += '<button class="toolbar-btn" onclick="adminApprovePatch(\'' + requestId + '\')" style="background: #1565c0;" title="Give admin approval">Admin Approve</button>';
+          footerHtml += '<button class="toolbar-btn" onclick="setAdminHoldPatch(\'' + requestId + '\')" style="background: #f57c00;" title="Put on hold for review">Admin Hold</button>';
+        } else if (request.status === 'Admin_Hold') {
+          footerHtml += '<button class="toolbar-btn" onclick="releaseAdminHoldPatch(\'' + requestId + '\')" style="background: #1565c0;" title="Release from admin hold">Release Hold</button>';
+        } else if (request.status === 'Admin_Approved') {
+          footerHtml += '<button class="toolbar-btn" onclick="exportToKiwi(\'' + requestId + '\')" style="background: #7b1fa2;" title="Export to Kiwi and mark as sent">Export to Kiwi</button>';
+        } else if (request.status === 'Sent_to_Kiwi') {
+          footerHtml += '<button class="toolbar-btn" onclick="openPasteKiwiReturnModal(\'' + requestId + '\')" style="background: #7b1fa2;" title="Paste Kiwi return payload">Paste Kiwi Return</button>';
+        } else if (request.status === 'Kiwi_Returned') {
+          footerHtml += '<button class="toolbar-btn" onclick="copyCommitPack(\'' + requestId + '\')" title="Copy commit pack to clipboard">Copy Commit Pack</button>';
+          footerHtml += '<button class="toolbar-btn" onclick="markSingleApplied(\'' + requestId + '\')" style="background: #388e3c;" title="Mark as applied">Mark Applied</button>';
+        }
+      }
+      
       footerHtml += '<button class="toolbar-btn" onclick="closePatchDetailDrawer()">Close</button>';
       footerHtml += '</div>';
       document.getElementById('patch-detail-footer').innerHTML = footerHtml;
@@ -3074,11 +3510,155 @@
     }
     
     function markSingleApplied(requestId) {
-      var author = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+      var author = currentMode || 'Admin';
       markApplied([requestId], author, author);
       closePatchDetailDrawer();
       renderPatchConsoleTable();
       showToast('Marked as Applied', 'success');
+    }
+    
+    function cancelPatchRequest(requestId) {
+      var author = currentMode || 'Analyst';
+      var result = updatePatchRequestStatus(requestId, 'Cancelled', author, author, 'Cancelled by ' + author);
+      if (result) {
+        closePatchDetailDrawer();
+        renderPatchConsoleTable();
+        showToast('Patch request cancelled', 'success');
+      } else {
+        showToast('Failed to cancel patch request', 'error');
+      }
+    }
+    
+    function approveAsReviewer(requestId) {
+      var author = currentMode || 'Verifier';
+      var reviewNotes = document.getElementById('pr-review-notes')?.value || '';
+      
+      var request = getPatchRequest(requestId);
+      if (reviewNotes && request) {
+        updatePatchRequest(requestId, { review_notes: reviewNotes }, author, author);
+      }
+      
+      var result = reviewerApprove(requestId, author, author);
+      if (result) {
+        closePatchDetailDrawer();
+        renderPatchConsoleTable();
+        showToast('Patch request approved by reviewer', 'success');
+      } else {
+        showToast('Failed to approve patch request', 'error');
+      }
+    }
+    
+    function rejectPatchRequest(requestId) {
+      var reason = prompt('Enter rejection reason:');
+      if (!reason) return;
+      
+      var author = currentMode || 'Verifier';
+      var result = markRejected(requestId, reason, author, author);
+      if (result) {
+        closePatchDetailDrawer();
+        renderPatchConsoleTable();
+        showToast('Patch request rejected', 'success');
+      } else {
+        showToast('Failed to reject patch request', 'error');
+      }
+    }
+    
+    function openClarificationModal(requestId) {
+      var questions = prompt('Enter clarification questions:');
+      if (!questions) return;
+      
+      var author = currentMode || 'Verifier';
+      var result = requestClarification(requestId, [questions], author, author);
+      if (result) {
+        closePatchDetailDrawer();
+        renderPatchConsoleTable();
+        showToast('Clarification requested', 'success');
+      } else {
+        showToast('Failed to request clarification', 'error');
+      }
+    }
+    
+    function openClarificationResponseModal(requestId) {
+      var response = prompt('Enter your response to the clarification request:');
+      if (!response) return;
+      
+      var author = currentMode || 'Analyst';
+      var result = respondToClarification(requestId, response, author, author);
+      if (result) {
+        closePatchDetailDrawer();
+        renderPatchConsoleTable();
+        showToast('Clarification response submitted', 'success');
+      } else {
+        showToast('Failed to submit response', 'error');
+      }
+    }
+    
+    function adminApprovePatch(requestId) {
+      var author = currentMode || 'Admin';
+      var result = adminApprove(requestId, author, author);
+      if (result) {
+        closePatchDetailDrawer();
+        renderPatchConsoleTable();
+        showToast('Admin approval granted', 'success');
+      } else {
+        showToast('Failed to grant admin approval', 'error');
+      }
+    }
+    
+    function setAdminHoldPatch(requestId) {
+      var reason = prompt('Enter reason for admin hold:') || 'Placed on hold for further review';
+      var author = currentMode || 'Admin';
+      var result = setAdminHold(requestId, reason, author, author);
+      if (result) {
+        closePatchDetailDrawer();
+        renderPatchConsoleTable();
+        showToast('Placed on admin hold', 'success');
+      } else {
+        showToast('Failed to set admin hold', 'error');
+      }
+    }
+    
+    function releaseAdminHoldPatch(requestId) {
+      var author = currentMode || 'Admin';
+      var result = releaseAdminHold(requestId, author, author);
+      if (result) {
+        closePatchDetailDrawer();
+        renderPatchConsoleTable();
+        showToast('Released from admin hold', 'success');
+      } else {
+        showToast('Failed to release admin hold', 'error');
+      }
+    }
+    
+    function exportToKiwi(requestId) {
+      var author = currentMode || 'Admin';
+      var exportJson = exportPatchRequestsForKiwi([requestId]);
+      navigator.clipboard.writeText(exportJson).then(function() {
+        markSentToKiwi([requestId], author, author);
+        closePatchDetailDrawer();
+        renderPatchConsoleTable();
+        showToast('Exported to Kiwi and copied to clipboard', 'success');
+      });
+    }
+    
+    function openPasteKiwiReturnModal(requestId) {
+      var payloadStr = prompt('Paste Kiwi return JSON payload:');
+      if (!payloadStr) return;
+      
+      try {
+        var payload = JSON.parse(payloadStr);
+        var author = currentMode || 'Admin';
+        var result = applyKiwiReturn(requestId, payload, author, author);
+        if (result) {
+          closePatchDetailDrawer();
+          renderPatchConsoleTable();
+          showToast('Kiwi return applied', 'success');
+        } else {
+          showToast('Failed to apply Kiwi return', 'error');
+        }
+      } catch (e) {
+        showToast('Invalid JSON payload', 'error');
+      }
     }
     
     // Initialize patch console when admin view loads
@@ -5600,9 +6180,220 @@
       currentSelection.activeTab = tabName;
       document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      renderDrawerTab(tabName);
+      
+      const patchStudioPanel = document.getElementById('patch-studio-panel');
+      const drawerBody = document.getElementById('drawer-body');
+      const actionsDefault = document.getElementById('drawer-actions-default');
+      const actionsPatchStudio = document.getElementById('drawer-actions-patch-studio');
+      
+      if (tabName === 'patch-studio') {
+        patchStudioPanel.style.display = 'flex';
+        patchStudioPanel.style.flexDirection = 'column';
+        drawerBody.style.display = 'none';
+        if (actionsDefault) actionsDefault.style.display = 'none';
+        if (actionsPatchStudio) actionsPatchStudio.style.display = 'block';
+        populatePatchStudioFromContext();
+      } else {
+        patchStudioPanel.style.display = 'none';
+        drawerBody.style.display = 'block';
+        if (actionsDefault) actionsDefault.style.display = 'block';
+        if (actionsPatchStudio) actionsPatchStudio.style.display = 'none';
+        renderDrawerTab(tabName);
+      }
       saveSelection();
     });
+    
+    document.querySelectorAll('.patch-studio-sub-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        const subtab = this.dataset.subtab;
+        document.querySelectorAll('.patch-studio-sub-tab').forEach(function(t) {
+          t.style.background = '#263238';
+          t.style.color = '#aaa';
+          t.classList.remove('active');
+        });
+        this.style.background = '#1a1a2e';
+        this.style.color = 'white';
+        this.classList.add('active');
+        
+        document.querySelectorAll('.patch-studio-sub-panel').forEach(function(panel) {
+          panel.style.display = 'none';
+        });
+        document.getElementById('subtab-' + subtab).style.display = 'block';
+      });
+    });
+    
+    function populatePatchStudioFromContext() {
+      const identity = currentSelection.joinIdentity;
+      if (!identity) return;
+      
+      const issues = getRelatedRecords(identity, allData.issues);
+      if (issues.length > 0) {
+        const firstIssue = issues[0];
+        document.getElementById('ps-intent-when').value = 
+          (firstIssue.sheet || '') + '.' + (firstIssue.field || '') + ' ' + (firstIssue.issue_type || '');
+      }
+    }
+    
+    function getPatchStudioDraft() {
+      return {
+        intent: {
+          when: document.getElementById('ps-intent-when')?.value || '',
+          then: document.getElementById('ps-intent-then')?.value || '',
+          because: document.getElementById('ps-intent-because')?.value || ''
+        },
+        target: document.getElementById('ps-target')?.value || 'proposed_changes',
+        risk: document.getElementById('ps-risk')?.value || 'low',
+        rationale: document.getElementById('ps-rationale')?.value || '',
+        evidence: {
+          observation: document.getElementById('ps-evidence-observation')?.value || '',
+          expected_behavior: document.getElementById('ps-evidence-expected')?.value || '',
+          rule_justification: document.getElementById('ps-evidence-justification')?.value || '',
+          repro_steps: document.getElementById('ps-evidence-repro')?.value || ''
+        }
+      };
+    }
+    
+    function clearPatchStudioForm() {
+      document.getElementById('ps-intent-when').value = '';
+      document.getElementById('ps-intent-then').value = '';
+      document.getElementById('ps-intent-because').value = '';
+      document.getElementById('ps-target').value = 'proposed_changes';
+      document.getElementById('ps-risk').value = 'low';
+      document.getElementById('ps-rationale').value = '';
+      document.getElementById('ps-evidence-observation').value = '';
+      document.getElementById('ps-evidence-expected').value = '';
+      document.getElementById('ps-evidence-justification').value = '';
+      document.getElementById('ps-evidence-repro').value = '';
+    }
+    
+    document.getElementById('ps-submit-to-queue')?.addEventListener('click', function() {
+      const draft = getPatchStudioDraft();
+      
+      if (!draft.intent.when && !draft.intent.then) {
+        showToast('Please fill in at least WHEN and THEN fields', 'warning');
+        return;
+      }
+      
+      const identity = currentSelection.joinIdentity || {};
+      const author = 'Analyst';
+      
+      var request = createPatchRequest({
+        author: author,
+        author_role: currentMode || 'Analyst',
+        status: 'Draft',
+        contract_key: identity.contract_key || null,
+        file_url: identity.file_url || null,
+        file_name: identity.file_name || null,
+        target: draft.target,
+        when: draft.intent.when,
+        then: draft.intent.then,
+        because: draft.intent.because,
+        rationale: draft.rationale,
+        risk: draft.risk,
+        evidence_observation: draft.evidence.observation,
+        evidence_expected: draft.evidence.expected_behavior,
+        evidence_justification: draft.evidence.rule_justification,
+        evidence_repro: draft.evidence.repro_steps
+      });
+      
+      var submittedRequest = submitPatchRequest(request.request_id, author, currentMode || 'Analyst');
+      
+      if (submittedRequest) {
+        showToast('Patch request submitted to queue: ' + request.request_id, 'success');
+        clearPatchStudioForm();
+        updatePatchQueueCounts();
+        
+        document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
+        document.querySelector('.drawer-tab[data-tab="contract"]')?.classList.add('active');
+        document.getElementById('patch-studio-panel').style.display = 'none';
+        document.getElementById('drawer-body').style.display = 'block';
+        document.getElementById('drawer-actions-default').style.display = 'block';
+        document.getElementById('drawer-actions-patch-studio').style.display = 'none';
+        renderDrawerTab('contract');
+      } else {
+        showToast('Failed to submit patch request', 'error');
+      }
+    });
+    
+    document.getElementById('ps-copy-draft')?.addEventListener('click', async function() {
+      const draft = getPatchStudioDraft();
+      const json = JSON.stringify(draft, null, 2);
+      const success = await copyToClipboard(json);
+      showToast(success ? 'Draft copied to clipboard' : 'Failed to copy', success ? 'success' : 'error');
+    });
+    
+    document.getElementById('ps-save-local')?.addEventListener('click', function() {
+      const draft = getPatchStudioDraft();
+      localStorage.setItem('orchestrate.patch_studio.draft', JSON.stringify(draft));
+      showToast('Draft saved locally', 'success');
+    });
+    
+    document.getElementById('ps-run-preflight')?.addEventListener('click', function() {
+      runPreflightChecks();
+    });
+    
+    document.getElementById('ps-copy-preflight')?.addEventListener('click', async function() {
+      const report = generatePreflightReport();
+      const success = await copyToClipboard(JSON.stringify(report, null, 2));
+      showToast(success ? 'Preflight report copied' : 'Failed to copy', success ? 'success' : 'error');
+    });
+    
+    function runPreflightChecks() {
+      const draft = getPatchStudioDraft();
+      const checks = [];
+      
+      if (draft.intent.when && draft.intent.then) {
+        checks.push({ status: 'PASS', message: 'Intent fields populated' });
+      } else {
+        checks.push({ status: 'FAIL', message: 'Intent fields incomplete (WHEN and THEN required)' });
+      }
+      
+      if (draft.evidence.observation || draft.evidence.expected_behavior) {
+        checks.push({ status: 'PASS', message: 'Evidence pack has content' });
+      } else {
+        checks.push({ status: 'WARN', message: 'Evidence pack incomplete' });
+      }
+      
+      checks.push({ status: 'INFO', message: 'Target: ' + humanLabel(draft.target) });
+      checks.push({ status: 'INFO', message: 'Risk level: ' + draft.risk });
+      
+      const container = document.getElementById('ps-preflight-checks');
+      container.innerHTML = checks.map(function(check) {
+        var badgeClass = check.status === 'PASS' ? 'background: #e8f5e9; color: #2e7d32;' :
+                         check.status === 'FAIL' ? 'background: #ffebee; color: #c62828;' :
+                         check.status === 'WARN' ? 'background: #fff3e0; color: #e65100;' :
+                         'background: #e3f2fd; color: #1565c0;';
+        return '<div class="preflight-check" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #f5f5f5; border-radius: 6px;">' +
+          '<span class="preflight-badge" style="padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; ' + badgeClass + '">' + check.status + '</span>' +
+          '<span style="font-size: 0.9em;">' + escapeHtml(check.message) + '</span>' +
+          '</div>';
+      }).join('');
+    }
+    
+    function generatePreflightReport() {
+      const draft = getPatchStudioDraft();
+      return {
+        generated_at: new Date().toISOString(),
+        intent_complete: !!(draft.intent.when && draft.intent.then),
+        evidence_complete: !!(draft.evidence.observation && draft.evidence.expected_behavior),
+        target: draft.target,
+        risk: draft.risk,
+        draft_snapshot: draft
+      };
+    }
+    
+    function copyEvidenceBlock(block) {
+      var value = '';
+      switch(block) {
+        case 'observation': value = document.getElementById('ps-evidence-observation')?.value || ''; break;
+        case 'expected': value = document.getElementById('ps-evidence-expected')?.value || ''; break;
+        case 'justification': value = document.getElementById('ps-evidence-justification')?.value || ''; break;
+        case 'repro': value = document.getElementById('ps-evidence-repro')?.value || ''; break;
+      }
+      copyToClipboard(value).then(function(success) {
+        showToast(success ? 'Evidence block copied' : 'Failed to copy', success ? 'success' : 'error');
+      });
+    }
 
     document.getElementById('drawer-copy')?.addEventListener('click', async () => {
       const rawJson = document.getElementById('drawer-body').dataset.json || '{}';

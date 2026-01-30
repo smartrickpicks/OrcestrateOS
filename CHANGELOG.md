@@ -1,5 +1,81 @@
 # CHANGELOG
 
+## Version: v1.2.3
+Date: 2026-01-30
+
+### Added (Patch Studio Integration + Role-Gated Review Pipeline)
+
+- Role-Based Access Control
+  - Three roles: Analyst, Verifier, Admin with distinct permissions
+  - ROLE_PERMISSIONS configuration with can/cannot action lists
+  - Verifier edit_allowlist for restricting editable fields
+  - canTransition() function for role-gated status changes
+
+- Extended 12-Status Lifecycle
+  - New statuses: Needs_Clarification, Reviewer_Responded, Admin_Hold
+  - STATUS_TRANSITIONS table with from/to/roles/action/audit mappings
+  - Underscore naming convention for multi-word statuses
+  - getAuditEventForTransition() for automatic audit event logging
+
+- Patch Studio as Workbench Tab
+  - Patch Studio integrated as a tab in Record Workbench (no stacked panels)
+  - Three sub-tabs: Draft, Preflight, Evidence Pack
+  - Intent fields (WHEN/THEN/BECAUSE) with structured input
+  - Target Artifact and Risk Level selectors
+  - Footer legend explaining Copy-only vs Submit behaviors
+
+- Submit to Patch Queue CTA
+  - "Submit to Patch Queue" button creates PatchRequest and sets status=Submitted
+  - Request appears in Admin Patch Console "New" tab
+  - Audit log entry appended: PATCH_REQUEST_SUBMITTED
+  - Form clears after successful submission
+
+- Preflight Checks
+  - Preflight tab displays pass/warn/fail badges for validation checks
+  - Checks: Intent fields populated, Evidence pack complete, Target info
+  - "Run Preflight Checks" button updates check display
+  - "Copy Preflight Report" copies deterministic JSON snapshot
+
+- Evidence Pack (Copy-only)
+  - Four structured evidence blocks: Observation, Expected Behavior, Rule Justification, Repro Steps
+  - Individual copy buttons for each block
+  - Evidence included in PatchRequest payload on Submit
+
+- Verifier Actions
+  - Request Clarification (Submitted → Needs_Clarification)
+  - Analyst Response (Needs_Clarification → Reviewer_Responded)
+  - Reviewer Approve (Submitted/Reviewer_Responded → Reviewer_Approved)
+  - Reject with reason
+  - Review Notes editable field in detail drawer
+
+- Admin Actions Gating
+  - Admin Approve (Reviewer_Approved → Admin_Approved)
+  - Admin Hold / Release Hold controls
+  - Export to Kiwi (copies and marks Sent_to_Kiwi)
+  - Paste Kiwi Return (ingests payload, sets Kiwi_Returned)
+  - Mark Applied (Kiwi_Returned → Applied)
+
+- Revision Tracking
+  - revisions array captures edits after submission
+  - Each revision: revision_id, at_utc, actor, role, diff_summary, previous_snapshot
+  - Revisions section in Patch Request Detail drawer (collapsible)
+
+- Audit Log Enhancements
+  - Separate audit_log array from history
+  - Append-only semantics with actor, role, event, details
+  - Events: PATCH_REQUEST_CREATED, PATCH_REQUEST_SUBMITTED, CLARIFICATION_REQUESTED, etc.
+
+- Tooltips on Patch Studio Buttons
+  - All action buttons have title attributes with 1-sentence descriptions
+  - Legend panel explains Copy-only vs Submit behavior
+
+### Changed
+- Queue tabs updated: New shows only Submitted; Rejected includes Cancelled
+- Status names use underscore format (Reviewer_Approved, Admin_Hold, etc.)
+- PatchRequest schema extended with submitted_at_utc, risk, evidence, revisions, audit_log, clarification_questions, review_notes
+
+---
+
 ## Version: v1.2.2
 Date: 2026-01-30
 
