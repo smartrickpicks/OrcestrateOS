@@ -1079,6 +1079,63 @@
             </div>
           </div>
         </div>
+        
+        <!-- Add Comment Modal -->
+        <div id="add-comment-modal" class="modal-overlay" style="display: none;">
+          <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+              <h3>Add Comment (RFI)</h3>
+              <button class="modal-close" onclick="closeAddCommentModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+              <div style="margin-bottom: 15px;">
+                <label style="font-size: 0.85em; color: #666; display: block; margin-bottom: 5px;">Target</label>
+                <div id="comment-target-display" style="font-family: monospace; font-size: 0.9em; padding: 8px; background: #f5f5f5; border-radius: 4px;"></div>
+              </div>
+              <div style="margin-bottom: 15px;">
+                <label style="font-size: 0.85em; color: #666; display: block; margin-bottom: 5px;">Comment</label>
+                <textarea id="comment-content-input" placeholder="Describe your question or clarification request..." style="width: 100%; height: 100px; font-size: 0.9em; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"></textarea>
+              </div>
+              <input type="hidden" id="comment-target-type">
+              <input type="hidden" id="comment-target-id">
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
+              <button class="toolbar-btn" onclick="closeAddCommentModal()">Cancel</button>
+              <button class="toolbar-btn" onclick="submitNewComment()" style="background: #1976d2;">Add Comment</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Elevate to Patch Request Modal -->
+        <div id="elevate-to-patch-modal" class="modal-overlay" style="display: none;">
+          <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+              <h3>Elevate to Patch Request</h3>
+              <button class="modal-close" onclick="closeElevateToPatchModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+              <p style="font-size: 0.9em; color: #666; margin-bottom: 15px;">Create a patch request from this resolved comment. Fill in the intent of the change.</p>
+              <div id="elevate-comment-preview" style="background: #f5f5f5; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9em;"></div>
+              <div style="margin-bottom: 15px;">
+                <label style="font-size: 0.85em; color: #666; display: block; margin-bottom: 5px;">WHEN (Condition)</label>
+                <input type="text" id="elevate-intent-when" placeholder="e.g., field 'label' contains 'Artist'" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+              </div>
+              <div style="margin-bottom: 15px;">
+                <label style="font-size: 0.85em; color: #666; display: block; margin-bottom: 5px;">THEN (Action)</label>
+                <input type="text" id="elevate-intent-then" placeholder="e.g., set 'label' to 'Record Label'" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+              </div>
+              <div style="margin-bottom: 15px;">
+                <label style="font-size: 0.85em; color: #666; display: block; margin-bottom: 5px;">BECAUSE (Reason)</label>
+                <input type="text" id="elevate-intent-because" placeholder="e.g., 'Artist' is reserved for performer names" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+              </div>
+              <input type="hidden" id="elevate-comment-id">
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
+              <button class="toolbar-btn" onclick="closeElevateToPatchModal()">Cancel</button>
+              <button class="toolbar-btn" onclick="submitElevateToPatch()" style="background: #7b1fa2;">Create Patch Request</button>
+            </div>
+          </div>
+        </div>
 
         <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Version & Baseline</h3>
@@ -2891,6 +2948,106 @@
       updatePatchQueueCounts();
     }
     
+    // ========== COMMENT UI FUNCTIONS ==========
+    function openAddCommentModal(targetType, targetId) {
+      document.getElementById('comment-target-type').value = targetType;
+      document.getElementById('comment-target-id').value = targetId;
+      document.getElementById('comment-target-display').textContent = targetType + ': ' + targetId;
+      document.getElementById('comment-content-input').value = '';
+      document.getElementById('add-comment-modal').style.display = 'flex';
+    }
+    
+    function closeAddCommentModal() {
+      document.getElementById('add-comment-modal').style.display = 'none';
+    }
+    
+    function submitNewComment() {
+      var targetType = document.getElementById('comment-target-type').value;
+      var targetId = document.getElementById('comment-target-id').value;
+      var content = document.getElementById('comment-content-input').value.trim();
+      
+      if (!content) {
+        showToast('Please enter a comment', 'warning');
+        return;
+      }
+      
+      var author = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+      createComment(targetType, targetId, content, author, author);
+      closeAddCommentModal();
+      showToast('Comment added', 'success');
+      
+      // Refresh the drawer if it's a record comment
+      if (targetType === 'record') {
+        renderRecordDrawer();
+      }
+      updatePatchQueueCounts();
+    }
+    
+    function resolveCommentById(commentId) {
+      var author = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+      resolveComment(commentId, author, author);
+      renderRecordDrawer();
+      updatePatchQueueCounts();
+      showToast('Comment resolved', 'success');
+    }
+    
+    function elevateCommentToPatchRequest(commentId) {
+      var comment = getComment(commentId);
+      if (!comment) return;
+      
+      document.getElementById('elevate-comment-id').value = commentId;
+      document.getElementById('elevate-comment-preview').innerHTML = 
+        '<strong>Original Comment:</strong> ' + escapeHtml(comment.content) + 
+        '<br><span style="font-size: 0.85em; color: #666;">Target: ' + comment.target_type + ' / ' + escapeHtml(comment.target_id) + '</span>';
+      document.getElementById('elevate-intent-when').value = '';
+      document.getElementById('elevate-intent-then').value = '';
+      document.getElementById('elevate-intent-because').value = '';
+      document.getElementById('elevate-to-patch-modal').style.display = 'flex';
+    }
+    
+    function closeElevateToPatchModal() {
+      document.getElementById('elevate-to-patch-modal').style.display = 'none';
+    }
+    
+    function submitElevateToPatch() {
+      var commentId = document.getElementById('elevate-comment-id').value;
+      var comment = getComment(commentId);
+      if (!comment) return;
+      
+      var intentWhen = document.getElementById('elevate-intent-when').value.trim();
+      var intentThen = document.getElementById('elevate-intent-then').value.trim();
+      var intentBecause = document.getElementById('elevate-intent-because').value.trim();
+      
+      if (!intentThen) {
+        showToast('Please fill in the THEN (action) field', 'warning');
+        return;
+      }
+      
+      var author = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+      
+      var targetScope = {
+        target: comment.target_type,
+        target_id: comment.target_id
+      };
+      
+      var proposedChange = {
+        intent: {
+          when: intentWhen || 'N/A',
+          then: intentThen,
+          because: intentBecause || comment.content
+        },
+        rationale: 'Elevated from comment: ' + comment.content
+      };
+      
+      var patchRequest = createPatchRequest(targetScope, proposedChange, author, author);
+      elevateToRequest(commentId, patchRequest.request_id, author, author);
+      
+      closeElevateToPatchModal();
+      renderRecordDrawer();
+      renderPatchConsoleTable();
+      showToast('Created Patch Request from comment', 'success');
+    }
+    
     // ========== STANDARDIZER (D3) ==========
     let standardizerResult = {
       mergedDataset: null,
@@ -3776,6 +3933,45 @@
       if (issues.length === 0 && actions.length === 0) {
         html += `<p style="color: #999; font-style: italic;">No issues or field actions for this contract.</p>`;
       }
+      
+      // Comments section
+      const recordComments = getCommentsByTarget('record', key);
+      html += `
+        <div style="margin-bottom: 20px; border-top: 1px solid #e0e0e0; padding-top: 15px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h4 style="margin: 0; color: #333; font-size: 0.9em; text-transform: uppercase;">Comments (${recordComments.length})</h4>
+            <button class="toolbar-btn" style="padding: 4px 10px; font-size: 0.8em;" onclick="openAddCommentModal('record', '${escapeHtml(key)}')">+ Add Comment</button>
+          </div>
+      `;
+      
+      if (recordComments.length > 0) {
+        html += '<div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;">';
+        recordComments.forEach(c => {
+          const statusColors = {
+            'Open': { bg: '#e3f2fd', border: '#1976d2' },
+            'ReviewerResponded': { bg: '#fff3e0', border: '#e65100' },
+            'Resolved': { bg: '#e8f5e9', border: '#388e3c' },
+            'ElevatedToPatchRequest': { bg: '#ede7f6', border: '#5e35b1' },
+            'Closed': { bg: '#f5f5f5', border: '#757575' }
+          }[c.status] || { bg: '#f5f5f5', border: '#757575' };
+          
+          const date = new Date(c.created_at_utc).toLocaleDateString();
+          var elevateBtn = c.status === 'Resolved' ? '<button class="toolbar-btn" style="padding: 2px 8px; font-size: 0.75em;" onclick="elevateCommentToPatchRequest(\'' + c.comment_id + '\')">Elevate to Patch</button>' : '';
+          var resolveBtn = c.status === 'Open' ? '<button class="toolbar-btn" style="padding: 2px 8px; font-size: 0.75em;" onclick="resolveCommentById(\'' + c.comment_id + '\')">Resolve</button>' : '';
+          html += '<div style="background: ' + statusColors.bg + '; padding: 10px; border-radius: 6px; border-left: 3px solid ' + statusColors.border + ';">' +
+            '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">' +
+            '<span style="font-weight: 500; font-size: 0.85em;">' + c.status + '</span>' +
+            '<span style="font-size: 0.75em; color: #666;">' + date + '</span>' +
+            '</div>' +
+            '<div style="font-size: 0.9em;">' + escapeHtml(c.content) + '</div>' +
+            '<div style="margin-top: 8px; display: flex; gap: 6px;">' + elevateBtn + resolveBtn + '</div>' +
+            '</div>';
+        });
+        html += '</div>';
+      } else {
+        html += '<p style="color: #999; font-style: italic; font-size: 0.85em;">No comments for this record.</p>';
+      }
+      html += '</div>';
       
       contentEl.innerHTML = html;
     }
