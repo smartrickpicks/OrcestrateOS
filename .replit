@@ -1,4 +1,4 @@
-modules = ["python-3.12", "bash"]
+modules = ["python-3.12", "bash", "nodejs-22"]
 [replit]
 language = "python3"
 run = "python3 local_runner/validate_config.py --base config/config_pack.base.json --patch config/config_pack.example.patch.json && python3 local_runner/run_local.py --base config/config_pack.base.json --patch config/config_pack.example.patch.json --standardized examples/standardized_dataset.example.json --out out/sf_packet.preview.json"

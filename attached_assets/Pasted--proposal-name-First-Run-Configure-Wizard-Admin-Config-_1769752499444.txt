@@ -1,0 +1,229 @@
+{
+  "proposal": {
+    "name": "First-Run Configure Wizard + Admin Config Flows (Master-Driven Editing)",
+    "goal": "Keep dev convenience (auto-setup) while introducing a first-run, human-friendly ‘Configure’ flow and an Admin-only ‘Config Flows’ panel that mirrors config_pack workflow order. Admin can edit master rules/configs and immediately see placeholder/preview reflections."
+  },
+  "first_run_experience": {
+    "mode": "AUTO_SETUP_DEFAULT + OPTIONAL_WIZARD",
+    "behavior": {
+      "default_on_boot": "Auto-load Repo Masters (dev baseline) when present",
+      "ui_affordance": "Show a prominent 'Configure' button in the topbar + a small first-run banner",
+      "first_run_banner_copy": "Using default setup. Click Configure to connect your local files and set your workflow defaults."
+    },
+    "wizard": {
+      "name": "Configure Kiwi (First Run)",
+      "steps": [
+        {
+          "step_id": "WELCOME",
+          "title": "Welcome",
+          "plain_english": "We’ll set up where your files live and what you want to see first.",
+          "inputs": [
+            {
+              "type": "toggle",
+              "key": "use_repo_masters",
+              "label": "Use Repo Masters (recommended for dev/testing)",
+              "default": true
+            }
+          ]
+        },
+        {
+          "step_id": "DATA_SOURCES",
+          "title": "Data Sources",
+          "plain_english": "Choose how you’ll load your Preview and Reference packets.",
+          "inputs": [
+            {
+              "type": "select",
+              "key": "preferred_load_method",
+              "label": "Default load method",
+              "options": ["Repo Masters", "Paste JSON", "Drag & Drop", "Local Path Hint"],
+              "default": "Repo Masters"
+            },
+            {
+              "type": "path_hint",
+              "key": "local_data_root",
+              "label": "Local folder (optional)",
+              "help": "Used only for path hints; nothing uploads or syncs."
+            }
+          ]
+        },
+        {
+          "step_id": "WORKFLOW_DEFAULTS",
+          "title": "Workflow Defaults",
+          "plain_english": "Pick what queues and panels you want visible by default.",
+          "inputs": [
+            {
+              "type": "multi_select",
+              "key": "default_queues",
+              "label": "Queues to show",
+              "options": ["To Do", "Needs Review", "Flagged", "Blocked", "Finalized"],
+              "default": ["To Do", "Needs Review", "Flagged"]
+            },
+            {
+              "type": "toggle",
+              "key": "compare_mode_default",
+              "label": "Enable Compare view by default",
+              "default": true
+            }
+          ]
+        },
+        {
+          "step_id": "DONE",
+          "title": "Finish",
+          "plain_english": "You’re set. You can change these anytime in Admin → Settings.",
+          "outputs": [
+            "Persist local-only settings (no network)",
+            "Optionally load masters immediately"
+          ]
+        }
+      ],
+      "persistence": {
+        "storage": "localStorage (or local file if supported later)",
+        "keys": [
+          "use_repo_masters",
+          "preferred_load_method",
+          "local_data_root",
+          "default_queues",
+          "compare_mode_default"
+        ]
+      }
+    }
+  },
+  "admin_panel": {
+    "new_area": {
+      "name": "Config Flows",
+      "purpose": "A workflow-ordered view of every config artifact (like config_pack), with payload previews and master editing.",
+      "audience": ["Admin"],
+      "navigation_location": "Sidebar → Admin → Config Flows"
+    },
+    "layout": {
+      "left_column": {
+        "component": "Workflow Rail",
+        "description": "Vertical stepper showing the end-to-end workflow order (mirrors config_pack order).",
+        "items_example": [
+          "1. Data Sources",
+          "2. Dataset Mapping",
+          "3. Standardization",
+          "4. Ruleset",
+          "5. Validation Gates",
+          "6. Patch Generation",
+          "7. Smoke Baselines",
+          "8. Export / PR Summary"
+        ]
+      },
+      "main_column": {
+        "component": "Flow Stage Detail",
+        "tabs": [
+          "Plain-English",
+          "Payload",
+          "Master",
+          "Diff",
+          "History"
+        ]
+      }
+    },
+    "per_stage_tabs": {
+      "plain_english": {
+        "purpose": "Explain what this stage does and why the user is doing it (tooltips copy source).",
+        "content_sources": [
+          "admin-authored markdown notes",
+          "sf_packet_tooltips equivalents, but renamed and simplified"
+        ]
+      },
+      "payload": {
+        "purpose": "Show the active effective config the UI is using right now (resolved view).",
+        "read_only": true,
+        "includes": [
+          "resolved JSON (computed/merged)",
+          "hash",
+          "version tag",
+          "source chips (MASTER/USER/DEFAULT)"
+        ]
+      },
+      "master": {
+        "purpose": "Admin-editable canonical source (master rules/config).",
+        "edit_mode": {
+          "controls": [
+            "Edit",
+            "Validate (local schema check)",
+            "Save to Master",
+            "Publish to Session (apply immediately)",
+            "Revert"
+          ],
+          "guards": [
+            "Admin role required",
+            "Schema validation must pass to publish",
+            "Edits are local-only unless user explicitly exports"
+          ]
+        }
+      },
+      "diff": {
+        "purpose": "Show what changed between Master and Effective Payload.",
+        "views": [
+          "Master vs Effective",
+          "Master vs Previous Master (version compare)"
+        ]
+      },
+      "history": {
+        "purpose": "Track local edits and publishes (audit trail).",
+        "fields": [
+          "timestamp",
+          "admin_user",
+          "stage",
+          "change_summary",
+          "hash_before",
+          "hash_after"
+        ]
+      }
+    }
+  },
+  "master_edit_reflection_logic": {
+    "requirement": "Admin edits to Master rules/config should reflect into placeholder/preview behavior immediately (in-session) when 'Publish to Session' is used.",
+    "mechanism": {
+      "concept": "Effective Config = Master + Overrides + Session Settings",
+      "publish_action": "Recompute Effective Config and refresh queues/labels/tooltips/field actions deterministically",
+      "scope": [
+        "queue membership rules",
+        "severity mapping",
+        "tooltip labels (plain-English nomenclature)",
+        "ruleset logic used to generate field_actions/issues shown in UI"
+      ]
+    },
+    "non_goals": [
+      "No runtime extraction",
+      "No Salesforce API execution",
+      "No file writes without explicit export"
+    ]
+  },
+  "nomenclature_layer": {
+    "intent": "Replace file-ish names with human names everywhere while preserving underlying keys.",
+    "examples": [
+      { "internal": "sf_packet.preview", "display": "Preview Packet (What we found)" },
+      { "internal": "sf_packet.expected", "display": "Reference Packet (What Salesforce expects)" },
+      { "internal": "ruleset", "display": "Rules (How we decide what's correct)" },
+      { "internal": "patch", "display": "Patch Draft (Proposed fixes)" },
+      { "internal": "smoke", "display": "Safety Check (Baseline smoke)" }
+    ],
+    "ui_rule": "Show display label by default; reveal internal key only in Admin with a small 'technical details' expander."
+  },
+  "admin_actions": {
+    "allowed": [
+      "Edit Master configs/rulesets",
+      "Publish Master → Effective Session",
+      "Adjust workflow order labels (UI only)",
+      "Manage wizard defaults",
+      "Export master bundle (copy-only) for PR"
+    ],
+    "forbidden": [
+      "Executing validator/smoke in-app",
+      "Writing directly to repo without explicit export",
+      "Network calls"
+    ]
+  },
+  "acceptance_criteria": [
+    "Non-admin users see auto-setup + Configure button; no forced wizard blocking work",
+    "Admin can open Config Flows and see workflow-ordered artifacts with Payload + Master side-by-side",
+    "Admin edits Master and can Publish to Session; UI updates immediately (queues/tooltips/mappings)",
+    "Display names are plain-English everywhere; internal keys are only visible in Admin details",
+    "All changes remain offline and deterministic; export is copy-only"
+  ]
+}
