@@ -696,6 +696,7 @@
             <span class="chip-dot"></span>
             <span id="session-chip-text">Not Loaded</span>
           </span>
+          <span id="config-status-chip" style="display: none; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; margin-left: 8px;"></span>
           <span class="session-meta" id="session-meta"></span>
         </div>
         <div class="top-toolbar-right">
@@ -981,14 +982,14 @@
           </div>
           
           <div class="loader-panel active" id="preview-paste">
-            <textarea class="paste-area" id="preview-paste-area" placeholder="Paste sf_packet JSON here..."></textarea>
+            <textarea class="paste-area" id="preview-paste-area" placeholder="Paste your Preview Packet JSON here..."></textarea>
             <button class="modal-btn modal-btn-primary" id="preview-paste-load">Load from Paste</button>
           </div>
           
           <div class="loader-panel" id="preview-drop">
             <div class="drop-zone" id="preview-drop-zone">
               <div class="drop-zone-icon">+</div>
-              <div class="drop-zone-text">Drag & drop sf_packet.json here, or click to select</div>
+              <div class="drop-zone-text">Drag & drop your Preview Packet file here, or click to select</div>
               <div class="drop-zone-file" id="preview-drop-file"></div>
             </div>
             <input type="file" id="preview-file-input" accept=".json" style="display: none;">
@@ -1022,7 +1023,7 @@
           </div>
           
           <div class="loader-panel active" id="expected-paste">
-            <textarea class="paste-area" id="expected-paste-area" placeholder="Paste expected sf_packet JSON for comparison..."></textarea>
+            <textarea class="paste-area" id="expected-paste-area" placeholder="Paste comparison data (previous version) here..."></textarea>
             <button class="modal-btn modal-btn-secondary" id="expected-paste-load">Load Expected</button>
           </div>
           
@@ -1541,7 +1542,7 @@
     
     function loadFromData(data, sourceType, fileName) {
       if (!data || (!data.sf_summary && !data.sf_contract_results && !data.sf_issues && !data.sf_field_actions)) {
-        throw new Error('Invalid sf_packet structure');
+        throw new Error('Invalid data format - expected Preview Packet structure');
       }
       
       sessionState.status = 'loaded';
@@ -2170,6 +2171,10 @@
     // Config Flows Panel
     let currentConfigFlowStage = 'data_sources';
     let currentConfigFlowTab = 'plain-english';
+    let masterEditMode = false;
+    let masterDraft = {};
+    let sessionConfig = {};
+    let configHistory = [];
     
     const CONFIG_FLOW_STAGES = {
       data_sources: {
@@ -2179,7 +2184,7 @@
           <p style="margin-top: 10px;"><strong>What it does:</strong> Defines the primary and comparison data sources for your session.</p>
           <ul style="margin: 10px 0 0 20px;">
             <li><strong>Repo Masters</strong> - Auto-load from repository (recommended for dev)</li>
-            <li><strong>Paste JSON</strong> - Manual paste of sf_packet data</li>
+            <li><strong>Paste JSON</strong> - Manual paste of Preview Packet data</li>
             <li><strong>Drag & Drop</strong> - Upload a file directly</li>
             <li><strong>Local Path Hint</strong> - Reference files by path</li>
           </ul>`
@@ -2232,9 +2237,142 @@
     
     function closeConfigFlows() {
       document.getElementById('config-flows-drawer').classList.remove('active');
+      masterEditMode = false;
+    }
+    
+    function getMasterConfig(stage) {
+      if (sessionConfig[stage]) return sessionConfig[stage];
+      const defaults = {
+        data_sources: { stage: 'data_sources', version: '1.0.0', sources: ['sf_packet.preview.json'] },
+        field_mapping: { stage: 'field_mapping', version: '1.0.0', mappings: [] },
+        rules_engine: { stage: 'rules_engine', version: '1.0.0', rules: [] },
+        qa_checks: { stage: 'qa_checks', version: '1.0.0', checks: [] },
+        resolution: { stage: 'resolution', version: '1.0.0', strategy: 'auto' },
+        enrichment: { stage: 'enrichment', version: '1.0.0', enrichers: [] },
+        approval: { stage: 'approval', version: '1.0.0', workflow: 'standard' },
+        export: { stage: 'export', version: '1.0.0', format: 'json' }
+      };
+      return defaults[stage] || { stage, version: '1.0.0' };
+    }
+    
+    function enterMasterEditMode() {
+      masterEditMode = true;
+      renderConfigFlowTabContent();
+    }
+    
+    function cancelMasterEdit() {
+      masterEditMode = false;
+      renderConfigFlowTabContent();
+    }
+    
+    function validateMasterConfig() {
+      const textarea = document.getElementById('master-edit-area');
+      const msgEl = document.getElementById('master-validation-msg');
+      if (!textarea || !msgEl) return;
+      
+      try {
+        JSON.parse(textarea.value);
+        msgEl.style.display = 'block';
+        msgEl.style.background = '#e8f5e9';
+        msgEl.style.color = '#2e7d32';
+        msgEl.textContent = 'Valid JSON configuration';
+        return true;
+      } catch (e) {
+        msgEl.style.display = 'block';
+        msgEl.style.background = '#ffebee';
+        msgEl.style.color = '#c62828';
+        msgEl.textContent = 'Invalid JSON: ' + e.message;
+        return false;
+      }
+    }
+    
+    function saveMasterDraft() {
+      const textarea = document.getElementById('master-edit-area');
+      if (!textarea) return;
+      
+      if (!validateMasterConfig()) return;
+      
+      masterDraft[currentConfigFlowStage] = textarea.value;
+      masterEditMode = false;
+      renderConfigFlowTabContent();
+      showToast('Draft saved for ' + CONFIG_FLOW_STAGES[currentConfigFlowStage]?.title);
+    }
+    
+    function publishMasterConfig() {
+      const stage = currentConfigFlowStage;
+      const draftJson = masterDraft[stage];
+      
+      if (!draftJson) {
+        showToast('No changes to publish', 'warning');
+        return;
+      }
+      
+      try {
+        const config = JSON.parse(draftJson);
+        const previousConfig = sessionConfig[stage] ? JSON.stringify(sessionConfig[stage]) : null;
+        
+        sessionConfig[stage] = config;
+        configHistory.push({
+          stage,
+          timestamp: new Date().toISOString(),
+          action: 'publish',
+          previousValue: previousConfig,
+          newValue: draftJson
+        });
+        
+        delete masterDraft[stage];
+        masterEditMode = false;
+        renderConfigFlowTabContent();
+        showToast('Published to session: ' + CONFIG_FLOW_STAGES[stage]?.title);
+        refreshSessionFromConfig();
+      } catch (e) {
+        showToast('Failed to publish: ' + e.message, 'error');
+      }
+    }
+    
+    function revertMasterConfig() {
+      delete masterDraft[currentConfigFlowStage];
+      masterEditMode = false;
+      renderConfigFlowTabContent();
+      showToast('Reverted changes');
+    }
+    
+    function refreshSessionFromConfig() {
+      console.log('Session config updated:', sessionConfig);
+      
+      const configChip = document.getElementById('config-status-chip');
+      if (configChip) {
+        const customCount = Object.keys(sessionConfig).length;
+        if (customCount > 0) {
+          configChip.textContent = `${customCount} custom config(s)`;
+          configChip.style.background = '#e3f2fd';
+          configChip.style.color = '#1565c0';
+          configChip.style.display = 'inline-block';
+        } else {
+          configChip.style.display = 'none';
+        }
+      }
+    }
+    
+    function showToast(message, type = 'success') {
+      const existing = document.querySelector('.config-toast');
+      if (existing) existing.remove();
+      
+      const toast = document.createElement('div');
+      toast.className = 'config-toast';
+      toast.style.cssText = `
+        position: fixed; bottom: 20px; right: 20px; padding: 12px 20px;
+        background: ${type === 'error' ? '#c62828' : type === 'warning' ? '#f57c00' : '#2e7d32'};
+        color: white; border-radius: 6px; font-size: 0.9em; z-index: 10001;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: fadeIn 0.2s ease;
+      `;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
     }
     
     function selectConfigFlowStage(stage) {
+      masterEditMode = false;
       currentConfigFlowStage = stage;
       
       // Update rail selection
@@ -2270,35 +2408,93 @@
       if (currentConfigFlowTab === 'plain-english') {
         html = `<div style="padding: 15px; background: #f5f5f5; border-radius: 6px;">${stageConfig.plainEnglish || '<p>No documentation available.</p>'}</div>`;
       } else if (currentConfigFlowTab === 'payload') {
+        const effectiveConfig = getMasterConfig(currentConfigFlowStage);
+        const isCustom = sessionConfig[currentConfigFlowStage] !== undefined;
         html = `<div style="padding: 15px; background: #263238; color: #eceff1; border-radius: 6px; font-family: monospace; font-size: 0.85em;">
           <div style="margin-bottom: 10px; color: #78909c;">// Effective config (resolved view)</div>
-          <pre style="margin: 0; white-space: pre-wrap;">{ "stage": "${currentConfigFlowStage}", "status": "active" }</pre>
+          <pre style="margin: 0; white-space: pre-wrap;">${escapeHtml(JSON.stringify(effectiveConfig, null, 2))}</pre>
         </div>
         <div style="margin-top: 10px; display: flex; gap: 8px;">
-          <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 0.75em;">MASTER</span>
-          <span style="background: #fff3e0; color: #e65100; padding: 4px 8px; border-radius: 4px; font-size: 0.75em;">DEFAULT</span>
+          <span style="background: ${isCustom ? '#e3f2fd' : '#e8f5e9'}; color: ${isCustom ? '#1565c0' : '#2e7d32'}; padding: 4px 8px; border-radius: 4px; font-size: 0.75em;">${isCustom ? 'CUSTOM' : 'MASTER'}</span>
+          ${!isCustom ? '<span style="background: #fff3e0; color: #e65100; padding: 4px 8px; border-radius: 4px; font-size: 0.75em;">DEFAULT</span>' : ''}
         </div>`;
       } else if (currentConfigFlowTab === 'master') {
-        html = `<div style="padding: 15px; background: #263238; color: #eceff1; border-radius: 6px; font-family: monospace; font-size: 0.85em; min-height: 150px;">
-          <div style="margin-bottom: 10px; color: #78909c;">// Master config (editable by Admin)</div>
-          <pre style="margin: 0; white-space: pre-wrap;">{ "stage": "${currentConfigFlowStage}", "version": "1.0.0" }</pre>
-        </div>
-        <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
-          <button class="modal-btn modal-btn-secondary" disabled>Edit</button>
-          <button class="modal-btn modal-btn-secondary" disabled>Validate</button>
-          <button class="modal-btn modal-btn-primary" disabled>Publish to Session</button>
-          <button class="modal-btn" style="margin-left: auto;" disabled>Revert</button>
-        </div>`;
+        const masterConfig = getMasterConfig(currentConfigFlowStage);
+        const configJson = JSON.stringify(masterConfig, null, 2);
+        const hasChanges = masterDraft[currentConfigFlowStage] !== undefined;
+        const draftJson = hasChanges ? masterDraft[currentConfigFlowStage] : configJson;
+        
+        if (masterEditMode) {
+          html = `<div style="margin-bottom: 10px;">
+            <div id="master-validation-msg" style="display: none; padding: 8px 12px; border-radius: 4px; margin-bottom: 10px;"></div>
+            <textarea id="master-edit-area" style="width: 100%; height: 200px; font-family: monospace; font-size: 0.85em; background: #263238; color: #eceff1; border: 2px solid #5c6bc0; border-radius: 6px; padding: 15px; resize: vertical;">${escapeHtml(draftJson)}</textarea>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="modal-btn modal-btn-secondary" onclick="validateMasterConfig()">Validate</button>
+            <button class="modal-btn modal-btn-primary" onclick="saveMasterDraft()">Save Draft</button>
+            <button class="modal-btn" style="background: #7c4dff; color: white;" onclick="publishMasterConfig()">Publish to Session</button>
+            <button class="modal-btn" style="margin-left: auto;" onclick="cancelMasterEdit()">Cancel</button>
+          </div>`;
+        } else {
+          html = `<div style="padding: 15px; background: #263238; color: #eceff1; border-radius: 6px; font-family: monospace; font-size: 0.85em; min-height: 150px;">
+            <div style="margin-bottom: 10px; color: #78909c;">// Master config ${hasChanges ? '(unsaved changes)' : ''}</div>
+            <pre style="margin: 0; white-space: pre-wrap;">${escapeHtml(hasChanges ? draftJson : configJson)}</pre>
+          </div>
+          <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="modal-btn modal-btn-secondary" onclick="enterMasterEditMode()">Edit</button>
+            <button class="modal-btn modal-btn-primary" onclick="publishMasterConfig()" ${hasChanges ? '' : 'disabled'}>Publish to Session</button>
+            <button class="modal-btn" style="margin-left: auto;" onclick="revertMasterConfig()" ${hasChanges ? '' : 'disabled'}>Revert</button>
+          </div>`
+        }
       } else if (currentConfigFlowTab === 'diff') {
-        html = `<div style="padding: 20px; text-align: center; color: #666;">
-          <p>No differences detected.</p>
-          <p style="font-size: 0.85em; margin-top: 10px;">Master and Effective Payload are identical.</p>
-        </div>`;
+        const hasChanges = masterDraft[currentConfigFlowStage] !== undefined;
+        if (hasChanges) {
+          const masterConfig = getMasterConfig(currentConfigFlowStage);
+          const currentJson = JSON.stringify(masterConfig, null, 2);
+          const draftJson = masterDraft[currentConfigFlowStage];
+          html = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+              <div style="font-weight: 600; margin-bottom: 8px; color: #666;">Current (Published)</div>
+              <div style="padding: 12px; background: #263238; color: #eceff1; border-radius: 6px; font-family: monospace; font-size: 0.8em; max-height: 200px; overflow: auto;">
+                <pre style="margin: 0; white-space: pre-wrap;">${escapeHtml(currentJson)}</pre>
+              </div>
+            </div>
+            <div>
+              <div style="font-weight: 600; margin-bottom: 8px; color: #5c6bc0;">Draft (Pending)</div>
+              <div style="padding: 12px; background: #1a237e; color: #eceff1; border-radius: 6px; font-family: monospace; font-size: 0.8em; max-height: 200px; overflow: auto; border: 2px solid #5c6bc0;">
+                <pre style="margin: 0; white-space: pre-wrap;">${escapeHtml(draftJson)}</pre>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top: 15px; display: flex; gap: 10px;">
+            <button class="modal-btn" style="background: #7c4dff; color: white;" onclick="publishMasterConfig()">Publish Changes</button>
+            <button class="modal-btn" onclick="revertMasterConfig()">Discard</button>
+          </div>`;
+        } else {
+          html = `<div style="padding: 20px; text-align: center; color: #666;">
+            <p>No differences detected.</p>
+            <p style="font-size: 0.85em; margin-top: 10px;">Master and Effective Payload are identical.</p>
+          </div>`;
+        }
       } else if (currentConfigFlowTab === 'history') {
-        html = `<div style="padding: 20px; text-align: center; color: #666;">
-          <p>No history entries.</p>
-          <p style="font-size: 0.85em; margin-top: 10px;">Changes will be recorded here when you edit and publish.</p>
-        </div>`;
+        const stageHistory = configHistory.filter(h => h.stage === currentConfigFlowStage);
+        if (stageHistory.length > 0) {
+          const historyItems = stageHistory.slice().reverse().map(h => `
+            <div style="padding: 12px; background: #f5f5f5; border-radius: 6px; margin-bottom: 8px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                <span style="font-weight: 600; color: #333;">${h.action === 'publish' ? 'Published' : h.action}</span>
+                <span style="font-size: 0.8em; color: #666;">${new Date(h.timestamp).toLocaleString()}</span>
+              </div>
+              <div style="font-size: 0.85em; color: #666;">Configuration updated</div>
+            </div>
+          `).join('');
+          html = `<div style="max-height: 300px; overflow-y: auto;">${historyItems}</div>`;
+        } else {
+          html = `<div style="padding: 20px; text-align: center; color: #666;">
+            <p>No history entries.</p>
+            <p style="font-size: 0.85em; margin-top: 10px;">Changes will be recorded here when you edit and publish.</p>
+          </div>`;
+        }
       }
       
       container.innerHTML = html;
@@ -3276,7 +3472,7 @@
         // No data available - show error and stay in welcome state
         const errorContainer = document.getElementById('error-container');
         if (errorContainer) {
-          errorContainer.innerHTML = `<div class="info">No sf_packet data found. Click "Load Data" to paste or drop a JSON file.</div>`;
+          errorContainer.innerHTML = `<div class="info">No records loaded yet. Click "Data Sources" to load your Preview Packet.</div>`;
         }
         updateSessionChip();
         return;
@@ -4881,7 +5077,7 @@ Add any additional notes here.
           navigateTo('triage');
           showWizardStatus('data-source-status', 'Data loaded successfully!', 'success');
         } else {
-          throw new Error('Invalid sf_packet format');
+          throw new Error('Invalid data format - expected Preview Packet structure');
         }
       } catch (e) {
         showWizardStatus('data-source-status', 'Failed to load: ' + e.message, 'error');

@@ -26,6 +26,14 @@ Date: 2026-01-30
   - Flow Stage Detail with tabs: Plain-English, Payload, Master, Diff, History
   - Admin-only access (requires Admin role)
   - Stage-specific documentation in Plain-English tab
+  - Master Edit: Validate, Save Draft, Publish to Session, Revert controls
+  - Diff View: Side-by-side comparison of current vs pending changes
+  - History View: Timestamped log of published config changes
+
+- Nomenclature Layer
+  - Replaced "sf_packet" with "Preview Packet" in all user-facing text
+  - Updated placeholders and help text with plain-English descriptions
+  - Clearer error messages for data format issues
 
 ### Changed
 - Replaced centered hero layout with sidebar + topbar + main workbench design
