@@ -2454,7 +2454,7 @@
             <button class="modal-btn modal-btn-secondary" onclick="enterMasterEditMode()">Edit</button>
             <button class="modal-btn modal-btn-primary" onclick="publishMasterConfig()" ${hasChanges ? '' : 'disabled'}>Publish to Session</button>
             <button class="modal-btn" style="margin-left: auto;" onclick="revertMasterConfig()" ${hasChanges ? '' : 'disabled'}>Revert</button>
-          </div>`
+          </div>`;
         }
       } else if (currentConfigFlowTab === 'diff') {
         const hasChanges = masterDraft[currentConfigFlowStage] !== undefined;
