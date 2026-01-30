@@ -14,6 +14,19 @@ Date: 2026-01-30
   - Record Drawer: Right-side slide-over for contract details with Previous/Next navigation
   - Topbar with Load Data button, session status chip, and quick actions
 
+- First-Run Configure Wizard
+  - Configure button in topbar (purple gradient)
+  - First-run banner: "Using default setup. Click Configure..."
+  - Multi-step wizard: Welcome, Data Sources, Workflow Defaults, Finish
+  - Settings persisted to localStorage
+  - Auto-setup: Repo Masters auto-load when enabled
+
+- Admin Config Flows Panel
+  - Workflow Rail: 8-step stepper (Data Sources → Export/PR)
+  - Flow Stage Detail with tabs: Plain-English, Payload, Master, Diff, History
+  - Admin-only access (requires Admin role)
+  - Stage-specific documentation in Plain-English tab
+
 ### Changed
 - Replaced centered hero layout with sidebar + topbar + main workbench design
 - Sidebar width: 280px fixed, with collapsible sections
@@ -26,6 +39,7 @@ Date: 2026-01-30
 - Single-file vanilla HTML+JS maintained
 - All existing determinism guarantees unchanged
 - Legacy 'operator' mode auto-converts to 'analyst'
+- Settings stored in localStorage with versioned keys (v12)
 
 ---
 

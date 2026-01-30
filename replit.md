@@ -15,6 +15,8 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 - Right-side drawers: Data Sources Drawer, Record Detail Drawer
 - Role-based navigation: Analyst (default), Reviewer, Admin
 - Session management: Data Sources, Evidence Status, Reset Session
+- First-Run Configure Wizard: Multi-step setup for data sources and workflow defaults
+- Admin Config Flows: Workflow-ordered view of config artifacts with Plain-English, Payload, Master tabs
 
 **What This Is NOT:**
 - Not a runtime system

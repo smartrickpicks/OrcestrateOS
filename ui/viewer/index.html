@@ -103,6 +103,49 @@
     .drawer-close:hover { opacity: 1; }
     .drawer-body { flex: 1; overflow-y: auto; padding: 20px; }
     .drawer-footer { padding: 15px 20px; border-top: 1px solid #e0e0e0; background: #f8f9fa; flex-shrink: 0; }
+    
+    /* First-Run Banner */
+    .first-run-banner { display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-bottom: 1px solid #bbdefb; font-size: 0.9em; }
+    .first-run-banner .banner-icon { font-size: 1.2em; }
+    .first-run-banner .banner-text { flex: 1; color: #1565c0; }
+    .first-run-banner .banner-dismiss { background: none; border: none; font-size: 1.2em; color: #666; cursor: pointer; padding: 4px 8px; line-height: 1; }
+    .first-run-banner .banner-dismiss:hover { color: #333; }
+    
+    /* Configure Button Style */
+    .top-toolbar-btn.configure-btn { background: linear-gradient(135deg, #7c4dff 0%, #536dfe 100%); color: white; border: none; }
+    .top-toolbar-btn.configure-btn:hover { background: linear-gradient(135deg, #651fff 0%, #304ffe 100%); }
+    
+    /* Wizard Progress Dots */
+    .wizard-step-dot { width: 12px; height: 12px; border-radius: 50%; background: #e0e0e0; transition: background 0.2s; }
+    .wizard-step-dot.active { background: #7c4dff; }
+    .wizard-step-dot.completed { background: #4caf50; }
+    
+    /* Config Flows Rail */
+    .rail-item { display: flex; align-items: center; gap: 10px; padding: 10px 15px; cursor: pointer; color: #555; text-decoration: none; transition: background 0.15s; }
+    .rail-item:hover { background: #e8e8e8; }
+    .rail-item.active { background: #e3f2fd; color: #1565c0; border-left: 3px solid #1565c0; }
+    .rail-number { width: 22px; height: 22px; border-radius: 50%; background: #ddd; color: #666; display: flex; align-items: center; justify-content: center; font-size: 0.75em; font-weight: 600; flex-shrink: 0; }
+    .rail-item.active .rail-number { background: #1565c0; color: white; }
+    .rail-label { font-size: 0.85em; }
+    
+    /* Config Flows Tabs */
+    .stage-tab { padding: 8px 16px; border: none; background: none; cursor: pointer; font-size: 0.85em; color: #666; border-bottom: 2px solid transparent; }
+    .stage-tab:hover { color: #333; }
+    .stage-tab.active { color: #1565c0; border-bottom-color: #1565c0; }
+    
+    /* Wizard Form Elements */
+    .wizard-form-group { margin-bottom: 18px; }
+    .wizard-form-group label { display: block; font-weight: 500; margin-bottom: 6px; color: #333; }
+    .wizard-form-group .hint { font-size: 0.8em; color: #888; margin-top: 4px; }
+    .wizard-toggle { display: flex; align-items: center; gap: 10px; padding: 12px; background: #f5f5f5; border-radius: 8px; cursor: pointer; }
+    .wizard-toggle input { width: 18px; height: 18px; }
+    .wizard-toggle-label { flex: 1; }
+    .wizard-toggle-label strong { display: block; margin-bottom: 2px; }
+    .wizard-toggle-label small { color: #666; }
+    .wizard-multi-select { display: flex; flex-wrap: wrap; gap: 8px; }
+    .wizard-multi-select label { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #f5f5f5; border-radius: 6px; cursor: pointer; font-size: 0.9em; }
+    .wizard-multi-select label:has(input:checked) { background: #e8eaf6; border: 1px solid #7c4dff; }
+    .wizard-multi-select input { width: 16px; height: 16px; }
     .modal-header { background: #1a1a2e; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
     .modal-header h3 { margin: 0; }
     .modal-close { background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; line-height: 1; }
@@ -628,6 +671,10 @@
             <span class="nav-icon">⚙</span>
             <span class="nav-label">Governance</span>
           </a>
+          <a class="nav-item admin-only" id="nav-config-flows" href="#" onclick="openConfigFlows(); return false;">
+            <span class="nav-icon">🔧</span>
+            <span class="nav-label">Config Flows</span>
+          </a>
         </div>
       </div>
       <div class="nav-mode-section">
@@ -652,10 +699,18 @@
           <span class="session-meta" id="session-meta"></span>
         </div>
         <div class="top-toolbar-right">
+          <button class="top-toolbar-btn configure-btn" id="btn-configure" title="Configure Kiwi settings and defaults">Configure</button>
           <button class="top-toolbar-btn" id="btn-ruleset">Ruleset</button>
           <button class="top-toolbar-btn" id="btn-compare">Compare</button>
           <button class="top-toolbar-btn" id="btn-run">Run Commands</button>
         </div>
+      </div>
+      
+      <!-- First-Run Banner -->
+      <div class="first-run-banner" id="first-run-banner" style="display: none;">
+        <span class="banner-icon">&#9881;</span>
+        <span class="banner-text">Using default setup. Click <strong>Configure</strong> to connect your local files and set your workflow defaults.</span>
+        <button class="banner-dismiss" onclick="dismissFirstRunBanner()" title="Dismiss">&times;</button>
       </div>
 
       <!-- Empty Queue Message (visible when no data loaded) -->
@@ -999,6 +1054,86 @@
     </div>
   </div>
 
+  <!-- Config Flows Drawer (right-side slide-over for admin config editing) -->
+  <div class="drawer-overlay" id="config-flows-drawer">
+    <div class="drawer" style="width: 700px;">
+      <div class="drawer-header" style="background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);">
+        <h3>Config Flows</h3>
+        <button class="drawer-close" onclick="closeConfigFlows()">&times;</button>
+      </div>
+      <div class="drawer-body" style="display: flex; gap: 0; padding: 0;">
+        <!-- Workflow Rail (Left Column) -->
+        <div class="config-flows-rail" style="width: 200px; background: #f8f9fa; border-right: 1px solid #e0e0e0; padding: 15px 0; flex-shrink: 0;">
+          <div class="rail-header" style="padding: 0 15px 10px; font-size: 0.75em; color: #666; text-transform: uppercase; font-weight: 600;">Workflow Stages</div>
+          <div class="rail-items" id="config-flows-rail">
+            <a class="rail-item active" data-stage="data_sources" onclick="selectConfigFlowStage('data_sources')">
+              <span class="rail-number">1</span>
+              <span class="rail-label">Data Sources</span>
+            </a>
+            <a class="rail-item" data-stage="dataset_mapping" onclick="selectConfigFlowStage('dataset_mapping')">
+              <span class="rail-number">2</span>
+              <span class="rail-label">Dataset Mapping</span>
+            </a>
+            <a class="rail-item" data-stage="standardization" onclick="selectConfigFlowStage('standardization')">
+              <span class="rail-number">3</span>
+              <span class="rail-label">Standardization</span>
+            </a>
+            <a class="rail-item" data-stage="ruleset" onclick="selectConfigFlowStage('ruleset')">
+              <span class="rail-number">4</span>
+              <span class="rail-label">Ruleset</span>
+            </a>
+            <a class="rail-item" data-stage="validation_gates" onclick="selectConfigFlowStage('validation_gates')">
+              <span class="rail-number">5</span>
+              <span class="rail-label">Validation Gates</span>
+            </a>
+            <a class="rail-item" data-stage="patch_generation" onclick="selectConfigFlowStage('patch_generation')">
+              <span class="rail-number">6</span>
+              <span class="rail-label">Patch Generation</span>
+            </a>
+            <a class="rail-item" data-stage="smoke_baselines" onclick="selectConfigFlowStage('smoke_baselines')">
+              <span class="rail-number">7</span>
+              <span class="rail-label">Smoke Baselines</span>
+            </a>
+            <a class="rail-item" data-stage="export" onclick="selectConfigFlowStage('export')">
+              <span class="rail-number">8</span>
+              <span class="rail-label">Export / PR</span>
+            </a>
+          </div>
+        </div>
+        
+        <!-- Flow Stage Detail (Main Column) -->
+        <div class="config-flows-detail" style="flex: 1; padding: 20px; overflow-y: auto;">
+          <div class="stage-header" style="margin-bottom: 15px;">
+            <h4 id="config-flow-stage-title" style="margin: 0 0 5px; font-size: 1.1em;">Data Sources</h4>
+            <p id="config-flow-stage-desc" style="margin: 0; color: #666; font-size: 0.9em;">Configure where data is loaded from.</p>
+          </div>
+          
+          <div class="stage-tabs" style="display: flex; gap: 0; border-bottom: 1px solid #e0e0e0; margin-bottom: 15px;">
+            <button class="stage-tab active" data-tab="plain-english" onclick="selectConfigFlowTab('plain-english')">Plain-English</button>
+            <button class="stage-tab" data-tab="payload" onclick="selectConfigFlowTab('payload')">Payload</button>
+            <button class="stage-tab" data-tab="master" onclick="selectConfigFlowTab('master')">Master</button>
+            <button class="stage-tab" data-tab="diff" onclick="selectConfigFlowTab('diff')">Diff</button>
+            <button class="stage-tab" data-tab="history" onclick="selectConfigFlowTab('history')">History</button>
+          </div>
+          
+          <div id="config-flow-tab-content">
+            <!-- Tab content rendered dynamically -->
+            <div style="padding: 20px; background: #f5f5f5; border-radius: 6px; color: #666;">
+              <p>This stage configures how Preview and Reference packets are loaded into the session.</p>
+              <p style="margin-top: 10px;">Available methods:</p>
+              <ul style="margin: 10px 0 0 20px;">
+                <li>Repo Masters (auto-load from repository)</li>
+                <li>Paste JSON (manual paste)</li>
+                <li>Drag & Drop (file upload)</li>
+                <li>Local Path Hint (reference local files)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Record Detail Drawer (right-side slide-over for contract details) -->
   <div class="drawer-overlay" id="record-drawer">
     <div class="drawer" style="width: 500px;">
@@ -1108,6 +1243,31 @@
           <button class="modal-btn modal-btn-secondary" onclick="closeRunModal()">Close</button>
         </div>
         <div class="modal-status" id="run-modal-status" style="display: none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Configure Wizard Modal -->
+  <div class="modal-overlay" id="configure-wizard-modal">
+    <div class="modal wizard-modal" style="max-width: 550px;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #7c4dff 0%, #536dfe 100%);">
+        <h3 id="wizard-step-title">Configure Kiwi</h3>
+        <button class="modal-close" onclick="closeConfigureWizard()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="wizard-progress" style="display: flex; gap: 8px; margin-bottom: 20px;">
+          <span class="wizard-step-dot active" data-step="0"></span>
+          <span class="wizard-step-dot" data-step="1"></span>
+          <span class="wizard-step-dot" data-step="2"></span>
+          <span class="wizard-step-dot" data-step="3"></span>
+        </div>
+        <div id="wizard-step-content">
+          <!-- Step content rendered dynamically -->
+        </div>
+        <div class="modal-actions" style="margin-top: 20px; justify-content: space-between;">
+          <button class="modal-btn modal-btn-secondary" id="wizard-back" onclick="wizardBack()" style="display: none;">Back</button>
+          <button class="modal-btn modal-btn-primary" id="wizard-next" onclick="wizardNext()" style="margin-left: auto;">Next</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1278,6 +1438,20 @@
     const COMMANDS_PATH = 'run_commands.json';
     const STORAGE_KEY = 'viewer_selection_v10';
     const PREFLIGHT_STORAGE_KEY = 'viewer_preflight_v10';
+    const SETTINGS_STORAGE_KEY = 'viewer_settings_v12';
+    const FIRST_RUN_DISMISSED_KEY = 'viewer_first_run_dismissed_v12';
+    
+    // Default settings (used when no user config exists)
+    const DEFAULT_SETTINGS = {
+      use_repo_masters: true,
+      preferred_load_method: 'Repo Masters',
+      local_data_root: '',
+      default_queues: ['To Do', 'Needs Review', 'Flagged'],
+      compare_mode_default: true,
+      configured: false
+    };
+    
+    let userSettings = { ...DEFAULT_SETTINGS };
     const PATCH_STORAGE_KEY = 'viewer_patch_v10';
     const COMPARISON_PATH = '../../out/sf_packet.preview.prev.json';
 
@@ -1701,11 +1875,11 @@
       
       // If on admin page but not admin mode, redirect to triage
       if (window.location.hash.includes('admin') && mode !== 'admin') {
-        navigateToPage('triage');
+        navigateTo('triage');
       }
       // If on review page but not reviewer or admin mode, redirect to triage
       if (window.location.hash.includes('review') && mode === 'analyst') {
-        navigateToPage('triage');
+        navigateTo('triage');
       }
       
       applyModeVisibility(mode);
@@ -1906,9 +2080,359 @@
     
     function showEvidenceStatus() {
       // Navigate to patch studio to show preflight status
-      navigateToPage('patch');
+      navigateTo('patch');
       const preflightToggle = document.getElementById('preflight-toggle');
       if (preflightToggle) preflightToggle.click();
+    }
+    
+    // Settings Management
+    function loadUserSettings() {
+      try {
+        const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+        if (saved) {
+          userSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+        }
+      } catch (e) {
+        console.warn('Failed to load user settings:', e);
+      }
+    }
+    
+    function saveUserSettings() {
+      try {
+        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(userSettings));
+      } catch (e) {
+        console.warn('Failed to save user settings:', e);
+      }
+    }
+    
+    function checkFirstRun() {
+      const dismissed = localStorage.getItem(FIRST_RUN_DISMISSED_KEY);
+      const banner = document.getElementById('first-run-banner');
+      
+      // Show banner if: not configured AND not dismissed
+      if (!userSettings.configured && !dismissed && banner) {
+        banner.style.display = 'flex';
+      }
+    }
+    
+    function dismissFirstRunBanner() {
+      const banner = document.getElementById('first-run-banner');
+      if (banner) banner.style.display = 'none';
+      localStorage.setItem(FIRST_RUN_DISMISSED_KEY, 'true');
+    }
+    
+    async function autoSetupRepoMasters() {
+      // Auto-load Repo Masters (dev baseline) when present
+      if (!userSettings.use_repo_masters) return;
+      
+      try {
+        const response = await fetch(RELATIVE_PRIMARY);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.sf_summary || data.sf_contract_results) {
+            allData.contractResults = data.sf_contract_results || [];
+            allData.issues = data.sf_issues || [];
+            allData.fieldActions = data.sf_field_actions || [];
+            allData.summary = data.sf_summary || {};
+            allData.changeLog = data.changelog || [];
+            dataLoaded = true;
+            sessionState = { status: 'loaded', sourceType: 'fetch', loadedAt: new Date().toISOString() };
+            currentArtifactPath = RELATIVE_PRIMARY;
+            updateUIForDataState();
+            renderSummary();
+            renderAllTables();
+            updateQueueCounts();
+          }
+        }
+      } catch (e) {
+        // Silently fail - user can manually load data
+      }
+    }
+    
+    let currentWizardStep = 0;
+    const WIZARD_STEPS = [
+      { id: 'WELCOME', title: 'Welcome' },
+      { id: 'DATA_SOURCES', title: 'Data Sources' },
+      { id: 'WORKFLOW_DEFAULTS', title: 'Workflow Defaults' },
+      { id: 'DONE', title: 'Finish' }
+    ];
+    
+    function openConfigureWizard() {
+      currentWizardStep = 0;
+      document.getElementById('configure-wizard-modal').classList.add('active');
+      renderConfigureWizardStep(0);
+    }
+    
+    function closeConfigureWizard() {
+      document.getElementById('configure-wizard-modal').classList.remove('active');
+    }
+    
+    // Config Flows Panel
+    let currentConfigFlowStage = 'data_sources';
+    let currentConfigFlowTab = 'plain-english';
+    
+    const CONFIG_FLOW_STAGES = {
+      data_sources: {
+        title: 'Data Sources',
+        desc: 'Configure where Preview and Reference packets are loaded from.',
+        plainEnglish: `<p>This stage controls how data enters the system.</p>
+          <p style="margin-top: 10px;"><strong>What it does:</strong> Defines the primary and comparison data sources for your session.</p>
+          <ul style="margin: 10px 0 0 20px;">
+            <li><strong>Repo Masters</strong> - Auto-load from repository (recommended for dev)</li>
+            <li><strong>Paste JSON</strong> - Manual paste of sf_packet data</li>
+            <li><strong>Drag & Drop</strong> - Upload a file directly</li>
+            <li><strong>Local Path Hint</strong> - Reference files by path</li>
+          </ul>`
+      },
+      dataset_mapping: {
+        title: 'Dataset Mapping',
+        desc: 'Define how input sheets map to semantic entities.',
+        plainEnglish: '<p>Maps incoming data columns to semantic fields. Ensures consistent naming across sources.</p>'
+      },
+      standardization: {
+        title: 'Standardization',
+        desc: 'Normalize data formats and values.',
+        plainEnglish: '<p>Applies formatting rules to ensure data consistency (dates, currencies, text casing).</p>'
+      },
+      ruleset: {
+        title: 'Ruleset',
+        desc: 'WHEN/THEN rules that determine field actions and issues.',
+        plainEnglish: '<p>The heart of semantic governance. Rules define:</p><ul style="margin: 10px 0 0 20px;"><li>When a condition is met (WHEN)</li><li>What action to take (THEN)</li><li>Severity level (info, warning, blocking)</li></ul>'
+      },
+      validation_gates: {
+        title: 'Validation Gates',
+        desc: 'Preflight checks before data can proceed.',
+        plainEnglish: '<p>Evidence gates that must pass before publishing:</p><ul style="margin: 10px 0 0 20px;"><li>Validation: Schema and format checks</li><li>Conflicts: No duplicate or conflicting rules</li><li>Smoke Baseline: Expected output matches</li></ul>'
+      },
+      patch_generation: {
+        title: 'Patch Generation',
+        desc: 'Configure how patches are built from field actions.',
+        plainEnglish: '<p>Controls how proposed fixes are packaged into patch format for review.</p>'
+      },
+      smoke_baselines: {
+        title: 'Smoke Baselines',
+        desc: 'Reference outputs for determinism checks.',
+        plainEnglish: '<p>Golden files that define expected outputs. Used to verify changes don\\'t break existing behavior.</p>'
+      },
+      export: {
+        title: 'Export / PR Summary',
+        desc: 'Bundle outputs for pull request review.',
+        plainEnglish: '<p>Generate exportable bundles with:</p><ul style="margin: 10px 0 0 20px;"><li>Patch file</li><li>Changelog entry</li><li>Evidence summary</li><li>PR description template</li></ul>'
+      }
+    };
+    
+    function openConfigFlows() {
+      if (currentMode !== 'admin') {
+        alert('Config Flows requires Admin mode.');
+        return;
+      }
+      document.getElementById('config-flows-drawer').classList.add('active');
+      selectConfigFlowStage('data_sources');
+    }
+    
+    function closeConfigFlows() {
+      document.getElementById('config-flows-drawer').classList.remove('active');
+    }
+    
+    function selectConfigFlowStage(stage) {
+      currentConfigFlowStage = stage;
+      
+      // Update rail selection
+      document.querySelectorAll('.rail-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.stage === stage);
+      });
+      
+      // Update header
+      const stageConfig = CONFIG_FLOW_STAGES[stage] || {};
+      document.getElementById('config-flow-stage-title').textContent = stageConfig.title || stage;
+      document.getElementById('config-flow-stage-desc').textContent = stageConfig.desc || '';
+      
+      // Render current tab content
+      renderConfigFlowTabContent();
+    }
+    
+    function selectConfigFlowTab(tab) {
+      currentConfigFlowTab = tab;
+      
+      // Update tab selection
+      document.querySelectorAll('.stage-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === tab);
+      });
+      
+      renderConfigFlowTabContent();
+    }
+    
+    function renderConfigFlowTabContent() {
+      const container = document.getElementById('config-flow-tab-content');
+      const stageConfig = CONFIG_FLOW_STAGES[currentConfigFlowStage] || {};
+      let html = '';
+      
+      if (currentConfigFlowTab === 'plain-english') {
+        html = `<div style="padding: 15px; background: #f5f5f5; border-radius: 6px;">${stageConfig.plainEnglish || '<p>No documentation available.</p>'}</div>`;
+      } else if (currentConfigFlowTab === 'payload') {
+        html = `<div style="padding: 15px; background: #263238; color: #eceff1; border-radius: 6px; font-family: monospace; font-size: 0.85em;">
+          <div style="margin-bottom: 10px; color: #78909c;">// Effective config (resolved view)</div>
+          <pre style="margin: 0; white-space: pre-wrap;">{ "stage": "${currentConfigFlowStage}", "status": "active" }</pre>
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 8px;">
+          <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 0.75em;">MASTER</span>
+          <span style="background: #fff3e0; color: #e65100; padding: 4px 8px; border-radius: 4px; font-size: 0.75em;">DEFAULT</span>
+        </div>`;
+      } else if (currentConfigFlowTab === 'master') {
+        html = `<div style="padding: 15px; background: #263238; color: #eceff1; border-radius: 6px; font-family: monospace; font-size: 0.85em; min-height: 150px;">
+          <div style="margin-bottom: 10px; color: #78909c;">// Master config (editable by Admin)</div>
+          <pre style="margin: 0; white-space: pre-wrap;">{ "stage": "${currentConfigFlowStage}", "version": "1.0.0" }</pre>
+        </div>
+        <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="modal-btn modal-btn-secondary" disabled>Edit</button>
+          <button class="modal-btn modal-btn-secondary" disabled>Validate</button>
+          <button class="modal-btn modal-btn-primary" disabled>Publish to Session</button>
+          <button class="modal-btn" style="margin-left: auto;" disabled>Revert</button>
+        </div>`;
+      } else if (currentConfigFlowTab === 'diff') {
+        html = `<div style="padding: 20px; text-align: center; color: #666;">
+          <p>No differences detected.</p>
+          <p style="font-size: 0.85em; margin-top: 10px;">Master and Effective Payload are identical.</p>
+        </div>`;
+      } else if (currentConfigFlowTab === 'history') {
+        html = `<div style="padding: 20px; text-align: center; color: #666;">
+          <p>No history entries.</p>
+          <p style="font-size: 0.85em; margin-top: 10px;">Changes will be recorded here when you edit and publish.</p>
+        </div>`;
+      }
+      
+      container.innerHTML = html;
+    }
+    
+    function wizardBack() {
+      if (currentWizardStep > 0) {
+        currentWizardStep--;
+        renderConfigureWizardStep(currentWizardStep);
+      }
+    }
+    
+    function wizardNext() {
+      saveWizardStepData(currentWizardStep);
+      
+      if (currentWizardStep < WIZARD_STEPS.length - 1) {
+        currentWizardStep++;
+        renderConfigureWizardStep(currentWizardStep);
+      } else {
+        // Finish wizard
+        userSettings.configured = true;
+        saveUserSettings();
+        closeConfigureWizard();
+        dismissFirstRunBanner();
+        
+        // Apply settings immediately
+        if (userSettings.use_repo_masters && !dataLoaded) {
+          autoSetupRepoMasters();
+        }
+      }
+    }
+    
+    function saveWizardStepData(step) {
+      if (step === 0) {
+        userSettings.use_repo_masters = document.getElementById('wiz-use-repo-masters')?.checked ?? true;
+      } else if (step === 1) {
+        userSettings.preferred_load_method = document.getElementById('wiz-load-method')?.value || 'Repo Masters';
+        userSettings.local_data_root = document.getElementById('wiz-local-path')?.value || '';
+      } else if (step === 2) {
+        const checkboxes = document.querySelectorAll('.wiz-queue-checkbox:checked');
+        userSettings.default_queues = Array.from(checkboxes).map(cb => cb.value);
+        userSettings.compare_mode_default = document.getElementById('wiz-compare-default')?.checked ?? true;
+      }
+    }
+    
+    function renderConfigureWizardStep(step) {
+      const titleEl = document.getElementById('wizard-step-title');
+      const contentEl = document.getElementById('wizard-step-content');
+      const backBtn = document.getElementById('wizard-back');
+      const nextBtn = document.getElementById('wizard-next');
+      
+      // Update progress dots
+      document.querySelectorAll('.wizard-step-dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === step);
+        dot.classList.toggle('completed', i < step);
+      });
+      
+      titleEl.textContent = WIZARD_STEPS[step].title;
+      backBtn.style.display = step === 0 ? 'none' : 'inline-block';
+      nextBtn.textContent = step === WIZARD_STEPS.length - 1 ? 'Finish' : 'Next';
+      
+      let html = '';
+      
+      if (step === 0) {
+        html = `
+          <p style="margin-bottom: 20px; color: #555;">We'll set up where your files live and what you want to see first.</p>
+          <div class="wizard-toggle">
+            <input type="checkbox" id="wiz-use-repo-masters" ${userSettings.use_repo_masters ? 'checked' : ''}>
+            <div class="wizard-toggle-label">
+              <strong>Use Repo Masters</strong>
+              <small>Recommended for dev/testing. Auto-loads preview data from the repository.</small>
+            </div>
+          </div>
+        `;
+      } else if (step === 1) {
+        html = `
+          <p style="margin-bottom: 20px; color: #555;">Choose how you'll load your Preview and Reference packets.</p>
+          <div class="wizard-form-group">
+            <label>Default Load Method</label>
+            <select id="wiz-load-method" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+              <option value="Repo Masters" ${userSettings.preferred_load_method === 'Repo Masters' ? 'selected' : ''}>Repo Masters</option>
+              <option value="Paste JSON" ${userSettings.preferred_load_method === 'Paste JSON' ? 'selected' : ''}>Paste JSON</option>
+              <option value="Drag & Drop" ${userSettings.preferred_load_method === 'Drag & Drop' ? 'selected' : ''}>Drag & Drop</option>
+              <option value="Local Path Hint" ${userSettings.preferred_load_method === 'Local Path Hint' ? 'selected' : ''}>Local Path Hint</option>
+            </select>
+          </div>
+          <div class="wizard-form-group">
+            <label>Local Folder (optional)</label>
+            <input type="text" id="wiz-local-path" value="${userSettings.local_data_root}" placeholder="e.g., out/" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+            <div class="hint">Used only for path hints; nothing uploads or syncs.</div>
+          </div>
+        `;
+      } else if (step === 2) {
+        const queues = ['To Do', 'Needs Review', 'Flagged', 'Blocked', 'Finalized'];
+        html = `
+          <p style="margin-bottom: 20px; color: #555;">Pick what queues and panels you want visible by default.</p>
+          <div class="wizard-form-group">
+            <label>Queues to Show</label>
+            <div class="wizard-multi-select">
+              ${queues.map(q => `
+                <label>
+                  <input type="checkbox" class="wiz-queue-checkbox" value="${q}" ${userSettings.default_queues.includes(q) ? 'checked' : ''}>
+                  ${q}
+                </label>
+              `).join('')}
+            </div>
+          </div>
+          <div class="wizard-toggle" style="margin-top: 15px;">
+            <input type="checkbox" id="wiz-compare-default" ${userSettings.compare_mode_default ? 'checked' : ''}>
+            <div class="wizard-toggle-label">
+              <strong>Enable Compare View by Default</strong>
+              <small>Show comparison panel when loading data.</small>
+            </div>
+          </div>
+        `;
+      } else if (step === 3) {
+        html = `
+          <div style="text-align: center; padding: 20px 0;">
+            <div style="font-size: 3em; margin-bottom: 15px;">&#10004;</div>
+            <h3 style="margin: 0 0 10px; color: #4caf50;">You're All Set!</h3>
+            <p style="color: #666;">You can change these anytime in Admin &rarr; Settings.</p>
+            <div style="background: #f5f5f5; border-radius: 8px; padding: 15px; margin-top: 20px; text-align: left;">
+              <div style="font-size: 0.85em; color: #666; margin-bottom: 8px;">Your settings:</div>
+              <ul style="margin: 0; padding-left: 20px; font-size: 0.9em;">
+                <li>Load method: <strong>${userSettings.preferred_load_method}</strong></li>
+                <li>Auto-load repo masters: <strong>${userSettings.use_repo_masters ? 'Yes' : 'No'}</strong></li>
+                <li>Default queues: <strong>${userSettings.default_queues.join(', ') || 'All'}</strong></li>
+              </ul>
+            </div>
+          </div>
+        `;
+      }
+      
+      contentEl.innerHTML = html;
     }
     
     function resetSession() {
@@ -1976,6 +2500,10 @@
         navigateTo(hash);
       });
       
+      // Load user settings and check for first run
+      loadUserSettings();
+      checkFirstRun();
+      
       let savedMode = localStorage.getItem('viewer_mode_v10');
       // Convert legacy 'operator' mode to 'analyst'
       if (savedMode === 'operator') savedMode = 'analyst';
@@ -1984,6 +2512,11 @@
       
       const hash = window.location.hash.replace('#/', '') || 'triage';
       navigateTo(hash);
+      
+      // Auto-setup repo masters if enabled
+      if (userSettings.use_repo_masters && !dataLoaded) {
+        autoSetupRepoMasters();
+      }
     }
 
     function getRecordHash(record) {
@@ -4292,9 +4825,15 @@ Add any additional notes here.
     // Welcome hero and top toolbar event listeners
     document.getElementById('welcome-load-data')?.addEventListener('click', openDataSourceDrawer);
     document.getElementById('btn-load-data')?.addEventListener('click', openDataSourceDrawer);
+    document.getElementById('btn-configure')?.addEventListener('click', openConfigureWizard);
     document.getElementById('btn-ruleset')?.addEventListener('click', openRulesetModal);
     document.getElementById('btn-compare')?.addEventListener('click', openCompareModal);
     document.getElementById('btn-run')?.addEventListener('click', openRunModal);
+    
+    // Configure wizard modal events
+    document.getElementById('configure-wizard-modal')?.addEventListener('click', e => {
+      if (e.target.id === 'configure-wizard-modal') closeConfigureWizard();
+    });
 
     // Data source drawer events
     document.getElementById('data-source-drawer')?.addEventListener('click', e => {
@@ -4304,6 +4843,11 @@ Add any additional notes here.
     // Record drawer events
     document.getElementById('record-drawer')?.addEventListener('click', e => {
       if (e.target.id === 'record-drawer') closeRecordDrawer();
+    });
+    
+    // Config Flows drawer events
+    document.getElementById('config-flows-drawer')?.addEventListener('click', e => {
+      if (e.target.id === 'config-flows-drawer') closeConfigFlows();
     });
     document.querySelectorAll('#data-source-drawer .wizard-preset-btn').forEach(btn => {
       btn.addEventListener('click', () => {
