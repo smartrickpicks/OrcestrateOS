@@ -1,0 +1,154 @@
+{
+  "file_name": "replit_nav_and_loader_ux_fix_v1.json",
+  "version": "v1.2.7",
+  "scope": "Replit-only",
+  "problem_statement": {
+    "nav_freeze": "Navigation still freezes / gets stuck when clicking around between routes and sessions.",
+    "loader_ux": "Loader page is a dead-end 'menu of options' that forces extra clicks. In demo mode, 'Load Sample Dataset' should be the default and the user should land in the Spreadsheet/Triage experience immediately.",
+    "workflow_alignment": "For local/manual mode, Loader/Import is the start, then you work inside a dataset. Queues are dataset-scoped. Later, in stream mode, queue-first becomes primary."
+  },
+  "goals": [
+    "Eliminate route/state mismatch that causes navigation freezes",
+    "Make Loader one-click-to-progress (demo-friendly)",
+    "Default to cached sample dataset in demo mode",
+    "After load, route directly to the next working surface (Spreadsheet/Triage)",
+    "Prepare for a future where local/manual mode becomes a sub-tool under Sessions/Tools"
+  ],
+  "recommended_changes": {
+    "A_route_state_machine": {
+      "description": "Introduce a simple app session state machine and route guards. Never render a route that depends on dataset/session state unless it exists.",
+      "required_state_keys": [
+        "active_dataset_id",
+        "active_dataset_revision",
+        "active_bundle_present",
+        "active_field_index_present"
+      ],
+      "route_guards": [
+        {
+          "route": "/triage",
+          "requires": ["active_bundle_present"],
+          "on_missing": "redirect_to:/loader?next=triage"
+        },
+        {
+          "route": "/workbench/:record_id",
+          "requires": ["active_bundle_present", "record_id_exists"],
+          "on_missing": "redirect_to:/triage"
+        },
+        {
+          "route": "/patch-studio",
+          "requires": ["active_bundle_present"],
+          "on_missing": "redirect_to:/loader?next=triage"
+        }
+      ],
+      "anti_freeze_rule": "If state is invalid, do not partially render the page. Hard redirect immediately."
+    },
+    "B_loader_as_next_action_not_menu": {
+      "description": "When user clicks Loader in sidebar, show the single next action for the current mode.",
+      "modes": {
+        "demo_mode": {
+          "default_behavior": "Auto-load cached sample dataset if no active dataset exists.",
+          "primary_cta": "Continue to Spreadsheet (or Triage) (enabled once dataset active)",
+          "secondary_actions_collapsible": [
+            "Import CSV/XLSX",
+            "Attach PDF",
+            "Reset Demo State",
+            "Rebuild Field Index"
+          ],
+          "ui_rule": "Hide the 3-card menu layout; use a single primary panel + collapsible 'Other actions'."
+        },
+        "manual_import_mode": {
+          "default_behavior": "If no active dataset: show Import as the primary CTA.",
+          "primary_cta": "Import Dataset",
+          "secondary_actions_collapsible": [
+            "Load Sample Dataset",
+            "Attach PDF",
+            "Reset Session",
+            "Rebuild Field Index"
+          ]
+        }
+      }
+    },
+    "C_cached_sample_dataset": {
+      "description": "Keep sample dataset always available (cached) and treat it as the default dataset until the Upload Library is finished.",
+      "storage": {
+        "preferred": "IndexedDB (datasets store)",
+        "fallback": "localStorage (scoped keys)"
+      },
+      "behavior": [
+        "On first app launch: seed sample dataset into cache (ds-sample, r1).",
+        "If user clicks Loader and no active dataset: activate ds-sample automatically.",
+        "If user imports a file: create new dataset_id and set it active."
+      ]
+    },
+    "D_spreadsheet_viewer_next": {
+      "description": "After dataset activation, route to the operator surface (Spreadsheet Viewer / Triage).",
+      "routing": [
+        "Loader -> activate dataset -> redirect to /triage (or /spreadsheet if that exists)."
+      ],
+      "ui_expectation": "Spreadsheet Viewer should show sheets in config-pack order (e.g., Accounts -> Contacts -> Opportunities -> Contracts). If config pack isn’t present yet, use a stable fallback ordering: sheet name asc."
+    },
+    "E_session_management_future_hook": {
+      "description": "Prepare local/manual mode to become a 'tool' under Session later without changing behavior now.",
+      "note": "For now keep Loader in Start. Later: move Import/Loader actions under Session > Data Sources and keep Start focused on queue-first streaming mode."
+    }
+  },
+  "implementation_tasks": [
+    {
+      "id": "NAV-STATE-REWRITE-001",
+      "title": "Fix navigation freezes via route guards + hard redirects",
+      "deliverables": [
+        "Central route guard function",
+        "Required-state checks per route",
+        "Redirect logic with ?next= param support",
+        "A 'Recover' action only if guard fails (should be rare)"
+      ],
+      "acceptance_criteria": [
+        "Cannot render /triage without active dataset; it redirects to Loader",
+        "Cannot render workbench without record_id; redirects to triage",
+        "No route gets stuck after switching sessions/datasets"
+      ]
+    },
+    {
+      "id": "LOADER-UX-001",
+      "title": "Convert Loader from option menu to Next Action screen",
+      "deliverables": [
+        "Demo mode auto-load behavior (if no dataset active)",
+        "Primary CTA: Continue to Triage/Spreadsheet",
+        "Secondary actions in collapsible section",
+        "Remove three-card layout"
+      ],
+      "acceptance_criteria": [
+        "Clicking Loader takes user forward with 0–1 clicks",
+        "Load Sample Dataset is effectively default in demo mode"
+      ]
+    },
+    {
+      "id": "SAMPLE-CACHE-001",
+      "title": "Persist sample dataset in cache and auto-activate",
+      "deliverables": [
+        "Seed ds-sample/r1 on first run",
+        "Activation logic",
+        "Reset Demo State resets to ds-sample/r1"
+      ],
+      "acceptance_criteria": [
+        "Sample dataset always available without reloading code",
+        "Reset restores a known-good working state"
+      ]
+    },
+    {
+      "id": "POST-LOAD-ROUTE-001",
+      "title": "After dataset activation, route user to working surface",
+      "deliverables": [
+        "Auto redirect to /triage (or /spreadsheet) after dataset loads",
+        "Loader shows 'Continue' when active dataset exists"
+      ],
+      "acceptance_criteria": [
+        "User doesn’t land on Loader after successfully loading data"
+      ]
+    }
+  ],
+  "copy_paste_to_replit": "NAV STILL FREEZES + Loader UX needs change. Implement route guards + hard redirects: never render triage/workbench/patch-studio without active dataset state; redirect to /loader?next=triage. Convert Loader into a 'Next Action' screen: in demo mode auto-activate cached sample dataset (seed ds-sample/r1) when none exists; primary CTA becomes 'Continue to Triage/Spreadsheet'. Move Import/PDF/Reset/Rebuild into a collapsible 'Other actions' section. After any dataset activation, auto-route to /triage (or /spreadsheet). Reset Demo State restores ds-sample/r1 known-good state.",
+  "miro_prompt_optional": {
+    "text": "Update diagram note: Loader is 'Next Action' screen (demo mode auto-load ds-sample) and post-load routes to Triage/Spreadsheet. Add explicit Route Guards callout: dataset-required routes hard redirect to Loader to prevent nav freezes."
+  }
+}

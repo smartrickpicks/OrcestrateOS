@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## Version: v1.2.7
+Date: 2026-01-30
+
+### Added (Navigation Fix + Loader UX)
+
+- App Session State Machine
+  - getAppSessionState() returns active_dataset_id, active_bundle_present, active_field_index_present
+  - checkRouteRequirements() validates route requirements before rendering
+  - Hard redirect: never render triage/patch/review without active_bundle_present
+  - sessionStorage tracks intended route for post-load redirect
+
+- Loader as Next Action Screen (demo-friendly)
+  - Primary panel: "Dataset Ready" with Continue to Triage button when dataset active
+  - Primary panel: "Demo Mode" with Load Sample Dataset button when no dataset
+  - Collapsible "Other Actions" section for Import CSV, Attach PDF, Test Utilities
+  - updateLoaderPageUI() shows appropriate panel based on state
+
+- Auto-Load and Auto-Redirect
+  - seedSampleDatasetOnFirstRun() seeds ds-sample into cache on first app launch
+  - loadSampleDataset() auto-redirects to Triage after loading
+  - importCSVFile() auto-redirects to Triage after loading
+  - initLoaderPage() sets up event listeners for new Loader layout
+
+### Changed
+- Loader layout changed from 3-card menu to single primary action panel
+- Route guards now check bundle presence instead of just dataLoaded flag
+- navigateTo() stores intended route in sessionStorage for redirect after load
+
+---
+
 ## Version: v1.2.6
 Date: 2026-01-30
 
