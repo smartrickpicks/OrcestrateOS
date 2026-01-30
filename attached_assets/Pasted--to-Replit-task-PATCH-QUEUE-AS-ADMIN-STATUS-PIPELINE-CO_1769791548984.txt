@@ -1,0 +1,270 @@
+{
+  "to": "Replit",
+  "task": "PATCH_QUEUE_AS_ADMIN_STATUS_PIPELINE + COMMENT_TO_PATCH_FLOW",
+  "context": {
+    "product": "Orchestrate OS",
+    "mode": "local_offline_only",
+    "goal": "Update the Admin Status/Configure/Evidence redesign so Patch Requests are the *core* operational queue, fed by Analyst/Reviewer comments from the spreadsheet/PDF workbench, and progressed through a ‘Send to Kiwi → Patch Returned → Batch Apply/Commit’ lifecycle (still copy-only, offline-first)."
+  },
+  "delta_from_previous_prompt": {
+    "what_changed": [
+      "Patch Queue must live prominently in Admin (Status tab), not just as a Tools page.",
+      "Add upstream ‘Comment / RFI’ objects attached to records + fields, which feed into Patch Requests.",
+      "Add explicit lifecycle stages for ‘SentToKiwi’ and ‘KiwiReturned’ (ReadyForCommit) with batch operations.",
+      "Admin needs a review surface to compare: Patch Request (plain English) ↔ Kiwi Patch Payload (JSON) ↔ Target Artifact being updated (Truth/Proposed/SF rules/etc.)."
+    ],
+    "what_stays_the_same": [
+      "Use Kiwi patch_request_schema_json as canonical Patch Request object.",
+      "Keep copy-only export (no network, no file writes).",
+      "Deterministic sorting and join-triplet identity rules remain unchanged."
+    ]
+  },
+  "requirements": {
+    "admin_status_tab_patch_centric": {
+      "layout_changes": [
+        "In Admin > Status tab, add a top-level section: 'Patch Requests Console' directly under Snapshot Header.",
+        "This console shows queue tabs: New / Needs Review / Approved / Sent to Kiwi / Kiwi Returned / Applied / Rejected (see state + queue rules below).",
+        "Show counts per tab and a compact table in-place (same table component used in full Patch Queue page).",
+        "Add batch actions in this console (Admin-only): 'Mark Sent to Kiwi', 'Paste Kiwi Return', 'Mark Applied', 'Export Batch PR Summary'."
+      ],
+      "snapshot_metrics": [
+        "patch_requests_total",
+        "patch_requests_by_status",
+        "comments_open_total",
+        "comments_waiting_on_reviewer",
+        "comments_linked_to_patch_requests"
+      ]
+    },
+    "comment_to_patch_flow": {
+      "new_object": {
+        "name": "Comment (RFI-style)",
+        "storage_key": "orchestrate.comments.v1",
+        "purpose": "Record-level or field-level discussion that can be elevated into a Patch Request.",
+        "minimum_schema": {
+          "$schema": "orchestrate_os.comment.v1",
+          "required": [
+            "comment_id",
+            "created_at_utc",
+            "author",
+            "author_role",
+            "record_identity",
+            "scope",
+            "message",
+            "status"
+          ],
+          "properties": {
+            "comment_id": { "type": "string" },
+            "created_at_utc": { "type": "string", "format": "date-time" },
+            "author": { "type": "string" },
+            "author_role": { "type": "string", "enum": ["Analyst", "Reviewer", "Admin"] },
+            "record_identity": {
+              "type": "object",
+              "required": ["contract_key", "file_url", "file_name"],
+              "properties": {
+                "contract_key": { "type": ["string", "null"] },
+                "file_url": { "type": ["string", "null"] },
+                "file_name": { "type": ["string", "null"] }
+              }
+            },
+            "scope": {
+              "type": "object",
+              "required": ["level"],
+              "properties": {
+                "level": { "type": "string", "enum": ["field", "sheet", "contract"] },
+                "sheet": { "type": ["string", "null"] },
+                "field": { "type": ["string", "null"] }
+              }
+            },
+            "message": { "type": "string" },
+            "status": {
+              "type": "string",
+              "enum": [
+                "Open",
+                "ReviewerResponded",
+                "Resolved",
+                "ElevatedToPatchRequest",
+                "Closed"
+              ]
+            },
+            "history": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["at_utc", "actor", "role", "action"],
+                "properties": {
+                  "at_utc": { "type": "string", "format": "date-time" },
+                  "actor": { "type": "string" },
+                  "role": { "type": "string", "enum": ["Analyst", "Reviewer", "Admin"] },
+                  "action": { "type": "string" },
+                  "notes": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ui_entry_points": [
+        "From spreadsheet/record view: add 'Comment' button (RFI-style) at record level and at field row level.",
+        "From Record Drawer: Comments panel showing thread + status chips.",
+        "From Reviewer mode: ability to respond/edit/resolve comments."
+      ],
+      "promotion_to_patch_request": {
+        "button": "Elevate to Patch Request",
+        "who": ["Reviewer", "Admin"],
+        "behavior": [
+          "Creates a new Patch Request (Kiwi schema) prefilled with record_identity, target_scope from comment scope, and rationale seeded from comment thread.",
+          "Sets comment.status = ElevatedToPatchRequest and links via patch_request_id field (add optional property).",
+          "Patch Request starts at Draft (if Reviewer is still shaping) or Submitted (if ready)."
+        ]
+      }
+    },
+    "patch_request_lifecycle_updates": {
+      "states": [
+        "Draft",
+        "Submitted",
+        "ReviewerChangesRequested",
+        "ReviewerApproved",
+        "AdminHold",
+        "AdminApproved",
+        "SentToKiwi",
+        "KiwiReturned",
+        "Applied",
+        "Rejected",
+        "Cancelled"
+      ],
+      "notes": [
+        "Keep Kiwi canonical state machine, but add one local-only state: KiwiReturned (meaning Admin pasted the returned patch payload).",
+        "Do NOT remove Kiwi states; only extend in UI/state handling as additive.",
+        "All transitions must record history[] entries (UTC)."
+      ],
+      "queue_tabs": [
+        {
+          "tab": "New",
+          "membership": "status in {Draft, Submitted}"
+        },
+        {
+          "tab": "Needs Review",
+          "membership": "status in {Submitted, ReviewerChangesRequested}"
+        },
+        {
+          "tab": "Approved",
+          "membership": "status in {ReviewerApproved, AdminApproved}"
+        },
+        {
+          "tab": "Sent to Kiwi",
+          "membership": "status == SentToKiwi"
+        },
+        {
+          "tab": "Kiwi Returned",
+          "membership": "status == KiwiReturned"
+        },
+        {
+          "tab": "Applied",
+          "membership": "status == Applied"
+        },
+        {
+          "tab": "Rejected",
+          "membership": "status == Rejected"
+        }
+      ]
+    },
+    "send_to_kiwi_offline_handshake": {
+      "constraints": [
+        "NO network calls to Kiwi.",
+        "Use copy/paste payload exchange only."
+      ],
+      "admin_actions": [
+        {
+          "action": "Export to Kiwi",
+          "behavior": [
+            "Batch select one or more Patch Requests in Admin console.",
+            "Generate a single JSON export object: { batch_id, exported_at_utc, requests:[<PatchRequestJSON>...] }",
+            "Copy-to-clipboard only.",
+            "Mark each selected Patch Request: status = SentToKiwi; add history entry."
+          ]
+        },
+        {
+          "action": "Paste Kiwi Return",
+          "behavior": [
+            "Admin pastes Kiwi output JSON into a 'Kiwi Return Inbox' text area.",
+            "Parse into per-request results using request_id matching.",
+            "Store attached kiwi_payload on Patch Request under a new property: kiwi_return (object) that includes: returned_at_utc, patch_payload_json, notes, derived_target (salesforce/qa/resolver), proposed_version.",
+            "Set status = KiwiReturned for matched requests; status = Rejected for explicit reject results."
+          ]
+        }
+      ]
+    },
+    "admin_review_surface_for_kiwi_return": {
+      "view": "Patch Request Detail Drawer",
+      "panels": [
+        {
+          "name": "Plain-English Intent",
+          "content": "Show proposed_change.intent.when/then/because + rationale (human-readable)."
+        },
+        {
+          "name": "Kiwi Patch Payload",
+          "content": "Pretty nested JSON viewer of returned patch payload."
+        },
+        {
+          "name": "Target Artifact Preview",
+          "content": "Show which artifact this would update (e.g., Proposed Changes / resolver rules / QA rules). For now, show as label + expected path; do not apply automatically."
+        },
+        {
+          "name": "Apply Checklist (copy-only)",
+          "content": [
+            "Base version match",
+            "Validation ok",
+            "Smoke baseline pass required",
+            "Edge smoke required if join/fallback touched"
+          ]
+        }
+      ],
+      "apply_action": {
+        "label": "Copy Commit Pack",
+        "behavior": [
+          "Generate a copy-only 'commit pack' bundle containing: patch_payload_json, suggested file path(s), suggested version bump note, and PR summary markdown.",
+          "Admin uses terminal/git manually outside the UI."
+        ]
+      }
+    },
+    "batch_apply_support": {
+      "goal": "Allow Admin to push patches all at once (still manual).",
+      "ui": [
+        "In Kiwi Returned tab, allow multi-select.",
+        "Add 'Copy Batch Commit Pack' button."
+      ],
+      "output": {
+        "format": {
+          "batch_id": "string",
+          "created_at_utc": "date-time",
+          "items": [
+            {
+              "request_id": "string",
+              "target": "string",
+              "patch_payload_json": "object",
+              "suggested_files": ["string"],
+              "changelog_entry": "string",
+              "pr_summary_markdown": "string"
+            }
+          ]
+        }
+      }
+    },
+    "nomenclature_and_copy": {
+      "must_do": [
+        "Rename UI text to reflect: Comment (RFI), Patch Request, Send to Kiwi (Copy), Paste Kiwi Return.",
+        "Never show 'sf_packet'—always 'Preview Packet'.",
+        "Add plain-English helper copy explaining why Patch Requests exist and how they become versioned patches."
+      ]
+    }
+  },
+  "acceptance_checks": [
+    "Admin Status tab includes Patch Requests Console with tabs and counts; Patch Queue page still exists but Admin is the primary operational surface.",
+    "Users can add comments (RFI-style) at record or field level; Reviewer can respond and elevate to Patch Request.",
+    "Admin can export selected Patch Requests as a batch JSON (copy-only) and mark SentToKiwi.",
+    "Admin can paste Kiwi return JSON, which populates kiwi_return and moves requests to KiwiReturned.",
+    "Patch Request Detail Drawer shows intent + kiwi payload + apply checklist + copy commit pack.",
+    "Batch commit pack export works for multiple KiwiReturned requests.",
+    "No network calls; no file writes; deterministic sorting preserved."
+  ]
+}
