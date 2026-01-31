@@ -1,0 +1,189 @@
+{
+  "spec_version": "1.0.0",
+  "spec_name": "Human-Agent-Workflow-V1",
+  "description": "Machine-readable specification for the human+agent governance workflow in Orchestrate OS",
+  "principles": {
+    "determinism": "Same inputs produce identical outputs",
+    "auditability": "Every decision has traceable evidence",
+    "human_authority": "Operators approve or reject; agents propose only",
+    "offline_first": "No network dependencies for validation"
+  },
+  "roles": [
+    {
+      "id": "analyst",
+      "label": "Analyst",
+      "permissions": ["author_patch", "view_records", "load_data"]
+    },
+    {
+      "id": "verifier",
+      "label": "Verifier",
+      "permissions": ["author_patch", "view_records", "load_data", "review_patch", "request_clarification"]
+    },
+    {
+      "id": "admin",
+      "label": "Admin",
+      "permissions": ["author_patch", "view_records", "load_data", "review_patch", "request_clarification", "approve_patch", "reject_patch", "export_patch", "apply_patch"]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "load_data",
+      "label": "Load Data",
+      "stage": 1,
+      "actor": "operator",
+      "description": "Load dataset (sample, CSV, or attached file)"
+    },
+    {
+      "id": "triage_review",
+      "label": "Triage Review",
+      "stage": 2,
+      "actor": "operator",
+      "description": "Review queue counts and summary cards"
+    },
+    {
+      "id": "record_inspection",
+      "label": "Record Inspection",
+      "stage": 3,
+      "actor": "operator",
+      "description": "Drill into individual records, examine field values"
+    },
+    {
+      "id": "issue_identification",
+      "label": "Issue Identification",
+      "stage": 4,
+      "actor": "operator",
+      "agent_assist": true,
+      "description": "Identify semantic issue or rule gap"
+    },
+    {
+      "id": "patch_authoring",
+      "label": "Patch Authoring",
+      "stage": 5,
+      "actor": "operator",
+      "description": "Author structured intent (WHEN/THEN/BECAUSE)"
+    },
+    {
+      "id": "preflight_check",
+      "label": "Preflight Check",
+      "stage": 6,
+      "actor": "system",
+      "automated": true,
+      "description": "Validate patch structure and dependencies"
+    },
+    {
+      "id": "evidence_pack",
+      "label": "Evidence Pack Assembly",
+      "stage": 7,
+      "actor": "operator",
+      "description": "Complete 4-block evidence pack"
+    },
+    {
+      "id": "submit_queue",
+      "label": "Submit to Queue",
+      "stage": 8,
+      "actor": "operator",
+      "description": "Submit patch request to review queue"
+    },
+    {
+      "id": "verifier_review",
+      "label": "Verifier Review",
+      "stage": 9,
+      "actor": "verifier",
+      "description": "Review patch, request clarification or approve/reject"
+    },
+    {
+      "id": "admin_approval",
+      "label": "Admin Approval",
+      "stage": 10,
+      "actor": "admin",
+      "description": "Final approval, hold, or export to external system"
+    },
+    {
+      "id": "apply_patch",
+      "label": "Apply Patch",
+      "stage": 11,
+      "actor": "admin",
+      "description": "Mark patch as applied to semantic baseline"
+    },
+    {
+      "id": "promotion",
+      "label": "Promotion (PR Ready)",
+      "stage": 12,
+      "actor": "operator_or_admin",
+      "description": "Export artifacts for pull request"
+    }
+  ],
+  "edges": [
+    { "from": "load_data", "to": "triage_review", "condition": "dataset_parsed" },
+    { "from": "triage_review", "to": "record_inspection", "condition": "operator_proceeds" },
+    { "from": "record_inspection", "to": "issue_identification", "condition": "record_selected" },
+    { "from": "issue_identification", "to": "patch_authoring", "condition": "issue_articulated" },
+    { "from": "patch_authoring", "to": "preflight_check", "condition": "intent_complete" },
+    { "from": "preflight_check", "to": "evidence_pack", "condition": "no_fail_badges" },
+    { "from": "preflight_check", "to": "patch_authoring", "condition": "has_fail_badges", "label": "Fix Required" },
+    { "from": "evidence_pack", "to": "submit_queue", "condition": "evidence_complete" },
+    { "from": "submit_queue", "to": "verifier_review", "condition": "submitted" },
+    { "from": "verifier_review", "to": "patch_authoring", "condition": "clarification_requested", "label": "Needs Clarification" },
+    { "from": "verifier_review", "to": "admin_approval", "condition": "verifier_approved" },
+    { "from": "verifier_review", "to": "submit_queue", "condition": "verifier_rejected", "label": "Rejected" },
+    { "from": "admin_approval", "to": "apply_patch", "condition": "admin_approved" },
+    { "from": "admin_approval", "to": "verifier_review", "condition": "admin_hold", "label": "Hold" },
+    { "from": "apply_patch", "to": "promotion", "condition": "patch_applied" }
+  ],
+  "gates": [
+    {
+      "id": "gate_parse",
+      "at_node": "load_data",
+      "condition": "Dataset parses without errors",
+      "evidence": ["row_count", "column_headers", "parse_timestamp"]
+    },
+    {
+      "id": "gate_preflight",
+      "at_node": "preflight_check",
+      "condition": "All preflight checks pass or warn (no fail)",
+      "evidence": ["preflight_report", "badge_summary"]
+    },
+    {
+      "id": "gate_evidence",
+      "at_node": "evidence_pack",
+      "condition": "All 4 blocks populated (Observation, Expected, Justification, Repro)",
+      "evidence": ["evidence_pack_snapshot"]
+    },
+    {
+      "id": "gate_verifier",
+      "at_node": "verifier_review",
+      "condition": "Verifier decision recorded",
+      "evidence": ["review_notes", "decision_status", "revision_history"]
+    },
+    {
+      "id": "gate_admin",
+      "at_node": "admin_approval",
+      "condition": "Admin decision recorded",
+      "evidence": ["admin_action_log", "export_payload"]
+    }
+  ],
+  "authority": {
+    "model": "role_based",
+    "escalation_path": ["analyst", "verifier", "admin"],
+    "agent_role": "assistant_only",
+    "agent_can_apply": false,
+    "agent_can_approve": false
+  },
+  "drift_detection": {
+    "deprecated_terms": [
+      { "old": "Kiwi Control Board", "new": "Semantic Control Board" },
+      { "old": "All Data Grid", "new": "All-Data Grid" },
+      { "old": "Reviewer Hub", "new": "Verifier Review" },
+      { "old": "Queue", "context": "standalone nav label", "new": "specific queue name" }
+    ]
+  },
+  "acceptance_tests": [
+    { "id": "load_test", "description": "Sample dataset loads with correct row count" },
+    { "id": "triage_test", "description": "Queue counts match data state" },
+    { "id": "patch_test", "description": "Structured intent renders correctly" },
+    { "id": "preflight_test", "description": "Invalid patches show fail badge" },
+    { "id": "submit_test", "description": "Audit log captures submission" },
+    { "id": "review_test", "description": "Verifier actions update status correctly" },
+    { "id": "export_test", "description": "Applied patches export to valid patch file" }
+  ]
+}

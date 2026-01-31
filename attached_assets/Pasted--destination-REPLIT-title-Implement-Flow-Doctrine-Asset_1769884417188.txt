@@ -1,0 +1,46 @@
+{
+  "destination": "REPLIT",
+  "title": "Implement Flow Doctrine Assets + Repo Drift Sweep Helpers (Docs-Only)",
+  "role": "You are working inside the OOS repo in Replit. Your job is docs-only and helper scripts (optional). No runtime feature development unless explicitly requested.",
+  "tasks": [
+    {
+      "task_id": "DOCS_FLOW_DOCTRINE",
+      "description": "Create docs/V1/Flow-Doctrine.md based on the improved Human+Agent governance workflow. Keep it aligned to OOS README posture (offline-first, deterministic, tool-agnostic, human authority)."
+    },
+    {
+      "task_id": "DOCS_FLOW_SPEC_JSON",
+      "description": "Create docs/specs/Human-Agent-Workflow-V1.json that encodes nodes/edges/gates/authority/evidence/drift/promotion/acceptance tests."
+    },
+    {
+      "task_id": "DOCS_MIRO_PROMPT_ASSET",
+      "description": "Create docs/assets/miro/Human-Agent-Workflow-MiroPrompt.txt containing a Miro diagram-generation prompt that matches the flow."
+    },
+    {
+      "task_id": "DOCS_README_INDEX",
+      "description": "Update docs/README.md to link to the new Flow Doctrine + spec."
+    },
+    {
+      "task_id": "DRIFT_SWEEP_HELPER_OPTIONAL",
+      "description": "Optional: add a simple script (scripts/docs_drift_sweep.sh or .py) that greps for deprecated terms and reports drift (e.g., 'Kiwi Control Board', 'All Data Grid', 'Reviewer Hub', 'Queue' as nav label). Output is a report only; no auto-edits."
+    }
+  ],
+  "constraints": [
+    "Do not imply AI autonomy or auto-apply",
+    "Do not add compliance framework mapping",
+    "Keep V1/Planned/Conceptual labeling rules intact",
+    "Prefer deterministic language and acceptance tests"
+  ],
+  "definition_of_done": [
+    "Files created/updated as described",
+    "No broken links in docs/README.md",
+    "Optional drift script runs and outputs a readable report"
+  ],
+  "output_request": {
+    "format": "patch_or_file_list",
+    "include": [
+      "file paths",
+      "diffs or full contents",
+      "any commands to run the optional drift sweep"
+    ]
+  }
+}

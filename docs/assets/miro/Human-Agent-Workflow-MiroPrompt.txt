@@ -1,0 +1,121 @@
+MIRO DIAGRAM GENERATION PROMPT
+==============================
+
+Create a workflow diagram for a Human+Agent Governance system with the following specifications:
+
+DIAGRAM TYPE: Flowchart / Swimlane Diagram
+
+SWIMLANES (3 horizontal lanes):
+1. Operator Lane (top) - Blue background
+2. System Lane (middle) - Gray background  
+3. Elevated Roles Lane (bottom) - Purple background
+
+NODES (12 stages, left to right flow):
+
+Stage 1: LOAD DATA
+- Lane: Operator
+- Shape: Rounded rectangle
+- Color: Light blue
+- Icon: Upload/database icon
+
+Stage 2: TRIAGE REVIEW
+- Lane: Operator
+- Shape: Rounded rectangle
+- Color: Light blue
+- Icon: List/queue icon
+
+Stage 3: RECORD INSPECTION
+- Lane: Operator
+- Shape: Rounded rectangle
+- Color: Light blue
+- Icon: Magnifying glass
+
+Stage 4: ISSUE IDENTIFICATION
+- Lane: Operator
+- Shape: Rounded rectangle with dashed border (agent assist possible)
+- Color: Light blue with yellow accent
+- Icon: Flag/alert icon
+
+Stage 5: PATCH AUTHORING
+- Lane: Operator
+- Shape: Rounded rectangle
+- Color: Light blue
+- Icon: Edit/pencil icon
+- Label: "Patch Studio"
+
+Stage 6: PREFLIGHT CHECK
+- Lane: System
+- Shape: Diamond (decision)
+- Color: Gray
+- Icon: Checkmark/shield
+- Outputs: "Pass/Warn" → continue, "Fail" → back to Stage 5
+
+Stage 7: EVIDENCE PACK
+- Lane: Operator
+- Shape: Rounded rectangle
+- Color: Light blue
+- Icon: Document stack
+- Label: "4 Blocks"
+
+Stage 8: SUBMIT TO QUEUE
+- Lane: Operator
+- Shape: Rounded rectangle
+- Color: Light blue
+- Icon: Send/arrow-right
+
+Stage 9: VERIFIER REVIEW
+- Lane: Elevated Roles
+- Shape: Rounded rectangle
+- Color: Light purple
+- Icon: Eye/review icon
+- Outputs: "Approve" → continue, "Clarify" → back to Stage 5, "Reject" → back to Stage 8
+
+Stage 10: ADMIN APPROVAL
+- Lane: Elevated Roles
+- Shape: Rounded rectangle
+- Color: Dark purple
+- Icon: Shield/admin icon
+- Outputs: "Approve" → continue, "Hold" → back to Stage 9
+
+Stage 11: APPLY PATCH
+- Lane: Elevated Roles
+- Shape: Rounded rectangle
+- Color: Dark purple
+- Icon: Apply/merge icon
+
+Stage 12: PROMOTION
+- Lane: Elevated Roles
+- Shape: Rounded rectangle with double border (terminal)
+- Color: Green
+- Icon: Rocket/PR icon
+- Label: "PR Ready"
+
+CONNECTORS:
+- Solid arrows for forward flow
+- Dashed arrows for backward/loop flows
+- Red dashed arrows for rejection paths
+- Yellow dashed arrows for clarification paths
+
+GATE ANNOTATIONS (diamond callouts):
+- At Stage 1: "Gate: Dataset parsed"
+- At Stage 6: "Gate: No fail badges"
+- At Stage 7: "Gate: 4 blocks complete"
+- At Stage 9: "Gate: Verifier decision"
+- At Stage 10: "Gate: Admin decision"
+
+LEGEND BOX (bottom right):
+- Operator action: Light blue rounded rectangle
+- System action: Gray diamond
+- Elevated role action: Purple rounded rectangle
+- Agent assist: Dashed yellow border
+- Gate: Diamond callout
+
+TITLE: "Human-Agent Governance Workflow V1"
+SUBTITLE: "Offline-first, deterministic, human-authority-governed"
+
+STYLE NOTES:
+- Use Miro's built-in flowchart shapes
+- Keep consistent 20px spacing between nodes
+- Align swimlanes horizontally
+- Use Miro sticky notes for gate annotations
+- Group related elements for easy editing
