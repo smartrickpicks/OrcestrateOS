@@ -1,0 +1,133 @@
+{
+  "mode": "build",
+  "build_name": "v1.4.4 Loader UX Reset + Post-Load Auto-Navigate + Demo File Visibility Fix",
+  "scope_guardrails": {
+    "do_not_touch": [
+      "documentation generation",
+      "API/Salesforce features",
+      "admin console IA beyond unknown-columns panel",
+      "RBAC rules (unless needed to preserve route guard correctness)"
+    ],
+    "focus_only": [
+      "Fix: real demo file load shows blank grid",
+      "Remove: loader side panel dataset history/registry UI",
+      "Change: after successful load -> auto-navigate to Grid (spreadsheet view), not Triage",
+      "Reimagine: Load Data flow as simple modal with two actions (Upload + Sample), no history list"
+    ]
+  },
+  "user_reported_bugs": [
+    {
+      "id": "BUG-01",
+      "symptom": "Uploading the real demo workflow file shows nothing (blank grid / no rows).",
+      "expected": "Grid renders headers + rows for the active sheet immediately after successful load.",
+      "likely_root_causes_to_check": [
+        "workbook.order is empty OR activeSheet not set to a valid sheet",
+        "headers not derived correctly from rows (or header-map mismatch)",
+        "XLSX parser returns sheet keys but we never assign them into workbook.sheets",
+        "dataLoaded flag is false even after workbook is populated",
+        "grid render reads a different state key than loader writes"
+      ]
+    },
+    {
+      "id": "BUG-02",
+      "symptom": "Load Data button opens a side panel showing previously used datasets (history/registry).",
+      "expected": "No dataset history UI. Load Data opens a modal that only handles current import (Upload CSV/XLSX) + optional Load Sample."
+    },
+    {
+      "id": "BUG-03",
+      "symptom": "After successful load, user remains in triage role/page instead of spreadsheet view.",
+      "expected": "On successful import (CSV or XLSX), auto-route to #/grid and set focus to grid container."
+    }
+  ],
+  "required_behavior_changes": [
+    {
+      "id": "UX-01",
+      "change": "Remove dataset history/registry UI from loader experience",
+      "details": [
+        "Delete/disable any UI that lists previously loaded datasets, recent datasets, or 'datasets you've used'",
+        "Loader modal should contain ONLY: (1) Upload CSV/XLSX (2) Load Sample Dataset (optional) (3) Cancel/Close",
+        "No secondary drawer/panel, no persistence surface visible to the user"
+      ],
+      "acceptance": [
+        "Clicking 'Load Data' opens a centered modal overlay only",
+        "No list of past datasets is shown anywhere in loader"
+      ]
+    },
+    {
+      "id": "UX-02",
+      "change": "Auto-navigate to Grid after successful load",
+      "details": [
+        "After workbook is populated and dataLoaded=true, call navigateTo('#/grid')",
+        "Ensure this happens for both CSV and XLSX loads, including sample dataset load",
+        "Do not leave the user on #/triage unless grid fails to render (fallback only)"
+      ],
+      "acceptance": [
+        "Upload CSV -> modal closes -> route is #/grid -> data visible",
+        "Upload XLSX -> modal closes -> route is #/grid -> data visible",
+        "Load Sample -> modal closes -> route is #/grid -> sheet dropdown populated"
+      ]
+    },
+    {
+      "id": "FIX-01",
+      "change": "Demo workflow file shows blank grid: add deterministic validation + guardrails in import pipeline",
+      "details": [
+        "After parsing: assert workbook.order.length>0 and activeSheet in workbook.sheets; otherwise surface a visible inline error inside loader modal",
+        "Derive headers deterministically: union of keys across first N rows (e.g., first 25) OR explicit header row mapping if present",
+        "Guarantee rows array exists even if empty; never allow undefined rows/headers to reach grid",
+        "If workbook loads but selected sheet has 0 rows, still render headers + empty state that clearly says '0 rows in <sheet>'"
+      ],
+      "acceptance": [
+        "Uploading the known demo file results in non-empty workbook.order and a valid activeSheet",
+        "Grid renders either (a) rows, or (b) a clear empty-state with sheet name and 0 row count — never a silent blank page"
+      ]
+    }
+  ],
+  "implementation_notes": {
+    "state_contract": {
+      "must_hold": [
+        "workbook = { sheets: { [sheetName]: { rows:[], headers:[], meta:{} } }, order:[], activeSheet:string }",
+        "dataLoaded === true iff workbook.order.length > 0 AND workbook.activeSheet exists in workbook.sheets"
+      ]
+    },
+    "post_load_routing_rule": "OnImportSuccess => setState(workbook) => setDataLoaded(true) => closeModal() => navigateTo('#/grid')",
+    "fallback_rule": "If import success but grid cannot render (missing workbook invariants), show loader error and do NOT close modal"
+  },
+  "required_debug_output": {
+    "logs": [
+      "IMPORT: workbook.order, workbook.activeSheet, sheetCount",
+      "IMPORT: activeSheet rows.length, headers.length",
+      "GRID: activeSheet, rows.length, headers.length, dataLoaded"
+    ],
+    "ui_error_surface": [
+      "If import validation fails, show a red inline error block in the loader modal with the specific invariant that failed (e.g., 'No sheets detected' / 'Active sheet not set')"
+    ]
+  },
+  "DIF_response_format_required": {
+    "requirement": "Reply only in DIF: D (what changed), I (impact), F (follow-ups/tests). Keep it short."
+  },
+  "acceptance_tests": [
+    {
+      "name": "Demo file renders",
+      "steps": [
+        "Open Load Data modal",
+        "Upload the demo XLSX/CSV you tested a few days ago",
+        "Observe route and grid"
+      ],
+      "expected": [
+        "Auto-navigates to #/grid",
+        "Sheet dropdown populated (if XLSX)",
+        "Rows visible OR explicit '0 rows' empty-state (not blank page)"
+      ]
+    },
+    {
+      "name": "No dataset history UI",
+      "steps": ["Click Load Data"],
+      "expected": ["Modal shows only Upload + Sample + Close; no 'previous datasets' panel exists"]
+    },
+    {
+      "name": "Post-load auto-nav",
+      "steps": ["Upload any CSV", "Upload any XLSX"],
+      "expected": ["Both land on #/grid immediately after load"]
+    }
+  ]
+}

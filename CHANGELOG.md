@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## Version: v1.4.4
+Date: 2026-01-31
+
+### Fixed (Loader UX Reset + Post-Load Navigation)
+
+- UX-01: Simplified Loader Modal
+  - Removed dataset history/status panel from modal
+  - Modal now shows only: Upload CSV + Load Sample + Close
+  - Added inline error display for import failures
+  - Clear error message for XLSX files: "Please convert to CSV"
+
+- UX-02: Auto-Navigate to Grid After Load
+  - CSV import → modal closes → route changes to #/grid
+  - Load Sample → modal closes → route changes to #/grid
+  - No longer lands on #/triage after successful load
+
+- FIX-01: Workbook Validation Guardrails
+  - validateWorkbookState() checks: order.length > 0, activeSheet exists, headers array present
+  - If validation fails, modal stays open with inline error
+  - Console logs show validation details: order count, activeSheet, headers, rows
+
+- FIX-02: XLSX Detection with User-Friendly Error
+  - handleFileImport() detects .xlsx/.xls files before parsing
+  - Shows clear error: "XLSX files are not yet supported. Please convert to CSV."
+  - File input now only accepts .csv files
+
+### Added (Debug Logging)
+- [Loader] logs validation pass/fail with counts
+- [Loader] logs error messages to console
+
+### Preserved
+- Upload Library drawer still exists (for session history) but not linked from loader modal
+- RBAC route guards intact
+- No admin tools bleed into Analyst/Reviewer routes
+
+---
+
 ## Version: v1.4.3
 Date: 2026-01-31
 

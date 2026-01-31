@@ -937,7 +937,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Triage</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.4.3</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.4.4</span>
           </div>
           <p class="page-desc">Alert summary view. Click status cards to open filtered grid views.</p>
           <div class="triage-session-info" id="triage-session-info" style="margin-top: 10px; font-size: 0.85em; color: #666;"></div>
@@ -986,7 +986,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>All-Data Grid</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: GRID | BUILD v1.4.3</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: GRID | BUILD v1.4.4</span>
           </div>
           <p class="page-desc">Dense spreadsheet view of all records with filtering and search.</p>
         </div>
@@ -1191,7 +1191,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Admin Console</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-CONSOLE | BUILD v1.4.3</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-CONSOLE | BUILD v1.4.4</span>
           </div>
           <p class="page-desc">Centralized admin tools for governance, config, standardization, and patch management.</p>
         </div>
@@ -1599,18 +1599,11 @@
         <button class="loader-modal-close" id="loader-modal-close-btn" onclick="closeLoaderModal()" aria-label="Close">&times;</button>
       </div>
       <div class="loader-modal-body">
-        <!-- Dataset Status -->
-        <div id="loader-drawer-status" style="margin-bottom: 20px; padding: 15px; background: #e8f5e9; border-radius: 8px; display: none;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 1.2em;">✅</span>
-            <div style="flex: 1;">
-              <div style="font-weight: 600; color: #2e7d32;">Dataset Loaded</div>
-              <div id="loader-drawer-dataset-name" style="font-size: 0.85em; color: #666;"></div>
-            </div>
-          </div>
-          <div style="margin-top: 12px; display: flex; gap: 10px;">
-            <button class="top-toolbar-btn" onclick="closeLoaderModal(); navigateTo('grid');">Continue to Grid</button>
-            <button class="top-toolbar-btn" onclick="copyBundleJSON()">Copy Bundle</button>
+        <!-- Inline Error Display (v1.4.4) -->
+        <div id="loader-error-display" style="display: none; margin-bottom: 16px; padding: 12px 16px; background: #ffebee; border: 1px solid #ef5350; border-radius: 8px; color: #c62828;">
+          <div style="display: flex; align-items: flex-start; gap: 10px;">
+            <span style="font-size: 1.1em;">⚠️</span>
+            <div id="loader-error-message" style="flex: 1; font-size: 0.9em;"></div>
           </div>
         </div>
         
@@ -1622,7 +1615,8 @@
             <div class="drop-zone-text">Drop CSV file here or click to browse</div>
             <div class="drop-zone-file" id="loader-drawer-file-name" style="display: none;"></div>
           </div>
-          <input type="file" id="loader-drawer-file" accept=".csv,.xlsx" style="display: none;">
+          <input type="file" id="loader-drawer-file" accept=".csv" style="display: none;">
+          <div style="font-size: 0.75em; color: #888; margin-top: 6px;">Supported: CSV files only</div>
         </div>
         
         <!-- Sample Dataset Section -->
@@ -2493,7 +2487,7 @@
         desc: 'Load Preview Packet and reference data into the session.',
         icon: '📥',
         artifacts: ['preview_packet', 'reference_expected'],
-        action: function() { openDataSourceDrawer(); }
+        action: function() { openLoaderModal(); }
       },
       {
         id: 'config',
@@ -5384,14 +5378,27 @@
     }
 
     function renderGrid() {
-      if (!dataLoaded || !currentDataset) {
-        document.getElementById('grid-tbody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">No data loaded</td></tr>';
+      // v1.4.4: Improved empty state handling
+      if (!dataLoaded) {
+        document.getElementById('grid-tbody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">' +
+          '<div style="margin-bottom: 10px;">No data loaded</div>' +
+          '<button class="top-toolbar-btn" onclick="openLoaderModal()">Load Data</button>' +
+          '</td></tr>';
         document.getElementById('grid-row-count').textContent = '0 records';
         return;
       }
       
       var ds = getGridDataset();
-      if (!ds) return;
+      if (!ds) {
+        // Workbook exists but getGridDataset returned null
+        var sheetName = workbook.activeSheet || 'unknown';
+        document.getElementById('grid-tbody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">' +
+          '<div style="font-weight: 600; margin-bottom: 5px;">0 rows in sheet: ' + escapeHtml(sheetName) + '</div>' +
+          '<div style="font-size: 0.85em; color: #888;">The selected sheet has no data rows.</div>' +
+          '</td></tr>';
+        document.getElementById('grid-row-count').textContent = '0 records in ' + sheetName;
+        return;
+      }
       var records = ds.sf_contract_results || [];
       
       // Apply filters: sheet -> status -> search
@@ -5695,7 +5702,7 @@
     // END GRID FUNCTIONS
     
     // ============================================================
-    // UNKNOWN COLUMNS FUNCTIONS (v1.4.3)
+    // UNKNOWN COLUMNS FUNCTIONS (v1.4.4)
     // ============================================================
     
     var CANONICAL_FIELDS = ['contract_key', 'file_name', 'file_url', 'status', 'subtype', 'severity', 'sheet', 'notes'];
@@ -5911,11 +5918,7 @@
         fileInput.addEventListener('change', function(e) {
           var file = e.target.files[0];
           if (file) {
-            handleCSVImport(file, function() {
-              updateLoaderModalUI();
-              closeLoaderDrawer();
-              navigateTo('triage');
-            });
+            handleFileImport(file);
           }
         });
       }
@@ -5935,11 +5938,7 @@
           dropzone.classList.remove('drag-over');
           var file = e.dataTransfer.files[0];
           if (file) {
-            handleCSVImport(file, function() {
-              updateLoaderModalUI();
-              closeLoaderDrawer();
-              navigateTo('triage');
-            });
+            handleFileImport(file);
           }
         });
       }
@@ -5949,11 +5948,85 @@
       if (sampleBtn) {
         sampleBtn.addEventListener('click', function() {
           loadSampleDataset({ autoRedirect: false });
-          updateLoaderModalUI();
-          closeLoaderDrawer();
-          navigateTo('triage');
+          closeLoaderModal();
+          navigateTo('grid');
         });
       }
+    }
+    
+    // v1.4.4: Unified file import handler with validation
+    function handleFileImport(file) {
+      hideLoaderError();
+      
+      // Check file extension
+      var ext = (file.name.split('.').pop() || '').toLowerCase();
+      
+      if (ext === 'xlsx' || ext === 'xls') {
+        showLoaderError('XLSX files are not yet supported. Please convert to CSV and try again.');
+        return;
+      }
+      
+      if (ext !== 'csv') {
+        showLoaderError('Unsupported file type: .' + ext + '. Please use a CSV file.');
+        return;
+      }
+      
+      // Handle CSV import with post-load navigation
+      handleCSVImport(file, function() {
+        // Validate workbook state before closing modal
+        if (!validateWorkbookState()) {
+          showLoaderError('Import completed but no data was loaded. Please check the file format.');
+          return;
+        }
+        closeLoaderModal();
+        navigateTo('grid');
+      });
+    }
+    
+    function showLoaderError(message) {
+      var errorEl = document.getElementById('loader-error-display');
+      var msgEl = document.getElementById('loader-error-message');
+      if (errorEl && msgEl) {
+        msgEl.textContent = message;
+        errorEl.style.display = 'block';
+      }
+      console.error('[Loader] Error:', message);
+    }
+    
+    function hideLoaderError() {
+      var errorEl = document.getElementById('loader-error-display');
+      if (errorEl) errorEl.style.display = 'none';
+    }
+    
+    function validateWorkbookState() {
+      // v1.4.4 FIX-01: Validate workbook invariants with specific error messages
+      if (!workbook.order || workbook.order.length === 0) {
+        console.error('[Loader] Validation failed: workbook.order is empty');
+        showLoaderError('No sheets detected in file. Please check the file format.');
+        return false;
+      }
+      if (!workbook.activeSheet || !workbook.sheets[workbook.activeSheet]) {
+        console.error('[Loader] Validation failed: activeSheet not in sheets');
+        showLoaderError('Active sheet not set correctly. Internal error - please try again.');
+        return false;
+      }
+      var sheet = workbook.sheets[workbook.activeSheet];
+      if (!sheet.headers || !Array.isArray(sheet.headers)) {
+        console.error('[Loader] Validation failed: headers missing or invalid');
+        showLoaderError('No headers detected in file. Please ensure the first row contains column headers.');
+        return false;
+      }
+      if (sheet.headers.length === 0) {
+        console.error('[Loader] Validation failed: headers array is empty');
+        showLoaderError('Empty header row detected. Please ensure the first row contains column headers.');
+        return false;
+      }
+      // Ensure rows array exists (can be empty but must exist)
+      if (!Array.isArray(sheet.rows)) {
+        sheet.rows = [];
+      }
+      console.log('[Loader] Validation passed: order=' + workbook.order.length + ', activeSheet=' + workbook.activeSheet + ', headers=' + sheet.headers.length + ', rows=' + sheet.rows.length);
+      return true;
     }
     
     // Demo mode flag
@@ -9826,12 +9899,10 @@ Add any additional notes here.
         console.log('[Loader] Sample dataset loaded:', workbook.order.length, 'sheets');
         showToast('Sample dataset loaded successfully', 'success');
         
-        // Auto-redirect after loading (v1.2.7) - use intended route if stored
+        // Auto-redirect after loading (v1.4.4) - always go to grid after load
         if (options.autoRedirect !== false) {
           setTimeout(function() {
-            var nextRoute = sessionStorage.getItem('kiwi_next_route') || 'triage';
-            sessionStorage.removeItem('kiwi_next_route');
-            navigateTo(nextRoute);
+            navigateTo('grid');
           }, 300);
         }
       } catch (e) {
@@ -10245,7 +10316,7 @@ Add any additional notes here.
       e.target.value = '';
     });
     document.getElementById('btn-open-spreadsheet')?.addEventListener('click', function() {
-      navigateTo('triage');
+      navigateTo('grid');
     });
     document.getElementById('btn-reset-demo-state')?.addEventListener('click', resetDemoState);
     document.getElementById('btn-rebuild-field-index')?.addEventListener('click', rebuildFieldIndex);
@@ -10257,8 +10328,8 @@ Add any additional notes here.
     updateLoaderPageUI();
     
     // Welcome hero and top toolbar event listeners
-    document.getElementById('welcome-load-data')?.addEventListener('click', openDataSourceDrawer);
-    document.getElementById('btn-load-data')?.addEventListener('click', openDataSourceDrawer);
+    document.getElementById('welcome-load-data')?.addEventListener('click', openLoaderModal);
+    document.getElementById('btn-load-data')?.addEventListener('click', openLoaderModal);
     document.getElementById('btn-configure')?.addEventListener('click', openConfigureWizard);
     document.getElementById('btn-ruleset')?.addEventListener('click', openRulesetModal);
     document.getElementById('btn-compare')?.addEventListener('click', openCompareModal);
@@ -10317,7 +10388,7 @@ Add any additional notes here.
           updateUIForDataState();
           renderAllTables();
           closeDataSourceDrawer();
-          navigateTo('triage');
+          navigateTo('grid');
           showWizardStatus('data-source-status', 'Data loaded successfully!', 'success');
         } else {
           throw new Error('Invalid data format - expected Preview Packet structure');
