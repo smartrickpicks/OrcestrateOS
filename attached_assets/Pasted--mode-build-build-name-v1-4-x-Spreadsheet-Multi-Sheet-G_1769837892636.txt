@@ -1,0 +1,134 @@
+{
+  "mode": "build",
+  "build_name": "v1.4.x Spreadsheet + Multi-Sheet Grid Stabilization",
+  "scope_guardrails": {
+    "do_not_touch": [
+      "documentation generation",
+      "any Kiwi doc tasks",
+      "API/Salesforce features",
+      "new agents/workflows",
+      "admin console IA unless required for unknown-columns UI wiring already present"
+    ],
+    "focus_only": [
+      "Loader ingest correctness",
+      "Multi-sheet XLSX support end-to-end",
+      "Grid rendering and sheet switching",
+      "Triage -> Grid deep links + filtered views",
+      "Row click -> Row Review (PDF viewer can remain stub)"
+    ]
+  },
+  "success_definition": {
+    "must_work": [
+      "Uploading CSV shows data immediately in Grid (not only in Triage)",
+      "Uploading XLSX with multiple sheets populates a Sheet dropdown in Grid",
+      "Switching sheets swaps the table rows/columns correctly",
+      "Unknown columns are detected per-sheet and surfaced in Admin Unknown Columns UI",
+      "Triage chips navigate to Grid with correct filters applied",
+      "Row click opens Row Review from Grid and from Triage consistently"
+    ],
+    "must_not_regress": [
+      "RBAC route guards and admin isolation",
+      "Loader remains a modal overlay (not a route, not a drawer)",
+      "No admin tools bleed into Analyst/Reviewer routes"
+    ]
+  },
+  "implementation_tasks": [
+    {
+      "id": "INGEST-01",
+      "title": "Canonical multi-sheet dataset contract",
+      "requirements": [
+        "Represent loaded dataset as { workbook: { sheets: { [sheetName]: { rows:[], headers:[], meta:{} } }, order:[] }, activeSheet }",
+        "For CSV, create a single synthetic sheet name (e.g., 'Sheet1' or 'CSV')",
+        "Deterministic sheet ordering: lexical unless config pack specifies a canonical order; if config exists, apply it"
+      ],
+      "acceptance": [
+        "After load, dataset state contains workbook.sheets + workbook.order + activeSheet",
+        "activeSheet always points to a valid sheet",
+        "No partial/undefined bundle gating blocks navigation/rendering"
+      ]
+    },
+    {
+      "id": "INGEST-02",
+      "title": "Loader import must preserve ALL columns",
+      "requirements": [
+        "Do not drop columns during standardization; map unknown fields but keep them in the sheet rows",
+        "Headers array must include unknown headers; unknown_columns computed as set difference vs canonical",
+        "If any column is unrecognized, add it to unknown_columns[sheetName] with sample values"
+      ],
+      "acceptance": [
+        "Grid shows all columns from the uploaded file (including unknown ones)",
+        "Admin Unknown Columns shows sheetName + fieldName + sample values",
+        "No silent column loss"
+      ]
+    },
+    {
+      "id": "GRID-01",
+      "title": "Grid must render table from activeSheet",
+      "requirements": [
+        "Grid reads dataset.workbook.sheets[activeSheet].rows and headers",
+        "If dataset empty, show a clear empty-state + CTA to open Loader modal",
+        "Grid must be reachable via nav and default landing when dataLoaded=true"
+      ],
+      "acceptance": [
+        "After import, Grid displays data immediately",
+        "Empty state only appears when no workbook loaded"
+      ]
+    },
+    {
+      "id": "GRID-02",
+      "title": "Multi-sheet selector in Grid",
+      "requirements": [
+        "Dropdown in Grid header listing workbook.order",
+        "Switch updates activeSheet and refreshes headers/rows",
+        "Persist activeSheet in URL (optional) or local state deterministically"
+      ],
+      "acceptance": [
+        "Sheet dropdown appears for XLSX and CSV (single option for CSV)",
+        "Switching sheets swaps columns/rows correctly with no stale columns from prior sheet"
+      ]
+    },
+    {
+      "id": "TRIAGE-01",
+      "title": "Triage becomes alert lens into Grid",
+      "requirements": [
+        "Triage summary cards/chips deep-link to Grid filter state: #/grid?f=<status>&sheet=<sheetName?>&q=<search?>",
+        "Grid reads query params and applies filter deterministically"
+      ],
+      "acceptance": [
+        "Clicking Flagged/Needs Review in Triage navigates to Grid with the same subset"
+      ]
+    },
+    {
+      "id": "ROW-01",
+      "title": "Row click -> Row Review (consistent from Grid and Triage)",
+      "requirements": [
+        "Row click opens Row Review drawer/split with row payload + sheetName context",
+        "Evidence viewer can remain stub but must render a placeholder area",
+        "Back behavior returns to Grid with filters preserved"
+      ],
+      "acceptance": [
+        "Row review opens from Grid and Triage and shows correct row data",
+        "No route/UI bleed after closing review"
+      ]
+    }
+  ],
+  "debugging_requirements": {
+    "add_minimal_logs": [
+      "On load: workbook.order, activeSheet, per-sheet header count, row count",
+      "On sheet switch: previousSheet -> nextSheet and resulting header count",
+      "On grid render: activeSheet + rows.length + headers.length"
+    ],
+    "no_admin_debug_leaks": [
+      "Keep debug HUD admin-only (already done)",
+      "No test buttons visible to Analyst/Reviewer"
+    ]
+  },
+  "DIF_change_log_format": {
+    "requirement": "Use DIF format in your response: D (what changed), I (impact), F (follow-ups/tests). Keep it short.",
+    "example": {
+      "D": ["Added sheet dropdown to Grid header", "Loader now preserves unknown columns per-sheet"],
+      "I": ["XLSX multi-sheet navigation works; no column loss"],
+      "F": ["Test: upload XLSX with 3 sheets; switch; verify headers change; open row review"]
+    }
+  }
+}

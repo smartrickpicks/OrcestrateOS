@@ -937,7 +937,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Triage</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.4.2</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.4.3</span>
           </div>
           <p class="page-desc">Alert summary view. Click status cards to open filtered grid views.</p>
           <div class="triage-session-info" id="triage-session-info" style="margin-top: 10px; font-size: 0.85em; color: #666;"></div>
@@ -986,7 +986,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>All-Data Grid</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: GRID | BUILD v1.4.2</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: GRID | BUILD v1.4.3</span>
           </div>
           <p class="page-desc">Dense spreadsheet view of all records with filtering and search.</p>
         </div>
@@ -1191,7 +1191,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Admin Console</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-CONSOLE | BUILD v1.4.2</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-CONSOLE | BUILD v1.4.3</span>
           </div>
           <p class="page-desc">Centralized admin tools for governance, config, standardization, and patch management.</p>
         </div>
@@ -2163,6 +2163,53 @@
       expectedData: null,
       fileName: null
     };
+    
+    // ========== WORKBOOK DATA STRUCTURE (v1.4.3 INGEST-01) ==========
+    // Canonical multi-sheet dataset contract
+    var workbook = {
+      sheets: {},       // { sheetName: { headers: [], rows: [], meta: {} } }
+      order: [],        // Deterministic sheet ordering
+      activeSheet: null // Currently selected sheet
+    };
+    
+    function resetWorkbook() {
+      workbook.sheets = {};
+      workbook.order = [];
+      workbook.activeSheet = null;
+    }
+    
+    function setActiveSheet(sheetName) {
+      if (workbook.sheets[sheetName]) {
+        workbook.activeSheet = sheetName;
+        console.log('[Workbook] Active sheet set to:', sheetName);
+        return true;
+      }
+      return false;
+    }
+    
+    function getActiveSheetData() {
+      if (!workbook.activeSheet || !workbook.sheets[workbook.activeSheet]) {
+        return { headers: [], rows: [], meta: {} };
+      }
+      return workbook.sheets[workbook.activeSheet];
+    }
+    
+    function addSheet(sheetName, headers, rows, meta) {
+      workbook.sheets[sheetName] = {
+        headers: headers || [],
+        rows: rows || [],
+        meta: meta || {}
+      };
+      if (!workbook.order.includes(sheetName)) {
+        workbook.order.push(sheetName);
+        workbook.order.sort(); // Lexical ordering
+      }
+      // Set active sheet if none set
+      if (!workbook.activeSheet) {
+        workbook.activeSheet = sheetName;
+      }
+      console.log('[Workbook] Added sheet:', sheetName, 'headers:', headers.length, 'rows:', rows.length);
+    }
     
     const STORAGE_KEY_SESSION = 'controlboard_session_v11';
     const ARTIFACT_REGISTRY_KEY = 'orchestrateos.artifacts.v1';
@@ -4528,6 +4575,10 @@
       
       dataLoaded = false;
       currentArtifactPath = '';
+      currentDataset = null;
+      
+      // Reset workbook (v1.4.3)
+      resetWorkbook();
       
       allData.contractResults = [];
       allData.issues = [];
@@ -5198,7 +5249,7 @@
     function closeLoaderDrawer() { closeLoaderModal(); }
     
     // ============================================================
-    // GRID FUNCTIONS (v1.4.0)
+    // GRID FUNCTIONS (v1.4.3)
     // ============================================================
     var currentDataset = null;
     var gridState = {
@@ -5210,7 +5261,27 @@
     };
     
     function getGridDataset() {
+      // Priority: workbook > allData > localStorage cache
+      if (workbook.order.length > 0) {
+        // Build dataset from workbook
+        var records = [];
+        workbook.order.forEach(function(sheetName) {
+          var sheet = workbook.sheets[sheetName];
+          if (sheet && sheet.rows) {
+            sheet.rows.forEach(function(row) {
+              var r = Object.assign({}, row);
+              r.sheet = sheetName;
+              records.push(r);
+            });
+          }
+        });
+        currentDataset = { sf_contract_results: records };
+        console.log('[Grid] Dataset from workbook:', workbook.order.length, 'sheets,', records.length, 'records');
+        return currentDataset;
+      }
+      
       if (currentDataset) return currentDataset;
+      
       var cached = localStorage.getItem('sample_dataset');
       if (cached) {
         try { currentDataset = JSON.parse(cached); } catch(e) {}
@@ -5246,21 +5317,27 @@
 
     function populateGridSheetSelector() {
       var selector = document.getElementById('grid-sheet-selector');
-      var ds = getGridDataset();
-      if (!selector || !ds) return;
+      if (!selector) return;
       
       selector.innerHTML = '<option value="">All Sheets</option>';
-      var sheets = new Set();
+      var sheets = [];
       
-      // Collect unique sheet names from dataset
-      if (ds.sf_contract_results) {
-        ds.sf_contract_results.forEach(function(r) {
-          if (r.sheet) sheets.add(r.sheet);
-        });
+      // Priority: workbook.order > dataset extraction
+      if (workbook.order.length > 0) {
+        sheets = workbook.order.slice();
+      } else {
+        var ds = getGridDataset();
+        if (ds && ds.sf_contract_results) {
+          var sheetSet = new Set();
+          ds.sf_contract_results.forEach(function(r) {
+            if (r.sheet) sheetSet.add(r.sheet);
+          });
+          sheets = Array.from(sheetSet).sort();
+        }
       }
       
       // Sort deterministically
-      Array.from(sheets).sort().forEach(function(sheet) {
+      sheets.sort().forEach(function(sheet) {
         var opt = document.createElement('option');
         opt.value = sheet;
         opt.textContent = sheet;
@@ -5375,12 +5452,27 @@
         return (a._originalIdx || 0) - (b._originalIdx || 0);
       });
       
-      // Determine columns
+      // Determine columns from workbook sheet or fallback to defaults (v1.4.3 GRID-01)
       var columns = ['contract_key', 'file_name', 'file_url', 'status', 'subtype'];
-      if (gridState.visibleColumns.length === 0) {
-        gridState.visibleColumns = columns.slice();
-        gridState.allColumns = columns.slice();
+      var activeSheetName = gridState.sheet || workbook.activeSheet;
+      
+      if (activeSheetName && workbook.sheets[activeSheetName]) {
+        // Use headers from the active sheet
+        columns = workbook.sheets[activeSheetName].headers.filter(function(h) {
+          return h && h !== '_row_index';
+        });
+        console.log('[Grid] Using columns from sheet:', activeSheetName, columns.length, 'columns');
+      } else if (filtered.length > 0) {
+        // Extract columns from first record
+        var sampleRow = filtered[0];
+        columns = Object.keys(sampleRow).filter(function(k) {
+          return k !== '_row_index' && k !== '_originalIdx' && k !== 'sheet';
+        });
       }
+      
+      // Always update visible columns
+      gridState.visibleColumns = columns.slice();
+      gridState.allColumns = columns.slice();
       
       // Render header
       var headerRow = document.getElementById('grid-header-row');
@@ -5603,7 +5695,7 @@
     // END GRID FUNCTIONS
     
     // ============================================================
-    // UNKNOWN COLUMNS FUNCTIONS (v1.4.2)
+    // UNKNOWN COLUMNS FUNCTIONS (v1.4.3)
     // ============================================================
     
     var CANONICAL_FIELDS = ['contract_key', 'file_name', 'file_url', 'status', 'subtype', 'severity', 'sheet', 'notes'];
@@ -9689,10 +9781,20 @@ Add any additional notes here.
       showToast('Dataset deleted', 'success');
     }
     
-    // ========== LOADER HANDLERS (V1.2.5) ==========
+    // ========== LOADER HANDLERS (v1.4.3) ==========
     function loadSampleDataset(options) {
       options = options || {};
       try {
+        // Reset workbook and populate from sample dataset sheets (v1.4.3 INGEST-01)
+        resetWorkbook();
+        
+        if (SAMPLE_DATASET.sheets) {
+          Object.keys(SAMPLE_DATASET.sheets).forEach(function(sheetName) {
+            var sheet = SAMPLE_DATASET.sheets[sheetName];
+            addSheet(sheetName, sheet.headers || [], sheet.rows || [], {});
+          });
+        }
+        
         // Transform sample dataset to match expected format
         allData = {
           contractResults: SAMPLE_DATASET.contract_results || [],
@@ -9711,13 +9813,17 @@ Add any additional notes here.
         
         dataLoaded = true;
         currentArtifactPath = 'sample_v1';
+        currentDataset = null; // Reset cache
         updateUIForDataState();
         updateSessionChip();
         populateSubtypeDropdown();
+        populateGridSheetSelector();
         renderAllTables();
+        renderGrid();
         populateTargetFieldDropdown();
         updateLoaderPageUI();
         
+        console.log('[Loader] Sample dataset loaded:', workbook.order.length, 'sheets');
         showToast('Sample dataset loaded successfully', 'success');
         
         // Auto-redirect after loading (v1.2.7) - use intended route if stored
@@ -9734,7 +9840,7 @@ Add any additional notes here.
       }
     }
     
-    // Handle CSV import with standardization
+    // Handle CSV import with standardization (v1.4.3 INGEST-02: preserve ALL columns)
     function handleCSVImport(file, callback) {
       var reader = new FileReader();
       reader.onload = function(e) {
@@ -9747,50 +9853,101 @@ Add any additional notes here.
             return;
           }
           
-          // Create a standardized dataset structure
-          var standardizedData = {
-            contract_results: parsed.rows.map(function(row, idx) {
-              return {
-                contract_key: row.contract_key || row.ck || 'ROW_' + (idx + 1),
-                file_name: row.file_name || row.filename || null,
-                file_url: row.file_url || row.url || null,
-                subtype: row.subtype || row.type || { value: 'unknown', confidence: null },
-                status: row.status || 'needs_review'
-              };
+          // Sheet name from file (single sheet for CSV)
+          var sheetName = file.name.replace(/\.[^.]+$/, '') || 'Sheet1';
+          
+          // Reset and populate workbook (v1.4.3 INGEST-01)
+          resetWorkbook();
+          
+          // Normalize headers while preserving originals
+          var normalizedHeaders = parsed.headers.map(normalizeHeader);
+          var headerMap = {};
+          parsed.headers.forEach(function(h, i) { headerMap[h] = normalizedHeaders[i]; });
+          
+          // Detect unknown columns
+          var unknownColumns = [];
+          normalizedHeaders.forEach(function(nh, i) {
+            if (!CANONICAL_HEADERS.includes(nh)) {
+              unknownColumns.push({
+                original: parsed.headers[i],
+                normalized: nh,
+                samples: parsed.rows.slice(0, 3).map(function(r) { return r[parsed.headers[i]]; }).filter(Boolean)
+              });
+            }
+          });
+          
+          // Build rows with ALL columns preserved
+          var normalizedRows = parsed.rows.map(function(row, idx) {
+            var newRow = { _row_index: idx };
+            parsed.headers.forEach(function(original) {
+              var normalized = headerMap[original];
+              newRow[normalized] = row[original] !== '' ? row[original] : null;
+            });
+            // Ensure required fields have defaults
+            if (!newRow.contract_key) newRow.contract_key = 'ROW_' + (idx + 1);
+            if (!newRow.status) newRow.status = 'needs_review';
+            return newRow;
+          });
+          
+          // Add sheet to workbook
+          addSheet(sheetName, normalizedHeaders, normalizedRows, {
+            originalHeaders: parsed.headers,
+            headerMap: headerMap,
+            unknownColumns: unknownColumns,
+            delimiter: parsed.delimiter
+          });
+          
+          // Also populate allData for legacy compatibility
+          allData = {
+            contractResults: normalizedRows.map(function(r) {
+              var row = Object.assign({}, r);
+              row.sheet = sheetName;
+              return row;
             }),
             issues: [],
-            field_actions: [],
-            sheets: { imported: parsed.headers },
+            fieldActions: [],
+            changeLog: [],
             summary: {
-              total_contracts: parsed.rows.length,
+              total_contracts: normalizedRows.length,
               ready: 0,
-              needs_review: parsed.rows.length,
+              needs_review: normalizedRows.length,
               blocked: 0
             }
           };
           
-          // Load the standardized data
-          allData = {
-            contractResults: standardizedData.contract_results,
-            issues: standardizedData.issues,
-            fieldActions: standardizedData.field_actions,
-            changeLog: [],
-            summary: standardizedData.summary,
-            sheets: standardizedData.sheets
-          };
+          // Detect unknown columns for Admin UI
+          if (unknownColumns.length > 0) {
+            var unknownColsStorage = JSON.parse(localStorage.getItem('unknown_columns') || '{}');
+            unknownColsStorage[sheetName] = unknownColumns.map(function(uc) {
+              return {
+                original: uc.original,
+                normalized: uc.normalized,
+                samples: uc.samples,
+                nonEmptyCount: normalizedRows.filter(function(r) { return r[uc.normalized]; }).length
+              };
+            });
+            localStorage.setItem('unknown_columns', JSON.stringify(unknownColsStorage));
+          }
           
           // Save to localStorage
-          localStorage.setItem(STORAGE_KEY_DATASET, JSON.stringify(standardizedData));
-          saveToUploadLibrary(standardizedData, file.name, 'csv');
+          localStorage.setItem(STORAGE_KEY_DATASET, JSON.stringify({
+            workbook: workbook,
+            allData: allData
+          }));
+          saveToUploadLibrary({ workbook: workbook }, file.name, 'csv');
           
           dataLoaded = true;
           currentArtifactPath = file.name;
+          currentDataset = null; // Reset cache
           updateUIForDataState();
           updateSessionChip();
           populateSubtypeDropdown();
+          populateGridSheetSelector();
           renderAllTables();
+          renderGrid();
           
-          showToast('CSV imported: ' + parsed.rows.length + ' rows', 'success');
+          console.log('[Loader] CSV imported:', sheetName, 'headers:', normalizedHeaders.length, 'rows:', normalizedRows.length, 'unknown:', unknownColumns.length);
+          showToast('CSV imported: ' + parsed.rows.length + ' rows, ' + unknownColumns.length + ' unknown columns', 'success');
           
           if (callback) callback();
         } catch (err) {

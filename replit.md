@@ -1,4 +1,4 @@
-# Kiwi Semantic Control Board (v1.4.2)
+# Kiwi Semantic Control Board (v1.4.3)
 
 ## Overview
 

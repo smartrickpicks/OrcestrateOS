@@ -1,5 +1,54 @@
 # CHANGELOG
 
+## Version: v1.4.3
+Date: 2026-01-31
+
+### Fixed (Spreadsheet + Multi-Sheet Grid Stabilization)
+
+- INGEST-01: Canonical Multi-Sheet Dataset Contract
+  - New workbook data structure: `{ sheets: {}, order: [], activeSheet }`
+  - For CSV, creates single synthetic sheet from filename
+  - Deterministic lexical sheet ordering
+  - activeSheet always points to valid sheet
+
+- INGEST-02: Loader Preserves ALL Columns
+  - CSV import no longer drops columns during standardization
+  - Headers array includes all columns (canonical + unknown)
+  - Unknown columns detected per-sheet with sample values
+  - No silent column loss
+
+- GRID-01: Grid Renders from Workbook Sheet
+  - Grid reads from `workbook.sheets[activeSheet].rows` and `headers`
+  - Columns dynamically determined from sheet headers
+  - Empty state shows CTA to open Loader modal
+  - Grid is default landing when dataLoaded=true
+
+- GRID-02: Multi-Sheet Selector in Grid
+  - Dropdown in Grid header lists `workbook.order`
+  - Switching sheets updates columns/rows correctly
+  - No stale columns from prior sheet
+
+- TRIAGE-01: Triage as Alert Lens
+  - Summary cards deep-link to Grid with filters: `#/grid?f=<status>`
+  - navigateToGridFiltered() applies status filter deterministically
+
+- ROW-01: Row Review Consistency
+  - Row click opens Row Review from Grid and Triage consistently
+  - Uses workbook-aware getGridDataset()
+  - Back behavior returns to Grid with filters preserved
+
+### Added (Debug Logging)
+- [Workbook] logs on sheet add: sheet name, header count, row count
+- [Grid] logs on render: activeSheet, columns.length
+- [Loader] logs on import: sheets loaded, unknown column count
+
+### Preserved
+- RBAC route guards and admin isolation intact
+- Loader remains modal overlay (not a route)
+- No admin tools bleed into Analyst/Reviewer routes
+
+---
+
 ## Version: v1.4.2
 Date: 2026-01-31
 
