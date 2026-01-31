@@ -30,8 +30,13 @@ Date: 2026-01-31
 - [Loader] logs validation pass/fail with counts
 - [Loader] logs error messages to console
 
+- FIX-03: Grid Empty State Improvements
+  - No data: Shows "No data loaded" with "Load Data" button
+  - 0-row sheet: Shows "0 rows in sheet: <name>" with explanation
+  - Never shows silent blank grid
+
 ### Preserved
-- Upload Library drawer still exists (for session history) but not linked from loader modal
+- Upload Library drawer remains for session history (Data Sources sidebar)
 - RBAC route guards intact
 - No admin tools bleed into Analyst/Reviewer routes
 
