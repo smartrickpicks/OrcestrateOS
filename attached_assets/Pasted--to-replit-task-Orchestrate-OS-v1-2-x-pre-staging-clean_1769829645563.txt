@@ -1,0 +1,59 @@
+{
+  "to": "replit",
+  "task": "Orchestrate OS v1.2.x pre-staging cleanup: strict route/render boundaries + Admin tab IA",
+  "constraints": {
+    "offline_only": true,
+    "no_network_calls": true,
+    "copy_only_exports": true,
+    "no_salesforce_or_api_features": true
+  },
+  "goal": "Stop admin/tooling bleed into Analyst/Reviewer surfaces. Make the app behave like DataDash V1 ergonomics: default to triage; loader is a drawer; standardizer runs before queues (behind the scenes); admin is a separate console with tabs.",
+  "do_now": [
+    {
+      "name": "Router-level RBAC guard",
+      "requirements": [
+        "Implement requireRole(minRole) at the router layer (not component-only).",
+        "All routes under #/admin/* require Admin. Non-admin gets redirected to #/triage with an Access Denied toast/banner (no admin components mounted, no flash).",
+        "Role downgrade (admin -> reviewer/analyst) forces navigation to #/triage and tears down admin UI + admin state."
+      ]
+    },
+    {
+      "name": "Exclusive route rendering + teardown",
+      "requirements": [
+        "Ensure each route mounts exactly one primary page shell. No append/portal patterns that keep previous route UI mounted.",
+        "On route change, unmount previous page tree; confirm no leftover admin nodes in DOM when leaving admin routes."
+      ]
+    },
+    {
+      "name": "Admin Console IA (single page, tabbed)",
+      "requirements": [
+        "Move ALL admin-only sections into ONE Admin Console route: #/admin",
+        "Tabs: Governance, Config, Inspector(JSON), Standardizer, Patch Console, Evidence",
+        "Remove any admin sections currently rendered inside Triage/Grid/RowReview, even behind role conditionals."
+      ]
+    },
+    {
+      "name": "Loader is a drawer, not a page",
+      "requirements": [
+        "Default landing route is #/triage",
+        "Topbar 'Load Data' opens a slide-over drawer/modal; it does NOT navigate away from triage.",
+        "In dev/demo mode only: auto-load sample dataset on first run so triage is populated; Loader lets you replace it."
+      ]
+    },
+    {
+      "name": "Operator surfaces stay operator-simple",
+      "requirements": [
+        "Analyst/Reviewer see only: Triage, Grid, Row Review",
+        "No Standardizer controls, no Config Inspector controls, no debug/test buttons on those surfaces.",
+        "Reviewer can optionally have read-only Inspector(JSON) but only if you can guarantee no write controls render."
+      ]
+    }
+  ],
+  "acceptance_tests": [
+    "As Analyst: navigating to #/admin never shows admin UI; immediate redirect to #/triage.",
+    "As Reviewer: Triage/Grid/RowReview contain zero admin widgets; no standardizer buttons.",
+    "As Admin: Admin Console tabs render; leaving admin route removes admin nodes from DOM.",
+    "Loader opens as drawer from Triage; URL stays #/triage."
+  ],
+  "deliverable": "Commit with clear diff + CHANGELOG entry. No refactors unrelated to routing/render boundaries unless required."
+}

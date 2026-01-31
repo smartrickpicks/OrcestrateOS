@@ -1,4 +1,4 @@
-# Kiwi Semantic Control Board (v1.3.0)
+# Kiwi Semantic Control Board (v1.3.1)
 
 ## Overview
 
@@ -65,6 +65,13 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 - Admin section markers: data-admin-section="true" for smoke test assertions
 - Dev-only assertion: console.error if admin sections found in triage DOM
 - Page labels: Explicit route context (PAGE: TRIAGE, PAGE: ADMIN-GOVERNANCE, etc)
+
+**v1.3.1 Pre-Staging Cleanup:**
+- Admin Console with tabbed interface: Governance, Config, Inspector, Standardizer, Patch Console, Evidence
+- Role downgrade triggers teardownAdminState() for clean state management
+- Loader as drawer-only (URL stays #/triage)
+- Analyst/Reviewer surfaces have zero admin widgets
+- Exclusive route rendering (no append/portal patterns)
 
 **What This Is NOT:**
 - Not a runtime system

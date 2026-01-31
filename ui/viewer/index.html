@@ -912,7 +912,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Triage</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.3.0</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.3.1</span>
           </div>
           <p class="page-desc">View summary cards, filter issues by severity/status, and drill down into records.</p>
           <div class="triage-session-info" id="triage-session-info" style="margin-top: 10px; font-size: 0.85em; color: #666;"></div>
@@ -961,7 +961,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Patch Studio</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH-STUDIO | BUILD v1.3.0</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH-STUDIO | BUILD v1.3.1</span>
           </div>
           <p class="page-desc">Select records, build rule patches, validate with preflight gate, and export.</p>
         </div>
@@ -1031,7 +1031,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Review</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: CONFIG-INSPECTOR | BUILD v1.3.0</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: CONFIG-INSPECTOR | BUILD v1.3.1</span>
           </div>
           <p class="page-desc">Inspect config deltas, compare artifact versions, and generate evidence summaries.</p>
         </div>
@@ -1097,16 +1097,28 @@
         <div id="review-evidence-summary" class="evidence-summary-panel"></div>
       </div><!-- end page-review -->
 
-      <!-- ADMIN PAGE (Governance) -->
+      <!-- ADMIN PAGE (Console) -->
       <div class="page" id="page-admin">
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <h2>Governance</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-GOVERNANCE | BUILD v1.3.0</span>
+            <h2>Admin Console</h2>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-CONSOLE | BUILD v1.3.1</span>
           </div>
-          <p class="page-desc">View audit trails, manage baselines, and configure governance policies.</p>
+          <p class="page-desc">Centralized admin tools for governance, config, standardization, and patch management.</p>
         </div>
 
+        <!-- Admin Console Tabs -->
+        <div class="admin-console-tabs" style="display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; padding-bottom: 0;">
+          <button class="admin-tab active" data-admin-tab="governance" onclick="switchAdminTab('governance')" style="padding: 10px 20px; background: #1976d2; color: white; border: none; border-radius: 6px 6px 0 0; cursor: pointer; font-weight: 600;">Governance</button>
+          <button class="admin-tab" data-admin-tab="config" onclick="switchAdminTab('config')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Config</button>
+          <button class="admin-tab" data-admin-tab="inspector" onclick="switchAdminTab('inspector')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Inspector</button>
+          <button class="admin-tab" data-admin-tab="standardizer" onclick="switchAdminTab('standardizer')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Standardizer</button>
+          <button class="admin-tab" data-admin-tab="patch-console" onclick="switchAdminTab('patch-console')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Patch Console</button>
+          <button class="admin-tab" data-admin-tab="evidence" onclick="switchAdminTab('evidence')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Evidence</button>
+        </div>
+
+        <!-- GOVERNANCE TAB -->
+        <div id="admin-tab-governance" class="admin-tab-panel" data-admin-section="true">
         <!-- Masterline / Artifact Registry Section -->
         <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -1135,8 +1147,28 @@
           <div id="workflow-map" class="workflow-map"></div>
         </div>
 
-        <!-- Patch Requests Console -->
+        <!-- Governance Notes -->
         <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Governance Notes</h3>
+          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Admin-level notes and overrides are recorded here.</p>
+          <div id="admin-governance-notes" style="background: #f9f9f9; padding: 15px; border-radius: 6px; min-height: 60px;">
+            <em style="color: #888;">No governance notes recorded.</em>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Quick Actions</h3>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="toolbar-btn" onclick="document.getElementById('btn-run')?.click()">Run Commands</button>
+            <button class="toolbar-btn" onclick="switchAdminTab('inspector')">Open Inspector</button>
+          </div>
+        </div>
+        </div><!-- end admin-tab-governance -->
+
+        <!-- PATCH CONSOLE TAB -->
+        <div id="admin-tab-patch-console" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Patch Requests Console <span class="info-icon" title="Manage patch requests through their lifecycle. Track requests from creation through Kiwi processing to final application.">&#9432;</span></h3>
           <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Track and manage patch requests. Batch export to Kiwi, import returns, and apply changes.</p>
           
@@ -1264,8 +1296,11 @@
             </div>
           </div>
         </div>
+        </div><!-- end admin-tab-patch-console -->
 
-        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <!-- EVIDENCE TAB -->
+        <div id="admin-tab-evidence" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Version & Baseline</h3>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
             <div>
@@ -1293,9 +1328,11 @@
             <div class="state-chip pending">Smoke Edge: Pending</div>
           </div>
         </div>
+        </div><!-- end admin-tab-evidence -->
 
-        <!-- Standardizer Section -->
-        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <!-- STANDARDIZER TAB -->
+        <div id="admin-tab-standardizer" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Standardizer <span class="info-icon" title="Convert CSV data into the canonical merged_dataset.json format. Headers are normalized and issues are tracked.">&#9432;</span></h3>
           <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Upload or paste CSV data to normalize into the standard merged dataset format.</p>
           
@@ -1335,22 +1372,55 @@
             </div>
           </div>
         </div>
+        </div><!-- end admin-tab-standardizer -->
 
-        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Governance Notes</h3>
-          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Admin-level notes and overrides are recorded here.</p>
-          <div id="admin-governance-notes" style="background: #f9f9f9; padding: 15px; border-radius: 6px; min-height: 60px;">
-            <em style="color: #888;">No governance notes recorded.</em>
+        <!-- CONFIG TAB -->
+        <div id="admin-tab-config" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Config + Patch Inspector</h3>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Load and compare config packs. View ruleset deltas between base and patch.</p>
+            <div class="config-inspector-row" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">
+              <div style="flex: 1; min-width: 200px;">
+                <label style="font-size: 0.8em; color: #666; display: block; margin-bottom: 4px;">Base Config Path</label>
+                <input type="text" id="admin-base-config-path" value="config/config_pack.base.json" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 0.85em;">
+              </div>
+              <div style="flex: 1; min-width: 200px;">
+                <label style="font-size: 0.8em; color: #666; display: block; margin-bottom: 4px;">Patch Path</label>
+                <input type="text" id="admin-patch-path" value="config/config_pack.example.patch.json" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 0.85em;">
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+              <button class="toolbar-btn" onclick="loadAdminConfig()">Load Config</button>
+              <button class="toolbar-btn" onclick="clearAdminConfig()">Clear</button>
+            </div>
+            <div id="admin-config-status" style="display: none; padding: 10px; border-radius: 6px; margin-bottom: 15px;"></div>
+            <div id="admin-config-results" style="display: none;">
+              <div id="admin-patch-summary" style="background: #e3f2fd; padding: 15px; border-radius: 6px; margin-bottom: 15px;"></div>
+              <div id="admin-ruleset-delta" style="background: #263238; color: #eceff1; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 0.8em; max-height: 300px; overflow-y: auto;"></div>
+            </div>
           </div>
-        </div>
+        </div><!-- end admin-tab-config -->
 
-        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Quick Actions</h3>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="toolbar-btn" onclick="document.getElementById('btn-run')?.click()">Run Commands</button>
-            <button class="toolbar-btn" onclick="document.getElementById('config-inspector-toggle')?.click()">Open Config Inspector</button>
+        <!-- INSPECTOR TAB -->
+        <div id="admin-tab-inspector" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">JSON Inspector</h3>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">View raw JSON data for current session artifacts.</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+              <button class="toolbar-btn" onclick="inspectJSON('sf_packet')">SF Packet</button>
+              <button class="toolbar-btn" onclick="inspectJSON('base_config')">Base Config</button>
+              <button class="toolbar-btn" onclick="inspectJSON('patch_config')">Patch Config</button>
+              <button class="toolbar-btn" onclick="inspectJSON('dataset')">Dataset</button>
+            </div>
+            <div id="admin-json-inspector" style="background: #263238; color: #eceff1; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 0.75em; max-height: 400px; overflow-y: auto; white-space: pre-wrap;">
+              <em style="color: #888;">Select an artifact to inspect...</em>
+            </div>
+            <div style="margin-top: 10px;">
+              <button class="toolbar-btn" onclick="copyInspectorJSON()">Copy JSON</button>
+            </div>
           </div>
-        </div>
+        </div><!-- end admin-tab-inspector -->
+
       </div><!-- end page-admin -->
 
     </main><!-- end main-content -->
@@ -4663,11 +4733,20 @@
       // For pages needing data, we still show the page but with empty state
       // No hard redirect - triage handles its own empty state with "Load Data" CTA
       
+      // Parse admin tab from route (e.g., admin/standardizer -> tab=standardizer)
+      var adminTab = null;
+      if (page.startsWith('admin/')) {
+        var parts = page.split('/');
+        page = 'admin';
+        adminTab = parts[1] || 'governance';
+      }
+      
       // RBAC route guards with toast notification
       if (page === 'admin' && currentMode !== 'admin') {
         console.log('[Navigate] Admin page requires admin mode, redirecting to triage');
         showToast('Admin only - switch to Admin role to access this page', 'warning');
         page = 'triage'; // Redirect to triage instead of returning
+        adminTab = null;
       }
       if (page === 'review' && currentMode !== 'reviewer' && currentMode !== 'admin') {
         console.log('[Navigate] Review page requires reviewer/admin mode');
@@ -4724,7 +4803,17 @@
         }
       }
       
-      window.location.hash = '#/' + page;
+      // If navigating to admin with a specific tab, switch to it
+      if (page === 'admin' && adminTab) {
+        switchAdminTab(adminTab);
+      }
+      
+      // Update hash (include tab for admin deep-links)
+      if (page === 'admin' && adminTab && adminTab !== 'governance') {
+        window.location.hash = '#/admin/' + adminTab;
+      } else {
+        window.location.hash = '#/' + page;
+      }
     }
     
     function recoverNavigation() {
@@ -4752,12 +4841,19 @@
         appLayout.classList.add(`mode-${mode}`);
       }
       
+      // If downgrading from admin mode, teardown admin state
+      if (mode !== 'admin') {
+        teardownAdminState();
+      }
+      
       // If on admin page but not admin mode, redirect to triage
       if (window.location.hash.includes('admin') && mode !== 'admin') {
+        showToast('Role changed - returning to Triage', 'info');
         navigateTo('triage');
       }
       // If on review page but not reviewer or admin mode, redirect to triage
       if (window.location.hash.includes('review') && mode === 'analyst') {
+        showToast('Role changed - returning to Triage', 'info');
         navigateTo('triage');
       }
       
@@ -4779,6 +4875,48 @@
       admElements.forEach(el => {
         el.classList.toggle('mode-hidden', mode !== 'admin');
       });
+    }
+
+    // Admin Console Tab Switching
+    var currentAdminTab = 'governance';
+    function switchAdminTab(tabName) {
+      const tabs = ['governance', 'config', 'inspector', 'standardizer', 'patch-console', 'evidence'];
+      if (!tabs.includes(tabName)) tabName = 'governance';
+      currentAdminTab = tabName;
+      
+      // Hide all tab panels
+      document.querySelectorAll('.admin-tab-panel').forEach(panel => {
+        panel.style.display = 'none';
+      });
+      
+      // Show selected tab panel
+      const targetPanel = document.getElementById('admin-tab-' + tabName);
+      if (targetPanel) {
+        targetPanel.style.display = 'block';
+      }
+      
+      // Update tab button styles
+      document.querySelectorAll('.admin-tab').forEach(btn => {
+        if (btn.dataset.adminTab === tabName) {
+          btn.style.background = '#1976d2';
+          btn.style.color = 'white';
+          btn.style.fontWeight = '600';
+        } else {
+          btn.style.background = '#f5f5f5';
+          btn.style.color = '#666';
+          btn.style.fontWeight = 'normal';
+        }
+      });
+      
+      console.log('[Admin] Switched to tab:', tabName);
+    }
+
+    // Teardown admin state when leaving admin mode
+    function teardownAdminState() {
+      // Reset admin tab to default
+      currentAdminTab = 'governance';
+      // Clear any admin-specific temp state
+      console.log('[Admin] Tearing down admin state');
     }
 
     function updateUIForDataState() {

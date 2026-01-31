@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## Version: v1.3.1
+Date: 2026-01-31
+
+### Changed (Pre-Staging Cleanup)
+
+- Admin Console Tabbed Interface
+  - Consolidated all admin sections into single Admin Console page with 6 tabs
+  - Tabs: Governance, Config, Inspector, Standardizer, Patch Console, Evidence
+  - Tab switching via switchAdminTab() function
+  - Deep-linkable tabs within admin route
+
+- Router-Level RBAC Guards
+  - Role downgrade (admin -> analyst/reviewer) triggers teardownAdminState()
+  - Admin state cleared when leaving admin mode
+  - Toast notification on role-based redirects
+
+- Exclusive Route Rendering
+  - Each route mounts exactly one page shell
+  - Admin tab panels hidden/shown, not appended
+  - Verified no admin nodes in DOM when on triage
+
+- Loader as Drawer
+  - Load Data opens drawer from topbar, URL stays #/triage
+  - Demo mode auto-loads sample dataset on first run
+
+- Operator Surface Purity
+  - Analyst/Reviewer see only: Triage, Patch Studio (no admin widgets)
+  - Standardizer, Workflow Map, Config Inspector admin-only via tabs
+
+### Build
+- Version bumped to v1.3.1 across all pages
+
+---
+
 ## Version: v1.3.0
 Date: 2026-01-30
 
