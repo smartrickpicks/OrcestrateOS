@@ -1,0 +1,432 @@
+You are a repo-writing agent. You have filesystem + git access inside this Replit workspace.
+
+Repo context:
+	•	Repo: smartrickpicks/kiwi-semantic-control
+	•	Branch: main
+	•	Docs root: /docs
+	•	Goal: create the missing documentation files (docs-only change).
+
+Constraints
+	•	Do NOT change existing docs unless explicitly told.
+	•	Create missing directories as needed.
+	•	Output must be deterministic and offline-first aligned (no runtime/network claims).
+
+Task
+	1.	Ensure directories exist:
+
+	•	docs/ui/views/
+
+	2.	Create these 4 files with the exact contents below (overwrite if exists):
+
+File 1: docs/AUDIT_LOG.md
+
+# AUDIT_LOG — Offline, Append-Only Evidence Ledger
+
+Contract: This document defines the governance contract for the read-only audit and evidence log used by Orchestrate OS (Semantic Control Board). It specifies event types, deterministic schema, ordering, and UI rendering requirements. It does not describe implementation code, services, or runtime hooks.
+
+## Scope
+- Read-only, append-only ledger of human-governed events and attached evidence.
+- Offline-first: all entries are materialized through human action and stored within repository-bound assets.
+- Deterministic: schema, ordering, and normalization are fully specified to enable reproducible views and verifiable digests.
+- Governance-only: navigation surfaces never mutate state; only governed views can own gates and author gate events.
+
+## Non-Goals
+- No runtime webhooks, background listeners, or mutation endpoints.
+- No implicit transitions or auto-review.
+- No external identity or transport guarantees beyond what is recorded in the ledger.
+
+## Core Principles
+- Append-only: past entries are never edited; corrections are represented as new events that reference prior entries.
+- Human authority: all semantic decisions (e.g., patches, state marks) are attributed to a role and actor and must cite evidence.
+- Determinism: canonical field order, value normalization, and sort rules are defined and must be followed.
+- Evidence first: every consequential decision should link to concrete anchors (e.g., PDF highlights) and be replayable in the UI.
+
+## Event Model
+Each entry in the audit log is an Event with the following invariant fields:
+- event_id: globally unique stable identifier (string). Example: ULID or UUIDv4 rendered lowercase.
+- event_seq: monotonically increasing integer scoped to the `record_id`. Starts at 1 with the first event for a record; gaps are not reused.
+- occurred_at: UTC timestamp in ISO-8601 with Z suffix. Example: 2026-02-01T12:34:56Z
+- captured_at: UTC timestamp in ISO-8601 with Z suffix documenting when the event was recorded into the ledger.
+- record_id: stable identifier of the governed record (string).
+- dataset_id: stable identifier of the dataset containing the record (string). Optional for cross-cutting events.
+- patch_id: identifier of the patch when present (string, optional).
+- actor.handle: free-form actor label (string, may be pseudonymous or local handle).
+- actor.role: one of [Analyst, Verifier, Admin].
+- view: originating view (string). Examples: load_data_view, single_row_review_view, verifier_review_view, admin_approval_view, record_inspection_view.
+- event_type: see Event Types below (string enum).
+- payload: event-specific, deterministic object (see Payload Contracts).
+- evidence: zero or more evidence anchors (array; see Evidence Anchors).
+
+### Event Types
+- LOADED: data was loaded into the system through the governed loader (copy-only ingestion). Origin: load_data_view.
+- VIEWED: a record was opened in a governed inspection view. Origin: any read-only view.
+- PATCH_DRAFTED: an Analyst authored an initial patch delta (no submission yet). Origin: single_row_review_view (patch panel).
+- PATCH_SUBMITTED: an Analyst submitted a patch for verification. Origin: single_row_review_view. This does not change review state.
+- REVIEW_REQUESTED: explicit request for verification on a record or patch. Origin: single_row_review_view.
+- NOTE_ADDED: a structured note or comment was added. Origin: any governed view.
+- FLAG_ADDED: a flag was set with category and rationale. Origin: single_row_review_view or verifier_review_view.
+- FLAG_CLEARED: a previously set flag was cleared with rationale. Origin: verifier_review_view or admin_approval_view.
+- STATE_MARKED: review state was marked to a target state by a governed gate. Origin: verifier_review_view or admin_approval_view only.
+- EVIDENCE_ATTACHED: evidence anchors were added to an existing entry or patch. Origin: single_row_review_view or verifier_review_view.
+- EXPORT_GENERATED: a deterministic export or snapshot was generated. Origin: record_inspection_view or admin_approval_view.
+
+Review States (for STATE_MARKED): one of [To Do, Needs Review, Flagged, Blocked, Finalized].
+
+## Deterministic Event Schema (Canonical Order)
+Field order is fixed for canonical serialization and hashing:
+1. event_id (string)
+2. event_seq (integer)
+3. occurred_at (ISO-8601 UTC Z)
+4. captured_at (ISO-8601 UTC Z)
+5. record_id (string)
+6. dataset_id (string | null)
+7. patch_id (string | null)
+8. actor.handle (string)
+9. actor.role (Analyst | Verifier | Admin)
+10. view (string)
+11. event_type (enum)
+12. payload (object; see below)
+13. evidence (array of Evidence Anchors)
+
+Normalization rules:
+- Strings are trimmed; internal whitespace normalized to single spaces where applicable.
+- Enums are case-sensitive and must match exactly.
+- Arrays are ordered as specified (e.g., `changes` in a patch must be stable-sorted by `path`).
+- Null values are explicit; omitted fields are not allowed.
+
+## Payload Contracts (by event_type)
+LOADED payload fields (canonical order):
+- file_path (string; repository-relative path)
+- file_format (string; csv | xlsx)
+- sheet_name (string | null; xlsx only)
+- row_count (integer)
+- column_count (integer)
+- headers (array of strings)
+- source_checksum (string; hex digest of original file bytes)
+
+VIEWED payload fields:
+- context (string; e.g., "record", "patch", "audit")
+
+PATCH_DRAFTED payload fields:
+- patch_id (string)
+- changes (array of change objects; stable-sorted by `path`)
+  - For each change: path (JSON Pointer), before (scalar | object | array | null), after (scalar | object | array | null), rationale (string)
+
+PATCH_SUBMITTED payload fields:
+- patch_id (string)
+- submission_notes (string)
+
+REVIEW_REQUESTED payload fields:
+- target (string; "record" | "patch")
+- patch_id (string | null)
+- reason (string)
+
+NOTE_ADDED payload fields:
+- category (string)
+- text (string)
+
+FLAG_ADDED payload fields:
+- category (string)
+- severity (string; info | warning | error | critical)
+- rationale (string)
+
+FLAG_CLEARED payload fields:
+- category (string)
+- rationale (string)
+
+STATE_MARKED payload fields:
+- from_state (enum; Review States)
+- to_state (enum; Review States)
+- gate_view (string; must be verifier_review_view or admin_approval_view)
+- rationale (string)
+
+EVIDENCE_ATTACHED payload fields:
+- anchor_group_id (string)
+- purpose (string)
+
+EXPORT_GENERATED payload fields:
+- export_path (string; repository-relative)
+- export_format (string)
+- rationale (string)
+
+## Evidence Anchors
+Each evidence entry is a deterministic anchor that the UI can resolve:
+- anchor_id (string; unique within the record)
+- doc_path (string; repository-relative path to source, e.g., a PDF)
+- page_index (integer; zero-based)
+- text_snippet (string; excerpt used to locate the highlight)
+- bbox (array of 4 numbers; [x, y, w, h] in normalized page coordinates 0..1)
+- selector (string; optional alternative selector like a hash of the snippet)
+
+Evidence arrays are ordered by anchor_id ascending. All anchors must be resolvable offline.
+
+## Ordering & Deterministic Digest
+- Primary sort: event_seq ascending within a record.
+- Tie-break: event_id lexicographic ascending (should not occur in practice).
+- Canonical digest (for verification): SHA-256 over the canonical serialization (field order as above, UTF-8, LF newlines, normalized whitespace). The digest is not an event field in the schema; if stored, it must be placed in an external verification file.
+
+## UI Rendering Requirements
+- Presentation: vertical timeline grouped by record; event icon by type; badge for review state in STATE_MARKED entries.
+- Filtering: by event_type, actor.role, view, review state transitions, presence of evidence.
+- Evidence: each evidence anchor must be clickable to open the document viewer at the specified page and highlight the bbox. Opening evidence is read-only.
+- Patch context: PATCH_* events must display the number of changes and allow expanding a read-only diff; no editing from the audit view.
+- Gate provenance: STATE_MARKED events must display the gate_view value and rationale.
+- No mutation controls: no approve, promote, or mark actions are available in the audit view.
+
+## Review State Rules (for compatibility)
+- Allowed states: To Do, Needs Review, Flagged, Blocked, Finalized.
+- Navigation surfaces never perform state transitions.
+- Only governed views (verifier_review_view, admin_approval_view) may emit STATE_MARKED.
+
+## Redaction & Privacy
+- Redactions are represented as new PATCH_* events; original entries remain intact.
+- If a snippet contains sensitive text, the text_snippet may be replaced by a deterministic placeholder while preserving selector and bbox.
+
+## Data Residency
+- All file paths are repository-relative and must resolve under docs_root or designated data directories.
+- No external URLs are required to render or verify the audit log.
+
+File 2: docs/ui/views/load_data_view.md
+
+# Load Data View — Governed Loader UX (Modal)
+
+Contract: This document defines the governed, offline-first Loader experience. It specifies UI placement, allowed inputs, deterministic behaviors, audit requirements, and role semantics. It does not define implementation code or runtime ingestion services.
+
+## Placement & Access
+- Entry: Sidebar item "Load Data". Selecting it opens a modal dialog; no full-screen route.
+- Modal: blocks background interaction until dismissed; ESC to close.
+- Roles: Analysts and Admins may initiate loads. Verifiers may view the modal in read-only preview mode.
+
+## Supported Inputs & Parity
+- Accepted file types: CSV and Excel (.xlsx).
+- Parity statement:
+  - CSV and Excel receive identical validation and mapping flows.
+  - For Excel, each worksheet is treated as a logical dataset; the user selects one worksheet per load operation.
+  - No formula evaluation; values are treated as static cell contents.
+
+## Copy-Only Ingestion
+- The loader performs copy-only ingestion: source files are copied into repository-bound storage (e.g., under a data or docs-adjacent directory) without mutation.
+- No external services, no network calls, no runtime hooks.
+- A normalization plan is presented before confirmation (headers, column count, detected types), but the source bytes remain unchanged.
+
+## Deterministic Defaults
+- Header detection: user chooses one of [Has header row, No header row]. Default: Has header row.
+- Column normalization: spaces trimmed, internal whitespace collapsed, consistent casing (e.g., snake_case) applied to headers if the user opts in.
+- Null handling: empty cells normalized to null.
+- Date handling: values are ingested as strings; no implicit timezone or format conversion.
+
+## Initial Review State
+- All records created via this view are initialized with Review State: "To Do".
+- The view must not emit state transitions. No auto-review, no implicit promotion.
+
+## Audit Requirements
+Upon successful confirmation, the loader must emit exactly one LOADED event per dataset with payload fields:
+- file_path (repository-relative)
+- file_format (csv | xlsx)
+- sheet_name (xlsx only; otherwise null)
+- row_count, column_count
+- headers (array of strings)
+- source_checksum (hex digest of source file bytes)
+
+Additionally, the view must emit one VIEWED event when the modal is opened (context: "record" or "dataset") for traceability.
+
+## User Flow (Modal)
+1) Select Source
+- Upload or select a repository-relative file path.
+- For Excel, select worksheet from a dropdown list populated offline.
+
+2) Validate & Preview
+- Show first N rows in a read-only preview grid.
+- Controls:
+  - Header row toggle (Has header row / No header row).
+  - Column normalization (optional, opt-in) with a non-destructive preview.
+
+3) Mapping (Optional)
+- Read-only display of proposed field names and types; no irreversible transformations.
+
+4) Load Plan Summary
+- Deterministic summary: dataset_id, estimated record count, detected headers, checksum, and initial review state (To Do).
+- Button labels: "Confirm Load" (primary), "Cancel" (secondary).
+
+5) Confirmation
+- On confirm, copy the source file into the repository location and append the LOADED event. Do not perform any review state transition.
+
+## Error States (Display Only)
+- Non-parsable file: render error banner; no partial commit; audit a VIEWED event only.
+- Header mismatch: present a clear message and allow toggling header detection; no auto-fix.
+
+## Read-Only Guarantees
+- The loader does not edit the source file content.
+- The loader does not create or modify patches.
+- No gates are present in this view.
+
+## Accessibility & Ergonomics
+- Keyboard navigation for file selection and preview table.
+- Clear labeling of CSV/Excel parity and copy-only behavior.
+- Visible badge in the summary indicating: "Initial Review State: To Do".
+
+File 3: docs/ui/views/all_data_grid_view.md
+
+# All Data Grid View — Bulk Inspection (Read-Only)
+
+Contract: This document defines the bulk inspection grid. It is read-only and provides navigation to record-level inspection without permitting edits, gates, or transitions.
+
+## Purpose
+- Provide a scalable, filterable, and sortable overview of all records.
+- Surface critical indicators (system-derived vs user-modified, flags, warnings, blocked status) at a glance.
+- Route operators into the Single Row Review view for detailed work.
+
+## Read-Only Guarantees
+- No cell editing, no inline patching, no state transitions.
+- No gates are present in this view; navigation surfaces never perform state transitions.
+
+## Visual Indicators
+Per row, the grid must display:
+- Review State badge: one of [To Do, Needs Review, Flagged, Blocked, Finalized].
+- Modification marker:
+  - System-derived: fields with values populated by baseline ingestion (no user deltas) are shown with a neutral indicator.
+  - User-modified: fields with pending or applied patches show a distinct indicator (e.g., blue dot or pencil icon) and a count of deltas.
+- Flags & warnings:
+  - Flag icon with severity (info, warning, error, critical) and count.
+  - Blocked indicator if any active block condition is present.
+- Evidence presence: small paperclip icon with count of evidence anchors.
+
+## Columns (Minimum Set)
+- record_id (string)
+- dataset_id (string)
+- review_state (badge)
+- flags (count + highest severity)
+- warnings (count)
+- modified_fields (count)
+- last_event_at (timestamp from audit log)
+
+Additional columns may be added if purely informational and read-only.
+
+## Sorting & Filtering
+- Sortable by any visible column; default sort by last_event_at desc.
+- Filters: review_state, flags.severity, dataset_id, modified_fields > 0, text search across record_id and key fields.
+
+## Navigation
+- Row click opens Single Row Review for that record in a new governed route.
+- Deep links: the grid may display links to evidence counts that route to Single Row Review with the evidence panel pre-opened.
+- No other destinations (e.g., no direct links to approval or promotion views).
+
+## Empty & Error States
+- Empty results: display guidance to load data (link opens Load Data modal) or adjust filters.
+- Error fetching display data: show read-only error banner; do not offer retry that would imply runtime execution.
+
+## Performance & Offline Behavior
+- Pagination is deterministic; page size is fixed or user-selectable from a small set of options.
+- All rows are derived from repository-bound data; no network lookups.
+
+## Accessibility & Ergonomics
+- Keyboard accessible row focus and navigation.
+- Clear legend for indicators (system-derived, user-modified, flags, blocked).
+- Tooltips reveal counts and short explanations; never perform actions.
+
+File 4: docs/ui/views/single_row_review_view.md
+
+# Single Row Review View — Authoritative, Per-Record Inspection
+
+Contract: This document defines the record-level inspection surface. It supports evidence-backed analysis and patch authoring by Analysts while remaining read-only for Verifier/Admin with respect to gates and review state transitions.
+
+## Purpose
+- Provide authoritative, per-record context: baseline values, deltas, flags, evidence, and audit trail.
+- Enable Analysts to author structured patches (deltas) with explicit rationale and evidence anchoring.
+- Maintain strict separation of duties: no direct Review State transitions from this view.
+
+## Roles & Permissions
+- Analyst:
+  - May edit the patch panel to create or update deltas.
+  - May save a draft and submit for verification; this emits PATCH_DRAFTED and/or PATCH_SUBMITTED and REVIEW_REQUESTED audit events.
+  - May add or clear flags with rationale (FLAG_ADDED / FLAG_CLEARED).
+- Verifier/Admin:
+  - Read-only in this view (inspect baseline, deltas, evidence, and audit log).
+  - Gate decisions (STATE_MARKED) occur only in their dedicated governed views (verifier_review_view, admin_approval_view).
+
+## Layout (High-Level)
+- Left pane: Field inspector
+  - Shows fields in a deterministic order (e.g., schema order), each with indicators:
+    - System-derived (neutral icon)
+    - User-modified (delta icon)
+    - Flagged (flag icon with severity)
+  - Field row affordances (read-only for Verifier/Admin): expand to see baseline, proposed value, and field audit subset.
+- Right pane: Patch editor panel (Analyst-only interactive)
+  - Structured editor following WHEN / THEN / BECAUSE pattern.
+  - Action buttons: Save Draft (emits PATCH_DRAFTED), Submit for Review (emits PATCH_SUBMITTED + REVIEW_REQUESTED). No state transition occurs here.
+- Bottom or drawer: Evidence viewer (embedded PDF and anchors)
+  - Inline PDF viewer with highlight overlay.
+  - Evidence list with anchors; selection syncs to current highlight.
+
+## Field-Level Indicators (Deterministic)
+For each field:
+- state: system_derived | user_modified | flagged
+- delta_count: integer (0 for system_derived)
+- evidence_count: integer for anchors referencing this field
+- last_event_at: timestamp from audit
+
+## Patch Editor Contract (WHEN / THEN / BECAUSE)
+- WHEN: preconditions or context that define applicability (free-form text or tags; stored in the patch rationale).
+- THEN: one or more changes (deltas) specified as:
+  - path: JSON Pointer locating the field
+  - before: original value (may be null)
+  - after: proposed value (may be null)
+- BECAUSE: evidence references:
+  - anchors: array of anchor_id values that must exist in the evidence list
+  - rationale: short, plain-language justification
+
+Patch editor emits deterministic events:
+- Save Draft → PATCH_DRAFTED with payload { patch_id, changes[], rationale }.
+- Submit for Review → PATCH_SUBMITTED with payload { patch_id, submission_notes } and REVIEW_REQUESTED { target: "patch", patch_id, reason }.
+
+## Embedded PDF Viewer & Highlights
+- The viewer must be read-only and offline.
+- Evidence anchors define the page and bbox to highlight.
+- Click-through mapping:
+  - Clicking a field with an associated evidence anchor scrolls the viewer to the anchor's page and highlights the bbox.
+  - Selecting a highlight focuses the corresponding field in the inspector pane.
+
+## Audit Integration
+- Opening this view emits a VIEWED event (context: "record").
+- All patch authoring emits the appropriate PATCH_* events and EVIDENCE_ATTACHED when anchors are added.
+- No STATE_MARKED events originate from this view.
+
+## Flags & Warnings
+- Analysts can add or clear flags (FLAG_ADDED / FLAG_CLEARED) with category, severity (info | warning | error | critical), and rationale.
+- Block conditions are displayed but cannot be resolved here.
+
+## Navigation
+- From All Data Grid → Single Row Review (this view).
+- From this view:
+  - Open Audit Log detail (read-only overlay or linked panel).
+  - Navigate to governed gating views (verifier_review_view, admin_approval_view) via explicit links that do not perform transitions themselves.
+
+## Read-Only & Gate Separation
+- No approve, promote, or finalize actions are available in this view.
+- Review State transitions are owned exclusively by governed gate views.
+
+## Accessibility & Ergonomics
+- Keyboard shortcuts:
+  - Up/Down: move between fields
+  - Enter: expand/collapse field details
+  - Ctrl/Cmd+S: Save Draft
+  - Ctrl/Cmd+Enter: Submit for Review
+- Clear legends for indicators and evidence.
+- Deterministic ordering and stable scroll positions to aid verification.
+
+	3.	After writing files:
+
+	•	Run ls -la docs/ui/views
+	•	Run git status
+	•	Show the file list of newly created docs.
+
+	4.	Commit and push:
+
+	•	Commit message: docs: add audit log + missing view contracts (docs-only)
+	•	Push to main (or if direct push is blocked, create branch docs/missing-view-contracts and open a PR).
+
+	5.	Return:
+
+	•	The commit SHA (or PR URL), and the final git status.
+	•	Do not claim success without showing the concrete output from git commands.
+
