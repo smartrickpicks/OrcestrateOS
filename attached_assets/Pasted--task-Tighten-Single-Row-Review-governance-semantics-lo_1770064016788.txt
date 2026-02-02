@@ -1,0 +1,47 @@
+{
+  "task": "Tighten Single Row Review governance semantics: lock canonical field ordering and patch draft/request naming without adding runtime services. Update UI + docs to match.",
+  "priority": "P0",
+  "decisions": {
+    "field_order": "schema_order_with_fallback",
+    "fallback_order": "alphabetical",
+    "patch_list_labeling": "status_based"
+  },
+  "changes": [
+    {
+      "file": "ui/viewer/index.html",
+      "instructions": [
+        "Field Inspector ordering: implement schema-based ordering if a schema/order array exists; otherwise fallback to alphabetical.",
+        "If schema order is not yet available, add a local-only stub schema order array (small) with a clear comment: 'V2: replace with real schema map'.",
+        "Patch list labeling: show section title 'Patch Drafts' for Draft status items and 'Patch Requests' for Submitted items OR a single title 'Patches' with status badges (Draft/Submitted).",
+        "Ensure 'Submit Patch Request' changes patch status to 'Submitted' (local-only UI state) and does not affect Review State.",
+        "Do not add any new navigation side effects beyond existing grid row click routing."
+      ]
+    },
+    {
+      "file": "docs/ui/views/single_row_review_view.md",
+      "instructions": [
+        "Update the Field Inspector section to explicitly define the canonical field ordering rule:",
+        "- 'Primary: schema order (deterministic)'",
+        "- 'Fallback: alphabetical for unknown fields'",
+        "Update Patch panel wording to reflect status-based labeling and that Submit sets patch status to Submitted (not Review State)."
+      ]
+    }
+  ],
+  "verification": {
+    "commands_to_run": [
+      "grep -R \"Queue\\|Submit to Queue\\|Load Data\\|Loader\\|Record Inspection\\|Reviewer Hub\" -n ui/viewer/index.html docs/ui/views/single_row_review_view.md || true"
+    ],
+    "expected_results": [
+      "No forbidden terms",
+      "Docs describe field order exactly matching UI"
+    ]
+  },
+  "deliverable": {
+    "include": [
+      "Files changed",
+      "Before/after snippets for field order + patch list sections",
+      "Suggested commit message"
+    ],
+    "suggested_commit_message": "chore(ui/docs): lock SRR field order + patch status semantics"
+  }
+}

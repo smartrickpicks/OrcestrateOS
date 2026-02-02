@@ -25,7 +25,10 @@ Contract: This document defines the record-level inspection surface. It supports
 - Open Audit Log button (read-only link)
 
 ### Left Panel: Field Inspector
-- Shows fields in deterministic order (alphabetical by default, schema order when available)
+- **Field Ordering Rule (canonical):**
+  - Primary: Schema order (deterministic, from `SRR_SCHEMA_ORDER`)
+  - Fallback: Alphabetical for unknown fields not in schema
+  - V2: Schema order will load from `config/schema.json`
 - Per-field indicators:
   - System-derived (S badge, neutral)
   - User-modified (Δ badge, delta)
@@ -46,9 +49,11 @@ Contract: This document defines the record-level inspection surface. It supports
   - **Justification** (helper alias: BECAUSE) — Why this change is correct
   - **Repro** (no alias) — Steps to reproduce
 - Patch Request section:
+  - Title: **Patches** with status badge (Draft or Submitted)
   - Proposed changes list (path/before/after)
-  - Buttons: **Save Patch Draft**, **Submit Patch Request**
-  - No Review State transitions occur here
+  - **Save Patch Draft**: Saves Evidence Pack locally, status remains Draft
+  - **Submit Patch Request**: Sets patch status to Submitted (local UI state only)
+  - Note: Submit updates patch status, **not** Review State. Review State transitions occur only in governed gate views.
 
 ## Field-Level Indicators (Deterministic)
 For each field:

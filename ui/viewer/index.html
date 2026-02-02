@@ -382,7 +382,11 @@
     .srr-evidence-textarea { width: 100%; min-height: 70px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85em; font-family: inherit; resize: vertical; }
     .srr-evidence-textarea:focus { border-color: #1565c0; outline: none; }
     .srr-patch-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid #e0e0e0; }
-    .srr-patch-list { background: #f9f9f9; border-radius: 6px; max-height: 120px; overflow-y: auto; margin-bottom: 12px; }
+    .srr-patch-list { background: #f9f9f9; border-radius: 6px; max-height: 150px; overflow-y: auto; margin-bottom: 12px; }
+    .srr-patch-header { padding: 8px 10px; font-weight: 600; font-size: 0.85em; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+    .srr-patch-status { font-size: 0.75em; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+    .srr-patch-status.draft { background: #fff3e0; color: #e65100; }
+    .srr-patch-status.submitted { background: #e3f2fd; color: #1565c0; }
     .srr-patch-item { padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 0.8em; }
     .srr-patch-item:last-child { border-bottom: none; }
     .srr-patch-path { font-family: 'Courier New', monospace; color: #7b1fa2; }
@@ -6070,8 +6074,21 @@
       docPage: 1,
       docTotalPages: 1,
       zoom: 1,
-      patchDraft: { observation: '', expected: '', justification: '', repro: '', changes: [] }
+      patchDraft: { observation: '', expected: '', justification: '', repro: '', changes: [], status: 'Draft' }
     };
+    
+    // V2: Replace with real schema map from config/schema.json
+    // Canonical field order for Field Inspector (schema_order_with_fallback)
+    var SRR_SCHEMA_ORDER = [
+      'contract_key',
+      'file_name',
+      'file_url',
+      'subtype',
+      'status',
+      'notes',
+      'artist',
+      'label'
+    ];
 
     function openRowReviewDrawer(rowId) {
       // Find record by contract_key or index
@@ -6135,10 +6152,30 @@
         return;
       }
       
-      // Get all keys except internal ones, sort alphabetically for determinism
-      var keys = Object.keys(record).filter(function(k) {
+      // Canonical field ordering: schema order (primary), alphabetical fallback (secondary)
+      var allKeys = Object.keys(record).filter(function(k) {
         return !k.startsWith('_');
-      }).sort();
+      });
+      
+      // Partition into schema-ordered and unknown fields
+      var schemaKeys = [];
+      var unknownKeys = [];
+      allKeys.forEach(function(k) {
+        if (SRR_SCHEMA_ORDER.indexOf(k) >= 0) {
+          schemaKeys.push(k);
+        } else {
+          unknownKeys.push(k);
+        }
+      });
+      
+      // Sort schema keys by schema order, unknown keys alphabetically
+      schemaKeys.sort(function(a, b) {
+        return SRR_SCHEMA_ORDER.indexOf(a) - SRR_SCHEMA_ORDER.indexOf(b);
+      });
+      unknownKeys.sort();
+      
+      // Final order: schema fields first, then unknown fields
+      var keys = schemaKeys.concat(unknownKeys);
       
       document.getElementById('srr-field-count').textContent = keys.length + ' fields';
       
@@ -6179,13 +6216,20 @@
     function renderSrrPatchList() {
       var container = document.getElementById('srr-patch-list');
       var changes = srrState.patchDraft.changes || [];
+      var patchStatus = srrState.patchDraft.status || 'Draft';
       
       if (changes.length === 0) {
         container.innerHTML = '<div class="srr-empty-state" style="padding: 12px;">No changes proposed yet</div>';
         return;
       }
       
-      var html = changes.map(function(c, idx) {
+      // Status-based badge styling
+      var statusBadge = patchStatus === 'Submitted' 
+        ? '<span class="srr-patch-status submitted">Submitted</span>'
+        : '<span class="srr-patch-status draft">Draft</span>';
+      
+      var html = '<div class="srr-patch-header">Patches ' + statusBadge + '</div>';
+      html += changes.map(function(c, idx) {
         return '<div class="srr-patch-item">' +
           '<div class="srr-patch-path">' + (c.path || 'field') + '</div>' +
           '<div class="srr-patch-change">' +
@@ -6245,6 +6289,10 @@
         showToast('Please fill in Observation and Expected blocks', 'warning');
         return;
       }
+      
+      // Set patch status to Submitted (does NOT affect Review State)
+      srrState.patchDraft.status = 'Submitted';
+      renderSrrPatchList();
       
       // Emit audit events (stub)
       console.log('[SRR] PATCH_SUBMITTED:', srrState.patchDraft);
