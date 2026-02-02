@@ -1,0 +1,98 @@
+{
+  "task_name": "Brand Lock: Insert Orchestrate OS Logo + Rename Dashboard Surfaces",
+  "context": {
+    "product_name": "Orchestrate OS",
+    "primary_surface": "Semantic Control Board",
+    "logo_asset": {
+      "filename": "orchestrate-os-logo.png",
+      "expected_path": "assets/brand/orchestrate-os-logo.png"
+    },
+    "constraints": [
+      "Governance-only UI (no homepage metaphors)",
+      "Logo is informational, not navigational",
+      "No new runtime behavior changes",
+      "Docs and UI must remain terminology-locked"
+    ]
+  },
+  "ui_changes": [
+    {
+      "area": "Global App Header",
+      "instructions": [
+        "Insert the Orchestrate OS logo (icon + text lockup) in the top-left of the header",
+        "Display text label: 'Orchestrate OS'",
+        "Optional small subtitle beneath or beside: 'Semantic Control Board'",
+        "Clicking the logo must NOT navigate to a home page (at most, soft reset to Triage)"
+      ]
+    },
+    {
+      "area": "Browser / Tab Title",
+      "instructions": [
+        "Set document title to: 'Orchestrate OS — Semantic Control Board'"
+      ]
+    },
+    {
+      "area": "Sidebar Header",
+      "instructions": [
+        "Add logo icon only (no text) at top of sidebar",
+        "Add hover tooltip: 'Orchestrate OS'",
+        "Do not add navigation behavior"
+      ]
+    }
+  ],
+  "copy_updates": [
+    {
+      "replace": "Dashboard",
+      "with": "Triage",
+      "scope": "UI labels only (do not rename files)"
+    }
+  ],
+  "documentation_updates": [
+    {
+      "file": "docs/ui/ui_principles.md",
+      "add_section": {
+        "title": "Product Identity",
+        "content": [
+          "- Product name: Orchestrate OS",
+          "- Primary surface: Semantic Control Board",
+          "- Logo usage:",
+          "  - Logo is informational, not navigational",
+          "  - No homepage metaphor",
+          "  - Clicking logo does not trigger state changes"
+        ]
+      }
+    },
+    {
+      "file": "docs/overview.md",
+      "instructions": [
+        "Ensure Orchestrate OS is the canonical product name",
+        "Ensure 'Semantic Control Board' is used consistently for the UI surface"
+      ]
+    },
+    {
+      "file": "docs/INDEX.md",
+      "instructions": [
+        "Verify branding references are consistent with 'Orchestrate OS'",
+        "No new entries required unless branding section is added"
+      ]
+    }
+  ],
+  "asset_handling": [
+    "Move uploaded logo file to assets/brand/orchestrate-os-logo.png",
+    "Do not inline base64",
+    "Do not hotlink external assets"
+  ],
+  "acceptance_criteria": [
+    "Logo visible in header and sidebar",
+    "No navigation triggered by logo click",
+    "Browser title updated correctly",
+    "Docs reflect Orchestrate OS branding",
+    "No terminology drift (Review States, Data Source, Single Row Review unchanged)",
+    "All smoke tests pass"
+  ],
+  "explicit_non_goals": [
+    "No auth screen changes",
+    "No new routes",
+    "No layout reflows outside header/sidebar",
+    "No changes to Data Source, Grid, or Review logic"
+  ]
+}

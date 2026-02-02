@@ -2,6 +2,16 @@
 
 > Human authority governs all semantic decisions. The UI exists to surface evidence, enable decisions, and record audit trails.
 
+## Product Identity
+
+- **Product name**: Orchestrate OS
+- **Primary surface**: Semantic Control Board
+- **Logo usage**:
+  - Logo is informational, not navigational
+  - No homepage metaphor
+  - Clicking logo does not trigger state changes
+- **Asset location**: `assets/brand/orchestrate-os-logo.png`
+
 ## Core Principles
 
 ### 1. Evidence-First Display
