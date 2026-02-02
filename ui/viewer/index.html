@@ -716,17 +716,6 @@
       </div>
       <div class="nav-menu">
         <div class="nav-section">
-          <div class="nav-section-header">Data</div>
-          <a class="nav-item" id="nav-data-source" href="#" onclick="openDataSourcePanel(); return false;">
-            <span class="nav-icon">📁</span>
-            <span class="nav-label">Data Source</span>
-            <span class="nav-count" id="data-status-chip">--</span>
-          </a>
-        </div>
-
-        <div class="nav-divider"></div>
-
-        <div class="nav-section">
           <div class="nav-section-header">Views</div>
           <a class="nav-item" data-page="grid" href="#/grid">
             <span class="nav-icon">📊</span>
@@ -767,10 +756,6 @@
 
         <div class="nav-section">
           <div class="nav-section-header">Session</div>
-          <a class="nav-item" id="nav-data-sources" href="#" onclick="openDataSourceDrawer(); return false;">
-            <span class="nav-icon">📁</span>
-            <span class="nav-label">Data Sources</span>
-          </a>
           <a class="nav-item" id="nav-evidence-status" href="#" onclick="showEvidenceStatus(); return false;">
             <span class="nav-icon">📊</span>
             <span class="nav-label">Evidence Status</span>
@@ -826,6 +811,13 @@
           <span class="session-meta" id="session-meta"></span>
         </div>
         <div class="top-toolbar-right">
+          <!-- Global Search Stub (V2) -->
+          <div style="position: relative;">
+            <input type="text" id="global-search-input" placeholder="Search agreements, accounts, record IDs…" 
+                   style="padding: 8px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85em; width: 280px;" 
+                   onkeydown="handleGlobalSearchKeydown(event)">
+            <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.7em; color: #888; pointer-events: none;">⌘K</span>
+          </div>
           <button class="top-toolbar-btn configure-btn admin-only-content" id="btn-configure" title="Configure Kiwi settings and defaults">Configure</button>
           <button class="top-toolbar-btn admin-only-content" id="btn-ruleset">Ruleset</button>
           <button class="top-toolbar-btn" id="btn-compare">Compare</button>
@@ -1565,60 +1557,115 @@
         <button class="drawer-close" onclick="closeDataSourceDrawer()">&times;</button>
       </div>
       <div class="drawer-body">
+        <!-- Empty State Section (shown when no data loaded) -->
+        <div id="data-source-empty-section" style="display: none;">
+          <div style="text-align: center; padding: 30px 20px; color: #888; background: #f5f5f5; border-radius: 8px; border: 2px dashed #ddd; margin-bottom: 20px;">
+            <div style="font-size: 2em; margin-bottom: 10px;">📁</div>
+            <div style="font-weight: 600; color: #333; margin-bottom: 8px;">No Active Dataset</div>
+            <p style="margin: 0; font-size: 0.9em;">Upload a file or load sample data to get started.</p>
+          </div>
+          
+          <!-- In-panel Upload Section -->
+          <div style="margin-bottom: 20px;">
+            <div style="font-weight: 600; margin-bottom: 10px; color: #333;">Upload Data</div>
+            <div class="drop-zone" id="drawer-upload-dropzone" onclick="document.getElementById('drawer-upload-file').click();">
+              <div class="drop-zone-icon">📄</div>
+              <div class="drop-zone-text">Drop CSV or XLSX file here or click to browse</div>
+              <div class="drop-zone-file" id="drawer-upload-file-name" style="display: none;"></div>
+            </div>
+            <input type="file" id="drawer-upload-file" accept=".csv,.xlsx" style="display: none;" onchange="handleDrawerFileUpload(this)">
+            <div style="font-size: 0.75em; color: #888; margin-top: 6px;">Supported: CSV, XLSX files</div>
+          </div>
+          
+          <!-- Sample Dataset Button -->
+          <div style="margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px; border: 1px dashed #ccc;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 1.2em;">📦</span>
+              <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 0.9em;">Demo Dataset</div>
+                <div style="font-size: 0.8em; color: #666;">5 sample contracts for testing</div>
+              </div>
+              <button class="modal-btn modal-btn-primary" onclick="loadSampleDataset(true); closeDataSourceDrawer();">Load Sample</button>
+            </div>
+          </div>
+          
+          <!-- Connect Stubs (Empty State) -->
+          <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+            <div style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase; margin-bottom: 12px;">Connect External Source</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <button class="modal-btn modal-btn-secondary" disabled style="width: 100%; opacity: 0.5; justify-content: flex-start; display: flex; align-items: center; gap: 8px;">
+                <span>📁</span> Connect Google Drive <span style="margin-left: auto; font-size: 0.75em; background: #e0e0e0; padding: 2px 6px; border-radius: 4px;">V2</span>
+              </button>
+              <button class="modal-btn modal-btn-secondary" disabled style="width: 100%; opacity: 0.5; justify-content: flex-start; display: flex; align-items: center; gap: 8px;">
+                <span>🔌</span> Connect MCP Source <span style="margin-left: auto; font-size: 0.75em; background: #e0e0e0; padding: 2px 6px; border-radius: 4px;">V2</span>
+              </button>
+            </div>
+            <p style="color: #888; font-size: 0.75em; margin-top: 8px;">Coming in V2</p>
+          </div>
+        </div>
+        
         <!-- Active Dataset Section (shown when data loaded) -->
-        <div id="data-source-active-section" style="display: none; margin-bottom: 20px; padding: 16px; background: #e8f5e9; border: 1px solid #81c784; border-radius: 8px;">
+        <div id="data-source-active-section" style="display: none; margin-bottom: 20px; padding: 16px; background: #e8f5e9; border: 1px solid #81c784; border-radius: 8px; position: relative;">
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
             <span style="font-size: 1.5em;">📊</span>
             <div style="flex: 1;">
               <div style="font-weight: 600; font-size: 0.95em; color: #2e7d32;">Active Dataset</div>
               <div id="active-dataset-name" style="font-size: 0.85em; color: #555; font-family: monospace;">—</div>
             </div>
-            <span style="background: #4caf50; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600;">ACTIVE</span>
+            <div class="active-badge-container" style="position: relative;">
+              <span id="active-badge" class="active-badge-hover" style="background: #4caf50; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; cursor: pointer;" onclick="toggleDisconnectMenu(event)">ACTIVE ▾</span>
+              <div id="disconnect-menu" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 4px; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; min-width: 140px;">
+                <button onclick="disconnectActiveDataset()" style="display: block; width: 100%; padding: 10px 14px; background: none; border: none; text-align: left; cursor: pointer; font-size: 0.85em; color: #c62828;" onmouseover="this.style.background='#ffebee'" onmouseout="this.style.background='none'">
+                  ⏏ Disconnect
+                </button>
+              </div>
+            </div>
           </div>
           <div id="active-dataset-meta" style="font-size: 0.8em; color: #666;">
             <!-- Row count, loaded timestamp -->
           </div>
         </div>
         
-        <!-- Switch Data Source Button (shown when multiple datasets) -->
-        <div id="data-source-switch-section" style="display: none; margin-bottom: 20px;">
-          <button class="modal-btn modal-btn-primary" onclick="closeDataSourceDrawer(); openLoaderModal();" style="width: 100%;">
-            <span style="margin-right: 6px;">🔄</span> Switch Data Source
-          </button>
-          <p style="color: #888; font-size: 0.8em; margin-top: 8px; text-align: center;">Switching datasets does not alter Review States</p>
+        <!-- Upload New Section (shown when active dataset exists) -->
+        <div id="data-source-upload-section" style="display: none; margin-bottom: 20px;">
+          <div style="font-weight: 600; margin-bottom: 10px; color: #333;">Upload New Dataset</div>
+          <div class="drop-zone" id="drawer-upload-new-dropzone" onclick="document.getElementById('drawer-upload-new-file').click();">
+            <div class="drop-zone-icon">📄</div>
+            <div class="drop-zone-text">Drop CSV or XLSX file here</div>
+          </div>
+          <input type="file" id="drawer-upload-new-file" accept=".csv,.xlsx" style="display: none;" onchange="handleDrawerFileUpload(this)">
+          <p style="color: #888; font-size: 0.75em; margin-top: 6px;">Uploading rotates current active dataset to Saved.</p>
         </div>
         
-        <!-- Library Header -->
-        <div style="margin-bottom: 15px; border-top: 1px solid #e0e0e0; padding-top: 15px;">
+        <!-- Library Header (shown when saved datasets exist) -->
+        <div id="data-source-library-header" style="display: none; margin-bottom: 15px; border-top: 1px solid #e0e0e0; padding-top: 15px;">
           <div style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase; margin-bottom: 8px;">Saved Datasets</div>
-          <p style="color: #888; font-size: 0.85em; margin: 0;">Select a dataset to make it active.</p>
+          <p style="color: #888; font-size: 0.85em; margin: 0;">Select a dataset to make it active. Active dataset cannot be deleted.</p>
         </div>
         
         <!-- Dataset List -->
         <div id="upload-library-list" style="display: flex; flex-direction: column; gap: 12px;">
           <!-- Populated by renderUploadLibrary() -->
-          <div class="upload-library-empty" style="text-align: center; padding: 40px 20px; color: #888; background: #f5f5f5; border-radius: 8px; border: 2px dashed #ddd;">
-            <div style="font-size: 2em; margin-bottom: 10px;">📁</div>
-            <p style="margin: 0 0 15px;">No datasets saved yet.</p>
-            <button class="modal-btn modal-btn-primary" onclick="closeDataSourceDrawer(); openLoaderModal();">Add Data Source</button>
-          </div>
         </div>
         
-        <!-- Connector Section (hidden by default in V1) -->
-        <div id="data-source-connector-section" style="display: none; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
-          <div style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase; margin-bottom: 8px;">Connect External Source</div>
-          <button class="modal-btn modal-btn-secondary" disabled style="width: 100%; opacity: 0.5;">
-            <span style="margin-right: 6px;">🔌</span> Connect (Coming Soon)
-          </button>
+        <!-- Connector Section (always visible, stubs disabled) -->
+        <div id="data-source-connector-section" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+          <div style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase; margin-bottom: 12px;">Connect External Source</div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button class="modal-btn modal-btn-secondary" disabled style="width: 100%; opacity: 0.5; justify-content: flex-start; display: flex; align-items: center; gap: 8px;">
+              <span>📁</span> Connect Google Drive <span style="margin-left: auto; font-size: 0.75em; background: #e0e0e0; padding: 2px 6px; border-radius: 4px;">V2</span>
+            </button>
+            <button class="modal-btn modal-btn-secondary" disabled style="width: 100%; opacity: 0.5; justify-content: flex-start; display: flex; align-items: center; gap: 8px;">
+              <span>🔌</span> Connect MCP Source <span style="margin-left: auto; font-size: 0.75em; background: #e0e0e0; padding: 2px 6px; border-radius: 4px;">V2</span>
+            </button>
+          </div>
+          <p style="color: #888; font-size: 0.75em; margin-top: 8px;">Coming in V2</p>
         </div>
         
         <div class="modal-status" id="data-source-status" style="display: none; margin-top: 15px;"></div>
       </div>
       <div class="drawer-footer">
-        <div style="display: flex; gap: 10px; justify-content: space-between;">
-          <button class="modal-btn modal-btn-primary" onclick="closeDataSourceDrawer(); openLoaderModal();">Add Data Source</button>
-          <button class="modal-btn modal-btn-secondary" onclick="closeDataSourceDrawer()">Close</button>
-        </div>
+        <button class="modal-btn modal-btn-secondary" onclick="closeDataSourceDrawer()" style="width: 100%;">Close</button>
       </div>
     </div>
   </div>
@@ -1644,11 +1691,11 @@
           <div style="font-weight: 600; margin-bottom: 10px; color: #333;">Upload / Add Data Source</div>
           <div class="drop-zone" id="loader-drawer-dropzone" onclick="document.getElementById('loader-drawer-file').click();">
             <div class="drop-zone-icon">📄</div>
-            <div class="drop-zone-text">Drop CSV file here or click to browse</div>
+            <div class="drop-zone-text">Drop CSV or XLSX file here or click to browse</div>
             <div class="drop-zone-file" id="loader-drawer-file-name" style="display: none;"></div>
           </div>
-          <input type="file" id="loader-drawer-file" accept=".csv" style="display: none;">
-          <div style="font-size: 0.75em; color: #888; margin-top: 6px;">Supported: CSV files only</div>
+          <input type="file" id="loader-drawer-file" accept=".csv,.xlsx" style="display: none;">
+          <div style="font-size: 0.75em; color: #888; margin-top: 6px;">Supported: CSV, XLSX files</div>
         </div>
         
         <!-- Sample Dataset Section -->
@@ -5232,19 +5279,9 @@
     };
     
     // Data Source Panel - unified entry point (v1.5.0)
-    // Shows contextual UI based on current data state
+    // Always opens right-side panel (never modal) - per spec
     function openDataSourcePanel() {
-      var uploadLibrary = getUploadLibrary();
-      var hasData = dataLoaded && sessionState.status === 'loaded';
-      var hasMultiple = uploadLibrary && uploadLibrary.length > 1;
-      
-      if (!hasData && (!uploadLibrary || uploadLibrary.length === 0)) {
-        // State A: No Data - show loader modal with CTA
-        openLoaderModal();
-      } else {
-        // State B (Active) or C (Multiple) - show Data Sources drawer
-        openDataSourceDrawer();
-      }
+      openDataSourceDrawer();
     }
     
     // Data Sources Drawer functions (now Upload Library)
@@ -5264,23 +5301,25 @@
       if (!drawer) return;
       
       var headerEl = drawer.querySelector('.drawer-header h3');
+      var emptySection = document.getElementById('data-source-empty-section');
       var activeSection = document.getElementById('data-source-active-section');
-      var switchSection = document.getElementById('data-source-switch-section');
-      var connectorSection = document.getElementById('data-source-connector-section');
+      var uploadSection = document.getElementById('data-source-upload-section');
+      var libraryHeader = document.getElementById('data-source-library-header');
       var uploadLibrary = getUploadLibrary();
       var count = uploadLibrary ? uploadLibrary.length : 0;
       var hasData = dataLoaded && sessionState.status === 'loaded';
       
       // Update header
       if (headerEl) {
-        if (count > 1) {
-          headerEl.textContent = 'Data Sources (' + count + ')';
-        } else {
-          headerEl.textContent = 'Data Source';
-        }
+        headerEl.textContent = 'Data Source';
       }
       
-      // Show/hide active dataset section
+      // Show empty section when no data
+      if (emptySection) {
+        emptySection.style.display = hasData ? 'none' : 'block';
+      }
+      
+      // Show active dataset section when data loaded
       if (activeSection) {
         if (hasData) {
           activeSection.style.display = 'block';
@@ -5299,16 +5338,115 @@
         }
       }
       
-      // Show switch section if multiple datasets
-      if (switchSection) {
-        switchSection.style.display = (count > 1 && hasData) ? 'block' : 'none';
+      // Show upload section when active dataset exists
+      if (uploadSection) {
+        uploadSection.style.display = hasData ? 'block' : 'none';
       }
       
-      // Show connector section only if feature flag enabled
-      if (connectorSection) {
-        connectorSection.style.display = FEATURE_FLAGS.connectors_enabled ? 'block' : 'none';
+      // Show library header only when there are saved datasets (excluding active)
+      if (libraryHeader) {
+        libraryHeader.style.display = count > 0 ? 'block' : 'none';
+      }
+      
+      // Close disconnect menu
+      var disconnectMenu = document.getElementById('disconnect-menu');
+      if (disconnectMenu) disconnectMenu.style.display = 'none';
+    }
+    
+    // Toggle disconnect menu on ACTIVE badge click
+    function toggleDisconnectMenu(event) {
+      event.stopPropagation();
+      var menu = document.getElementById('disconnect-menu');
+      if (menu) {
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
       }
     }
+    
+    // Disconnect active dataset (move to Saved)
+    function disconnectActiveDataset() {
+      var menu = document.getElementById('disconnect-menu');
+      if (menu) menu.style.display = 'none';
+      
+      // Save current dataset to library before clearing
+      if (dataLoaded && sessionState.status === 'loaded') {
+        saveCurrentDatasetToLibrary();
+      }
+      
+      // Clear active dataset
+      dataLoaded = false;
+      sessionState.status = 'not_loaded';
+      sessionState.fileName = null;
+      sessionState.loadedAt = null;
+      sessionState.sourceType = null;
+      allData = { contractResults: [], fieldActions: [], issues: [], summary: {} };
+      workbook = { sheets: {}, order: [] };
+      localStorage.removeItem('activeDatasetId');
+      
+      // Update UI
+      updateDataSourceDrawerState();
+      renderUploadLibrary();
+      updateSessionUI();
+      updateQueueCounts();
+      showToast('Dataset disconnected', 'info');
+    }
+    
+    // Save current dataset to upload library
+    function saveCurrentDatasetToLibrary() {
+      var library = getUploadLibrary();
+      var entry = {
+        id: 'ds_' + Date.now(),
+        name: sessionState.fileName || 'Dataset',
+        type: sessionState.sourceType || 'unknown',
+        recordCount: allData.contractResults ? allData.contractResults.length : 0,
+        savedAt: new Date().toISOString(),
+        data: JSON.stringify(allData)
+      };
+      library.push(entry);
+      localStorage.setItem('upload_library_v1', JSON.stringify(library));
+    }
+    
+    // Handle file upload from drawer
+    function handleDrawerFileUpload(input) {
+      var file = input.files[0];
+      if (!file) return;
+      
+      var ext = file.name.split('.').pop().toLowerCase();
+      if (ext !== 'csv' && ext !== 'xlsx') {
+        showToast('Unsupported file type. Use CSV or XLSX.', 'error');
+        return;
+      }
+      
+      // If active dataset exists, rotate it to Saved
+      if (dataLoaded && sessionState.status === 'loaded') {
+        saveCurrentDatasetToLibrary();
+        showToast('Previous dataset moved to Saved', 'info');
+      }
+      
+      // Process the file
+      if (ext === 'csv') {
+        processCSVFile(file);
+      } else if (ext === 'xlsx') {
+        processXLSXFile(file);
+      }
+      
+      input.value = ''; // Reset input
+    }
+    
+    // Placeholder XLSX processing (V2 full implementation)
+    function processXLSXFile(file) {
+      showToast('XLSX support coming soon. Use CSV for now.', 'info');
+    }
+    
+    // Close disconnect menu when clicking elsewhere
+    document.addEventListener('click', function(e) {
+      var menu = document.getElementById('disconnect-menu');
+      if (menu && menu.style.display !== 'none') {
+        var badge = document.getElementById('active-badge');
+        if (!badge || !badge.contains(e.target)) {
+          menu.style.display = 'none';
+        }
+      }
+    });
     
     // Get stored datasets from localStorage
     function getUploadLibrary() {
@@ -6608,6 +6746,28 @@
       document.body.appendChild(toast);
       setTimeout(function() { toast.remove(); }, 3000);
     }
+    
+    // Global Search Stub (V2)
+    function handleGlobalSearchKeydown(event) {
+      if (event.key === 'Enter') {
+        var query = event.target.value.trim();
+        if (query) {
+          showToast('Search coming soon (V2)', 'info');
+        }
+      }
+    }
+    
+    // Global keyboard shortcut for search
+    document.addEventListener('keydown', function(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        var searchInput = document.getElementById('global-search-input');
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+    });
     
     function selectConfigFlowStage(stage) {
       masterEditMode = false;
@@ -9885,7 +10045,9 @@ Add any additional notes here.
             '<div style="display: flex; gap: 8px;">' +
               (isActive ? '' : '<button class="modal-btn modal-btn-primary" style="padding: 6px 12px; font-size: 0.85em;" onclick="activateDataset(\'' + entry.dataset_id + '\')">Activate</button>') +
               '<button class="modal-btn modal-btn-secondary" style="padding: 6px 12px; font-size: 0.85em;" onclick="duplicateDataset(\'' + entry.dataset_id + '\')">Duplicate</button>' +
-              '<button class="modal-btn" style="padding: 6px 12px; font-size: 0.85em; background: #ffebee; color: #c62828;" onclick="deleteDataset(\'' + entry.dataset_id + '\')">Delete</button>' +
+              (isActive ? 
+                '<button class="modal-btn" style="padding: 6px 12px; font-size: 0.85em; background: #e0e0e0; color: #999; cursor: not-allowed;" disabled title="Disconnect first.">Delete</button>' :
+                '<button class="modal-btn" style="padding: 6px 12px; font-size: 0.85em; background: #ffebee; color: #c62828;" onclick="deleteDataset(\'' + entry.dataset_id + '\')">Delete</button>') +
             '</div>' +
           '</div>' +
         '</div>';

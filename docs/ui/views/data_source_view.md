@@ -3,31 +3,50 @@
 Contract: This document defines the governed, offline-first Data Source experience. It specifies UI placement, allowed inputs, deterministic behaviors, switching states, audit requirements, and role semantics. It does not define implementation code or runtime ingestion services.
 
 ## Placement & Access
-- Entry: Sidebar item "Data Source" under the "Data" section.
-- Behavior: Opens contextual panel based on current state (see Data Source States below).
+- Entry: **Top quick-action bar only** ("Data Source" button). No sidebar nav item.
+- Behavior: Always opens the right-side panel regardless of data state.
 - Roles: Analysts and Admins may add or switch data sources. Verifiers may view in read-only preview mode.
 
 ## Data Source States (Deterministic)
 
-### State A: No Data
-- **Condition**: No data loaded AND no saved datasets in browser storage.
-- **Display**: Centered modal with "Add Data Source" CTA.
-- **Affordances**: Upload CSV, load demo dataset.
+### State A: No Data (Empty State)
+- **Condition**: No active dataset loaded.
+- **Display**: Right-side panel with:
+  - Empty state card: "No Active Dataset"
+  - In-panel upload dropzone (CSV/XLSX)
+  - Demo Dataset load button
+  - Connect stubs: "Connect Google Drive (V2)" disabled, "Connect MCP Source (V2)" disabled
+- **Affordances**: Upload CSV/XLSX, load demo dataset.
 
-### State B: Active (Single Dataset)
-- **Condition**: Data loaded, one dataset in session.
-- **Display**: Data Source drawer showing:
-  - Active Dataset card with name, row count, loaded timestamp, "ACTIVE" badge.
-  - "Add Data Source" button in footer.
-- **Affordances**: View active dataset metadata, add new data source.
+### State B: Active Dataset
+- **Condition**: Active dataset loaded.
+- **Display**: Right-side panel with:
+  - Active Dataset card with name, row count, loaded timestamp, "ACTIVE ▾" badge.
+  - ACTIVE badge has hover menu with "Disconnect" action.
+  - "Upload New Dataset" dropzone (uploading rotates previous active to Saved).
+  - Saved Datasets list (if any exist).
+  - Connect stubs (disabled, Coming in V2).
+- **Affordances**: View metadata, disconnect, upload new, select from Saved.
 
-### State C: Multiple Datasets
-- **Condition**: Data loaded, multiple datasets in browser storage.
-- **Display**: Data Source drawer showing:
-  - Active Dataset card (as in State B).
-  - "Switch Data Source" button with note: "Switching datasets does not alter Review States".
-  - Saved Datasets list with selection affordance.
-- **Affordances**: Switch between datasets, add new data source.
+## Active Dataset Constraints
+
+### Delete Protection
+- **Active dataset cannot be deleted.**
+- Delete button is disabled with tooltip: "Disconnect first."
+- User must Disconnect (via ACTIVE badge click menu) before deleting.
+
+### Disconnect Action
+- Location: Click menu on ACTIVE badge in Active Dataset card (click to reveal dropdown).
+- Behavior:
+  1. Move active dataset into Saved Datasets list.
+  2. Clear active dataset pointer (`activeDatasetId = null`).
+  3. Keep panel open; switch UI to empty/connect state.
+
+### Upload Rotation Rule
+- When uploading a new dataset while an active dataset exists:
+  1. Move previous active dataset into Saved Datasets.
+  2. Set new dataset as Active.
+- This prevents data loss while maintaining single-active invariant.
 
 ## Switching Datasets (V1 Contract)
 - Switching datasets **does not alter Review States**.
@@ -36,9 +55,12 @@ Contract: This document defines the governed, offline-first Data Source experien
 - Audit event: DATASET_SWITCHED (not STATE_MARKED).
 
 ## Connector Language (V1)
-- **V1 Default**: "Connect" feature is hidden by default (feature flag: `connectors_enabled: false`).
-- **UI Copy**: Use "Upload / Add Data Source" only.
-- **Future**: When `connectors_enabled: true`, show "Connect External Source" section with disabled state.
+- **V1 Default**: Connect stubs are always visible but disabled.
+- **Stub buttons**: 
+  - "Connect Google Drive" — disabled, badge: "V2"
+  - "Connect MCP Source" — disabled, badge: "V2"
+- **Label**: "Coming in V2" below the stubs.
+- **No feature flag gating**: Stubs are always visible to set expectations.
 
 ## Supported Inputs & Parity
 - Accepted file types: CSV and Excel (.xlsx).
@@ -77,27 +99,24 @@ Additionally:
 
 ## User Flow
 
-### Adding Data Source (Modal)
-1) **Select Source**
-   - Upload or select a repository-relative file path.
-   - For Excel, select worksheet from a dropdown list populated offline.
+### Adding Data Source (Panel — No Modal)
+1) **Click Data Source** button in top quick-action bar.
+2) **Panel opens** showing current state (empty or active).
+3) **Upload file** via dropzone or **Load Sample** via button.
+4) **Preview** first N rows in read-only grid.
+5) **Confirm Load** — copy source file, emit LOADED event, set as Active.
 
-2) **Validate & Preview**
-   - Show first N rows in a read-only preview grid.
-   - Controls: Header row toggle, column normalization (optional).
+### Switching Data Source (Panel)
+1) **Open Data Source** from top quick-action bar.
+2) **View Active Dataset** card with ACTIVE badge.
+3) **Select from Saved Datasets** list to switch.
+4) **Dataset Switched** — context updates, Review States preserved.
 
-3) **Load Plan Summary**
-   - Deterministic summary: dataset_id, estimated record count, detected headers, checksum, initial Review State (To Do).
-   - Button labels: "Confirm Load" (primary), "Cancel" (secondary).
-
-4) **Confirmation**
-   - On confirm, copy the source file and append the LOADED event. Do not perform any Review State transition.
-
-### Switching Data Source (Drawer)
-1) **Open Data Source** from sidebar.
-2) **View Active Dataset** card.
-3) **Select from Saved Datasets** or click "Switch Data Source".
-4) **Confirm Switch** (optional confirmation modal).
+### Disconnecting Active Dataset
+1) **Click ACTIVE badge** to reveal dropdown menu.
+2) **Click Disconnect** action.
+3) **Active moves to Saved** — UI transitions to empty state.
+4) **Panel stays open** for immediate next action.
 5) **Dataset Switched** — context updates, Review States preserved.
 
 ## Error States (Display Only)

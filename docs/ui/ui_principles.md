@@ -53,7 +53,7 @@ Gates are checkpoints that must be satisfied before proceeding. See [gate_view_m
 
 | Gate | Owning View | Required Evidence |
 |------|-------------|-------------------|
-| gate_parse | load_data | row_count, column_headers, parse_timestamp |
+| gate_parse | data_source | row_count, column_headers, parse_timestamp |
 | gate_preflight | patch_authoring_view | preflight_report, badge_summary (no fail) |
 | gate_evidence | patch_authoring_view | 4-block Evidence Pack complete (Observation, Expected, Justification, Repro) |
 | gate_verifier | verifier_review_view | review_notes, decision_status |
@@ -82,6 +82,21 @@ Gates are checkpoints that must be satisfied before proceeding. See [gate_view_m
 ### Agent Language
 - **Agent suggestion**: For optional AI assistance (never "system" when referring to agents)
 - **System-derived**: For deterministic computed values only
+
+## Global Search (V2 Stub)
+
+A search input is present in the top toolbar as a UX placeholder for future functionality.
+
+### Current Behavior (V1)
+- Input visible with placeholder: "Search agreements, accounts, record IDs…"
+- Keyboard shortcut hint: ⌘K / Ctrl+K
+- On Enter: Shows toast "Search coming soon (V2)"
+- No backend indexing, no network calls
+
+### Future Scope (V2)
+- Full-text search across loaded records
+- Filter by field (agreement, account, contract_key, file_url)
+- Results navigate to All Data Grid with filter applied
 
 ## Related Documents
 

@@ -1,0 +1,164 @@
+{
+  "agent": "replit",
+  "task_title": "Data Source UX v1 fix + global record search (stub) + docs sync",
+  "priority": "high",
+  "constraints": [
+    "Do NOT reintroduce modal flows for Data Source.",
+    "Do NOT add network calls (offline-only).",
+    "Active dataset cannot be deleted.",
+    "Search feature is STUBBED in UI only (no full implementation required unless trivial with existing in-memory data).",
+    "All UI label/term changes must be reflected in docs so Kiwi can verify terminology lock."
+  ],
+  "ui_ux_changes": {
+    "data_source_entrypoint": {
+      "remove_sidebar_item": true,
+      "keep_quick_action_bar_button": true,
+      "acceptance": [
+        "Left sidebar has no 'Data Source' nav item.",
+        "Top quick-action 'Data Source' button remains and is the only entry point."
+      ]
+    },
+    "data_source_panel": {
+      "panel_type": "right_side_panel",
+      "modal_usage": "forbidden",
+      "open_behavior": [
+        {
+          "when": "active_dataset_exists",
+          "do": [
+            "Open panel",
+            "Show Active Dataset card at top",
+            "Show Saved Datasets list below"
+          ]
+        },
+        {
+          "when": "no_active_dataset",
+          "do": [
+            "Open panel",
+            "Show empty state: 'No Active Dataset'",
+            "Show in-panel Upload (CSV/XLSX)",
+            "Show Connect stubs: 'Connect Google Drive (V2)' disabled, 'Connect MCP Source (V2)' disabled with 'Coming in V2'"
+          ]
+        }
+      ],
+      "acceptance": [
+        "Clicking quick-action always opens the same right-side panel.",
+        "No modal appears in any state.",
+        "Empty state is reachable and usable."
+      ]
+    },
+    "active_dataset_constraints": {
+      "delete_active_dataset": "disallow",
+      "delete_button_behavior_for_active": "disabled_with_tooltip",
+      "tooltip_text": "Disconnect first.",
+      "disconnect_action": {
+        "location": "hover_menu_on_ACTIVE_badge_or_active_card",
+        "action": [
+          "Move active dataset into Saved Datasets",
+          "Clear active dataset pointer (activeDatasetId = null)",
+          "Keep panel open and switch UI to empty/connect state"
+        ]
+      },
+      "upload_rotation_rule": {
+        "when": "upload_new_dataset_while_active_exists",
+        "action": [
+          "Move previous active dataset into Saved Datasets",
+          "Set new dataset as Active"
+        ]
+      },
+      "acceptance": [
+        "Active dataset cannot be deleted.",
+        "Disconnect is available via hover on ACTIVE.",
+        "Disconnect transitions to empty/connect state.",
+        "Uploading a new dataset rotates the previous active into Saved automatically."
+      ]
+    },
+    "file_type_support": {
+      "upload_accepts": [".csv", ".xlsx"],
+      "csv_behavior": {
+        "dataset_sheets": 1,
+        "default_sheet_name": "csv",
+        "notes": "All-Data Grid shows one sheet."
+      },
+      "xlsx_behavior": {
+        "dataset_sheets": "N (worksheets)",
+        "notes": "All-Data Grid supports switching between worksheets."
+      },
+      "acceptance": [
+        "CSV upload produces a usable dataset and renders in All-Data Grid.",
+        "XLSX upload produces multi-sheet dataset and All-Data Grid can switch sheets."
+      ]
+    },
+    "global_search_stub": {
+      "status": "stubbed",
+      "location": "top_bar_quick_actions_or_header",
+      "ui_elements": [
+        "Search input with placeholder: 'Search agreements, accounts, record IDs…'",
+        "Hotkey hint (optional): Cmd+K / Ctrl+K (stub only)"
+      ],
+      "behavior": {
+        "minimum": [
+          "Input accepts text",
+          "On Enter, show non-blocking toast or inline banner: 'Search coming soon (V2)'"
+        ],
+        "optional_if_trivial": [
+          "If in-memory records are already loaded, filter All-Data Grid by matching key fields (agreement file name, account name, contract key, file URL)."
+        ]
+      },
+      "scope_notes": [
+        "Do NOT add backend indexing or network search.",
+        "Do NOT change deterministic governance semantics.",
+        "This is a UX placeholder to reserve layout and future behavior."
+      ],
+      "acceptance": [
+        "Search input is visible in the UI.",
+        "Submitting a query shows 'coming soon' feedback.",
+        "No crashes; no network calls."
+      ]
+    }
+  },
+  "docs_updates_required": {
+    "must_update": [
+      "docs/overview.md",
+      "docs/ui/ui_principles.md",
+      "docs/ui/views/load_data_view.md",
+      "docs/ui/views/triage_view.md",
+      "docs/ui/views/all_data_grid_view.md",
+      "docs/ui/views/single_row_review_view.md",
+      "docs/INDEX.md"
+    ],
+    "doc_changes": [
+      {
+        "topic": "Data Source entrypoint",
+        "change": "Document that Data Source is accessed only via the top quick-action bar (not sidebar)."
+      },
+      {
+        "topic": "Panel state behavior",
+        "change": "Document the two Data Source panel states (active vs no active) and the removal of modal usage."
+      },
+      {
+        "topic": "Constraints",
+        "change": "Document active dataset deletion rules and the Disconnect action semantics."
+      },
+      {
+        "topic": "File type support",
+        "change": "Document CSV/XLSX support and multi-sheet behavior for XLSX in All-Data Grid."
+      },
+      {
+        "topic": "Global Search (stub)",
+        "change": "Add a 'Search (V2) — Stub' section describing the UI placeholder and intended future scope."
+      }
+    ],
+    "acceptance": [
+      "Docs reflect the new UI/UX behavior and labels.",
+      "No reintroduction of deprecated terms (Queues, Record Inspection, Apply Patch).",
+      "Kiwi should be able to verify terminology + surface names without drift."
+    ]
+  },
+  "deliverables": [
+    "UI changes implemented per spec",
+    "State logic updated to enforce constraints",
+    "CSV/XLSX verified (or implemented) with multi-sheet XLSX support",
+    "Docs updated to match UI/UX",
+    "Commit(s) prepared (do not claim push unless you provide verifiable GitHub URLs)"
+  ]
+}
