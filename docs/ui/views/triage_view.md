@@ -27,7 +27,7 @@
 | Click status card (navigate to filtered grid) | Yes | Yes | Yes |
 | Apply filters | Yes | Yes | Yes |
 | Click record row (open inspection) | Yes | Yes | Yes |
-| Open Loader | Yes | Yes | Yes |
+| Open Data Source | Yes | Yes | Yes |
 | Reset Session | Yes | Yes | Yes |
 
 ## Disallowed Actions
@@ -53,6 +53,7 @@ This view does not initiate state transitions. It is a navigation hub.
 
 ## Related Documents
 
+- [data_source_view.md](data_source_view.md) — Data Source panel
 - [single_row_review_view.md](single_row_review_view.md) — Single Row Review view
 - [ui_principles.md](../ui_principles.md) — UI principles
 - [analyst.md](../roles/analyst.md) — Analyst role permissions

@@ -30,13 +30,13 @@ Each entry in the audit log is an Event with the following invariant fields:
 - patch_id: identifier of the patch when present (string, optional).
 - actor.handle: free-form actor label (string, may be pseudonymous or local handle).
 - actor.role: one of [Analyst, Verifier, Admin].
-- view: originating view (string). Examples: load_data_view, single_row_review_view, verifier_review_view, admin_approval_view.
+- view: originating view (string). Examples: data_source_view, single_row_review_view, verifier_review_view, admin_approval_view.
 - event_type: see Event Types below (string enum).
 - payload: event-specific, deterministic object (see Payload Contracts).
 - evidence: zero or more evidence anchors (array; see Evidence Anchors).
 
 ### Event Types
-- LOADED: data was loaded into the system through the governed loader (copy-only ingestion). Origin: load_data_view.
+- LOADED: data was loaded into the system through the governed loader (copy-only ingestion). Origin: data_source_view.
 - VIEWED: a record was opened in a governed inspection view. Origin: any read-only view.
 - PATCH_DRAFTED: an Analyst authored an initial Patch Draft (no submission yet). Origin: single_row_review_view (Evidence Pack panel).
 - PATCH_SUBMITTED: an Analyst submitted a Patch Request for verification. Origin: single_row_review_view. This does not change Review State.

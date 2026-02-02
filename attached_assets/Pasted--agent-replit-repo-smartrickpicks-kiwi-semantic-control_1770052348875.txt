@@ -1,0 +1,107 @@
+{
+  "agent": "replit",
+  "repo": "smartrickpicks/kiwi-semantic-control",
+  "branch": "main",
+  "task_name": "docs: finalize Data Source terminology lock + doc gaps (post-kiwi audit)",
+  "scope": {
+    "docs_only": true,
+    "no_runtime_changes": true,
+    "no_ui_changes": true
+  },
+  "acceptance_criteria": [
+    "KIWI-DS-01 PASS: No 'load_data_view' references remain in AUDIT_LOG.md (use 'data_source_view')",
+    "KIWI-DS-06 PASS: triage_view.md uses 'Open Data Source' and links to data_source_view.md",
+    "KIWI-DS-03 PASS: data_source_view.md enumerates Saved dataset actions + constraints",
+    "KIWI-DS-05 PASS: all_data_grid_view.md includes XLSX workbook sheet selector note",
+    "No 'Queue' terminology reintroduced; keep 'Review States' canon",
+    "No 'All-Data Grid' hyphenation; keep 'All Data Grid'"
+  ],
+  "file_edits": [
+    {
+      "path": "docs/AUDIT_LOG.md",
+      "edits": [
+        {
+          "find": "Examples: load_data_view, single_row_review_view, verifier_review_view, admin_approval_view.",
+          "replace": "Examples: data_source_view, single_row_review_view, verifier_review_view, admin_approval_view."
+        },
+        {
+          "find": "Origin: load_data_view.",
+          "replace": "Origin: data_source_view."
+        }
+      ]
+    },
+    {
+      "path": "docs/ui/views/triage_view.md",
+      "edits": [
+        {
+          "find": "| Open Loader | Yes | Yes | Yes |",
+          "replace": "| Open Data Source | Yes | Yes | Yes |"
+        },
+        {
+          "insert_after_heading": "## Related Documents",
+          "insert_lines": [
+            "- [data_source_view.md](data_source_view.md) — Data Source panel"
+          ],
+          "dedupe_if_exists": true
+        }
+      ]
+    },
+    {
+      "path": "docs/ui/views/data_source_view.md",
+      "edits": [
+        {
+          "insert_after_heading": "### Saved Datasets",
+          "insert_lines": [
+            "",
+            "- Actions (per Saved dataset):",
+            "  - Activate — set as Active (rotates current Active to Saved)",
+            "  - Duplicate — create a copy under Saved",
+            "  - Delete — permanently remove (disabled for Active; only enabled for Saved)",
+            "- Constraints:",
+            "  - Delete is disabled when dataset is Active; use Disconnect first",
+            "  - Activate preserves Review States and evidence (context switch only)"
+          ],
+          "dedupe_if_exists": true
+        }
+      ]
+    },
+    {
+      "path": "docs/ui/views/all_data_grid_view.md",
+      "edits": [
+        {
+          "insert_before_heading": "## Navigation",
+          "insert_lines": [],
+          "note": "no-op (anchor for next insert)"
+        },
+        {
+          "insert_after_heading": "## Navigation",
+          "insert_lines": [
+            "- Workbook sheet selector (XLSX only):",
+            "  - If the active dataset is an Excel workbook, show a sheet selector.",
+            "  - Default to the first sheet; switching sheets updates the grid deterministically."
+          ],
+          "dedupe_if_exists": true
+        }
+      ]
+    }
+  ],
+  "post_edit_checks": [
+    {
+      "type": "grep_must_not_find",
+      "patterns": ["load_data_view", "Open Loader"]
+    },
+    {
+      "type": "grep_should_find",
+      "patterns": ["data_source_view", "Open Data Source", "Workbook sheet selector (XLSX only)"]
+    }
+  ],
+  "output_request": {
+    "return": [
+      "Exact changed file list",
+      "Unified diff for each file (or git status + git diff summary)",
+      "Suggested commit message (docs-only)",
+      "Do NOT claim push/PR unless you provide a verifiable URL"
+    ],
+    "suggested_commit_message": "docs(ui): finalize data source terminology lock + grid workbook note"
+  }
+}

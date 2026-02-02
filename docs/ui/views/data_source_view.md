@@ -25,6 +25,16 @@ Contract: This document defines the governed, offline-first Data Source experien
   3. Search stub (V2) — placeholder, shows toast on input
   4. Saved Datasets list (if any exist)
 - ACTIVE badge has click menu with "Disconnect" action.
+
+### Saved Datasets
+
+- Actions (per Saved dataset):
+  - Activate — set as Active (rotates current Active to Saved)
+  - Duplicate — create a copy under Saved
+  - Delete — permanently remove (disabled for Active; only enabled for Saved)
+- Constraints:
+  - Delete is disabled when dataset is Active; use Disconnect first
+  - Activate preserves Review States and evidence (context switch only)
 - Upload helper text: "Uploading rotates current active dataset to Saved."
 - **Affordances**: View metadata, disconnect, upload new, search (stub), select from Saved.
 

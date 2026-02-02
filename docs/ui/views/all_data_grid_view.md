@@ -38,6 +38,9 @@ Additional columns may be added if purely informational and read-only.
 - Filters: review_state, flags.severity, dataset_id, modified_fields > 0, text search across record_id and key fields.
 
 ## Navigation
+- Workbook sheet selector (XLSX only):
+  - If the active dataset is an Excel workbook, show a sheet selector.
+  - Default to the first sheet; switching sheets updates the grid deterministically.
 - Row click opens Single Row Review for that record in a new governed route.
 - Deep links: the grid may display links to evidence counts that route to Single Row Review with the evidence panel pre-opened.
 - No other destinations (e.g., no direct links to approval or promotion views).
