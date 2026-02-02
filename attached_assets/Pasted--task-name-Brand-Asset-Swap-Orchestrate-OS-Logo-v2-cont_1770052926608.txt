@@ -1,0 +1,64 @@
+{
+  "task_name": "Brand Asset Swap: Orchestrate OS Logo v2",
+  "context": {
+    "product_name": "Orchestrate OS",
+    "surface_name": "Semantic Control Board",
+    "logo_update": "Replace existing logo with new asset; adjust sizing only",
+    "new_logo_asset": {
+      "filename": "orchestrate-os-logo-v2.png",
+      "expected_path": "assets/brand/orchestrate-os-logo.png"
+    }
+  },
+  "constraints": [
+    "NO terminology changes",
+    "NO navigation changes",
+    "NO layout restructuring",
+    "NO behavior changes",
+    "ONLY logo asset + sizing tweaks"
+  ],
+  "ui_changes": [
+    {
+      "area": "Global Header",
+      "instructions": [
+        "Replace existing logo image source with the new uploaded logo",
+        "Increase logo visual prominence (target ~1.25x–1.5x current size)",
+        "Maintain text lockup: 'Orchestrate OS' + subtitle 'Semantic Control Board'",
+        "Ensure logo remains vertically aligned with header text",
+        "Do NOT add click navigation"
+      ]
+    },
+    {
+      "area": "Sidebar Header",
+      "instructions": [
+        "Replace existing sidebar logo with new asset",
+        "Increase size slightly while preserving sidebar spacing",
+        "Maintain tooltip: 'Orchestrate OS'",
+        "Do NOT add navigation behavior"
+      ]
+    }
+  ],
+  "asset_handling": [
+    "Overwrite existing file at assets/brand/orchestrate-os-logo.png",
+    "Do NOT change asset path references elsewhere",
+    "Do NOT inline image as base64",
+    "Ensure high-DPI scaling looks crisp"
+  ],
+  "documentation_policy": [
+    "Do NOT update documentation (branding already locked)",
+    "Docs should remain unchanged for this task"
+  ],
+  "acceptance_criteria": [
+    "New logo visibly larger and clearer in header",
+    "New logo visible in sidebar",
+    "No text, layout, or navigation regressions",
+    "No changes outside CSS/image references",
+    "Smoke tests pass"
+  ],
+  "explicit_non_goals": [
+    "No renaming",
+    "No color palette changes",
+    "No font changes",
+    "No spacing changes outside logo bounds",
+    "No additional UI polish"
+  ]
+}
