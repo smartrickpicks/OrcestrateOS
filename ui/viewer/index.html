@@ -6209,8 +6209,65 @@
       var selected = document.querySelector('.srr-field-item[data-field="' + fieldKey + '"]');
       if (selected) selected.classList.add('active');
       
-      // Future: scroll document viewer to related evidence anchor
+      srrState.selectedField = fieldKey;
+      
+      // Update document viewer highlight placeholder
+      srrUpdateViewerHighlight(fieldKey);
+      
+      // Update evidence anchors list
+      srrUpdateAnchorList(fieldKey);
+      
       console.log('[SRR] Selected field: ' + fieldKey);
+    }
+    
+    function srrUpdateViewerHighlight(fieldKey) {
+      var docFrame = document.getElementById('srr-doc-frame');
+      
+      // Remove existing overlays
+      docFrame.querySelectorAll('.srr-anchor-overlay').forEach(function(el) { el.remove(); });
+      
+      // If no field selected, show default state
+      if (!fieldKey) {
+        docFrame.innerHTML = '<div style="text-align: center;">' +
+          '<div style="font-size: 3em; margin-bottom: 10px;">📄</div>' +
+          '<div>No document attached</div>' +
+          '<div style="font-size: 0.85em; color: #999; margin-top: 8px;">PDF viewer stub — attach documents via Data Source</div>' +
+        '</div>';
+        return;
+      }
+      
+      // Show highlight placeholder for selected field
+      docFrame.innerHTML = '<div style="text-align: center;">' +
+        '<div style="font-size: 2.5em; margin-bottom: 10px;">🔍</div>' +
+        '<div style="font-weight: 600; color: #1565c0;">Viewing: ' + fieldKey + '</div>' +
+        '<div style="font-size: 0.85em; color: #666; margin-top: 8px;">Evidence anchor would appear here</div>' +
+        '<div style="margin-top: 16px; padding: 12px; background: rgba(21, 101, 192, 0.1); border: 2px dashed #1565c0; border-radius: 8px;">' +
+          '<div style="font-size: 0.8em; color: #1565c0;">📎 Anchor Placeholder</div>' +
+          '<div style="font-size: 0.75em; color: #666; margin-top: 4px;">Page 1, Bbox: [0.2, 0.3, 0.6, 0.1]</div>' +
+        '</div>' +
+      '</div>';
+    }
+    
+    function srrUpdateAnchorList(fieldKey) {
+      var container = document.getElementById('srr-anchor-list');
+      
+      if (!fieldKey) {
+        container.innerHTML = '<div style="font-size: 0.8em; font-weight: 600; color: #666; margin-bottom: 8px;">Evidence Anchors</div>' +
+          '<div class="srr-empty-state" style="padding: 10px;">No anchors defined</div>';
+        return;
+      }
+      
+      // Stub anchor for selected field
+      container.innerHTML = '<div style="font-size: 0.8em; font-weight: 600; color: #666; margin-bottom: 8px;">Evidence Anchors for: ' + fieldKey + '</div>' +
+        '<div class="srr-anchor-item" onclick="srrJumpToAnchor(\'' + fieldKey + '\', 0)">' +
+          '<div style="font-weight: 500;">' + fieldKey + ' — Source</div>' +
+          '<div style="font-size: 0.75em; color: #888;">Page 1 • Click to highlight</div>' +
+        '</div>';
+    }
+    
+    function srrJumpToAnchor(fieldKey, anchorIdx) {
+      console.log('[SRR] Jumping to anchor: ' + fieldKey + ', index: ' + anchorIdx);
+      showToast('Anchor navigation: ' + fieldKey, 'info');
     }
     
     function renderSrrPatchList() {
