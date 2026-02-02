@@ -1,0 +1,76 @@
+{
+  "task": "Sidebar header logo sizing: match Kiwi-style ratio (logo visually large, minimal padding), fix SVG whitespace, and lock layout tokens",
+  "goal_reference": "Kiwi header ratio: logo ~44px tall inside a 56px header; minimal padding; strong visual presence",
+  "assets": {
+    "logo_svg_path": "assets/brand/orchestrate-os-logo.svg"
+  },
+  "layout_tokens": {
+    "header_height_px": 56,
+    "header_padding_x_px": 16,
+    "header_padding_y_px": 10,
+    "logo_box_px": 44,
+    "logo_title_gap_px": 12
+  },
+  "required_changes": [
+    {
+      "id": "LOGO-01",
+      "title": "Hard-crop SVG so it can scale correctly",
+      "steps": [
+        "Open assets/brand/orchestrate-os-logo.svg",
+        "Fix the root <svg viewBox> so it tightly bounds the visible mark (remove internal whitespace)",
+        "If artwork is inside translated <g>, normalize transforms so the mark sits near (0,0) and update viewBox accordingly",
+        "Do NOT change colors/gradients; only geometry framing (viewBox/transforms)"
+      ],
+      "acceptance": [
+        "The viewBox numbers shrink materially (indicating crop worked)",
+        "The mark occupies most of the SVG bounds when viewed alone"
+      ]
+    },
+    {
+      "id": "LOGO-02",
+      "title": "Match Kiwi-style header ratio",
+      "steps": [
+        "Sidebar header remains height: 56px",
+        "Header container: display:flex; align-items:center; padding: 10px 16px;",
+        "Logo container fixed at 44x44",
+        "Render SVG at width:100%; height:100%; display:block;",
+        "Set preserveAspectRatio='xMidYMid meet' (switch to 'xMidYMid slice' only if meet still looks small after cropping)",
+        "Gap between logo and title stack: 12px",
+        "Ensure logo never overflows header height"
+      ],
+      "acceptance": [
+        "Logo is visually prominent, ~44px tall, not tiny",
+        "Title/subtitle alignment stays clean and consistent",
+        "No extra dead space/padding around the logo"
+      ]
+    },
+    {
+      "id": "LOGO-03",
+      "title": "Optional: allow bigger logo if needed (cap at 48px)",
+      "steps": [
+        "If after cropping the mark still looks small, increase logo container from 44 to 48px (still within 56px header)",
+        "If increased, reduce header vertical padding to 8px to avoid clipping"
+      ],
+      "acceptance": [
+        "Logo looks similar in ratio to the Kiwi example",
+        "No layout shift or clipping"
+      ]
+    },
+    {
+      "id": "DOC-01",
+      "title": "Update docs to lock branding + sizing rules",
+      "files": ["docs/ui/ui_principles.md"],
+      "steps": [
+        "Add a 'Branding: Sidebar Header' section",
+        "Document: header=56px, logo box=44px (or 48px max), padding=10px 16px, gap=12px",
+        "Document: SVG logos must be tight-cropped (viewBox must match visible mark bounds)"
+      ]
+    }
+  ],
+  "verification": [
+    "Visually compare to Kiwi-style ratio screenshot: logo should read as a primary brand mark, not an icon",
+    "Run smoke tests",
+    "No navigation behavior changes"
+  ],
+  "suggested_commit_message": "ui(brand): match sidebar header logo ratio + crop svg bounds"
+}

@@ -10,9 +10,19 @@
   - Logo is informational, not navigational
   - No homepage metaphor
   - Clicking logo does not trigger state changes
-- **Logo format**: SVG (canonical)
+- **Logo format**: SVG (canonical, tight-cropped viewBox)
 - **Asset location**: `assets/brand/orchestrate-os-logo.svg`
-- **Sidebar logo size**: 32–40px visual height (target: 36px)
+
+### Branding: Sidebar Header
+
+| Token | Value |
+|-------|-------|
+| Header height | 56px |
+| Logo box | 44px (max 48px) |
+| Header padding | 10px 16px |
+| Logo-title gap | 12px |
+
+**SVG requirement**: viewBox must tightly bound the visible mark (no internal whitespace).
 
 ## Core Principles
 
