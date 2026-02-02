@@ -8,7 +8,7 @@ This document maps doctrine gates from [Human-Agent-Workflow-V1.json](../specs/H
 
 | Gate ID | Gate Name | Owning View | Required Evidence | Failure Behavior |
 |---------|-----------|-------------|-------------------|------------------|
-| gate_parse | Dataset Parsed | load_data | row_count, column_headers, parse_timestamp | Block navigation to triage |
+| gate_parse | Dataset Parsed | data_source_view | row_count, column_headers, parse_timestamp | Block navigation to triage |
 | gate_preflight | Preflight Check | [patch_authoring_view](views/patch_authoring_view.md) | preflight_report, badge_summary (no fail) | Block submission |
 | gate_evidence | Evidence Pack | [patch_authoring_view](views/patch_authoring_view.md) | 4-block Evidence Pack complete (Observation, Expected, Justification, Repro) | Block submission |
 | gate_verifier | Verifier Decision | [verifier_review_view](views/verifier_review_view.md) | review_notes, decision_status | Patch remains Under_Review |
