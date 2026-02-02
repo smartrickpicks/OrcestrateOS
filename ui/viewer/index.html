@@ -5672,7 +5672,7 @@
         sessionState.source = 'file:' + file.name;
         
         updateUIForDataState();
-        closeDataDrawer();
+        closeDataSourceDrawer();
         showToast('CSV loaded: ' + records.length + ' records', 'success');
         navigateTo('grid');
       };
