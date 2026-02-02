@@ -38,8 +38,8 @@ See [INDEX.md](INDEX.md) for the complete table of contents.
 | [Verifier Review](ui/views/verifier_review_view.md) | Review surface for verifiers |
 | [Admin Approval](ui/views/admin_approval_view.md) | Final approval surface |
 | [Promotion](ui/views/promotion_view.md) | Baseline promotion and PR export |
-| [Load Data](ui/views/load_data_view.md) | Governed loader (modal) |
-| [All-Data Grid](ui/views/all_data_grid_view.md) | Bulk inspection surface |
+| [Data Source](ui/views/data_source_view.md) | Add/switch data source |
+| [All Data Grid](ui/views/all_data_grid_view.md) | Bulk inspection surface |
 | [Single Row Review](ui/views/single_row_review_view.md) | Per-record inspection |
 | [AUDIT_LOG](AUDIT_LOG.md) | Append-only evidence ledger |
 

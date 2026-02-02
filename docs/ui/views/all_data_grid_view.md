@@ -43,7 +43,7 @@ Additional columns may be added if purely informational and read-only.
 - No other destinations (e.g., no direct links to approval or promotion views).
 
 ## Empty & Error States
-- Empty results: display guidance to load data (link opens Load Data modal) or adjust filters.
+- Empty results: display guidance to add data (link opens Data Source panel) or adjust filters.
 - Error fetching display data: show read-only error banner; do not offer retry that would imply runtime execution.
 
 ## Performance & Offline Behavior

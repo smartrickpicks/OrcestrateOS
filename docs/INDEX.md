@@ -53,7 +53,7 @@
 - docs/ui/views/verifier_review_view.md
 - docs/ui/views/admin_approval_view.md
 - docs/ui/views/promotion_view.md
-- docs/ui/views/load_data_view.md
+- docs/ui/views/data_source_view.md
 - docs/ui/views/all_data_grid_view.md
 - docs/ui/views/single_row_review_view.md
 

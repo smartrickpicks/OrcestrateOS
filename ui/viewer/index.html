@@ -717,9 +717,9 @@
       <div class="nav-menu">
         <div class="nav-section">
           <div class="nav-section-header">Data</div>
-          <a class="nav-item" id="nav-load-data" href="#" onclick="openLoaderModal(); return false;">
-            <span class="nav-icon">📥</span>
-            <span class="nav-label">Load Data</span>
+          <a class="nav-item" id="nav-data-source" href="#" onclick="openDataSourcePanel(); return false;">
+            <span class="nav-icon">📁</span>
+            <span class="nav-label">Data Source</span>
             <span class="nav-count" id="data-status-chip">--</span>
           </a>
         </div>
@@ -730,12 +730,12 @@
           <div class="nav-section-header">Views</div>
           <a class="nav-item" data-page="grid" href="#/grid">
             <span class="nav-icon">📊</span>
-            <span class="nav-label">All-Data Grid</span>
+            <span class="nav-label">All Data Grid</span>
           </a>
         </div>
 
         <div class="nav-section">
-          <div class="nav-section-header">Queues</div>
+          <div class="nav-section-header">Review States</div>
           <a class="nav-item queue-item" data-page="triage" data-queue="todo" href="#/triage">
             <span class="nav-icon">📋</span>
             <span class="nav-label">To Do</span>
@@ -817,7 +817,7 @@
       <!-- Top Toolbar (visible when data loaded) -->
       <div class="top-toolbar" id="top-toolbar" style="display: none;">
         <div class="top-toolbar-left">
-          <button class="top-toolbar-btn primary" id="btn-load-data">Load Data</button>
+          <button class="top-toolbar-btn primary" id="btn-data-source">Data Source</button>
           <span class="session-chip not-loaded" id="session-chip">
             <span class="chip-dot"></span>
             <span id="session-chip-text">Not Loaded</span>
@@ -845,7 +845,7 @@
         <div class="empty-queue-icon">📋</div>
         <h3>No records loaded yet</h3>
         <p>Import a dataset to start working.</p>
-        <button class="empty-queue-cta" id="empty-queue-load" onclick="openLoaderModal()">Load Data</button>
+        <button class="empty-queue-cta" id="empty-queue-load" onclick="openDataSourcePanel()">Add Data Source</button>
       </div>
       
       <!-- Loader Page (DEPRECATED - v1.2.9 uses drawer instead) -->
@@ -1557,17 +1557,41 @@
   </div><!-- end app-layout -->
 
   <!-- Global Modals and Drawers (outside pages) -->
-  <!-- Upload Library Drawer (right-side slide-over) -->
+  <!-- Data Source Drawer (right-side slide-over) -->
   <div class="drawer-overlay" id="data-source-drawer">
     <div class="drawer">
       <div class="drawer-header">
-        <h3>Upload Library</h3>
+        <h3>Data Source</h3>
         <button class="drawer-close" onclick="closeDataSourceDrawer()">&times;</button>
       </div>
       <div class="drawer-body">
+        <!-- Active Dataset Section (shown when data loaded) -->
+        <div id="data-source-active-section" style="display: none; margin-bottom: 20px; padding: 16px; background: #e8f5e9; border: 1px solid #81c784; border-radius: 8px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <span style="font-size: 1.5em;">📊</span>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; font-size: 0.95em; color: #2e7d32;">Active Dataset</div>
+              <div id="active-dataset-name" style="font-size: 0.85em; color: #555; font-family: monospace;">—</div>
+            </div>
+            <span style="background: #4caf50; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600;">ACTIVE</span>
+          </div>
+          <div id="active-dataset-meta" style="font-size: 0.8em; color: #666;">
+            <!-- Row count, loaded timestamp -->
+          </div>
+        </div>
+        
+        <!-- Switch Data Source Button (shown when multiple datasets) -->
+        <div id="data-source-switch-section" style="display: none; margin-bottom: 20px;">
+          <button class="modal-btn modal-btn-primary" onclick="closeDataSourceDrawer(); openLoaderModal();" style="width: 100%;">
+            <span style="margin-right: 6px;">🔄</span> Switch Data Source
+          </button>
+          <p style="color: #888; font-size: 0.8em; margin-top: 8px; text-align: center;">Switching datasets does not alter Review States</p>
+        </div>
+        
         <!-- Library Header -->
-        <div style="margin-bottom: 20px;">
-          <p style="color: #666; font-size: 0.9em; margin: 0;">Previously uploaded datasets are stored here. Select one to activate it.</p>
+        <div style="margin-bottom: 15px; border-top: 1px solid #e0e0e0; padding-top: 15px;">
+          <div style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase; margin-bottom: 8px;">Saved Datasets</div>
+          <p style="color: #888; font-size: 0.85em; margin: 0;">Select a dataset to make it active.</p>
         </div>
         
         <!-- Dataset List -->
@@ -1576,15 +1600,23 @@
           <div class="upload-library-empty" style="text-align: center; padding: 40px 20px; color: #888; background: #f5f5f5; border-radius: 8px; border: 2px dashed #ddd;">
             <div style="font-size: 2em; margin-bottom: 10px;">📁</div>
             <p style="margin: 0 0 15px;">No datasets saved yet.</p>
-            <button class="modal-btn modal-btn-primary" onclick="closeDataSourceDrawer(); openLoaderModal();">Load Data</button>
+            <button class="modal-btn modal-btn-primary" onclick="closeDataSourceDrawer(); openLoaderModal();">Add Data Source</button>
           </div>
+        </div>
+        
+        <!-- Connector Section (hidden by default in V1) -->
+        <div id="data-source-connector-section" style="display: none; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+          <div style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase; margin-bottom: 8px;">Connect External Source</div>
+          <button class="modal-btn modal-btn-secondary" disabled style="width: 100%; opacity: 0.5;">
+            <span style="margin-right: 6px;">🔌</span> Connect (Coming Soon)
+          </button>
         </div>
         
         <div class="modal-status" id="data-source-status" style="display: none; margin-top: 15px;"></div>
       </div>
       <div class="drawer-footer">
         <div style="display: flex; gap: 10px; justify-content: space-between;">
-          <button class="modal-btn reset-session-btn" id="reset-session-btn">Reset Session</button>
+          <button class="modal-btn modal-btn-primary" onclick="closeDataSourceDrawer(); openLoaderModal();">Add Data Source</button>
           <button class="modal-btn modal-btn-secondary" onclick="closeDataSourceDrawer()">Close</button>
         </div>
       </div>
@@ -1595,7 +1627,7 @@
   <div class="loader-modal-overlay" id="loader-modal-overlay" onclick="closeLoaderModal(event)">
     <div class="loader-modal" id="loader-modal" onclick="event.stopPropagation()">
       <div class="loader-modal-header">
-        <h3>Load Data</h3>
+        <h3>Data Source</h3>
         <button class="loader-modal-close" id="loader-modal-close-btn" onclick="closeLoaderModal()" aria-label="Close">&times;</button>
       </div>
       <div class="loader-modal-body">
@@ -1609,7 +1641,7 @@
         
         <!-- Import CSV Section -->
         <div style="margin-bottom: 20px;">
-          <div style="font-weight: 600; margin-bottom: 10px; color: #333;">Import from File</div>
+          <div style="font-weight: 600; margin-bottom: 10px; color: #333;">Upload / Add Data Source</div>
           <div class="drop-zone" id="loader-drawer-dropzone" onclick="document.getElementById('loader-drawer-file').click();">
             <div class="drop-zone-icon">📄</div>
             <div class="drop-zone-text">Drop CSV file here or click to browse</div>
@@ -2081,15 +2113,15 @@
           <span style="font-size: 0.75em; background: #e3f2fd; color: #1565c0; padding: 3px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px;" title="These buttons copy data to clipboard without creating queue artifacts">
             <span style="font-size: 1em;">&#128203;</span> Copy-only
           </span>
-          <span style="font-size: 0.75em; background: #e8f5e9; color: #2e7d32; padding: 3px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px;" title="Submit creates a tracked artifact in the Patch Queue">
-            <span style="font-size: 1em;">&#10003;</span> Submit creates queue artifact
+          <span style="font-size: 0.75em; background: #e8f5e9; color: #2e7d32; padding: 3px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px;" title="Submit creates a tracked Patch Request artifact">
+            <span style="font-size: 1em;">&#10003;</span> Submit creates Patch Request
           </span>
         </div>
       </div>
       <div class="drawer-actions-grid" style="padding: 10px;">
         <button class="drawer-btn drawer-btn-secondary" id="ps-copy-draft" title="Copy the current draft to clipboard">Copy Draft</button>
         <button class="drawer-btn drawer-btn-secondary" id="ps-save-local" title="Save draft to browser storage">Save Draft</button>
-        <button class="drawer-btn" id="ps-submit-to-queue" style="background: #2e7d32; grid-column: span 2;" title="Submit this patch request to the review queue">Submit to Patch Queue</button>
+        <button class="drawer-btn" id="ps-submit-to-queue" style="background: #2e7d32; grid-column: span 2;" title="Submit this Patch Request for review">Submit Patch Request</button>
       </div>
     </div>
   </div>
@@ -2483,11 +2515,11 @@
     const WORKFLOW_STAGES = [
       {
         id: 'load',
-        title: 'Load Data',
-        desc: 'Load Preview Packet and reference data into the session.',
-        icon: '📥',
+        title: 'Data Source',
+        desc: 'Add or switch data source. Load Preview Packet and reference data.',
+        icon: '📁',
         artifacts: ['preview_packet', 'reference_expected'],
-        action: function() { openLoaderModal(); }
+        action: function() { openDataSourcePanel(); }
       },
       {
         id: 'config',
@@ -4496,7 +4528,7 @@
           previewStatus.className = 'loader-section-status empty';
         }
         if (triageInfo) {
-          triageInfo.innerHTML = `<strong>Source:</strong> none | Click <em>Load Data</em> to begin`;
+          triageInfo.innerHTML = `<strong>Source:</strong> none | Click <em>Data Source</em> to begin`;
         }
       }
     }
@@ -5194,14 +5226,98 @@
       });
     }
 
+    // Feature Flags (V1 defaults)
+    var FEATURE_FLAGS = {
+      connectors_enabled: false  // V1: offline-first, no connectors
+    };
+    
+    // Data Source Panel - unified entry point (v1.5.0)
+    // Shows contextual UI based on current data state
+    function openDataSourcePanel() {
+      var uploadLibrary = getUploadLibrary();
+      var hasData = dataLoaded && sessionState.status === 'loaded';
+      var hasMultiple = uploadLibrary && uploadLibrary.length > 1;
+      
+      if (!hasData && (!uploadLibrary || uploadLibrary.length === 0)) {
+        // State A: No Data - show loader modal with CTA
+        openLoaderModal();
+      } else {
+        // State B (Active) or C (Multiple) - show Data Sources drawer
+        openDataSourceDrawer();
+      }
+    }
+    
     // Data Sources Drawer functions (now Upload Library)
     function openDataSourceDrawer() {
       document.getElementById('data-source-drawer').classList.add('active');
       renderUploadLibrary();
+      updateDataSourceDrawerState();
     }
     
     function closeDataSourceDrawer() {
       document.getElementById('data-source-drawer').classList.remove('active');
+    }
+    
+    // Update Data Source drawer to show current state
+    function updateDataSourceDrawerState() {
+      var drawer = document.getElementById('data-source-drawer');
+      if (!drawer) return;
+      
+      var headerEl = drawer.querySelector('.drawer-header h3');
+      var activeSection = document.getElementById('data-source-active-section');
+      var switchSection = document.getElementById('data-source-switch-section');
+      var connectorSection = document.getElementById('data-source-connector-section');
+      var uploadLibrary = getUploadLibrary();
+      var count = uploadLibrary ? uploadLibrary.length : 0;
+      var hasData = dataLoaded && sessionState.status === 'loaded';
+      
+      // Update header
+      if (headerEl) {
+        if (count > 1) {
+          headerEl.textContent = 'Data Sources (' + count + ')';
+        } else {
+          headerEl.textContent = 'Data Source';
+        }
+      }
+      
+      // Show/hide active dataset section
+      if (activeSection) {
+        if (hasData) {
+          activeSection.style.display = 'block';
+          var nameEl = document.getElementById('active-dataset-name');
+          var metaEl = document.getElementById('active-dataset-meta');
+          if (nameEl) {
+            nameEl.textContent = sessionState.fileName || sessionState.sourceType || 'Loaded Dataset';
+          }
+          if (metaEl) {
+            var rowCount = allData.contractResults ? allData.contractResults.length : 0;
+            var loadedAt = sessionState.loadedAt ? new Date(sessionState.loadedAt).toLocaleString() : '—';
+            metaEl.innerHTML = '<strong>' + rowCount + '</strong> records | Loaded: ' + loadedAt;
+          }
+        } else {
+          activeSection.style.display = 'none';
+        }
+      }
+      
+      // Show switch section if multiple datasets
+      if (switchSection) {
+        switchSection.style.display = (count > 1 && hasData) ? 'block' : 'none';
+      }
+      
+      // Show connector section only if feature flag enabled
+      if (connectorSection) {
+        connectorSection.style.display = FEATURE_FLAGS.connectors_enabled ? 'block' : 'none';
+      }
+    }
+    
+    // Get stored datasets from localStorage
+    function getUploadLibrary() {
+      try {
+        var stored = localStorage.getItem('upload_library_v1');
+        return stored ? JSON.parse(stored) : [];
+      } catch (e) {
+        return [];
+      }
     }
     
     // Loader Modal functions
@@ -5408,7 +5524,7 @@
       if (!dataLoaded) {
         document.getElementById('grid-tbody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">' +
           '<div style="margin-bottom: 10px;">No data loaded</div>' +
-          '<button class="top-toolbar-btn" onclick="openLoaderModal()">Load Data</button>' +
+          '<button class="top-toolbar-btn" onclick="openDataSourcePanel()">Add Data Source</button>' +
           '</td></tr>';
         document.getElementById('grid-row-count').textContent = '0 records';
         return;
@@ -10322,8 +10438,8 @@ Add any additional notes here.
     updateLoaderPageUI();
     
     // Welcome hero and top toolbar event listeners
-    document.getElementById('welcome-load-data')?.addEventListener('click', openLoaderModal);
-    document.getElementById('btn-load-data')?.addEventListener('click', openLoaderModal);
+    document.getElementById('welcome-load-data')?.addEventListener('click', openDataSourcePanel);
+    document.getElementById('btn-data-source')?.addEventListener('click', openDataSourcePanel);
     document.getElementById('btn-configure')?.addEventListener('click', openConfigureWizard);
     document.getElementById('btn-ruleset')?.addEventListener('click', openRulesetModal);
     document.getElementById('btn-compare')?.addEventListener('click', openCompareModal);

@@ -13,10 +13,10 @@ What you see (panels)
 - Record Context Panel (drawer): identity keys (contract_key → file_url → file_name), fields, issues, field actions
 - PDF Viewer: local PDF with deterministic highlights and navigation
 - Evidence Strip: pasted gate status chips (Base/Validation/Conflicts/Smoke)
-- Toolbar: Load Data, Ruleset, Compare, Run (all in modals; copy‑only)
+- Toolbar: Data Source, Ruleset, Compare, Run (all in modals; copy‑only)
 
 Buttons & actions (deterministic)
-- Load Data (modal): choose Preview Packet (local JSON) and Reference Expected (local JSON). [screenshot: Load Data]
+- Data Source (modal): add or switch data source, load Preview Packet and Reference Expected. [screenshot: Data Source]
 - Ruleset (modal): select Truth Config (base) and Proposed Changes (patch). [screenshot: Ruleset]
 - Compare (modal): normalized side‑by‑side Preview vs Expected (no diff engine beyond normalization). [screenshot: Compare]
 - Run (modal): copy commands for validate/preview/smoke (UI never executes). [screenshot: Run Modal]

@@ -390,18 +390,18 @@ Changes are sorted by:
 
 ## Version History
 
-### How to Load Data in Static Mode (v1.1.1)
+### How to Add Data Source in Static Mode (v1.1.1)
 
 Since the viewer runs entirely in the browser with no backend, you need to provide data via one of these methods:
 
 **Method 1: Paste JSON**
-1. Click "Load Data" to open the modal
+1. Click "Data Source" to open the panel
 2. Select the "Paste JSON" tab
 3. Copy your sf_packet JSON and paste it into the textarea
 4. Click "Load from Paste"
 
 **Method 2: Drag-and-Drop File**
-1. Click "Load Data" to open the modal
+1. Click "Data Source" to open the panel
 2. Select the "Drop File" tab
 3. Drag your sf_packet.json file onto the drop zone (or click to browse)
 4. Click "Load from File"
@@ -425,10 +425,10 @@ Since the viewer runs entirely in the browser with no backend, you need to provi
 
 ### Upload-First Flow + Modal Wizards (v1.1)
 
-The viewer now starts with a clear "Load Data" action and uses modal wizards for configuration, giving a more product-like feel.
+The viewer now starts with a clear "Data Source" action and uses modal wizards for configuration, giving a more product-like feel.
 
 **Operator Journey:**
-1. **Load Data** - Click "Load Data" to open the Data Source modal and select an artifact path
+1. **Data Source** - Click "Data Source" to add or switch data sources
 2. **Triage** - View summary cards, filter issues, and drill down into records
 3. **Workbench** - Click any record row to open the Workbench drawer for details
 4. **Build Patch** - Click "Build Patch" button to add selected issues/actions to a patch
@@ -438,7 +438,7 @@ The viewer now starts with a clear "Load Data" action and uses modal wizards for
 **Modals:**
 | Modal | Button | Purpose |
 |-------|--------|---------|
-| Data Source | Load Data | Select sf_packet artifact path |
+| Data Source | Data Source | Add or switch data source |
 | Ruleset | Ruleset | Configure base config + patch paths |
 | Compare | Compare | Load comparison artifact for delta view |
 | Run | Run Commands | Copy validation/preview/smoke commands |
