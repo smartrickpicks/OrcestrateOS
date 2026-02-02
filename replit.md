@@ -1,8 +1,14 @@
-# Kiwi Semantic Control Board (v1.4.5)
+# Orchestrate OS — Semantic Control Board (v1.4.5)
 
 ## Overview
 
 This repository is a **governance-only semantic control plane** for DataDash + Kiwi. It defines, validates, and previews semantic rules offline so decisions are explicit, deterministic, and auditable.
+
+**Product Identity:**
+- Product name: Orchestrate OS
+- Primary surface: Semantic Control Board
+- Logo asset: `assets/brand/orchestrate-os-logo.png`
+- Logo is informational only (not navigational)
 
 **Core Purpose:**
 - Single source of semantic truth: rules, templates, examples, and governance documents
