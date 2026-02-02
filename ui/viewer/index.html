@@ -5651,17 +5651,16 @@
         // Clear any cached version of this sheet to treat re-import as fresh
         clearCachedDataset(sheetName);
         
-        // Load into workbook (fresh state)
-        window.workbookState = window.workbookState || { sheets: {}, sheetOrder: [], activeSheet: null };
-        window.workbookState.sheets[sheetName] = {
+        // Load into workbook (the correct global variable that getGridDataset reads from)
+        workbook.sheets[sheetName] = {
           name: sheetName,
           headers: headers,
           rows: records
         };
-        if (window.workbookState.sheetOrder.indexOf(sheetName) < 0) {
-          window.workbookState.sheetOrder.push(sheetName);
+        if (workbook.order.indexOf(sheetName) < 0) {
+          workbook.order.push(sheetName);
         }
-        window.workbookState.activeSheet = sheetName;
+        workbook.activeSheet = sheetName;
         
         console.log('[Loader] CSV file loaded: ' + sheetName + ', ' + records.length + ' rows');
         
@@ -5685,10 +5684,10 @@
     // Clear cached dataset by name to ensure fresh import
     function clearCachedDataset(sheetName) {
       // Remove from workbook if exists
-      if (window.workbookState && window.workbookState.sheets && window.workbookState.sheets[sheetName]) {
-        delete window.workbookState.sheets[sheetName];
-        var idx = window.workbookState.sheetOrder.indexOf(sheetName);
-        if (idx >= 0) window.workbookState.sheetOrder.splice(idx, 1);
+      if (workbook && workbook.sheets && workbook.sheets[sheetName]) {
+        delete workbook.sheets[sheetName];
+        var idx = workbook.order.indexOf(sheetName);
+        if (idx >= 0) workbook.order.splice(idx, 1);
         console.log('[Loader] Cleared cached dataset: ' + sheetName);
       }
       

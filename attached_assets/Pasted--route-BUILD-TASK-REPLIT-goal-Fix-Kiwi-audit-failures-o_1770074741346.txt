@@ -1,0 +1,64 @@
+{
+  "route": "BUILD_TASK_REPLIT",
+  "goal": "Fix Kiwi audit failures only: canonicalize spec + gate mapping and add missing handoff UI backlog file.",
+  "constraints": [
+    "Docs-only changes. Do not change runtime behavior unless explicitly required.",
+    "Use canonical terminology only: Data Source, All Data Grid, Single Row Review, Patch Authoring, Verifier Review, Admin Approval, Audit Log.",
+    "Forbidden terms: Load Data, Loader, Queue/Queues, Record Inspection, Submit to Queue, Apply Patch, Reviewer Hub.",
+    "Do NOT claim pushes, PRs, merges, deploys, or releases. Output git commands only."
+  ],
+  "tasks": [
+    {
+      "id": "DS-SPEC-01",
+      "type": "edit_file",
+      "path": "docs/specs/Human-Agent-Workflow-V1.json",
+      "instructions": [
+        "Replace legacy node ids/labels and affected edges exactly as per Kiwi minimal diffs:",
+        "- node id load_data -> data_source and label 'Load Data' -> 'Data Source'",
+        "- node id record_inspection -> single_row_review and label 'Record Inspection' -> 'Single Row Review'",
+        "- node id submit_queue -> submit_patch_request and label 'Submit to Queue' -> 'Submit Patch Request'",
+        "Update edges to reference new ids (from data_source, single_row_review, submit_patch_request) and replace any remaining occurrences of the legacy ids/labels.",
+        "Keep structure and formatting stable; do not reformat unrelated sections."
+      ]
+    },
+    {
+      "id": "DS-MAP-01",
+      "type": "edit_file",
+      "path": "docs/ui/gate_view_mapping.md",
+      "instructions": [
+        "In the gate table row for gate_parse, replace Owning View value 'load_data' with 'data_source_view'.",
+        "Do not change anything else in this file."
+      ]
+    },
+    {
+      "id": "HO-UI-01",
+      "type": "create_file",
+      "path": "docs/handoff/TASKS_UI.md",
+      "content": "# TASKS_UI (Handoff — UI Backlog)\n\nAudience: Governance reviewers and UI operators\nPurpose: Track UI tasks with governance constraints and evidence links\nScope: UI copy and contracts only; no runtime or implementation claims\nNon-Goals: No claims of completion without evidence (commit/PR URL)\nAuthority Level: Informational; defers to canonical docs\nOwner Agent: Kiwi (documentation architect)\nUpdate Rules: Each task must include scope, files likely to touch, and acceptance tests; if evidence missing, mark “Unknown — requires audit”\n\nRepository: smartrickpicks/kiwi-semantic-control (branch: main)\nOpen PRs: unknown/none\n\n## Backlog\n\n### SRR: Field Order Determinism (UI copy)\n- Scope: Ensure UI copy states schema-first order with alphabetical fallback; V2 notes schema.json\n- Files likely to touch: docs/ui/views/single_row_review_view.md, ui/viewer/index.html\n- Acceptance:\n  - Copy present in SRR view docs\n  - No claims of runtime schema loading (stub only)\n  - Evidence link: Unknown — requires audit\n\n### Data Source: Panel Search Stub Consistency\n- Scope: Confirm placement between Upload|Connect and Saved; placeholder copy exact text\n- Files likely to touch: docs/ui/views/data_source_view.md, ui/viewer/index.html\n- Acceptance:\n  - Docs and UI match position and copy\n  - Evidence link: Unknown — requires audit\n\n### Spec/Mapping Canonicalization\n- Scope: Update Human-Agent-Workflow-V1.json ids/labels; gate_view_mapping owner token\n- Files likely to touch: docs/specs/Human-Agent-Workflow-V1.json, docs/ui/gate_view_mapping.md\n- Acceptance:\n  - Spec uses data_source, single_row_review, submit_patch_request\n  - gate_parse owner is data_source_view (or data_source_panel consistently)\n  - Evidence link: Unknown — requires audit\n"
+    }
+  ],
+  "acceptance_tests": [
+    {
+      "id": "AT-01",
+      "run": "test -f docs/handoff/TASKS_UI.md"
+    },
+    {
+      "id": "AT-02",
+      "run": "grep -R \"Load Data\\|Record Inspection\\|Submit to Queue\\|submit_queue\\|record_inspection\\|load_data\" -n docs/specs/Human-Agent-Workflow-V1.json || true"
+    },
+    {
+      "id": "AT-03",
+      "run": "grep -n \"| gate_parse\" -n docs/ui/gate_view_mapping.md"
+    }
+  ],
+  "expected_results": [
+    "docs/specs/Human-Agent-Workflow-V1.json contains only canonical ids/labels for the three nodes and edges use the canonical ids.",
+    "docs/ui/gate_view_mapping.md gate_parse owning view is data_source_view.",
+    "docs/handoff/TASKS_UI.md exists and includes the full header contract block."
+  ],
+  "output_requirements": [
+    "Return a concise diff summary (file -> change).",
+    "Return suggested commit message.",
+    "Return git add/commit commands (no push claims)."
+  ]
+}
