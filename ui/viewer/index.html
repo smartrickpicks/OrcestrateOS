@@ -1417,12 +1417,16 @@
             <div class="srr-doc-viewer">
               <div class="srr-doc-controls">
                 <button class="srr-doc-btn" id="srr-prev-btn" onclick="srrPrevPage()" title="Previous page">← Prev</button>
-                <span class="srr-page-indicator" id="srr-page-indicator">Page 1 / 1</span>
+                <span class="srr-page-indicator" id="srr-page-indicator">Page 1</span>
                 <button class="srr-doc-btn" id="srr-next-btn" onclick="srrNextPage()" title="Next page">Next →</button>
                 <span class="srr-doc-spacer"></span>
                 <button class="srr-doc-btn" id="srr-zoom-out" onclick="srrZoomOut()" title="Zoom out">−</button>
                 <span class="srr-zoom-indicator" id="srr-zoom-indicator">100%</span>
                 <button class="srr-doc-btn" id="srr-zoom-in" onclick="srrZoomIn()" title="Zoom in">+</button>
+              </div>
+              <div class="srr-doc-source" id="srr-doc-source" style="font-size: 0.75em; color: #666; padding: 4px 8px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0; display: none;">
+                <span id="srr-doc-source-type" style="font-weight: 500;"></span>
+                <span id="srr-doc-source-name" style="margin-left: 6px; color: #888;"></span>
               </div>
               <div class="srr-doc-frame" id="srr-doc-frame">
                 <div class="srr-doc-empty-state" id="srr-doc-empty">
@@ -7377,6 +7381,9 @@
       var emptyEl = document.getElementById('srr-doc-empty');
       var containerEl = document.getElementById('srr-doc-container');
       var iframeEl = document.getElementById('srr-pdf-iframe');
+      var sourceEl = document.getElementById('srr-doc-source');
+      var sourceTypeEl = document.getElementById('srr-doc-source-type');
+      var sourceNameEl = document.getElementById('srr-doc-source-name');
       
       if (!emptyEl || !containerEl || !iframeEl) return;
       
@@ -7386,65 +7393,115 @@
       } catch (e) {}
       
       var pdfUrl = null;
-      if (record && record.file_url && record.file_url.endsWith('.pdf')) {
+      var sourceType = null;
+      var sourceName = null;
+      
+      // Priority 1: record.file_url that looks like a PDF URL (network/S3)
+      if (record && record.file_url && typeof record.file_url === 'string') {
+        var fileUrl = record.file_url.toLowerCase();
+        if (fileUrl.endsWith('.pdf') || fileUrl.includes('.pdf?') || fileUrl.includes('/pdf')) {
+          pdfUrl = record.file_url;
+          sourceType = 'URL';
+          sourceName = record.file_name || record.file_url.split('/').pop().split('?')[0];
+          console.log('[SRR] Using network PDF:', pdfUrl);
+        }
+      }
+      
+      // Priority 2: Local attachment matching record.file_name
+      if (!pdfUrl && record && record.file_name && attachments.length > 0) {
         var match = attachments.find(function(a) { return a.file_name === record.file_name; });
         if (match && match.local_object_url) {
           pdfUrl = match.local_object_url;
+          sourceType = 'Local Attachment';
+          sourceName = match.file_name;
+          console.log('[SRR] Using local attachment by file_name match:', sourceName);
         }
       }
-      if (!pdfUrl && attachments.length > 0) {
+      
+      // Priority 3: Any local attachment (fallback - first available)
+      if (!pdfUrl && attachments.length > 0 && attachments[0].local_object_url) {
         pdfUrl = attachments[0].local_object_url;
+        sourceType = 'Local Attachment';
+        sourceName = attachments[0].file_name;
+        console.log('[SRR] Using fallback local attachment:', sourceName);
       }
       
       if (pdfUrl) {
         var savedState = loadSrrPdfState(record);
         srrState.docPage = savedState.page || 1;
-        srrState.zoom = savedState.zoom || 1;
-        srrState.docTotalPages = 1;
+        srrState.zoom = savedState.zoom || 100;
+        srrState.docTotalPages = null; // Unknown with iframe rendering
         srrState.currentPdfUrl = pdfUrl;
+        srrState.pdfSourceType = sourceType;
         
         emptyEl.style.display = 'none';
         containerEl.style.display = 'block';
-        iframeEl.src = pdfUrl;
+        
+        // Update source indicator
+        if (sourceEl && sourceTypeEl && sourceNameEl) {
+          sourceEl.style.display = 'block';
+          sourceTypeEl.textContent = sourceType + ':';
+          sourceNameEl.textContent = sourceName || '';
+        }
+        
+        // Set iframe src with PDF fragment params for page/zoom
+        srrUpdateIframeSrc();
         srrUpdateZoomDisplay();
         srrUpdatePageDisplay();
-        console.log('[SRR] PDF loaded for record, zoom:', srrState.zoom);
+        console.log('[SRR] PDF loaded for record, page:', srrState.docPage, 'zoom:', srrState.zoom);
       } else {
         srrState.docPage = 1;
-        srrState.docTotalPages = 1;
-        srrState.zoom = 1;
+        srrState.docTotalPages = null;
+        srrState.zoom = 100;
         srrState.currentPdfUrl = null;
+        srrState.pdfSourceType = null;
         emptyEl.style.display = 'block';
         containerEl.style.display = 'none';
+        if (sourceEl) sourceEl.style.display = 'none';
         iframeEl.src = 'about:blank';
         srrUpdateZoomDisplay();
         srrUpdatePageDisplay();
       }
     }
     
+    function srrUpdateIframeSrc() {
+      var iframeEl = document.getElementById('srr-pdf-iframe');
+      if (!iframeEl || !srrState.currentPdfUrl) return;
+      
+      // Build PDF fragment params: #page=N&zoom=percent
+      var baseUrl = srrState.currentPdfUrl.split('#')[0];
+      var fragment = '#page=' + srrState.docPage + '&zoom=' + srrState.zoom;
+      iframeEl.src = baseUrl + fragment;
+    }
+    
     function srrUpdateZoomDisplay() {
       var zoomEl = document.getElementById('srr-zoom-indicator');
-      var containerEl = document.getElementById('srr-doc-container');
-      if (zoomEl) zoomEl.textContent = Math.round(srrState.zoom * 100) + '%';
-      if (containerEl) containerEl.style.transform = 'scale(' + srrState.zoom + ')';
+      var zoomInBtn = document.getElementById('srr-zoom-in');
+      var zoomOutBtn = document.getElementById('srr-zoom-out');
+      if (zoomEl) zoomEl.textContent = srrState.zoom + '%';
+      if (zoomInBtn) zoomInBtn.disabled = srrState.zoom >= 300;
+      if (zoomOutBtn) zoomOutBtn.disabled = srrState.zoom <= 50;
     }
     
     function srrUpdatePageDisplay() {
       var pageEl = document.getElementById('srr-page-indicator');
       var headerPageEl = document.getElementById('srr-doc-page');
-      var text = 'Page ' + srrState.docPage + ' / ' + srrState.docTotalPages;
+      // Show "Page X" without total (total pages unknown with iframe rendering)
+      var text = 'Page ' + srrState.docPage;
       if (pageEl) pageEl.textContent = text;
       if (headerPageEl) headerPageEl.textContent = text;
       
       var prevBtn = document.getElementById('srr-prev-btn');
       var nextBtn = document.getElementById('srr-next-btn');
+      // Prev disabled at page 1; Next always enabled (total unknown)
       if (prevBtn) prevBtn.disabled = srrState.docPage <= 1;
-      if (nextBtn) nextBtn.disabled = srrState.docPage >= srrState.docTotalPages;
+      if (nextBtn) nextBtn.disabled = false;
     }
     
     function srrPrevPage() {
       if (srrState.docPage > 1) {
         srrState.docPage--;
+        srrUpdateIframeSrc();
         srrUpdatePageDisplay();
         saveSrrPdfState(srrState.currentRecord);
         console.log('[SRR] Page:', srrState.docPage);
@@ -7452,29 +7509,31 @@
     }
     
     function srrNextPage() {
-      if (srrState.docPage < srrState.docTotalPages) {
-        srrState.docPage++;
-        srrUpdatePageDisplay();
-        saveSrrPdfState(srrState.currentRecord);
-        console.log('[SRR] Page:', srrState.docPage);
-      }
+      // Allow increment (total pages unknown with iframe)
+      srrState.docPage++;
+      srrUpdateIframeSrc();
+      srrUpdatePageDisplay();
+      saveSrrPdfState(srrState.currentRecord);
+      console.log('[SRR] Page:', srrState.docPage);
     }
     
     function srrZoomIn() {
-      if (srrState.zoom < 3) {
-        srrState.zoom = Math.min(srrState.zoom + 0.25, 3);
+      if (srrState.zoom < 300) {
+        srrState.zoom = Math.min(srrState.zoom + 25, 300);
+        srrUpdateIframeSrc();
         srrUpdateZoomDisplay();
         saveSrrPdfState(srrState.currentRecord);
-        console.log('[SRR] Zoom:', srrState.zoom * 100 + '%');
+        console.log('[SRR] Zoom:', srrState.zoom + '%');
       }
     }
     
     function srrZoomOut() {
-      if (srrState.zoom > 0.5) {
-        srrState.zoom = Math.max(srrState.zoom - 0.25, 0.5);
+      if (srrState.zoom > 50) {
+        srrState.zoom = Math.max(srrState.zoom - 25, 50);
+        srrUpdateIframeSrc();
         srrUpdateZoomDisplay();
         saveSrrPdfState(srrState.currentRecord);
-        console.log('[SRR] Zoom:', srrState.zoom * 100 + '%');
+        console.log('[SRR] Zoom:', srrState.zoom + '%');
       }
     }
     

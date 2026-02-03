@@ -109,28 +109,40 @@ Patch Draft authoring emits deterministic events:
 - Save Patch Draft → PATCH_DRAFTED with payload { patch_id, changes[], rationale }.
 - Submit Patch Request → PATCH_SUBMITTED with payload { patch_id, submission_notes } and REVIEW_REQUESTED { target: "patch", patch_id, reason }.
 
-## Embedded PDF Viewer & Highlights (v1.4.10)
+## Embedded PDF Viewer & Highlights (v1.4.11)
 
-### Rendering
-- PDFs are rendered via the browser's native PDF viewer (iframe with object URL)
-- Source: Local PDF attachments stored in localStorage via Data Source panel
-- No network calls; fully offline
+### PDF Source Resolution
+PDF source is resolved in priority order:
+1. **Network URL**: If record has `file_url` that looks like a PDF URL (ends with `.pdf`, contains `.pdf?`, or `/pdf`), render directly from that URL
+2. **Local Attachment (by file_name)**: If a locally attached PDF matches the record's `file_name`, render that
+3. **Local Attachment (fallback)**: If any local PDF attachment exists, render the first one
+4. **Empty State**: Show "No document attached" with guidance
 
-### Controls (Read-Only)
+### Source Indicator
+- Shows below controls bar when PDF is loaded
+- Format: `[Source Type]: [filename]`
+- Source types: "URL" (network) or "Local Attachment"
+
+### Controls (Read-Only via PDF Fragment Params)
+Page and zoom are applied using PDF fragment parameters (`#page=N&zoom=percent`):
+
 | Control | Action | Limits |
 |---------|--------|--------|
 | ← Prev | Go to previous page | Disabled at page 1 |
-| Next → | Go to next page | Disabled at last page |
+| Next → | Go to next page | Always enabled (total pages unknown with iframe) |
 | − (Zoom Out) | Decrease zoom by 25% | Min: 50% |
 | + (Zoom In) | Increase zoom by 25% | Max: 300% |
 
+Page indicator shows "Page X" (without total, as total pages unknown with iframe rendering).
+
 ### State Persistence
-- Page and zoom are persisted per-record to localStorage
+- Only `{page, zoom}` values are persisted (not objectURL strings)
 - Key: `orchestrate.srr_pdf_state.v1` with record identity triplet (contract_key|file_url|file_name)
-- State is restored when returning to the same record within the session
+- State is restored when returning to the same record
+- Object URLs are kept in-memory for session only; no stale URL behavior after refresh
 
 ### Empty State
-When no PDF is attached for the record:
+When no PDF source is available for the record:
 - Shows placeholder icon and message: "No document attached"
 - Guidance: "Attach PDFs via Data Source panel to view here"
 

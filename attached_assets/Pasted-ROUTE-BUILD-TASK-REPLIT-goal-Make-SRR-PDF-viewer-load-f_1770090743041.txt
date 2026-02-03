@@ -1,0 +1,52 @@
+ROUTE: BUILD_TASK_REPLIT
+goal: Make SRR PDF viewer load from record file_url (S3) when present, with deterministic page/zoom controls; fall back to locally attached PDFs matched by file_name.
+constraints:
+
+Do not change canonical ids/routes/spec tokens.
+Do not implement text highlight extraction yet.
+Keep SRR read-only for Review State.
+files_in_scope:
+index.html
+single_row_review_view.md
+implementation_steps:
+PDF source resolution (record-bound)
+Requirements:
+When opening SRR, resolve PDF source in this order:
+If current record has file_url that looks like a PDF URL: render that in the SRR viewer.
+Else if a local PDF attachment exists whose file_name matches the record’s file_name: render that.
+Else show empty state with “No document attached” + guidance.
+Add a small “Source” line in SRR doc header area: URL or Local Attachment, and display the filename when available.
+Acceptance tests:
+Records with a valid file_url render a PDF without manual attachment.
+Records without file_url but with a matching attached PDF render via local attachment.
+Records with neither show the empty state.
+Page + zoom controls that actually affect the embedded viewer
+Requirements:
+Implement page/zoom controls by updating the embedded src using PDF fragment params:
+#page=<n> and #zoom=<percent> (or nearest supported format).
+Controls must be clamped deterministically (e.g., page 1..N if N known, zoom 50–300%).
+If total pages can’t be known with iframe rendering, still allow page increment/decrement and update the indicator (show “Page X” without “/Y”).
+Acceptance tests:
+Clicking Prev/Next changes what page is displayed (observable).
+Zoom in/out changes zoom (observable).
+Persistence (safe)
+Requirements:
+Persist only {page, zoom} keyed by join identity.
+Do not persist objectURL strings to localStorage (they are not stable). Keep object URLs in-memory for the session; persist only metadata if needed.
+Acceptance tests:
+Reloading SRR restores page/zoom state.
+No broken “stale objectURL” behavior after refresh.
+Docs alignment
+Requirements:
+Update SRR doc to state: PDF source uses record file_url when present; otherwise local attachment match by file_name; otherwise empty state.
+Acceptance tests:
+Doc matches the implemented behavior exactly.
+output_format:
+
+summary: bullet list of file changes
+verification: manual checks performed
+suggested_commit_message: one line
+git_commands: exact add/commit commands (no push claims)
+If you don’t want network PDF loading from file_url, tell me and I’ll rewrite the task to be fully offline (bulk attach PDFs + match by file_name).
+
+
