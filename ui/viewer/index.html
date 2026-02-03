@@ -7007,13 +7007,15 @@
       // Priority: workbook > allData > localStorage cache
       if (workbook.order.length > 0) {
         // Build dataset from workbook
+        // v1.4.15: Store _sheetRowIndex for stable click handler identity
         var records = [];
         workbook.order.forEach(function(sheetName) {
           var sheet = workbook.sheets[sheetName];
           if (sheet && sheet.rows) {
-            sheet.rows.forEach(function(row) {
+            sheet.rows.forEach(function(row, sheetRowIndex) {
               var r = Object.assign({}, row);
               r.sheet = sheetName;
+              r._sheetRowIndex = sheetRowIndex;
               records.push(r);
             });
           }
@@ -7252,9 +7254,12 @@
       } else {
         // Cleanup virtualization when not needed
         cleanupGridVirtualization();
+        // v1.4.15: Pass sheet name and original row index to click handler
         tbody.innerHTML = filtered.map(function(r, idx) {
           var statusClass = 'status-' + (r.status || '').toLowerCase().replace(/\s+/g, '_');
-          return '<tr class="clickable" onclick="openRowReviewDrawer(\'' + (r.contract_key || idx) + '\')">' +
+          var sheetName = escapeHtml(r.sheet || '');
+          var sheetRowIdx = r._sheetRowIndex !== undefined ? r._sheetRowIndex : idx;
+          return '<tr class="clickable" data-sheet-name="' + sheetName + '" data-record-index="' + sheetRowIdx + '" onclick="openRowReviewDrawer(\'' + sheetName + '\',' + sheetRowIdx + ')">' +
             '<td class="row-index">' + (idx + 1) + '</td>' +
             gridState.visibleColumns.map(function(col) {
               var val = r[col];
@@ -7402,52 +7407,77 @@
       return null;
     }
 
-    // v1.4.15: Resolve record from workbook with proper identity
-    function openRowReviewDrawer(rowId) {
+    // v1.4.15: Resolve record from workbook using explicit sheetName and recordIndex
+    // Signature: openRowReviewDrawer(sheetName, recordIndex)
+    // Backwards compat: openRowReviewDrawer(rowId) for legacy callers
+    function openRowReviewDrawer(arg1, arg2) {
       var record = null;
       var sheetName = null;
-      var rowIndex = parseInt(rowId, 10);
+      var rowIndex = -1;
       
-      // Priority: workbook sheets > legacy sf_contract_results
-      if (workbook.order.length > 0) {
-        // v1.4.15: Use getActiveSheetName() helper (no more currentSheetFilter error)
-        sheetName = getActiveSheetName();
-        if (!sheetName) {
-          showToast('No active sheet selected', 'warning');
+      // v1.4.15: New signature (sheetName, recordIndex) from grid click handlers
+      if (typeof arg1 === 'string' && typeof arg2 === 'number') {
+        sheetName = arg1;
+        rowIndex = arg2;
+        
+        var sheet = workbook.sheets[sheetName];
+        if (sheet && sheet.rows && rowIndex >= 0 && rowIndex < sheet.rows.length) {
+          record = sheet.rows[rowIndex];
+        }
+        
+        if (!record) {
+          // Log failure with diagnostic context
+          console.log('[SRR_OPEN_FAIL]', JSON.stringify({
+            sheetName: sheetName,
+            recordIndex: rowIndex,
+            availableSheets: workbook.order,
+            sheetRowCount: sheet ? (sheet.rows ? sheet.rows.length : 0) : 0
+          }));
+          showToast('Record not found: ' + sheetName + '[' + rowIndex + ']', 'warning');
           return;
         }
-        var sheet = workbook.sheets[sheetName];
-        
-        if (sheet && sheet.rows) {
-          // Try to find by contract_key first
-          var foundIdx = sheet.rows.findIndex(function(r) {
-            return String(r.contract_key) === String(rowId);
-          });
-          
-          if (foundIdx >= 0) {
-            record = sheet.rows[foundIdx];
-            rowIndex = foundIdx;
-          } else if (!isNaN(rowIndex) && rowIndex >= 0 && rowIndex < sheet.rows.length) {
-            // Fall back to numeric index
-            record = sheet.rows[rowIndex];
-          }
-        }
       } else {
-        // Fallback to legacy dataset path
-        var ds = getGridDataset();
-        if (ds && ds.sf_contract_results) {
-          record = ds.sf_contract_results.find(function(r) {
-            return String(r.contract_key) === String(rowId);
-          });
-          if (!record && !isNaN(rowIndex) && rowIndex >= 0 && rowIndex < ds.sf_contract_results.length) {
-            record = ds.sf_contract_results[rowIndex];
+        // Legacy signature: openRowReviewDrawer(rowId) - for backwards compatibility
+        var rowId = arg1;
+        rowIndex = parseInt(rowId, 10);
+        
+        if (workbook.order.length > 0) {
+          sheetName = getActiveSheetName();
+          if (!sheetName) {
+            showToast('No active sheet selected', 'warning');
+            return;
           }
-          sheetName = record ? (record.sheet || 'unknown') : 'unknown';
+          var sheet = workbook.sheets[sheetName];
+          
+          if (sheet && sheet.rows) {
+            var foundIdx = sheet.rows.findIndex(function(r) {
+              return String(r.contract_key) === String(rowId);
+            });
+            
+            if (foundIdx >= 0) {
+              record = sheet.rows[foundIdx];
+              rowIndex = foundIdx;
+            } else if (!isNaN(rowIndex) && rowIndex >= 0 && rowIndex < sheet.rows.length) {
+              record = sheet.rows[rowIndex];
+            }
+          }
+        } else {
+          var ds = getGridDataset();
+          if (ds && ds.sf_contract_results) {
+            record = ds.sf_contract_results.find(function(r) {
+              return String(r.contract_key) === String(rowId);
+            });
+            if (!record && !isNaN(rowIndex) && rowIndex >= 0 && rowIndex < ds.sf_contract_results.length) {
+              record = ds.sf_contract_results[rowIndex];
+            }
+            sheetName = record ? (record.sheet || 'unknown') : 'unknown';
+          }
         }
       }
       
       if (!record) {
-        showToast('Record not found: ' + rowId, 'warning');
+        console.log('[SRR_OPEN_FAIL] Record resolution failed:', { arg1: arg1, arg2: arg2, sheetName: sheetName, rowIndex: rowIndex });
+        showToast('Record not found', 'warning');
         return;
       }
       
@@ -8854,7 +8884,12 @@
         var r = data[idx];
         var tr = document.createElement('tr');
         tr.className = 'clickable';
-        tr.onclick = (function(ck, i) { return function() { openRowReviewDrawer(ck || i); }; })(r.contract_key, idx);
+        // v1.4.15: Pass sheet name and original row index to click handler
+        var sheetName = r.sheet || '';
+        var sheetRowIdx = r._sheetRowIndex !== undefined ? r._sheetRowIndex : idx;
+        tr.dataset.sheetName = sheetName;
+        tr.dataset.recordIndex = sheetRowIdx;
+        tr.onclick = (function(sn, sri) { return function() { openRowReviewDrawer(sn, sri); }; })(sheetName, sheetRowIdx);
         
         var statusClass = 'status-' + (r.status || '').toLowerCase().replace(/\s+/g, '_');
         tr.innerHTML = '<td class="row-index">' + (idx + 1) + '</td>' +

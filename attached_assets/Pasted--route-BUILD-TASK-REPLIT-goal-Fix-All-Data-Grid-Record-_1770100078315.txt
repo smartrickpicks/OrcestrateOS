@@ -1,0 +1,72 @@
+{
+  "route": "BUILD_TASK_REPLIT",
+  "goal": "Fix All Data Grid → Record Inspection (SRR) click flow so the clicked row always resolves to a valid record from the active sheet (no 'data row not found'), and ensure SRR opens with correct record context.",
+  "constraints": [
+    "Do not rename canonical ids/routes/tokens (keep single_row_review, existing hash routes).",
+    "UI label remains 'Record Inspection' (user-facing), canonical docs/specs remain 'Single Row Review'.",
+    "No new services or proxy work in this task.",
+    "No invented claims; output git commands only."
+  ],
+  "files_in_scope": [
+    "ui/viewer/index.html",
+    "docs/handoff/TASKS_UI.md"
+  ],
+  "implementation_steps": [
+    {
+      "id": "GRID-ROW-01",
+      "title": "Bind stable row identity to DOM and click handler",
+      "requirements": [
+        "When rendering grid rows, attach stable identifiers to each <tr>: data-sheet-name and data-record-index (index into active sheet rows array).",
+        "Ensure the click handler reads these data-* attributes and passes them explicitly to openRowReviewDrawer(sheetName, recordIndex) (or passes the record object directly).",
+        "If the grid is filtered/sorted, ensure data-record-index maps back to the original active sheet row index, not the DOM index."
+      ],
+      "acceptance_tests": [
+        "Clicking any visible row opens Record Inspection without 'data row not found'.",
+        "In console logs, sheetName and recordIndex are present and non-null."
+      ]
+    },
+    {
+      "id": "SRR-OPEN-03",
+      "title": "Harden record resolution in openRowReviewDrawer",
+      "requirements": [
+        "Update openRowReviewDrawer to accept (sheetName, recordIndex) and resolve from the active workbook sheet.",
+        "If recordIndex is out of range, log a single [SRR_OPEN_FAIL] with sheetName, recordIndex, available sheet names, rowCount; show a toast and return without throwing.",
+        "Prefer a direct record object if provided (e.g., openRowReviewDrawer(record, sheetName, recordIndex)) to avoid re-resolving."
+      ],
+      "acceptance_tests": [
+        "No 'data row not found' toast/console when clicking valid rows.",
+        "Invalid indices produce one [SRR_OPEN_FAIL] log and a user-facing toast (no crash)."
+      ]
+    },
+    {
+      "id": "SRR-OPEN-04",
+      "title": "Ensure SRR context is stored correctly",
+      "requirements": [
+        "Set srrState.currentSheetName and srrState.currentRowIndex from the resolved record.",
+        "Construct a recordKey using a stable field if available; otherwise `${sheetName}:${recordIndex}`.",
+        "Keep [SRR_OPEN] log output consistent: include sheetName, rowIndex, recordKey, file_name, file_url, availableKeys (first N)."
+      ],
+      "acceptance_tests": [
+        "After click, [SRR_OPEN] log shows correct sheetName and rowIndex.",
+        "file_url resolves when present in the dataset."
+      ]
+    },
+    {
+      "id": "TASKS-UI-02",
+      "title": "Track this bugfix in TASKS_UI",
+      "requirements": [
+        "Add a new entry under [IN_PROGRESS] or [TODO]: 'BUGFIX: Grid row click resolves correct sheet + record (no data row not found)'.",
+        "Do not mark DONE without a commit URL; use 'Unknown — requires audit' until evidence exists."
+      ],
+      "acceptance_tests": [
+        "TASKS_UI contains the new bugfix entry with scope, files, and acceptance tests."
+      ]
+    }
+  ],
+  "output_format": {
+    "summary": "bullet list (file -> change)",
+    "verification": "exact commands run + key console log lines",
+    "suggested_commit_message": "single line",
+    "git_commands": "git add/commit commands only (no push claims)"
+  }
+}

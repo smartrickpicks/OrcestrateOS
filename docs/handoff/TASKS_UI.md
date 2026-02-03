@@ -37,7 +37,8 @@ All tasks must use these terms exclusively:
 
 | ID | Task | Scope | Files Likely to Touch | Acceptance Criteria | Status |
 |----|------|-------|----------------------|---------------------|--------|
-| SRR-BUG-01 | BUGFIX: SRR row open uses active sheet selection (currentSheetFilter error) | UI bugfix | `ui/viewer/index.html` | No ReferenceError on row click; SRR_OPEN log shows sheetName != "unknown" | In Progress |
+| SRR-BUG-01 | BUGFIX: SRR row open uses active sheet selection (currentSheetFilter error) | UI bugfix | `ui/viewer/index.html` | No ReferenceError on row click; SRR_OPEN log shows sheetName != "unknown" | Done (9c4bfda) |
+| SRR-BUG-02 | BUGFIX: Grid row click resolves correct sheet + record (no data row not found) | UI bugfix | `ui/viewer/index.html` | Click opens SRR without "data row not found"; console shows sheetName and recordIndex | In Progress |
 
 ### P1 — High Priority
 
