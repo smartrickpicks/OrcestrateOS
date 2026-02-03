@@ -1,0 +1,59 @@
+Replit Task: Verifier Triage (Same Page) + Payload Wiring
+
+Please update index.html to introduce a Verifier Triage view that lives in the same Triage page location, and wire analyst actions into a verifier payload queue for demo purposes.
+
+Assumptions (use these unless conflict exists)
+
+Use existing Reviewer mode to represent the Verifier role.
+Verifier triage appears in the same Triage page container, replacing the analyst triage view when in Reviewer mode.
+Persist payloads in localStorage so the demo survives refresh.
+1) Verifier Triage view (same location as Analyst Triage)
+
+When mode === reviewer, show a Verifier Triage panel in the existing Triage page area.
+Analyst triage content should be hidden in reviewer mode.
+Verifier queues (top cards or tabs)
+
+RFIs
+Corrections
+Blacklist / Blocked
+Awaiting Admin
+Resolved
+Verifier queue list (below)
+
+Show a list/table of payloads in the selected queue.
+Columns: Type, Record, Field, Value, Comment, Analyst, Submitted Time, Status, Actions.
+Actions
+
+Approve
+Request Clarification
+Send to Admin
+Actions update payload status and move items between queues.
+
+2) Payload schema (demo‑ready)
+Create a single payload structure for RFI / Correction / Blacklist:
+
+id
+type (rfi, correction, blacklist)
+record_id or contract_key
+sheet, field
+old_value, new_value
+comment
+analyst_id (stub ok)
+timestamp
+status (pending, needs_clarification, approved, sent_to_admin, resolved)
+Persist in localStorage (e.g., srr_verifier_queue_v1).
+
+3) Wire analyst actions into verifier queue
+
+On Send RFI: add payload type=rfi, status=pending.
+On Submit Patch Request for Correction: add payload type=correction, status=pending.
+On Blacklist submit: add payload type=blacklist, status=pending.
+These payloads should appear in Verifier Triage queues.
+Acceptance
+
+Verifier triage shows inside Triage page in reviewer mode.
+Analyst triage remains in analyst mode.
+RFI / Correction / Blacklist actions create payloads and appear in verifier queue.
+Verifier action buttons update payload status and move items between queues.
+Payloads persist across refresh.
+Suggested commit: ui(srr): verifier triage + payload wiring

@@ -1370,51 +1370,89 @@
 
       <!-- TRIAGE PAGE (default after data loaded) -->
       <div class="page" id="page-triage">
-        <div class="page-header">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <h2>Triage</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.4.5</span>
-          </div>
-          <p class="page-desc">Alert summary view. Click status cards to open filtered grid views.</p>
-          <div class="triage-session-info" id="triage-session-info" style="margin-top: 10px; font-size: 0.85em; color: #666;"></div>
-        </div>
-
-        <div class="filters" id="filters">
-          <div class="filters-row">
-            <div class="filter-group">
-              <label>Search</label>
-              <input type="text" class="filter-search" id="filter-search" placeholder="Search all fields...">
+        <div id="analyst-triage-content">
+          <div class="page-header">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <h2>Triage</h2>
+              <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.4.5</span>
             </div>
-            <div class="filter-group">
-              <label>Severity</label>
-              <div class="filter-chips" id="severity-chips">
-                <span class="filter-chip severity-blocking" data-severity="blocking">Blocking</span>
-                <span class="filter-chip severity-warning" data-severity="warning">Warning</span>
-                <span class="filter-chip severity-info" data-severity="info">Info</span>
+            <p class="page-desc">Alert summary view. Click status cards to open filtered grid views.</p>
+            <div class="triage-session-info" id="triage-session-info" style="margin-top: 10px; font-size: 0.85em; color: #666;"></div>
+          </div>
+
+          <div class="filters" id="filters">
+            <div class="filters-row">
+              <div class="filter-group">
+                <label>Search</label>
+                <input type="text" class="filter-search" id="filter-search" placeholder="Search all fields...">
+              </div>
+              <div class="filter-group">
+                <label>Severity</label>
+                <div class="filter-chips" id="severity-chips">
+                  <span class="filter-chip severity-blocking" data-severity="blocking">Blocking</span>
+                  <span class="filter-chip severity-warning" data-severity="warning">Warning</span>
+                  <span class="filter-chip severity-info" data-severity="info">Info</span>
+                </div>
+              </div>
+              <div class="filter-group">
+                <label>Status</label>
+                <div class="filter-chips" id="status-chips">
+                  <span class="filter-chip status-ready" data-status="ready">Ready</span>
+                  <span class="filter-chip status-needs_review" data-status="needs_review">Needs Review</span>
+                  <span class="filter-chip status-blocked" data-status="blocked">Blocked</span>
+                </div>
+              </div>
+              <div class="filter-group">
+                <label>Subtype</label>
+                <select class="filter-select" id="filter-subtype">
+                  <option value="">All Subtypes</option>
+                </select>
               </div>
             </div>
-            <div class="filter-group">
-              <label>Status</label>
-              <div class="filter-chips" id="status-chips">
-                <span class="filter-chip status-ready" data-status="ready">Ready</span>
-                <span class="filter-chip status-needs_review" data-status="needs_review">Needs Review</span>
-                <span class="filter-chip status-blocked" data-status="blocked">Blocked</span>
-              </div>
-            </div>
-            <div class="filter-group">
-              <label>Subtype</label>
-              <select class="filter-select" id="filter-subtype">
-                <option value="">All Subtypes</option>
-              </select>
-            </div>
           </div>
+
+          <div id="delta-container" style="display: none;"></div>
+          <div id="summary-container"></div>
+          <div id="contract-results-container"></div>
+          <div id="issues-container"></div>
+          <div id="field-actions-container"></div>
         </div>
 
-        <div id="delta-container" style="display: none;"></div>
-        <div id="summary-container"></div>
-        <div id="contract-results-container"></div>
-        <div id="issues-container"></div>
-        <div id="field-actions-container"></div>
+        <div id="verifier-triage-content" style="display: none;">
+          <div class="page-header">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <h2>Verifier Triage</h2>
+              <span style="font-size: 0.7em; color: #999;">PAGE: VERIFIER-TRIAGE | BUILD v1.5.0</span>
+            </div>
+            <p class="page-desc">Review submitted RFIs, Corrections, and Blacklist requests.</p>
+          </div>
+          
+          <div class="verifier-tabs" style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+            <div class="v-tab active" data-vqueue="pending" onclick="setVerifierQueue('pending')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600; background: #f5f5f5;">Pending <span id="v-count-pending">(0)</span></div>
+            <div class="v-tab" data-vqueue="needs_clarification" onclick="setVerifierQueue('needs_clarification')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600;">Clarification <span id="v-count-clarification">(0)</span></div>
+            <div class="v-tab" data-vqueue="sent_to_admin" onclick="setVerifierQueue('sent_to_admin')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600;">To Admin <span id="v-count-admin">(0)</span></div>
+            <div class="v-tab" data-vqueue="resolved" onclick="setVerifierQueue('resolved')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600;">Resolved <span id="v-count-resolved">(0)</span></div>
+          </div>
+
+          <div class="verifier-table-container" style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
+              <thead style="background: #f8f9fa; border-bottom: 1px solid #eee;">
+                <tr>
+                  <th style="padding: 12px;">Type</th>
+                  <th style="padding: 12px;">Record</th>
+                  <th style="padding: 12px;">Field</th>
+                  <th style="padding: 12px;">Change / Value</th>
+                  <th style="padding: 12px;">Comment</th>
+                  <th style="padding: 12px;">Submitted</th>
+                  <th style="padding: 12px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="verifier-queue-list">
+                <tr><td colspan="7" style="padding: 40px; text-align: center; color: #999;">No payloads in this queue</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div><!-- end page-triage -->
 
       <!-- ALL-DATA GRID PAGE -->
@@ -6843,6 +6881,20 @@
         appLayout.classList.remove('mode-analyst', 'mode-reviewer', 'mode-admin');
         appLayout.classList.add(`mode-${mode}`);
       }
+
+      // v1.5.0: Toggle Triage view visibility
+      const analystContent = document.getElementById('analyst-triage-content');
+      const verifierContent = document.getElementById('verifier-triage-content');
+      if (analystContent && verifierContent) {
+        if (mode === 'reviewer') {
+          analystContent.style.display = 'none';
+          verifierContent.style.display = 'block';
+          renderVerifierTriage();
+        } else {
+          analystContent.style.display = 'block';
+          verifierContent.style.display = 'none';
+        }
+      }
       
       // If downgrading from admin mode, teardown admin state
       if (mode !== 'admin') {
@@ -9497,6 +9549,20 @@
       // Submit the patch request
       var submittedRequest = submitPatchRequest(request.request_id, author, currentMode || 'Analyst');
       
+      // v1.5.0: Add to verifier queue
+      addVerifierPayload({
+        id: request.request_id,
+        type: patchType,
+        record_id: request.contract_key,
+        field: changes.length > 0 ? changes[0].field : (srrState.rfiField ? srrState.rfiField.key : 'N/A'),
+        old_value: changes.length > 0 ? changes[0].from : (srrState.rfiField ? srrState.rfiField.value : ''),
+        new_value: changes.length > 0 ? changes[0].to : '',
+        comment: justification,
+        analyst_id: author,
+        timestamp: new Date().toISOString(),
+        status: 'pending'
+      });
+      
       // Update local state
       srrState.patchDraft.status = 'Submitted';
       
@@ -9537,6 +9603,94 @@
     function showAuditLogForRecord() {
       showToast('Audit Log view coming soon', 'info');
       console.log('[SRR] Opening audit log for record: ' + srrState.currentRowId);
+    }
+
+    // ========== VERIFIER TRIAGE & PAYLOAD SYSTEM (v1.5.0) ==========
+    var verifierQueueState = {
+      activeQueue: 'pending',
+      payloads: JSON.parse(localStorage.getItem('srr_verifier_queue_v1') || '[]')
+    };
+
+    function addVerifierPayload(payload) {
+      verifierQueueState.payloads.push(payload);
+      saveVerifierQueue();
+      console.log('[Verifier] Payload added:', payload);
+    }
+
+    function saveVerifierQueue() {
+      localStorage.setItem('srr_verifier_queue_v1', JSON.stringify(verifierQueueState.payloads));
+    }
+
+    function setVerifierQueue(queue) {
+      verifierQueueState.activeQueue = queue;
+      document.querySelectorAll('.v-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.vqueue === queue);
+        t.style.background = t.dataset.vqueue === queue ? '#e3f2fd' : 'transparent';
+        t.style.color = t.dataset.vqueue === queue ? '#1565c0' : '#666';
+      });
+      renderVerifierTriage();
+    }
+
+    function renderVerifierTriage() {
+      const container = document.getElementById('verifier-queue-list');
+      if (!container) return;
+
+      const queue = verifierQueueState.activeQueue;
+      const filtered = verifierQueueState.payloads.filter(p => p.status === queue);
+
+      // Update counts
+      const counts = { pending: 0, needs_clarification: 0, sent_to_admin: 0, resolved: 0 };
+      verifierQueueState.payloads.forEach(p => counts[p.status] = (counts[p.status] || 0) + 1);
+      
+      document.getElementById('v-count-pending').textContent = `(${counts.pending})`;
+      document.getElementById('v-count-clarification').textContent = `(${counts.needs_clarification})`;
+      document.getElementById('v-count-admin').textContent = `(${counts.sent_to_admin})`;
+      document.getElementById('v-count-resolved').textContent = `(${counts.resolved})`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<tr><td colspan="7" style="padding: 40px; text-align: center; color: #999;">No payloads in this queue</td></tr>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(p => {
+        const typeLabel = p.type.toUpperCase();
+        const typeColor = p.type === 'rfi' ? '#ff9800' : (p.type === 'blacklist' ? '#d32f2f' : '#1565c0');
+        const time = new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        let actions = '';
+        if (p.status === 'pending') {
+          actions = `
+            <button onclick="updatePayloadStatus('${p.id}', 'sent_to_admin')" style="background:#2e7d32; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Approve</button>
+            <button onclick="updatePayloadStatus('${p.id}', 'needs_clarification')" style="background:#f57c00; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">RFI</button>
+          `;
+        } else if (p.status === 'needs_clarification') {
+          actions = `<button onclick="updatePayloadStatus('${p.id}', 'pending')" style="background:#1565c0; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Re-check</button>`;
+        } else if (p.status === 'sent_to_admin') {
+          actions = `<button onclick="updatePayloadStatus('${p.id}', 'resolved')" style="background:#7b1fa2; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Finalize</button>`;
+        }
+
+        return `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding:12px;"><span style="background:${typeColor}; color:white; padding:2px 6px; border-radius:10px; font-size:0.8em;">${typeLabel}</span></td>
+            <td style="padding:12px; font-weight:600;">${p.record_id}</td>
+            <td style="padding:12px; font-family:monospace;">${p.field}</td>
+            <td style="padding:12px;">${p.new_value || p.old_value || '(none)'}</td>
+            <td style="padding:12px; color:#666; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${p.comment}">${p.comment}</td>
+            <td style="padding:12px; color:#888;">${time}</td>
+            <td style="padding:12px; display:flex; gap:6px;">${actions}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function updatePayloadStatus(payloadId, newStatus) {
+      const payload = verifierQueueState.payloads.find(p => p.id === payloadId);
+      if (payload) {
+        payload.status = newStatus;
+        saveVerifierQueue();
+        renderVerifierTriage();
+        showToast(`Payload ${newStatus.replace(/_/g, ' ')}`, 'info');
+      }
     }
 
     // ========== VERIFIER REVIEW STATE + FUNCTIONS (v1.4.5) ==========
