@@ -8030,16 +8030,16 @@
         if (srrState.selectedField === key) cardClass += ' active';
         
         // v1.4.20: Build action buttons based on state
-        // v1.4.20: Heroicons outline SVGs for field actions (order: Blacklist, RFI, Verify)
-        var iconFlag = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v18"/><path d="M4 4h13l-2 4 2 4H4"/></svg>';
-        var iconQuestion = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18h.01"/><path d="M9.09 9a3 3 0 115.82 1c-.9.8-1.41 1.29-1.41 2.5"/><circle cx="12" cy="12" r="9"/></svg>';
-        var iconCheck = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>';
-        var iconReset = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 110 8h-1"/></svg>';
+        // v1.4.20: Feather SVGs for field actions (order: Blacklist, RFI, Verify)
+        var iconFlag = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>';
+        var iconEdit = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>';
+        var iconCheck = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        var iconReset = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 110 8h-1"/></svg>';
         
         var actionsHtml = '<div class="srr-field-actions">';
         if (fieldState === 'todo') {
           actionsHtml += '<button class="srr-field-action blacklist" onclick="event.stopPropagation(); srrBlacklistField(\'' + key + '\')" title="Blacklist Flag">' + iconFlag + '</button>';
-          actionsHtml += '<button class="srr-field-action rfi" onclick="event.stopPropagation(); srrRfiField(\'' + key + '\')" title="RFI (question)">' + iconQuestion + '</button>';
+          actionsHtml += '<button class="srr-field-action rfi" onclick="event.stopPropagation(); srrRfiField(\'' + key + '\')" title="RFI (request for info)">' + iconEdit + '</button>';
           actionsHtml += '<button class="srr-field-action verify" onclick="event.stopPropagation(); srrVerifyField(\'' + key + '\')" title="Verify (mark as correct)">' + iconCheck + '</button>';
         } else if (fieldState === 'verified') {
           actionsHtml += '<button class="srr-field-action verify active" title="Verified">' + iconCheck + '</button>';
@@ -8126,6 +8126,32 @@
     function srrVerifyField(fieldKey) {
       srrState.fieldStates[fieldKey] = 'verified';
       console.log('[SRR] Field VERIFIED:', fieldKey);
+      
+      // Check if all fields are now verified (record fully validated)
+      var allVerified = true;
+      var fieldKeys = Object.keys(srrState.originalValues || {});
+      for (var i = 0; i < fieldKeys.length; i++) {
+        var k = fieldKeys[i];
+        var state = srrState.fieldStates[k] || 'todo';
+        if (state === 'todo') {
+          allVerified = false;
+          break;
+        }
+      }
+      
+      if (allVerified && fieldKeys.length > 0) {
+        // Mark record as validated and route to triage
+        console.log('[SRR] All fields verified - record validated, routing to To Do queue');
+        var recordKey = srrState.currentRecordKey;
+        if (recordKey && window.localState && window.localState.recordStatus) {
+          window.localState.recordStatus[recordKey] = 'finalized';
+        }
+        updateTriageCounts();
+        showToast('Record validated - all fields verified');
+        navigateTo('triage');
+        return;
+      }
+      
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditor();
     }
