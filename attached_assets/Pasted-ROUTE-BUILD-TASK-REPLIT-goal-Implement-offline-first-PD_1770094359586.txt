@@ -1,0 +1,57 @@
+ROUTE: BUILD_TASK_REPLIT
+goal: Implement offline-first PDF caching for SRR with realistic limits and deterministic LRU eviction (per-file 25MB, total 250MB), plus Cache UI controls, aligned to V1 local ingest + V1.5 copy-in connectors.
+constraints:
+- Cache is local-only; no background sync.
+- Do not claim Drive/Sheets connectors exist unless implemented.
+- Canonical tokens unchanged; UI labels may alias.
+files_in_scope:
+- `ui/viewer/index.html`
+- `docs/ui/views/single_row_review_view.md`
+- `docs/ui/views/data_source_view.md`
+- `docs/AUDIT_LOG.md`
+implementation_steps:
+1) Cache index + stats
+- Requirements:
+  - Add a cache index stored locally (IndexedDB preferred; if not, localStorage index + IndexedDB blobs).
+  - Track per entry: key, source_url, size_bytes, created_at, last_accessed_at, checksum (sha256 or stable placeholder if too heavy).
+  - Compute stats: file count, total bytes, max bytes.
+- Acceptance tests:
+  - Cache stats display accurate count + total MB in the Cache section.
+
+2) Cache lookup + load path
+- Requirements:
+  - On SRR PDF request: compute cache key (join identity + source_url).
+  - If cached: update last_accessed_at and render from cached blob (object URL).
+  - If not cached: attempt fetch (online); validate PDF signature; enforce per-file cap.
+  - If offline or fetch fails: show deterministic “Document not available offline” stub (no crash).
+- Acceptance tests:
+  - Cache hit renders without refetch; last_accessed updates.
+  - Offline miss shows stub.
+
+3) LRU eviction (deterministic)
+- Requirements:
+  - Before caching a new PDF, if total would exceed 250MB, evict LRU entries until enough space.
+  - If a single PDF exceeds 25MB: do not cache; still allow viewing if it can be fetched.
+- Acceptance tests:
+  - >25MB file is not cached and shows “Not cached (too large)”.
+  - Adding files beyond 250MB triggers eviction of oldest last_accessed entries.
+
+4) Clear cache UI
+- Requirements:
+  - Wire “Clear cached PDFs” to delete all cached blobs and reset index + stats.
+- Acceptance tests:
+  - Clear cache sets stats to 0 and removes cached entries.
+
+5) Docs updates (exact, no invented integrations)
+- Requirements:
+  - Update SRR doc: caching behavior, caps, offline stub behavior.
+  - Update Data Source doc: “download once, work locally” semantics; connectors are copy-in stubs unless implemented.
+  - Update AUDIT_LOG doc: add cache index contract fields and note cache operations are local UI concerns (not governance events unless explicitly logged).
+- Acceptance tests:
+  - Docs reflect caps (25MB/250MB) and LRU policy exactly.
+
+output_format:
+- summary: bullet list of file changes
+- verification: how you tested AT-01..AT-07
+- suggested_commit_message: one line
+- git_commands: exact add/commit commands (no push claims)

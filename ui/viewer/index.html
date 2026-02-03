@@ -1087,17 +1087,21 @@
       <!-- Sidebar Footer (anchored to bottom) -->
       <div class="nav-footer">
         <div class="nav-divider"></div>
-        <!-- Cache Section -->
+        <!-- Cache Section (v1.4.13) -->
         <div class="nav-section">
-          <div class="nav-section-header">Cache</div>
+          <div class="nav-section-header">PDF Cache</div>
           <div class="cache-info" style="padding: 4px 20px; font-size: 0.8em; color: #888;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
               <span>Cached PDFs</span>
               <span id="cache-pdf-count">0</span>
             </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
               <span>Storage used</span>
-              <span id="cache-storage-used">0 KB</span>
+              <span id="cache-storage-used">0 B</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9em; color: #aaa;">
+              <span>Max capacity</span>
+              <span>250 MB</span>
             </div>
             <button class="cache-clear-btn" onclick="clearCachedPDFs()">Clear All Cached PDFs</button>
           </div>
@@ -5495,7 +5499,341 @@
     }
 
     // ========== SIDEBAR FUNCTIONS (v1.4.6) ==========
-    var cacheState = { pdfCount: 0, storageKB: 0 };
+    var cacheState = { pdfCount: 0, storageKB: 0, totalBytes: 0 };
+    
+    // ========== PDF CACHE (v1.4.13) ==========
+    // IndexedDB-based offline-first PDF cache with LRU eviction
+    var PDF_CACHE_CONFIG = {
+      DB_NAME: 'orchestrate_pdf_cache',
+      DB_VERSION: 1,
+      STORE_NAME: 'pdfs',
+      INDEX_STORE: 'index',
+      MAX_FILE_BYTES: 25 * 1024 * 1024,  // 25MB per file
+      MAX_TOTAL_BYTES: 250 * 1024 * 1024  // 250MB total
+    };
+    
+    var pdfCacheDB = null;
+    var pdfCacheIndex = []; // In-memory index: [{key, source_url, size_bytes, created_at, last_accessed_at}]
+    
+    function initPdfCache() {
+      return new Promise(function(resolve, reject) {
+        if (!window.indexedDB) {
+          console.warn('[PDF_CACHE] IndexedDB not supported, using memory-only mode');
+          resolve(null);
+          return;
+        }
+        
+        var request = indexedDB.open(PDF_CACHE_CONFIG.DB_NAME, PDF_CACHE_CONFIG.DB_VERSION);
+        
+        request.onerror = function(e) {
+          console.error('[PDF_CACHE] Failed to open IndexedDB:', e);
+          resolve(null);
+        };
+        
+        request.onsuccess = function(e) {
+          pdfCacheDB = e.target.result;
+          console.log('[PDF_CACHE] IndexedDB opened successfully');
+          loadCacheIndex().then(resolve).catch(function() { resolve(null); });
+        };
+        
+        request.onupgradeneeded = function(e) {
+          var db = e.target.result;
+          if (!db.objectStoreNames.contains(PDF_CACHE_CONFIG.STORE_NAME)) {
+            db.createObjectStore(PDF_CACHE_CONFIG.STORE_NAME, { keyPath: 'key' });
+          }
+          if (!db.objectStoreNames.contains(PDF_CACHE_CONFIG.INDEX_STORE)) {
+            db.createObjectStore(PDF_CACHE_CONFIG.INDEX_STORE, { keyPath: 'id' });
+          }
+        };
+      });
+    }
+    
+    function loadCacheIndex() {
+      return new Promise(function(resolve, reject) {
+        if (!pdfCacheDB) {
+          pdfCacheIndex = [];
+          updateCacheStatsFromIndex();
+          resolve();
+          return;
+        }
+        
+        try {
+          var tx = pdfCacheDB.transaction([PDF_CACHE_CONFIG.INDEX_STORE], 'readonly');
+          var store = tx.objectStore(PDF_CACHE_CONFIG.INDEX_STORE);
+          var req = store.get('cache_index');
+          
+          req.onsuccess = function() {
+            if (req.result && Array.isArray(req.result.entries)) {
+              pdfCacheIndex = req.result.entries;
+            } else {
+              pdfCacheIndex = [];
+            }
+            updateCacheStatsFromIndex();
+            console.log('[PDF_CACHE] Loaded index:', pdfCacheIndex.length, 'entries');
+            resolve();
+          };
+          
+          req.onerror = function() {
+            pdfCacheIndex = [];
+            updateCacheStatsFromIndex();
+            resolve();
+          };
+        } catch (e) {
+          pdfCacheIndex = [];
+          updateCacheStatsFromIndex();
+          resolve();
+        }
+      });
+    }
+    
+    function saveCacheIndex() {
+      if (!pdfCacheDB) return Promise.resolve();
+      
+      return new Promise(function(resolve) {
+        try {
+          var tx = pdfCacheDB.transaction([PDF_CACHE_CONFIG.INDEX_STORE], 'readwrite');
+          var store = tx.objectStore(PDF_CACHE_CONFIG.INDEX_STORE);
+          store.put({ id: 'cache_index', entries: pdfCacheIndex });
+          tx.oncomplete = resolve;
+          tx.onerror = resolve;
+        } catch (e) {
+          resolve();
+        }
+      });
+    }
+    
+    function updateCacheStatsFromIndex() {
+      var totalBytes = 0;
+      pdfCacheIndex.forEach(function(entry) {
+        totalBytes += entry.size_bytes || 0;
+      });
+      cacheState.pdfCount = pdfCacheIndex.length;
+      cacheState.totalBytes = totalBytes;
+      cacheState.storageKB = Math.round(totalBytes / 1024);
+      updateCacheDisplay();
+    }
+    
+    function computePdfCacheKey(recordIdentity, sourceUrl) {
+      var identity = recordIdentity || 'unknown';
+      var url = sourceUrl || '';
+      return 'pdf:' + identity + ':' + url.split('?')[0];
+    }
+    
+    function getCachedPdf(cacheKey) {
+      return new Promise(function(resolve) {
+        if (!pdfCacheDB) {
+          resolve(null);
+          return;
+        }
+        
+        try {
+          var tx = pdfCacheDB.transaction([PDF_CACHE_CONFIG.STORE_NAME], 'readonly');
+          var store = tx.objectStore(PDF_CACHE_CONFIG.STORE_NAME);
+          var req = store.get(cacheKey);
+          
+          req.onsuccess = function() {
+            if (req.result && req.result.blob) {
+              // Update last_accessed_at
+              updateCacheEntryAccess(cacheKey);
+              resolve(req.result.blob);
+            } else {
+              resolve(null);
+            }
+          };
+          
+          req.onerror = function() { resolve(null); };
+        } catch (e) {
+          resolve(null);
+        }
+      });
+    }
+    
+    function updateCacheEntryAccess(cacheKey) {
+      var entry = pdfCacheIndex.find(function(e) { return e.key === cacheKey; });
+      if (entry) {
+        entry.last_accessed_at = Date.now();
+        saveCacheIndex();
+      }
+    }
+    
+    function cachePdf(cacheKey, sourceUrl, blob) {
+      return new Promise(function(resolve) {
+        if (!pdfCacheDB || !blob) {
+          resolve(false);
+          return;
+        }
+        
+        var sizeBytes = blob.size;
+        
+        // Check per-file cap
+        if (sizeBytes > PDF_CACHE_CONFIG.MAX_FILE_BYTES) {
+          console.log('[PDF_CACHE] File too large to cache:', (sizeBytes / 1024 / 1024).toFixed(2), 'MB (max 25MB)');
+          resolve(false);
+          return;
+        }
+        
+        // LRU eviction if needed
+        evictLRUIfNeeded(sizeBytes).then(function() {
+          try {
+            var tx = pdfCacheDB.transaction([PDF_CACHE_CONFIG.STORE_NAME], 'readwrite');
+            var store = tx.objectStore(PDF_CACHE_CONFIG.STORE_NAME);
+            
+            var entry = {
+              key: cacheKey,
+              source_url: sourceUrl,
+              size_bytes: sizeBytes,
+              created_at: Date.now(),
+              last_accessed_at: Date.now(),
+              blob: blob
+            };
+            
+            store.put(entry);
+            
+            tx.oncomplete = function() {
+              // Update index
+              var existingIdx = pdfCacheIndex.findIndex(function(e) { return e.key === cacheKey; });
+              var indexEntry = {
+                key: cacheKey,
+                source_url: sourceUrl,
+                size_bytes: sizeBytes,
+                created_at: entry.created_at,
+                last_accessed_at: entry.last_accessed_at
+              };
+              
+              if (existingIdx >= 0) {
+                pdfCacheIndex[existingIdx] = indexEntry;
+              } else {
+                pdfCacheIndex.push(indexEntry);
+              }
+              
+              updateCacheStatsFromIndex();
+              saveCacheIndex();
+              console.log('[PDF_CACHE] Cached:', cacheKey, (sizeBytes / 1024).toFixed(1), 'KB');
+              resolve(true);
+            };
+            
+            tx.onerror = function() { resolve(false); };
+          } catch (e) {
+            resolve(false);
+          }
+        });
+      });
+    }
+    
+    function evictLRUIfNeeded(newFileBytes) {
+      return new Promise(function(resolve) {
+        var currentTotal = cacheState.totalBytes;
+        var wouldBe = currentTotal + newFileBytes;
+        
+        if (wouldBe <= PDF_CACHE_CONFIG.MAX_TOTAL_BYTES) {
+          resolve();
+          return;
+        }
+        
+        // Sort by last_accessed_at (oldest first)
+        var sorted = pdfCacheIndex.slice().sort(function(a, b) {
+          return (a.last_accessed_at || 0) - (b.last_accessed_at || 0);
+        });
+        
+        var toEvict = [];
+        var freedBytes = 0;
+        var needed = wouldBe - PDF_CACHE_CONFIG.MAX_TOTAL_BYTES;
+        
+        for (var i = 0; i < sorted.length && freedBytes < needed; i++) {
+          toEvict.push(sorted[i].key);
+          freedBytes += sorted[i].size_bytes || 0;
+        }
+        
+        if (toEvict.length === 0) {
+          resolve();
+          return;
+        }
+        
+        console.log('[PDF_CACHE] Evicting', toEvict.length, 'LRU entries to free', (freedBytes / 1024).toFixed(1), 'KB');
+        
+        // Delete from IndexedDB
+        var pending = toEvict.length;
+        toEvict.forEach(function(key) {
+          deleteCachedPdf(key).then(function() {
+            pending--;
+            if (pending === 0) resolve();
+          });
+        });
+      });
+    }
+    
+    function deleteCachedPdf(cacheKey) {
+      return new Promise(function(resolve) {
+        if (!pdfCacheDB) {
+          pdfCacheIndex = pdfCacheIndex.filter(function(e) { return e.key !== cacheKey; });
+          updateCacheStatsFromIndex();
+          resolve();
+          return;
+        }
+        
+        try {
+          var tx = pdfCacheDB.transaction([PDF_CACHE_CONFIG.STORE_NAME], 'readwrite');
+          var store = tx.objectStore(PDF_CACHE_CONFIG.STORE_NAME);
+          store.delete(cacheKey);
+          
+          tx.oncomplete = function() {
+            pdfCacheIndex = pdfCacheIndex.filter(function(e) { return e.key !== cacheKey; });
+            updateCacheStatsFromIndex();
+            resolve();
+          };
+          
+          tx.onerror = function() {
+            pdfCacheIndex = pdfCacheIndex.filter(function(e) { return e.key !== cacheKey; });
+            updateCacheStatsFromIndex();
+            resolve();
+          };
+        } catch (e) {
+          pdfCacheIndex = pdfCacheIndex.filter(function(e) { return e.key !== cacheKey; });
+          updateCacheStatsFromIndex();
+          resolve();
+        }
+      });
+    }
+    
+    function clearAllCachedPdfs() {
+      return new Promise(function(resolve) {
+        if (!pdfCacheDB) {
+          pdfCacheIndex = [];
+          updateCacheStatsFromIndex();
+          resolve();
+          return;
+        }
+        
+        try {
+          var tx = pdfCacheDB.transaction([PDF_CACHE_CONFIG.STORE_NAME, PDF_CACHE_CONFIG.INDEX_STORE], 'readwrite');
+          tx.objectStore(PDF_CACHE_CONFIG.STORE_NAME).clear();
+          tx.objectStore(PDF_CACHE_CONFIG.INDEX_STORE).clear();
+          
+          tx.oncomplete = function() {
+            pdfCacheIndex = [];
+            updateCacheStatsFromIndex();
+            console.log('[PDF_CACHE] All cached PDFs cleared');
+            resolve();
+          };
+          
+          tx.onerror = function() {
+            pdfCacheIndex = [];
+            updateCacheStatsFromIndex();
+            resolve();
+          };
+        } catch (e) {
+          pdfCacheIndex = [];
+          updateCacheStatsFromIndex();
+          resolve();
+        }
+      });
+    }
+    
+    function formatCacheSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+    }
 
     function updateProgressBlock() {
       var todoEl = document.getElementById('progress-todo');
@@ -5569,26 +5907,26 @@
       }
     }
 
+    // v1.4.13: Wire clear cache to IndexedDB
     function clearCachedPDFs() {
-      cacheState.pdfCount = 0;
-      cacheState.storageKB = 0;
-      document.getElementById('cache-pdf-count').textContent = '0';
-      document.getElementById('cache-storage-used').textContent = '0 KB';
-      try {
-        localStorage.removeItem('orchestrate.pdf_attachments.v1');
-      } catch (e) {}
-      showToast('Cached PDFs cleared', 'success');
+      clearAllCachedPdfs().then(function() {
+        try {
+          localStorage.removeItem('orchestrate.pdf_attachments.v1');
+        } catch (e) {}
+        showToast('Cached PDFs cleared', 'success');
+      });
     }
 
     function handleExportSave() {
       showToast('Export / Save coming soon', 'info');
     }
 
+    // v1.4.13: Update cache display with formatted size
     function updateCacheDisplay() {
       var countEl = document.getElementById('cache-pdf-count');
       var sizeEl = document.getElementById('cache-storage-used');
       if (countEl) countEl.textContent = cacheState.pdfCount;
-      if (sizeEl) sizeEl.textContent = cacheState.storageKB + ' KB';
+      if (sizeEl) sizeEl.textContent = formatCacheSize(cacheState.totalBytes);
     }
     
     function loadFromData(data, sourceType, fileName) {
@@ -7619,6 +7957,7 @@
       console.log('[SRR_PDF_LOAD] Switched to local attachment:', srrState.localAttachmentFallback.name);
     }
     
+    // v1.4.13: Cache-aware PDF loading with offline support
     function srrLoadPdfForRecord(record) {
       var emptyEl = document.getElementById('srr-doc-empty');
       var containerEl = document.getElementById('srr-doc-container');
@@ -7633,103 +7972,233 @@
       srrState.localAttachmentFallback = null;
       srrState.useFragmentZoom = true;
       srrState.networkPdfUrl = null;
+      srrState.cacheStatus = null;
       
       var attachments = [];
       try {
         attachments = JSON.parse(localStorage.getItem(STORAGE_KEY_PDF_ATTACHMENTS) || '[]');
       } catch (e) {}
       
-      var pdfUrl = null;
-      var sourceType = null;
-      var sourceName = null;
       var recordId = record ? (record.contract_key || record.id || 'unknown') : 'no-record';
-      
-      // v1.4.13: Coerce file_url and file_name to strings
       var fileUrl = record ? srrNormalizePdfValue(record.file_url) : '';
       var fileName = record ? srrNormalizePdfValue(record.file_name) : '';
       
-      // Priority 1: record.file_url that is a valid PDF URL (http/https, ends with .pdf)
-      if (srrIsValidPdfUrl(fileUrl)) {
-        pdfUrl = fileUrl;
-        sourceType = 'URL';
-        sourceName = fileName || fileUrl.split('/').pop().split('?')[0];
-        srrState.networkPdfUrl = fileUrl;
-      }
+      // Compute cache key for this record
+      var cacheKey = computePdfCacheKey(recordId, fileUrl);
       
-      // Priority 2: Local attachment matching record.file_name
-      if (!pdfUrl && fileName && attachments.length > 0) {
-        var match = attachments.find(function(a) { return a.file_name === fileName; });
-        if (match && match.local_object_url) {
-          pdfUrl = match.local_object_url;
-          sourceType = 'Local Attachment';
-          sourceName = match.file_name;
-        }
-      }
+      // Check if network URL is valid
+      var hasNetworkUrl = srrIsValidPdfUrl(fileUrl);
       
-      // Priority 3: Any local attachment (fallback - first available)
-      if (!pdfUrl && attachments.length > 0 && attachments[0].local_object_url) {
-        pdfUrl = attachments[0].local_object_url;
-        sourceType = 'Local Attachment';
-        sourceName = attachments[0].file_name;
-      }
-      
-      // Track local fallback if using network URL
-      if (sourceType === 'URL' && attachments.length > 0) {
+      // Track local fallback
+      if (hasNetworkUrl && attachments.length > 0) {
         var fallbackMatch = fileName ? attachments.find(function(a) { return a.file_name === fileName; }) : attachments[0];
         if (fallbackMatch && fallbackMatch.local_object_url) {
           srrState.localAttachmentFallback = { url: fallbackMatch.local_object_url, name: fallbackMatch.file_name };
         }
       }
       
-      // v1.4.13: Structured SRR_PDF_LOAD log
-      var logEntry = {
-        record: recordId,
-        sourceType: sourceType || 'none',
-        url: pdfUrl ? (pdfUrl.length > 80 ? pdfUrl.substring(0, 80) + '...' : pdfUrl) : 'none',
-        page: 1,
-        zoom: 100
-      };
-      
-      if (pdfUrl) {
-        var savedState = loadSrrPdfState(record);
-        srrState.docPage = savedState.page || 1;
-        srrState.zoom = savedState.zoom || 100;
-        srrState.docTotalPages = null;
-        srrState.currentPdfUrl = pdfUrl;
-        srrState.pdfSourceType = sourceType;
+      // Try cache first for network URLs
+      if (hasNetworkUrl) {
+        srrState.networkPdfUrl = fileUrl;
         
-        logEntry.page = srrState.docPage;
-        logEntry.zoom = srrState.zoom;
+        getCachedPdf(cacheKey).then(function(cachedBlob) {
+          if (cachedBlob) {
+            // Cache hit - render from cached blob
+            var objectUrl = URL.createObjectURL(cachedBlob);
+            srrState.cacheStatus = 'hit';
+            srrRenderPdf(record, objectUrl, 'Cached', fileName || fileUrl.split('/').pop().split('?')[0], {
+              record: recordId,
+              sourceType: 'Cached',
+              cacheStatus: 'hit',
+              url: fileUrl.substring(0, 60) + '...'
+            });
+            console.log('[PDF_CACHE] Cache hit for:', cacheKey);
+          } else {
+            // Cache miss - fetch from network
+            srrFetchAndCachePdf(record, fileUrl, fileName, cacheKey, attachments);
+          }
+        });
+      } else {
+        // No network URL - try local attachments
+        var pdfUrl = null;
+        var sourceType = null;
+        var sourceName = null;
         
-        emptyEl.style.display = 'none';
-        containerEl.style.display = 'block';
-        
-        if (sourceEl && sourceTypeEl && sourceNameEl) {
-          sourceEl.style.display = 'block';
-          sourceTypeEl.textContent = sourceType + ':';
-          sourceNameEl.textContent = sourceName || '';
+        if (fileName && attachments.length > 0) {
+          var match = attachments.find(function(a) { return a.file_name === fileName; });
+          if (match && match.local_object_url) {
+            pdfUrl = match.local_object_url;
+            sourceType = 'Local Attachment';
+            sourceName = match.file_name;
+          }
         }
         
-        // Setup iframe load/error handlers
-        srrSetupIframeHandlers(iframeEl);
-        srrUpdateIframeSrc();
-        srrUpdateZoomDisplay();
-        srrUpdatePageDisplay();
-      } else {
-        srrState.docPage = 1;
-        srrState.docTotalPages = null;
-        srrState.zoom = 100;
-        srrState.currentPdfUrl = null;
-        srrState.pdfSourceType = null;
-        emptyEl.style.display = 'block';
-        containerEl.style.display = 'none';
-        if (sourceEl) sourceEl.style.display = 'none';
-        iframeEl.src = 'about:blank';
-        srrUpdateZoomDisplay();
-        srrUpdatePageDisplay();
+        if (!pdfUrl && attachments.length > 0 && attachments[0].local_object_url) {
+          pdfUrl = attachments[0].local_object_url;
+          sourceType = 'Local Attachment';
+          sourceName = attachments[0].file_name;
+        }
+        
+        if (pdfUrl) {
+          srrRenderPdf(record, pdfUrl, sourceType, sourceName, {
+            record: recordId,
+            sourceType: sourceType,
+            cacheStatus: 'local',
+            url: 'local-attachment'
+          });
+        } else {
+          srrShowEmptyState();
+        }
+      }
+    }
+    
+    // v1.4.13: Fetch PDF from network and cache it
+    function srrFetchAndCachePdf(record, networkUrl, fileName, cacheKey, attachments) {
+      var recordId = record ? (record.contract_key || record.id || 'unknown') : 'no-record';
+      
+      fetch(networkUrl, { mode: 'cors' })
+        .then(function(response) {
+          if (!response.ok) throw new Error('HTTP ' + response.status);
+          return response.blob();
+        })
+        .then(function(blob) {
+          // Validate PDF signature (basic check: starts with %PDF)
+          return blob.slice(0, 5).text().then(function(sig) {
+            if (!sig.startsWith('%PDF')) {
+              throw new Error('Invalid PDF signature');
+            }
+            return blob;
+          });
+        })
+        .then(function(blob) {
+          var objectUrl = URL.createObjectURL(blob);
+          var sourceName = fileName || networkUrl.split('/').pop().split('?')[0];
+          
+          // Check if file is too large to cache
+          if (blob.size > PDF_CACHE_CONFIG.MAX_FILE_BYTES) {
+            srrState.cacheStatus = 'too-large';
+            console.log('[PDF_CACHE] File too large to cache:', (blob.size / 1024 / 1024).toFixed(2), 'MB');
+            srrRenderPdf(record, objectUrl, 'URL (not cached)', sourceName, {
+              record: recordId,
+              sourceType: 'URL',
+              cacheStatus: 'too-large',
+              url: networkUrl.substring(0, 60) + '...'
+            });
+          } else {
+            // Cache the PDF
+            cachePdf(cacheKey, networkUrl, blob).then(function(cached) {
+              srrState.cacheStatus = cached ? 'cached' : 'cache-failed';
+              srrRenderPdf(record, objectUrl, cached ? 'URL (cached)' : 'URL', sourceName, {
+                record: recordId,
+                sourceType: 'URL',
+                cacheStatus: cached ? 'cached' : 'cache-failed',
+                url: networkUrl.substring(0, 60) + '...'
+              });
+            });
+          }
+        })
+        .catch(function(err) {
+          console.warn('[SRR_PDF] Fetch failed:', err.message);
+          srrState.cacheStatus = 'offline';
+          
+          // Try local attachment fallback
+          if (srrState.localAttachmentFallback) {
+            srrRenderPdf(record, srrState.localAttachmentFallback.url, 'Local Attachment (offline fallback)', srrState.localAttachmentFallback.name, {
+              record: recordId,
+              sourceType: 'Local Attachment',
+              cacheStatus: 'offline-fallback',
+              url: 'local-attachment'
+            });
+          } else {
+            // Show offline stub
+            srrShowOfflineStub(networkUrl);
+          }
+        });
+    }
+    
+    // v1.4.13: Render PDF in iframe
+    function srrRenderPdf(record, pdfUrl, sourceType, sourceName, logEntry) {
+      var emptyEl = document.getElementById('srr-doc-empty');
+      var containerEl = document.getElementById('srr-doc-container');
+      var iframeEl = document.getElementById('srr-pdf-iframe');
+      var sourceEl = document.getElementById('srr-doc-source');
+      var sourceTypeEl = document.getElementById('srr-doc-source-type');
+      var sourceNameEl = document.getElementById('srr-doc-source-name');
+      
+      var savedState = loadSrrPdfState(record);
+      srrState.docPage = savedState.page || 1;
+      srrState.zoom = savedState.zoom || 100;
+      srrState.docTotalPages = null;
+      srrState.currentPdfUrl = pdfUrl;
+      srrState.pdfSourceType = sourceType;
+      
+      logEntry.page = srrState.docPage;
+      logEntry.zoom = srrState.zoom;
+      
+      if (emptyEl) emptyEl.style.display = 'none';
+      if (containerEl) containerEl.style.display = 'block';
+      
+      if (sourceEl && sourceTypeEl && sourceNameEl) {
+        sourceEl.style.display = 'block';
+        sourceTypeEl.textContent = sourceType + ':';
+        sourceNameEl.textContent = sourceName || '';
       }
       
+      srrSetupIframeHandlers(iframeEl);
+      srrUpdateIframeSrc();
+      srrUpdateZoomDisplay();
+      srrUpdatePageDisplay();
+      
       console.log('[SRR_PDF_LOAD]', JSON.stringify(logEntry));
+    }
+    
+    // v1.4.13: Show empty state
+    function srrShowEmptyState() {
+      var emptyEl = document.getElementById('srr-doc-empty');
+      var containerEl = document.getElementById('srr-doc-container');
+      var iframeEl = document.getElementById('srr-pdf-iframe');
+      var sourceEl = document.getElementById('srr-doc-source');
+      
+      srrState.docPage = 1;
+      srrState.docTotalPages = null;
+      srrState.zoom = 100;
+      srrState.currentPdfUrl = null;
+      srrState.pdfSourceType = null;
+      
+      if (emptyEl) emptyEl.style.display = 'block';
+      if (containerEl) containerEl.style.display = 'none';
+      if (sourceEl) sourceEl.style.display = 'none';
+      if (iframeEl) iframeEl.src = 'about:blank';
+      srrUpdateZoomDisplay();
+      srrUpdatePageDisplay();
+      
+      console.log('[SRR_PDF_LOAD]', JSON.stringify({ record: 'unknown', sourceType: 'none', cacheStatus: 'empty' }));
+    }
+    
+    // v1.4.13: Show offline stub when network unavailable and no local fallback
+    function srrShowOfflineStub(networkUrl) {
+      var emptyEl = document.getElementById('srr-doc-empty');
+      var containerEl = document.getElementById('srr-doc-container');
+      var sourceEl = document.getElementById('srr-doc-source');
+      
+      srrState.docPage = 1;
+      srrState.zoom = 100;
+      srrState.currentPdfUrl = null;
+      srrState.pdfSourceType = null;
+      
+      if (containerEl) containerEl.style.display = 'none';
+      if (sourceEl) sourceEl.style.display = 'none';
+      
+      // Show offline stub in empty state area
+      if (emptyEl) {
+        emptyEl.style.display = 'block';
+        emptyEl.innerHTML = '<div style="font-size: 3em; margin-bottom: 10px;">📵</div>' +
+          '<div style="font-weight: 500; color: #e65100;">Document not available offline</div>' +
+          '<div style="font-size: 0.85em; color: #999; margin-top: 8px;">This PDF has not been cached. Connect to the network to view.</div>' +
+          (networkUrl ? '<a href="' + networkUrl + '" target="_blank" style="display: inline-block; margin-top: 12px; color: #1565c0; text-decoration: underline;">Open in New Tab (when online)</a>' : '');
+      }
+      
+      console.log('[SRR_PDF_LOAD]', JSON.stringify({ record: 'unknown', sourceType: 'none', cacheStatus: 'offline-no-cache', url: networkUrl ? networkUrl.substring(0, 60) + '...' : 'none' }));
     }
     
     // v1.4.13: Setup iframe load/error handlers for best-effort failure detection
@@ -13046,6 +13515,11 @@ Add any additional notes here.
     initLoaderPage();
     renderPDFAttachmentsList();
     updateLoaderPageUI();
+    
+    // v1.4.13: Initialize PDF cache (IndexedDB)
+    initPdfCache().then(function() {
+      console.log('[PDF_CACHE] Initialized, cached:', cacheState.pdfCount, 'files,', formatCacheSize(cacheState.totalBytes));
+    });
     
     // Welcome hero and top toolbar event listeners
     document.getElementById('welcome-load-data')?.addEventListener('click', openDataSourcePanel);
