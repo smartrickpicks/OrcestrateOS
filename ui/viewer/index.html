@@ -14,7 +14,8 @@
     .nav-header { padding: 16px 20px; border-bottom: 1px solid #2d2d4a; }
     .nav-header h1 { font-size: 1em; color: white; margin: 0; }
     .nav-header .version { font-size: 0.7em; color: #888; margin-top: 4px; }
-    .nav-menu { flex-grow: 1; padding: 10px 0; overflow-y: auto; }
+    .nav-menu { flex: 1 1 auto; padding: 10px 0; overflow-y: auto; min-height: 0; }
+    .nav-footer { flex-shrink: 0; background: #1a1a2e; border-top: 1px solid #333; }
     .nav-section { margin-bottom: 8px; }
     .nav-section-header { padding: 8px 20px 6px; font-size: 0.65em; color: #666; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
     .nav-item { display: flex; align-items: center; padding: 10px 20px; color: #aaa; text-decoration: none; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
@@ -1018,7 +1019,11 @@
             </select>
           </div>
           
-          <!-- View Mode Buttons -->
+          <!-- View Mode Buttons: Triage → All Data Grid → Record Inspection -->
+          <a class="nav-item" data-page="triage" href="#/triage">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">Triage</span>
+          </a>
           <a class="nav-item" data-page="grid" href="#/grid">
             <span class="nav-icon">📊</span>
             <span class="nav-label">All Data Grid</span>
@@ -1042,10 +1047,6 @@
             <span class="nav-icon">✎</span>
             <span class="nav-label">Patch Studio</span>
           </a>
-          <a class="nav-item" id="nav-evidence-status" href="#" onclick="showEvidenceStatus(); return false;">
-            <span class="nav-icon">📋</span>
-            <span class="nav-label">Evidence Status</span>
-          </a>
           <a class="nav-item reviewer-only" data-page="review" href="#/review">
             <span class="nav-icon">🔍</span>
             <span class="nav-label">Config Inspector</span>
@@ -1064,8 +1065,10 @@
           </a>
         </div>
 
+      </div>
+      <!-- Sidebar Footer (anchored to bottom) -->
+      <div class="nav-footer">
         <div class="nav-divider"></div>
-
         <!-- Cache Section -->
         <div class="nav-section">
           <div class="nav-section-header">Cache</div>
@@ -1081,9 +1084,8 @@
             <button class="cache-clear-btn" onclick="clearCachedPDFs()">Clear All Cached PDFs</button>
           </div>
         </div>
-
-        <!-- Export / Save Footer -->
-        <div class="nav-section" style="padding: 12px 16px; margin-top: auto;">
+        <!-- Export / Save -->
+        <div class="nav-section" style="padding: 12px 16px;">
           <button class="nav-action-btn export-btn" onclick="handleExportSave()">
             <span class="nav-action-icon">💾</span>
             <span>Export / Save</span>

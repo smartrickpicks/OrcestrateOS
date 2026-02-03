@@ -1,5 +1,5 @@
 {
-  "version": "1.4.6",
+  "version": "1.4.7",
   "description": "Sidebar panel structure and navigation semantics for DataDash-style layout",
   "sidebar_structure": {
     "order": [
@@ -45,6 +45,14 @@
             "kind": "dropdown",
             "interaction": "filters_grid_by_sheet",
             "visible_to": ["Analyst", "Reviewer", "Admin"]
+          },
+          {
+            "id": "triage",
+            "label": "Triage",
+            "kind": "nav_item",
+            "route": "#/triage",
+            "visible_to": ["Analyst", "Reviewer", "Admin"],
+            "rationale": "Alert summary and prioritization lens."
           },
           {
             "id": "all_data_grid",

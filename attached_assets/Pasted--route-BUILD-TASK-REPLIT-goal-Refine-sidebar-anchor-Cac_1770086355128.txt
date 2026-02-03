@@ -1,0 +1,68 @@
+{
+  "route": "BUILD_TASK_REPLIT",
+  "goal": "Refine sidebar: anchor Cache + Export/Save to bottom, rename evidence label to Triage, and reorder view buttons to Triage → All Data Grid → Record Inspection.",
+  "constraints": [
+    "Offline-first; no network calls.",
+    "Canonical tokens/routes unchanged.",
+    "UI label must be 'Record Inspection' (not Record Inspector).",
+    "No invented claims."
+  ],
+  "files_in_scope": [
+    "ui/viewer/index.html",
+    "docs/specs/Side-Panel-UX-and-Navigation-Semantics-V1.json",
+    "docs/ui/ui_principles.md",
+    "docs/ui/views/triage_view.md"
+  ],
+  "implementation_steps": [
+    {
+      "id": "SIDEBAR-01",
+      "title": "Anchor footer",
+      "requirements": [
+        "Cache section and Export/Save button are anchored to the bottom of the sidebar."
+      ],
+      "acceptance_tests": [
+        "Cache + Export/Save remain at bottom on tall screens.",
+        "Main navigation scrolls independently above the footer."
+      ]
+    },
+    {
+      "id": "SIDEBAR-02",
+      "title": "Rename evidence label to Triage",
+      "requirements": [
+        "Any sidebar label that currently reads 'Evidence' or 'Evidence Source' is renamed to 'Triage'."
+      ],
+      "acceptance_tests": [
+        "Sidebar shows Triage as the label."
+      ]
+    },
+    {
+      "id": "SIDEBAR-03",
+      "title": "Reorder view buttons",
+      "requirements": [
+        "View Mode buttons order: Triage → All Data Grid → Record Inspection.",
+        "Record Inspection routes to the SRR view (canonical route)."
+      ],
+      "acceptance_tests": [
+        "Buttons appear in correct order with correct labels.",
+        "Record Inspection routes to SRR."
+      ]
+    },
+    {
+      "id": "DOCS-01",
+      "title": "Docs alignment",
+      "requirements": [
+        "Update Side-Panel-UX-and-Navigation-Semantics-V1.json and any UI docs touched to reflect the new order/labels.",
+        "Avoid introducing non-canonical ids."
+      ],
+      "acceptance_tests": [
+        "Docs match UI labels and ordering."
+      ]
+    }
+  ],
+  "output_format": {
+    "summary": "bullet list of file changes",
+    "verification": "manual checks or grep notes",
+    "suggested_commit_message": "one line",
+    "git_commands": "exact add/commit commands without claiming push"
+  }
+}
