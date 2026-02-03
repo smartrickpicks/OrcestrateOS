@@ -565,7 +565,6 @@
     .srr-chip-edited { background: #ff9800; color: white; }
     .srr-chip-needs-patch { background: #e91e63; color: white; }
     .srr-chip-required { background: #9c27b0; color: white; }
-    .srr-chip-rfi { background: #673ab7; color: white; }
     .srr-field-card-body { padding: 10px; }
     .srr-field-value-display { font-size: 0.85em; color: #333; word-break: break-word; padding: 6px 8px; background: #fafafa; border-radius: 4px; min-height: 24px; cursor: text; }
     .srr-field-value-display:hover { background: #f0f0f0; }
@@ -1621,10 +1620,12 @@
                   <div id="srr-blacklist-subject-value">(Derived from selected field/value)</div>
                 </div>
                 
-                <!-- v1.4.19: RFI Target (RFI only) -->
+                <!-- RFI Assignment Stub (RFI only) -->
                 <div id="srr-rfi-section" class="srr-rfi-target srr-section-hidden">
-                  <div class="srr-evidence-label">RFI Target (optional)</div>
-                  <input type="text" id="srr-rfi-target" placeholder="e.g., Team Lead, Legal, Data Steward..." oninput="srrSaveEvidenceDraft()">
+                  <div class="srr-rfi-stub" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: #f5f5f5; border-radius: 6px; color: #888;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span style="font-size: 0.85em;">Assign user (coming soon)</span>
+                  </div>
                 </div>
               </div>
 
@@ -7891,14 +7892,14 @@
       srrState.proposedChanges = {};
       srrState.lockedFields = {};  // v1.4.18: Reset locked fields
       srrState.editingField = null;
-      srrState.activeFilter = 'all';
+      srrState.activeFilter = 'todo';  // Default to To Do queue
       srrState.activeGroup = 'all';
       srrState.searchQuery = '';  // v1.4.18: Reset search
       
-      // Reset filter chips
+      // Reset filter chips - default to To Do
       document.querySelectorAll('.srr-filter-chip').forEach(function(chip) {
         chip.classList.remove('active');
-        if (chip.dataset.filter === 'all') chip.classList.add('active');
+        if (chip.dataset.filter === 'todo') chip.classList.add('active');
       });
       
       // v1.4.18: Reset search input
@@ -7925,8 +7926,7 @@
       document.getElementById('srr-expected-type').value = srrState.patchDraft.expected_type || '';
       document.getElementById('srr-justification').value = srrState.patchDraft.justification || '';
       document.getElementById('srr-repro-type').value = srrState.patchDraft.repro_type || '';
-      var rfiTargetEl = document.getElementById('srr-rfi-target');
-      if (rfiTargetEl) rfiTargetEl.value = srrState.patchDraft.rfi_target || '';
+      // RFI target stub - no input to restore (coming soon)
       
       // v1.4.18: Render Patch Editor
       srrRenderPatchEditor();
@@ -8204,8 +8204,9 @@
         : srrState.originalValues[fieldKey];
       var label = fieldKey.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
       
-      // Set field state to blocked
-      srrState.fieldStates[fieldKey] = 'blocked';
+      // Set field state to modified first (shows Modified tag immediately)
+      // The 'blocked' state will be applied after submit
+      srrState.fieldStates[fieldKey] = 'modified';
       
       // Auto-set patch type to blacklist
       srrState.patchType = 'blacklist';
@@ -8348,10 +8349,10 @@
         // v1.4.18: Lock field after commit (AC-01)
         srrState.lockedFields[fieldKey] = true;
         
-        // v1.4.20: Set field state to patched
-        srrState.fieldStates[fieldKey] = 'patched';
+        // Set field state to modified (routes to Correction, not RFI)
+        srrState.fieldStates[fieldKey] = 'modified';
         
-        // v1.4.20: Auto-set patch type to correction (via edit action)
+        // Auto-set patch type to correction (via edit action)
         srrState.patchType = 'correction';
         srrState.patchDraft.patch_type = 'correction';
         srrUpdatePatchTypeDisplay();
@@ -9292,7 +9293,8 @@
       srrState.patchDraft.expected_type = document.getElementById('srr-expected-type').value;
       srrState.patchDraft.justification = document.getElementById('srr-justification').value;
       srrState.patchDraft.repro_type = document.getElementById('srr-repro-type').value;
-      srrState.patchDraft.rfi_target = document.getElementById('srr-rfi-target') ? document.getElementById('srr-rfi-target').value : '';
+      // RFI target stub - no input field yet (coming soon)
+      srrState.patchDraft.rfi_target = '';
       srrState.patchDraft.override_enabled = srrState.overrideEnabled;
     }
     
