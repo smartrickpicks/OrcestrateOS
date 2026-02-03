@@ -40,6 +40,9 @@ All tasks must use these terms exclusively:
 | SRR-BUG-01 | BUGFIX: SRR row open uses active sheet selection (currentSheetFilter error) | UI bugfix | `ui/viewer/index.html` | No ReferenceError on row click; SRR_OPEN log shows sheetName != "unknown" | Done (9c4bfda) |
 | SRR-BUG-02 | BUGFIX: Grid row click resolves correct sheet + record (no data row not found) | UI bugfix | `ui/viewer/index.html` | Click opens SRR without "data row not found"; console shows sheetName and recordIndex | In Progress |
 | PDF-PROXY-01 | PDF proxy fetch to avoid download prompt (CORS-safe SRR render) | Backend + UI | `server/pdf_proxy.py`, `ui/viewer/index.html`, `docs/ui/views/single_row_review_view.md` | SRR PDF renders inline via proxy; no download prompt; cache hit uses local blob | In Progress |
+| PDF-PROXY-02 | BUGFIX: FastAPI proxy CORS headers + explicit OPTIONS handler | Backend | `server/pdf_proxy.py` | OPTIONS preflight returns 204 with CORS headers; browser fetch not CORS blocked | In Progress |
+| SRR-BUG-03 | BUGFIX: row/undefined hash navigation (rowId always defined) | UI bugfix | `ui/viewer/index.html` | Clicking grid row yields #/row/<number>; no SRR_OPEN_FAIL after row click | In Progress |
+| DEBUG-01 | PDF proxy debug logging (localStorage pdfDebug=1) | UI debug | `ui/viewer/index.html` | When pdfDebug=1, console shows viewerOrigin + proxyOrigin once | Done |
 
 ### P1 — High Priority
 

@@ -5547,7 +5547,25 @@
       }
       // If still localhost, proxy runs on same machine
       
-      console.log('[PDF_PROXY] Base URL:', baseUrl, '(host:', host + ')');
+      // v1.4.16: Debug logging (guarded by localStorage pdfDebug flag)
+      if (localStorage.getItem('pdfDebug') === '1') {
+        var proxyOrigin = 'unknown';
+        try {
+          var proxyUrl = new URL(baseUrl);
+          proxyOrigin = proxyUrl.origin;
+        } catch (e) {}
+        
+        console.log('[PDF_PROXY_DEBUG]', JSON.stringify({
+          viewerOrigin: window.location.origin,
+          viewerHost: host,
+          proxyBaseUrl: baseUrl,
+          proxyOrigin: proxyOrigin,
+          protocol: protocol,
+          sampleProxyUrl: baseUrl + '?url=' + encodeURIComponent('https://example.s3.amazonaws.com/test.pdf')
+        }));
+      } else {
+        console.log('[PDF_PROXY] Base URL:', baseUrl, '(host:', host + ')');
+      }
       
       return {
         BASE_URL: baseUrl,
@@ -6390,8 +6408,14 @@
       if (page === 'loader') page = 'triage';
       var pages = ['triage', 'grid', 'patch', 'review', 'verifier-review', 'admin-approval', 'admin', 'row'];
       // Handle row/:id routes
+      // v1.4.16: Validate rowId - reject undefined/NaN/empty
       if (page.startsWith('row/')) {
         var rowId = page.split('/')[1];
+        if (!rowId || rowId === 'undefined' || rowId === 'null' || rowId === 'NaN') {
+          console.warn('[Navigate] Invalid row route ignored:', page);
+          navigateTo(dataLoaded ? 'grid' : 'triage');
+          return;
+        }
         openRowReviewDrawer(rowId);
         return;
       }
@@ -7458,15 +7482,18 @@
     // v1.4.15: Resolve record from workbook using explicit sheetName and recordIndex
     // Signature: openRowReviewDrawer(sheetName, recordIndex)
     // Backwards compat: openRowReviewDrawer(rowId) for legacy callers
+    // v1.4.16: Fixed rowId/undefined bug - always define rowId consistently
     function openRowReviewDrawer(arg1, arg2) {
       var record = null;
       var sheetName = null;
       var rowIndex = -1;
+      var rowId = null;  // v1.4.16: Always define rowId
       
       // v1.4.15: New signature (sheetName, recordIndex) from grid click handlers
       if (typeof arg1 === 'string' && typeof arg2 === 'number') {
         sheetName = arg1;
         rowIndex = arg2;
+        rowId = rowIndex;  // v1.4.16: Use rowIndex as rowId for new signature
         
         var sheet = workbook.sheets[sheetName];
         if (sheet && sheet.rows && rowIndex >= 0 && rowIndex < sheet.rows.length) {
@@ -7486,7 +7513,7 @@
         }
       } else {
         // Legacy signature: openRowReviewDrawer(rowId) - for backwards compatibility
-        var rowId = arg1;
+        rowId = arg1;  // v1.4.16: Use existing rowId variable (no redeclaration)
         rowIndex = parseInt(rowId, 10);
         
         if (workbook.order.length > 0) {
@@ -7551,13 +7578,20 @@
         availableKeys: Object.keys(record).slice(0, 8)
       }));
       
+      // v1.4.16: Validate rowId before navigation (prevent row/undefined)
+      if (rowId === null || rowId === undefined || (typeof rowId === 'number' && isNaN(rowId))) {
+        console.warn('[SRR] Invalid rowId, using rowIndex:', rowIndex);
+        rowId = rowIndex;
+      }
+      
       // Navigate to page and render
       navigateTo('row');
       renderSingleRowReview(record, rowId);
       
       // Update URL without triggering hashchange loop
-      if (window.location.hash !== '#/row/' + rowId) {
-        history.pushState(null, '', '#/row/' + rowId);
+      var hashTarget = '#/row/' + rowId;
+      if (window.location.hash !== hashTarget) {
+        history.pushState(null, '', hashTarget);
       }
     }
     

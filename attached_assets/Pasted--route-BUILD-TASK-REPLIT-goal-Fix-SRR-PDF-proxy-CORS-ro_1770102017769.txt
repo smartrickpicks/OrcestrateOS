@@ -1,0 +1,77 @@
+{
+  "route": "BUILD_TASK_REPLIT",
+  "goal": "Fix SRR PDF proxy CORS + row/undefined routing and add a lightweight debug block to inspect viewer/proxy origins.",
+  "constraints": [
+    "Do not rename canonical ids/routes/tokens.",
+    "UI label stays 'Record Inspection' (user-facing); canonical docs/specs remain 'Single Row Review'.",
+    "No new services beyond existing FastAPI proxy.",
+    "No invented claims; output git commands only."
+  ],
+  "files_in_scope": [
+    "server/pdf_proxy.py",
+    "ui/viewer/index.html",
+    "docs/handoff/TASKS_UI.md"
+  ],
+  "implementation_steps": [
+    {
+      "id": "DEBUG-01",
+      "title": "Add origin/proxy debug log (client)",
+      "requirements": [
+        "Add a single debug log block in ui/viewer/index.html (guarded by localStorage flag e.g. localStorage.getItem('pdfDebug') === '1')",
+        "Log: viewerOrigin, proxyBaseUrl, proxyOrigin, allowedOrigins (client config), and a sample resolved proxy URL for a given file_url.",
+        "Do not spam logs (one-time log on init or on first SRR open)."
+      ],
+      "acceptance_tests": [
+        "When pdfDebug=1, console shows viewerOrigin + proxyOrigin once.",
+        "When pdfDebug is unset, no extra logs appear."
+      ]
+    },
+    {
+      "id": "PROXY-CORS-01",
+      "title": "Add CORS middleware to FastAPI proxy",
+      "requirements": [
+        "Add CORSMiddleware in server/pdf_proxy.py.",
+        "Allow origins from env PDF_PROXY_ALLOWED_ORIGINS (comma-separated).",
+        "Default allow origins include viewer origin + http://localhost:8000.",
+        "Allow methods: GET, OPTIONS. Allow headers: *.",
+        "Ensure ALL responses (success + error) include Access-Control-Allow-Origin.",
+        "Add explicit OPTIONS handler for /proxy/pdf returning 204."
+      ],
+      "acceptance_tests": [
+        "Browser fetch to proxy endpoint no longer shows CORS blocked.",
+        "OPTIONS preflight returns 204 with CORS headers."
+      ]
+    },
+    {
+      "id": "ROUTER-ROW-01",
+      "title": "Fix row/undefined hash navigation",
+      "requirements": [
+        "In openRowReviewDrawer, set srrState.currentRowIndex before any hash change.",
+        "When navigating, always use a real rowIndex: hash must be #/row/<number>.",
+        "If rowIndex is undefined/NaN, show toast and return without changing hash.",
+        "In hashchange handler, ignore row route if rowIndex is NaN."
+      ],
+      "acceptance_tests": [
+        "Clicking any grid row yields #/row/<number> (never undefined).",
+        "No [SRR_OPEN_FAIL] after clicking a row."
+      ]
+    },
+    {
+      "id": "TASKS-UI-02",
+      "title": "Track proxy CORS fix + debug in TASKS_UI",
+      "requirements": [
+        "Add TASKS_UI entry: 'BUGFIX: FastAPI proxy CORS headers + debug origin logging'.",
+        "Evidence remains 'Unknown — requires audit' until commit URL exists."
+      ],
+      "acceptance_tests": [
+        "TASKS_UI contains the new entry with scope + acceptance tests."
+      ]
+    }
+  ],
+  "output_format": {
+    "summary": "bullet list (file -> change)",
+    "verification": "exact commands run + key console log lines",
+    "suggested_commit_message": "single line",
+    "git_commands": "git add/commit commands only (no push claims)"
+  }
+}
