@@ -1885,7 +1885,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div style="display: flex; align-items: center; gap: 12px;">
-              <button class="srr-back-btn" onclick="navigateTo('triage')" style="padding: 6px 12px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.85em;">← Back</button>
+              <button class="srr-back-btn" onclick="navigateBackFromVerifierReview()" style="padding: 6px 12px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.85em;">← Back</button>
               <h2 style="margin: 0;">Verifier Review</h2>
               <span class="vr-state-badge" id="vr-state-badge">Submitted</span>
             </div>
@@ -9724,17 +9724,17 @@
         let actions = '';
         if (p.status === 'pending') {
           actions = `
-            <button onclick="updatePayloadStatus('${p.id}', 'sent_to_admin')" style="background:#2e7d32; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Approve</button>
-            <button onclick="updatePayloadStatus('${p.id}', 'needs_clarification')" style="background:#f57c00; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">RFI</button>
+            <button onclick="event.stopPropagation(); updatePayloadStatus('${p.id}', 'sent_to_admin')" style="background:#2e7d32; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Approve</button>
+            <button onclick="event.stopPropagation(); updatePayloadStatus('${p.id}', 'needs_clarification')" style="background:#f57c00; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">RFI</button>
           `;
         } else if (p.status === 'needs_clarification') {
-          actions = `<button onclick="updatePayloadStatus('${p.id}', 'pending')" style="background:#1565c0; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Re-check</button>`;
+          actions = `<button onclick="event.stopPropagation(); updatePayloadStatus('${p.id}', 'pending')" style="background:#1565c0; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Re-check</button>`;
         } else if (p.status === 'sent_to_admin') {
-          actions = `<button onclick="updatePayloadStatus('${p.id}', 'resolved')" style="background:#7b1fa2; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Finalize</button>`;
+          actions = `<button onclick="event.stopPropagation(); updatePayloadStatus('${p.id}', 'resolved')" style="background:#7b1fa2; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Finalize</button>`;
         }
 
         return `
-          <tr style="border-bottom: 1px solid #eee;">
+          <tr style="border-bottom: 1px solid #eee; cursor: pointer;" onclick="openVerifierReviewDetail('${p.id}')" onmouseover="this.style.background='#f5f8ff'" onmouseout="this.style.background='transparent'">
             <td style="padding:12px;"><span style="background:${typeColor}; color:white; padding:2px 6px; border-radius:10px; font-size:0.8em;">${typeLabel}</span></td>
             <td style="padding:12px; font-weight:600;">${p.record_id}</td>
             <td style="padding:12px; font-family:monospace;">${p.field}</td>
@@ -9763,8 +9763,19 @@
       reviewState: 'Submitted', // Submitted, Under_Review, Needs_Clarification, Verifier_Approved, Rejected
       reviewerActor: 'verifier@example.com',
       auditLog: [],
-      notes: ''
+      notes: '',
+      fromVerifierTriage: false,  // v1.5.0: Track if navigated from Verifier Triage
+      currentPayload: null        // v1.5.0: Store current payload for actions
     };
+    
+    function navigateBackFromVerifierReview() {
+      if (vrState.fromVerifierTriage) {
+        vrState.fromVerifierTriage = false;
+        navigateTo('triage');  // Returns to triage which shows Verifier Triage in reviewer mode
+      } else {
+        navigateTo('triage');
+      }
+    }
     
     // Sample patch data for demo (would come from SRR in real flow)
     var vrSamplePatch = {
@@ -9786,26 +9797,64 @@
       revisions: []
     };
     
-    function loadVerifierReviewData() {
-      // Load sample data into view
-      document.getElementById('vr-intent-when').textContent = vrSamplePatch.intent.observation || '—';
-      document.getElementById('vr-intent-then').textContent = vrSamplePatch.intent.expected || '—';
-      document.getElementById('vr-intent-because').textContent = vrSamplePatch.intent.justification || '—';
+    function loadVerifierReviewData(payloadId) {
+      // v1.5.0: If payloadId provided, load from verifier queue; else load sample
+      var payload = null;
+      if (payloadId) {
+        payload = verifierQueueState.payloads.find(function(p) { return p.id === payloadId; });
+      }
       
-      document.getElementById('vr-ev-observation').textContent = vrSamplePatch.evidence.observation || '—';
-      document.getElementById('vr-ev-expected').textContent = vrSamplePatch.evidence.expected || '—';
-      document.getElementById('vr-ev-justification').textContent = vrSamplePatch.evidence.justification || '—';
-      document.getElementById('vr-ev-repro').textContent = vrSamplePatch.evidence.repro || '—';
+      if (payload) {
+        // Map payload data to Verifier Review fields
+        var typeLabel = payload.type === 'rfi' ? 'RFI Request' : (payload.type === 'blacklist' ? 'Blacklist Flag' : 'Correction');
+        
+        document.getElementById('vr-intent-when').textContent = 'Field: ' + payload.field + ' = "' + (payload.old_value || '(empty)') + '"';
+        document.getElementById('vr-intent-then').textContent = payload.new_value ? 'Change to: "' + payload.new_value + '"' : typeLabel;
+        document.getElementById('vr-intent-because').textContent = payload.comment || '—';
+        
+        document.getElementById('vr-ev-observation').textContent = typeLabel;
+        document.getElementById('vr-ev-expected').textContent = payload.new_value || '(no change specified)';
+        document.getElementById('vr-ev-justification').textContent = payload.comment || '—';
+        document.getElementById('vr-ev-repro').textContent = '—';
+        
+        document.getElementById('vr-author-name').textContent = payload.analyst_id || 'analyst@example.com';
+        document.getElementById('vr-author-time').textContent = new Date(payload.timestamp).toLocaleString();
+        document.getElementById('vr-patch-id').textContent = payload.id;
+        
+        // Map payload status to vrState
+        var statusMap = { 'pending': 'Submitted', 'needs_clarification': 'Needs_Clarification', 'sent_to_admin': 'Verifier_Approved', 'resolved': 'Admin_Approved' };
+        vrState.currentPatchId = payload.id;
+        vrState.reviewState = statusMap[payload.status] || 'Submitted';
+        vrState.currentPayload = payload;  // Store for actions
+      } else {
+        // Fallback to sample data
+        document.getElementById('vr-intent-when').textContent = vrSamplePatch.intent.observation || '—';
+        document.getElementById('vr-intent-then').textContent = vrSamplePatch.intent.expected || '—';
+        document.getElementById('vr-intent-because').textContent = vrSamplePatch.intent.justification || '—';
+        
+        document.getElementById('vr-ev-observation').textContent = vrSamplePatch.evidence.observation || '—';
+        document.getElementById('vr-ev-expected').textContent = vrSamplePatch.evidence.expected || '—';
+        document.getElementById('vr-ev-justification').textContent = vrSamplePatch.evidence.justification || '—';
+        document.getElementById('vr-ev-repro').textContent = vrSamplePatch.evidence.repro || '—';
+        
+        document.getElementById('vr-author-name').textContent = vrSamplePatch.author;
+        document.getElementById('vr-author-time').textContent = vrSamplePatch.submitted_at;
+        document.getElementById('vr-patch-id').textContent = vrSamplePatch.patch_id;
+        
+        vrState.currentPatchId = vrSamplePatch.patch_id;
+        vrState.reviewState = 'Submitted';
+        vrState.currentPayload = null;
+      }
       
-      document.getElementById('vr-author-name').textContent = vrSamplePatch.author;
-      document.getElementById('vr-author-time').textContent = vrSamplePatch.submitted_at;
-      document.getElementById('vr-patch-id').textContent = vrSamplePatch.patch_id;
-      
-      vrState.currentPatchId = vrSamplePatch.patch_id;
-      vrState.reviewState = 'Submitted';
       vrUpdateStateBadge();
       vrUpdateActionButtons();
       vrRenderDecisionSummary();
+    }
+    
+    function openVerifierReviewDetail(payloadId) {
+      vrState.fromVerifierTriage = true;  // Track navigation source
+      navigateTo('verifier-review');
+      setTimeout(function() { loadVerifierReviewData(payloadId); }, 0);
     }
     
     function vrUpdateStateBadge() {
