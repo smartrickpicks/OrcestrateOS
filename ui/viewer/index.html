@@ -232,6 +232,14 @@
     .progress-bar-container { background: #1a1a2e; border-radius: 4px; height: 6px; overflow: hidden; }
     .progress-bar-fill { background: linear-gradient(90deg, #1565c0, #2196f3); height: 100%; transition: width 0.3s; }
 
+    /* Active Data Source Bar */
+    .active-data-source-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #252542; border-bottom: 1px solid #333; }
+    .active-data-source-info { flex: 1; min-width: 0; }
+    .active-data-source-label { font-size: 0.65em; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .active-data-source-name { font-size: 0.85em; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .active-data-source-change { background: transparent; border: 1px solid #555; color: #aaa; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; cursor: pointer; transition: all 0.2s; flex-shrink: 0; margin-left: 12px; }
+    .active-data-source-change:hover { background: #333; border-color: #777; color: white; }
+
     /* Sheet Selector */
     .sheet-selector { width: 100%; padding: 8px 10px; background: #2d2d4a; border: 1px solid #444; border-radius: 6px; color: #ddd; font-size: 0.85em; cursor: pointer; }
     .sheet-selector:focus { outline: none; border-color: #1565c0; }
@@ -974,16 +982,17 @@
         </div>
       </div>
       <div class="nav-menu">
-        <!-- Top Action: Data Source -->
-        <div class="nav-section" style="padding: 12px 16px 8px;">
-          <button class="nav-action-btn" id="sidebar-data-source-btn" onclick="openLoaderDrawer()">
-            <span class="nav-action-icon">📁</span>
-            <span>Data Source</span>
-          </button>
+        <!-- Active Data Source Bar -->
+        <div class="active-data-source-bar" id="active-data-source-bar">
+          <div class="active-data-source-info">
+            <div class="active-data-source-label">Active Data Source</div>
+            <div class="active-data-source-name" id="active-data-source-name">No dataset loaded</div>
+          </div>
+          <button class="active-data-source-change" onclick="openLoaderDrawer()">Change</button>
         </div>
 
         <!-- Progress Block (routes to Triage) -->
-        <div class="nav-section" style="padding: 8px 16px;">
+        <div class="nav-section" style="padding: 16px 16px 8px;">
           <a class="progress-block" href="#/triage" data-page="triage">
             <div class="progress-header">Progress</div>
             <div class="progress-stats">
@@ -5318,6 +5327,13 @@
       reviewEl.textContent = reviewTotal;
       doneEl.textContent = finalized;
       if (barFill) barFill.style.width = progressPct + '%';
+    }
+
+    function updateActiveDataSourceBar(filename) {
+      var nameEl = document.getElementById('active-data-source-name');
+      if (nameEl) {
+        nameEl.textContent = filename || 'No dataset loaded';
+      }
     }
 
     function updateSidebarSheetSelector() {
@@ -12037,6 +12053,7 @@ Add any additional notes here.
         console.log('[Loader] Sample dataset loaded:', workbook.order.length, 'sheets');
         showToast('Sample dataset loaded successfully', 'success');
         updateSidebarSheetSelector();
+        updateActiveDataSourceBar('sample_v1.json');
         
         // Auto-redirect after loading (v1.4.4) - always go to grid after load
         if (options.autoRedirect !== false) {

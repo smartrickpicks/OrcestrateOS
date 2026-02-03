@@ -86,8 +86,17 @@ Gates are checkpoints that must be satisfied before proceeding. See [gate_view_m
 | gate_verifier | verifier_review_view | review_notes, decision_status |
 | gate_admin | admin_approval_view | admin_action_log |
 
+## Active Data Source Bar (V1.4.8)
+- **Location**: Top of sidebar, above Progress block
+- **Layout**: Two-line info (label + dataset name) with Change pill on right
+- **Behavior**: 
+  - Shows "No dataset loaded" when empty
+  - Shows dataset filename after load (e.g., "sample_v1.json")
+  - Change button opens Data Source drawer
+- **Terminology**: "Active Data Source" (label), "Change" (action)
+
 ## Data Source Panel (V1.5)
-- **Entry**: Top quick-action "Data Source" button only (not in sidebar).
+- **Entry**: "Change" action in Active Data Source bar.
 - **Type**: Right-side drawer panel (never modal).
 - **Layout order** (active state): Active Dataset card → Upload|Connect row (two columns) → Search stub (V2) → Saved Datasets → Close.
 - **Terminology**: "Data Source" (not "Load Data"), "Disconnect" (not "Remove").

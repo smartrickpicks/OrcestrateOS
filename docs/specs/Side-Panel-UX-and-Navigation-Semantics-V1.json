@@ -1,9 +1,9 @@
 {
-  "version": "1.4.7",
+  "version": "1.4.8",
   "description": "Sidebar panel structure and navigation semantics for DataDash-style layout",
   "sidebar_structure": {
     "order": [
-      "data_source_action",
+      "active_data_source_bar",
       "progress_block",
       "navigation",
       "tools",
@@ -12,13 +12,17 @@
     ],
     "sections": [
       {
-        "id": "data_source_action",
-        "label": "Data Source",
-        "kind": "action_button",
+        "id": "active_data_source_bar",
+        "label": "Active Data Source",
+        "kind": "status_bar",
         "position": "top",
-        "interaction": "opens_loader_drawer",
+        "contains": {
+          "label": "Active Data Source",
+          "dataset_name": "dynamic (filename or 'No dataset loaded')",
+          "change_action": "opens_loader_drawer"
+        },
         "visible_to": ["Analyst", "Reviewer", "Admin"],
-        "rationale": "Primary entry point for loading datasets. Always visible at top."
+        "rationale": "Shows current dataset with quick Change action. Replaces standalone button."
       },
       {
         "id": "progress_block",
