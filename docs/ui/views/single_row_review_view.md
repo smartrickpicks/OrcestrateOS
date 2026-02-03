@@ -111,12 +111,15 @@ Patch Draft authoring emits deterministic events:
 
 ## Embedded PDF Viewer & Highlights (v1.4.11)
 
-### PDF Source Resolution
-PDF source is resolved in priority order:
+### PDF Source Resolution (v1.4.12)
+PDF source uses mapped `file_url` and `file_name` columns from the imported dataset:
+
 1. **Network URL**: If record has `file_url` that looks like a PDF URL (ends with `.pdf`, contains `.pdf?`, or `/pdf`), render directly from that URL
 2. **Local Attachment (by file_name)**: If a locally attached PDF matches the record's `file_name`, render that
 3. **Local Attachment (fallback)**: If any local PDF attachment exists, render the first one
 4. **Empty State**: Show "No document attached" with guidance
+
+**Note**: `file_url` and `file_name` values come from column mapping applied during CSV/XLSX import. See Data Source View for mapping rules.
 
 ### Source Indicator
 - Shows below controls bar when PDF is loaded

@@ -73,11 +73,41 @@ Contract: This document defines the governed, offline-first Data Source experien
 
 ## Source Types
 
-### V1: Local Folder (Implemented)
+### V1: Local Upload (Implemented)
 - **Status**: Available
-- **Behavior**: Manual file placement in `inbound/` folder or direct upload
-- **Supported formats**: CSV, XLSX, JSON, PDF (attachments)
-- **Offline-compatible**: Yes
+- **Behavior**: Direct upload via Data Source panel drop zone
+- **Supported formats**: CSV, XLSX (multi-sheet)
+- **Offline-compatible**: Yes (SheetJS library loaded from CDN, cached)
+- **Parser entrypoint**: `parseWorkbook(arrayBuffer, filename)` for reuse in V1.5 Drive integration
+
+### CSV Ingestion (v1.4.12)
+- Single-sheet workbook created from CSV file
+- Sheet name derived from filename (without extension)
+- Delimiter auto-detected (comma, tab, semicolon, pipe)
+- Column mapping applied for file_name/file_url (see below)
+
+### XLSX Ingestion (v1.4.12)
+- Multi-sheet workbook support via SheetJS library
+- Sheet names from Excel workbook
+- Sheet selector populated with all sheet names (lexically sorted)
+- Switching sheets updates Grid and Triage context
+
+### Column Mapping Rules (v1.4.12)
+Per-row `file_name` and `file_url` are resolved for SRR PDF viewer:
+
+1. **Primary (explicit headers)**: Case-insensitive match for:
+   - `file_name`, `filename`, `file name` → maps to `file_name`
+   - `file_url`, `fileurl`, `file url`, `url` → maps to `file_url`
+
+2. **Fallback (DataDash-style)**: If explicit headers not found:
+   - Column A (first column) → treated as `file_name`
+   - Column B (second column) → treated as `file_url`
+
+3. **Missing columns**: If mapping cannot be resolved:
+   - Warning banner shown in Data Source panel: "Missing required columns: file_name/file_url"
+   - SRR shows empty PDF state with guidance
+
+Column mapping is persisted in session state (not source bytes).
 
 ### V2 Stubs (Not Implemented)
 

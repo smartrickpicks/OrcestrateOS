@@ -1,0 +1,50 @@
+ROUTE: BUILD_TASK_REPLIT
+goal: Implement V1 Data Source ingestion for local CSV/XLSX into a workbook dataset, with deterministic file_name/file_url column mapping so SRR can render PDFs from real spreadsheets; structure it so V1.5 Google Drive can reuse the same parseWorkbook(bytes, filename) path.
+constraints:
+
+Offline-first for parsing (local files only); no Google Drive integration yet.
+Do not change canonical ids/routes/spec tokens.
+Do not invent a full standardizer; implement minimal deterministic mapping + clear errors.
+files_in_scope:
+index.html
+data_source_view.md
+single_row_review_view.md
+implementation_steps:
+CSV ingestion (single-sheet workbook)
+Requirements:
+Add CSV upload in Data Source panel that parses into a workbook dataset structure used by the viewer.
+Set Active Data Source filename from uploaded file name.
+Acceptance tests:
+Uploading a CSV enables Triage/Grid/Record Inspection navigation.
+Sheet selector shows one sheet.
+XLSX ingestion (multi-sheet workbook)
+Requirements:
+Add XLSX upload in Data Source panel that parses into workbook with multiple sheets.
+Populate Sheet selector with sheet names; switching sheets updates Grid/Triage context deterministically.
+Implement parser entrypoint as parseWorkbook(arrayBuffer, filename) for future Drive reuse.
+Acceptance tests:
+Uploading an XLSX shows multiple sheets in Sheet selector.
+Switching sheets changes the records displayed in Grid and Triage.
+Deterministic column mapping for SRR PDF source
+Requirements:
+Resolve per-row file_name and file_url using:
+Primary: explicit header names file_name and file_url (case-insensitive).
+Fallback: if headers are missing/unknown, treat column A as file_name and column B as file_url (DataDash-style).
+Persist the resolved mapping in session state; do not mutate source bytes.
+If mapping cannot be resolved, show a blocking banner in Data Source: “Missing required columns: file_name/file_url”.
+Acceptance tests:
+For a row with file_url, Record Inspection renders PDF via URL.
+If a sheet lacks resolvable file_name/file_url, Data Source shows the blocking banner and SRR shows empty-state guidance.
+Docs alignment
+Requirements:
+Update data_source_view.md to document CSV/XLSX ingestion + mapping rules.
+Update single_row_review_view.md to reference that PDFs come from mapped file_url/file_name.
+Acceptance tests:
+Docs match implemented behavior and do not claim Drive integration exists.
+output_format:
+
+summary: bullet list of file changes
+verification: manual test notes + any grep checks used
+suggested_commit_message: one line
+git_commands: exact add/commit commands (no push claims)
+

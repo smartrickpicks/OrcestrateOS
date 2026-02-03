@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Orchestrate OS — Semantic Control Board</title>
+  <!-- SheetJS library for XLSX parsing (v1.4.12) -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; margin: 0; padding: 0; }
@@ -2405,6 +2407,13 @@
             <div id="loader-error-message" style="flex: 1; font-size: 0.9em;"></div>
           </div>
         </div>
+        <!-- Column Mapping Warning Banner (v1.4.12) -->
+        <div id="column-mapping-banner" style="display: none; margin-bottom: 16px; padding: 12px 16px; background: #fff3e0; border: 1px solid #ff9800; border-radius: 8px; color: #e65100;">
+          <div style="display: flex; align-items: flex-start; gap: 10px;">
+            <span style="font-size: 1.1em;">⚠️</span>
+            <div id="column-mapping-message" style="flex: 1; font-size: 0.9em;"></div>
+          </div>
+        </div>
         
         <!-- Import CSV Section -->
         <div style="margin-bottom: 20px;">
@@ -3023,6 +3032,158 @@
     const STORAGE_KEY_PDF_ATTACHMENTS = 'orchestrate.pdf_attachments.v1';
     const STORAGE_KEY_LIBRARY = 'orchestrate.upload_library.v1';
     const STORAGE_KEY_ACTIVE_DATASET = 'orchestrate.active_dataset_id.v1';
+    
+    // ========== WORKBOOK PARSING + COLUMN MAPPING (V1.4.12) ==========
+    var COLUMN_MAPPING_STATE = {
+      mappingResolved: false,
+      fileNameColumn: null,
+      fileUrlColumn: null,
+      missingColumns: []
+    };
+    
+    function resolveColumnMapping(headers) {
+      COLUMN_MAPPING_STATE.mappingResolved = false;
+      COLUMN_MAPPING_STATE.fileNameColumn = null;
+      COLUMN_MAPPING_STATE.fileUrlColumn = null;
+      COLUMN_MAPPING_STATE.missingColumns = [];
+      
+      if (!headers || headers.length === 0) {
+        COLUMN_MAPPING_STATE.missingColumns = ['file_name', 'file_url'];
+        return COLUMN_MAPPING_STATE;
+      }
+      
+      var lowerHeaders = headers.map(function(h) { return (h || '').toLowerCase().trim(); });
+      
+      var fileNameIdx = lowerHeaders.findIndex(function(h) { 
+        return h === 'file_name' || h === 'filename' || h === 'file name'; 
+      });
+      var fileUrlIdx = lowerHeaders.findIndex(function(h) { 
+        return h === 'file_url' || h === 'fileurl' || h === 'file url' || h === 'url'; 
+      });
+      
+      if (fileNameIdx >= 0) COLUMN_MAPPING_STATE.fileNameColumn = headers[fileNameIdx];
+      if (fileUrlIdx >= 0) COLUMN_MAPPING_STATE.fileUrlColumn = headers[fileUrlIdx];
+      
+      if (!COLUMN_MAPPING_STATE.fileNameColumn && headers.length >= 1) {
+        COLUMN_MAPPING_STATE.fileNameColumn = headers[0];
+        console.log('[ColumnMapping] Fallback: column A as file_name:', headers[0]);
+      }
+      if (!COLUMN_MAPPING_STATE.fileUrlColumn && headers.length >= 2) {
+        COLUMN_MAPPING_STATE.fileUrlColumn = headers[1];
+        console.log('[ColumnMapping] Fallback: column B as file_url:', headers[1]);
+      }
+      
+      if (!COLUMN_MAPPING_STATE.fileNameColumn) COLUMN_MAPPING_STATE.missingColumns.push('file_name');
+      if (!COLUMN_MAPPING_STATE.fileUrlColumn) COLUMN_MAPPING_STATE.missingColumns.push('file_url');
+      
+      COLUMN_MAPPING_STATE.mappingResolved = COLUMN_MAPPING_STATE.missingColumns.length === 0;
+      console.log('[ColumnMapping] Resolved:', COLUMN_MAPPING_STATE);
+      return COLUMN_MAPPING_STATE;
+    }
+    
+    function applyColumnMapping(rows, headers, mapping) {
+      if (!mapping || !mapping.mappingResolved) return rows;
+      
+      return rows.map(function(row, idx) {
+        var newRow = Object.assign({}, row);
+        newRow._row_index = idx;
+        
+        if (mapping.fileNameColumn && mapping.fileNameColumn !== 'file_name') {
+          newRow.file_name = row[mapping.fileNameColumn] || null;
+        }
+        if (mapping.fileUrlColumn && mapping.fileUrlColumn !== 'file_url') {
+          newRow.file_url = row[mapping.fileUrlColumn] || null;
+        }
+        if (!newRow.contract_key) newRow.contract_key = 'ROW_' + (idx + 1);
+        if (!newRow.status) newRow.status = 'needs_review';
+        return newRow;
+      });
+    }
+    
+    function parseWorkbook(data, filename) {
+      var result = { sheets: {}, order: [], errors: [], mapping: null };
+      var ext = (filename.split('.').pop() || '').toLowerCase();
+      
+      try {
+        if (ext === 'csv' || ext === 'tsv' || ext === 'txt') {
+          var text = typeof data === 'string' ? data : new TextDecoder().decode(data);
+          var parsed = parseCSV(text);
+          var sheetName = filename.replace(/\.[^.]+$/, '') || 'Sheet1';
+          
+          var mapping = resolveColumnMapping(parsed.headers);
+          result.mapping = mapping;
+          var normalizedRows = applyColumnMapping(parsed.rows, parsed.headers, mapping);
+          
+          result.sheets[sheetName] = { headers: parsed.headers, rows: normalizedRows, meta: { delimiter: parsed.delimiter } };
+          result.order.push(sheetName);
+          
+        } else if (ext === 'xlsx' || ext === 'xls') {
+          if (typeof XLSX === 'undefined') {
+            result.errors.push('XLSX library not loaded. Please refresh the page.');
+            return result;
+          }
+          
+          var arrayBuffer = data instanceof ArrayBuffer ? data : data.buffer;
+          var workbookXLSX = XLSX.read(arrayBuffer, { type: 'array' });
+          
+          var firstSheetMapping = null;
+          workbookXLSX.SheetNames.forEach(function(sheetName, idx) {
+            var sheet = workbookXLSX.Sheets[sheetName];
+            var jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+            
+            if (jsonData.length === 0) return;
+            
+            var headers = jsonData[0].map(function(h) { return String(h || '').trim(); });
+            var rows = [];
+            for (var i = 1; i < jsonData.length; i++) {
+              var rowArr = jsonData[i];
+              var rowObj = {};
+              headers.forEach(function(h, colIdx) {
+                rowObj[h] = rowArr[colIdx] !== undefined ? String(rowArr[colIdx]) : null;
+              });
+              rows.push(rowObj);
+            }
+            
+            if (idx === 0) {
+              firstSheetMapping = resolveColumnMapping(headers);
+              result.mapping = firstSheetMapping;
+            }
+            
+            var normalizedRows = applyColumnMapping(rows, headers, firstSheetMapping || { mappingResolved: false });
+            result.sheets[sheetName] = { headers: headers, rows: normalizedRows, meta: { sheetIndex: idx } };
+            result.order.push(sheetName);
+          });
+          
+          result.order.sort();
+        } else {
+          result.errors.push('Unsupported file type: .' + ext);
+        }
+      } catch (err) {
+        result.errors.push('Parse error: ' + err.message);
+        console.error('[parseWorkbook] Error:', err);
+      }
+      
+      console.log('[parseWorkbook] Result:', result.order.length, 'sheets, errors:', result.errors.length);
+      return result;
+    }
+    
+    function showColumnMappingBanner(missingColumns) {
+      var banner = document.getElementById('column-mapping-banner');
+      var msgEl = document.getElementById('column-mapping-message');
+      if (banner && msgEl) {
+        if (missingColumns && missingColumns.length > 0) {
+          msgEl.textContent = 'Missing required columns: ' + missingColumns.join(', ') + '. Record Inspection will show empty PDF state.';
+          banner.style.display = 'block';
+        } else {
+          banner.style.display = 'none';
+        }
+      }
+    }
+    
+    function hideColumnMappingBanner() {
+      var banner = document.getElementById('column-mapping-banner');
+      if (banner) banner.style.display = 'none';
+    }
     
     // ========== SAMPLE DATASET (V1.2.5) ==========
     const SAMPLE_DATASET = {"dataset_id":"sample_v1","version":"1.0.0","created_at":"2026-01-30T00:00:00Z","description":"Deterministic demo dataset for testing structured intent and the full workflow.","sheets":{"contracts":{"headers":["contract_key","file_url","file_name","label_name","artist_name","subtype","status","effective_date"],"rows":[{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","label_name":"Acme Records","artist_name":"The Samples","subtype":"exclusive","status":"active","effective_date":"2024-01-15"},{"contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","label_name":"Various Artists","artist_name":"","subtype":"compilation","status":"active","effective_date":"2024-02-20"},{"contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","label_name":"Indie House","artist_name":"Solo Artist","subtype":"non-exclusive","status":"pending","effective_date":""},{"contract_key":"","file_url":"https://example.org/contract_d.pdf","file_name":"contract_d.pdf","label_name":"Beta Music","artist_name":"Beta Band","subtype":"exclusive","status":"draft","effective_date":"2024-03-01"},{"contract_key":"CK-005","file_url":"","file_name":"contract_e.pdf","label_name":"Gamma Tunes","artist_name":"","subtype":"exclusive","status":"active","effective_date":"2024-04-10"}]},"catalog":{"headers":["contract_key","file_url","file_name","track_title","artist_name","isrc","release_date","genre"],"rows":[{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","track_title":"Sample Song One","artist_name":"The Samples","isrc":"US-ABC-24-00001","release_date":"2024-05-01","genre":"Rock"},{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","track_title":"Sample Song Two","artist_name":"The Samples","isrc":"US-ABC-24-00002","release_date":"2024-05-01","genre":"Rock"},{"contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","track_title":"Compilation Hit","artist_name":"","isrc":"","release_date":"2024-06-15","genre":"Pop"},{"contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","track_title":"","artist_name":"Solo Artist","isrc":"US-DEF-24-00003","release_date":"","genre":"Jazz"},{"contract_key":"CK-005","file_url":"","file_name":"contract_e.pdf","track_title":"Gamma Track","artist_name":"Gamma Star","isrc":"US-GHI-24-00004","release_date":"2024-07-20","genre":"Electronic"}]},"royalties":{"headers":["contract_key","file_url","file_name","period","gross_revenue","artist_share_pct","net_payable"],"rows":[{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","period":"2024-Q1","gross_revenue":"15000.00","artist_share_pct":"50","net_payable":"7500.00"},{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","period":"2024-Q2","gross_revenue":"18500.00","artist_share_pct":"50","net_payable":"9250.00"},{"contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","period":"2024-Q1","gross_revenue":"8000.00","artist_share_pct":"","net_payable":""},{"contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","period":"2024-Q2","gross_revenue":"","artist_share_pct":"40","net_payable":""}]}},"issues":[{"issue_id":"ISS-001","contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","sheet":"contracts","field":"artist_name","issue_type":"MISSING_REQUIRED","severity":"warning","message":"Compilation contract missing artist attribution"},{"issue_id":"ISS-002","contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","sheet":"contracts","field":"effective_date","issue_type":"MISSING_REQUIRED","severity":"blocking","message":"Contract missing effective date"},{"issue_id":"ISS-003","contract_key":"","file_url":"https://example.org/contract_d.pdf","file_name":"contract_d.pdf","sheet":"contracts","field":"contract_key","issue_type":"MISSING_REQUIRED","severity":"blocking","message":"Contract key is missing"},{"issue_id":"ISS-004","contract_key":"CK-005","file_url":"","file_name":"contract_e.pdf","sheet":"contracts","field":"file_url","issue_type":"MISSING_REQUIRED","severity":"warning","message":"File URL is missing"},{"issue_id":"ISS-005","contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","sheet":"catalog","field":"isrc","issue_type":"MISSING_REQUIRED","severity":"warning","message":"ISRC code missing for track"},{"issue_id":"ISS-006","contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","sheet":"catalog","field":"track_title","issue_type":"MISSING_REQUIRED","severity":"blocking","message":"Track title is missing"},{"issue_id":"ISS-007","contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","sheet":"royalties","field":"artist_share_pct","issue_type":"MISSING_REQUIRED","severity":"warning","message":"Artist share percentage missing"}],"field_actions":[{"action_id":"FA-001","contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","sheet":"contracts","field":"label_name","action":"REVIEW","triggered_by":"SF_R1_LABEL_NOT_ARTIST"},{"action_id":"FA-002","contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","sheet":"catalog","field":"artist_name","action":"VALIDATE","triggered_by":"SF_R2_ARTIST_REQUIRED"}],"contract_results":[{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","status":"ready","subtype":"exclusive","issue_count":0},{"contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","status":"needs_review","subtype":"compilation","issue_count":3},{"contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","status":"blocked","subtype":"non-exclusive","issue_count":2},{"contract_key":"","file_url":"https://example.org/contract_d.pdf","file_name":"contract_d.pdf","status":"blocked","subtype":"exclusive","issue_count":1},{"contract_key":"CK-005","file_url":"","file_name":"contract_e.pdf","status":"needs_review","subtype":"exclusive","issue_count":1}],"summary":{"total_contracts":5,"ready":1,"needs_review":2,"blocked":2,"total_issues":7,"blocking_issues":3,"warning_issues":4}};
@@ -8267,33 +8428,108 @@
       }
     }
     
-    // v1.4.4: Unified file import handler with validation
+    // v1.4.12: Unified file import handler with XLSX support via parseWorkbook
     function handleFileImport(file) {
       hideLoaderError();
+      hideColumnMappingBanner();
       
-      // Check file extension
       var ext = (file.name.split('.').pop() || '').toLowerCase();
       
-      if (ext === 'xlsx' || ext === 'xls') {
-        showLoaderError('XLSX files are not yet supported. Please convert to CSV and try again.');
+      if (ext !== 'csv' && ext !== 'xlsx' && ext !== 'xls') {
+        showLoaderError('Unsupported file type: .' + ext + '. Please use a CSV or XLSX file.');
         return;
       }
       
-      if (ext !== 'csv') {
-        showLoaderError('Unsupported file type: .' + ext + '. Please use a CSV file.');
-        return;
-      }
-      
-      // Handle CSV import with post-load navigation
-      handleCSVImport(file, function() {
-        // Validate workbook state before closing modal
-        if (!validateWorkbookState()) {
-          showLoaderError('Import completed but no data was loaded. Please check the file format.');
-          return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var data = ext === 'csv' ? e.target.result : new Uint8Array(e.target.result);
+          var result = parseWorkbook(data, file.name);
+          
+          if (result.errors.length > 0) {
+            showLoaderError(result.errors.join('; '));
+            return;
+          }
+          
+          if (result.order.length === 0) {
+            showLoaderError('No sheets detected in file. Please check the file format.');
+            return;
+          }
+          
+          // Show column mapping warning if not fully resolved
+          if (result.mapping && result.mapping.missingColumns.length > 0) {
+            showColumnMappingBanner(result.mapping.missingColumns);
+          }
+          
+          // Populate workbook
+          resetWorkbook();
+          result.order.forEach(function(sheetName) {
+            var sheet = result.sheets[sheetName];
+            addSheet(sheetName, sheet.headers, sheet.rows, sheet.meta);
+          });
+          
+          // Also populate allData for legacy compatibility
+          var allRows = [];
+          result.order.forEach(function(sheetName) {
+            var sheet = result.sheets[sheetName];
+            sheet.rows.forEach(function(r) {
+              var row = Object.assign({}, r);
+              row.sheet = sheetName;
+              allRows.push(row);
+            });
+          });
+          
+          allData = {
+            contractResults: allRows,
+            issues: [],
+            fieldActions: [],
+            changeLog: [],
+            summary: {
+              total_contracts: allRows.length,
+              ready: 0,
+              needs_review: allRows.length,
+              blocked: 0
+            }
+          };
+          
+          // Save to localStorage
+          localStorage.setItem(STORAGE_KEY_DATASET, JSON.stringify({
+            workbook: workbook,
+            allData: allData,
+            columnMapping: result.mapping
+          }));
+          saveToUploadLibrary({ workbook: workbook }, file.name, ext);
+          
+          dataLoaded = true;
+          currentArtifactPath = file.name;
+          currentDataset = null;
+          updateUIForDataState();
+          updateSessionChip();
+          populateSubtypeDropdown();
+          populateGridSheetSelector();
+          renderAllTables();
+          renderGrid();
+          
+          console.log('[Loader] Workbook imported:', file.name, 'sheets:', result.order.length, 'total rows:', allRows.length);
+          showToast(ext.toUpperCase() + ' imported: ' + result.order.length + ' sheet(s), ' + allRows.length + ' rows', 'success');
+          
+          if (!validateWorkbookState()) {
+            showLoaderError('Import completed but no data was loaded. Please check the file format.');
+            return;
+          }
+          closeLoaderModal();
+          navigateTo('grid');
+        } catch (err) {
+          console.error('[Loader] Import error:', err);
+          showLoaderError('Failed to import file: ' + err.message);
         }
-        closeLoaderModal();
-        navigateTo('grid');
-      });
+      };
+      
+      if (ext === 'csv') {
+        reader.readAsText(file);
+      } else {
+        reader.readAsArrayBuffer(file);
+      }
     }
     
     function showLoaderError(message) {
