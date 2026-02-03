@@ -489,8 +489,8 @@
     .srr-patch-editor-new input:focus { outline: none; border-color: #2e7d32; box-shadow: 0 0 0 2px rgba(76,175,80,0.2); }
     .srr-patch-type-selector { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e0e0e0; }
     .srr-patch-type-label { font-size: 0.75em; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 8px; }
-    .srr-patch-type-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-    .srr-patch-type-chip { padding: 6px 14px; border-radius: 16px; font-size: 0.8em; font-weight: 500; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; }
+    .srr-patch-type-chips { display: flex; gap: 6px; overflow-x: auto; white-space: nowrap; }
+    .srr-patch-type-chip { padding: 5px 10px; border-radius: 14px; font-size: 0.75em; font-weight: 500; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; flex-shrink: 0; }
     .srr-patch-type-chip.correction { background: #e3f2fd; color: #1565c0; border-color: #bbdefb; }
     .srr-patch-type-chip.correction.active { background: #1565c0; color: white; border-color: #1565c0; }
     .srr-patch-type-chip.blacklist { background: #ffebee; color: #c62828; border-color: #ffcdd2; }
@@ -1588,15 +1588,13 @@
               <span>Patch Editor</span>
             </div>
             <div class="srr-panel-body">
-              <!-- Patch Type Dropdown -->
+              <!-- Patch Type Chips (horizontal scroll) -->
               <div class="srr-patch-type-selector" style="margin-bottom: 16px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <span style="font-size: 0.85em; font-weight: 600; color: #333;">Patch Type:</span>
-                  <select id="srr-patch-type-dropdown" class="srr-evidence-select" style="flex: 1; max-width: 200px;" onchange="srrOnPatchTypeChange(this.value)">
-                    <option value="correction">Correction</option>
-                    <option value="blacklist">Blacklist Flag</option>
-                    <option value="rfi">RFI (Question)</option>
-                  </select>
+                <div class="srr-patch-type-label" style="font-size: 0.75em; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 6px;">Patch Type</div>
+                <div class="srr-patch-type-chips" style="display: flex; gap: 6px; overflow-x: auto; white-space: nowrap; padding-bottom: 4px;">
+                  <div class="srr-patch-type-chip correction active" data-type="correction" onclick="srrOnPatchTypeChange('correction')">Correction</div>
+                  <div class="srr-patch-type-chip blacklist" data-type="blacklist" onclick="srrOnPatchTypeChange('blacklist')">Blacklist</div>
+                  <div class="srr-patch-type-chip rfi" data-type="rfi" onclick="srrOnPatchTypeChange('rfi')">RFI</div>
                 </div>
               </div>
 
@@ -7697,6 +7695,7 @@
       proposedChanges: {},
       lockedFields: {},  // v1.4.18: Fields locked after edit commit
       fieldStates: {},   // v1.4.20: Per-field states: todo, verified, rfi, patched
+      rfiField: null,    // Field being questioned in RFI (key, label, value)
       activeFilter: 'all',
       activeGroup: 'all',
       searchQuery: '',   // v1.4.18: Search filter
@@ -7919,9 +7918,11 @@
       srrState.patchType = srrState.patchDraft.patch_type || 'correction';
       srrState.overrideEnabled = srrState.patchDraft.override_enabled || false;
       
-      // Update patch type dropdown
-      var dropdown = document.getElementById('srr-patch-type-dropdown');
-      if (dropdown) dropdown.value = srrState.patchType;
+      // Update patch type chips
+      document.querySelectorAll('.srr-patch-type-chip').forEach(function(chip) {
+        chip.classList.remove('active');
+        if (chip.dataset.type === srrState.patchType) chip.classList.add('active');
+      });
       var overrideToggle = document.getElementById('srr-override-toggle');
       if (overrideToggle) overrideToggle.classList.toggle('active', srrState.overrideEnabled);
       
@@ -8231,6 +8232,17 @@
       // Set to rfi_pending (stays in To Do until Send RFI)
       srrState.fieldStates[fieldKey] = 'rfi_pending';
       
+      // Store RFI field info for display
+      var currentVal = srrState.editedValues.hasOwnProperty(fieldKey) 
+        ? srrState.editedValues[fieldKey] 
+        : srrState.originalValues[fieldKey];
+      var label = fieldKey.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+      srrState.rfiField = {
+        key: fieldKey,
+        label: label,
+        value: currentVal
+      };
+      
       // Auto-set patch type to RFI
       srrState.patchType = 'rfi';
       srrState.patchDraft.patch_type = 'rfi';
@@ -8398,13 +8410,33 @@
       var container = document.getElementById('srr-patch-editor-fields');
       var countEl = document.getElementById('srr-change-count');
       var changes = Object.values(srrState.proposedChanges);
+      var patchType = srrState.patchType;
       
       if (!container) return;
+      
+      // For RFI, show the RFI field info instead of changes
+      if (patchType === 'rfi' && srrState.rfiField) {
+        var rfi = srrState.rfiField;
+        var valDisplay = rfi.value === null || rfi.value === undefined || rfi.value === '' ? '(empty)' : String(rfi.value);
+        countEl.textContent = '1 field';
+        container.innerHTML = '<div class="srr-patch-editor-field">' +
+          '<div class="srr-patch-editor-label" style="font-weight: 600; margin-bottom: 6px;">' + rfi.label + '</div>' +
+          '<div class="srr-patch-editor-row">' +
+            '<label style="color: #666;">Value:</label>' +
+            '<div class="srr-patch-editor-old" style="background: #fff3e0; border-color: #ffe0b2;" title="' + valDisplay.replace(/"/g, '&quot;') + '">' + valDisplay + '</div>' +
+          '</div>' +
+        '</div>';
+        return;
+      }
       
       countEl.textContent = changes.length + ' change' + (changes.length !== 1 ? 's' : '');
       
       if (changes.length === 0) {
-        container.innerHTML = '<div class="srr-patch-editor-empty">Click a field value to edit. Changed fields appear here.</div>';
+        // Show appropriate helper based on patch type
+        var helperText = patchType === 'blacklist' 
+          ? 'Click the Block icon on a field to flag it for blacklist.'
+          : 'Click a field value to edit. Changed fields appear here.';
+        container.innerHTML = '<div class="srr-patch-editor-empty" id="srr-action-box-helper">' + helperText + '</div>';
         return;
       }
       
@@ -9171,9 +9203,11 @@
     
     // v1.4.20: Update patch type display (read-only indicator)
     function srrUpdatePatchTypeDisplay() {
-      // Update dropdown to match current patch type
-      var dropdown = document.getElementById('srr-patch-type-dropdown');
-      if (dropdown) dropdown.value = srrState.patchType;
+      // Update chips to match current patch type
+      document.querySelectorAll('.srr-patch-type-chip').forEach(function(chip) {
+        chip.classList.remove('active');
+        if (chip.dataset.type === srrState.patchType) chip.classList.add('active');
+      });
       // Update form sections
       srrUpdatePatchFormSections();
     }
@@ -9274,9 +9308,11 @@
         }
       }
       
-      // Update patch type dropdown
-      var dropdown = document.getElementById('srr-patch-type-dropdown');
-      if (dropdown) dropdown.value = type;
+      // Update patch type chips
+      document.querySelectorAll('.srr-patch-type-chip').forEach(function(chip) {
+        chip.classList.remove('active');
+        if (chip.dataset.type === type) chip.classList.add('active');
+      });
       
       // Update submit button text and style based on patch type
       var submitBtn = document.getElementById('srr-submit-btn');
