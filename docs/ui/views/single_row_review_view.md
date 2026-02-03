@@ -8,6 +8,14 @@ Contract: This document defines the record-level inspection surface. It supports
 >
 > The user-facing label "Record Inspection" appears in the UI header and navigation. All internal tokens, routes, specs, and audit logs retain the canonical name `single_row_review`.
 
+## Recent Changes (v1.5.0)
+
+- **Field Inspector State Model**: Updated to 6-state model (todo, verified, modified, submitted, rfi, blocked)
+- **RFI Workflow**: Fields stay in To Do queue until "Send RFI" clicked (rfi_pending intermediate state)
+- **Patch Editor Reset**: Form automatically clears after payload submission to prevent carry-over
+- **Verifier Payload Wiring**: RFI, Correction, and Blacklist submissions create payloads for Verifier queue
+- **State Badge Colors**: Green (verified), Blue (modified/submitted), Orange (rfi), Red (blocked)
+
 ## Purpose
 - Provide authoritative, per-record context: baseline values, deltas, flags, evidence, and audit trail.
 - Enable Analysts to author Evidence Packs and create Patch Drafts with explicit rationale and evidence anchoring.
@@ -30,33 +38,42 @@ Contract: This document defines the record-level inspection surface. It supports
 - Review State badge (read-only display)
 - Open Audit Log button (read-only link)
 
-### Left Panel: Field Inspector as Mini-Queue (v1.4.20)
+### Left Panel: Field Inspector as Mini-Queue (v1.5.0)
 
 The Field Inspector functions as a **mini-queue** where each field has a discrete state and can be actioned independently. The analyst processes fields until all are resolved.
 
 **Layout:**
-- Search input (filters by field name or value)
-- Filter chips: All, TODO, VERIFIED, RFI, PATCHED
-- Field Cards with action buttons
+- Search input (filters by field name or value, case-insensitive)
+- Filter chips: All / Changed / Unchanged
+- Field Cards with action buttons and state badges
 
-**Field States:**
+**Field States (6-State Model):**
 
-| State | Description | Visual |
-|-------|-------------|--------|
-| TODO | Field not yet reviewed | No chip (default) |
-| VERIFIED | Field confirmed correct as-is | Green check chip |
-| RFI | Question raised, pending clarification | Purple RFI chip |
-| PATCHED | Field value edited, pending submit | Orange PATCHED chip |
+| State | Description | Color | Badge Label | Queue Behavior |
+|-------|-------------|-------|-------------|----------------|
+| todo | Field not yet reviewed | Gray | (none) | Stays in To Do |
+| verified | Field confirmed correct | Green | Verified | Removed from To Do |
+| modified | Field value edited, not yet submitted | Blue | Modified | Stays in To Do |
+| submitted | Patch submitted to verifier | Blue | Patch Submitted | Removed from To Do |
+| rfi_pending | RFI drafted but not sent | Orange | RFI (pending) | Stays in To Do |
+| rfi | RFI sent to verifier | Orange | RFI | Stays in All (visible) |
+| blocked | Blacklist flag submitted | Red | Blocked | Removed from To Do |
 
 **Field Actions:**
 Each field card exposes action buttons based on current state:
 
 | Action | Icon | Result | Auto Patch Type |
 |--------|------|--------|-----------------|
-| Verify | ✓ (green check) | Sets state to VERIFIED | (none — no patch) |
-| Blacklist Flag | 🚫 (red) | Opens Blacklist modal | Blacklist Flag |
-| RFI | ? (purple) | Opens RFI input | RFI |
-| Patch (edit) | ✏️ | Enables inline edit | Correction |
+| Verify | ✓ (green) | Sets state to verified, removes from To Do | (none — no patch) |
+| Blacklist Flag | 🚫 (red) | Sets state to blocked, auto-sets Patch Type | Blacklist Flag |
+| RFI | ? (orange) | Sets state to rfi_pending, opens RFI input | RFI |
+| Modify (edit) | ✏️ (blue) | Enables inline edit, sets state to modified | Correction |
+
+**RFI Request Box (v1.5.0):**
+When RFI action is clicked, the Patch Editor displays:
+- Field name being questioned (read-only)
+- Current field value (read-only)
+- Justification textarea (acts as the RFI question)
 
 **Field Ordering Rule (canonical):**
 - Primary: Schema order (deterministic, from `SRR_SCHEMA_ORDER`)
@@ -198,6 +215,24 @@ Dropdown options:
 - Justification: Required (minimum 10 characters) — this is the question
 - RFI Target: Optional
 - Field changes: Optional
+
+## Patch Editor Reset Behavior (v1.5.0)
+
+After any successful submission (RFI, Correction, or Blacklist), the Patch Editor automatically resets to prevent data carry-over between records:
+
+**Cleared on Submit:**
+- Comment/Justification input
+- Patch type selection (reset to Correction default)
+- Old/New value displays
+- RFI field reference (srrState.rfiField)
+- Blacklist subject display
+- Proposed changes and locked fields
+- Override toggle state
+- Evidence Pack dropdowns (Observation, Expected, Repro)
+
+**Preserved:**
+- Verifier payloads in localStorage (persist independently)
+- Field states on current record (verified, submitted, etc.)
 
 ## Unsaved Changes Guard (v1.4.20)
 

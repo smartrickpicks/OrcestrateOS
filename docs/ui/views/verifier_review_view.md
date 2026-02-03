@@ -2,7 +2,14 @@
 
 > Review surface for evaluating submitted Patch Requests, requesting clarification, and approving/rejecting.
 
-## Implementation Status (v1.4.17)
+## Recent Changes (v1.5.0)
+
+- **Verifier Triage Integration**: Clicking a row in Verifier Triage opens the Verifier Review detail view
+- **Payload Data Display**: Review fields populated from localStorage verifier queue (not sample data)
+- **Back Navigation**: Returns to Verifier Triage (triage page in Reviewer mode)
+- **Status Mapping**: Payload statuses (pending, needs_clarification, sent_to_admin, resolved) map to review states
+
+## Implementation Status (v1.5.0)
 
 | Feature | Status |
 |---------|--------|
@@ -18,6 +25,8 @@
 | Audit logging (client-side) | Done |
 | Clarification modal | Done |
 | Role-gated navigation | Done |
+| Triage row → Review detail navigation (v1.5.0) | Done |
+| Payload data population from queue (v1.5.0) | Done |
 
 **Note (v1.4.17):** Patch Replay evaluation occurs in Admin Approval, not Verifier Review. Verifiers focus on semantic review; Admins perform replay validation before promotion.
 
