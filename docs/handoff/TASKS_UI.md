@@ -39,3 +39,16 @@ Open PRs: unknown/none
   - Override badge appears and suppresses repro requirement
   - Docs updated to match UI
 - Evidence link: Unknown — requires audit
+
+### SRR: Mini-Queue + Auto Patch Type Semantics (v1.4.20 — docs-only)
+- Scope: Document Field Inspector as mini-queue with field states and auto Patch Type behavior
+- Files likely to touch: docs/ui/views/single_row_review_view.md
+- Acceptance tests:
+  - SRR doc includes mini-queue field states (TODO, VERIFIED, RFI, PATCHED)
+  - SRR doc includes field actions (Verify, Blacklist Flag, RFI, Patch)
+  - SRR doc includes auto Patch Type behavior (read-only, action-driven)
+  - SRR doc includes Blacklist category dropdown + subject derivation
+  - SRR doc includes RFI behavior (Justification = question)
+  - SRR doc includes guard modal for unresolved PATCHED/RFI fields
+  - No UI code files modified
+- Evidence link: Unknown — requires audit

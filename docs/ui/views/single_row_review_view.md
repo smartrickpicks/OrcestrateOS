@@ -30,36 +30,49 @@ Contract: This document defines the record-level inspection surface. It supports
 - Review State badge (read-only display)
 - Open Audit Log button (read-only link)
 
-### Left Panel: Field Inspector (v1.4.18)
+### Left Panel: Field Inspector as Mini-Queue (v1.4.20)
+
+The Field Inspector functions as a **mini-queue** where each field has a discrete state and can be actioned independently. The analyst processes fields until all are resolved.
 
 **Layout:**
 - Search input (filters by field name or value)
-- Filter chips: All, Changed, Unchanged
-- Field Cards (not simple list items)
+- Filter chips: All, TODO, VERIFIED, RFI, PATCHED
+- Field Cards with action buttons
 
-**Field Card Structure:**
-- Header: Label (human-friendly) + API name (monospace), status chips
-- Body: Editable value display (click to edit)
-- Lock-on-commit: Changed fields lock with Changed marker and 🔒 icon
+**Field States:**
 
-**Status Chips:**
-- Changed (green): Field value has been committed
-- Locked (🔒): Field is locked after commit (use Patch Editor to modify)
-- Required (purple): Schema-defined required field
+| State | Description | Visual |
+|-------|-------------|--------|
+| TODO | Field not yet reviewed | No chip (default) |
+| VERIFIED | Field confirmed correct as-is | Green check chip |
+| RFI | Question raised, pending clarification | Purple RFI chip |
+| PATCHED | Field value edited, pending submit | Orange PATCHED chip |
+
+**Field Actions:**
+Each field card exposes action buttons based on current state:
+
+| Action | Icon | Result | Auto Patch Type |
+|--------|------|--------|-----------------|
+| Verify | ✓ (green check) | Sets state to VERIFIED | (none — no patch) |
+| Blacklist Flag | 🚫 (red) | Opens Blacklist modal | Blacklist Flag |
+| RFI | ? (purple) | Opens RFI input | RFI |
+| Patch (edit) | ✏️ | Enables inline edit | Correction |
 
 **Field Ordering Rule (canonical):**
 - Primary: Schema order (deterministic, from `SRR_SCHEMA_ORDER`)
 - Fallback: Alphabetical for unknown fields not in schema
 
 **Inline Editing Behavior:**
-- Click value display to enter edit mode
-- On blur/Enter: Commit edit, lock field, auto-create Proposed Change
-- Locked fields cannot be edited inline (use Patch Editor)
+- Click Patch action (or value display) to enter edit mode
+- On blur/Enter: Commit edit, lock field, set state to PATCHED
+- Locked fields cannot be edited inline (use Patch Editor to modify)
 
 **Filters:**
 - All: Show all fields
-- Changed: Show only locked/committed fields
-- Unchanged: Show fields not yet modified
+- TODO: Show fields not yet reviewed
+- VERIFIED: Show fields marked as correct
+- RFI: Show fields with pending questions
+- PATCHED: Show fields with value changes
 
 ### Center Panel: Document Viewer (v1.4.17)
 - **PDF Rendering**: Displays PDFs via browser's native PDF viewer (iframe-based)
@@ -70,14 +83,19 @@ Contract: This document defines the record-level inspection surface. It supports
 
 ### Right Panel: Patch Editor + Evidence Pack (v1.4.19)
 
-**Patch Type Selector:**
-Three chips at top of panel:
-- **Correction** (blue) — Default, for field value fixes
-- **Blacklist Flag** (red) — Flag values for blacklist
-- **RFI** (purple) — Request for information/clarification
+**Patch Type Selector (Read-Only):**
+Patch Type is **auto-determined** by the field action and displayed as a read-only indicator:
+
+| Field Action | Auto Patch Type |
+|--------------|-----------------|
+| Patch (edit) | Correction |
+| Blacklist Flag | Blacklist Flag |
+| RFI | RFI |
+
+The analyst cannot manually change the Patch Type; it reflects the semantic intent of the action taken. This ensures deterministic audit trails and consistent Evidence Pack requirements.
 
 **Changed Fields Section:**
-- Shows count of committed changes
+- Shows count of committed changes (PATCHED fields)
 - Per-field blocks with:
   - Field label + remove button
   - Old value (locked, subdued, strikethrough)
@@ -89,11 +107,35 @@ Three chips at top of panel:
 - When enabled: Repro block hidden, Override badge shown in header
 - Purpose: Skip repro requirement for documented exceptions
 
-**Blacklist Subject (Blacklist Flag only):**
-- Read-only display derived from selected field/value
+## Auto Patch Type Semantics (v1.4.20)
 
-**RFI Target (RFI only):**
-- Optional text input for routing (e.g., Team Lead, Legal, Data Steward)
+### Correction (via Patch action)
+- Triggered by: Editing a field value
+- Evidence Pack: Full (Observation + Expected + Justification + Repro)
+- Requires: At least one field change
+
+### Blacklist Flag (via Blacklist Flag action)
+- Triggered by: Clicking Blacklist Flag button on a field
+- Evidence Pack: Justification only
+- Blacklist Subject: Read-only, auto-derived from selected field name and value
+  - Format: `{field_label}: {current_value}`
+  - Example: "Artist Name: John Doe"
+- Blacklist Category: Dropdown selector with options:
+  - Duplicate Entry
+  - Invalid Format
+  - Prohibited Value
+  - Data Quality Issue
+  - Other (with custom reason)
+- Field change: Optional (flagging does not require value edit)
+
+### RFI (via RFI action)
+- Triggered by: Clicking RFI button on a field
+- Evidence Pack: Justification only
+- RFI behavior: The Justification textarea **is** the question
+  - Placeholder: "What is your question about this field?"
+  - The entered text becomes the RFI question body
+- RFI Target: Optional routing field (Team Lead, Legal, Data Steward, etc.)
+- Field change: Optional (RFI does not require value edit)
 
 ## Evidence Pack (v1.4.19)
 
@@ -119,6 +161,9 @@ Dropdown options:
 
 ### Justification (BECAUSE) — All patch types
 Single narrative textarea explaining the change/flag/question.
+- For Correction: Explains why the change is correct
+- For Blacklist Flag: Explains why the value should be blacklisted
+- For RFI: **Is the question itself** (acts as the RFI body)
 
 ### Repro Method — Correction only (when not Override)
 Dropdown options:
@@ -132,7 +177,7 @@ Dropdown options:
 | Type | Required Fields | Optional |
 |------|-----------------|----------|
 | Correction | Observation + Expected + Justification + Repro (unless Override) + Field changes | Override |
-| Blacklist Flag | Justification (min 10 chars) | Field changes |
+| Blacklist Flag | Justification (min 10 chars) + Blacklist Category | Field changes |
 | RFI | Justification (min 10 chars) | RFI Target, Field changes |
 
 ## Validation Rules
@@ -144,40 +189,66 @@ Dropdown options:
 - Repro method: Required (unless Override enabled)
 - File attachment: Required if Repro = "Doc Evidence Mismatch"
 
-### Blacklist Flag / RFI
+### Blacklist Flag
 - Justification: Required (minimum 10 characters)
+- Blacklist Category: Required
 - Field changes: Optional
 
-## Audit Integration
-- Opening this view emits a VIEWED event (context: "record").
-- All Evidence Pack authoring emits the appropriate PATCH_* events.
-- No STATE_MARKED events originate from this view.
+### RFI
+- Justification: Required (minimum 10 characters) — this is the question
+- RFI Target: Optional
+- Field changes: Optional
 
-## Unsaved Changes Guard
+## Unsaved Changes Guard (v1.4.20)
 
-If the user attempts to navigate away with edited fields that have incomplete patch data, a modal appears:
+If the user attempts to navigate away (Back to Grid) with **unresolved PATCHED or RFI fields**, a modal appears:
+
+**Trigger Conditions:**
+- Any field in PATCHED state (uncommitted edits)
+- Any field in RFI state (unsubmitted question)
+- VERIFIED fields do NOT trigger the guard (they are resolved)
+
+**Guard Modal:**
 
 | Button | Action |
 |--------|--------|
 | Cancel | Close modal, stay on Single Row Review |
-| Discard Changes | Clear all edits and Proposed Changes, navigate to Grid |
-| Save Patch Draft | Save current patch draft, then navigate to Grid |
+| Discard Changes | Clear all PATCHED and RFI states, navigate to Grid |
+| Submit Patch Request | Run `submit_patch_request` for pending items, then navigate to Grid |
+
+**Modal Message:**
+> "You have {N} unresolved fields (PATCHED or RFI). Do you want to submit a Patch Request before leaving?"
+
+## Audit Integration
+- Opening this view emits a VIEWED event (context: "record").
+- All Evidence Pack authoring emits the appropriate PATCH_* events.
+- Field state changes emit FIELD_STATE_CHANGED events with {field, from_state, to_state}.
+- No STATE_MARKED events originate from this view.
 
 ## Navigation
 - From All Data Grid → Single Row Review (this view).
 - From this view:
   - Open Audit Log detail (read-only overlay or linked panel).
   - Navigate to governed gating views via explicit links.
-  - Back to Grid (guarded if unsaved changes exist).
+  - Back to Grid (guarded if unresolved PATCHED/RFI fields exist).
 
 ## Read-Only & Gate Separation
 - No approve, promote, or finalize actions are available in this view.
 - Review State transitions are owned exclusively by governed gate views.
 
-## Acceptance Tests (v1.4.19)
+## Acceptance Tests (v1.4.20)
 
 | ID | Test | Expected |
 |----|------|----------|
+| SRR-MQ-01 | Field Inspector shows filter chips for TODO/VERIFIED/RFI/PATCHED | Four filter chips visible |
+| SRR-MQ-02 | Verify action sets field to VERIFIED state | Green check chip appears |
+| SRR-MQ-03 | Blacklist Flag action auto-sets Patch Type to "Blacklist Flag" | Patch Type read-only, shows Blacklist Flag |
+| SRR-MQ-04 | RFI action auto-sets Patch Type to "RFI" | Patch Type read-only, shows RFI |
+| SRR-MQ-05 | Patch (edit) action auto-sets Patch Type to "Correction" | Patch Type read-only, shows Correction |
+| SRR-MQ-06 | Blacklist Subject derived from field name + value | Read-only display shows "Field: Value" |
+| SRR-MQ-07 | RFI Justification acts as question body | Placeholder indicates "What is your question..." |
+| SRR-MQ-08 | Guard modal appears with unresolved PATCHED/RFI fields | Modal shows count and options |
+| SRR-MQ-09 | Guard modal does NOT appear with only VERIFIED fields | Navigation proceeds without modal |
 | SRR-PT-01 | Old/New values visually distinct | Old: subdued, strikethrough; New: prominent green border |
 | SRR-PT-02 | Observation/Expected are dropdowns only | No textarea for observation/expected notes |
 | SRR-PT-03 | Patch Type changes visible form sections | Blacklist/RFI hide Observation/Expected/Repro |
