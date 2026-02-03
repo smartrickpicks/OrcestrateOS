@@ -1,0 +1,76 @@
+{
+  "route": "BUILD_TASK_REPLIT",
+  "goal": "Fix SRR PDF rendering blocker: stop the row/0 hashchange navigation loop and ensure SRR sees mapped file_url/file_name from the workbook records (so sourceType is never 'none' when URLs exist).",
+  "constraints": [
+    "Do not change canonical ids/routes/spec tokens.",
+    "Do not add text highlighting yet (separate task).",
+    "Keep SRR Review State badge read-only (no transitions).",
+    "Do not touch Google Drive integration (V1.5) in this fix."
+  ],
+  "files_in_scope": [
+    "ui/viewer/index.html"
+  ],
+  "implementation_steps": [
+    {
+      "id": "ROUTER-01",
+      "title": "Stop hashchange loop for row routes",
+      "requirements": [
+        "Normalize routing so '#/row/0' is treated as a stable route and does not re-trigger navigateTo in a loop.",
+        "Hashchange handler must compare the normalized route (including row index) to the current route before calling navigateTo.",
+        "navigateTo must only write window.location.hash when it would actually change."
+      ],
+      "acceptance_tests": [
+        "No repeated '[Router] Hashchange to: row/0' spam.",
+        "No Chrome IPC flooding/throttling message.",
+        "Opening Record Inspection from the grid results in a single navigation + render."
+      ]
+    },
+    {
+      "id": "SRR-DATA-01",
+      "title": "Ensure SRR uses workbook row data (not an old contractResults path)",
+      "requirements": [
+        "When in the SRR route, resolve the current record from the active workbook sheet + row index.",
+        "Record identity must never be 'unknown'; fallback key = `${sheetName}:${rowIndex}` when join triplet is missing."
+      ],
+      "acceptance_tests": [
+        "[SRR_PDF_LOAD] log shows record key as 'Book1:0' (or similar), not 'unknown'.",
+        "SRR displays the row’s file_name/file_url (or '-' when missing)."
+      ]
+    },
+    {
+      "id": "MAPPING-01",
+      "title": "Apply column mapping to the actual row objects SRR reads",
+      "requirements": [
+        "Guarantee that post-ingest row objects include canonical keys: 'file_name' and 'file_url' (strings, trimmed).",
+        "Mapping must be applied once during ingest and stored in the workbook/session used by Grid + SRR.",
+        "Support common header aliases (case-insensitive):\n- file_name aliases: 'file name', 'filename', 'contract file', 'contract file name'\n- file_url aliases: 'file url', 'url', 'contract source', 'contract url', 'pdf url', 'source'\n- fallback: Column A = file_name, Column B = file_url when no alias match."
+      ],
+      "acceptance_tests": [
+        "For a sheet that has URLs, [SRR_PDF_LOAD] shows sourceType 'url' and a non-empty file_url.",
+        "sourceType is never 'none' unless the row truly has no URL and no matching local attachment."
+      ]
+    },
+    {
+      "id": "LOG-01",
+      "title": "Make SRR_PDF_LOAD diagnostic log actionable",
+      "requirements": [
+        "Log: sheetName, rowIndex, recordKey, file_name, file_url (truncated), resolvedSourceType, cacheStatus.",
+        "Log exactly once per SRR open (not in a loop)."
+      ],
+      "acceptance_tests": [
+        "Console shows one SRR_PDF_LOAD per open, with real values."
+      ]
+    }
+  ],
+  "acceptance_tests": [
+    "AT-01: Opening '#/row/0' does not trigger repeated hashchange navigation.",
+    "AT-02: SRR_PDF_LOAD shows recordKey not 'unknown'.",
+    "AT-03: With the provided S3 URL present in file_url for a row, SRR_PDF_LOAD shows sourceType 'url' (even if the fetch later fails due to CORS)."
+  ],
+  "output_format": {
+    "summary": "bullet list of file changes",
+    "verification": "paste the before/after console log snippets showing loop fixed and SRR_PDF_LOAD populated",
+    "suggested_commit_message": "one line",
+    "git_commands": "exact add/commit commands (no push claims)"
+  }
+}

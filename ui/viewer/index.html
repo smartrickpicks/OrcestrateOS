@@ -3072,11 +3072,16 @@
       
       var lowerHeaders = headers.map(function(h) { return (h || '').toLowerCase().trim(); });
       
+      // v1.4.14: Extended aliases for file_name
+      var fileNameAliases = ['file_name', 'filename', 'file name', 'contract file', 'contract file name', 'document', 'doc_name'];
       var fileNameIdx = lowerHeaders.findIndex(function(h) { 
-        return h === 'file_name' || h === 'filename' || h === 'file name'; 
+        return fileNameAliases.indexOf(h) >= 0;
       });
+      
+      // v1.4.14: Extended aliases for file_url
+      var fileUrlAliases = ['file_url', 'fileurl', 'file url', 'url', 'contract source', 'contract url', 'pdf url', 'source', 'document_url', 'doc_url', 'link'];
       var fileUrlIdx = lowerHeaders.findIndex(function(h) { 
-        return h === 'file_url' || h === 'fileurl' || h === 'file url' || h === 'url'; 
+        return fileUrlAliases.indexOf(h) >= 0;
       });
       
       if (fileNameIdx >= 0) COLUMN_MAPPING_STATE.fileNameColumn = headers[fileNameIdx];
@@ -7379,19 +7384,43 @@
     // Stub required fields (schema stub)
     var SRR_REQUIRED_FIELDS = ['contract_key', 'status'];
 
+    // v1.4.14: Resolve record from workbook with proper identity
     function openRowReviewDrawer(rowId) {
-      // Find record by contract_key or index
       var record = null;
-      var ds = getGridDataset();
-      if (ds && ds.sf_contract_results) {
-        record = ds.sf_contract_results.find(function(r) {
-          return String(r.contract_key) === String(rowId);
-        });
-        if (!record) {
-          var idx = parseInt(rowId, 10);
-          if (!isNaN(idx) && idx >= 0 && idx < ds.sf_contract_results.length) {
-            record = ds.sf_contract_results[idx];
+      var sheetName = null;
+      var rowIndex = parseInt(rowId, 10);
+      
+      // Priority: workbook sheets > legacy sf_contract_results
+      if (workbook.order.length > 0) {
+        // Use current sheet selection or first sheet
+        sheetName = currentSheetFilter || workbook.order[0];
+        var sheet = workbook.sheets[sheetName];
+        
+        if (sheet && sheet.rows) {
+          // Try to find by contract_key first
+          var foundIdx = sheet.rows.findIndex(function(r) {
+            return String(r.contract_key) === String(rowId);
+          });
+          
+          if (foundIdx >= 0) {
+            record = sheet.rows[foundIdx];
+            rowIndex = foundIdx;
+          } else if (!isNaN(rowIndex) && rowIndex >= 0 && rowIndex < sheet.rows.length) {
+            // Fall back to numeric index
+            record = sheet.rows[rowIndex];
           }
+        }
+      } else {
+        // Fallback to legacy dataset path
+        var ds = getGridDataset();
+        if (ds && ds.sf_contract_results) {
+          record = ds.sf_contract_results.find(function(r) {
+            return String(r.contract_key) === String(rowId);
+          });
+          if (!record && !isNaN(rowIndex) && rowIndex >= 0 && rowIndex < ds.sf_contract_results.length) {
+            record = ds.sf_contract_results[rowIndex];
+          }
+          sheetName = record ? (record.sheet || 'unknown') : 'unknown';
         }
       }
       
@@ -7400,16 +7429,24 @@
         return;
       }
       
-      // Store in state and navigate to Single Row Review page
+      // Build record identity for logging/caching
+      var recordKey = record.contract_key || (sheetName + ':' + rowIndex);
+      
+      // Store in state with extended context
       srrState.currentRecord = record;
       srrState.currentRowId = rowId;
+      srrState.currentSheetName = sheetName;
+      srrState.currentRowIndex = rowIndex;
+      srrState.currentRecordKey = recordKey;
       
       // Navigate to page and render
       navigateTo('row');
       renderSingleRowReview(record, rowId);
       
-      // Update URL
-      history.pushState(null, '', '#/row/' + rowId);
+      // Update URL without triggering hashchange loop
+      if (window.location.hash !== '#/row/' + rowId) {
+        history.pushState(null, '', '#/row/' + rowId);
+      }
     }
     
     function renderSingleRowReview(record, rowId) {
@@ -7958,6 +7995,19 @@
     }
     
     // v1.4.13: Cache-aware PDF loading with offline support
+    // v1.4.14: Build structured log entry with sheet/row context
+    function srrBuildLogEntry(sourceType, cacheStatus, url) {
+      return {
+        sheetName: srrState.currentSheetName || 'unknown',
+        rowIndex: srrState.currentRowIndex !== undefined ? srrState.currentRowIndex : -1,
+        recordKey: srrState.currentRecordKey || 'unknown',
+        file_name: srrState.currentRecord ? srrNormalizePdfValue(srrState.currentRecord.file_name) : '',
+        file_url: url ? (url.length > 60 ? url.substring(0, 60) + '...' : url) : '',
+        sourceType: sourceType,
+        cacheStatus: cacheStatus
+      };
+    }
+    
     function srrLoadPdfForRecord(record) {
       var emptyEl = document.getElementById('srr-doc-empty');
       var containerEl = document.getElementById('srr-doc-container');
@@ -7979,7 +8029,8 @@
         attachments = JSON.parse(localStorage.getItem(STORAGE_KEY_PDF_ATTACHMENTS) || '[]');
       } catch (e) {}
       
-      var recordId = record ? (record.contract_key || record.id || 'unknown') : 'no-record';
+      // v1.4.14: Use recordKey from srrState, fall back to record fields
+      var recordId = srrState.currentRecordKey || (record ? (record.contract_key || record.id || 'unknown') : 'no-record');
       var fileUrl = record ? srrNormalizePdfValue(record.file_url) : '';
       var fileName = record ? srrNormalizePdfValue(record.file_name) : '';
       
@@ -8006,12 +8057,7 @@
             // Cache hit - render from cached blob
             var objectUrl = URL.createObjectURL(cachedBlob);
             srrState.cacheStatus = 'hit';
-            srrRenderPdf(record, objectUrl, 'Cached', fileName || fileUrl.split('/').pop().split('?')[0], {
-              record: recordId,
-              sourceType: 'Cached',
-              cacheStatus: 'hit',
-              url: fileUrl.substring(0, 60) + '...'
-            });
+            srrRenderPdf(record, objectUrl, 'Cached', fileName || fileUrl.split('/').pop().split('?')[0], srrBuildLogEntry('Cached', 'hit', fileUrl));
             console.log('[PDF_CACHE] Cache hit for:', cacheKey);
           } else {
             // Cache miss - fetch from network
@@ -8040,12 +8086,7 @@
         }
         
         if (pdfUrl) {
-          srrRenderPdf(record, pdfUrl, sourceType, sourceName, {
-            record: recordId,
-            sourceType: sourceType,
-            cacheStatus: 'local',
-            url: 'local-attachment'
-          });
+          srrRenderPdf(record, pdfUrl, sourceType, sourceName, srrBuildLogEntry(sourceType, 'local', 'local-attachment'));
         } else {
           srrShowEmptyState();
         }
@@ -8053,8 +8094,9 @@
     }
     
     // v1.4.13: Fetch PDF from network and cache it
+    // v1.4.14: Use structured log entries
     function srrFetchAndCachePdf(record, networkUrl, fileName, cacheKey, attachments) {
-      var recordId = record ? (record.contract_key || record.id || 'unknown') : 'no-record';
+      var recordId = srrState.currentRecordKey || (record ? (record.contract_key || record.id || 'unknown') : 'no-record');
       
       fetch(networkUrl, { mode: 'cors' })
         .then(function(response) {
@@ -8078,22 +8120,12 @@
           if (blob.size > PDF_CACHE_CONFIG.MAX_FILE_BYTES) {
             srrState.cacheStatus = 'too-large';
             console.log('[PDF_CACHE] File too large to cache:', (blob.size / 1024 / 1024).toFixed(2), 'MB');
-            srrRenderPdf(record, objectUrl, 'URL (not cached)', sourceName, {
-              record: recordId,
-              sourceType: 'URL',
-              cacheStatus: 'too-large',
-              url: networkUrl.substring(0, 60) + '...'
-            });
+            srrRenderPdf(record, objectUrl, 'URL (not cached)', sourceName, srrBuildLogEntry('URL', 'too-large', networkUrl));
           } else {
             // Cache the PDF
             cachePdf(cacheKey, networkUrl, blob).then(function(cached) {
               srrState.cacheStatus = cached ? 'cached' : 'cache-failed';
-              srrRenderPdf(record, objectUrl, cached ? 'URL (cached)' : 'URL', sourceName, {
-                record: recordId,
-                sourceType: 'URL',
-                cacheStatus: cached ? 'cached' : 'cache-failed',
-                url: networkUrl.substring(0, 60) + '...'
-              });
+              srrRenderPdf(record, objectUrl, cached ? 'URL (cached)' : 'URL', sourceName, srrBuildLogEntry('URL', cached ? 'cached' : 'cache-failed', networkUrl));
             });
           }
         })
@@ -8103,12 +8135,7 @@
           
           // Try local attachment fallback
           if (srrState.localAttachmentFallback) {
-            srrRenderPdf(record, srrState.localAttachmentFallback.url, 'Local Attachment (offline fallback)', srrState.localAttachmentFallback.name, {
-              record: recordId,
-              sourceType: 'Local Attachment',
-              cacheStatus: 'offline-fallback',
-              url: 'local-attachment'
-            });
+            srrRenderPdf(record, srrState.localAttachmentFallback.url, 'Local Attachment (offline fallback)', srrState.localAttachmentFallback.name, srrBuildLogEntry('Local Attachment', 'offline-fallback', 'local-attachment'));
           } else {
             // Show offline stub
             srrShowOfflineStub(networkUrl);
@@ -8153,6 +8180,7 @@
     }
     
     // v1.4.13: Show empty state
+    // v1.4.14: Use structured log with sheet/row context
     function srrShowEmptyState() {
       var emptyEl = document.getElementById('srr-doc-empty');
       var containerEl = document.getElementById('srr-doc-container');
@@ -8172,10 +8200,11 @@
       srrUpdateZoomDisplay();
       srrUpdatePageDisplay();
       
-      console.log('[SRR_PDF_LOAD]', JSON.stringify({ record: 'unknown', sourceType: 'none', cacheStatus: 'empty' }));
+      console.log('[SRR_PDF_LOAD]', JSON.stringify(srrBuildLogEntry('none', 'empty', '')));
     }
     
     // v1.4.13: Show offline stub when network unavailable and no local fallback
+    // v1.4.14: Use structured log with sheet/row context
     function srrShowOfflineStub(networkUrl) {
       var emptyEl = document.getElementById('srr-doc-empty');
       var containerEl = document.getElementById('srr-doc-container');
@@ -8198,7 +8227,7 @@
           (networkUrl ? '<a href="' + networkUrl + '" target="_blank" style="display: inline-block; margin-top: 12px; color: #1565c0; text-decoration: underline;">Open in New Tab (when online)</a>' : '');
       }
       
-      console.log('[SRR_PDF_LOAD]', JSON.stringify({ record: 'unknown', sourceType: 'none', cacheStatus: 'offline-no-cache', url: networkUrl ? networkUrl.substring(0, 60) + '...' : 'none' }));
+      console.log('[SRR_PDF_LOAD]', JSON.stringify(srrBuildLogEntry('none', 'offline-no-cache', networkUrl || '')));
     }
     
     // v1.4.13: Setup iframe load/error handlers for best-effort failure detection
@@ -10002,11 +10031,15 @@
         });
       });
       
+      // v1.4.14: Track full route including params to prevent loops
+      var currentRoute = 'triage';
+      
       window.addEventListener('hashchange', () => {
         const hash = window.location.hash.replace('#/', '') || 'triage';
-        // Prevent duplicate navigation if we're already on this page
-        if (currentPage !== hash) {
+        // Prevent duplicate navigation - compare full route, not just page name
+        if (currentRoute !== hash) {
           console.log('[Router] Hashchange to:', hash);
+          currentRoute = hash;
           navigateTo(hash);
         }
       });
