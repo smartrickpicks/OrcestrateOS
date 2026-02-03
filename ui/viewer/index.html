@@ -1588,24 +1588,27 @@
               <span>Patch Editor</span>
             </div>
             <div class="srr-panel-body">
-              <!-- v1.4.19: Patch Type Selector -->
-              <div class="srr-patch-type-selector">
-                <div class="srr-patch-type-label">Patch Type <span style="font-weight:normal;font-size:0.85em;color:#999;">(auto-determined by action)</span></div>
-                <div class="srr-patch-type-chips">
-                  <div class="srr-patch-type-chip correction active" data-type="correction" style="cursor:default;" title="Patch type is auto-set by field action">Correction</div>
-                  <div class="srr-patch-type-chip blacklist" data-type="blacklist" style="cursor:default;" title="Patch type is auto-set by field action">Blacklist Flag</div>
-                  <div class="srr-patch-type-chip rfi" data-type="rfi" style="cursor:default;" title="Patch type is auto-set by field action">RFI (Question)</div>
+              <!-- Patch Type Dropdown -->
+              <div class="srr-patch-type-selector" style="margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 0.85em; font-weight: 600; color: #333;">Patch Type:</span>
+                  <select id="srr-patch-type-dropdown" class="srr-evidence-select" style="flex: 1; max-width: 200px;" onchange="srrOnPatchTypeChange(this.value)">
+                    <option value="correction">Correction</option>
+                    <option value="blacklist">Blacklist Flag</option>
+                    <option value="rfi">RFI (Question)</option>
+                  </select>
                 </div>
               </div>
 
-              <!-- v1.4.18: Patch Editor Block - shows changed fields with old/new values -->
+              <!-- Action Box - title changes based on patch type -->
               <div class="srr-patch-editor" id="srr-patch-editor">
                 <div class="srr-patch-editor-title">
-                  <span>Changed Fields <span id="srr-override-badge" class="srr-override-badge srr-section-hidden">OVERRIDE</span></span>
-                  <span id="srr-change-count" style="font-weight: normal; color: #666; font-size: 0.85em;">0 changes</span>
+                  <span id="srr-action-box-title">Changed Fields</span>
+                  <span id="srr-override-badge" class="srr-override-badge srr-section-hidden">OVERRIDE</span>
+                  <span id="srr-change-count" style="font-weight: normal; color: #666; font-size: 0.85em; margin-left: auto;">0 changes</span>
                 </div>
                 <div id="srr-patch-editor-fields">
-                  <div class="srr-patch-editor-empty">Click a field value to edit. Changed fields appear here.</div>
+                  <div class="srr-patch-editor-empty" id="srr-action-box-helper">Click a field value to edit. Changed fields appear here.</div>
                 </div>
                 
                 <!-- v1.4.19: Override toggle (Correction only, when applicable) -->
@@ -1660,9 +1663,9 @@
                 </select>
               </div>
               
-              <!-- Justification (all patch types) -->
+              <!-- Justification / Comment (all patch types) -->
               <div class="srr-evidence-block" id="srr-justification-block">
-                <div class="srr-evidence-label">Justification <span class="srr-evidence-alias">(BECAUSE)</span></div>
+                <div class="srr-evidence-label" id="srr-justification-label">Justification <span class="srr-evidence-alias">(BECAUSE)</span></div>
                 <textarea class="srr-evidence-textarea" id="srr-justification" placeholder="Explain why this change/flag/question is necessary..." oninput="srrSaveEvidenceDraft()"></textarea>
               </div>
               
@@ -1685,8 +1688,11 @@
                 </div>
               </div>
 
-              <!-- Submit Section -->
-              <div class="srr-patch-section">
+              <!-- Spacer to push buttons lower -->
+              <div style="flex-grow: 1; min-height: 20px;"></div>
+              
+              <!-- Submit Section (positioned lower) -->
+              <div class="srr-patch-section" style="margin-top: auto; padding-top: 16px; border-top: 1px solid #e0e0e0;">
                 <div class="srr-actions">
                   <button class="srr-btn srr-btn-secondary" onclick="srrSaveDraft()">Save Draft</button>
                   <button class="srr-btn srr-btn-primary" id="srr-submit-btn" onclick="srrSubmitPatchRequest()">Submit Patch Request</button>
@@ -7913,11 +7919,9 @@
       srrState.patchType = srrState.patchDraft.patch_type || 'correction';
       srrState.overrideEnabled = srrState.patchDraft.override_enabled || false;
       
-      // Update patch type UI
-      document.querySelectorAll('.srr-patch-type-chip').forEach(function(chip) {
-        chip.classList.remove('active');
-        if (chip.dataset.type === srrState.patchType) chip.classList.add('active');
-      });
+      // Update patch type dropdown
+      var dropdown = document.getElementById('srr-patch-type-dropdown');
+      if (dropdown) dropdown.value = srrState.patchType;
       var overrideToggle = document.getElementById('srr-override-toggle');
       if (overrideToggle) overrideToggle.classList.toggle('active', srrState.overrideEnabled);
       
@@ -8216,12 +8220,6 @@
       // Auto-populate blacklist subject
       srrState.patchDraft.blacklist_subject = label + ': ' + (currentVal || '(empty)');
       
-      // Update patch type UI
-      document.querySelectorAll('.srr-patch-type-chip').forEach(function(chip) {
-        chip.classList.remove('active');
-        if (chip.dataset.type === 'blacklist') chip.classList.add('active');
-      });
-      
       console.log('[SRR] Field BLACKLIST:', fieldKey, 'subject:', srrState.patchDraft.blacklist_subject);
       srrUpdatePatchFormSections();
       renderSrrFields(srrState.currentRecord);
@@ -8236,12 +8234,6 @@
       // Auto-set patch type to RFI
       srrState.patchType = 'rfi';
       srrState.patchDraft.patch_type = 'rfi';
-      
-      // Update patch type UI
-      document.querySelectorAll('.srr-patch-type-chip').forEach(function(chip) {
-        chip.classList.remove('active');
-        if (chip.dataset.type === 'rfi') chip.classList.add('active');
-      });
       
       console.log('[SRR] Field RFI (pending):', fieldKey);
       srrUpdatePatchFormSections();
@@ -9179,10 +9171,11 @@
     
     // v1.4.20: Update patch type display (read-only indicator)
     function srrUpdatePatchTypeDisplay() {
-      document.querySelectorAll('.srr-patch-type-chip').forEach(function(chip) {
-        chip.classList.remove('active');
-        if (chip.dataset.type === srrState.patchType) chip.classList.add('active');
-      });
+      // Update dropdown to match current patch type
+      var dropdown = document.getElementById('srr-patch-type-dropdown');
+      if (dropdown) dropdown.value = srrState.patchType;
+      // Update form sections
+      srrUpdatePatchFormSections();
     }
     
     // v1.4.20: Guard modal for leaving SRR with unresolved fields
@@ -9244,6 +9237,47 @@
       var rfiSection = document.getElementById('srr-rfi-section');
       if (rfiSection) rfiSection.classList.toggle('srr-section-hidden', !isRfi);
       
+      // Update action box title based on patch type
+      var actionBoxTitle = document.getElementById('srr-action-box-title');
+      if (actionBoxTitle) {
+        if (isCorrection) {
+          actionBoxTitle.textContent = 'Changed Fields';
+        } else if (isBlacklist) {
+          actionBoxTitle.textContent = 'Blacklist Request';
+        } else if (isRfi) {
+          actionBoxTitle.textContent = 'RFI Request';
+        }
+      }
+      
+      // Update helper text based on patch type
+      var helperEl = document.getElementById('srr-action-box-helper');
+      if (helperEl && !Object.keys(srrState.proposedChanges).length) {
+        if (isCorrection) {
+          helperEl.textContent = 'Click a field value to edit. Changed fields appear here.';
+        } else if (isBlacklist) {
+          helperEl.textContent = 'Click the Block icon on a field to flag it for blacklist.';
+        } else if (isRfi) {
+          helperEl.textContent = 'Click the RFI icon on a field to request clarification.';
+        }
+      }
+      
+      // Update justification label (Comment for RFI)
+      var justLabel = document.getElementById('srr-justification-label');
+      var justTextarea = document.getElementById('srr-justification');
+      if (justLabel) {
+        if (isRfi) {
+          justLabel.innerHTML = 'Comment';
+          if (justTextarea) justTextarea.placeholder = 'Add your question or note for the team...';
+        } else {
+          justLabel.innerHTML = 'Justification <span class="srr-evidence-alias">(BECAUSE)</span>';
+          if (justTextarea) justTextarea.placeholder = 'Explain why this change/flag is necessary...';
+        }
+      }
+      
+      // Update patch type dropdown
+      var dropdown = document.getElementById('srr-patch-type-dropdown');
+      if (dropdown) dropdown.value = type;
+      
       // Update submit button text and style based on patch type
       var submitBtn = document.getElementById('srr-submit-btn');
       if (submitBtn) {
@@ -9258,6 +9292,15 @@
           submitBtn.style.background = '#1565c0';  // Blue default
         }
       }
+    }
+    
+    // Handle patch type dropdown change
+    function srrOnPatchTypeChange(newType) {
+      srrState.patchType = newType;
+      srrState.patchDraft.patch_type = newType;
+      srrUpdatePatchFormSections();
+      srrSaveEvidenceDraft();
+      console.log('[SRR] Patch type changed to:', newType);
     }
     
     // v1.4.19: Check if override is applicable based on observation/expected
