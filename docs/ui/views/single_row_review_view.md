@@ -144,6 +144,31 @@ Page indicator shows "Page X" (without total, as total pages unknown with iframe
 - State is restored when returning to the same record
 - Object URLs are kept in-memory for session only; no stale URL behavior after refresh
 
+### PDF Caching (v1.4.13)
+PDFs are cached locally using IndexedDB for offline-first access:
+
+**Cache Behavior:**
+- **Cache key**: Computed from record identity + source URL
+- **Cache hit**: PDF renders from cached blob; `last_accessed_at` is updated
+- **Cache miss (online)**: PDF is fetched, validated (%PDF signature), and cached
+- **Cache miss (offline)**: Shows "Document not available offline" stub
+
+**Limits:**
+| Limit | Value |
+|-------|-------|
+| Max file size | 25 MB per PDF |
+| Max total cache | 250 MB |
+
+**Eviction Policy:**
+- LRU (Least Recently Used) eviction when total would exceed 250 MB
+- Files >25 MB are not cached but can still be viewed when online
+- Source indicator shows cache status: "Cached", "URL (cached)", "URL (not cached)"
+
+**Offline Stub:**
+When network unavailable and PDF not cached:
+- Shows 📵 icon with message: "Document not available offline"
+- Provides "Open in New Tab (when online)" link for later access
+
 ### Empty State
 When no PDF source is available for the record:
 - Shows placeholder icon and message: "No document attached"

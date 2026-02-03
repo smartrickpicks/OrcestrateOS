@@ -19,6 +19,31 @@ Contract: This document defines the governance contract for the read-only audit 
 - Determinism: canonical field order, value normalization, and sort rules are defined and must be followed.
 - Evidence first: every consequential decision should link to concrete anchors (e.g., PDF highlights) and be replayable in the UI.
 
+## PDF Cache Index Contract (v1.4.13)
+
+The PDF cache is a local UI concern and does not emit governance events. However, the cache index schema is documented for tooling interoperability:
+
+### Cache Index Entry Fields
+| Field | Type | Description |
+|-------|------|-------------|
+| key | string | Cache key: `pdf:{record_id}:{source_url_without_query}` |
+| source_url | string | Original network URL |
+| size_bytes | integer | File size in bytes |
+| created_at | integer | Unix timestamp (ms) when cached |
+| last_accessed_at | integer | Unix timestamp (ms) of last access |
+
+### Cache Limits
+| Limit | Value |
+|-------|-------|
+| MAX_FILE_BYTES | 25 MB (26,214,400 bytes) |
+| MAX_TOTAL_BYTES | 250 MB (262,144,000 bytes) |
+
+### Cache Operations
+Cache operations are local UI concerns and are NOT logged to the audit ledger:
+- Cache writes, reads, and evictions are silent
+- Only explicit governance actions (PATCH_*, STATE_MARKED, etc.) are logged
+- The cache exists purely for offline convenience and has no semantic authority
+
 ## Event Model
 Each entry in the audit log is an Event with the following invariant fields:
 - event_id: globally unique stable identifier (string). Example: ULID or UUIDv4 rendered lowercase.

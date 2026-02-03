@@ -80,6 +80,24 @@ Contract: This document defines the governed, offline-first Data Source experien
 - **Offline-compatible**: Yes (SheetJS library loaded from CDN, cached)
 - **Parser entrypoint**: `parseWorkbook(arrayBuffer, filename)` for reuse in V1.5 Drive integration
 
+### Download Once, Work Locally (v1.4.13)
+Data sources follow a "copy-in" model:
+- **Ingestion**: Files are parsed and stored in IndexedDB/localStorage
+- **PDF Caching**: Network PDFs are cached locally (25 MB per file, 250 MB total)
+- **Offline Work**: After initial load, records can be reviewed offline
+- **No Background Sync**: Changes are local-only until explicit export
+
+This design ensures analysts can work on flights, in low-connectivity environments, or with sensitive data that shouldn't leave the device.
+
+### V1.5 Connectors (Copy-In Stubs)
+> **Note:** These are governance stubs for future copy-in connectors. No runtime integration exists yet.
+
+#### Google Drive Connector (V1.5 Stub)
+- **Status**: Not implemented
+- **Purpose**: One-time copy-in from Drive folder (not sync)
+- **Behavior**: Download files once, then work locally
+- **Requires**: OAuth, Drive API read access
+
 ### CSV Ingestion (v1.4.12)
 - Single-sheet workbook created from CSV file
 - Sheet name derived from filename (without extension)
