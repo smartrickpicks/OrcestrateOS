@@ -1,0 +1,49 @@
+ROUTE: BUILD_TASK_REPLIT
+goal: Fix SRR PDF rendering regression so PDFs reliably display after CSV/XLSX ingestion + column mapping (before implementing anchors/highlights).
+constraints:
+
+Do not change canonical ids/routes/spec tokens.
+No text extraction/highlighting yet (this task is “PDF must render” only).
+Keep SRR Review State badge read-only.
+files_in_scope:
+index.html
+implementation_steps:
+Reproduce + capture the failing condition
+Requirements:
+Identify the exact console error and the PDF source type when it fails:
+file_url (network) vs local attachment (object URL)
+Log a single structured line when attempting to load PDF:
+record identity, resolved source type, resolved URL (redact querystring if needed), page, zoom.
+Acceptance tests:
+Console shows one clear “SRR_PDF_LOAD” log per SRR open with the resolved source.
+Harden URL resolution + normalization
+Requirements:
+Ensure file_url and file_name are strings (SheetJS can yield non-string values); coerce + trim().
+Treat a file_url as usable only if it starts with http:// or https:// and ends with .pdf OR contains .pdf before query params.
+Ensure the iframe src is always set to a non-empty string when a source is resolved.
+Acceptance tests:
+A record with a valid file_url sets iframe.src to that URL.
+A record with a matching local attachment sets iframe.src to the attachment object URL.
+Add load/error UX and a deterministic fallback
+Requirements:
+Add onload and a “best-effort failure detector”:
+If iframe never loads (or loads blank), show an inline banner: “PDF failed to render.”
+Always show an Open in New Tab link when file_url is present.
+If file_url render fails, allow user to click Use Local Attachment (if a matching attachment exists) and rerender.
+Acceptance tests:
+When PDF fails to render, user sees a clear message + Open in New Tab link.
+Switching to local attachment works when available.
+Fix fragment params compatibility
+Requirements:
+Ensure fragment format is compatible with browser PDF viewers:
+Use #page=<n> and &zoom=<percent> (or #page=<n>&zoom=<percent>), but if the browser ignores zoom, don’t break rendering.
+If fragment causes blank rendering for some URLs, fall back to setting src without zoom fragment (keep page only).
+Acceptance tests:
+Page navigation changes #page= and remains render-safe.
+If zoom fragment breaks rendering, fallback path renders PDF and zoom indicator remains UI-only.
+output_format:
+
+summary: bullet list of file changes
+verification: include the exact console error you saw + how it was resolved
+suggested_commit_message: one line
+git_commands: exact add/commit commands (no push claims)
