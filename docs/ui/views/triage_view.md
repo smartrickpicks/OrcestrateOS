@@ -2,6 +2,12 @@
 
 > Alert summary view showing Review State counts and status cards for quick navigation.
 
+## Navigation Entry Points
+
+Triage is accessible via:
+- **Progress Block** in sidebar (click routes to #/triage)
+- Direct URL navigation (#/triage)
+
 ## Entry Conditions
 
 | Condition | Required |

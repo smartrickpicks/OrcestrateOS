@@ -44,6 +44,7 @@ All documentation, UI labels, and schemas must use canonical terms only. No syno
 - Navigation reflects data state (empty → load, loaded → triage/grid)
 - Gates block forward progression until conditions are met
 - Backward navigation preserves context (no data loss)
+- Sidebar Progress Block routes to Triage for detailed queue view
 
 ### 4. Audit by Design
 - Every decision-bearing action writes to the audit log

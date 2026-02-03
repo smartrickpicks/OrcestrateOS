@@ -1,0 +1,78 @@
+{
+  "route": "BUILD_TASK_REPLIT",
+  "goal": "Side panel overhaul to match DataDash-style layout: Data Source action at top, progress block routing to Triage, Navigation with Sheet selector and view buttons, Cache section, Export/Save stub.",
+  "constraints": [
+    "Offline-first; no network calls.",
+    "Canonical terminology only; UI labels use Record Inspection alias, Verifier Review (not Reviewer Hub).",
+    "No changes to routes/ids/spec tokens.",
+    "No invented claims in docs."
+  ],
+  "files_in_scope": [
+    "ui/viewer/index.html",
+    "docs/specs/Side-Panel-UX-and-Navigation-Semantics-V1.json",
+    "docs/ui/ui_principles.md",
+    "docs/ui/views/triage_view.md"
+  ],
+  "implementation_steps": [
+    {
+      "id": "NAV-01",
+      "title": "Top action + progress block",
+      "requirements": [
+        "Add a top quick-action button labeled 'Data Source' (opens Data Source panel).",
+        "Replace current triage center with a Progress block matching the screenshot layout.",
+        "Progress block is a single clickable button routing to Triage."
+      ],
+      "acceptance_tests": [
+        "Data Source button appears above progress block.",
+        "Progress block routes to Triage.",
+        "Progress labels match canonical doctrine terms from docs."
+      ]
+    },
+    {
+      "id": "NAV-02",
+      "title": "Navigation section with sheet selector",
+      "requirements": [
+        "Add Navigation header.",
+        "Sheet selector (stub) directly under Navigation.",
+        "View Mode buttons in order: All Data Grid, Record Inspection, Verifier Review.",
+        "Record Inspection routes to SRR (canonical route)."
+      ],
+      "acceptance_tests": [
+        "Sheet selector appears under Navigation.",
+        "View Mode buttons appear in correct order with correct labels.",
+        "Record Inspection routes to SRR view."
+      ]
+    },
+    {
+      "id": "NAV-03",
+      "title": "Cache + Export/Save footer",
+      "requirements": [
+        "Add Cache section with Cached PDFs count and Storage used (stub).",
+        "Add 'Clear All Cached PDFs' button (clears stub counters, shows toast).",
+        "Add Export / Save button at bottom (stub; optional 'coming soon' toast)."
+      ],
+      "acceptance_tests": [
+        "Cache section appears above Export / Save.",
+        "Clear All Cached PDFs clears stub counters.",
+        "Export / Save button visible at bottom."
+      ]
+    },
+    {
+      "id": "DOCS-01",
+      "title": "Docs alignment",
+      "requirements": [
+        "Update Side-Panel-UX-and-Navigation-Semantics-V1.json to match new sidebar layout/labels.",
+        "Update ui_principles.md and triage_view.md for Progress → Triage routing and navigation ordering."
+      ],
+      "acceptance_tests": [
+        "Docs reflect the new layout and labels."
+      ]
+    }
+  ],
+  "output_format": {
+    "summary": "bullet list of file changes",
+    "verification": "manual checks or grep notes",
+    "suggested_commit_message": "one line",
+    "git_commands": "exact add/commit commands without claiming push"
+  }
+}

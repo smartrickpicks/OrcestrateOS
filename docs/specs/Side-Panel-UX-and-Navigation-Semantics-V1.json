@@ -1,168 +1,166 @@
 {
-  "proposed_side_panel_structure": {
+  "version": "1.4.6",
+  "description": "Sidebar panel structure and navigation semantics for DataDash-style layout",
+  "sidebar_structure": {
     "order": [
-      "Progress State",
-      "Triage",
-      "Orchestrator View",
-      "Admin Board"
+      "data_source_action",
+      "progress_block",
+      "navigation",
+      "tools",
+      "cache",
+      "export_save"
     ],
-    "items": [
+    "sections": [
       {
-        "id": "progress_state",
-        "label": "Progress State",
-        "kind": "informational_block",
-        "route": null,
+        "id": "data_source_action",
+        "label": "Data Source",
+        "kind": "action_button",
+        "position": "top",
+        "interaction": "opens_loader_drawer",
         "visible_to": ["Analyst", "Reviewer", "Admin"],
-        "enabled_when": "always",
-        "policy_refs": {
-          "behavior_default": "informational_only",
-          "behavior_optional": "click_to_triage_allowed",
-          "never": "imply_resolution_or_auto_fix"
-        },
-        "contains": [
-          {
-            "id": "load_data",
-            "label": "Load Data",
-            "type": "action_button",
-            "interaction": "modal_only_no_route_change",
-            "csv_only": true,
-            "xlsx_unsupported_copy": "XLSX not supported yet.",
-            "visible_to": ["Analyst", "Reviewer", "Admin"],
-            "repo_anchors": [
-              "ui/viewer/components/LoaderModal.*",
-              "ui/viewer/index.html"
-            ]
-          }
-        ],
-        "rationale": "Progress is a canonical, role-neutral summary. It is informational by default and may optionally deep-link to Triage without implying resolution. Load Data lives here as the workflow entry, not a utility." 
+        "rationale": "Primary entry point for loading datasets. Always visible at top."
       },
       {
-        "id": "triage",
-        "label": "Triage",
-        "kind": "primary_nav",
+        "id": "progress_block",
+        "label": "Progress",
+        "kind": "informational_block",
+        "position": "below_data_source",
+        "interaction": "click_routes_to_triage",
         "route": "#/triage",
         "visible_to": ["Analyst", "Reviewer", "Admin"],
-        "enabled_when": "dataset_loaded_or_demo_mode",
-        "never": [
-          "append_admin_widgets",
-          "resolve_flags_implicitly"
-        ],
-        "rationale": "Alerts and flags lens; prioritization and entry to record review. Never duplicates Orchestrator responsibilities."
+        "contains": {
+          "stats": ["To Do", "Review", "Done"],
+          "progress_bar": true
+        },
+        "rationale": "Summarizes work queue status. Clicking routes to Triage for detailed view."
       },
       {
-        "id": "orchestrator_view",
-        "label": "Orchestrator View",
-        "kind": "primary_nav",
-        "route": "#/grid",
-        "visible_to": ["Analyst", "Reviewer", "Admin"],
-        "enabled_when": "dataset_loaded",
-        "never": [
-          "mount_admin_tools",
-          "apply_patches_automatically"
-        ],
-        "rationale": "Primary grid for bulk inspection and cross-sheet review. Admin actions remain under Admin Board."
+        "id": "navigation",
+        "label": "Navigation",
+        "kind": "nav_section",
+        "contains": [
+          {
+            "id": "sheet_selector",
+            "label": "Sheet Selector",
+            "kind": "dropdown",
+            "interaction": "filters_grid_by_sheet",
+            "visible_to": ["Analyst", "Reviewer", "Admin"]
+          },
+          {
+            "id": "all_data_grid",
+            "label": "All Data Grid",
+            "kind": "nav_item",
+            "route": "#/grid",
+            "visible_to": ["Analyst", "Reviewer", "Admin"]
+          },
+          {
+            "id": "record_inspection",
+            "label": "Record Inspection",
+            "canonical_name": "single_row_review",
+            "kind": "nav_item",
+            "route": "#/row/:id",
+            "interaction": "opens_first_row_or_prompts",
+            "visible_to": ["Analyst", "Reviewer", "Admin"],
+            "rationale": "UI alias for Single Row Review. Opens drawer for selected/first row."
+          },
+          {
+            "id": "verifier_review",
+            "label": "Verifier Review",
+            "kind": "nav_item",
+            "route": "#/verifier-review",
+            "visible_to": ["Reviewer", "Admin"],
+            "rationale": "Verifier gate actions. Role-gated."
+          }
+        ]
       },
       {
-        "id": "admin_board",
-        "label": "Admin Board",
-        "kind": "primary_nav",
-        "route": "#/admin",
+        "id": "tools",
+        "label": "Tools",
+        "kind": "nav_section",
+        "contains": [
+          {
+            "id": "patch_studio",
+            "label": "Patch Studio",
+            "route": "#/patch",
+            "visible_to": ["Analyst", "Reviewer", "Admin"]
+          },
+          {
+            "id": "evidence_status",
+            "label": "Evidence Status",
+            "interaction": "opens_status_modal",
+            "visible_to": ["Analyst", "Reviewer", "Admin"]
+          },
+          {
+            "id": "config_inspector",
+            "label": "Config Inspector",
+            "route": "#/review",
+            "visible_to": ["Reviewer", "Admin"]
+          },
+          {
+            "id": "admin_approval",
+            "label": "Admin Approval",
+            "route": "#/admin-approval",
+            "visible_to": ["Admin"]
+          },
+          {
+            "id": "governance",
+            "label": "Governance",
+            "route": "#/admin",
+            "visible_to": ["Admin"]
+          },
+          {
+            "id": "config_flows",
+            "label": "Config Flows",
+            "interaction": "opens_config_flows_modal",
+            "visible_to": ["Admin"]
+          }
+        ]
+      },
+      {
+        "id": "cache",
+        "label": "Cache",
+        "kind": "info_section",
+        "contains": {
+          "cached_pdfs_count": "stub",
+          "storage_used": "stub",
+          "clear_action": "clears_pdf_cache_shows_toast"
+        },
         "visible_to": ["Analyst", "Reviewer", "Admin"],
-        "enabled_when": "always",
-        "gating_notes": "Admin-only actions gated by permissions; non-admins see access denied or read-only summaries.",
-        "rationale": "Config, Inspector (JSON), Standardizer, Patch Console, Evidence live here exclusively."
+        "rationale": "Displays cached PDF attachments. Clear action removes from localStorage."
+      },
+      {
+        "id": "export_save",
+        "label": "Export / Save",
+        "kind": "action_button",
+        "position": "bottom",
+        "interaction": "stub_coming_soon_toast",
+        "visible_to": ["Analyst", "Reviewer", "Admin"],
+        "rationale": "Future export functionality. Currently shows coming soon toast."
       }
     ]
   },
   "navigation_semantics": {
-    "progress_state": {
-      "default": "informational_only",
-      "optional_click_to_triage": true,
-      "on_click": {
-        "action": "navigate",
-        "target": "#/triage",
-        "guard": "must_not_imply_resolution_or_auto_fix"
-      },
-      "never": [
-        "apply_patches",
-        "change_state_implicitly"
-      ]
+    "progress_block": {
+      "default": "informational_summary",
+      "click_action": "routes_to_triage",
+      "stats_source": "queue_counts",
+      "never": ["imply_resolution", "auto_fix"]
     },
-    "triage": {
-      "route": "#/triage",
-      "enabled_when": [
-        "dataset_loaded",
-        "or_demo_mode"
-      ],
-      "does": [
-        "display_flags_and_alerts",
-        "open_record_review"
-      ],
-      "never": [
-        "mount_admin_tools",
-        "apply_patches_automatically"
-      ]
+    "record_inspection": {
+      "canonical_id": "single_row_review",
+      "ui_label": "Record Inspection",
+      "behavior": "opens_row_drawer_for_selected_or_first_row",
+      "fallback_if_no_data": "prompts_to_load_or_select"
     },
-    "orchestrator_view": {
-      "route": "#/grid",
-      "enabled_when": [
-        "dataset_loaded"
-      ],
-      "does": [
-        "bulk_inspection",
-        "filters_and_search",
-        "open_record_review"
-      ],
-      "never": [
-        "admin_actions",
-        "implicit_state_changes"
-      ]
-    },
-    "admin_board": {
-      "route": "#/admin",
-      "does": [
-        "config_edit (gated)",
-        "inspector_json",
-        "standardizer_run (gated)",
-        "patch_console (gated)",
-        "evidence_summaries"
-      ],
-      "gating": "Admin role required for mutations; non-admins blocked or read-only",
-      "never": [
-        "mount_in_operator_routes",
-        "bypass_patch_approval"
-      ]
-    },
-    "loader_modal": {
-      "invocation_points": [
-        "Sidebar: Progress State block",
-        "Topbar: secondary entry",
-        "Triage: CTA"
-      ],
-      "interaction": "modal_only_no_route_change",
-      "csv_only": true,
-      "xlsx_copy": "XLSX not supported yet.",
-      "success_flow": [
-        "commit_dataset_state",
-        "close_modal",
-        "navigate '#/grid'"
-      ]
-    },
-    "global_rules": {
-      "no_per_queue_nav_links": true,
-      "no_copy_implying_auto_apply": true,
-      "single_layout_all_roles": true,
-      "role_diff_via_widgets_permissions": true,
-      "offline_first_v1": true
+    "sheet_selector": {
+      "default_value": "All Sheets",
+      "populated_from": "workbook.sheets",
+      "interaction": "filters_grid_state"
     }
   },
-  "copy_pack": {
-    "labels": {
-      "progress_state": "Progress State",
-      "triage": "Triage",
-      "orchestrator_view": "Orchestrator View",
-      "admin_board": "Admin Board",
-      "load_data": "Load Data"
-    },
-    "descriptions": {
-      "progress_state": "Evidence-bound summary of current workflow state. Informational; d
+  "role_visibility": {
+    "Analyst": ["data_source_action", "progress_block", "navigation", "tools.patch_studio", "tools.evidence_status", "cache", "export_save"],
+    "Reviewer": ["data_source_action", "progress_block", "navigation", "tools.*", "cache", "export_save"],
+    "Admin": ["*"]
+  }
+}

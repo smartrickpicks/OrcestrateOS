@@ -18,6 +18,7 @@ cd "$(dirname "$0")/.."
 python3 -c "
 import http.server
 import socketserver
+import socket
 
 class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -26,7 +27,10 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Expires', '0')
         super().end_headers()
 
+class ReuseAddrTCPServer(socketserver.TCPServer):
+    allow_reuse_address = True
+
 PORT = $PORT
-with socketserver.TCPServer(('0.0.0.0', PORT), NoCacheHandler) as httpd:
+with ReuseAddrTCPServer(('0.0.0.0', PORT), NoCacheHandler) as httpd:
     httpd.serve_forever()
 "

@@ -212,6 +212,32 @@
     .mode-reviewer .nav-item.reviewer-only { display: flex; }
     .mode-admin .nav-item.reviewer-only { display: flex; }
     .mode-admin .nav-item.admin-only { display: flex; }
+
+    /* Sidebar Action Buttons */
+    .nav-action-btn { width: 100%; padding: 10px 14px; background: #1565c0; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 500; display: flex; align-items: center; gap: 8px; transition: background 0.2s; }
+    .nav-action-btn:hover { background: #1976d2; }
+    .nav-action-btn.export-btn { background: #2e7d32; }
+    .nav-action-btn.export-btn:hover { background: #388e3c; }
+    .nav-action-icon { font-size: 1.1em; }
+
+    /* Progress Block */
+    .progress-block { display: block; background: #2d2d4a; border-radius: 8px; padding: 12px; text-decoration: none; color: inherit; cursor: pointer; transition: background 0.2s; }
+    .progress-block:hover { background: #3d3d5a; }
+    .progress-header { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-bottom: 8px; font-weight: 600; }
+    .progress-stats { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .progress-stat { text-align: center; flex: 1; }
+    .progress-stat-count { display: block; font-size: 1.4em; font-weight: 600; color: white; }
+    .progress-stat-label { font-size: 0.65em; color: #888; text-transform: uppercase; }
+    .progress-bar-container { background: #1a1a2e; border-radius: 4px; height: 6px; overflow: hidden; }
+    .progress-bar-fill { background: linear-gradient(90deg, #1565c0, #2196f3); height: 100%; transition: width 0.3s; }
+
+    /* Sheet Selector */
+    .sheet-selector { width: 100%; padding: 8px 10px; background: #2d2d4a; border: 1px solid #444; border-radius: 6px; color: #ddd; font-size: 0.85em; cursor: pointer; }
+    .sheet-selector:focus { outline: none; border-color: #1565c0; }
+
+    /* Cache Section */
+    .cache-clear-btn { width: 100%; padding: 6px 10px; background: transparent; border: 1px solid #555; border-radius: 4px; color: #aaa; font-size: 0.75em; cursor: pointer; transition: all 0.2s; }
+    .cache-clear-btn:hover { background: #333; border-color: #777; color: white; }
     
     /* Role-based visibility for any element */
     .admin-only-content { display: none !important; }
@@ -947,68 +973,78 @@
         </div>
       </div>
       <div class="nav-menu">
+        <!-- Top Action: Data Source -->
+        <div class="nav-section" style="padding: 12px 16px 8px;">
+          <button class="nav-action-btn" id="sidebar-data-source-btn" onclick="openLoaderDrawer()">
+            <span class="nav-action-icon">📁</span>
+            <span>Data Source</span>
+          </button>
+        </div>
+
+        <!-- Progress Block (routes to Triage) -->
+        <div class="nav-section" style="padding: 8px 16px;">
+          <a class="progress-block" href="#/triage" data-page="triage">
+            <div class="progress-header">Progress</div>
+            <div class="progress-stats">
+              <div class="progress-stat">
+                <span class="progress-stat-count" id="progress-todo">0</span>
+                <span class="progress-stat-label">To Do</span>
+              </div>
+              <div class="progress-stat">
+                <span class="progress-stat-count" id="progress-review">0</span>
+                <span class="progress-stat-label">Review</span>
+              </div>
+              <div class="progress-stat">
+                <span class="progress-stat-count" id="progress-done">0</span>
+                <span class="progress-stat-label">Done</span>
+              </div>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%;"></div>
+            </div>
+          </a>
+        </div>
+
+        <div class="nav-divider"></div>
+
+        <!-- Navigation Section -->
         <div class="nav-section">
-          <div class="nav-section-header">Views</div>
+          <div class="nav-section-header">Navigation</div>
+          
+          <!-- Sheet Selector (stub) -->
+          <div style="padding: 4px 16px 8px;">
+            <select class="sheet-selector" id="sidebar-sheet-selector" onchange="handleSheetSelectorChange(this.value)">
+              <option value="all">All Sheets</option>
+            </select>
+          </div>
+          
+          <!-- View Mode Buttons -->
           <a class="nav-item" data-page="grid" href="#/grid">
             <span class="nav-icon">📊</span>
             <span class="nav-label">All Data Grid</span>
           </a>
-        </div>
-
-        <div class="nav-section">
-          <div class="nav-section-header">Review States</div>
-          <a class="nav-item queue-item" data-page="triage" data-queue="todo" href="#/triage">
-            <span class="nav-icon">📋</span>
-            <span class="nav-label">To Do</span>
-            <span class="nav-count" id="queue-count-todo">0</span>
+          <a class="nav-item" id="nav-record-inspection" href="#" onclick="openRecordInspectionFromNav(); return false;">
+            <span class="nav-icon">🔎</span>
+            <span class="nav-label">Record Inspection</span>
           </a>
-          <a class="nav-item queue-item" data-page="triage" data-queue="needs_review" href="#/triage?queue=needs_review">
-            <span class="nav-icon">👁</span>
-            <span class="nav-label">Needs Review</span>
-            <span class="nav-count" id="queue-count-needs_review">0</span>
-          </a>
-          <a class="nav-item queue-item" data-page="triage" data-queue="flagged" href="#/triage?queue=flagged">
-            <span class="nav-icon">🚩</span>
-            <span class="nav-label">Flagged</span>
-            <span class="nav-count" id="queue-count-flagged">0</span>
-          </a>
-          <a class="nav-item queue-item" data-page="triage" data-queue="blocked" href="#/triage?queue=blocked">
-            <span class="nav-icon">⛔</span>
-            <span class="nav-label">Blocked</span>
-            <span class="nav-count" id="queue-count-blocked">0</span>
-          </a>
-          <a class="nav-item queue-item" data-page="triage" data-queue="finalized" href="#/triage?queue=finalized">
-            <span class="nav-icon">✅</span>
-            <span class="nav-label">Finalized</span>
-            <span class="nav-count" id="queue-count-finalized">0</span>
+          <a class="nav-item reviewer-only" data-page="verifier-review" href="#/verifier-review">
+            <span class="nav-icon">✓</span>
+            <span class="nav-label">Verifier Review</span>
           </a>
         </div>
 
         <div class="nav-divider"></div>
 
-        <div class="nav-section">
-          <div class="nav-section-header">Session</div>
-          <a class="nav-item" id="nav-evidence-status" href="#" onclick="showEvidenceStatus(); return false;">
-            <span class="nav-icon">📊</span>
-            <span class="nav-label">Evidence Status</span>
-          </a>
-          <a class="nav-item" id="nav-reset-session" href="#" onclick="resetSession(); return false;">
-            <span class="nav-icon">🔄</span>
-            <span class="nav-label">Reset Session</span>
-          </a>
-        </div>
-
-        <div class="nav-divider"></div>
-
+        <!-- Tools Section -->
         <div class="nav-section">
           <div class="nav-section-header">Tools</div>
           <a class="nav-item" data-page="patch" href="#/patch">
             <span class="nav-icon">✎</span>
             <span class="nav-label">Patch Studio</span>
           </a>
-          <a class="nav-item reviewer-only" data-page="verifier-review" href="#/verifier-review">
-            <span class="nav-icon">✓</span>
-            <span class="nav-label">Verifier Review</span>
+          <a class="nav-item" id="nav-evidence-status" href="#" onclick="showEvidenceStatus(); return false;">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">Evidence Status</span>
           </a>
           <a class="nav-item reviewer-only" data-page="review" href="#/review">
             <span class="nav-icon">🔍</span>
@@ -1026,6 +1062,32 @@
             <span class="nav-icon">🔧</span>
             <span class="nav-label">Config Flows</span>
           </a>
+        </div>
+
+        <div class="nav-divider"></div>
+
+        <!-- Cache Section -->
+        <div class="nav-section">
+          <div class="nav-section-header">Cache</div>
+          <div class="cache-info" style="padding: 4px 20px; font-size: 0.8em; color: #888;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span>Cached PDFs</span>
+              <span id="cache-pdf-count">0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span>Storage used</span>
+              <span id="cache-storage-used">0 KB</span>
+            </div>
+            <button class="cache-clear-btn" onclick="clearCachedPDFs()">Clear All Cached PDFs</button>
+          </div>
+        </div>
+
+        <!-- Export / Save Footer -->
+        <div class="nav-section" style="padding: 12px 16px; margin-top: auto;">
+          <button class="nav-action-btn export-btn" onclick="handleExportSave()">
+            <span class="nav-action-icon">💾</span>
+            <span>Export / Save</span>
+          </button>
         </div>
       </div>
       <div class="nav-mode-section">
@@ -5228,6 +5290,92 @@
         }
       }
     }
+
+    // ========== SIDEBAR FUNCTIONS (v1.4.6) ==========
+    var cacheState = { pdfCount: 0, storageKB: 0 };
+
+    function updateProgressBlock() {
+      var todoEl = document.getElementById('progress-todo');
+      var reviewEl = document.getElementById('progress-review');
+      var doneEl = document.getElementById('progress-done');
+      var barFill = document.getElementById('progress-bar-fill');
+      
+      if (!todoEl || !reviewEl || !doneEl) return;
+      
+      var todo = parseInt(document.getElementById('queue-count-todo')?.textContent || '0', 10);
+      var needsReview = parseInt(document.getElementById('queue-count-needs_review')?.textContent || '0', 10);
+      var flagged = parseInt(document.getElementById('queue-count-flagged')?.textContent || '0', 10);
+      var blocked = parseInt(document.getElementById('queue-count-blocked')?.textContent || '0', 10);
+      var finalized = parseInt(document.getElementById('queue-count-finalized')?.textContent || '0', 10);
+      
+      var reviewTotal = needsReview + flagged + blocked;
+      var total = todo + reviewTotal + finalized;
+      var progressPct = total > 0 ? Math.round((finalized / total) * 100) : 0;
+      
+      todoEl.textContent = todo;
+      reviewEl.textContent = reviewTotal;
+      doneEl.textContent = finalized;
+      if (barFill) barFill.style.width = progressPct + '%';
+    }
+
+    function updateSidebarSheetSelector() {
+      var selector = document.getElementById('sidebar-sheet-selector');
+      if (!selector || !workbook || !workbook.order) return;
+      
+      selector.innerHTML = '<option value="all">All Sheets</option>';
+      workbook.order.forEach(function(sheetName) {
+        var sheet = workbook.sheets[sheetName];
+        if (!sheet) return;
+        var opt = document.createElement('option');
+        opt.value = sheetName;
+        opt.textContent = sheetName + ' (' + (sheet.rows ? sheet.rows.length : 0) + ')';
+        selector.appendChild(opt);
+      });
+    }
+
+    function handleSheetSelectorChange(value) {
+      console.log('[Sidebar] Sheet selector changed:', value);
+      if (value === 'all') {
+        gridState.sheet = null;
+      } else {
+        gridState.sheet = value;
+      }
+      renderGrid();
+    }
+
+    function openRecordInspectionFromNav() {
+      var firstRow = gridState.filteredData && gridState.filteredData[0];
+      if (firstRow && firstRow._row_id) {
+        openRowReviewDrawer(firstRow._row_id);
+      } else if (dataLoaded) {
+        showToast('Select a row from the grid to inspect', 'info');
+        navigateTo('grid');
+      } else {
+        showToast('Load a dataset first', 'warning');
+      }
+    }
+
+    function clearCachedPDFs() {
+      cacheState.pdfCount = 0;
+      cacheState.storageKB = 0;
+      document.getElementById('cache-pdf-count').textContent = '0';
+      document.getElementById('cache-storage-used').textContent = '0 KB';
+      try {
+        localStorage.removeItem('orchestrate.pdf_attachments.v1');
+      } catch (e) {}
+      showToast('Cached PDFs cleared', 'success');
+    }
+
+    function handleExportSave() {
+      showToast('Export / Save coming soon', 'info');
+    }
+
+    function updateCacheDisplay() {
+      var countEl = document.getElementById('cache-pdf-count');
+      var sizeEl = document.getElementById('cache-storage-used');
+      if (countEl) countEl.textContent = cacheState.pdfCount;
+      if (sizeEl) sizeEl.textContent = cacheState.storageKB + ' KB';
+    }
     
     function loadFromData(data, sourceType, fileName) {
       if (!data || (!data.sf_summary && !data.sf_contract_results && !data.sf_issues && !data.sf_field_actions)) {
@@ -5317,6 +5465,7 @@
       
       updateUIForDataState();
       updateSessionChip();
+      updateProgressBlock();
       renderAllTables();
       
       // Reset modal fields (if they exist)
@@ -5940,6 +6089,9 @@
           el.classList.toggle('blocking', queue === 'blocked' && count > 0);
         }
       });
+      
+      // Update progress block in sidebar
+      if (typeof updateProgressBlock === 'function') updateProgressBlock();
     }
 
     // Feature Flags (V1 defaults)
@@ -11882,6 +12034,7 @@ Add any additional notes here.
         
         console.log('[Loader] Sample dataset loaded:', workbook.order.length, 'sheets');
         showToast('Sample dataset loaded successfully', 'success');
+        updateSidebarSheetSelector();
         
         // Auto-redirect after loading (v1.4.4) - always go to grid after load
         if (options.autoRedirect !== false) {
