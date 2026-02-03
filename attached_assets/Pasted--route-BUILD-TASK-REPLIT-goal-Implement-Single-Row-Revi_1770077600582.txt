@@ -1,0 +1,60 @@
+{
+  "route": "BUILD_TASK_REPLIT",
+  "goal": "Implement Single Row Review (Analyst) v1 usability pass in the viewer: three‑panel layout, deterministic field ordering, read‑only PDF viewer stub with anchors, evidence pack blocks, and patch draft/request state (client‑side only).",
+  "constraints": [
+    "Offline‑first; no network calls.",
+    "Canonical terminology only: Single Row Review, Evidence Pack, Observation/Expected/Justification/Repro.",
+    "No Review State transitions in Single Row Review.",
+    "Docs‑only changes only if explicitly required by the task."
+  ],
+  "files_in_scope": [
+    "ui/viewer/index.html",
+    "ui/viewer/README.md"
+  ],
+  "implementation_steps": [
+    {
+      "id": "SRR-01",
+      "title": "Three‑panel layout + deterministic field ordering",
+      "requirements": [
+        "Left panel: Field Inspector with deterministic ordering (schema order if available, otherwise alphabetical).",
+        "Center panel: Document Viewer stub with page controls and zoom placeholders.",
+        "Right panel: Evidence Pack with four blocks and Patch Request actions."
+      ],
+      "acceptance_tests": [
+        "Single Row Review renders three panels with the specified content.",
+        "Field ordering is deterministic and stable across refreshes."
+      ]
+    },
+    {
+      "id": "SRR-02",
+      "title": "Evidence Pack + Patch Request actions (client‑side only)",
+      "requirements": [
+        "Evidence Pack shows Observation, Expected, Justification, Repro blocks.",
+        "Provide actions: Save Patch Draft, Submit Patch Request.",
+        "Persist draft/request state in client‑side state only (no network)."
+      ],
+      "acceptance_tests": [
+        "Evidence blocks are visible and labeled with canonical names.",
+        "Save/Submit actions update local UI state without changing Review State."
+      ]
+    },
+    {
+      "id": "SRR-03",
+      "title": "Evidence anchors + viewer highlight stub",
+      "requirements": [
+        "Allow selecting a field to focus a viewer highlight placeholder.",
+        "Keep viewer read‑only with no editing controls."
+      ],
+      "acceptance_tests": [
+        "Selecting a field updates the viewer highlight placeholder.",
+        "No editing controls appear in the viewer."
+      ]
+    }
+  ],
+  "output_format": {
+    "summary": "bullet list of file changes",
+    "verification": "manual checks or grep notes",
+    "suggested_commit_message": "one line",
+    "git_commands": "exact add/commit commands without claiming push"
+  }
+}
