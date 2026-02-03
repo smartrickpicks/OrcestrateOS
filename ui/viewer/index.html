@@ -544,9 +544,10 @@
     .srr-filter-chip.active { background: #1565c0; color: white; border-color: #1565c0; }
     .srr-filter-chip:hover { background: #e3f2fd; }
     .srr-filter-chip.active:hover { background: #1976d2; }
-    .srr-field-card { border: 1px solid #e0e0e0; border-radius: 8px; margin: 8px; padding: 0; background: white; transition: all 0.15s; overflow: hidden; }
+    .srr-field-card { border: 1px solid #e0e0e0; border-radius: 8px; margin: 8px; padding: 0; background: white; transition: all 0.25s ease-out; overflow: hidden; }
     .srr-field-card:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
     .srr-field-card.active { border-color: #1565c0; box-shadow: 0 0 0 2px rgba(21, 101, 192, 0.2); }
+    .srr-field-card.removing { opacity: 0; transform: translateX(-20px); margin: 0; padding: 0; height: 0; overflow: hidden; }
     .srr-field-card.edited { border-color: #ff9800; background: #fff8e1; }
     .srr-field-card-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: #f5f5f5; border-bottom: 1px solid #eee; cursor: pointer; }
     .srr-field-card.edited .srr-field-card-header { background: #fff3e0; }
@@ -7979,17 +7980,19 @@
         });
       }
       
-      // v1.4.20: Apply field state filter
-      if (srrState.activeFilter !== 'all') {
-        keys = keys.filter(function(k) {
-          var state = srrState.fieldStates[k] || 'todo';
-          if (srrState.activeFilter === 'todo') return state === 'todo';
-          if (srrState.activeFilter === 'verified') return state === 'verified';
-          if (srrState.activeFilter === 'rfi') return state === 'rfi';
-          if (srrState.activeFilter === 'patched') return state === 'patched';
-          return true;
-        });
-      }
+      // v1.4.20: Apply field state filter - verified fields hidden by default
+      keys = keys.filter(function(k) {
+        var state = srrState.fieldStates[k] || 'todo';
+        // Hide verified fields unless explicitly viewing verified filter
+        if (state === 'verified' && srrState.activeFilter !== 'verified') return false;
+        // Apply active filter
+        if (srrState.activeFilter === 'all') return state !== 'verified';
+        if (srrState.activeFilter === 'todo') return state === 'todo';
+        if (srrState.activeFilter === 'verified') return state === 'verified';
+        if (srrState.activeFilter === 'rfi') return state === 'rfi';
+        if (srrState.activeFilter === 'patched') return state === 'patched';
+        return true;
+      });
       
       // v1.4.20: Update filter chip counts
       srrUpdateFilterCounts();
@@ -8127,9 +8130,17 @@
       srrState.fieldStates[fieldKey] = 'verified';
       console.log('[SRR] Field VERIFIED:', fieldKey);
       
+      // Animate out the field card
+      var card = document.querySelector('.srr-field-card[data-field="' + fieldKey + '"]');
+      if (card) {
+        card.classList.add('removing');
+      }
+      
       // Check if all fields are now verified (record fully validated)
       var allVerified = true;
-      var fieldKeys = Object.keys(srrState.originalValues || {});
+      var fieldKeys = Object.keys(srrState.originalValues || {}).filter(function(k) {
+        return !k.startsWith('_');
+      });
       for (var i = 0; i < fieldKeys.length; i++) {
         var k = fieldKeys[i];
         var state = srrState.fieldStates[k] || 'todo';
@@ -8139,21 +8150,24 @@
         }
       }
       
-      if (allVerified && fieldKeys.length > 0) {
-        // Mark record as validated and route to triage
-        console.log('[SRR] All fields verified - record validated, routing to To Do queue');
-        var recordKey = srrState.currentRecordKey;
-        if (recordKey && window.localState && window.localState.recordStatus) {
-          window.localState.recordStatus[recordKey] = 'finalized';
+      // Delay re-render to allow animation to complete
+      setTimeout(function() {
+        if (allVerified && fieldKeys.length > 0) {
+          // Mark record as validated and route to triage
+          console.log('[SRR] All fields verified - record validated, routing to To Do queue');
+          var recordKey = srrState.currentRecordKey;
+          if (recordKey && window.localState && window.localState.recordStatus) {
+            window.localState.recordStatus[recordKey] = 'finalized';
+          }
+          updateTriageCounts();
+          showToast('Record validated - all fields verified');
+          navigateTo('triage');
+          return;
         }
-        updateTriageCounts();
-        showToast('Record validated - all fields verified');
-        navigateTo('triage');
-        return;
-      }
-      
-      renderSrrFields(srrState.currentRecord);
-      srrRenderPatchEditor();
+        
+        renderSrrFields(srrState.currentRecord);
+        srrRenderPatchEditor();
+      }, 250);
     }
     
     // v1.4.20: Field action - Blacklist Flag
