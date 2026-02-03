@@ -419,12 +419,53 @@
     .srr-anchor-item { padding: 8px 10px; background: #f8f9fa; border-radius: 4px; margin-bottom: 6px; font-size: 0.8em; cursor: pointer; border-left: 3px solid #1565c0; }
     .srr-anchor-item:hover { background: #e3f2fd; }
     
+    /* v1.4.18: Field Inspector Search + Filters */
+    .srr-search-bar { padding: 8px 12px; border-bottom: 1px solid #e0e0e0; }
+    .srr-search-input { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85em; }
+    .srr-search-input:focus { border-color: #1565c0; outline: none; }
+    .srr-filter-bar { display: flex; gap: 8px; padding: 8px 12px; border-bottom: 1px solid #e0e0e0; align-items: center; flex-wrap: wrap; }
+    .srr-filter-chips { display: flex; gap: 4px; }
+    .srr-filter-chip { padding: 4px 10px; font-size: 0.75em; border-radius: 12px; cursor: pointer; background: #f0f0f0; color: #666; }
+    .srr-filter-chip:hover { background: #e0e0e0; }
+    .srr-filter-chip.active { background: #1565c0; color: white; }
+    
+    /* v1.4.18: Field Card enhancements - locked, changed */
+    .srr-field-card.locked { background: #f8f8f8; opacity: 0.9; }
+    .srr-field-card.locked .srr-field-value-display { pointer-events: none; cursor: not-allowed; }
+    .srr-field-card.changed { border-left: 3px solid #4caf50; }
+    .srr-field-card.changed .srr-field-card-header { background: #e8f5e9; }
+    .srr-chip-changed { background: #4caf50; color: white; }
+    .srr-chip-locked { background: #9e9e9e; color: white; }
+    .srr-lock-icon { font-size: 0.9em; margin-left: 4px; }
+    
+    /* v1.4.18: Patch Editor Block */
+    .srr-patch-editor { background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; margin-bottom: 16px; }
+    .srr-patch-editor-title { font-weight: 600; font-size: 0.9em; color: #333; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .srr-patch-editor-empty { color: #999; font-size: 0.85em; font-style: italic; text-align: center; padding: 20px; }
+    .srr-patch-editor-field { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e0e0e0; }
+    .srr-patch-editor-field:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .srr-patch-editor-label { font-size: 0.8em; font-weight: 600; color: #333; margin-bottom: 6px; }
+    .srr-patch-editor-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 4px; }
+    .srr-patch-editor-row label { font-size: 0.75em; color: #666; min-width: 60px; }
+    .srr-patch-editor-old { flex: 1; background: #ffebee; padding: 6px 8px; border-radius: 4px; font-size: 0.8em; color: #888; font-family: monospace; opacity: 0.8; }
+    .srr-patch-editor-new { flex: 1; }
+    .srr-patch-editor-new input { width: 100%; padding: 6px 8px; border: 1px solid #4caf50; border-radius: 4px; font-size: 0.8em; font-family: monospace; }
+    .srr-patch-editor-new input:focus { outline: none; border-color: #2e7d32; }
+    .srr-patch-remove-btn { background: none; border: none; color: #c62828; cursor: pointer; font-size: 0.9em; padding: 4px; }
+    .srr-patch-remove-btn:hover { background: #ffebee; border-radius: 4px; }
+    
     /* Evidence Pack + Patch Request */
     .srr-evidence-block { margin-bottom: 16px; }
     .srr-evidence-label { font-size: 0.75em; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
     .srr-evidence-alias { font-weight: 400; color: #999; }
+    .srr-evidence-select { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85em; margin-bottom: 6px; }
+    .srr-evidence-select:focus { border-color: #1565c0; outline: none; }
+    .srr-evidence-notes { width: 100%; min-height: 50px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.8em; font-family: inherit; resize: vertical; }
+    .srr-evidence-notes:focus { border-color: #1565c0; outline: none; }
+    .srr-evidence-notes::placeholder { color: #999; font-style: italic; }
     .srr-evidence-textarea { width: 100%; min-height: 70px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85em; font-family: inherit; resize: vertical; }
     .srr-evidence-textarea:focus { border-color: #1565c0; outline: none; }
+    .srr-evidence-file-input { margin-top: 6px; }
     .srr-patch-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid #e0e0e0; }
     .srr-patch-list { background: #f9f9f9; border-radius: 6px; max-height: 150px; overflow-y: auto; margin-bottom: 12px; }
     .srr-patch-header { padding: 8px 10px; font-weight: 600; font-size: 0.85em; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
@@ -1409,24 +1450,21 @@
 
         <!-- Three-Panel Layout -->
         <div class="srr-layout">
-          <!-- Left Panel: Field Inspector with Field Cards + Groups/Filters -->
+          <!-- Left Panel: Field Inspector with Search, Filters, Field Cards -->
           <div class="srr-panel srr-panel-left">
             <div class="srr-panel-header">
               <span>Field Inspector</span>
               <span id="srr-field-count" style="font-weight: normal; color: #666; font-size: 0.85em;">0 fields</span>
             </div>
+            <!-- v1.4.18: Search input -->
+            <div class="srr-search-bar">
+              <input type="text" class="srr-search-input" id="srr-field-search" placeholder="Search fields..." oninput="srrFilterFields()">
+            </div>
             <div class="srr-filter-bar" id="srr-filter-bar">
-              <select class="srr-group-select" id="srr-group-select" onchange="srrFilterByGroup(this.value)">
-                <option value="all">All Groups</option>
-                <option value="identity">Identity</option>
-                <option value="metadata">Metadata</option>
-                <option value="status">Status</option>
-              </select>
               <div class="srr-filter-chips">
                 <span class="srr-filter-chip active" data-filter="all" onclick="srrSetFilter('all')">All</span>
-                <span class="srr-filter-chip" data-filter="edited" onclick="srrSetFilter('edited')">Edited</span>
-                <span class="srr-filter-chip" data-filter="needs-patch" onclick="srrSetFilter('needs-patch')">Needs Patch</span>
-                <span class="srr-filter-chip" data-filter="rfi" onclick="srrSetFilter('rfi')">RFI</span>
+                <span class="srr-filter-chip" data-filter="changed" onclick="srrSetFilter('changed')">Changed</span>
+                <span class="srr-filter-chip" data-filter="unchanged" onclick="srrSetFilter('unchanged')">Unchanged</span>
               </div>
             </div>
             <div class="srr-panel-body" id="srr-field-list" style="padding: 0;">
@@ -1485,38 +1523,80 @@
             </div>
           </div>
 
-          <!-- Right Panel: Evidence Pack + Patch Request -->
+          <!-- Right Panel: Patch Editor + Evidence Pack + Submit -->
           <div class="srr-panel srr-panel-right">
             <div class="srr-panel-header">
-              <span>Evidence Pack + Patch Request</span>
+              <span>Patch Editor</span>
             </div>
             <div class="srr-panel-body">
-              <!-- Evidence Pack: 4 Canonical Blocks -->
-              <div class="srr-evidence-block">
-                <div class="srr-evidence-label">Observation <span class="srr-evidence-alias">(WHEN)</span></div>
-                <textarea class="srr-evidence-textarea" id="srr-observation" placeholder="What situation was observed..."></textarea>
-              </div>
-              <div class="srr-evidence-block">
-                <div class="srr-evidence-label">Expected <span class="srr-evidence-alias">(THEN)</span></div>
-                <textarea class="srr-evidence-textarea" id="srr-expected" placeholder="What behavior is expected..."></textarea>
-              </div>
-              <div class="srr-evidence-block">
-                <div class="srr-evidence-label">Justification <span class="srr-evidence-alias">(BECAUSE)</span></div>
-                <textarea class="srr-evidence-textarea" id="srr-justification" placeholder="Why this change is correct..."></textarea>
-              </div>
-              <div class="srr-evidence-block">
-                <div class="srr-evidence-label">Repro</div>
-                <textarea class="srr-evidence-textarea" id="srr-repro" placeholder="Steps to reproduce the issue..."></textarea>
+              <!-- v1.4.18: Patch Editor Block - shows changed fields with old/new values -->
+              <div class="srr-patch-editor" id="srr-patch-editor">
+                <div class="srr-patch-editor-title">
+                  <span>Changed Fields</span>
+                  <span id="srr-change-count" style="font-weight: normal; color: #666; font-size: 0.85em;">0 changes</span>
+                </div>
+                <div id="srr-patch-editor-fields">
+                  <div class="srr-patch-editor-empty">Click a field value to edit. Changed fields appear here.</div>
+                </div>
               </div>
 
-              <!-- Patch Request Section -->
-              <div class="srr-patch-section">
-                <div style="font-size: 0.85em; font-weight: 600; color: #333; margin-bottom: 10px;">Proposed Changes</div>
-                <div class="srr-patch-list" id="srr-patch-list">
-                  <div class="srr-empty-state" style="padding: 12px;">No changes proposed yet</div>
+              <!-- Evidence Pack: 4 Canonical Blocks with dropdowns + notes -->
+              <div style="font-size: 0.85em; font-weight: 600; color: #333; margin-bottom: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">Evidence Pack</div>
+              
+              <div class="srr-evidence-block">
+                <div class="srr-evidence-label">Observation <span class="srr-evidence-alias">(WHEN)</span></div>
+                <select class="srr-evidence-select" id="srr-observation-type" onchange="srrSaveEvidenceDraft()">
+                  <option value="">-- Select observation type --</option>
+                  <option value="incorrect_value">Incorrect Value</option>
+                  <option value="missing_value">Missing Value</option>
+                  <option value="formatting_issue">Formatting Issue</option>
+                  <option value="duplicate_entry">Duplicate Entry</option>
+                  <option value="inconsistent_data">Inconsistent Data</option>
+                  <option value="other">Other (specify in notes)</option>
+                </select>
+                <textarea class="srr-evidence-notes" id="srr-observation-notes" placeholder="Additional observation notes (optional)..." oninput="srrSaveEvidenceDraft()"></textarea>
+              </div>
+              
+              <div class="srr-evidence-block">
+                <div class="srr-evidence-label">Expected <span class="srr-evidence-alias">(THEN)</span></div>
+                <select class="srr-evidence-select" id="srr-expected-type" onchange="srrSaveEvidenceDraft()">
+                  <option value="">-- Select expected behavior --</option>
+                  <option value="correct_value">Use Correct Value</option>
+                  <option value="populate_field">Populate Empty Field</option>
+                  <option value="standardize_format">Standardize Format</option>
+                  <option value="remove_duplicate">Remove Duplicate</option>
+                  <option value="align_with_source">Align with Source Document</option>
+                  <option value="other">Other (specify in notes)</option>
+                </select>
+                <textarea class="srr-evidence-notes" id="srr-expected-notes" placeholder="Additional expected behavior notes (optional)..." oninput="srrSaveEvidenceDraft()"></textarea>
+              </div>
+              
+              <div class="srr-evidence-block">
+                <div class="srr-evidence-label">Justification <span class="srr-evidence-alias">(BECAUSE)</span></div>
+                <textarea class="srr-evidence-textarea" id="srr-justification" placeholder="Why this change is correct..." oninput="srrSaveEvidenceDraft()"></textarea>
+              </div>
+              
+              <div class="srr-evidence-block">
+                <div class="srr-evidence-label">Repro</div>
+                <select class="srr-evidence-select" id="srr-repro-type" onchange="srrSaveEvidenceDraft()">
+                  <option value="">-- Select repro method --</option>
+                  <option value="visual_inspection">Visual Inspection of Document</option>
+                  <option value="data_comparison">Data Comparison</option>
+                  <option value="rule_violation">Rule Violation Detected</option>
+                  <option value="external_source">Verified Against External Source</option>
+                  <option value="other">Other (specify in notes)</option>
+                </select>
+                <textarea class="srr-evidence-notes" id="srr-repro-notes" placeholder="Additional repro notes (optional)..." oninput="srrSaveEvidenceDraft()"></textarea>
+                <div class="srr-evidence-file-input">
+                  <input type="file" id="srr-repro-file" accept=".pdf,.png,.jpg,.jpeg" onchange="srrHandleReproFile(this)">
+                  <span id="srr-repro-file-name" style="font-size: 0.8em; color: #666; margin-left: 8px;"></span>
                 </div>
+              </div>
+
+              <!-- Submit Section -->
+              <div class="srr-patch-section">
                 <div class="srr-actions">
-                  <button class="srr-btn srr-btn-secondary" onclick="srrSaveDraft()">Save Patch Draft</button>
+                  <button class="srr-btn srr-btn-secondary" onclick="srrSaveDraft()">Save Draft</button>
                   <button class="srr-btn srr-btn-primary" onclick="srrSubmitPatchRequest()">Submit Patch Request</button>
                 </div>
               </div>
@@ -7509,20 +7589,29 @@
       renderGrid();
     }
 
-    // Single Row Review state (v1.4.1 - DataDash-style field editing)
+    // Single Row Review state (v1.4.18 - Field Inspector patch flow)
     var srrState = {
       currentRecord: null,
       currentRowId: null,
       originalValues: {},
       editedValues: {},
       proposedChanges: {},
+      lockedFields: {},  // v1.4.18: Fields locked after edit commit
       activeFilter: 'all',
       activeGroup: 'all',
+      searchQuery: '',   // v1.4.18: Search filter
       editingField: null,
       docPage: 1,
       docTotalPages: 1,
       zoom: 1,
-      patchDraft: { observation: '', expected: '', justification: '', repro: '', changes: [], status: 'Draft' }
+      patchDraft: { 
+        observation_type: '', observation_notes: '',
+        expected_type: '', expected_notes: '',
+        justification: '',
+        repro_type: '', repro_notes: '', repro_file: null,
+        changes: [], 
+        status: 'Draft' 
+      }
     };
     
     // V2: Replace with real schema map from config/schema.json
@@ -7701,28 +7790,36 @@
       // Reset edit state for new record
       srrState.editedValues = {};
       srrState.proposedChanges = {};
+      srrState.lockedFields = {};  // v1.4.18: Reset locked fields
       srrState.editingField = null;
       srrState.activeFilter = 'all';
       srrState.activeGroup = 'all';
+      srrState.searchQuery = '';  // v1.4.18: Reset search
       
       // Reset filter chips
       document.querySelectorAll('.srr-filter-chip').forEach(function(chip) {
         chip.classList.remove('active');
         if (chip.dataset.filter === 'all') chip.classList.add('active');
       });
-      document.getElementById('srr-group-select').value = 'all';
+      
+      // v1.4.18: Reset search input
+      var searchInput = document.getElementById('srr-field-search');
+      if (searchInput) searchInput.value = '';
       
       // Render Field Inspector
       renderSrrFields(record);
       
-      // Clear Evidence Pack textareas (or load from draft)
-      document.getElementById('srr-observation').value = srrState.patchDraft.observation || '';
-      document.getElementById('srr-expected').value = srrState.patchDraft.expected || '';
+      // v1.4.18: Load Evidence Pack with new structure (AC-03)
+      document.getElementById('srr-observation-type').value = srrState.patchDraft.observation_type || '';
+      document.getElementById('srr-observation-notes').value = srrState.patchDraft.observation_notes || '';
+      document.getElementById('srr-expected-type').value = srrState.patchDraft.expected_type || '';
+      document.getElementById('srr-expected-notes').value = srrState.patchDraft.expected_notes || '';
       document.getElementById('srr-justification').value = srrState.patchDraft.justification || '';
-      document.getElementById('srr-repro').value = srrState.patchDraft.repro || '';
+      document.getElementById('srr-repro-type').value = srrState.patchDraft.repro_type || '';
+      document.getElementById('srr-repro-notes').value = srrState.patchDraft.repro_notes || '';
       
-      // Render patch changes list
-      renderSrrPatchList();
+      // v1.4.18: Render Patch Editor
+      srrRenderPatchEditor();
       
       // Load PDF for this record (v1.4.10)
       srrLoadPdfForRecord(record);
@@ -7767,17 +7864,22 @@
         keys = keys.filter(function(k) { return groupFields.indexOf(k) >= 0; });
       }
       
-      // Apply status filter
+      // v1.4.18: Apply search filter
+      if (srrState.searchQuery) {
+        var query = srrState.searchQuery.toLowerCase();
+        keys = keys.filter(function(k) {
+          var val = srrState.editedValues.hasOwnProperty(k) ? srrState.editedValues[k] : srrState.originalValues[k];
+          var valStr = val ? String(val).toLowerCase() : '';
+          return k.toLowerCase().indexOf(query) >= 0 || valStr.indexOf(query) >= 0;
+        });
+      }
+      
+      // v1.4.18: Apply changed/unchanged filter
       if (srrState.activeFilter !== 'all') {
         keys = keys.filter(function(k) {
-          var isEdited = srrState.editedValues.hasOwnProperty(k);
-          var change = srrState.proposedChanges[k];
-          var needsPatch = isEdited && (!change || !change.justification);
-          var isRfi = change && change.category === 'RFI';
-          
-          if (srrState.activeFilter === 'edited') return isEdited;
-          if (srrState.activeFilter === 'needs-patch') return needsPatch;
-          if (srrState.activeFilter === 'rfi') return isRfi;
+          var isChanged = srrState.lockedFields.hasOwnProperty(k);
+          if (srrState.activeFilter === 'changed') return isChanged;
+          if (srrState.activeFilter === 'unchanged') return !isChanged;
           return true;
         });
       }
@@ -7791,22 +7893,28 @@
         if (typeof currentVal === 'object') currentVal = JSON.stringify(currentVal);
         
         var isEdited = srrState.editedValues.hasOwnProperty(key);
+        var isLocked = srrState.lockedFields.hasOwnProperty(key);  // v1.4.18: locked after commit
         var change = srrState.proposedChanges[key];
-        var needsPatch = isEdited && (!change || !change.justification);
         var isRequired = SRR_REQUIRED_FIELDS.indexOf(key) >= 0;
-        var isRfi = change && change.category === 'RFI';
         
-        // Build chips
+        // v1.4.18: Build chips - Changed and Locked indicators
         var chips = '';
-        if (isEdited) chips += '<span class="srr-chip srr-chip-edited">Edited</span>';
-        if (needsPatch) chips += '<span class="srr-chip srr-chip-needs-patch">Needs Patch</span>';
+        if (isLocked) {
+          chips += '<span class="srr-chip srr-chip-changed">Changed</span>';
+          chips += '<span class="srr-chip srr-chip-locked">🔒</span>';
+        } else if (isEdited) {
+          chips += '<span class="srr-chip srr-chip-edited">Editing</span>';
+        }
         if (isRequired) chips += '<span class="srr-chip srr-chip-required">Required</span>';
-        if (isRfi) chips += '<span class="srr-chip srr-chip-rfi">RFI</span>';
         
         // Human-friendly label (convert snake_case to Title Case)
         var label = key.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
         
-        var cardClass = 'srr-field-card' + (isEdited ? ' edited' : '') + (srrState.selectedField === key ? ' active' : '');
+        // v1.4.18: Add locked and changed classes
+        var cardClass = 'srr-field-card';
+        if (isLocked) cardClass += ' locked changed';
+        else if (isEdited) cardClass += ' edited';
+        if (srrState.selectedField === key) cardClass += ' active';
         
         var cardHtml = '<div class="' + cardClass + '" data-field="' + key + '">' +
           '<div class="srr-field-card-header" onclick="srrSelectField(\'' + key + '\')">' +
@@ -7865,8 +7973,21 @@
       renderSrrFields(srrState.currentRecord);
     }
     
+    // v1.4.18: Search filter function
+    function srrFilterFields() {
+      var searchInput = document.getElementById('srr-field-search');
+      srrState.searchQuery = searchInput ? searchInput.value : '';
+      renderSrrFields(srrState.currentRecord);
+    }
+    
     // SRR Inline Edit functions
     function srrStartEdit(fieldKey) {
+      // v1.4.18: Prevent editing locked fields
+      if (srrState.lockedFields.hasOwnProperty(fieldKey)) {
+        showToast('Field is locked after change. Use Patch Editor to modify.', 'info');
+        return;
+      }
+      
       var card = document.querySelector('.srr-field-card[data-field="' + fieldKey + '"]');
       if (!card) return;
       
@@ -7906,7 +8027,10 @@
       // Check if value actually changed
       if (String(newValue) !== String(originalVal)) {
         srrState.editedValues[fieldKey] = newValue;
-        srrState.editingField = fieldKey;
+        srrState.editingField = null;  // v1.4.18: Clear editing state
+        
+        // v1.4.18: Lock field after commit (AC-01)
+        srrState.lockedFields[fieldKey] = true;
         
         // Create or update proposed change
         if (!srrState.proposedChanges[fieldKey]) {
@@ -7926,33 +8050,86 @@
         // Update patch draft changes array
         srrSyncProposedChanges();
         
-        console.log('[SRR] Field edited:', fieldKey, 'from:', originalVal, 'to:', newValue);
+        console.log('[SRR] Field committed (locked):', fieldKey, 'from:', originalVal, 'to:', newValue);
+        showToast('Field changed and locked: ' + fieldKey, 'success');
       } else {
         srrState.editingField = null;
       }
       
       renderSrrFields(srrState.currentRecord);
-      renderSrrPatchList();
+      srrRenderPatchEditor();  // v1.4.18: Update Patch Editor
     }
     
     function srrUndoChange(fieldKey) {
       delete srrState.editedValues[fieldKey];
       delete srrState.proposedChanges[fieldKey];
+      delete srrState.lockedFields[fieldKey];  // v1.4.18: Unlock field
       srrState.editingField = null;
       
       srrSyncProposedChanges();
       renderSrrFields(srrState.currentRecord);
-      renderSrrPatchList();
+      srrRenderPatchEditor();  // v1.4.18: Update Patch Editor
       
       showToast('Change reverted: ' + fieldKey, 'info');
       console.log('[SRR] Undo change:', fieldKey);
+    }
+    
+    // v1.4.18: Patch Editor rendering (AC-02)
+    function srrRenderPatchEditor() {
+      var container = document.getElementById('srr-patch-editor-fields');
+      var countEl = document.getElementById('srr-change-count');
+      var changes = Object.values(srrState.proposedChanges);
+      
+      if (!container) return;
+      
+      countEl.textContent = changes.length + ' change' + (changes.length !== 1 ? 's' : '');
+      
+      if (changes.length === 0) {
+        container.innerHTML = '<div class="srr-patch-editor-empty">Click a field value to edit. Changed fields appear here.</div>';
+        return;
+      }
+      
+      var html = changes.map(function(change) {
+        var oldVal = change.from === null || change.from === undefined || change.from === '' ? '(empty)' : String(change.from);
+        var newVal = change.to === null || change.to === undefined ? '' : String(change.to);
+        
+        return '<div class="srr-patch-editor-field" data-field="' + change.field + '">' +
+          '<div class="srr-patch-editor-label">' + change.label + 
+            '<button class="srr-patch-remove-btn" onclick="srrUndoChange(\'' + change.field + '\')" title="Remove change">✕</button>' +
+          '</div>' +
+          '<div class="srr-patch-editor-row">' +
+            '<label>Old:</label>' +
+            '<div class="srr-patch-editor-old" title="' + oldVal.replace(/"/g, '&quot;') + '">' + oldVal + '</div>' +
+          '</div>' +
+          '<div class="srr-patch-editor-row">' +
+            '<label>New:</label>' +
+            '<div class="srr-patch-editor-new">' +
+              '<input type="text" id="srr-pe-new-' + change.field + '" value="' + newVal.replace(/"/g, '&quot;') + '" ' +
+                'onchange="srrUpdatePatchEditorValue(\'' + change.field + '\', this.value)">' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      
+      container.innerHTML = html;
+    }
+    
+    // v1.4.18: Update new value from Patch Editor (AC-02)
+    function srrUpdatePatchEditorValue(fieldKey, newValue) {
+      if (srrState.proposedChanges[fieldKey]) {
+        srrState.proposedChanges[fieldKey].to = newValue;
+        srrState.editedValues[fieldKey] = newValue;
+        srrSyncProposedChanges();
+        renderSrrFields(srrState.currentRecord);  // Update Field Inspector display
+        console.log('[SRR] Patch Editor updated:', fieldKey, 'to:', newValue);
+      }
     }
     
     function srrUpdateChangeCategory(fieldKey, category) {
       if (srrState.proposedChanges[fieldKey]) {
         srrState.proposedChanges[fieldKey].category = category;
         srrSyncProposedChanges();
-        renderSrrPatchList();
+        srrRenderPatchEditor();
       }
     }
     
@@ -7968,7 +8145,7 @@
       srrState.editingField = null;
       srrSyncProposedChanges();
       renderSrrFields(srrState.currentRecord);
-      renderSrrPatchList();
+      srrRenderPatchEditor();
       
       showToast('Patch draft saved for: ' + fieldKey, 'success');
     }
@@ -8657,36 +8834,98 @@
     }
     
     // Patch actions
-    function srrSaveDraft() {
-      srrState.patchDraft.observation = document.getElementById('srr-observation').value;
-      srrState.patchDraft.expected = document.getElementById('srr-expected').value;
+    // v1.4.18: Save Evidence Pack draft (AC-03)
+    function srrSaveEvidenceDraft() {
+      srrState.patchDraft.observation_type = document.getElementById('srr-observation-type').value;
+      srrState.patchDraft.observation_notes = document.getElementById('srr-observation-notes').value;
+      srrState.patchDraft.expected_type = document.getElementById('srr-expected-type').value;
+      srrState.patchDraft.expected_notes = document.getElementById('srr-expected-notes').value;
       srrState.patchDraft.justification = document.getElementById('srr-justification').value;
-      srrState.patchDraft.repro = document.getElementById('srr-repro').value;
+      srrState.patchDraft.repro_type = document.getElementById('srr-repro-type').value;
+      srrState.patchDraft.repro_notes = document.getElementById('srr-repro-notes').value;
+    }
+    
+    // v1.4.18: Handle repro file attachment
+    function srrHandleReproFile(input) {
+      if (input.files && input.files[0]) {
+        srrState.patchDraft.repro_file = input.files[0];
+        document.getElementById('srr-repro-file-name').textContent = input.files[0].name;
+        console.log('[SRR] Repro file attached:', input.files[0].name);
+      }
+    }
+    
+    function srrSaveDraft() {
+      srrSaveEvidenceDraft();
       
       // Emit audit event (stub)
       console.log('[SRR] PATCH_DRAFTED:', srrState.patchDraft);
-      showToast('Patch Draft saved', 'success');
+      showToast('Draft saved', 'success');
     }
     
     function srrSubmitPatchRequest() {
       // Save current values
-      srrSaveDraft();
+      srrSaveEvidenceDraft();
       
-      // Validate Evidence Pack has content
-      if (!srrState.patchDraft.observation && !srrState.patchDraft.expected) {
-        showToast('Please fill in Observation and Expected blocks', 'warning');
+      // v1.4.18: Validate Evidence Pack (AC-04)
+      var obsType = srrState.patchDraft.observation_type;
+      var expType = srrState.patchDraft.expected_type;
+      var changeCount = Object.keys(srrState.proposedChanges).length;
+      
+      if (!obsType) {
+        showToast('Please select an Observation type', 'warning');
+        return;
+      }
+      if (!expType) {
+        showToast('Please select an Expected behavior type', 'warning');
+        return;
+      }
+      if (changeCount === 0) {
+        showToast('Please make at least one field change', 'warning');
         return;
       }
       
-      // Set patch status to Submitted (does NOT affect Review State)
+      // v1.4.18: Create Patch Request using existing function (AC-04)
+      var changes = Object.values(srrState.proposedChanges);
+      var changeSummary = changes.map(function(c) {
+        return c.label + ': ' + (c.from || '(empty)') + ' → ' + c.to;
+      }).join('; ');
+      
+      var record = srrState.currentRecord || {};
+      var author = 'analyst@example.com';  // Demo actor
+      
+      var request = createPatchRequest({
+        author: author,
+        author_role: currentMode || 'Analyst',
+        contract_key: record.contract_key || srrState.currentRecordKey,
+        file_url: srrResolveFieldValue(record, 'file_url'),
+        file_name: srrResolveFieldValue(record, 'file_name'),
+        sheet: srrState.currentSheetName,
+        field: changes.length === 1 ? changes[0].field : '(multiple)',
+        target: 'field_values',
+        target_field: changes.length === 1 ? changes[0].field : null,
+        condition_type: 'FIELD_VALUE',
+        action_type: 'SET_VALUE',
+        when: 'Field value is incorrect',
+        then: changeSummary,
+        because: srrState.patchDraft.justification || '',
+        evidence_observation: obsType + (srrState.patchDraft.observation_notes ? ': ' + srrState.patchDraft.observation_notes : ''),
+        evidence_expected: expType + (srrState.patchDraft.expected_notes ? ': ' + srrState.patchDraft.expected_notes : ''),
+        evidence_justification: srrState.patchDraft.justification,
+        evidence_repro: srrState.patchDraft.repro_type + (srrState.patchDraft.repro_notes ? ': ' + srrState.patchDraft.repro_notes : ''),
+        rationale: changeSummary
+      });
+      
+      // Submit the patch request
+      var submittedRequest = submitPatchRequest(request.request_id, author, currentMode || 'Analyst');
+      
+      // Update local state
       srrState.patchDraft.status = 'Submitted';
-      renderSrrPatchList();
       
-      // Emit audit events (stub)
-      console.log('[SRR] PATCH_SUBMITTED:', srrState.patchDraft);
-      console.log('[SRR] REVIEW_REQUESTED: patch_id=' + (srrState.currentRowId || 'new'));
+      // Emit audit events
+      console.log('[SRR] PATCH_SUBMITTED:', request);
+      console.log('[SRR] REVIEW_REQUESTED: patch_id=' + request.request_id);
       
-      showToast('Patch Request submitted — sent to Verifier Review', 'success');
+      showToast('Patch Request submitted — visible in Patch Console', 'success');
     }
     
     function showAuditLogForRecord() {
