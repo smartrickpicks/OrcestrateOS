@@ -988,7 +988,7 @@
             <div class="active-data-source-label">Active Data Source</div>
             <div class="active-data-source-name" id="active-data-source-name">No dataset loaded</div>
           </div>
-          <button class="active-data-source-change" onclick="openLoaderDrawer()">Change</button>
+          <button class="active-data-source-change" id="active-data-source-action" onclick="openDataSourcePanel()">Connect</button>
         </div>
 
         <!-- Progress Block (routes to Triage) -->
@@ -5331,8 +5331,12 @@
 
     function updateActiveDataSourceBar(filename) {
       var nameEl = document.getElementById('active-data-source-name');
+      var actionBtn = document.getElementById('active-data-source-action');
       if (nameEl) {
         nameEl.textContent = filename || 'No dataset loaded';
+      }
+      if (actionBtn) {
+        actionBtn.textContent = filename ? 'Change' : 'Connect';
       }
     }
 

@@ -86,14 +86,14 @@ Gates are checkpoints that must be satisfied before proceeding. See [gate_view_m
 | gate_verifier | verifier_review_view | review_notes, decision_status |
 | gate_admin | admin_approval_view | admin_action_log |
 
-## Active Data Source Bar (V1.4.8)
+## Active Data Source Bar (V1.4.9)
 - **Location**: Top of sidebar, above Progress block
-- **Layout**: Two-line info (label + dataset name) with Change pill on right
+- **Layout**: Two-line info (label + dataset name) with action pill on right
 - **Behavior**: 
-  - Shows "No dataset loaded" when empty
-  - Shows dataset filename after load (e.g., "sample_v1.json")
-  - Change button opens Data Source drawer
-- **Terminology**: "Active Data Source" (label), "Change" (action)
+  - Shows "No dataset loaded" when empty → action label: "Connect"
+  - Shows dataset filename after load (e.g., "sample_v1.json") → action label: "Change"
+  - Action opens Data Source side panel (not modal)
+- **Terminology**: "Active Data Source" (label), "Connect" / "Change" (action)
 
 ## Data Source Panel (V1.5)
 - **Entry**: "Change" action in Active Data Source bar.

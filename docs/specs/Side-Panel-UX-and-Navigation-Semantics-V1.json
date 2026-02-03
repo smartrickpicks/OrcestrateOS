@@ -1,5 +1,5 @@
 {
-  "version": "1.4.8",
+  "version": "1.4.9",
   "description": "Sidebar panel structure and navigation semantics for DataDash-style layout",
   "sidebar_structure": {
     "order": [
@@ -19,7 +19,8 @@
         "contains": {
           "label": "Active Data Source",
           "dataset_name": "dynamic (filename or 'No dataset loaded')",
-          "change_action": "opens_loader_drawer"
+          "action_label": "Connect (no dataset) | Change (dataset loaded)",
+          "action": "opens_data_source_panel"
         },
         "visible_to": ["Analyst", "Reviewer", "Admin"],
         "rationale": "Shows current dataset with quick Change action. Replaces standalone button."
