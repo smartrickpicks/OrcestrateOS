@@ -43,6 +43,7 @@ All tasks must use these terms exclusively:
 | PDF-PROXY-02 | BUGFIX: FastAPI proxy CORS headers + explicit OPTIONS handler | Backend | `server/pdf_proxy.py` | OPTIONS preflight returns 204 with CORS headers; browser fetch not CORS blocked | Done (74c7948) |
 | SRR-BUG-03 | BUGFIX: row/undefined hash navigation (rowId always defined) | UI bugfix | `ui/viewer/index.html` | Clicking grid row yields #/row/<number>; no SRR_OPEN_FAIL after row click | Done (74c7948) |
 | DEBUG-01 | PDF proxy debug logging (localStorage pdfDebug=1) | UI debug | `ui/viewer/index.html` | When pdfDebug=1, console shows viewerOrigin + proxyOrigin once | Done (74c7948) |
+| PDF-PROXY-03 | Supabase Edge Function proxy for SRR PDFs (DataDash method) | Backend + UI | `supabase/functions/contract-proxy/index.ts`, `ui/viewer/index.html`, `docs/` | With Supabase env set, SRR fetches via Supabase proxy; falls back to FastAPI if missing | In Progress |
 
 ### P1 — High Priority
 

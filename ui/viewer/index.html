@@ -5508,68 +5508,79 @@
     
     // ========== PDF CACHE (v1.4.13) ==========
     // IndexedDB-based offline-first PDF cache with LRU eviction
-    // v1.4.16: PDF Proxy configuration for CORS-safe fetching
-    // Auto-detect Replit environment: use port 8000 subdomain if on Replit, else localhost
+    // v1.4.17: PDF Proxy configuration with Supabase Edge Function as primary, FastAPI as fallback
+    // Priority: Supabase proxy (if env set) > FastAPI proxy (port 8000) > show warning
     var PDF_PROXY_CONFIG = (function() {
-      var baseUrl = 'http://localhost:8000/proxy/pdf';
       var host = window.location.hostname;
       var protocol = window.location.protocol;
       
-      // Detect Replit environment and construct port 8000 URL
-      // Pattern 1: xxx-00-yyy.kirk.replit.dev (port 5000 default) -> xxx-8000-yyy.kirk.replit.dev
-      // Pattern 2: xxx.replit.app -> xxx-8000.replit.app (may not work, use same-origin fallback)
-      // Pattern 3: xxx.repl.co -> legacy pattern
-      if (host.includes('.replit.dev')) {
-        if (host.includes('-00-')) {
-          baseUrl = protocol + '//' + host.replace('-00-', '-8000-') + '/proxy/pdf';
-        } else {
-          // Try inserting -8000 before the first dot
+      // Check for Supabase configuration (set via embedded config or env)
+      var supabaseUrl = window.VITE_SUPABASE_URL || localStorage.getItem('SUPABASE_URL') || '';
+      var supabaseKey = window.VITE_SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY') || '';
+      
+      var proxyType = 'none';
+      var baseUrl = '';
+      var authHeader = null;
+      
+      // Priority 1: Supabase Edge Function (DataDash method)
+      if (supabaseUrl && supabaseKey) {
+        baseUrl = supabaseUrl.replace(/\/$/, '') + '/functions/v1/contract-proxy';
+        authHeader = 'Bearer ' + supabaseKey;
+        proxyType = 'supabase';
+      } else {
+        // Priority 2: FastAPI proxy on port 8000
+        baseUrl = 'http://localhost:8000/proxy/pdf';
+        
+        // Detect Replit environment and construct port 8000 URL
+        if (host.includes('.replit.dev')) {
+          if (host.includes('-00-')) {
+            baseUrl = protocol + '//' + host.replace('-00-', '-8000-') + '/proxy/pdf';
+          } else {
+            var parts = host.split('.');
+            if (parts.length > 0) {
+              parts[0] = parts[0] + '-8000';
+              baseUrl = protocol + '//' + parts.join('.') + '/proxy/pdf';
+            }
+          }
+          proxyType = 'fastapi';
+        } else if (host.includes('.replit.app')) {
+          var parts = host.split('.');
+          if (parts.length >= 2) {
+            parts[0] = parts[0].replace(/-5000$/, '') + '-8000';
+            baseUrl = protocol + '//' + parts.join('.') + '/proxy/pdf';
+          }
+          proxyType = 'fastapi';
+        } else if (host.includes('.repl.co')) {
           var parts = host.split('.');
           if (parts.length > 0) {
             parts[0] = parts[0] + '-8000';
             baseUrl = protocol + '//' + parts.join('.') + '/proxy/pdf';
           }
-        }
-      } else if (host.includes('.replit.app')) {
-        // xxx.replit.app -> xxx-8000.replit.app (note: may require port config)
-        var parts = host.split('.');
-        if (parts.length >= 2) {
-          parts[0] = parts[0].replace(/-5000$/, '') + '-8000';
-          baseUrl = protocol + '//' + parts.join('.') + '/proxy/pdf';
-        }
-      } else if (host.includes('.repl.co')) {
-        // Legacy pattern
-        var parts = host.split('.');
-        if (parts.length > 0) {
-          parts[0] = parts[0] + '-8000';
-          baseUrl = protocol + '//' + parts.join('.') + '/proxy/pdf';
+          proxyType = 'fastapi';
+        } else if (host === 'localhost' || host === '127.0.0.1') {
+          proxyType = 'fastapi';
         }
       }
-      // If still localhost, proxy runs on same machine
       
-      // v1.4.16: Debug logging (guarded by localStorage pdfDebug flag)
+      // v1.4.17: Debug logging (guarded by localStorage pdfDebug flag)
       if (localStorage.getItem('pdfDebug') === '1') {
-        var proxyOrigin = 'unknown';
-        try {
-          var proxyUrl = new URL(baseUrl);
-          proxyOrigin = proxyUrl.origin;
-        } catch (e) {}
-        
         console.log('[PDF_PROXY_DEBUG]', JSON.stringify({
+          proxyType: proxyType,
           viewerOrigin: window.location.origin,
           viewerHost: host,
           proxyBaseUrl: baseUrl,
-          proxyOrigin: proxyOrigin,
-          protocol: protocol,
-          sampleProxyUrl: baseUrl + '?url=' + encodeURIComponent('https://example.s3.amazonaws.com/test.pdf')
+          hasSupabaseEnv: !!(supabaseUrl && supabaseKey),
+          authHeaderSet: !!authHeader
         }));
       } else {
-        console.log('[PDF_PROXY] Base URL:', baseUrl, '(host:', host + ')');
+        console.log('[PDF_PROXY] Type:', proxyType, '| URL:', baseUrl.substring(0, 60) + (baseUrl.length > 60 ? '...' : ''));
       }
       
       return {
         BASE_URL: baseUrl,
-        ENABLED: true,
+        ENABLED: proxyType !== 'none',
+        PROXY_TYPE: proxyType,
+        AUTH_HEADER: authHeader,
         TIMEOUT_MS: 30000
       };
     })();
@@ -8306,10 +8317,16 @@
       if (PDF_PROXY_CONFIG.ENABLED && networkUrl) {
         fetchUrl = PDF_PROXY_CONFIG.BASE_URL + '?url=' + encodeURIComponent(networkUrl);
         usingProxy = true;
-        console.log('[SRR_PDF] Fetching via proxy:', fetchUrl.substring(0, 80));
+        console.log('[SRR_PDF] Fetching via', PDF_PROXY_CONFIG.PROXY_TYPE, 'proxy:', fetchUrl.substring(0, 80));
       }
       
-      var fetchOptions = usingProxy ? {} : { mode: 'cors' };
+      // v1.4.17: Add auth header for Supabase proxy
+      var fetchOptions = {};
+      if (usingProxy && PDF_PROXY_CONFIG.AUTH_HEADER) {
+        fetchOptions.headers = { 'Authorization': PDF_PROXY_CONFIG.AUTH_HEADER };
+      } else if (!usingProxy) {
+        fetchOptions.mode = 'cors';
+      }
       
       fetch(fetchUrl, fetchOptions)
         .then(function(response) {

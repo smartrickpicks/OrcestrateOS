@@ -1,0 +1,75 @@
+{
+  "route": "BUILD_TASK_REPLIT",
+  "goal": "Switch SRR PDF proxy to the Supabase Edge Function (DataDash method) to bypass CORS/download prompts; keep FastAPI as optional fallback and add proxy-selection debug.",
+  "files_in_scope": [
+    "supabase/functions/contract-proxy/index.ts",
+    "ui/viewer/index.html",
+    "docs/ui/views/single_row_review_view.md",
+    "docs/handoff/TASKS_UI.md",
+    "server/README_PROXY.md"
+  ],
+  "constraints": [
+    "Do not rename canonical ids/routes/tokens.",
+    "UI label stays 'Record Inspection' (user-facing); canonical docs/specs remain 'Single Row Review'.",
+    "Use DataDash’s Supabase proxy implementation (allowlist, SSRF guard, size limit, inline content-disposition).",
+    "No invented claims; output git commands only."
+  ],
+  "implementation_steps": [
+    {
+      "id": "SB-EDGE-01",
+      "title": "Add Supabase Edge Function contract-proxy",
+      "requirements": [
+        "Create `supabase/functions/contract-proxy/index.ts` by porting DataDash’s implementation.",
+        "Include CORS headers (Access-Control-Allow-Origin: *), allowlist host(s), SSRF guard, size limit checks, and inline response headers.",
+        "Keep MAX_CONTRACT_BYTES at 25MB to match current SRR cache limits (raise from 10MB in DataDash).",
+        "Preserve response headers: Content-Type, Content-Disposition (inline), X-Proxy-File-Size."
+      ],
+      "acceptance_tests": [
+        "Function responds to OPTIONS with CORS headers.",
+        "Function returns inline PDF for allowlisted S3 URL and blocks non-allowlisted hosts."
+      ]
+    },
+    {
+      "id": "SB-UI-02",
+      "title": "Prefer Supabase proxy in SRR PDF load path",
+      "requirements": [
+        "Add SUPABASE proxy endpoint resolver: `${VITE_SUPABASE_URL}/functions/v1/contract-proxy`.",
+        "Use `Authorization: Bearer ${VITE_SUPABASE_ANON_KEY}` header when calling Supabase proxy (match DataDash).",
+        "Proxy selection order: Supabase proxy if env present → FastAPI proxy if configured → show 'Proxy not configured' message.",
+        "Add a single debug log (guarded by localStorage.pdfDebug=1) showing chosen proxy, proxy URL, and viewer origin."
+      ],
+      "acceptance_tests": [
+        "With Supabase env set, SRR fetches via Supabase proxy without CORS errors.",
+        "If Supabase env missing, app falls back to FastAPI or shows a clear warning."
+      ]
+    },
+    {
+      "id": "DOCS-01",
+      "title": "Document Supabase proxy usage",
+      "requirements": [
+        "Update docs/ui/views/single_row_review_view.md to note Supabase proxy path and required env vars.",
+        "Update server/README_PROXY.md to include Supabase Edge Function option (primary) and FastAPI fallback (secondary)."
+      ],
+      "acceptance_tests": [
+        "Docs mention Supabase proxy endpoint and required env vars."
+      ]
+    },
+    {
+      "id": "TASKS-UI-01",
+      "title": "Track Supabase proxy switch",
+      "requirements": [
+        "Add TASKS_UI entry: 'BUGFIX: Supabase Edge Function proxy for SRR PDFs'.",
+        "Evidence remains 'Unknown — requires audit' until commit URL exists."
+      ],
+      "acceptance_tests": [
+        "TASKS_UI contains the new entry with scope + acceptance tests."
+      ]
+    }
+  ],
+  "output_format": {
+    "summary": "bullet list (file -> change)",
+    "verification": "exact commands run + key console log lines",
+    "suggested_commit_message": "single line",
+    "git_commands": "git add/commit commands only (no push claims)"
+  }
+}

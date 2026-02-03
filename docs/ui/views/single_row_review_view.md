@@ -66,12 +66,16 @@ Contract: This document defines the record-level inspection surface. It supports
 - Needs Patch: Show edited fields missing justification
 - RFI: Show fields marked with RFI category
 
-### Center Panel: Document Viewer (v1.4.10, updated v1.4.16)
+### Center Panel: Document Viewer (v1.4.10, updated v1.4.17)
 - **PDF Rendering**: Displays PDFs via browser's native PDF viewer (iframe-based)
-- **PDF Proxy (v1.4.16)**: Network PDFs are fetched via local FastAPI proxy (`server/pdf_proxy.py`) to avoid CORS issues and download prompts
+- **PDF Proxy (v1.4.17)**: Network PDFs are fetched via proxy to avoid CORS issues and download prompts
+  - **Primary (Supabase Edge Function)**: `${VITE_SUPABASE_URL}/functions/v1/contract-proxy`
+    - Requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (window globals or localStorage)
+    - Auth header: `Authorization: Bearer ${VITE_SUPABASE_ANON_KEY}`
+  - **Fallback (FastAPI)**: `server/pdf_proxy.py` on port 8000 (auto-detected in Replit)
   - Proxy allowlist: Only configured S3 buckets are permitted (SSRF guard)
-  - Size limit: 25MB max (configurable via `PDF_PROXY_MAX_SIZE_MB`)
-  - If proxy unavailable, falls back to direct iframe (may show download prompt)
+  - Size limit: 25MB max
+  - If both proxies unavailable, shows "Proxy not configured" warning
 - **Empty State**: When no PDF is attached, shows placeholder with guidance to attach via Data Source panel
 - **Page Navigation**: ← Prev / Next → buttons with page indicator (Page X / Y)
 - **Zoom Controls**: + / − buttons with zoom indicator (50% to 300% range, 25% increments)

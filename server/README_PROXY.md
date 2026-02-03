@@ -1,10 +1,33 @@
-# PDF Proxy Service
+# PDF Proxy Services
 
-A lightweight FastAPI proxy that fetches PDFs from allowlisted S3 buckets and serves them with proper headers to avoid CORS issues and browser download prompts.
+PDF proxying for Single Row Review (SRR) to avoid CORS issues and browser download prompts.
+
+## Proxy Options
+
+The SRR panel supports two proxy backends:
+
+| Priority | Proxy | When Used |
+|----------|-------|-----------|
+| 1 (Primary) | **Supabase Edge Function** | If `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set |
+| 2 (Fallback) | **FastAPI** | Otherwise, auto-detected in Replit environment |
+
+### Supabase Edge Function (Recommended)
+
+Location: `supabase/functions/contract-proxy/index.ts`
+
+Endpoint: `${VITE_SUPABASE_URL}/functions/v1/contract-proxy?url=<encoded-url>`
+
+Required env vars:
+- `VITE_SUPABASE_URL` — Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` — Supabase anon/public key
+
+### FastAPI Proxy (Fallback)
+
+A lightweight FastAPI proxy that fetches PDFs from allowlisted S3 buckets and serves them with proper headers.
 
 ## Purpose
 
-When the Single Row Review (SRR) panel attempts to display a PDF from an external source (e.g., S3), browsers enforce CORS restrictions and may trigger a download prompt instead of inline rendering. This proxy:
+When the Single Row Review (SRR) panel attempts to display a PDF from an external source (e.g., S3), browsers enforce CORS restrictions and may trigger a download prompt instead of inline rendering. Both proxies:
 
 1. Fetches the PDF server-side (bypassing CORS)
 2. Returns it with `Content-Disposition: inline` (no download prompt)
