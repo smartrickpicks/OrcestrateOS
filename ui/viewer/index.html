@@ -508,6 +508,57 @@
     .vr-clarify-modal textarea { width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 12px; }
     .vr-clarify-modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
+    /* Admin Approval Styles (v1.4.5) */
+    .aa-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; }
+    .aa-section { background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; }
+    .aa-section-header { font-weight: 600; font-size: 0.95em; color: #333; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .aa-section-header .icon { font-size: 1.1em; }
+    .aa-intent-block { background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 8px; }
+    .aa-intent-label { font-size: 0.75em; color: #666; text-transform: uppercase; margin-bottom: 4px; font-weight: 600; }
+    .aa-intent-value { font-size: 0.9em; color: #333; }
+    .aa-evidence-block { background: #fafafa; padding: 10px 12px; border-left: 3px solid #7b1fa2; margin-bottom: 8px; }
+    .aa-evidence-label { font-size: 0.7em; color: #666; text-transform: uppercase; font-weight: 600; }
+    .aa-evidence-text { font-size: 0.85em; color: #333; margin-top: 4px; white-space: pre-wrap; }
+    .aa-preflight-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; }
+    .aa-preflight-badge.pass { background: #e8f5e9; color: #2e7d32; }
+    .aa-preflight-badge.warn { background: #fff3e0; color: #e65100; }
+    .aa-preflight-badge.fail { background: #ffebee; color: #c62828; }
+    .aa-verifier-decision { background: #e8f5e9; border: 1px solid #c8e6c9; padding: 12px; border-radius: 6px; }
+    .aa-verifier-decision-header { font-weight: 600; color: #2e7d32; margin-bottom: 8px; }
+    .aa-smoke-status { display: flex; align-items: center; gap: 8px; padding: 12px; border-radius: 6px; }
+    .aa-smoke-status.pass { background: #e8f5e9; border: 1px solid #c8e6c9; }
+    .aa-smoke-status.fail { background: #ffebee; border: 1px solid #ffcdd2; }
+    .aa-smoke-icon { font-size: 1.5em; }
+    .aa-smoke-label { font-weight: 600; }
+    .aa-changelog-preview { background: #263238; color: #eceff1; padding: 12px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 0.8em; white-space: pre-wrap; }
+    .aa-actions-panel { background: #f3e5f5; padding: 16px; border-radius: 8px; margin-top: 16px; border: 1px solid #ce93d8; }
+    .aa-actions-header { font-weight: 600; font-size: 0.9em; margin-bottom: 12px; color: #6a1b9a; }
+    .aa-actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .aa-action-btn { padding: 12px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 500; transition: all 0.15s; }
+    .aa-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .aa-action-btn.approve { background: #6a1b9a; color: white; }
+    .aa-action-btn.approve:hover:not(:disabled) { background: #7b1fa2; }
+    .aa-action-btn.hold { background: #ff9800; color: white; }
+    .aa-action-btn.hold:hover:not(:disabled) { background: #ffa726; }
+    .aa-action-btn.release { background: #1565c0; color: white; }
+    .aa-action-btn.release:hover:not(:disabled) { background: #1976d2; }
+    .aa-action-btn.promote { background: #2e7d32; color: white; grid-column: span 2; }
+    .aa-action-btn.promote:hover:not(:disabled) { background: #388e3c; }
+    .aa-state-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; }
+    .aa-state-badge.verifier-approved { background: #e8f5e9; color: #2e7d32; }
+    .aa-state-badge.admin-hold { background: #fff3e0; color: #e65100; }
+    .aa-state-badge.admin-approved { background: #f3e5f5; color: #6a1b9a; }
+    .aa-state-badge.promoted { background: #e3f2fd; color: #1565c0; }
+    .aa-decision-summary { background: #f3e5f5; border: 1px solid #ce93d8; padding: 12px; border-radius: 6px; margin-top: 12px; }
+    .aa-full-width { grid-column: span 2; }
+    .aa-notes-area { width: 100%; min-height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85em; resize: vertical; }
+    .aa-hold-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 9999; }
+    .aa-hold-modal.active { display: flex; }
+    .aa-hold-modal-content { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 500px; }
+    .aa-hold-modal h4 { margin: 0 0 12px 0; }
+    .aa-hold-modal textarea { width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 12px; }
+    .aa-hold-modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
     /* Grid Table Styles */
     .grid-table { min-width: 800px; }
     .grid-table th, .grid-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e0e0e0; white-space: nowrap; }
@@ -962,6 +1013,10 @@
           <a class="nav-item reviewer-only" data-page="review" href="#/review">
             <span class="nav-icon">🔍</span>
             <span class="nav-label">Config Inspector</span>
+          </a>
+          <a class="nav-item admin-only" data-page="admin-approval" href="#/admin-approval">
+            <span class="nav-icon">✓✓</span>
+            <span class="nav-label">Admin Approval</span>
           </a>
           <a class="nav-item admin-only" data-page="admin" href="#/admin">
             <span class="nav-icon">⚙</span>
@@ -1603,6 +1658,155 @@
           <div class="vr-clarify-modal-actions">
             <button class="vr-action-btn" style="background: #e0e0e0; color: #333;" onclick="vrClarifyCancel()">Cancel</button>
             <button class="vr-action-btn clarify" onclick="vrClarifySubmit()">Send Request</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN APPROVAL PAGE -->
+      <div class="page" id="page-admin-approval">
+        <div class="page-header">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <button class="srr-back-btn" onclick="navigateTo('triage')" style="padding: 6px 12px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.85em;">← Back</button>
+              <h2 style="margin: 0;">Admin Approval</h2>
+              <span class="aa-state-badge" id="aa-state-badge">Verifier Approved</span>
+            </div>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-APPROVAL | BUILD v1.4.5</span>
+          </div>
+          <p class="page-desc">Final approval surface before Promote Patch to Baseline.</p>
+        </div>
+
+        <div class="aa-container" id="aa-container">
+          <!-- Left Column: Intent + Evidence -->
+          <div>
+            <!-- Structured Intent -->
+            <div class="aa-section">
+              <div class="aa-section-header"><span class="icon">📋</span> Structured Intent</div>
+              <div id="aa-intent-blocks">
+                <div class="aa-intent-block">
+                  <div class="aa-intent-label">Observation (WHEN)</div>
+                  <div class="aa-intent-value" id="aa-intent-when">—</div>
+                </div>
+                <div class="aa-intent-block">
+                  <div class="aa-intent-label">Expected (THEN)</div>
+                  <div class="aa-intent-value" id="aa-intent-then">—</div>
+                </div>
+                <div class="aa-intent-block">
+                  <div class="aa-intent-label">Justification (BECAUSE)</div>
+                  <div class="aa-intent-value" id="aa-intent-because">—</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Evidence Pack -->
+            <div class="aa-section" style="margin-top: 16px;">
+              <div class="aa-section-header"><span class="icon">📎</span> Evidence Pack</div>
+              <div id="aa-evidence-blocks">
+                <div class="aa-evidence-block">
+                  <div class="aa-evidence-label">Observation</div>
+                  <div class="aa-evidence-text" id="aa-ev-observation">—</div>
+                </div>
+                <div class="aa-evidence-block">
+                  <div class="aa-evidence-label">Expected</div>
+                  <div class="aa-evidence-text" id="aa-ev-expected">—</div>
+                </div>
+                <div class="aa-evidence-block">
+                  <div class="aa-evidence-label">Justification</div>
+                  <div class="aa-evidence-text" id="aa-ev-justification">—</div>
+                </div>
+                <div class="aa-evidence-block">
+                  <div class="aa-evidence-label">Repro</div>
+                  <div class="aa-evidence-text" id="aa-ev-repro">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Verifier Decision + Preflight + Smoke + Changelog + Revisions -->
+          <div>
+            <!-- Verifier Decision -->
+            <div class="aa-section">
+              <div class="aa-section-header"><span class="icon">✓</span> Verifier Decision</div>
+              <div class="aa-verifier-decision" id="aa-verifier-decision">
+                <div class="aa-verifier-decision-header">Approved by Verifier</div>
+                <div style="font-size: 0.85em; color: #666;">
+                  <div><strong>Verifier:</strong> <span id="aa-verifier-name">verifier@example.com</span></div>
+                  <div><strong>Approved at:</strong> <span id="aa-verifier-time">—</span></div>
+                  <div><strong>Notes:</strong> <span id="aa-verifier-notes">All checklist items confirmed.</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Preflight Report -->
+            <div class="aa-section" style="margin-top: 16px;">
+              <div class="aa-section-header"><span class="icon">✅</span> Preflight Report</div>
+              <div id="aa-preflight-badges" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <span class="aa-preflight-badge pass">Schema ✓</span>
+                <span class="aa-preflight-badge pass">Conflicts ✓</span>
+                <span class="aa-preflight-badge pass">Evidence ✓</span>
+              </div>
+            </div>
+
+            <!-- Smoke (Strict) Status -->
+            <div class="aa-section" style="margin-top: 16px;">
+              <div class="aa-section-header"><span class="icon">🔥</span> Smoke (Strict) Status</div>
+              <div class="aa-smoke-status pass" id="aa-smoke-status">
+                <span class="aa-smoke-icon">✓</span>
+                <div>
+                  <div class="aa-smoke-label">Smoke (Strict) Passing</div>
+                  <div style="font-size: 0.8em; color: #666;">Last run: <span id="aa-smoke-time">—</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Changelog Preview -->
+            <div class="aa-section" style="margin-top: 16px;">
+              <div class="aa-section-header"><span class="icon">📝</span> Changelog Preview</div>
+              <div class="aa-changelog-preview" id="aa-changelog-preview">## [1.4.6] - 2026-02-03
+
+### Changed
+- SF_R1_LABEL_NOT_ARTIST: Updated label_vendor requirement for LICENSING contracts</div>
+            </div>
+
+            <!-- Revision History -->
+            <div class="aa-section" style="margin-top: 16px;">
+              <div class="aa-section-header"><span class="icon">📜</span> Revision History</div>
+              <div id="aa-revisions">
+                <div style="font-size: 0.85em; color: #666;">No previous revisions</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Full-Width: Admin Notes + Actions -->
+          <div class="aa-full-width">
+            <div class="aa-section">
+              <div class="aa-section-header"><span class="icon">📝</span> Admin Notes</div>
+              <textarea class="aa-notes-area" id="aa-notes" placeholder="Add admin notes (visible in audit log)..."></textarea>
+            </div>
+
+            <div class="aa-actions-panel">
+              <div class="aa-actions-header">Admin Actions</div>
+              <div class="aa-actions-grid">
+                <button class="aa-action-btn approve" id="aa-btn-approve" onclick="aaAdminApprove()">Admin Approve</button>
+                <button class="aa-action-btn hold" id="aa-btn-hold" onclick="aaAdminHold()">Admin Hold</button>
+                <button class="aa-action-btn release" id="aa-btn-release" onclick="aaReleaseHold()" disabled>Release Hold</button>
+                <button class="aa-action-btn promote" id="aa-btn-promote" onclick="aaPromoteToBaseline()" disabled>Promote Patch to Baseline</button>
+              </div>
+              <div id="aa-decision-summary" style="margin-top: 12px;"></div>
+            </div>
+          </div>
+        </div>
+      </div><!-- end page-admin-approval -->
+
+      <!-- Admin Hold Modal -->
+      <div class="aa-hold-modal" id="aa-hold-modal">
+        <div class="aa-hold-modal-content">
+          <h4>Admin Hold</h4>
+          <p style="font-size: 0.85em; color: #666; margin-bottom: 12px;">Describe why this patch is being placed on hold.</p>
+          <textarea id="aa-hold-text" placeholder="Hold reason..."></textarea>
+          <div class="aa-hold-modal-actions">
+            <button class="aa-action-btn" style="background: #e0e0e0; color: #333;" onclick="aaHoldCancel()">Cancel</button>
+            <button class="aa-action-btn hold" onclick="aaHoldSubmit()">Place on Hold</button>
           </div>
         </div>
       </div>
@@ -5430,7 +5634,7 @@
       options = options || {};
       // Loader is now a drawer, not a page - redirect loader requests to triage
       if (page === 'loader') page = 'triage';
-      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-review', 'admin', 'row'];
+      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-review', 'admin-approval', 'admin', 'row'];
       // Handle row/:id routes
       if (page.startsWith('row/')) {
         var rowId = page.split('/')[1];
@@ -5467,6 +5671,11 @@
       if (page === 'verifier-review' && currentMode !== 'reviewer' && currentMode !== 'admin') {
         console.log('[Navigate] Verifier Review page requires reviewer/admin mode');
         showToast('Verifier access required', 'warning');
+        page = 'triage';
+      }
+      if (page === 'admin-approval' && currentMode !== 'admin') {
+        console.log('[Navigate] Admin Approval page requires admin mode');
+        showToast('Admin access required', 'warning');
         page = 'triage';
       }
       
@@ -5529,6 +5738,11 @@
       // If navigating to verifier-review, load sample data
       if (page === 'verifier-review') {
         setTimeout(function() { loadVerifierReviewData(); }, 0);
+      }
+      
+      // If navigating to admin-approval, load sample data
+      if (page === 'admin-approval') {
+        setTimeout(function() { loadAdminApprovalData(); }, 0);
       }
       
       // Update hash (include tab for admin deep-links, preserve grid query params)
@@ -7192,6 +7406,213 @@
         '<strong>Decision:</strong> ' + stateLabel + '<br>' +
         '<span style="font-size: 0.85em; color: #666;">by ' + vrState.reviewerActor + ' at ' + (lastEvent ? lastEvent.timestamp : '—') + '</span>' +
         (vrState.notes ? '<div style="margin-top: 8px; font-size: 0.85em;"><strong>Notes:</strong> ' + vrState.notes + '</div>' : '') +
+      '</div>';
+    }
+
+    // ========== ADMIN APPROVAL STATE + FUNCTIONS (v1.4.5) ==========
+    var aaState = {
+      currentPatchId: null,
+      reviewState: 'Verifier_Approved', // Verifier_Approved, Admin_Hold, Admin_Approved, Promoted
+      adminActor: 'admin@example.com',
+      auditLog: [],
+      notes: '',
+      smokeStatus: 'pass' // pass or fail
+    };
+    
+    // Sample patch data for Admin Approval demo
+    var aaSamplePatch = {
+      patch_id: 'PATCH-2026-0001',
+      author: 'analyst@example.com',
+      submitted_at: new Date(Date.now() - 3600000).toISOString(),
+      intent: {
+        observation: 'Contract has missing label_vendor field despite being a licensing agreement.',
+        expected: 'Label_vendor should be populated when contract_type = LICENSING.',
+        justification: 'Licensing agreements require label_vendor for downstream royalty calculations.'
+      },
+      evidence: {
+        observation: 'Row 142 shows contract_type=LICENSING but label_vendor is blank.',
+        expected: 'label_vendor = "Sony Music" based on contract header data.',
+        justification: 'Header section row 1 references Sony Music as the licensing partner.',
+        repro: '1. Load sample_v1.json\n2. Navigate to row 142\n3. Observe label_vendor is empty\n4. Cross-reference with contract header'
+      },
+      verifier: {
+        actor: 'verifier@example.com',
+        approved_at: new Date(Date.now() - 1800000).toISOString(),
+        notes: 'All checklist items confirmed. Evidence is complete and consistent.'
+      },
+      preflight: { schema: 'pass', conflicts: 'pass', evidence: 'pass' },
+      smoke: { status: 'pass', last_run: new Date().toISOString() },
+      changelog: '## [1.4.6] - 2026-02-03\n\n### Changed\n- SF_R1_LABEL_NOT_ARTIST: Updated label_vendor requirement for LICENSING contracts',
+      revisions: []
+    };
+    
+    function loadAdminApprovalData() {
+      // Load sample data into view
+      document.getElementById('aa-intent-when').textContent = aaSamplePatch.intent.observation || '—';
+      document.getElementById('aa-intent-then').textContent = aaSamplePatch.intent.expected || '—';
+      document.getElementById('aa-intent-because').textContent = aaSamplePatch.intent.justification || '—';
+      
+      document.getElementById('aa-ev-observation').textContent = aaSamplePatch.evidence.observation || '—';
+      document.getElementById('aa-ev-expected').textContent = aaSamplePatch.evidence.expected || '—';
+      document.getElementById('aa-ev-justification').textContent = aaSamplePatch.evidence.justification || '—';
+      document.getElementById('aa-ev-repro').textContent = aaSamplePatch.evidence.repro || '—';
+      
+      document.getElementById('aa-verifier-name').textContent = aaSamplePatch.verifier.actor;
+      document.getElementById('aa-verifier-time').textContent = aaSamplePatch.verifier.approved_at;
+      document.getElementById('aa-verifier-notes').textContent = aaSamplePatch.verifier.notes;
+      
+      document.getElementById('aa-smoke-time').textContent = aaSamplePatch.smoke.last_run;
+      document.getElementById('aa-changelog-preview').textContent = aaSamplePatch.changelog;
+      
+      aaState.currentPatchId = aaSamplePatch.patch_id;
+      aaState.reviewState = 'Verifier_Approved';
+      aaState.smokeStatus = aaSamplePatch.smoke.status;
+      aaUpdateStateBadge();
+      aaUpdateActionButtons();
+      aaRenderDecisionSummary();
+    }
+    
+    function aaUpdateStateBadge() {
+      var badge = document.getElementById('aa-state-badge');
+      var stateClass = aaState.reviewState.toLowerCase().replace(/_/g, '-');
+      badge.className = 'aa-state-badge ' + stateClass;
+      badge.textContent = aaState.reviewState.replace(/_/g, ' ');
+    }
+    
+    function aaUpdateActionButtons() {
+      var btnApprove = document.getElementById('aa-btn-approve');
+      var btnHold = document.getElementById('aa-btn-hold');
+      var btnRelease = document.getElementById('aa-btn-release');
+      var btnPromote = document.getElementById('aa-btn-promote');
+      
+      // Reset all
+      btnApprove.disabled = true;
+      btnHold.disabled = true;
+      btnRelease.disabled = true;
+      btnPromote.disabled = true;
+      
+      // Enable based on state
+      if (aaState.reviewState === 'Verifier_Approved') {
+        btnApprove.disabled = false;
+        btnHold.disabled = false;
+      } else if (aaState.reviewState === 'Admin_Hold') {
+        btnRelease.disabled = false;
+      } else if (aaState.reviewState === 'Admin_Approved') {
+        btnPromote.disabled = aaState.smokeStatus !== 'pass';
+      }
+      // Promoted = no actions available
+    }
+    
+    function aaLogAuditEvent(eventType, details) {
+      var event = {
+        timestamp: new Date().toISOString(),
+        event_type: eventType,
+        patch_id: aaState.currentPatchId,
+        actor: aaState.adminActor,
+        details: details || {}
+      };
+      aaState.auditLog.push(event);
+      console.log('[AA] AUDIT:', eventType, event);
+    }
+    
+    function aaAdminApprove() {
+      if (aaState.reviewState !== 'Verifier_Approved') return;
+      
+      if (aaState.smokeStatus !== 'pass') {
+        showToast('Smoke (Strict) must pass before Admin Approve', 'warning');
+        return;
+      }
+      
+      aaState.notes = document.getElementById('aa-notes').value;
+      aaState.reviewState = 'Admin_Approved';
+      aaLogAuditEvent('ADMIN_APPROVED', { smoke_evidence_ref: 'smoke_strict_' + Date.now(), notes: aaState.notes });
+      
+      aaUpdateStateBadge();
+      aaUpdateActionButtons();
+      aaRenderDecisionSummary();
+      showToast('Patch approved by Admin — ready to Promote', 'success');
+    }
+    
+    function aaAdminHold() {
+      if (aaState.reviewState !== 'Verifier_Approved') return;
+      document.getElementById('aa-hold-modal').classList.add('active');
+    }
+    
+    function aaHoldCancel() {
+      document.getElementById('aa-hold-modal').classList.remove('active');
+      document.getElementById('aa-hold-text').value = '';
+    }
+    
+    function aaHoldSubmit() {
+      var holdText = document.getElementById('aa-hold-text').value.trim();
+      if (!holdText) {
+        showToast('Please provide a hold reason', 'warning');
+        return;
+      }
+      
+      aaState.reviewState = 'Admin_Hold';
+      aaState.notes = document.getElementById('aa-notes').value;
+      aaLogAuditEvent('ADMIN_HOLD', { hold_reason: holdText });
+      
+      document.getElementById('aa-hold-modal').classList.remove('active');
+      document.getElementById('aa-hold-text').value = '';
+      
+      aaUpdateStateBadge();
+      aaUpdateActionButtons();
+      aaRenderDecisionSummary();
+      showToast('Patch placed on Admin Hold', 'info');
+    }
+    
+    function aaReleaseHold() {
+      if (aaState.reviewState !== 'Admin_Hold') return;
+      
+      aaState.notes = document.getElementById('aa-notes').value;
+      aaState.reviewState = 'Verifier_Approved'; // Returns to Verifier_Approved for re-evaluation
+      aaLogAuditEvent('RELEASE_HOLD', { notes: aaState.notes });
+      
+      aaUpdateStateBadge();
+      aaUpdateActionButtons();
+      aaRenderDecisionSummary();
+      showToast('Hold released — patch returned to Verifier Approved state', 'info');
+    }
+    
+    function aaPromoteToBaseline() {
+      if (aaState.reviewState !== 'Admin_Approved') return;
+      
+      if (aaState.smokeStatus !== 'pass') {
+        showToast('Smoke (Strict) must pass before Promote', 'warning');
+        return;
+      }
+      
+      aaState.notes = document.getElementById('aa-notes').value;
+      aaState.reviewState = 'Promoted';
+      aaLogAuditEvent('PROMOTE_TO_BASELINE', { 
+        version: '1.4.6', 
+        changelog_entry: aaSamplePatch.changelog,
+        notes: aaState.notes 
+      });
+      
+      aaUpdateStateBadge();
+      aaUpdateActionButtons();
+      aaRenderDecisionSummary();
+      showToast('Patch promoted to baseline! Version 1.4.6 is now live.', 'success');
+    }
+    
+    function aaRenderDecisionSummary() {
+      var container = document.getElementById('aa-decision-summary');
+      
+      if (aaState.reviewState === 'Verifier_Approved') {
+        container.innerHTML = '';
+        return;
+      }
+      
+      var stateLabel = aaState.reviewState.replace(/_/g, ' ');
+      var lastEvent = aaState.auditLog[aaState.auditLog.length - 1];
+      
+      container.innerHTML = '<div class="aa-decision-summary">' +
+        '<strong>Admin Decision:</strong> ' + stateLabel + '<br>' +
+        '<span style="font-size: 0.85em; color: #666;">by ' + aaState.adminActor + ' at ' + (lastEvent ? lastEvent.timestamp : '—') + '</span>' +
+        (aaState.notes ? '<div style="margin-top: 8px; font-size: 0.85em;"><strong>Notes:</strong> ' + aaState.notes + '</div>' : '') +
       '</div>';
     }
 

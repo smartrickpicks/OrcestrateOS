@@ -2,6 +2,25 @@
 
 > Final approval surface for Admin decisions before Promote Patch to Baseline.
 
+## Implementation Status (v1.4.5)
+
+| Feature | Status |
+|---------|--------|
+| Page layout (2-column grid) | Done |
+| Structured Intent display (WHEN/THEN/BECAUSE) | Done |
+| Evidence Pack display (4 blocks) | Done |
+| Preflight Report badges | Done |
+| Verifier Decision section | Done |
+| Revision History section | Done (stub) |
+| Smoke (Strict) Status indicator | Done |
+| Changelog Preview | Done |
+| Admin Notes textarea | Done |
+| Admin Actions panel | Done |
+| State transitions (Verifier_Approved → Admin_Approved/Admin_Hold → Promoted) | Done |
+| Audit logging (client-side) | Done |
+| Hold modal | Done |
+| Role-gated navigation (admin-only) | Done |
+
 ## Entry Conditions
 
 | Condition | Required |
@@ -83,7 +102,8 @@ Before Admin Approve, the Admin must confirm ALL checklist sections (see [REVIEW
 |------------|----------|--------|------|
 | Verifier_Approved | Admin_Approved | Admin Approve | Admin |
 | Verifier_Approved | Admin_Hold | Admin Hold | Admin |
-| Admin_Hold | Under_Review | Release Hold | Admin |
+| Admin_Hold | Verifier_Approved | Release Hold | Admin |
+| Admin_Approved | Promoted | Promote Patch to Baseline | Admin |
 
 ## Related Documents
 
