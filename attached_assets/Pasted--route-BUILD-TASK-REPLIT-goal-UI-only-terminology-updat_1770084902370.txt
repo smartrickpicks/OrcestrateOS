@@ -1,0 +1,63 @@
+{
+  "route": "BUILD_TASK_REPLIT",
+  "goal": "UI-only terminology update: display 'Record Inspection' to users while keeping canonical tokens/specs/audit terms as 'Single Row Review'.",
+  "constraints": [
+    "Do NOT rename canonical ids, routes, or spec tokens: keep single_row_review / single_row_review_view unchanged.",
+    "Do NOT change docs/specs JSON ids/labels or AUDIT_LOG canonical view names.",
+    "Change only visible UI copy (labels/titles/tooltips) and add a single alias note in the SRR doc.",
+    "No invented claims about pushes/PRs; output must include exact files changed and grep checks."
+  ],
+  "files_in_scope": [
+    "ui/viewer/index.html",
+    "docs/ui/views/single_row_review_view.md"
+  ],
+  "implementation_steps": [
+    {
+      "id": "UI-ALIAS-01",
+      "title": "UI label aliasing (Record Inspection)",
+      "requirements": [
+        "Replace user-facing label 'Single Row Review' with 'Record Inspection' across the UI.",
+        "Do not change routes/ids; keep SRR route and internal ids intact."
+      ],
+      "acceptance_tests": [
+        "UI header/title reads 'Record Inspection' on the per-row view.",
+        "Any nav/sidebar/links a user clicks read 'Record Inspection'.",
+        "No change to route/hash or internal ids (still SRR route).",
+        "grep across UI for 'Single Row Review' returns zero matches (unless a tiny in-UI alias hint was deliberately added; prefer none)."
+      ]
+    },
+    {
+      "id": "DOC-ALIAS-01",
+      "title": "Single alias note in SRR doc",
+      "requirements": [
+        "Add a short 'UI Label vs Canonical Name' block clarifying: UI label = Record Inspection; canonical name = Single Row Review.",
+        "Keep canonical surface name 'Single Row Review' in headings/contract references; alias only appears in the note."
+      ],
+      "acceptance_tests": [
+        "Doc contains the alias note block.",
+        "Headings remain 'Single Row Review'.",
+        "No other docs updated unless they explicitly contain UI-visible copy that must match."
+      ]
+    },
+    {
+      "id": "VERIFY-01",
+      "title": "Canonical token safety checks",
+      "requirements": [
+        "Run grep checks to ensure canonical tokens were not altered."
+      ],
+      "acceptance_tests": [
+        "No new 'record_inspection' tokens appear in specs, AUDIT_LOG.md, or gate mappings.",
+        "single_row_review remains present in specs as canonical id.",
+        "UI no longer displays 'Single Row Review' except possibly in the SRR doc alias note."
+      ]
+    }
+  ],
+  "output_format": {
+    "summary": "bullet list of file changes",
+    "verification": "grep commands + results",
+    "snippets": "before/after for UI header/title and nav labels",
+    "alias_note": "the exact block added to docs/ui/views/single_row_review_view.md",
+    "suggested_commit_message": "one line",
+    "git_commands": "exact add/commit commands without claiming push"
+  }
+}

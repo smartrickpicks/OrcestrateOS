@@ -2,6 +2,12 @@
 
 Contract: This document defines the record-level inspection surface. It supports Evidence Pack authoring and Patch Draft creation by Analysts while remaining read-only for Verifier/Admin with respect to gates and Review State transitions.
 
+> **UI Label vs Canonical Name**
+> - **UI Label (user-facing):** Record Inspection
+> - **Canonical Name (specs/audit/routes):** Single Row Review
+>
+> The user-facing label "Record Inspection" appears in the UI header and navigation. All internal tokens, routes, specs, and audit logs retain the canonical name `single_row_review`.
+
 ## Purpose
 - Provide authoritative, per-record context: baseline values, deltas, flags, evidence, and audit trail.
 - Enable Analysts to author Evidence Packs and create Patch Drafts with explicit rationale and evidence anchoring.
