@@ -3799,8 +3799,13 @@
       if (!record_id) return null;
       
       var result = null;
-      Object.keys(globalDataset).some(function(sheetName) {
-        var rows = globalDataset[sheetName];
+      // Use workbook.sheets instead of globalDataset
+      if (!workbook || !workbook.sheets) return null;
+      
+      Object.keys(workbook.sheets).some(function(sheetName) {
+        var sheet = workbook.sheets[sheetName];
+        var rows = sheet ? sheet.rows : [];
+        if (!rows) return false;
         for (var i = 0; i < rows.length; i++) {
           var row = rows[i];
           // Check various ID fields
@@ -10974,21 +10979,26 @@
         var foundRecord = null;
         
         // Search across all sheets for the record by record_id
-        Object.keys(globalDataset).forEach(function(sheetName) {
-          if (foundRecord) return;
-          var rows = globalDataset[sheetName];
-          for (var i = 0; i < rows.length; i++) {
-            // Match by contract_key, record_id, or _row_id fields
-            if (rows[i].contract_key === recordId || 
-                rows[i].record_id === recordId || 
-                rows[i]._row_id === recordId) {
-              foundSheet = sheetName;
-              foundIdx = i;
-              foundRecord = rows[i];
-              break;
+        // Use workbook.sheets instead of globalDataset
+        if (workbook && workbook.sheets) {
+          Object.keys(workbook.sheets).forEach(function(sheetName) {
+            if (foundRecord) return;
+            var sheet = workbook.sheets[sheetName];
+            var rows = sheet ? sheet.rows : [];
+            if (!rows) return;
+            for (var i = 0; i < rows.length; i++) {
+              // Match by contract_key, record_id, or _row_id fields
+              if (rows[i].contract_key === recordId || 
+                  rows[i].record_id === recordId || 
+                  rows[i]._row_id === recordId) {
+                foundSheet = sheetName;
+                foundIdx = i;
+                foundRecord = rows[i];
+                break;
+              }
             }
-          }
-        });
+          });
+        }
         
         if (foundRecord) {
           // v1.5.1: Set SRR context with artifact binding
