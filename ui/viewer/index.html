@@ -478,19 +478,10 @@
     .srr-filter-chip .chip-count { font-size: 0.85em; margin-left: 4px; opacity: 0.8; }
     .srr-lock-icon { font-size: 0.9em; margin-left: 4px; }
     
-    /* v1.5.2: Patch Editor Quick Actions */
-    .srr-pe-quick-actions { background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border: 1px solid #bbdefb; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
-    .srr-pe-quick-actions-label { font-size: 0.75em; font-weight: 600; color: #5c6bc0; text-transform: uppercase; margin-bottom: 8px; }
-    .srr-pe-quick-actions-row { display: flex; gap: 8px; margin-bottom: 8px; }
-    .srr-pe-action-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 12px; border: 2px solid transparent; border-radius: 6px; font-size: 0.8em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-    .srr-pe-action-btn.correction { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
-    .srr-pe-action-btn.correction:hover { background: #bbdefb; border-color: #1565c0; }
-    .srr-pe-action-btn.rfi { background: #fff3e0; color: #e65100; border-color: #ffcc80; }
-    .srr-pe-action-btn.rfi:hover { background: #ffe0b2; border-color: #e65100; }
-    .srr-pe-action-btn.blacklist { background: #ffebee; color: #c62828; border-color: #ef9a9a; }
-    .srr-pe-action-btn.blacklist:hover { background: #ffcdd2; border-color: #c62828; }
-    .srr-pe-action-icon { font-size: 1.1em; }
-    .srr-pe-selected-field { font-size: 0.8em; color: #666; background: rgba(255,255,255,0.7); padding: 6px 10px; border-radius: 4px; text-align: center; }
+    /* v1.5.2: Patch Type chip selected field indicator */
+    .srr-patch-type-selected-field { font-size: 0.75em; color: #666; margin-top: 6px; padding: 4px 8px; background: #f5f5f5; border-radius: 4px; text-align: center; }
+    .srr-patch-type-chips.no-selection .srr-patch-type-chip { opacity: 0.6; }
+    .srr-patch-type-chips.no-selection .srr-patch-type-chip:hover { opacity: 1; }
 
     /* v1.4.18: Patch Editor Block */
     .srr-patch-editor { background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; margin-bottom: 16px; }
@@ -1661,31 +1652,15 @@
             
             <!-- Patch Editor Content (default, for analysts) -->
             <div class="srr-panel-body" id="srr-tab-editor">
-              <!-- Patch Type Chips (horizontal scroll) -->
+              <!-- Patch Type Chips (horizontal scroll) - v1.5.2: Acts on selected field -->
               <div class="srr-patch-type-selector" style="margin-bottom: 16px;">
                 <div class="srr-patch-type-label" style="font-size: 0.75em; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 6px;">Patch Type</div>
-                <div class="srr-patch-type-chips" style="display: flex; gap: 6px; overflow-x: auto; white-space: nowrap; padding-bottom: 4px;">
-                  <div class="srr-patch-type-chip correction active" data-type="correction" onclick="srrOnPatchTypeChange('correction')">Correction</div>
-                  <div class="srr-patch-type-chip blacklist" data-type="blacklist" onclick="srrOnPatchTypeChange('blacklist')">Blacklist</div>
-                  <div class="srr-patch-type-chip rfi" data-type="rfi" onclick="srrOnPatchTypeChange('rfi')">RFI</div>
+                <div class="srr-patch-type-chips no-selection" id="srr-patch-type-chips" style="display: flex; gap: 6px; overflow-x: auto; white-space: nowrap; padding-bottom: 4px;">
+                  <div class="srr-patch-type-chip correction active" data-type="correction" onclick="srrOnPatchTypeChange('correction')">✏️ Correction</div>
+                  <div class="srr-patch-type-chip blacklist" data-type="blacklist" onclick="srrOnPatchTypeChange('blacklist')">🚫 Blacklist</div>
+                  <div class="srr-patch-type-chip rfi" data-type="rfi" onclick="srrOnPatchTypeChange('rfi')">❓ RFI</div>
                 </div>
-              </div>
-
-              <!-- v1.5.2: Quick Actions for selected field -->
-              <div id="srr-pe-quick-actions" class="srr-pe-quick-actions srr-section-hidden">
-                <div class="srr-pe-quick-actions-label">Quick Actions for Selected Field</div>
-                <div class="srr-pe-quick-actions-row">
-                  <button class="srr-pe-action-btn correction" onclick="srrPeQuickAction('correction')" title="Mark as Correction">
-                    <span class="srr-pe-action-icon">✏️</span> Correction
-                  </button>
-                  <button class="srr-pe-action-btn rfi" onclick="srrPeQuickAction('rfi')" title="Send RFI">
-                    <span class="srr-pe-action-icon">❓</span> RFI
-                  </button>
-                  <button class="srr-pe-action-btn blacklist" onclick="srrPeQuickAction('blacklist')" title="Flag as Blacklist">
-                    <span class="srr-pe-action-icon">🚫</span> Blacklist
-                  </button>
-                </div>
-                <div class="srr-pe-selected-field" id="srr-pe-selected-field-label">No field selected</div>
+                <div class="srr-patch-type-selected-field" id="srr-patch-type-selected-field">Select a field to apply action</div>
               </div>
 
               <!-- Action Box - title changes based on patch type -->
@@ -9465,85 +9440,41 @@
       }
     }
     
-    // v1.5.2: Track selected field in Patch Editor for quick actions
+    // v1.5.2: Track selected field for Patch Type chip actions
     var srrPeSelectedField = null;
     
     function srrPeSelectField(fieldKey, fieldLabel) {
       srrPeSelectedField = { key: fieldKey, label: fieldLabel };
-      var actionsPanel = document.getElementById('srr-pe-quick-actions');
-      var labelEl = document.getElementById('srr-pe-selected-field-label');
-      if (actionsPanel) {
-        actionsPanel.classList.remove('srr-section-hidden');
+      
+      // Update chip area to show selection
+      var chipsContainer = document.getElementById('srr-patch-type-chips');
+      var labelEl = document.getElementById('srr-patch-type-selected-field');
+      
+      if (chipsContainer) {
+        chipsContainer.classList.remove('no-selection');
       }
       if (labelEl) {
         labelEl.textContent = 'Selected: ' + fieldLabel;
+        labelEl.style.background = '#e8f5e9';
+        labelEl.style.color = '#2e7d32';
       }
-      console.log('[SRR] Patch Editor field selected:', fieldKey);
+      console.log('[SRR] Field selected for action:', fieldKey);
     }
     
     function srrPeClearSelection() {
       srrPeSelectedField = null;
-      var actionsPanel = document.getElementById('srr-pe-quick-actions');
-      var labelEl = document.getElementById('srr-pe-selected-field-label');
-      if (actionsPanel) {
-        actionsPanel.classList.add('srr-section-hidden');
+      
+      var chipsContainer = document.getElementById('srr-patch-type-chips');
+      var labelEl = document.getElementById('srr-patch-type-selected-field');
+      
+      if (chipsContainer) {
+        chipsContainer.classList.add('no-selection');
       }
       if (labelEl) {
-        labelEl.textContent = 'No field selected';
+        labelEl.textContent = 'Select a field to apply action';
+        labelEl.style.background = '#f5f5f5';
+        labelEl.style.color = '#666';
       }
-    }
-    
-    // v1.5.2: Quick action from Patch Editor panel
-    function srrPeQuickAction(actionType) {
-      if (!srrPeSelectedField) {
-        showToast('Select a field first by clicking on it in the Field Inspector or Changed Fields list.', 'warning');
-        return;
-      }
-      
-      var fieldKey = srrPeSelectedField.key;
-      var fieldLabel = srrPeSelectedField.label;
-      var record = srrState.currentRecord;
-      var currentValue = record ? record[fieldKey] : '';
-      
-      console.log('[SRR] Quick action:', actionType, 'on field:', fieldKey);
-      
-      // Update patch type
-      srrOnPatchTypeChange(actionType);
-      
-      if (actionType === 'rfi') {
-        // Set up RFI for this field
-        srrState.rfiField = { key: fieldKey, label: fieldLabel, value: currentValue };
-        srrState.fieldStates[fieldKey] = 'rfi_pending';
-        showToast('RFI started for: ' + fieldLabel, 'info');
-      } else if (actionType === 'blacklist') {
-        // Set up blacklist for this field
-        srrState.blacklistField = { key: fieldKey, label: fieldLabel, value: currentValue };
-        srrState.fieldStates[fieldKey] = 'blocked';
-        // Update blacklist subject display
-        var subjectEl = document.getElementById('srr-blacklist-subject-value');
-        if (subjectEl) {
-          subjectEl.textContent = fieldLabel + ': ' + (currentValue || '(empty)');
-        }
-        showToast('Blacklist flag set for: ' + fieldLabel, 'info');
-      } else if (actionType === 'correction') {
-        // Ensure field is in proposed changes for correction
-        if (!srrState.proposedChanges[fieldKey]) {
-          srrState.proposedChanges[fieldKey] = {
-            field: fieldKey,
-            label: fieldLabel,
-            from: currentValue,
-            to: currentValue,
-            category: 'correction'
-          };
-        }
-        srrState.fieldStates[fieldKey] = 'modified';
-        showToast('Correction mode for: ' + fieldLabel, 'info');
-      }
-      
-      // Refresh UI
-      renderSrrFields(srrState.currentRecord);
-      srrRenderPatchEditor();
-      srrUpdateEvidencePackVisibility();
     }
     
     function srrUpdateChangeCategory(fieldKey, category) {
@@ -10583,9 +10514,53 @@
     
     // Handle patch type dropdown change
     function srrOnPatchTypeChange(newType) {
+      // v1.5.2: If a field is selected, apply the action to that field
+      if (srrPeSelectedField) {
+        var fieldKey = srrPeSelectedField.key;
+        var fieldLabel = srrPeSelectedField.label;
+        var record = srrState.currentRecord;
+        var currentValue = record ? record[fieldKey] : '';
+        
+        console.log('[SRR] Patch type chip action:', newType, 'on field:', fieldKey);
+        
+        if (newType === 'rfi') {
+          // Same as srrRfiField
+          srrState.rfiField = { key: fieldKey, label: fieldLabel, value: currentValue };
+          srrState.fieldStates[fieldKey] = 'rfi_pending';
+          showToast('RFI started for: ' + fieldLabel, 'info');
+        } else if (newType === 'blacklist') {
+          // Same as srrBlacklistField
+          srrState.fieldStates[fieldKey] = 'blocked';
+          srrState.patchDraft.blacklist_subject = fieldLabel + ': ' + (currentValue || '(empty)');
+          var subjectEl = document.getElementById('srr-blacklist-subject-value');
+          if (subjectEl) {
+            subjectEl.textContent = fieldLabel + ': ' + (currentValue || '(empty)');
+          }
+          showToast('Blacklist flag set for: ' + fieldLabel, 'info');
+        } else if (newType === 'correction') {
+          // Set up for correction / edit mode
+          if (!srrState.proposedChanges[fieldKey]) {
+            srrState.proposedChanges[fieldKey] = {
+              field: fieldKey,
+              label: fieldLabel,
+              from: currentValue,
+              to: currentValue,
+              category: 'correction'
+            };
+          }
+          srrState.fieldStates[fieldKey] = 'modified';
+          showToast('Correction mode for: ' + fieldLabel, 'info');
+        }
+        
+        // Refresh Field Inspector
+        renderSrrFields(srrState.currentRecord);
+      }
+      
+      // Update patch type state
       srrState.patchType = newType;
       srrState.patchDraft.patch_type = newType;
       srrUpdatePatchFormSections();
+      srrRenderPatchEditor();
       srrSaveEvidenceDraft();
       console.log('[SRR] Patch type changed to:', newType);
     }
