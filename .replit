@@ -67,7 +67,6 @@ outputType = "console"
 
 [deployment]
 deploymentTarget = "autoscale"
-publicDir = "ui/viewer"
 run = ["python", "-m", "http.server", "5000", "--directory", "ui/viewer"]
 
 [[ports]]
