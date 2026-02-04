@@ -1,0 +1,82 @@
+Replit Task: Fill Missing SRR Handoff Documentation (Shared Store, record_id, queues, debug)
+
+Please update documentation to fill all gaps listed in srr-handoff-status.md (“What is Missing”). Keep updates concise and consistent with the current implementation.
+
+1) Shared PatchRequest Store
+Add a new section (or update existing) describing:
+
+PATCH_REQUEST_STORE / pr: prefix usage
+Shared across roles (Analyst/Verifier/Admin)
+Single source of truth for reviewer hydration
+Canonical storage key format
+Which actions create/update PatchRequest
+Suggested placement:
+HANDOFF.md or new section in STATUS.md
+
+2) record_id Routing Strategy
+Document:
+
+Why row index is not allowed
+record_id generation (hash‑based)
+Canonical fingerprint formula
+Difference between system record_id and external IDs
+Suggested placement:
+single_row_review_view.md or overview.md
+
+3) Verifier SRR Hydration
+Document:
+
+Required lookup sequence:
+patch_request_id → record_id → record
+Blocking error behavior if patch missing
+Reader‑only row inspector + patch inspector
+Suggested placement:
+verifier_review_view.md
+
+4) Queue Item Schema
+Document required queue fields:
+
+dataset_id
+record_id
+patch_request_id
+division_id
+queue_item_id, role, assigned_to_user_id, status
+Suggested placement:
+HANDOFF.md or verifier.md
+
+5) UUID Alias Capture
+Document:
+
+RFC4122 regex detection
+Storage in _identity.aliases[]
+Aliases not used as record_id
+Future Truth Config promotion path
+Suggested placement:
+overview.md or single_row_review_view.md
+
+6) Artifact Store Integration
+Document:
+
+LocalStorage mock filesystem layout
+Artifact ID generation logic
+Event log usage
+Suggested placement:
+HANDOFF.md or INTERFACES.md
+
+7) Debug Panel
+Document:
+
+?debug=1 URL param
+What fields are shown (role, tenant_id, dataset_id, record_id, patch_request_id, storage keys)
+Suggested placement:
+verifier_review_view.md (or STATUS.md)
+
+Acceptance
+All missing items are addressed in docs.
+“What is Missing” list can be closed or updated with links.
+Updates are concise and cross‑linked in INDEX.md if necessary.
+Suggested commit: docs: fill srr handoff gaps
+
+If you want, I can also pin exact file locations and headings based on your preferred doc structure.
+
+

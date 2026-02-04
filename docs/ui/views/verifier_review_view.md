@@ -2,12 +2,91 @@
 
 > Review surface for evaluating submitted Patch Requests, requesting clarification, and approving/rejecting.
 
+## Recent Changes (v1.5.2)
+
+- **SRR Hydration Refactor**: Loads PatchRequest by `patch_request_id` first, then record by `record_id`
+- **Blocking Error UI**: Shows exact storage key when PatchRequest not found
+- **Debug Panel**: `?debug=1` URL param shows traceability info
+
 ## Recent Changes (v1.5.0)
 
 - **Verifier Triage Integration**: Clicking a row in Verifier Triage opens the Verifier Review detail view
 - **Payload Data Display**: Review fields populated from localStorage verifier queue (not sample data)
 - **Back Navigation**: Returns to Verifier Triage (triage page in Reviewer mode)
 - **Status Mapping**: Payload statuses (pending, needs_clarification, sent_to_admin, resolved) map to review states
+
+---
+
+## SRR Hydration Sequence (v1.5.2)
+
+When opening a queue item for review, the system follows a strict lookup sequence:
+
+### Step 1: Load PatchRequest
+```
+patch_request_id → PATCH_REQUEST_STORE.get("pr:{patch_request_id}")
+```
+- **If found**: Proceed to Step 2
+- **If not found**: Show blocking error UI with storage key
+
+### Step 2: Load Record
+```
+record_id → workbook.sheets[*].rows.find(r => r.record_id === record_id)
+```
+- Searches all sheets for matching `record_id`
+- Falls back to `_identity.record_id` if top-level missing
+- Legacy fallback: `contract_key` (deprecated)
+
+### Step 3: Bind SRR Context
+```javascript
+srrState.currentRecordId = record_id;
+srrState.currentPatchRequestId = patch_request_id;
+srrState.currentPatchRequest = patchRequest;
+```
+
+### Blocking Error Behavior
+If PatchRequest not found, SRR displays:
+- Red error banner: "PatchRequest not found"
+- Storage key attempted: `pr:{patch_request_id}`
+- No record data loaded (prevents stale binding)
+
+### Read-Only Mode
+When opened by Verifier/Admin:
+- Field Inspector: Read-only (no edit actions)
+- Patch Editor: Read-only (displays `proposed_changes`, `evidence_pack`)
+- Actions available: Approve, Reject, Request Clarification
+
+---
+
+## Debug Panel (v1.5.2)
+
+A collapsible debug panel is available for traceability during development and troubleshooting.
+
+### Activation
+Add `?debug=1` to the URL:
+```
+/ui/viewer/index.html?debug=1
+```
+
+### Displayed Fields
+
+| Field | Description |
+|-------|-------------|
+| Role | Current user role (Analyst/Reviewer/Admin) |
+| tenant_id | Active tenant context |
+| division_id | Active division context |
+| dataset_id | Current dataset identifier |
+| record_id | Current record identifier |
+| patch_request_id | Current patch request identifier |
+| Storage Keys | localStorage keys with load status |
+
+### Load Status Indicators
+- **Green checkmark**: Successfully loaded from storage
+- **Red X**: Not found in storage
+
+### Usage
+- Debug panel is hidden by default (production)
+- Only visible when `?debug=1` is in URL
+- Does not affect application behavior
 
 ## Implementation Status (v1.5.0)
 

@@ -121,3 +121,54 @@ Determinism
 Primary: contract_key → Fallback: file_url → Last resort: file_name
 - Never fabricate identifiers.
 - If joins fail, preview must surface the gap rather than guessing.
+
+---
+
+## Artifact Store (v1.5.2)
+
+LocalStorage-backed mock filesystem for artifacts, events, and threads.
+
+### Storage Layout
+
+| Prefix | Content | Example Key |
+|--------|---------|-------------|
+| `art:` | Artifact objects | `art:art_ds1_rec123_field_2026...` |
+| `pr:` | PatchRequest objects | `pr:pr_1234567890` |
+| `evt:` | Event log entries | `evt:evt_2026-02-04T...` |
+| `thr:` | Thread messages | `thr:thr_art_ds1_rec123...` |
+
+### Artifact ID Generation
+
+Deterministic artifact ID formula:
+```
+artifact_id = "art_" + dataset_id + "_" + record_id + "_" + field_key + "_" + timestamp
+```
+
+- `dataset_id`: Source dataset identifier
+- `record_id`: Stable record hash
+- `field_key`: Affected field name
+- `timestamp`: ISO 8601 creation time
+
+### Thread ID Generation
+```
+thread_id = "thr_" + artifact_id
+```
+
+### Event Log
+
+Events are appended to localStorage with `evt:` prefix:
+
+| Event Type | Trigger |
+|------------|---------|
+| `artifact_created` | New artifact stored |
+| `artifact_updated` | Artifact status changed |
+| `thread_message` | Comment added to thread |
+| `status_transition` | Review state changed |
+
+### Environment Scoping
+
+Artifacts are scoped by:
+- `workspace_id`: Current workspace context
+- `environment`: `development` or `production`
+
+Playground mode uses `environment: "playground"` for isolated testing.

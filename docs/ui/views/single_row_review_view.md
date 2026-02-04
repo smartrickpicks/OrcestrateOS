@@ -8,6 +8,12 @@ Contract: This document defines the record-level inspection surface. It supports
 >
 > The user-facing label "Record Inspection" appears in the UI header and navigation. All internal tokens, routes, specs, and audit logs retain the canonical name `single_row_review`.
 
+## Recent Changes (v1.5.2)
+
+- **Record Identity Model**: Stable `record_id` via hash-based generation; no row-index lookups
+- **UUID Alias Capture**: RFC4122 UUIDs auto-detected during import and stored in `_identity.aliases[]`
+- **Shared PatchRequest Store**: PatchRequests stored in `PATCH_REQUEST_STORE` for cross-role hydration
+
 ## Recent Changes (v1.5.0)
 
 - **Field Inspector State Model**: Updated to 6-state model (todo, verified, modified, submitted, rfi, blocked)
@@ -15,6 +21,60 @@ Contract: This document defines the record-level inspection surface. It supports
 - **Patch Editor Reset**: Form automatically clears after payload submission to prevent carry-over
 - **Verifier Payload Wiring**: RFI, Correction, and Blacklist submissions create payloads for Verifier queue
 - **State Badge Colors**: Green (verified), Blue (modified/submitted), Orange (rfi), Red (blocked)
+
+---
+
+## Record Identity Model (v1.5.2)
+
+### Why Row Index Is Not Allowed
+Row-index-based lookups (`sheet:rowIndex`) break when:
+- User sorts the grid
+- User filters the grid
+- Rows are added/removed
+
+### Stable record_id Generation
+```
+record_id = hash(tenant_id + dataset_id + canonicalizeRowForFingerprint(row))
+```
+
+**Fingerprint Formula:**
+1. Sort row keys alphabetically
+2. Concatenate `key=value` pairs (skip `_identity`, `record_id`)
+3. Prepend `tenant_id` and `dataset_id`
+4. Apply deterministic hash (djb2 or similar)
+
+### System vs External IDs
+| ID Type | Source | Usage |
+|---------|--------|-------|
+| `record_id` | System-generated hash | Primary record key for all lookups |
+| `_identity.aliases[]` | Extracted from row data | External UUIDs for cross-system matching |
+| `contract_key` | Legacy field | Fallback only; deprecated for routing |
+
+---
+
+## UUID Alias Capture (v1.5.2)
+
+### Detection
+During import, `extractUuidAliases()` scans all row values for RFC4122 UUIDs:
+```
+/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+```
+
+### Storage
+Detected UUIDs are stored in `row._identity.aliases[]`:
+```json
+{
+  "_identity": {
+    "record_id": "rec_abc123",
+    "aliases": ["550e8400-e29b-41d4-a716-446655440000", "6ba7b810-9dad-11d1-80b4-00c04fd430c8"]
+  }
+}
+```
+
+### Usage
+- Aliases are **not** used as `record_id` (hash is authoritative)
+- Aliases enable future Truth Config promotion (match external system IDs)
+- Aliases are read-only after import
 
 ## Purpose
 - Provide authoritative, per-record context: baseline values, deltas, flags, evidence, and audit trail.

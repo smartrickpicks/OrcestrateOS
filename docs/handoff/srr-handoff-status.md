@@ -22,17 +22,17 @@
 | Gate ownership mapping | `docs/ui/gate_view_mapping.md` | Complete |
 | State transitions per role | `docs/ui/ui_principles.md` | Complete |
 
-### What is Missing
+### What Was Missing (Now Addressed)
 
-| Topic | Gap | Priority |
-|-------|-----|----------|
-| Shared PatchRequest store | No doc on `PATCH_REQUEST_STORE` (`pr:` prefix) and cross-role hydration | High |
-| record_id routing strategy | No doc on stable `record_id` generation (hash-based) vs legacy `contract_key` | High |
-| UUID alias capture | No doc on RFC4122 regex detection and `_identity.aliases[]` storage | Medium |
-| Debug panel | No doc on `?debug=1` URL param and traceability features | Low |
-| Verifier SRR hydration | No doc on `patch_request_id → record_id` lookup sequence | High |
-| Artifact Store integration | Limited doc on localStorage filesystem and artifact ID generation | Medium |
-| Queue item schema | No doc on required fields: `dataset_id`, `record_id`, `patch_request_id`, `division_id` | High |
+| Topic | Status | Location |
+|-------|--------|----------|
+| Shared PatchRequest store | Documented | [HANDOFF.md](./HANDOFF.md#shared-patchrequest-store-v152) |
+| record_id routing strategy | Documented | [single_row_review_view.md](../ui/views/single_row_review_view.md#record-identity-model-v152) |
+| UUID alias capture | Documented | [single_row_review_view.md](../ui/views/single_row_review_view.md#uuid-alias-capture-v152) |
+| Debug panel | Documented | [verifier_review_view.md](../ui/views/verifier_review_view.md#debug-panel-v152) |
+| Verifier SRR hydration | Documented | [verifier_review_view.md](../ui/views/verifier_review_view.md#srr-hydration-sequence-v152) |
+| Artifact Store integration | Documented | [INTERFACES.md](../INTERFACES.md#artifact-store-v152) |
+| Queue item schema | Documented | [HANDOFF.md](./HANDOFF.md#queue-item-schema-v152) |
 
 ### What Was Updated in Latest Iteration
 
