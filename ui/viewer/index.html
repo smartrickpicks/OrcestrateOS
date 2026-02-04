@@ -1452,6 +1452,7 @@
               <label style="font-size: 0.85em; color: #666; font-weight: 600;">Division:</label>
               <select id="reviewer-filter-division" class="filter-select" style="min-width: 140px;" onchange="onReviewerFilterChange()">
                 <option value="">All Divisions</option>
+                <option value="__unassigned__">Unassigned</option>
               </select>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -1465,6 +1466,14 @@
               </select>
             </div>
             <span id="reviewer-filter-count" style="font-size: 0.85em; color: #666; margin-left: auto;"></span>
+          </div>
+          
+          <!-- v1.5.3: Patch Type tabs (Corrections, Blacklist, RFI) -->
+          <div class="patch-type-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">
+            <div class="pt-tab active" data-ptype="" onclick="setReviewerPatchType('')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0;">All Types <span id="pt-count-all">(0)</span></div>
+            <div class="pt-tab" data-ptype="correction" onclick="setReviewerPatchType('correction')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #f5f5f5; color: #333; border: 1px solid #ddd;">Corrections <span id="pt-count-correction">(0)</span></div>
+            <div class="pt-tab" data-ptype="blacklist" onclick="setReviewerPatchType('blacklist')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #f5f5f5; color: #333; border: 1px solid #ddd;">Blacklist <span id="pt-count-blacklist">(0)</span></div>
+            <div class="pt-tab" data-ptype="rfi" onclick="setReviewerPatchType('rfi')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #f5f5f5; color: #333; border: 1px solid #ddd;">RFI <span id="pt-count-rfi">(0)</span></div>
           </div>
           
           <div class="verifier-tabs" style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
@@ -7466,6 +7475,12 @@
       // Loader is now a drawer, not a page - redirect loader requests to triage
       if (page === 'loader') page = 'triage';
       var pages = ['triage', 'grid', 'patch', 'review', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'row'];
+      
+      // v1.5.3: Reset reviewer SRR mode when navigating away from row page
+      if (!page.startsWith('row') && srrState.reviewerMode) {
+        resetReviewerSRRMode();
+      }
+      
       // Handle row/:id routes
       // v1.4.16: Validate rowId - reject undefined/NaN/empty
       if (page.startsWith('row/')) {
@@ -8509,10 +8524,10 @@
         // Refresh prStatusMap for accurate filtering
         renderReviewerGrid();
         
-        // Filter by division if set
+        // Filter by division if set (uses matchesDivisionFilter for Unassigned support)
         if (reviewerFilterState.division) {
           filtered = filtered.filter(function(r) {
-            return r.division_id === reviewerFilterState.division;
+            return matchesDivisionFilter(r);
           });
         }
         
@@ -8989,6 +9004,11 @@
       
       // Load PDF for this record (v1.4.10)
       srrLoadPdfForRecord(record);
+      
+      // v1.5.3: Initialize Reviewer SRR mode if applicable
+      if (srrState.reviewerMode) {
+        initReviewerSRRMode();
+      }
     }
     
     function renderSrrFields(record) {
@@ -11010,7 +11030,8 @@
     // v1.5.2: Reviewer filter state with persistence
     var reviewerFilterState = {
       division: localStorage.getItem('reviewer_filter_division') || '',
-      status: localStorage.getItem('reviewer_filter_status') || ''
+      status: localStorage.getItem('reviewer_filter_status') || '',
+      patchType: localStorage.getItem('reviewer_filter_patchtype') || ''
     };
     
     function onReviewerFilterChange() {
@@ -11035,23 +11056,61 @@
       console.log('[Reviewer] Filter changed:', reviewerFilterState);
     }
     
+    function setReviewerPatchType(ptype) {
+      reviewerFilterState.patchType = ptype;
+      localStorage.setItem('reviewer_filter_patchtype', ptype);
+      
+      // Update tab styling
+      document.querySelectorAll('.pt-tab').forEach(function(tab) {
+        var tabPtype = tab.getAttribute('data-ptype');
+        if (tabPtype === ptype) {
+          tab.style.background = '#e3f2fd';
+          tab.style.color = '#1565c0';
+          tab.style.border = '1px solid #1565c0';
+        } else {
+          tab.style.background = '#f5f5f5';
+          tab.style.color = '#333';
+          tab.style.border = '1px solid #ddd';
+        }
+      });
+      
+      renderVerifierTriage();
+      console.log('[Reviewer] Patch type changed:', ptype);
+    }
+    
     function initReviewerFilters() {
       // Populate division dropdown from PatchRequest store
       var divisions = new Set();
+      var hasUnassigned = false;
       var allPRs = PATCH_REQUEST_STORE.list();
       
       allPRs.forEach(function(pr) {
-        if (pr.division_id) divisions.add(pr.division_id);
+        if (pr.division_id) {
+          divisions.add(pr.division_id);
+        } else {
+          hasUnassigned = true;
+        }
       });
       
       // Also scan verifier queue payloads
       verifierQueueState.payloads.forEach(function(p) {
-        if (p.division_id) divisions.add(p.division_id);
+        if (p.division_id) {
+          divisions.add(p.division_id);
+        } else {
+          hasUnassigned = true;
+        }
       });
       
       var divisionEl = document.getElementById('reviewer-filter-division');
       if (divisionEl) {
         divisionEl.innerHTML = '<option value="">All Divisions</option>';
+        // Add Unassigned option if there are items without division_id
+        if (hasUnassigned) {
+          var unassignedOpt = document.createElement('option');
+          unassignedOpt.value = '__unassigned__';
+          unassignedOpt.textContent = 'Unassigned';
+          divisionEl.appendChild(unassignedOpt);
+        }
         Array.from(divisions).sort().forEach(function(div) {
           var opt = document.createElement('option');
           opt.value = div;
@@ -11068,26 +11127,69 @@
         statusEl.value = reviewerFilterState.status;
       }
       
+      // Restore patch type tab styling
+      if (reviewerFilterState.patchType) {
+        setReviewerPatchType(reviewerFilterState.patchType);
+      } else {
+        updatePatchTypeCounts();
+      }
+      
       // Also init grid filter dropdowns
       initReviewerGridFilters();
+    }
+    
+    function updatePatchTypeCounts() {
+      var counts = { all: 0, correction: 0, blacklist: 0, rfi: 0 };
+      verifierQueueState.payloads.forEach(function(p) {
+        counts.all++;
+        if (p.type === 'correction') counts.correction++;
+        else if (p.type === 'blacklist') counts.blacklist++;
+        else if (p.type === 'rfi') counts.rfi++;
+      });
+      
+      var allEl = document.getElementById('pt-count-all');
+      var corrEl = document.getElementById('pt-count-correction');
+      var blEl = document.getElementById('pt-count-blacklist');
+      var rfiEl = document.getElementById('pt-count-rfi');
+      
+      if (allEl) allEl.textContent = '(' + counts.all + ')';
+      if (corrEl) corrEl.textContent = '(' + counts.correction + ')';
+      if (blEl) blEl.textContent = '(' + counts.blacklist + ')';
+      if (rfiEl) rfiEl.textContent = '(' + counts.rfi + ')';
     }
     
     function initReviewerGridFilters() {
       // Populate grid division dropdown (same data as triage)
       var divisions = new Set();
+      var hasUnassigned = false;
       var allPRs = PATCH_REQUEST_STORE.list();
       
       allPRs.forEach(function(pr) {
-        if (pr.division_id) divisions.add(pr.division_id);
+        if (pr.division_id) {
+          divisions.add(pr.division_id);
+        } else {
+          hasUnassigned = true;
+        }
       });
       
       verifierQueueState.payloads.forEach(function(p) {
-        if (p.division_id) divisions.add(p.division_id);
+        if (p.division_id) {
+          divisions.add(p.division_id);
+        } else {
+          hasUnassigned = true;
+        }
       });
       
       var divisionEl = document.getElementById('reviewer-grid-filter-division');
       if (divisionEl) {
         divisionEl.innerHTML = '<option value="">All Divisions</option>';
+        // Add Unassigned option if there are items without division_id
+        if (hasUnassigned) {
+          var unassignedOpt = document.createElement('option');
+          unassignedOpt.value = '__unassigned__';
+          unassignedOpt.textContent = 'Unassigned';
+          divisionEl.appendChild(unassignedOpt);
+        }
         Array.from(divisions).sort().forEach(function(div) {
           var opt = document.createElement('option');
           opt.value = div;
@@ -11241,21 +11343,34 @@
       renderVerifierTriage();
     }
 
+    function matchesDivisionFilter(item) {
+      // Helper to check if item matches division filter, handling Unassigned
+      if (!reviewerFilterState.division) return true;
+      if (reviewerFilterState.division === '__unassigned__') {
+        return !item.division_id;
+      }
+      return item.division_id === reviewerFilterState.division;
+    }
+    
     function renderVerifierTriage() {
       const container = document.getElementById('verifier-queue-list');
       if (!container) return;
 
       const queue = verifierQueueState.activeQueue;
       
-      // v1.5.2: Apply division + status filters
+      // Update patch type counts first
+      updatePatchTypeCounts();
+      
+      // v1.5.3: Apply division + status + patchType filters
       var filtered = verifierQueueState.payloads.filter(function(p) {
         // Filter by queue tab first
         if (p.status !== queue) return false;
         
-        // Apply division filter
-        if (reviewerFilterState.division && p.division_id !== reviewerFilterState.division) {
-          return false;
-        }
+        // Apply division filter (handles Unassigned)
+        if (!matchesDivisionFilter(p)) return false;
+        
+        // Apply patch type filter
+        if (reviewerFilterState.patchType && p.type !== reviewerFilterState.patchType) return false;
         
         return true;
       });
@@ -11264,7 +11379,8 @@
       if (reviewerFilterState.status) {
         filtered = verifierQueueState.payloads.filter(function(p) {
           if (p.status !== reviewerFilterState.status) return false;
-          if (reviewerFilterState.division && p.division_id !== reviewerFilterState.division) return false;
+          if (!matchesDivisionFilter(p)) return false;
+          if (reviewerFilterState.patchType && p.type !== reviewerFilterState.patchType) return false;
           return true;
         });
       }
@@ -11282,7 +11398,7 @@
       var filterCountEl = document.getElementById('reviewer-filter-count');
       if (filterCountEl) {
         var queueCount = verifierQueueState.payloads.filter(function(p) { return p.status === queue; }).length;
-        if (reviewerFilterState.division || reviewerFilterState.status) {
+        if (reviewerFilterState.division || reviewerFilterState.status || reviewerFilterState.patchType) {
           filterCountEl.textContent = filtered.length + ' of ' + queueCount + ' items (filtered)';
         } else {
           filterCountEl.textContent = queueCount + ' items';
@@ -11291,7 +11407,7 @@
 
       if (filtered.length === 0) {
         var msg = 'No reviewer items match the selected filters.';
-        if (!reviewerFilterState.division && !reviewerFilterState.status) {
+        if (!reviewerFilterState.division && !reviewerFilterState.status && !reviewerFilterState.patchType) {
           msg = 'No payloads in this queue';
         }
         container.innerHTML = '<tr><td colspan="7" style="padding: 40px; text-align: center; color: #999;">' + msg + '</td></tr>';
@@ -11386,20 +11502,21 @@
     }
     
     function openRecordFromPayload(payloadId) {
-      // v1.5.1: Try artifact store first, then legacy payload
+      // v1.5.3: Open record in Reviewer SRR mode with patch context
       var artifact = getArtifact(payloadId);
+      var payload = verifierQueueState.payloads.find(function(p) { return p.id === payloadId; });
       var recordId = null;
       var fieldKey = null;
+      var patchType = null;
       
       if (artifact) {
         recordId = artifact.record_id;
         fieldKey = artifact.field_key;
-      } else {
-        var payload = verifierQueueState.payloads.find(function(p) { return p.id === payloadId; });
-        if (payload) {
-          recordId = payload.record_id;
-          fieldKey = payload.field;
-        }
+        patchType = artifact.type || 'correction';
+      } else if (payload) {
+        recordId = payload.record_id;
+        fieldKey = payload.field;
+        patchType = payload.type || 'correction';
       }
       
       if (recordId) {
@@ -11407,14 +11524,242 @@
         if (recordInfo) {
           srrState.currentSheetName = recordInfo.sheetName;
           srrState.focusFieldKey = fieldKey || null;
+          
+          // v1.5.3: Set reviewer SRR mode with patch context
+          srrState.reviewerMode = true;
+          srrState.reviewerPayload = payload || artifact;
+          srrState.reviewerPatchType = patchType;
+          srrState.reviewerPayloadId = payloadId;
+          
           navigateTo('row/' + recordInfo.rowIndex);
-          console.log('[ArtifactStore] Opened record by ID:', recordId, 'field:', fieldKey);
+          console.log('[Reviewer SRR] Opened record:', recordId, 'patchType:', patchType, 'field:', fieldKey);
         } else {
           showToast('Record not found in dataset', 'warning');
         }
       } else {
         showToast('No record linked to this payload', 'info');
       }
+    }
+    
+    function initReviewerSRRMode() {
+      // v1.5.3: Initialize Reviewer SRR mode with read-only field inspector and Patch Review/Tester tabs
+      if (!srrState.reviewerMode) return;
+      
+      // Set read-only flag to prevent field editing
+      srrState.isReadOnly = true;
+      
+      var patchType = srrState.reviewerPatchType || 'correction';
+      var payload = srrState.reviewerPayload;
+      
+      // Update right panel title and tabs
+      var panelTitle = document.getElementById('srr-right-panel-title');
+      var panelTabs = document.getElementById('srr-panel-tabs');
+      
+      if (panelTitle) panelTitle.textContent = 'Patch Review';
+      
+      if (panelTabs) {
+        // Show tabs for Correction/Blacklist, hide for RFI
+        if (patchType === 'rfi') {
+          panelTabs.style.display = 'none';
+        } else {
+          panelTabs.style.display = 'flex';
+          // Update tab labels for reviewer mode
+          var tabBtns = panelTabs.querySelectorAll('.srr-panel-tab');
+          tabBtns.forEach(function(btn) {
+            if (btn.getAttribute('data-tab') === 'editor') {
+              btn.textContent = 'Patch Review';
+            }
+          });
+        }
+      }
+      
+      // Hide patch type chips (read-only mode)
+      var patchTypeSelector = document.querySelector('.srr-patch-type-selector');
+      if (patchTypeSelector) patchTypeSelector.style.display = 'none';
+      
+      // Populate Patch Review tab with submitted patch data
+      populateReviewerPatchReview(payload, patchType);
+      
+      // Populate Patch Tester if applicable
+      if (patchType !== 'rfi' && payload) {
+        populateReviewerPatchTester(payload);
+      }
+      
+      // For RFI, show comment thread instead of patch editor
+      if (patchType === 'rfi') {
+        showRFICommentThread(payload);
+      }
+      
+      console.log('[Reviewer SRR] Mode initialized for patch type:', patchType);
+    }
+    
+    function populateReviewerPatchReview(payload, patchType) {
+      // v1.5.3: Populate the Patch Review (read-only) view with analyst's submitted patch
+      var container = document.getElementById('srr-patch-editor-fields');
+      if (!container || !payload) return;
+      
+      var typeLabel = (patchType || 'correction').toUpperCase();
+      var typeColor = patchType === 'rfi' ? '#ff9800' : (patchType === 'blacklist' ? '#d32f2f' : '#1565c0');
+      
+      var html = '<div style="margin-bottom: 16px; padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid ' + typeColor + ';">';
+      html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">';
+      html += '<span style="font-weight: 600;">Submitted Patch</span>';
+      html += '<span style="background: ' + typeColor + '; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75em;">' + typeLabel + '</span>';
+      html += '</div>';
+      
+      // Field being modified
+      html += '<div style="margin-bottom: 8px;">';
+      html += '<span style="font-size: 0.75em; color: #888;">Field:</span> ';
+      html += '<span style="font-family: monospace; font-weight: 500;">' + (payload.field || '—') + '</span>';
+      html += '</div>';
+      
+      // Old value
+      if (payload.old_value !== undefined) {
+        html += '<div style="margin-bottom: 8px;">';
+        html += '<span style="font-size: 0.75em; color: #888;">Current Value:</span> ';
+        html += '<span style="color: #888; text-decoration: line-through;">' + (payload.old_value || '(empty)') + '</span>';
+        html += '</div>';
+      }
+      
+      // New value (for Correction/Blacklist)
+      if (patchType !== 'rfi' && payload.new_value !== undefined) {
+        html += '<div style="margin-bottom: 8px;">';
+        html += '<span style="font-size: 0.75em; color: #888;">Proposed Value:</span> ';
+        html += '<span style="color: #2e7d32; font-weight: 600;">' + (payload.new_value || '(empty)') + '</span>';
+        html += '</div>';
+      }
+      
+      // Comment/Justification
+      if (payload.comment) {
+        html += '<div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ddd;">';
+        html += '<span style="font-size: 0.75em; color: #888;">Analyst Comment:</span>';
+        html += '<div style="margin-top: 4px; font-size: 0.9em; color: #555; font-style: italic;">"' + payload.comment + '"</div>';
+        html += '</div>';
+      }
+      
+      html += '</div>';
+      
+      // Add read-only indicator
+      html += '<div style="text-align: center; color: #888; font-size: 0.8em; padding: 12px; background: #f5f5f5; border-radius: 6px;">';
+      html += '<span style="margin-right: 6px;">👁</span> Read-only view — Use Patch Tester tab to modify';
+      html += '</div>';
+      
+      container.innerHTML = html;
+      
+      // Hide change count and action box title for reviewer mode
+      var changeCount = document.getElementById('srr-change-count');
+      var actionBoxTitle = document.getElementById('srr-action-box-title');
+      if (changeCount) changeCount.style.display = 'none';
+      if (actionBoxTitle) actionBoxTitle.textContent = 'Submitted Patch';
+    }
+    
+    function populateReviewerPatchTester(payload) {
+      // v1.5.3: Pre-populate Patch Tester with payload data
+      var fieldEl = document.getElementById('srr-tester-field');
+      var oldEl = document.getElementById('srr-tester-old-value');
+      var proposedEl = document.getElementById('srr-tester-proposed-value');
+      var newValueInput = document.getElementById('srr-tester-new-value');
+      
+      if (fieldEl) fieldEl.textContent = payload.field || '—';
+      if (oldEl) oldEl.textContent = payload.old_value || '(empty)';
+      if (proposedEl) proposedEl.textContent = payload.new_value || '(empty)';
+      if (newValueInput) newValueInput.value = payload.new_value || '';
+    }
+    
+    function showRFICommentThread(payload) {
+      // v1.5.3: For RFI type, show comment thread instead of Patch Tester
+      var editorTab = document.getElementById('srr-tab-editor');
+      if (!editorTab) return;
+      
+      // Replace editor content with RFI comment thread
+      var rfiHtml = '<div style="margin-bottom: 16px; padding: 12px; background: #fff3e0; border-radius: 8px; border-left: 4px solid #ff9800;">';
+      rfiHtml += '<div style="font-weight: 600; margin-bottom: 8px; color: #e65100;">Request for Information</div>';
+      rfiHtml += '<div style="margin-bottom: 8px;">';
+      rfiHtml += '<span style="font-size: 0.75em; color: #888;">Field:</span> ';
+      rfiHtml += '<span style="font-family: monospace;">' + (payload.field || '—') + '</span>';
+      rfiHtml += '</div>';
+      rfiHtml += '<div style="margin-bottom: 8px;">';
+      rfiHtml += '<span style="font-size: 0.75em; color: #888;">Current Value:</span> ';
+      rfiHtml += '<span>' + (payload.old_value || '(empty)') + '</span>';
+      rfiHtml += '</div>';
+      rfiHtml += '<div style="font-style: italic; color: #666;">"' + (payload.comment || 'No question provided') + '"</div>';
+      rfiHtml += '</div>';
+      
+      // Comment thread section
+      rfiHtml += '<div style="font-size: 0.85em; font-weight: 600; margin-bottom: 12px;">Comment Thread</div>';
+      rfiHtml += '<div id="srr-rfi-thread" style="background: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 16px; min-height: 100px;">';
+      rfiHtml += '<div style="color: #888; font-size: 0.85em; text-align: center; padding: 20px;">No responses yet</div>';
+      rfiHtml += '</div>';
+      
+      // Reply input
+      rfiHtml += '<div style="margin-bottom: 16px;">';
+      rfiHtml += '<textarea id="srr-rfi-reply" placeholder="Add a response to this RFI..." style="width: 100%; min-height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"></textarea>';
+      rfiHtml += '</div>';
+      
+      rfiHtml += '<button class="srr-btn srr-btn-primary" style="width: 100%;" onclick="srrReplyToRFI()">Send Response</button>';
+      
+      // Update the container
+      var container = document.getElementById('srr-patch-editor-fields');
+      if (container) {
+        container.innerHTML = rfiHtml;
+      }
+      
+      // Hide evidence pack sections for RFI
+      ['srr-observation-block', 'srr-expected-block', 'srr-repro-block'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+    }
+    
+    function srrReplyToRFI() {
+      var replyInput = document.getElementById('srr-rfi-reply');
+      if (!replyInput || !replyInput.value.trim()) {
+        showToast('Please enter a response', 'warning');
+        return;
+      }
+      
+      showToast('Response sent to analyst', 'success');
+      replyInput.value = '';
+    }
+    
+    function resetReviewerSRRMode() {
+      // v1.5.3: Reset SRR to analyst mode when leaving reviewer context
+      srrState.reviewerMode = false;
+      srrState.reviewerPayload = null;
+      srrState.reviewerPatchType = null;
+      srrState.reviewerPayloadId = null;
+      srrState.isReadOnly = false;  // Restore editing capability
+      
+      // Restore panel title and tabs
+      var panelTitle = document.getElementById('srr-right-panel-title');
+      var panelTabs = document.getElementById('srr-panel-tabs');
+      
+      if (panelTitle) panelTitle.textContent = 'Patch Editor';
+      if (panelTabs) {
+        panelTabs.style.display = 'none';
+        var tabBtns = panelTabs.querySelectorAll('.srr-panel-tab');
+        tabBtns.forEach(function(btn) {
+          if (btn.getAttribute('data-tab') === 'editor') {
+            btn.textContent = 'Editor';
+          }
+        });
+      }
+      
+      // Restore patch type chips
+      var patchTypeSelector = document.querySelector('.srr-patch-type-selector');
+      if (patchTypeSelector) patchTypeSelector.style.display = '';
+      
+      // Restore evidence pack sections
+      ['srr-observation-block', 'srr-expected-block', 'srr-repro-block'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = '';
+      });
+      
+      // Restore change count
+      var changeCount = document.getElementById('srr-change-count');
+      var actionBoxTitle = document.getElementById('srr-action-box-title');
+      if (changeCount) changeCount.style.display = '';
+      if (actionBoxTitle) actionBoxTitle.textContent = 'Changed Fields';
     }
 
     // ========== VERIFIER REVIEW STATE + FUNCTIONS (v1.4.5) ==========

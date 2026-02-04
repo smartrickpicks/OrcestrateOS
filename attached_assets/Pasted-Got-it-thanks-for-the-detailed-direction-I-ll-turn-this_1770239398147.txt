@@ -1,0 +1,74 @@
+Got it — thanks for the detailed direction. I’ll turn this into a **single Riplet task** that covers:
+
+- Division = **Unassigned** bucket
+- Reviewer Triage **grouped by patch type** (tabs or cards)
+- Verifier workflow: **open record → reviewer SRR** with left Field Inspector and right Patch Review + Patch Tester tabs
+- Ensure **Open Record** from Verifier Review navigates to this reviewer SRR (read‑only + patch context)
+
+Here’s the consolidated task:
+
+---
+
+**Replit Task: Reviewer Workflow Enhancements (Unassigned Division + Type Tabs + Reviewer SRR View)**
+
+Please update `ui/viewer/index.html` to improve the **Reviewer/Verifier flow** and triage layout.
+
+---
+
+## 1) Division Filter — Unassigned Bucket
+- If `division_id` is missing on a PatchRequest, treat it as **“Unassigned”**.
+- Add **“Unassigned”** to the division dropdown.
+- Items without division_id should appear under **Unassigned**, not disappear.
+
+---
+
+## 2) Reviewer Triage: Group by Patch Type
+Add patch‑type grouping on the Reviewer Triage page (in addition to status filter):
+
+- **Tabs or Cards** for patch type:
+  - **Corrections**
+  - **Blacklist**
+  - **RFI**
+- Status filter bar (pending_review, needs_clarification, sent_to_admin, resolved) remains.
+
+Behavior:
+- Selecting a type + status filters the queue list.
+
+---
+
+## 3) Reviewer Record Inspection (SRR) — Verifier Flow
+When a Reviewer clicks a triage row (or “Open Record” from Verifier Review), they should land on a **Reviewer SRR view** that contains:
+
+**Left panel**
+- Field Inspector (read‑only)
+- Shows **all field states** (Verified, RFI, Blocked, Modified, etc.)
+- No edit actions
+
+**Right panel**
+- Patch area with **two tabs**:
+  1. **Patch Review** (shows analyst’s submitted patch, read‑only)
+  2. **Patch Tester** (can adjust and run stub Kiwi test)
+
+**Patch Tester**
+- Only visible for **Correction/Blacklist**
+- For RFI, hide Patch Tester and show comment thread only.
+
+---
+
+## 4) Routing Fixes
+- “Open Record” in Verifier Review must navigate to **Reviewer SRR** (read‑only view).
+- SRR must always hydrate from PatchRequest (`patch_request_id`) + record (`dataset_id + record_id`).
+
+---
+
+## Acceptance
+- Missing division_id items show under **Unassigned**.
+- Reviewer triage can filter by **patch type + status**.
+- Reviewer SRR has left read‑only Field Inspector and right Patch Review + Patch Tester tabs.
+- Open Record from Verifier Review goes to Reviewer SRR with correct patch context.
+
+Suggested commit: `ui(srr): reviewer workflow + type tabs + unassigned division`
+
+---
+
+If you want the triage to show **summary cards** (counts per patch type + status), I can add that too.
