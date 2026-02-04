@@ -1,0 +1,51 @@
+Replit Task: Reviewer SRR Open Failure — Fix PatchRequest ↔ Record Resolution (Local-Only)
+
+Please debug and fix why Reviewer cannot open the SRR from the all‑data grid or triage when a PatchRequest exists. In reviewer mode, clicking a row currently shows “No PatchRequest available” or “record not found.” This must work using the local, shared PatchRequest store (no backend).
+
+Goal
+When an analyst submits a patch (RFI/Correction/Blacklist), the reviewer should always be able to open the SRR from triage and from the grid, and see the correct record + patch payload.
+
+Root issues to fix
+
+Reviewer grid lookup is failing to find PatchRequests for records
+Verifier Review → “Open Record / Single Row Review” uses the wrong patch store and fails to resolve the record
+SRR open path fails if it can’t find the record in the workbook (needs local record store fallback)
+Required Fixes
+
+1) Use the canonical PATCH_REQUEST_STORE everywhere
+Replace any legacy patch store reads (like srr_patch_requests_v1) with PATCH_REQUEST_STORE.
+
+Example: openRecordFromPayload() currently pulls from legacy storage. It must use PATCH_REQUEST_STORE.get(patch_request_id) (or artifact store if only artifact_id exists).
+2) Ensure reviewer grid resolves PatchRequests correctly
+Reviewer grid should map record_id → patch_request_id reliably.
+
+Build the reviewer map from PATCH_REQUEST_STORE.list() (and optionally from artifacts if missing)
+The grid should check record.record_id first, fallback only if necessary to contract_key
+If patch exists but not found, log a debug message showing the missing record_id and the known patch IDs.
+3) Fix SRR open routing to record store fallback
+In reviewer/verifier/admin SRR, when opening with {dataset_id, record_id, patch_request_id}:
+
+Load PatchRequest first
+If record not found in workbook rows, load from local record store:
+{record_id}.json
+Only error if both workbook + record store fail.
+4) Ensure PatchRequest payload includes dataset_id + record_id
+When analyst submits:
+
+PatchRequest must include dataset_id and record_id
+Queue items must carry dataset_id, record_id, patch_request_id, division_id
+If any of those are missing, add them during submit.
+
+5) Add Debug Clarity (temporary)
+When reviewer can’t open:
+
+Show a blocking message that includes
+dataset_id, record_id, patch_request_id, and the storage keys checked.
+Acceptance Tests
+
+Analyst submits patch → reviewer grid row shows patch status and opens SRR
+Verifier Review “Open Single Row Review” works and shows same patch data
+Sorting/filtering grid doesn’t break open behavior
+If record not found, error screen shows exact keys and IDs checked (no silent fail)
+Suggested commit
+fix(srr): reviewer SRR opens via shared patch store + record fallback

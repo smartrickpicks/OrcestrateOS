@@ -11423,8 +11423,19 @@
         // Open Verifier Review with this patch_request_id
         openVerifierReviewDetail(prInfo.patch_request_id);
       } else {
-        // No PatchRequest - show toast and offer to open read-only SRR
-        showToast('No PatchRequest available for this record.', 'info');
+        // No PatchRequest found - provide debug info
+        var debugInfo = 'record_id=' + recordId;
+        var knownRecordIds = window.reviewerPrStatusMap ? Object.keys(window.reviewerPrStatusMap).slice(0, 5) : [];
+        
+        console.warn('[Reviewer] No PatchRequest for record:', recordId, 
+          'Known PRs:', knownRecordIds.length > 0 ? knownRecordIds.join(', ') : 'none');
+        
+        // Show more helpful message
+        if (knownRecordIds.length === 0) {
+          showToast('No PatchRequests loaded. Try loading sample data first.', 'warning');
+        } else {
+          showToast('No PatchRequest found for this record.', 'info');
+        }
       }
     }
 
@@ -11621,21 +11632,36 @@
         patchRequestId = artifact.patch_request_id;
       }
       
-      // Step 3: Load PatchRequest from store using resolved patch_request_id
+      // Step 3: Load PatchRequest from CANONICAL PATCH_REQUEST_STORE
       var patchRequest = null;
-      var patchRequestStore = localStorage.getItem('srr_patch_requests_v1');
-      if (patchRequestStore) {
-        try {
-          var allRequests = JSON.parse(patchRequestStore);
-          patchRequest = allRequests.find(function(pr) {
-            return pr.request_id === patchRequestId || 
-                   pr.id === patchRequestId ||
-                   pr.request_id === payloadId || 
-                   pr.id === payloadId;
-          });
-        } catch (e) {
-          console.warn('[Reviewer SRR] Failed to parse PatchRequest store:', e);
+      
+      // Try direct lookup first using resolved patchRequestId
+      patchRequest = PATCH_REQUEST_STORE.get(patchRequestId);
+      
+      // If not found by patchRequestId, try payloadId as fallback
+      if (!patchRequest && payloadId !== patchRequestId) {
+        patchRequest = PATCH_REQUEST_STORE.get(payloadId);
+      }
+      
+      // If still not found, try scanning all PRs for matching IDs (fallback for legacy data)
+      if (!patchRequest) {
+        var allPRs = PATCH_REQUEST_STORE.list();
+        patchRequest = allPRs.find(function(pr) {
+          return pr.request_id === patchRequestId || 
+                 pr.id === patchRequestId ||
+                 pr.request_id === payloadId || 
+                 pr.id === payloadId;
+        });
+        if (patchRequest) {
+          console.log('[Reviewer SRR] Found PatchRequest via scan:', patchRequest.request_id);
         }
+      }
+      
+      // Debug: Log available PR IDs if not found
+      if (!patchRequest) {
+        var knownPRIds = PATCH_REQUEST_STORE.list().map(function(pr) { return pr.request_id; });
+        console.warn('[Reviewer SRR] PatchRequest not found. Looking for:', patchRequestId, 
+          'Available IDs:', knownPRIds.slice(0, 10).join(', ') + (knownPRIds.length > 10 ? '...' : ''));
       }
       
       // Step 4: Check if PatchRequest was expected but not found (strict mode)
