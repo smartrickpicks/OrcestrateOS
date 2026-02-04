@@ -478,6 +478,20 @@
     .srr-filter-chip .chip-count { font-size: 0.85em; margin-left: 4px; opacity: 0.8; }
     .srr-lock-icon { font-size: 0.9em; margin-left: 4px; }
     
+    /* v1.5.2: Patch Editor Quick Actions */
+    .srr-pe-quick-actions { background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border: 1px solid #bbdefb; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+    .srr-pe-quick-actions-label { font-size: 0.75em; font-weight: 600; color: #5c6bc0; text-transform: uppercase; margin-bottom: 8px; }
+    .srr-pe-quick-actions-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .srr-pe-action-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 12px; border: 2px solid transparent; border-radius: 6px; font-size: 0.8em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .srr-pe-action-btn.correction { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
+    .srr-pe-action-btn.correction:hover { background: #bbdefb; border-color: #1565c0; }
+    .srr-pe-action-btn.rfi { background: #fff3e0; color: #e65100; border-color: #ffcc80; }
+    .srr-pe-action-btn.rfi:hover { background: #ffe0b2; border-color: #e65100; }
+    .srr-pe-action-btn.blacklist { background: #ffebee; color: #c62828; border-color: #ef9a9a; }
+    .srr-pe-action-btn.blacklist:hover { background: #ffcdd2; border-color: #c62828; }
+    .srr-pe-action-icon { font-size: 1.1em; }
+    .srr-pe-selected-field { font-size: 0.8em; color: #666; background: rgba(255,255,255,0.7); padding: 6px 10px; border-radius: 4px; text-align: center; }
+
     /* v1.4.18: Patch Editor Block */
     .srr-patch-editor { background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; margin-bottom: 16px; }
     .srr-patch-editor-title { font-weight: 600; font-size: 0.9em; color: #333; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
@@ -1655,6 +1669,23 @@
                   <div class="srr-patch-type-chip blacklist" data-type="blacklist" onclick="srrOnPatchTypeChange('blacklist')">Blacklist</div>
                   <div class="srr-patch-type-chip rfi" data-type="rfi" onclick="srrOnPatchTypeChange('rfi')">RFI</div>
                 </div>
+              </div>
+
+              <!-- v1.5.2: Quick Actions for selected field -->
+              <div id="srr-pe-quick-actions" class="srr-pe-quick-actions srr-section-hidden">
+                <div class="srr-pe-quick-actions-label">Quick Actions for Selected Field</div>
+                <div class="srr-pe-quick-actions-row">
+                  <button class="srr-pe-action-btn correction" onclick="srrPeQuickAction('correction')" title="Mark as Correction">
+                    <span class="srr-pe-action-icon">✏️</span> Correction
+                  </button>
+                  <button class="srr-pe-action-btn rfi" onclick="srrPeQuickAction('rfi')" title="Send RFI">
+                    <span class="srr-pe-action-icon">❓</span> RFI
+                  </button>
+                  <button class="srr-pe-action-btn blacklist" onclick="srrPeQuickAction('blacklist')" title="Flag as Blacklist">
+                    <span class="srr-pe-action-icon">🚫</span> Blacklist
+                  </button>
+                </div>
+                <div class="srr-pe-selected-field" id="srr-pe-selected-field-label">No field selected</div>
               </div>
 
               <!-- Action Box - title changes based on patch type -->
@@ -9150,6 +9181,9 @@
         : srrState.originalValues[fieldKey];
       var label = fieldKey.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
       
+      // v1.5.2: Select field for quick actions
+      srrPeSelectField(fieldKey, label);
+      
       // Set field state to blocked (red header + Blocked badge)
       srrState.fieldStates[fieldKey] = 'blocked';
       
@@ -9168,14 +9202,17 @@
     
     // v1.4.20: Field action - RFI (question)
     function srrRfiField(fieldKey) {
-      // Set to rfi_pending (stays in To Do until Send RFI)
-      srrState.fieldStates[fieldKey] = 'rfi_pending';
-      
       // Store RFI field info for display
       var currentVal = srrState.editedValues.hasOwnProperty(fieldKey) 
         ? srrState.editedValues[fieldKey] 
         : srrState.originalValues[fieldKey];
       var label = fieldKey.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+      
+      // v1.5.2: Select field for quick actions
+      srrPeSelectField(fieldKey, label);
+      
+      // Set to rfi_pending (stays in To Do until Send RFI)
+      srrState.fieldStates[fieldKey] = 'rfi_pending';
       srrState.rfiField = {
         key: fieldKey,
         label: label,
@@ -9242,6 +9279,12 @@
     
     // SRR Inline Edit functions
     function srrStartEdit(fieldKey) {
+      // v1.5.2: Get field label for selection tracking
+      var fieldLabel = fieldKey.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+      
+      // v1.5.2: Select field for quick actions (works even in read-only mode)
+      srrPeSelectField(fieldKey, fieldLabel);
+      
       // v1.5.1: Prevent editing in read-only mode (Verifier/Admin)
       if (srrState.isReadOnly) {
         showToast('Read-only mode: Use Patch Tester tab to review', 'info');
@@ -9389,9 +9432,10 @@
         var oldVal = change.from === null || change.from === undefined || change.from === '' ? '(empty)' : String(change.from);
         var newVal = change.to === null || change.to === undefined ? '' : String(change.to);
         
-        return '<div class="srr-patch-editor-field" data-field="' + change.field + '">' +
+        // v1.5.2: Make field clickable to select for quick actions
+        return '<div class="srr-patch-editor-field" data-field="' + change.field + '" onclick="srrPeSelectField(\'' + change.field + '\', \'' + change.label.replace(/'/g, "\\'") + '\')" style="cursor: pointer;">' +
           '<div class="srr-patch-editor-label">' + change.label + 
-            '<button class="srr-patch-remove-btn" onclick="srrUndoChange(\'' + change.field + '\')" title="Remove change">✕</button>' +
+            '<button class="srr-patch-remove-btn" onclick="event.stopPropagation(); srrUndoChange(\'' + change.field + '\')" title="Remove change">✕</button>' +
           '</div>' +
           '<div class="srr-patch-editor-row">' +
             '<label>Old:</label>' +
@@ -9401,7 +9445,7 @@
             '<label>New:</label>' +
             '<div class="srr-patch-editor-new">' +
               '<input type="text" id="srr-pe-new-' + change.field + '" value="' + newVal.replace(/"/g, '&quot;') + '" ' +
-                'onchange="srrUpdatePatchEditorValue(\'' + change.field + '\', this.value)">' +
+                'onclick="event.stopPropagation()" onchange="srrUpdatePatchEditorValue(\'' + change.field + '\', this.value)">' +
             '</div>' +
           '</div>' +
         '</div>';
@@ -9419,6 +9463,87 @@
         renderSrrFields(srrState.currentRecord);  // Update Field Inspector display
         console.log('[SRR] Patch Editor updated:', fieldKey, 'to:', newValue);
       }
+    }
+    
+    // v1.5.2: Track selected field in Patch Editor for quick actions
+    var srrPeSelectedField = null;
+    
+    function srrPeSelectField(fieldKey, fieldLabel) {
+      srrPeSelectedField = { key: fieldKey, label: fieldLabel };
+      var actionsPanel = document.getElementById('srr-pe-quick-actions');
+      var labelEl = document.getElementById('srr-pe-selected-field-label');
+      if (actionsPanel) {
+        actionsPanel.classList.remove('srr-section-hidden');
+      }
+      if (labelEl) {
+        labelEl.textContent = 'Selected: ' + fieldLabel;
+      }
+      console.log('[SRR] Patch Editor field selected:', fieldKey);
+    }
+    
+    function srrPeClearSelection() {
+      srrPeSelectedField = null;
+      var actionsPanel = document.getElementById('srr-pe-quick-actions');
+      var labelEl = document.getElementById('srr-pe-selected-field-label');
+      if (actionsPanel) {
+        actionsPanel.classList.add('srr-section-hidden');
+      }
+      if (labelEl) {
+        labelEl.textContent = 'No field selected';
+      }
+    }
+    
+    // v1.5.2: Quick action from Patch Editor panel
+    function srrPeQuickAction(actionType) {
+      if (!srrPeSelectedField) {
+        showToast('Select a field first by clicking on it in the Field Inspector or Changed Fields list.', 'warning');
+        return;
+      }
+      
+      var fieldKey = srrPeSelectedField.key;
+      var fieldLabel = srrPeSelectedField.label;
+      var record = srrState.currentRecord;
+      var currentValue = record ? record[fieldKey] : '';
+      
+      console.log('[SRR] Quick action:', actionType, 'on field:', fieldKey);
+      
+      // Update patch type
+      srrOnPatchTypeChange(actionType);
+      
+      if (actionType === 'rfi') {
+        // Set up RFI for this field
+        srrState.rfiField = { key: fieldKey, label: fieldLabel, value: currentValue };
+        srrState.fieldStates[fieldKey] = 'rfi_pending';
+        showToast('RFI started for: ' + fieldLabel, 'info');
+      } else if (actionType === 'blacklist') {
+        // Set up blacklist for this field
+        srrState.blacklistField = { key: fieldKey, label: fieldLabel, value: currentValue };
+        srrState.fieldStates[fieldKey] = 'blocked';
+        // Update blacklist subject display
+        var subjectEl = document.getElementById('srr-blacklist-subject-value');
+        if (subjectEl) {
+          subjectEl.textContent = fieldLabel + ': ' + (currentValue || '(empty)');
+        }
+        showToast('Blacklist flag set for: ' + fieldLabel, 'info');
+      } else if (actionType === 'correction') {
+        // Ensure field is in proposed changes for correction
+        if (!srrState.proposedChanges[fieldKey]) {
+          srrState.proposedChanges[fieldKey] = {
+            field: fieldKey,
+            label: fieldLabel,
+            from: currentValue,
+            to: currentValue,
+            category: 'correction'
+          };
+        }
+        srrState.fieldStates[fieldKey] = 'modified';
+        showToast('Correction mode for: ' + fieldLabel, 'info');
+      }
+      
+      // Refresh UI
+      renderSrrFields(srrState.currentRecord);
+      srrRenderPatchEditor();
+      srrUpdateEvidencePackVisibility();
     }
     
     function srrUpdateChangeCategory(fieldKey, category) {
