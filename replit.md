@@ -31,6 +31,7 @@ The repository is organized into `docs/` for documentation, `rules/` for rule au
 13. **Artifact Store and Role Handoff Routing**: Uses a localStorage-backed mock filesystem for artifacts, a deterministic artifact ID system, event logging, and a thread system for conversations. It supports playground mode with environment scoping and a seamless handoff from Verifier Approval to the Admin Patch Queue.
 14. **Record Identity Model**: Defines `tenant_id`, `division_id`, `dataset_id`, `record_id` as first-class identity fields, with source pointers and aliases, and generates `record_id` based on a canonicalized row fingerprint.
 15. **SRR Hydration**: Ensures proper hydration of Single Row Review (SRR) by loading PatchRequests from a shared `localStorage` store before loading record data.
+16. **Reviewer SRR Mode (v1.5.3)**: When reviewers click "Open Record" from Verifier Review, they enter a read-only Reviewer SRR with: left panel showing Field Inspector (editing disabled via isReadOnly flag), right panel with Patch Review + Patch Tester tabs. Patch Tester is hidden for RFI type, showing comment thread instead. Division filter now includes "Unassigned" bucket for items without division_id. Patch type tabs (Corrections, Blacklist, RFI) added to Reviewer Triage for grouping. Reviewer mode is automatically reset when navigating away from SRR.
 
 ### Key Commands
 
