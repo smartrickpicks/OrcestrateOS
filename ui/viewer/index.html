@@ -9296,8 +9296,13 @@
         var iconReset = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 110 8h-1"/></svg>';
         
         var actionsHtml = '<div class="srr-field-actions">';
-        // v1.5.1: Hide action buttons in read-only mode (Verifier/Admin)
-        if (!srrState.isReadOnly) {
+        // v1.5.3 Fix: Reviewer can action non-verified fields, verified fields are read-only
+        // Analyst: all actions available based on field state
+        // Reviewer/Admin: actions available for non-verified/non-submitted states
+        var isFieldActionable = !srrState.isReadOnly || 
+          (srrState.reviewerMode && fieldState !== 'verified' && fieldState !== 'submitted');
+        
+        if (isFieldActionable) {
           if (fieldState === 'todo') {
             actionsHtml += '<button class="srr-field-action blacklist" onclick="event.stopPropagation(); srrBlacklistField(\'' + key + '\')" title="Block this field">' + iconFlag + '</button>';
             actionsHtml += '<button class="srr-field-action rfi" onclick="event.stopPropagation(); srrRfiField(\'' + key + '\')" title="Request for Info">' + iconEdit + '</button>';
@@ -9305,11 +9310,14 @@
           } else if (fieldState === 'modified') {
             // Modified: no action icons (user moved on after editing)
           } else if (fieldState === 'verified') {
-            actionsHtml += '<button class="srr-field-action reset" onclick="event.stopPropagation(); srrResetFieldState(\'' + key + '\')" title="Reset to TODO">' + iconReset + '</button>';
+            // Verified: read-only for reviewers, reset for analysts
+            if (!srrState.isReadOnly) {
+              actionsHtml += '<button class="srr-field-action reset" onclick="event.stopPropagation(); srrResetFieldState(\'' + key + '\')" title="Reset to TODO">' + iconReset + '</button>';
+            }
           } else if (fieldState === 'submitted') {
             // Patch Submitted: no actions needed
           } else {
-            // rfi, blocked, patched: show reset
+            // rfi, blocked, patched, rfi_pending: show reset
             actionsHtml += '<button class="srr-field-action reset" onclick="event.stopPropagation(); srrResetFieldState(\'' + key + '\')" title="Reset to TODO">' + iconReset + '</button>';
           }
         }
@@ -10054,7 +10062,359 @@
       // Update evidence anchors list
       srrUpdateAnchorList(fieldKey);
       
-      console.log('[SRR] Selected field: ' + fieldKey);
+      // v1.5.3 Fix: Update Patch Editor to reflect the selected field's patch type
+      var fieldState = srrState.fieldStates[fieldKey] || 'todo';
+      var fieldChange = srrState.patchDraft.changes ? srrState.patchDraft.changes[fieldKey] : null;
+      
+      // v1.5.3 Fix: For reviewer mode, derive patch type from submitted change in payload
+      var fieldPatchType = 'correction';
+      if (srrState.reviewerMode && srrState.reviewerPayload) {
+        var payload = srrState.reviewerPayload;
+        var submittedChange = null;
+        
+        // Find submitted change for this field
+        if (payload.field === fieldKey) {
+          submittedChange = { category: payload.patch_type || payload.category };
+        }
+        if (payload.changes && Array.isArray(payload.changes)) {
+          payload.changes.forEach(function(c) {
+            if (c.field === fieldKey || c.fieldKey === fieldKey) {
+              submittedChange = c;
+            }
+          });
+        }
+        if (payload.body && payload.body.changes) {
+          payload.body.changes.forEach(function(c) {
+            if (c.field === fieldKey || c.fieldKey === fieldKey) {
+              submittedChange = c;
+            }
+          });
+        }
+        
+        // Derive patch type from submitted change
+        if (submittedChange && submittedChange.category) {
+          var cat = submittedChange.category.toLowerCase();
+          if (cat === 'rfi' || cat.includes('rfi')) fieldPatchType = 'rfi';
+          else if (cat === 'blacklist' || cat === 'blacklist flag') fieldPatchType = 'blacklist';
+        } else if (submittedChange && submittedChange.patch_type) {
+          fieldPatchType = submittedChange.patch_type;
+        }
+      } else {
+        // Analyst mode: derive from field state or draft changes
+        if (fieldState === 'rfi' || fieldState === 'rfi_pending') {
+          fieldPatchType = 'rfi';
+        } else if (fieldState === 'blocked') {
+          fieldPatchType = 'blacklist';
+        } else if (fieldChange && fieldChange.category) {
+          if (fieldChange.category === 'RFI') fieldPatchType = 'rfi';
+          else if (fieldChange.category === 'Blacklist Flag') fieldPatchType = 'blacklist';
+        }
+      }
+      
+      // v1.5.3 Fix: Always update patch editor when selecting a field (not just when type changes)
+      srrState.patchType = fieldPatchType;
+      
+      // Update patch type chips
+      document.querySelectorAll('.srr-patch-type-chip').forEach(function(chip) {
+        chip.classList.remove('active');
+        if (chip.dataset.type === fieldPatchType) chip.classList.add('active');
+      });
+      
+      // Update form sections visibility
+      srrUpdatePatchFormSections();
+      
+      // v1.5.3 Fix: Use different rendering for reviewer mode vs analyst mode
+      if (srrState.reviewerMode) {
+        // Reviewer mode: show read-only summary for the selected field
+        srrRenderPatchEditorForField(fieldKey);
+      } else {
+        // Analyst mode: use interactive patch editor
+        srrRenderPatchEditor();
+      }
+      
+      console.log('[SRR] Selected field:', fieldKey, 'state:', fieldState, 'patchType:', fieldPatchType);
+    }
+    
+    function srrRenderPatchEditorForField(fieldKey) {
+      // v1.5.3: Render Patch Review for reviewer mode - shows submitted patch data with actions
+      var container = document.getElementById('srr-patch-editor-fields');
+      if (!container) return;
+      
+      var fieldState = srrState.fieldStates[fieldKey] || 'todo';
+      var record = srrState.currentRecord;
+      var currentVal = record ? record[fieldKey] : '';
+      
+      // v1.5.3 Fix: Load submitted patch data from reviewer payload (not just local draft)
+      var payload = srrState.reviewerPayload;
+      var submittedChange = null;
+      
+      // Check if payload has this field's change
+      if (payload) {
+        // Single-field payload
+        if (payload.field === fieldKey) {
+          submittedChange = {
+            old_value: payload.old_value,
+            new_value: payload.new_value,
+            justification: payload.justification,
+            category: payload.patch_type || payload.category
+          };
+        }
+        // Multi-field payload (changes array)
+        if (payload.changes && Array.isArray(payload.changes)) {
+          payload.changes.forEach(function(c) {
+            if (c.field === fieldKey || c.fieldKey === fieldKey) {
+              submittedChange = c;
+            }
+          });
+        }
+        // PatchRequest with body.changes
+        if (payload.body && payload.body.changes && Array.isArray(payload.body.changes)) {
+          payload.body.changes.forEach(function(c) {
+            if (c.field === fieldKey || c.fieldKey === fieldKey) {
+              submittedChange = c;
+            }
+          });
+        }
+      }
+      
+      // Fallback to local draft if no submitted change found
+      if (!submittedChange && srrState.patchDraft.changes) {
+        submittedChange = srrState.patchDraft.changes[fieldKey];
+      }
+      
+      // v1.5.3 Fix: Derive patch type from submitted change category (per-field, not global)
+      var fieldPatchType = 'correction';
+      if (submittedChange && submittedChange.category) {
+        var cat = submittedChange.category.toLowerCase();
+        if (cat === 'rfi' || cat.includes('rfi')) fieldPatchType = 'rfi';
+        else if (cat === 'blacklist' || cat === 'blacklist flag') fieldPatchType = 'blacklist';
+      } else if (submittedChange && submittedChange.patch_type) {
+        fieldPatchType = submittedChange.patch_type;
+      } else {
+        // Fallback to field state
+        if (fieldState === 'rfi' || fieldState === 'rfi_pending') fieldPatchType = 'rfi';
+        else if (fieldState === 'blocked') fieldPatchType = 'blacklist';
+      }
+      
+      var typeColor = fieldPatchType === 'rfi' ? '#7b1fa2' : (fieldPatchType === 'blacklist' ? '#c62828' : '#1565c0');
+      var typeLabel = fieldPatchType.toUpperCase();
+      
+      var html = '<div style="padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid ' + typeColor + ';">';
+      html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">';
+      html += '<span style="font-weight: 600;">Field: ' + fieldKey + '</span>';
+      html += '<span style="background: ' + typeColor + '; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75em;">' + typeLabel + '</span>';
+      html += '</div>';
+      
+      // Current/Old value
+      var oldValue = (submittedChange && submittedChange.old_value !== undefined) ? submittedChange.old_value : currentVal;
+      html += '<div style="margin-bottom: 8px;">';
+      html += '<span style="font-size: 0.75em; color: #888;">Current Value:</span> ';
+      html += '<span style="font-family: monospace; color: #666; text-decoration: ' + (submittedChange ? 'line-through' : 'none') + ';">' + (oldValue || '(empty)') + '</span>';
+      html += '</div>';
+      
+      // Show submitted change details
+      if (submittedChange) {
+        if (submittedChange.new_value !== undefined) {
+          html += '<div style="margin-bottom: 8px;">';
+          html += '<span style="font-size: 0.75em; color: #888;">Proposed Value:</span> ';
+          html += '<span style="font-family: monospace; color: #2e7d32; font-weight: 600;">' + (submittedChange.new_value || '(empty)') + '</span>';
+          html += '</div>';
+        }
+        if (submittedChange.justification) {
+          html += '<div style="margin-bottom: 8px;">';
+          html += '<span style="font-size: 0.75em; color: #888;">Justification:</span> ';
+          html += '<span>' + submittedChange.justification + '</span>';
+          html += '</div>';
+        }
+        if (submittedChange.comment) {
+          html += '<div style="margin-bottom: 8px;">';
+          html += '<span style="font-size: 0.75em; color: #888;">Comment:</span> ';
+          html += '<span style="font-style: italic;">' + submittedChange.comment + '</span>';
+          html += '</div>';
+        }
+      }
+      
+      // Field state indicator
+      html += '<div style="margin-bottom: 8px;">';
+      html += '<span style="font-size: 0.75em; color: #888;">Review Status:</span> ';
+      var stateColor = fieldState === 'verified' ? '#2e7d32' : 
+                       fieldState === 'rfi_pending' ? '#7b1fa2' : 
+                       fieldState === 'blocked' ? '#c62828' : '#1565c0';
+      var stateLabel = fieldState === 'verified' ? 'APPROVED' : 
+                       fieldState === 'rfi_pending' ? 'NEEDS CLARIFICATION' : 
+                       fieldState === 'blocked' ? 'REJECTED' : 'PENDING REVIEW';
+      html += '<span style="color: ' + stateColor + '; font-weight: 500;">' + stateLabel + '</span>';
+      html += '</div>';
+      
+      // v1.5.3: Add reviewer action buttons for non-final states
+      if (fieldState !== 'verified' && fieldState !== 'submitted') {
+        html += '<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px; flex-wrap: wrap;">';
+        html += '<button onclick="reviewerApproveField(\'' + fieldKey + '\')" style="padding: 6px 12px; background: #2e7d32; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Approve</button>';
+        html += '<button onclick="reviewerRequestClarification(\'' + fieldKey + '\')" style="padding: 6px 12px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Request Clarification</button>';
+        html += '<button onclick="reviewerRejectField(\'' + fieldKey + '\')" style="padding: 6px 12px; background: #c62828; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Reject</button>';
+        html += '</div>';
+      }
+      
+      html += '</div>';
+      container.innerHTML = html;
+    }
+    
+    function reviewerApproveField(fieldKey) {
+      // v1.5.3: Reviewer approves a field change - integrates with canonical workflow
+      var patchRequestId = srrState.currentPatchRequestId;
+      var patchRequest = patchRequestId ? PATCH_REQUEST_STORE.get(patchRequestId) : null;
+      
+      srrState.fieldStates[fieldKey] = 'verified';
+      
+      // Update PatchRequest and log audit event
+      if (patchRequest) {
+        if (!patchRequest.field_decisions) patchRequest.field_decisions = {};
+        patchRequest.field_decisions[fieldKey] = {
+          decision: 'approved',
+          by: currentMode,
+          at: new Date().toISOString()
+        };
+        
+        // Check if all fields are approved - update overall status
+        var allApproved = checkAllFieldsApproved(patchRequest);
+        if (allApproved) {
+          patchRequest.status = currentMode === 'admin' ? 'resolved' : 'sent_to_admin';
+        }
+        
+        // Log audit event (canonical pattern)
+        if (!patchRequest.audit_log) patchRequest.audit_log = [];
+        patchRequest.audit_log.push({
+          event: 'FIELD_APPROVED',
+          field: fieldKey,
+          by: currentMode,
+          actor: getActorForRole(currentMode),
+          at: new Date().toISOString()
+        });
+        
+        PATCH_REQUEST_STORE.update(patchRequestId, patchRequest);
+      }
+      
+      // Update Verifier Review state if we're in that context
+      if (vrState.currentPatchId && patchRequest) {
+        vrState.reviewState = 'Under_Review';
+        vrUpdateStateBadge();
+        vrUpdateActionButtons();
+      }
+      
+      showToast('Approved: ' + fieldKey, 'success');
+      renderSrrFields(srrState.currentRecord);
+      srrRenderPatchEditorForField(fieldKey);
+      console.log('[Reviewer] Approved field:', fieldKey);
+    }
+    
+    function reviewerRequestClarification(fieldKey) {
+      // v1.5.3: Reviewer requests clarification - integrates with canonical workflow
+      var patchRequestId = srrState.currentPatchRequestId;
+      var patchRequest = patchRequestId ? PATCH_REQUEST_STORE.get(patchRequestId) : null;
+      
+      srrState.fieldStates[fieldKey] = 'rfi_pending';
+      
+      // Update PatchRequest and log audit event
+      if (patchRequest) {
+        if (!patchRequest.field_decisions) patchRequest.field_decisions = {};
+        patchRequest.field_decisions[fieldKey] = {
+          decision: 'needs_clarification',
+          by: currentMode,
+          at: new Date().toISOString()
+        };
+        patchRequest.status = 'needs_clarification';
+        
+        // Log audit event (canonical pattern)
+        if (!patchRequest.audit_log) patchRequest.audit_log = [];
+        patchRequest.audit_log.push({
+          event: 'REQUEST_CLARIFICATION',
+          field: fieldKey,
+          by: currentMode,
+          actor: getActorForRole(currentMode),
+          at: new Date().toISOString()
+        });
+        
+        PATCH_REQUEST_STORE.update(patchRequestId, patchRequest);
+      }
+      
+      // Update Verifier Review state
+      if (vrState.currentPatchId) {
+        vrState.reviewState = 'Needs_Clarification';
+        vrUpdateStateBadge();
+        vrUpdateActionButtons();
+        vrRenderDecisionSummary();
+      }
+      
+      showToast('Clarification requested: ' + fieldKey, 'info');
+      renderSrrFields(srrState.currentRecord);
+      srrRenderPatchEditorForField(fieldKey);
+      console.log('[Reviewer] Request clarification for field:', fieldKey);
+    }
+    
+    function reviewerRejectField(fieldKey) {
+      // v1.5.3: Reviewer rejects a field change - integrates with canonical workflow
+      var patchRequestId = srrState.currentPatchRequestId;
+      var patchRequest = patchRequestId ? PATCH_REQUEST_STORE.get(patchRequestId) : null;
+      
+      srrState.fieldStates[fieldKey] = 'blocked';
+      
+      // Update PatchRequest and log audit event
+      if (patchRequest) {
+        if (!patchRequest.field_decisions) patchRequest.field_decisions = {};
+        patchRequest.field_decisions[fieldKey] = {
+          decision: 'rejected',
+          by: currentMode,
+          at: new Date().toISOString()
+        };
+        
+        // Log audit event (canonical pattern)
+        if (!patchRequest.audit_log) patchRequest.audit_log = [];
+        patchRequest.audit_log.push({
+          event: 'FIELD_REJECTED',
+          field: fieldKey,
+          by: currentMode,
+          actor: getActorForRole(currentMode),
+          at: new Date().toISOString()
+        });
+        
+        PATCH_REQUEST_STORE.update(patchRequestId, patchRequest);
+      }
+      
+      showToast('Rejected: ' + fieldKey, 'warning');
+      renderSrrFields(srrState.currentRecord);
+      srrRenderPatchEditorForField(fieldKey);
+      console.log('[Reviewer] Rejected field:', fieldKey);
+    }
+    
+    function checkAllFieldsApproved(patchRequest) {
+      // v1.5.3: Check if all fields in the PatchRequest have been approved
+      if (!patchRequest.field_decisions) return false;
+      
+      var changedFields = [];
+      
+      // Collect all changed field keys
+      if (patchRequest.field) changedFields.push(patchRequest.field);
+      if (patchRequest.changes) {
+        patchRequest.changes.forEach(function(c) {
+          if (c.field) changedFields.push(c.field);
+        });
+      }
+      if (patchRequest.body && patchRequest.body.changes) {
+        patchRequest.body.changes.forEach(function(c) {
+          if (c.field) changedFields.push(c.field);
+        });
+      }
+      
+      // Check all fields have approved decision
+      for (var i = 0; i < changedFields.length; i++) {
+        var fk = changedFields[i];
+        var decision = patchRequest.field_decisions[fk];
+        if (!decision || decision.decision !== 'approved') {
+          return false;
+        }
+      }
+      
+      return changedFields.length > 0;
     }
     
     function srrUpdateViewerHighlight(fieldKey) {
@@ -11897,11 +12257,62 @@
       // v1.5.3: Initialize Reviewer SRR mode with read-only field inspector and Patch Review/Tester tabs
       if (!srrState.reviewerMode) return;
       
-      // Set read-only flag to prevent field editing
+      // Set read-only flag to prevent field editing (but allow actions on non-verified fields)
       srrState.isReadOnly = true;
       
       var patchType = srrState.reviewerPatchType || 'correction';
       var payload = srrState.reviewerPayload;
+      
+      // v1.5.3 Fix: Populate field states from PatchRequest for multi-issue records
+      if (payload) {
+        // If payload has a field property, set its state based on patch type
+        var fieldKey = payload.field || payload.fieldKey;
+        if (fieldKey) {
+          if (patchType === 'rfi') {
+            srrState.fieldStates[fieldKey] = 'rfi_pending';
+          } else if (patchType === 'blacklist') {
+            srrState.fieldStates[fieldKey] = 'blocked';
+          } else if (patchType === 'correction') {
+            srrState.fieldStates[fieldKey] = 'modified';
+          }
+        }
+        
+        // If payload has changes array, populate all field states
+        if (payload.changes && Array.isArray(payload.changes)) {
+          payload.changes.forEach(function(change) {
+            var fk = change.field || change.fieldKey;
+            if (fk) {
+              var cat = (change.category || change.patch_type || 'correction').toLowerCase();
+              if (cat === 'rfi') {
+                srrState.fieldStates[fk] = 'rfi_pending';
+              } else if (cat === 'blacklist flag' || cat === 'blacklist') {
+                srrState.fieldStates[fk] = 'blocked';
+              } else {
+                srrState.fieldStates[fk] = 'modified';
+              }
+            }
+          });
+        }
+        
+        // Also check if payload is a PatchRequest with body.changes
+        if (payload.body && payload.body.changes && Array.isArray(payload.body.changes)) {
+          payload.body.changes.forEach(function(change) {
+            var fk = change.field || change.fieldKey;
+            if (fk) {
+              var cat = (change.category || change.patch_type || 'correction').toLowerCase();
+              if (cat === 'rfi') {
+                srrState.fieldStates[fk] = 'rfi_pending';
+              } else if (cat === 'blacklist flag' || cat === 'blacklist') {
+                srrState.fieldStates[fk] = 'blocked';
+              } else {
+                srrState.fieldStates[fk] = 'modified';
+              }
+            }
+          });
+        }
+        
+        console.log('[Reviewer SRR] Populated field states:', Object.keys(srrState.fieldStates).length, 'fields');
+      }
       
       // Update right panel title and tabs
       var panelTitle = document.getElementById('srr-right-panel-title');
@@ -11910,24 +12321,26 @@
       if (panelTitle) panelTitle.textContent = 'Patch Review';
       
       if (panelTabs) {
-        // Show tabs for Correction/Blacklist, hide for RFI
-        if (patchType === 'rfi') {
-          panelTabs.style.display = 'none';
-        } else {
-          panelTabs.style.display = 'flex';
-          // Update tab labels for reviewer mode
-          var tabBtns = panelTabs.querySelectorAll('.srr-panel-tab');
-          tabBtns.forEach(function(btn) {
-            if (btn.getAttribute('data-tab') === 'editor') {
-              btn.textContent = 'Patch Review';
-            }
-          });
-        }
+        // v1.5.3: Show tabs for all patch types in reviewer mode
+        panelTabs.style.display = 'flex';
+        // Update tab labels for reviewer mode
+        var tabBtns = panelTabs.querySelectorAll('.srr-panel-tab');
+        tabBtns.forEach(function(btn) {
+          if (btn.getAttribute('data-tab') === 'editor') {
+            btn.textContent = 'Patch Review';
+          }
+        });
       }
       
-      // Hide patch type chips (read-only mode)
+      // v1.5.3 Fix: Keep patch type chips visible for navigation in reviewer mode
       var patchTypeSelector = document.querySelector('.srr-patch-type-selector');
-      if (patchTypeSelector) patchTypeSelector.style.display = 'none';
+      if (patchTypeSelector) patchTypeSelector.style.display = '';  // Keep visible
+      
+      // Update patch type chips to show current type
+      document.querySelectorAll('.srr-patch-type-chip').forEach(function(chip) {
+        chip.classList.remove('active');
+        if (chip.dataset.type === patchType) chip.classList.add('active');
+      });
       
       // Populate Patch Review tab with submitted patch data
       populateReviewerPatchReview(payload, patchType);
@@ -11940,6 +12353,33 @@
       // For RFI, show comment thread instead of patch editor
       if (patchType === 'rfi') {
         showRFICommentThread(payload);
+      }
+      
+      // v1.5.3 Fix: Rerender field list with updated states and select first actionable field
+      if (srrState.currentRecord) {
+        renderSrrFields(srrState.currentRecord);
+        
+        // Select the first field with a non-final state (actionable)
+        var firstActionableField = null;
+        var fieldKeys = Object.keys(srrState.fieldStates);
+        for (var i = 0; i < fieldKeys.length; i++) {
+          var fk = fieldKeys[i];
+          var fs = srrState.fieldStates[fk];
+          if (fs !== 'verified' && fs !== 'submitted') {
+            firstActionableField = fk;
+            break;
+          }
+        }
+        
+        // If no actionable field found, try the focus field from payload
+        if (!firstActionableField && srrState.focusFieldKey) {
+          firstActionableField = srrState.focusFieldKey;
+        }
+        
+        // Select and highlight the first actionable field
+        if (firstActionableField) {
+          srrSelectField(firstActionableField);
+        }
       }
       
       console.log('[Reviewer SRR] Mode initialized for patch type:', patchType);
