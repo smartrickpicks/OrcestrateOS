@@ -255,11 +255,11 @@ Dropdown options:
 
 ## Patch Type Behavior
 
-| Type | Required Fields | Optional |
-|------|-----------------|----------|
-| Correction | Observation + Expected + Justification + Repro (unless Override) + Field changes | Override |
-| Blacklist Flag | Justification (min 10 chars) + Blacklist Category | Field changes |
-| RFI | Justification (min 10 chars) | RFI Target, Field changes |
+| Type | Required Fields | Optional | Coming Soon |
+|------|-----------------|----------|-------------|
+| Correction | Observation + Expected + Justification + Repro (unless Override) + Field changes | Override | — |
+| Blacklist Flag | Justification (min 10 chars) | Field changes | Blacklist Category |
+| RFI | Justification (min 10 chars) | Field changes | RFI Target |
 
 ## Validation Rules
 
@@ -272,12 +272,12 @@ Dropdown options:
 
 ### Blacklist Flag
 - Justification: Required (minimum 10 characters)
-- Blacklist Category: Required
+- Blacklist Category: *(coming soon — not currently enforced)*
 - Field changes: Optional
 
 ### RFI
 - Justification: Required (minimum 10 characters) — this is the question
-- RFI Target: Optional
+- RFI Target: *(coming soon — not currently enforced)*
 - Field changes: Optional
 
 ## Patch Editor Reset Behavior (v1.5.0)
