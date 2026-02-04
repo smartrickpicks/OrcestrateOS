@@ -72,6 +72,12 @@
 - examples/expected_outputs/sf_packet.example.json
 - local_runner/README.md
 
+## Handoff & Status
+- docs/handoff/srr-handoff-status.md — SRR handoff documentation audit (v1.5.2)
+- docs/handoff/TASKS_UI.md — UI backlog tracker
+- docs/handoff/STATUS.md — General status
+- docs/handoff/HANDOFF.md — Handoff guide
+
 ## Replit Tools (Optional)
 - docs/07_replit_mcp.md — Replit MCP operator guide and install-link format
 - scripts/mcp_link_gen.py — deterministic MCP install-link generator (ENCODED, LINK, BADGE_MARKDOWN)
