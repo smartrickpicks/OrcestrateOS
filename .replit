@@ -66,7 +66,8 @@ waitForPort = 8000
 outputType = "console"
 
 [deployment]
-deploymentTarget = "cloudrun"
+deploymentTarget = "static"
+publicDir = "ui/viewer"
 
 [[ports]]
 localPort = 5000
