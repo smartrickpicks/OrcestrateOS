@@ -17024,7 +17024,7 @@
     var DEMO_MODE_KEY = 'orchestrate.demo_mode';
     function isDemoMode() {
       var stored = localStorage.getItem(DEMO_MODE_KEY);
-      return stored === null ? true : stored === 'true'; // Default to true
+      return stored === null ? false : stored === 'true'; // Default to false (production mode)
     }
     
     function setDemoMode(enabled) {
