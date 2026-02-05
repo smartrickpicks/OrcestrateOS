@@ -1298,25 +1298,18 @@
       <!-- Top Toolbar (visible when data loaded) -->
       <div class="top-toolbar" id="top-toolbar" style="display: none;">
         <div class="top-toolbar-left">
-          <button class="top-toolbar-btn primary" id="btn-data-source">Data Source</button>
-          <span class="session-chip not-loaded" id="session-chip">
-            <span class="chip-dot"></span>
-            <span id="session-chip-text">Not Loaded</span>
-          </span>
-          <span id="config-status-chip" style="display: none; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; margin-left: 8px;"></span>
-          <span class="session-meta" id="session-meta"></span>
+          <span id="config-status-chip" style="display: none; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600;"></span>
         </div>
         <div class="top-toolbar-right">
-          <!-- Global Search Stub (V2) -->
+          <!-- Global Search (disabled - coming soon) -->
           <div style="position: relative;">
-            <input type="text" id="global-search-input" placeholder="Search agreements, accounts, record IDs…" 
-                   style="padding: 8px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85em; width: 280px;" 
-                   onkeydown="handleGlobalSearchKeydown(event)">
-            <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.7em; color: #888; pointer-events: none;">⌘K</span>
+            <input type="text" id="global-search-input" placeholder="Search coming soon…" 
+                   style="padding: 8px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85em; width: 240px; background: #f5f5f5; color: #999; cursor: not-allowed;" 
+                   disabled>
+            <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.7em; color: #bbb; pointer-events: none;">⌘K</span>
           </div>
           <button class="top-toolbar-btn configure-btn admin-only-content" id="btn-configure" title="Configure Kiwi settings and defaults">Configure</button>
           <button class="top-toolbar-btn admin-only-content" id="btn-ruleset">Ruleset</button>
-          <button class="top-toolbar-btn" id="btn-compare">Compare</button>
           <button class="top-toolbar-btn admin-only-content" id="btn-run">Run Commands</button>
         </div>
       </div>
@@ -1426,133 +1419,110 @@
       <div class="page" id="page-triage">
         <div id="analyst-triage-content">
           <div class="page-header">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <h2>Triage</h2>
-              <span style="font-size: 0.7em; color: #999;">PAGE: ANALYST-TRIAGE | BUILD v1.5.5</span>
-            </div>
+            <h2>Triage</h2>
             <p class="page-desc">All items requiring analyst review and action.</p>
           </div>
 
-          <!-- QUEUE 1: QA Issues -->
-          <div class="triage-queue-section" style="margin-bottom: 32px;">
-            <div class="queue-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <h3 style="margin: 0; font-size: 1.1em; color: #333;">QA Issues <span id="qa-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
+          <!-- QUEUE 1: Manual Review (yellow accent) -->
+          <div class="triage-queue-section" style="margin-bottom: 28px;">
+            <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 3px solid #ffc107;">
+              <h3 style="margin: 0; font-size: 1.05em; color: #333;">Manual Review <span id="manual-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
             </div>
-            <div class="queue-table-container" style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+            <div class="queue-table-container" style="background: white; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
-                <thead style="background: #f8f9fa; border-bottom: 1px solid #eee;">
+                <thead style="background: #fffde7; border-bottom: 1px solid #fff59d;">
                   <tr>
-                    <th style="padding: 10px 12px;">Type</th>
-                    <th style="padding: 10px 12px;">Record</th>
-                    <th style="padding: 10px 12px;">Field</th>
-                    <th style="padding: 10px 12px;">Status</th>
-                    <th style="padding: 10px 12px;">Last Updated</th>
-                    <th style="padding: 10px 12px;">Actions</th>
+                    <th style="padding: 8px 12px;">Type</th>
+                    <th style="padding: 8px 12px;">Record</th>
+                    <th style="padding: 8px 12px;">Field</th>
+                    <th style="padding: 8px 12px;">Status</th>
+                    <th style="padding: 8px 12px;">Last Updated</th>
+                    <th style="padding: 8px 12px;">Actions</th>
                   </tr>
                 </thead>
-                <tbody id="qa-queue-list">
-                  <tr><td colspan="6" style="padding: 24px; text-align: center; color: #999;">No QA issues pending</td></tr>
+                <tbody id="manual-queue-list">
+                  <tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">No manual review items</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <!-- QUEUE 2: Extraction Issues -->
-          <div class="triage-queue-section" style="margin-bottom: 32px;">
-            <div class="queue-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <h3 style="margin: 0; font-size: 1.1em; color: #333;">Extraction Issues <span id="extraction-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
+          <!-- QUEUE 2: Salesforce Logic Flags (orange accent) -->
+          <div class="triage-queue-section" style="margin-bottom: 28px;">
+            <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 3px solid #ff9800;">
+              <h3 style="margin: 0; font-size: 1.05em; color: #333;">Salesforce Logic Flags <span id="sflogic-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
             </div>
-            <div class="queue-table-container" style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+            <div class="queue-table-container" style="background: white; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
-                <thead style="background: #f8f9fa; border-bottom: 1px solid #eee;">
+                <thead style="background: #fff3e0; border-bottom: 1px solid #ffcc80;">
                   <tr>
-                    <th style="padding: 10px 12px;">Type</th>
-                    <th style="padding: 10px 12px;">Record</th>
-                    <th style="padding: 10px 12px;">Field</th>
-                    <th style="padding: 10px 12px;">Status</th>
-                    <th style="padding: 10px 12px;">Last Updated</th>
-                    <th style="padding: 10px 12px;">Actions</th>
+                    <th style="padding: 8px 12px;">Type</th>
+                    <th style="padding: 8px 12px;">Record</th>
+                    <th style="padding: 8px 12px;">Field</th>
+                    <th style="padding: 8px 12px;">Status</th>
+                    <th style="padding: 8px 12px;">Last Updated</th>
+                    <th style="padding: 8px 12px;">Actions</th>
                   </tr>
                 </thead>
-                <tbody id="extraction-queue-list">
-                  <tr><td colspan="6" style="padding: 24px; text-align: center; color: #999;">No extraction issues pending</td></tr>
+                <tbody id="sflogic-queue-list">
+                  <tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">No Salesforce logic flags</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <!-- QUEUE 3: Logic Issues -->
-          <div class="triage-queue-section" style="margin-bottom: 32px;">
-            <div class="queue-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <h3 style="margin: 0; font-size: 1.1em; color: #333;">Logic Issues <span id="logic-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
+          <!-- QUEUE 3: Patch Queue (blue accent, with compact status chips) -->
+          <div class="triage-queue-section" style="margin-bottom: 28px;">
+            <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 3px solid #2196f3;">
+              <h3 style="margin: 0; font-size: 1.05em; color: #333;">Patch Queue <span id="patch-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
+              <!-- Compact inline status chips -->
+              <div class="pipeline-chips" style="display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap;">
+                <span class="status-chip" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; font-size: 0.7em; font-weight: 600; background: #fff3e0; color: #e65100;"><span id="at-count-pending">0</span> Pending</span>
+                <span class="status-chip" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; font-size: 0.7em; font-weight: 600; background: #e3f2fd; color: #1565c0;"><span id="at-count-verifier">0</span> Verifier</span>
+                <span class="status-chip" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; font-size: 0.7em; font-weight: 600; background: #f3e5f5; color: #7b1fa2;"><span id="at-count-admin">0</span> Admin</span>
+                <span class="status-chip" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; font-size: 0.7em; font-weight: 600; background: #fff8e1; color: #f57f17;"><span id="at-count-clarification">0</span> Clarify</span>
+                <span class="status-chip" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; font-size: 0.7em; font-weight: 600; background: #ffebee; color: #c62828;"><span id="at-count-rejected">0</span> Rejected</span>
+                <span class="status-chip" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; font-size: 0.7em; font-weight: 600; background: #e8f5e9; color: #2e7d32;"><span id="at-count-approved">0</span> Approved</span>
+              </div>
             </div>
-            <div class="queue-table-container" style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+            <div class="queue-table-container" style="background: white; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
-                <thead style="background: #f8f9fa; border-bottom: 1px solid #eee;">
+                <thead style="background: #e3f2fd; border-bottom: 1px solid #90caf9;">
                   <tr>
-                    <th style="padding: 10px 12px;">Type</th>
-                    <th style="padding: 10px 12px;">Record</th>
-                    <th style="padding: 10px 12px;">Field</th>
-                    <th style="padding: 10px 12px;">Status</th>
-                    <th style="padding: 10px 12px;">Last Updated</th>
-                    <th style="padding: 10px 12px;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="logic-queue-list">
-                  <tr><td colspan="6" style="padding: 24px; text-align: center; color: #999;">No logic issues pending</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- QUEUE 4: Patch Queue (with pipeline cards) -->
-          <div class="triage-queue-section" style="margin-bottom: 32px;">
-            <div class="queue-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <h3 style="margin: 0; font-size: 1.1em; color: #333;">Patch Queue <span id="patch-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
-            </div>
-            
-            <!-- Patch Pipeline Cards -->
-            <div class="patch-pipeline-cards" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 16px;">
-              <div class="pipeline-card" style="background: #fff3e0; border: 1px solid #ffcc80; border-radius: 6px; padding: 12px; text-align: center;">
-                <div style="font-size: 1.5em; font-weight: 700; color: #e65100;" id="at-count-pending">0</div>
-                <div style="font-size: 0.7em; color: #bf360c; text-transform: uppercase; font-weight: 600;">Pending</div>
-              </div>
-              <div class="pipeline-card" style="background: #e3f2fd; border: 1px solid #90caf9; border-radius: 6px; padding: 12px; text-align: center;">
-                <div style="font-size: 1.5em; font-weight: 700; color: #1565c0;" id="at-count-verifier">0</div>
-                <div style="font-size: 0.7em; color: #0d47a1; text-transform: uppercase; font-weight: 600;">At Verifier</div>
-              </div>
-              <div class="pipeline-card" style="background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 6px; padding: 12px; text-align: center;">
-                <div style="font-size: 1.5em; font-weight: 700; color: #7b1fa2;" id="at-count-admin">0</div>
-                <div style="font-size: 0.7em; color: #4a148c; text-transform: uppercase; font-weight: 600;">At Admin</div>
-              </div>
-              <div class="pipeline-card" style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px; padding: 12px; text-align: center;">
-                <div style="font-size: 1.5em; font-weight: 700; color: #f57f17;" id="at-count-clarification">0</div>
-                <div style="font-size: 0.7em; color: #f57f17; text-transform: uppercase; font-weight: 600;">Clarification</div>
-              </div>
-              <div class="pipeline-card" style="background: #ffebee; border: 1px solid #ef9a9a; border-radius: 6px; padding: 12px; text-align: center;">
-                <div style="font-size: 1.5em; font-weight: 700; color: #c62828;" id="at-count-rejected">0</div>
-                <div style="font-size: 0.7em; color: #b71c1c; text-transform: uppercase; font-weight: 600;">Rejected</div>
-              </div>
-              <div class="pipeline-card" style="background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 6px; padding: 12px; text-align: center;">
-                <div style="font-size: 1.5em; font-weight: 700; color: #2e7d32;" id="at-count-approved">0</div>
-                <div style="font-size: 0.7em; color: #1b5e20; text-transform: uppercase; font-weight: 600;">Approved</div>
-              </div>
-            </div>
-            
-            <div class="queue-table-container" style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
-                <thead style="background: #f8f9fa; border-bottom: 1px solid #eee;">
-                  <tr>
-                    <th style="padding: 10px 12px;">Type</th>
-                    <th style="padding: 10px 12px;">Record</th>
-                    <th style="padding: 10px 12px;">Field</th>
-                    <th style="padding: 10px 12px;">Status</th>
-                    <th style="padding: 10px 12px;">Last Updated</th>
-                    <th style="padding: 10px 12px;">Actions</th>
+                    <th style="padding: 8px 12px;">Type</th>
+                    <th style="padding: 8px 12px;">Record</th>
+                    <th style="padding: 8px 12px;">Field</th>
+                    <th style="padding: 8px 12px;">Status</th>
+                    <th style="padding: 8px 12px;">Last Updated</th>
+                    <th style="padding: 8px 12px;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="patch-queue-list">
-                  <tr><td colspan="6" style="padding: 24px; text-align: center; color: #999;">No patch requests submitted yet. Go to Record Inspection to create one.</td></tr>
+                  <tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">No patch requests yet</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- QUEUE 4: System Changes (gray accent) -->
+          <div class="triage-queue-section" style="margin-bottom: 28px;">
+            <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 3px solid #9e9e9e;">
+              <h3 style="margin: 0; font-size: 1.05em; color: #333;">System Changes <span id="system-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
+            </div>
+            <div class="queue-table-container" style="background: white; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
+                <thead style="background: #fafafa; border-bottom: 1px solid #e0e0e0;">
+                  <tr>
+                    <th style="padding: 8px 12px;">Type</th>
+                    <th style="padding: 8px 12px;">Record</th>
+                    <th style="padding: 8px 12px;">Field</th>
+                    <th style="padding: 8px 12px;">Status</th>
+                    <th style="padding: 8px 12px;">Last Updated</th>
+                    <th style="padding: 8px 12px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="system-queue-list">
+                  <tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">No system changes</td></tr>
                 </tbody>
               </table>
             </div>
@@ -6791,6 +6761,8 @@
       const previewStatus = document.getElementById('preview-status');
       const triageInfo = document.getElementById('triage-session-info');
       
+      // v1.5.5: chip may not exist after header cleanup
+      if (!chip) return;
       chip.className = 'session-chip ' + sessionState.status;
       
       if (sessionState.status === 'loaded') {
@@ -12401,10 +12373,10 @@
     // =====================
     
     var analystTriageState = {
-      qaItems: [],
-      extractionItems: [],
-      logicItems: [],
-      patchItems: []
+      manualItems: [],
+      sflogicItems: [],
+      patchItems: [],
+      systemItems: []
     };
     
     // Map PatchRequest status to pipeline section
@@ -12454,11 +12426,11 @@
         return (b.updated_at || '').localeCompare(a.updated_at || '');
       });
       
-      // For now, QA/Extraction/Logic queues are empty placeholders
+      // For now, Manual/SF Logic/System queues are empty placeholders
       // They will be populated from different data sources in future versions
-      analystTriageState.qaItems = [];
-      analystTriageState.extractionItems = [];
-      analystTriageState.logicItems = [];
+      analystTriageState.manualItems = [];
+      analystTriageState.sflogicItems = [];
+      analystTriageState.systemItems = [];
     }
     
     function renderTriageQueueTable(items, containerId, emptyMessage) {
@@ -12500,22 +12472,22 @@
       loadAnalystTriageFromStore();
       
       // Update queue counts
-      var qaCount = analystTriageState.qaItems.length;
-      var extractionCount = analystTriageState.extractionItems.length;
-      var logicCount = analystTriageState.logicItems.length;
+      var manualCount = analystTriageState.manualItems.length;
+      var sflogicCount = analystTriageState.sflogicItems.length;
       var patchCount = analystTriageState.patchItems.length;
+      var systemCount = analystTriageState.systemItems.length;
       
-      var qaCountEl = document.getElementById('qa-queue-count');
-      var extractionCountEl = document.getElementById('extraction-queue-count');
-      var logicCountEl = document.getElementById('logic-queue-count');
+      var manualCountEl = document.getElementById('manual-queue-count');
+      var sflogicCountEl = document.getElementById('sflogic-queue-count');
       var patchCountEl = document.getElementById('patch-queue-count');
+      var systemCountEl = document.getElementById('system-queue-count');
       
-      if (qaCountEl) qaCountEl.textContent = '(' + qaCount + ')';
-      if (extractionCountEl) extractionCountEl.textContent = '(' + extractionCount + ')';
-      if (logicCountEl) logicCountEl.textContent = '(' + logicCount + ')';
+      if (manualCountEl) manualCountEl.textContent = '(' + manualCount + ')';
+      if (sflogicCountEl) sflogicCountEl.textContent = '(' + sflogicCount + ')';
       if (patchCountEl) patchCountEl.textContent = '(' + patchCount + ')';
+      if (systemCountEl) systemCountEl.textContent = '(' + systemCount + ')';
       
-      // Update patch pipeline cards
+      // Update patch pipeline chips
       var sectionCounts = { pending: 0, verifier: 0, admin: 0, clarification: 0, rejected: 0, approved: 0 };
       analystTriageState.patchItems.forEach(function(item) {
         if (sectionCounts.hasOwnProperty(item.section)) {
@@ -12538,10 +12510,10 @@
       if (approvedEl) approvedEl.textContent = sectionCounts.approved;
       
       // Render each queue table
-      renderTriageQueueTable(analystTriageState.qaItems, 'qa-queue-list', 'No QA issues pending');
-      renderTriageQueueTable(analystTriageState.extractionItems, 'extraction-queue-list', 'No extraction issues pending');
-      renderTriageQueueTable(analystTriageState.logicItems, 'logic-queue-list', 'No logic issues pending');
-      renderTriageQueueTable(analystTriageState.patchItems, 'patch-queue-list', 'No patch requests submitted yet. Go to Record Inspection to create one.');
+      renderTriageQueueTable(analystTriageState.manualItems, 'manual-queue-list', 'No manual review items');
+      renderTriageQueueTable(analystTriageState.sflogicItems, 'sflogic-queue-list', 'No Salesforce logic flags');
+      renderTriageQueueTable(analystTriageState.patchItems, 'patch-queue-list', 'No patch requests yet');
+      renderTriageQueueTable(analystTriageState.systemItems, 'system-queue-list', 'No system changes');
     }
     
     function openAnalystTriageItem(requestId) {
