@@ -1718,6 +1718,31 @@
           <span class="stat-divider admin-only-content" style="color: #ccc; display: none;">|</span>
           <span id="grid-stat-unknown" class="admin-only-content" style="display: none; cursor: pointer;" onclick="openLoaderDrawer()" title="Click to load data"><strong>Unknown Cols:</strong> <span class="stat-value" style="color: #7b1fa2;">0</span></span>
         </div>
+        
+        <!-- v1.6.11: Change Map Legend (shown only for modified dataset) -->
+        <div id="grid-change-legend" style="display: none; margin-bottom: 12px; padding: 8px 16px; background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 0.8em;">
+          <span style="font-weight: 600; color: #333; margin-right: 12px;">Cell Colors:</span>
+          <span class="legend-item" style="margin-right: 16px;">
+            <span style="display: inline-block; width: 14px; height: 14px; background: #FFD6D6; border: 1px solid #e53935; border-radius: 2px; vertical-align: middle;"></span>
+            <span style="margin-left: 4px; color: #555;">Blacklist</span>
+          </span>
+          <span class="legend-item" style="margin-right: 16px;">
+            <span style="display: inline-block; width: 14px; height: 14px; background: #FFE7B3; border: 1px solid #ff9800; border-radius: 2px; vertical-align: middle;"></span>
+            <span style="margin-left: 4px; color: #555;">RFI</span>
+          </span>
+          <span class="legend-item" style="margin-right: 16px;">
+            <span style="display: inline-block; width: 14px; height: 14px; background: #CFE8FF; border: 1px solid #1976d2; border-radius: 2px; vertical-align: middle;"></span>
+            <span style="margin-left: 4px; color: #555;">Correction</span>
+          </span>
+          <span class="legend-item" style="margin-right: 16px;">
+            <span style="display: inline-block; width: 14px; height: 14px; background: #EFEFEF; border: 1px solid #9e9e9e; border-radius: 2px; vertical-align: middle;"></span>
+            <span style="margin-left: 4px; color: #555;">System</span>
+          </span>
+          <span class="legend-item">
+            <span style="display: inline-block; width: 14px; height: 14px; background: #DDF5DD; border: 1px solid #4caf50; border-radius: 2px; vertical-align: middle;"></span>
+            <span style="margin-left: 4px; color: #555;">Verified</span>
+          </span>
+        </div>
 
         <!-- Dense Grid Table -->
         <div class="grid-table-container" style="overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px;">
@@ -9198,6 +9223,12 @@
     }
 
     function renderGrid() {
+      // v1.6.11: Show/hide change legend based on whether change map is active
+      var legendEl = document.getElementById('grid-change-legend');
+      if (legendEl) {
+        legendEl.style.display = changeMapStore.enabled ? 'block' : 'none';
+      }
+      
       // v1.4.4: Improved empty state handling
       if (!dataLoaded) {
         document.getElementById('grid-tbody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">' +
@@ -9759,12 +9790,17 @@
     };
     
     // Change type colors for grid highlighting
+    // v1.6.11: Strong DataDash-style cell colors for modified dataset
     var CHANGE_TYPE_STYLES = {
-      correction: { bg: '#e3f2fd', border: '#1976d2', label: 'Correction', emoji: '✏️' },
-      rfi: { bg: '#fff8e1', border: '#ff9800', label: 'RFI', emoji: '❓' },
-      system_change: { bg: '#f5f5f5', border: '#9e9e9e', label: 'System Change', emoji: '⚙️' },
-      blacklist: { bg: '#ffebee', border: '#f44336', label: 'Blacklist', emoji: '🚫' }
+      correction: { bg: '#CFE8FF', border: '#1976d2', label: 'Correction', emoji: '✏️', priority: 3 },
+      rfi: { bg: '#FFE7B3', border: '#ff9800', label: 'RFI', emoji: '❓', priority: 2 },
+      system_change: { bg: '#EFEFEF', border: '#9e9e9e', label: 'System Change', emoji: '⚙️', priority: 4 },
+      blacklist: { bg: '#FFD6D6', border: '#e53935', label: 'Blacklist', emoji: '🚫', priority: 1 },
+      verified: { bg: '#DDF5DD', border: '#4caf50', label: 'Verified', emoji: '✓', priority: 5 }
     };
+    
+    // v1.6.11: Priority order for overlapping changes (lower = higher priority)
+    // Blacklist (1) > RFI (2) > Correction (3) > System Change (4) > Verified (5)
     
     // Build change map from meta sheets in workbook
     function buildChangeMapFromMetaSheets() {
