@@ -9624,6 +9624,9 @@
       
       signalStore.stats.total = signalCount;
       
+      // v1.6.0: Set dataset load timestamp for triage display
+      datasetLoadTimestamp = new Date().toISOString();
+      
       // Debug console log
       console.log('[SignalEngine] Scan complete:');
       console.log('  - Records scanned:', recordCount);
@@ -12803,12 +12806,15 @@
       'Draft': { section: 'pending', label: 'Draft', color: '#757575' }
     };
     
+    // v1.6.0: Dataset load timestamp for signal items
+    var datasetLoadTimestamp = null;
+    
     function loadAnalystTriageFromStore() {
       var allPRs = PATCH_REQUEST_STORE.list();
       console.log('[AnalystTriage] Loading from store, found:', allPRs.length);
       
-      // Map all patch requests to triage items
-      analystTriageState.patchItems = allPRs.map(function(pr) {
+      // Map all patch requests to triage items (existing behavior)
+      var patchRequestItems = allPRs.map(function(pr) {
         var statusInfo = ANALYST_STATUS_MAP[pr.status] || { section: 'pending', label: pr.status || 'Unknown', color: '#757575' };
         
         var patchType = 'correction';
@@ -12828,17 +12834,120 @@
           status_color: statusInfo.color,
           updated_at: pr.updated_at_utc || pr.submitted_at_utc || pr.created_at_utc,
           notes: pr.clarification_notes || pr.rejection_reason,
-          thread: pr.thread
+          thread: pr.thread,
+          source: 'patch_request'
         };
       }).sort(function(a, b) {
         return (b.updated_at || '').localeCompare(a.updated_at || '');
       });
       
-      // For now, Manual/SF Logic/System queues are empty placeholders
-      // They will be populated from different data sources in future versions
-      analystTriageState.manualItems = [];
-      analystTriageState.sflogicItems = [];
-      analystTriageState.systemItems = [];
+      // v1.6.0: Populate queues from signalStore
+      var signalItems = getSignalTriageItems();
+      
+      // Manual Review: MOJIBAKE_DETECTED
+      analystTriageState.manualItems = signalItems.filter(function(item) {
+        return item.signal_type === 'MOJIBAKE_DETECTED';
+      });
+      
+      // Salesforce Logic Flags: QA_FLAG with ERROR or WARNING severity
+      analystTriageState.sflogicItems = signalItems.filter(function(item) {
+        return item.signal_type === 'QA_FLAG' && (item.severity === 'error' || item.severity === 'warning');
+      });
+      
+      // Patch Queue: MISSING_REQUIRED, PICKLIST_INVALID + patch requests
+      // Sort combined list by record_id asc, then field_key asc for determinism
+      var actionableSignals = signalItems.filter(function(item) {
+        return item.signal_type === 'MISSING_REQUIRED' || item.signal_type === 'PICKLIST_INVALID';
+      });
+      var combinedPatchItems = actionableSignals.concat(patchRequestItems);
+      combinedPatchItems.sort(function(a, b) {
+        var recCmp = (a.record_id || '').localeCompare(b.record_id || '');
+        if (recCmp !== 0) return recCmp;
+        // Use field_key for signals, fallback to field_name for patch requests
+        var aKey = a.field_key || a.field_name || '';
+        var bKey = b.field_key || b.field_name || '';
+        return aKey.localeCompare(bKey);
+      });
+      analystTriageState.patchItems = combinedPatchItems;
+      
+      // System Changes: QA_FLAG with INFO severity
+      analystTriageState.systemItems = signalItems.filter(function(item) {
+        return item.signal_type === 'QA_FLAG' && item.severity === 'info';
+      });
+      
+      console.log('[AnalystTriage] Queue counts from signals: Manual=' + analystTriageState.manualItems.length + 
+        ', SFLogic=' + analystTriageState.sflogicItems.length + 
+        ', Patch=' + analystTriageState.patchItems.length + 
+        ', System=' + analystTriageState.systemItems.length);
+    }
+    
+    // v1.6.0: Convert signalStore to triage items
+    function getSignalTriageItems() {
+      var items = [];
+      var loadTime = datasetLoadTimestamp || new Date().toISOString();
+      
+      // Iterate over signalStore.signals_by_cell
+      var recordIds = Object.keys(signalStore.signals_by_cell).sort();
+      
+      recordIds.forEach(function(recordId) {
+        var fieldSignals = signalStore.signals_by_cell[recordId];
+        var fieldKeys = Object.keys(fieldSignals).sort();
+        
+        fieldKeys.forEach(function(fieldKey) {
+          var signals = fieldSignals[fieldKey];
+          
+          signals.forEach(function(signal) {
+            items.push({
+              id: recordId + '|' + fieldKey + '|' + signal.signal_type,
+              signal_type: signal.signal_type,
+              type: mapSignalTypeToTriageType(signal.signal_type),
+              record_id: recordId,
+              field_name: signal.field_label || fieldKey,
+              field_key: fieldKey,
+              status: signal.signal_type,
+              status_label: mapSignalTypeToLabel(signal.signal_type),
+              status_color: mapSignalSeverityToColor(signal.severity),
+              severity: signal.severity,
+              message: signal.message,
+              updated_at: loadTime,
+              source: 'signal'
+            });
+          });
+        });
+      });
+      
+      return items;
+    }
+    
+    // v1.6.0: Map signal types to triage display types
+    function mapSignalTypeToTriageType(signalType) {
+      switch (signalType) {
+        case 'MISSING_REQUIRED': return 'required';
+        case 'PICKLIST_INVALID': return 'picklist';
+        case 'MOJIBAKE_DETECTED': return 'encoding';
+        case 'QA_FLAG': return 'qa';
+        default: return 'signal';
+      }
+    }
+    
+    function mapSignalTypeToLabel(signalType) {
+      switch (signalType) {
+        case 'MISSING_REQUIRED': return 'Required';
+        case 'PICKLIST_INVALID': return 'Invalid Value';
+        case 'MOJIBAKE_DETECTED': return 'Encoding Issue';
+        case 'QA_FLAG': return 'QA Flag';
+        default: return signalType;
+      }
+    }
+    
+    function mapSignalSeverityToColor(severity) {
+      switch (severity) {
+        case 'error': return '#c62828';
+        case 'warning': return '#f57f17';
+        case 'warn': return '#f57f17';  // Handle both 'warn' and 'warning'
+        case 'info': return '#1565c0';
+        default: return '#757575';
+      }
     }
     
     function renderTriageQueueTable(items, containerId, emptyMessage) {
@@ -12851,8 +12960,9 @@
       }
       
       container.innerHTML = items.map(function(item) {
-        var typeLabel = item.type === 'rfi' ? 'RFI' : item.type === 'blacklist' ? 'Blacklist' : item.type === 'qa' ? 'QA' : item.type === 'extraction' ? 'Extraction' : item.type === 'logic' ? 'Logic' : 'Correction';
-        var typeBadgeColor = item.type === 'rfi' ? '#1565c0' : item.type === 'blacklist' ? '#c62828' : item.type === 'qa' ? '#ff9800' : item.type === 'extraction' ? '#9c27b0' : item.type === 'logic' ? '#00bcd4' : '#2e7d32';
+        // v1.6.0: Handle both signal items and patch request items
+        var typeLabel = getTriageTypeLabel(item.type);
+        var typeBadgeColor = getTriageTypeColor(item.type);
         
         var timestamp = item.updated_at ? new Date(item.updated_at).toLocaleString() : 'Unknown';
         var statusBadge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + 
@@ -12864,15 +12974,128 @@
         
         var rowStyle = item.section === 'clarification' ? 'background: #fff8e1;' : '';
         
-        return '<tr style="border-bottom: 1px solid #eee; cursor: pointer; ' + rowStyle + '" onclick="openAnalystTriageItem(\'' + item.request_id + '\')">' +
+        // v1.6.0: Different click handlers for signal vs patch request items
+        var clickHandler = item.source === 'signal' 
+          ? 'openSignalTriageItem(\'' + item.record_id + '\', \'' + item.field_key + '\')'
+          : 'openAnalystTriageItem(\'' + item.request_id + '\')';
+        
+        var viewHandler = item.source === 'signal'
+          ? 'openSignalTriageItem(\'' + item.record_id + '\', \'' + item.field_key + '\')'
+          : 'openAnalystTriageItem(\'' + item.request_id + '\')';
+        
+        return '<tr style="border-bottom: 1px solid #eee; cursor: pointer; ' + rowStyle + '" onclick="' + clickHandler + '">' +
           '<td style="padding: 10px 12px;"><span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + typeBadgeColor + '15; color: ' + typeBadgeColor + ';">' + typeLabel + '</span></td>' +
           '<td style="padding: 10px 12px; font-family: monospace; font-size: 0.85em;">' + recordDisplay + '</td>' +
           '<td style="padding: 10px 12px;">' + (item.field_name || '-') + '</td>' +
           '<td style="padding: 10px 12px;">' + statusBadge + notesIndicator + '</td>' +
           '<td style="padding: 10px 12px; color: #666; font-size: 0.85em;">' + timestamp + '</td>' +
-          '<td style="padding: 10px 12px;"><button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75em;" onclick="event.stopPropagation(); openAnalystTriageItem(\'' + item.request_id + '\')">View</button></td>' +
+          '<td style="padding: 10px 12px;"><button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75em;" onclick="event.stopPropagation(); ' + viewHandler + '">View</button></td>' +
           '</tr>';
       }).join('');
+    }
+    
+    // v1.6.0: Get type label for triage display
+    function getTriageTypeLabel(type) {
+      switch (type) {
+        case 'rfi': return 'RFI';
+        case 'blacklist': return 'Blacklist';
+        case 'qa': return 'QA';
+        case 'required': return 'Required';
+        case 'picklist': return 'Picklist';
+        case 'encoding': return 'Encoding';
+        case 'correction': return 'Correction';
+        case 'extraction': return 'Extraction';
+        case 'logic': return 'Logic';
+        default: return type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Signal';
+      }
+    }
+    
+    // v1.6.0: Get type color for triage display
+    function getTriageTypeColor(type) {
+      switch (type) {
+        case 'rfi': return '#1565c0';
+        case 'blacklist': return '#c62828';
+        case 'qa': return '#ff9800';
+        case 'required': return '#c62828';
+        case 'picklist': return '#f57f17';
+        case 'encoding': return '#9c27b0';
+        case 'correction': return '#2e7d32';
+        case 'extraction': return '#9c27b0';
+        case 'logic': return '#00bcd4';
+        default: return '#757575';
+      }
+    }
+    
+    // v1.6.0: Open SRR at specific field from signal triage item
+    function openSignalTriageItem(recordId, fieldKey) {
+      console.log('[AnalystTriage] Opening signal item:', recordId, fieldKey);
+      
+      // Find record in workbook or canonical store
+      var found = findRecordById(recordId);
+      
+      if (found) {
+        // Open SRR with the record
+        openRowReviewDrawer(found.row, found.rowIndex, recordId);
+        
+        // After SRR opens, scroll to and focus the field
+        setTimeout(function() {
+          focusFieldInInspector(fieldKey);
+        }, 300);
+      } else {
+        // Try loading from canonical store
+        var storeKeys = Object.keys(localStorage).filter(function(k) {
+          return k.includes('/records/') && k.endsWith('/' + recordId + '.json');
+        });
+        
+        if (storeKeys.length > 0) {
+          try {
+            var record = JSON.parse(localStorage.getItem(storeKeys[0]));
+            openRowReviewDrawer(record, 0, recordId);
+            
+            setTimeout(function() {
+              focusFieldInInspector(fieldKey);
+            }, 300);
+          } catch (e) {
+            console.error('[AnalystTriage] Error loading record from store:', e);
+            showToast('Could not load record data', 'error');
+          }
+        } else {
+          showToast('Record not found. Please load the dataset first.', 'warning');
+        }
+      }
+    }
+    
+    // v1.6.0: Focus a specific field in the Field Inspector
+    function focusFieldInInspector(fieldKey) {
+      // Find the field card by looking for the field key in card attributes (uses data-field attribute)
+      var card = document.querySelector('.srr-field-card[data-field="' + fieldKey + '"]');
+      
+      // Try normalized lookup if exact match not found
+      if (!card) {
+        var fieldCards = document.querySelectorAll('.srr-field-card');
+        for (var i = 0; i < fieldCards.length; i++) {
+          var cardFieldKey = fieldCards[i].getAttribute('data-field');
+          if (cardFieldKey && normalizeFieldKey(cardFieldKey) === normalizeFieldKey(fieldKey)) {
+            card = fieldCards[i];
+            break;
+          }
+        }
+      }
+      
+      if (card) {
+        // Scroll into view
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Add highlight effect
+        card.style.boxShadow = '0 0 0 3px #1565c0';
+        setTimeout(function() {
+          card.style.boxShadow = '';
+        }, 2000);
+        // Click to select
+        card.click();
+        console.log('[FieldInspector] Focused field:', fieldKey);
+      } else {
+        console.warn('[FieldInspector] Field not found:', fieldKey);
+      }
     }
     
     function renderAnalystTriage() {
