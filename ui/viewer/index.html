@@ -13052,7 +13052,8 @@
       
       // Build fragment: page is always included, zoom only if useFragmentZoom is true
       // Some PDF renderers break with zoom fragment, so we keep it UI-only in those cases
-      var fragment = '#page=' + srrState.docPage;
+      // v1.6.13: Add navpanes=0 to hide thumbnail sidebar, scrollbar=1 for continuous scroll
+      var fragment = '#page=' + srrState.docPage + '&navpanes=0&scrollbar=1&toolbar=1&view=FitH';
       if (srrState.useFragmentZoom !== false) {
         fragment += '&zoom=' + srrState.zoom;
       }
