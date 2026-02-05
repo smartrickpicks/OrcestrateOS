@@ -210,9 +210,16 @@
     .wizard-preset-btn.active { background: #1565c0; color: white; }
 
     /* Nav item mode visibility */
+    .nav-item.analyst-only { display: flex; }
     .nav-item.reviewer-only { display: none; }
     .nav-item.admin-only { display: none; }
+    .mode-analyst .nav-item.analyst-only { display: flex; }
+    .mode-analyst .nav-item.reviewer-only { display: none; }
+    .mode-analyst .nav-item.admin-only { display: none; }
+    .mode-reviewer .nav-item.analyst-only { display: none; }
     .mode-reviewer .nav-item.reviewer-only { display: flex; }
+    .mode-reviewer .nav-item.admin-only { display: none; }
+    .mode-admin .nav-item.analyst-only { display: none; }
     .mode-admin .nav-item.reviewer-only { display: flex; }
     .mode-admin .nav-item.admin-only { display: flex; }
 
@@ -1190,7 +1197,7 @@
         <!-- Tools Section -->
         <div class="nav-section">
           <div class="nav-section-header">Tools</div>
-          <a class="nav-item" data-page="patch" href="#/patch">
+          <a class="nav-item analyst-only" data-page="patch" href="#/patch">
             <span class="nav-icon">✎</span>
             <span class="nav-label">Patch Studio</span>
           </a>
@@ -1386,6 +1393,19 @@
             </div>
           </div>
           
+        </div>
+      </div>
+
+      <!-- ACCESS RESTRICTED PAGE (v1.4.22) -->
+      <div class="page" id="page-restricted" style="display: none;">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center;">
+          <div style="font-size: 64px; margin-bottom: 20px;">🔒</div>
+          <h2 style="margin: 0 0 10px; color: #333;">Access Restricted</h2>
+          <p style="color: #666; margin-bottom: 24px; max-width: 400px;" id="restricted-message">You don't have permission to view this page with your current role.</p>
+          <div style="display: flex; gap: 12px;">
+            <button onclick="navigateToRoleDefault()" class="toolbar-btn" style="padding: 10px 24px;">Go to My Dashboard</button>
+            <button onclick="window.location.href='/ui/landing/'" class="toolbar-btn" style="padding: 10px 24px; background: #f5f5f5; color: #333;">Switch Role</button>
+          </div>
         </div>
       </div>
 
@@ -7618,7 +7638,7 @@
       options = options || {};
       // Loader is now a drawer, not a page - redirect loader requests to triage
       if (page === 'loader') page = 'triage';
-      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'row'];
+      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'row', 'restricted'];
       
       // v1.5.3: Reset reviewer SRR mode when navigating away from row page
       if (!page.startsWith('row') && srrState.reviewerMode) {
@@ -7665,34 +7685,43 @@
         adminTab = parts[1] || 'governance';
       }
       
-      // RBAC route guards with toast notification
+      // v1.4.22: RBAC route guards - show Access Restricted page with specific message
+      var restrictedReason = null;
       if (page === 'admin' && currentMode !== 'admin') {
-        console.log('[Navigate] Admin page requires admin mode, redirecting to triage');
-        showToast('Admin only - switch to Admin role to access this page', 'warning');
-        page = 'triage'; // Redirect to triage instead of returning
+        console.log('[Navigate] Admin page requires admin mode');
+        restrictedReason = 'The Admin Panel is only available to users with the Admin role.';
         adminTab = null;
       }
       if (page === 'review' && currentMode !== 'reviewer' && currentMode !== 'admin') {
         console.log('[Navigate] Review page requires reviewer/admin mode');
-        showToast('Reviewer access required', 'warning');
-        page = 'triage';
+        restrictedReason = 'Config Inspector is only available to Reviewers and Admins.';
       }
       if (page === 'verifier-review' && currentMode !== 'reviewer' && currentMode !== 'admin') {
         console.log('[Navigate] Verifier Review page requires reviewer/admin mode');
-        showToast('Verifier access required', 'warning');
-        page = 'triage';
+        restrictedReason = 'Verifier Review is only available to Reviewers and Admins.';
       }
       if (page === 'admin-approval' && currentMode !== 'admin') {
         console.log('[Navigate] Admin Approval page requires admin mode');
-        showToast('Admin access required', 'warning');
-        page = 'triage';
+        restrictedReason = 'Admin Approval is only available to users with the Admin role.';
+      }
+      if (page === 'patch' && currentMode !== 'analyst') {
+        console.log('[Navigate] Patch Studio requires analyst mode');
+        restrictedReason = 'Patch Studio is only available to Analysts. Reviewers and Admins review patches submitted by Analysts.';
+      }
+      
+      // If restricted, show access restricted page
+      if (restrictedReason) {
+        page = 'restricted';
+        var msgEl = document.getElementById('restricted-message');
+        if (msgEl) msgEl.textContent = restrictedReason;
       }
       // v1.5.1: Admin Review route (reuses verifier-review page with admin label)
       if (page.startsWith('admin-review/') || page === 'admin-review') {
         if (currentMode !== 'admin') {
           console.log('[Navigate] Admin Review page requires admin mode');
-          showToast('Admin access required', 'warning');
-          page = 'triage';
+          page = 'restricted';
+          var msgEl2 = document.getElementById('restricted-message');
+          if (msgEl2) msgEl2.textContent = 'Admin Review is only available to users with the Admin role.';
         } else {
           // Extract artifact ID and load for admin review
           var artifactId = page.split('/')[1];
@@ -7914,21 +7943,38 @@
         }
       }
       
-      // If on admin page but not admin mode, redirect to triage
-      if (window.location.hash.includes('admin') && mode !== 'admin') {
-        showToast('Role changed - returning to Triage', 'info');
-        navigateTo('triage');
+      // v1.4.22: Navigate to role-specific default landing on role change
+      var currentHash = window.location.hash.replace('#/', '') || '';
+      var needsRedirect = false;
+      
+      // Check if current page is restricted for new role
+      if (currentHash.includes('admin') && mode !== 'admin') {
+        needsRedirect = true;
+      } else if ((currentHash.includes('review') || currentHash === 'verifier-review') && mode === 'analyst') {
+        needsRedirect = true;
+      } else if (currentHash === 'patch' && mode !== 'analyst') {
+        needsRedirect = true;
       }
-      // If on review page but not reviewer or admin mode, redirect to triage
-      if (window.location.hash.includes('review') && mode === 'analyst') {
-        showToast('Role changed - returning to Triage', 'info');
-        navigateTo('triage');
+      
+      if (needsRedirect) {
+        showToast('Role changed - redirecting to your dashboard', 'info');
+        navigateToRoleDefault();
       }
       
       applyModeVisibility(mode);
       localStorage.setItem('viewer_mode_v10', mode);
     }
 
+    // v1.4.22: Navigate to role-specific default landing page
+    function navigateToRoleDefault() {
+      if (currentMode === 'admin') {
+        navigateTo('admin');
+      } else {
+        // Analyst and Reviewer both default to Triage
+        navigateTo('triage');
+      }
+    }
+    
     function applyModeVisibility(mode) {
       const revElements = document.querySelectorAll('[data-mode-reviewer]');
       const anlElements = document.querySelectorAll('[data-mode-analyst]');
@@ -15101,9 +15147,14 @@
         localStorage.setItem('viewer_mode_v10', localStorage.getItem('currentRole'));
       }
       
-      // Default route is always triage
-      const hash = window.location.hash.replace('#/', '') || 'triage';
-      navigateTo(hash === 'loader' ? 'triage' : hash);
+      // v1.4.22: Default route based on role
+      const hash = window.location.hash.replace('#/', '') || '';
+      if (hash && hash !== 'loader') {
+        navigateTo(hash);
+      } else {
+        // No hash or loader - go to role default
+        navigateToRoleDefault();
+      }
       
       // Auto-setup repo masters if enabled
       if (userSettings.use_repo_masters && !dataLoaded) {
