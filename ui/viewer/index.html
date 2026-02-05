@@ -699,10 +699,8 @@
     .glossary-icon:hover { color: #1976d2; }
     .glossary-tooltip {
       display: none;
-      position: absolute;
-      bottom: 100%;
-      left: 50%;
-      transform: translateX(-50%);
+      position: fixed;
+      z-index: 10000;
       background: #333;
       color: white;
       padding: 10px 14px;
@@ -725,8 +723,7 @@
       border: 6px solid transparent;
       border-top-color: #333;
     }
-    .glossary-icon:hover + .glossary-tooltip,
-    .glossary-tooltip:hover { display: block; }
+    .glossary-tooltip.visible { display: block; }
     .glossary-tooltip-row { margin-bottom: 4px; }
     .glossary-tooltip-label { color: #aaa; font-size: 0.85em; }
     .glossary-tooltip-value { color: #fff; }
@@ -10909,7 +10906,29 @@
     // v1.5.7: Get all hinges for a sheet, grouped by level (stores normalized keys for lookup)
     function getSheetHinges(sheetName) {
       if (!rulesBundleCache.hingeGroups || !rulesBundleCache.hingeGroups.hinges) return { primary: [], secondary: [], primaryNorm: [], secondaryNorm: [] };
-      var hinges = rulesBundleCache.hingeGroups.hinges.filter(function(h) { return h.sheet === sheetName; });
+      var hinges = rulesBundleCache.hingeGroups.hinges.filter(function(h) { return h.sheet === sheetName; 
+    // v1.6.36: Glossary tooltip positioning (fixed positioning to escape container bounds)
+    document.addEventListener('mouseover', function(e) {
+      if (e.target.classList.contains('glossary-icon')) {
+        var tooltip = e.target.nextElementSibling;
+        if (tooltip && tooltip.classList.contains('glossary-tooltip')) {
+          var rect = e.target.getBoundingClientRect();
+          tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+          tooltip.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+          tooltip.style.transform = 'translateX(-50%)';
+          tooltip.classList.add('visible');
+        }
+      }
+    });
+    document.addEventListener('mouseout', function(e) {
+      if (e.target.classList.contains('glossary-icon')) {
+        var tooltip = e.target.nextElementSibling;
+        if (tooltip && tooltip.classList.contains('glossary-tooltip')) {
+          tooltip.classList.remove('visible');
+        }
+      }
+    });
+});
       var primary = hinges.filter(function(h) { return h.hinge_level === 'Primary'; }).map(function(h) { return h.field_key; });
       var secondary = hinges.filter(function(h) { return h.hinge_level === 'Secondary'; }).map(function(h) { return h.field_key; });
       return {
