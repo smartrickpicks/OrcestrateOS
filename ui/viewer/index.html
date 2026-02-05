@@ -20572,6 +20572,9 @@ Add any additional notes here.
         // v1.6.0: Generate signals for dataset
         generateSignalsForDataset();
         
+        // v1.6.8 fix: Re-render grid after change map is built for cell highlighting
+        renderGrid();
+        
         console.log('[Loader] Ostereo demo dataset loaded:', workbook.order.length, 'sheets');
         showToast('Ostereo demo dataset loaded successfully', 'success');
         updateSidebarSheetSelector();
