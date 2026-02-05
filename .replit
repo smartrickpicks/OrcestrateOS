@@ -51,7 +51,7 @@ waitForPort = 5000
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["python", "-m", "http.server", "5000", "--directory", "ui/viewer"]
+run = ["python", "-m", "uvicorn", "server.pdf_proxy:app", "--host", "0.0.0.0", "--port", "5000"]
 
 [[ports]]
 localPort = 5000
