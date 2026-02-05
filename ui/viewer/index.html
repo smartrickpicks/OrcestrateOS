@@ -1467,7 +1467,7 @@
       
       <!-- Sign Out link -->
       <div style="padding: 12px 20px; border-top: 1px solid #2d2d4a;">
-        <a href="/ui/landing/" id="sign-out-link" style="display: flex; align-items: center; gap: 8px; color: #888; text-decoration: none; font-size: 0.8em; transition: color 0.2s;">
+        <a href="#" id="sign-out-link" onclick="handleSignOut(event)" style="display: flex; align-items: center; gap: 8px; color: #888; text-decoration: none; font-size: 0.8em; transition: color 0.2s;">
           <span style="font-size: 1.1em;">←</span>
           <span>Sign Out</span>
         </a>
@@ -8590,10 +8590,33 @@
     // Admin: full "God mode" - can switch between all roles (when Playground enabled)
     var roleRestrictionsApplied = false;
     
+    // v1.6.25: Check if user is in demo session (came from /ui/demo/)
+    function isDemoSession() {
+      try {
+        var demoUser = JSON.parse(localStorage.getItem('demoUser') || '{}');
+        return demoUser.isDemo === true;
+      } catch (e) {
+        return false;
+      }
+    }
+    
+    // v1.6.25: Handle sign out - redirect to appropriate landing page
+    function handleSignOut(event) {
+      event.preventDefault();
+      var isDemo = isDemoSession();
+      // Clear session
+      localStorage.removeItem('currentRole');
+      localStorage.removeItem('demoUser');
+      // Redirect to appropriate page
+      window.location.href = isDemo ? '/ui/demo/' : '/ui/landing/';
+    }
+    
     // v1.6.24: Check if playground mode is enabled for admin
     function isPlaygroundEnabled() {
       try {
         var demoUser = JSON.parse(localStorage.getItem('demoUser') || '{}');
+        // In demo mode, playground is always enabled
+        if (demoUser.isDemo === true) return true;
         return demoUser.playgroundEnabled === true;
       } catch (e) {
         return false;

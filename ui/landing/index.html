@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Orchestrate OS — Sign In</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     * {
       margin: 0;
@@ -23,7 +24,6 @@
       overflow: hidden;
     }
     
-    /* Subtle starfield background */
     body::before {
       content: '';
       position: absolute;
@@ -58,7 +58,6 @@
       z-index: 0;
     }
     
-    /* Slow gentle drift animation */
     @keyframes starfield {
       0% { transform: translateY(0); }
       100% { transform: translateY(-250px); }
@@ -101,31 +100,10 @@
       margin-top: 8px;
     }
     
-    .google-btn {
+    .google-signin-container {
       display: flex;
-      align-items: center;
       justify-content: center;
-      gap: 12px;
-      width: 100%;
-      padding: 14px 24px;
-      background: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 500;
-      color: #1f2937;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .google-btn:hover {
-      background: #f3f4f6;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-    
-    .google-icon {
-      width: 20px;
-      height: 20px;
+      margin-bottom: 12px;
     }
     
     .auth-hint {
@@ -133,6 +111,17 @@
       font-size: 13px;
       color: #64748b;
       line-height: 1.4;
+    }
+    
+    .error-message {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
     }
     
     .divider {
@@ -189,6 +178,39 @@
       border-radius: 3px;
       margin-left: 4px;
     }
+    
+    .demo-link {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid #2d3748;
+    }
+    
+    .demo-link a {
+      color: #60a5fa;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    
+    .demo-link a:hover {
+      text-decoration: underline;
+    }
+    
+    .setup-notice {
+      background: rgba(251, 191, 36, 0.1);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      color: #fbbf24;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 20px;
+      text-align: left;
+      line-height: 1.5;
+    }
+    
+    .setup-notice strong {
+      display: block;
+      margin-bottom: 8px;
+    }
   </style>
 </head>
 <body>
@@ -197,16 +219,19 @@
     <h1>Orchestrate OS</h1>
     <p class="tagline">Semantic Control Board for governance-first data operations</p>
     
+    <div id="error-message" class="error-message"></div>
+    
+    <div id="setup-notice" class="setup-notice" style="display: none;">
+      <strong>Google OAuth Setup Required</strong>
+      To enable production login, configure your Google OAuth credentials in the Secrets panel.
+      <br><br>
+      <a href="/ui/demo/" style="color: #60a5fa;">Use Demo Mode</a> for testing in the meantime.
+    </div>
+    
     <div class="auth-section">
-      <button class="google-btn" id="google-signin">
-        <svg class="google-icon" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-        </svg>
-        Continue with Google
-      </button>
+      <div id="google-signin-container" class="google-signin-container">
+        <!-- Google Sign-In button will be rendered here -->
+      </div>
       <p class="auth-hint">Use your createmusicgroup.com account.</p>
     </div>
     
@@ -228,33 +253,25 @@
         Connect Google Drive <span class="coming-tag">Coming Soon</span>
       </button>
     </div>
+    
+    <div class="demo-link">
+      <a href="/ui/demo/">Switch to Demo Mode</a>
+    </div>
   </div>
   
   <script>
     (function() {
-      // v1.6.24: Production login with role-based access
-      // In production, role would come from Google OAuth + directory lookup
-      // For demo: default to analyst; ?role=admin|reviewer for testing
-      
+      // Role assignment based on email domain and specific emails
       var adminEmails = [
-        'emily.rodriguez@createmusicgroup.com', 
-        'admin@createmusicgroup.com',
-        'emily.rodriguez@orchestrate.demo'
+        'emily.rodriguez@createmusicgroup.com',
+        'admin@createmusicgroup.com'
       ];
       var reviewerEmails = [
-        'marcus.johnson@createmusicgroup.com', 
-        'reviewer@createmusicgroup.com',
-        'marcus.johnson@orchestrate.demo'
+        'marcus.johnson@createmusicgroup.com',
+        'reviewer@createmusicgroup.com'
       ];
+      var allowedDomain = 'createmusicgroup.com';
       
-      // Demo profiles for role-specific logins
-      var demoProfiles = {
-        analyst: { email: 'sarah.chen@createmusicgroup.com', name: 'Sarah Chen' },
-        reviewer: { email: 'marcus.johnson@createmusicgroup.com', name: 'Marcus Johnson' },
-        admin: { email: 'emily.rodriguez@createmusicgroup.com', name: 'Emily Rodriguez' }
-      };
-      
-      // Determine role from email using lookup lists
       function getRoleFromEmail(email) {
         var lowerEmail = (email || '').toLowerCase();
         for (var i = 0; i < adminEmails.length; i++) {
@@ -266,58 +283,85 @@
         return 'analyst';
       }
       
-      document.getElementById('google-signin').addEventListener('click', function() {
-        // Check for existing session to preserve admin playground state
-        var existingUser = null;
-        var preservePlayground = false;
-        try {
-          existingUser = JSON.parse(localStorage.getItem('demoUser') || 'null');
-          if (existingUser && existingUser.playgroundEnabled) {
-            preservePlayground = true;
-          }
-        } catch (e) {}
+      function showError(message) {
+        var errorEl = document.getElementById('error-message');
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+      }
+      
+      function handleGoogleSignIn(response) {
+        // Decode JWT token to get user info
+        var payload = JSON.parse(atob(response.credential.split('.')[1]));
+        var email = payload.email;
+        var name = payload.name || payload.given_name || email.split('@')[0];
+        var emailVerified = payload.email_verified;
         
-        // In real production: Google OAuth would return actual user email
-        // For demo: check URL param for role testing, or use default analyst profile
-        var urlParams = new URLSearchParams(window.location.search);
-        var testRole = urlParams.get('role'); // ?role=admin, ?role=reviewer
-        
-        var userEmail, userName, userRole;
-        
-        if (testRole === 'admin') {
-          // Admin role requested via URL param (for testing)
-          userEmail = demoProfiles.admin.email;
-          userName = demoProfiles.admin.name;
-          userRole = 'admin';
-        } else if (testRole === 'reviewer') {
-          // Reviewer role requested via URL param (for testing)
-          userEmail = demoProfiles.reviewer.email;
-          userName = demoProfiles.reviewer.name;
-          userRole = 'reviewer';
-        } else if (existingUser && existingUser.email) {
-          // Re-login: use existing email and look up role
-          userEmail = existingUser.email;
-          userName = existingUser.name || 'User';
-          userRole = getRoleFromEmail(userEmail);
-        } else {
-          // Fresh login: default to admin for demo testing (real OAuth would use actual email)
-          userEmail = demoProfiles.admin.email;
-          userName = demoProfiles.admin.name;
-          userRole = 'admin';
+        // Verify email is from allowed domain
+        var emailDomain = email.split('@')[1];
+        if (emailDomain !== allowedDomain) {
+          showError('Access denied. Please use your ' + allowedDomain + ' account.');
+          return;
         }
         
-        localStorage.setItem('currentRole', userRole);
+        if (!emailVerified) {
+          showError('Email not verified. Please verify your Google account.');
+          return;
+        }
+        
+        // Determine role from email
+        var role = getRoleFromEmail(email);
+        
+        // Store user session
+        localStorage.setItem('currentRole', role);
         localStorage.setItem('demoUser', JSON.stringify({
-          email: userEmail,
-          name: userName,
-          folder: userName + ' - Production',
-          role: userRole,
+          email: email,
+          name: name,
+          folder: name + ' - Production',
+          role: role,
           signedInAt: new Date().toISOString(),
-          playgroundEnabled: (userRole === 'admin') ? preservePlayground : false
+          isDemo: false,
+          playgroundEnabled: false
         }));
         
+        // Redirect to viewer
         window.location.href = '/ui/viewer/';
-      });
+      }
+      
+      // Fetch Google Client ID from server config
+      fetch('/api/auth/config')
+        .then(function(res) {
+          if (!res.ok) throw new Error('Config not available');
+          return res.json();
+        })
+        .then(function(config) {
+          if (!config.googleClientId) {
+            throw new Error('Google OAuth not configured');
+          }
+          
+          // Initialize Google Sign-In
+          google.accounts.id.initialize({
+            client_id: config.googleClientId,
+            callback: handleGoogleSignIn,
+            auto_select: false,
+            cancel_on_tap_outside: true
+          });
+          
+          // Render the button
+          google.accounts.id.renderButton(
+            document.getElementById('google-signin-container'),
+            {
+              theme: 'filled_blue',
+              size: 'large',
+              width: 300,
+              text: 'continue_with'
+            }
+          );
+        })
+        .catch(function(err) {
+          console.warn('Google OAuth not configured:', err.message);
+          document.getElementById('setup-notice').style.display = 'block';
+          document.getElementById('google-signin-container').innerHTML = '';
+        });
     })();
   </script>
 </body>

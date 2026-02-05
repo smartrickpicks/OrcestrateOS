@@ -221,6 +221,16 @@ app.mount("/assets", NoCacheStaticFiles(directory=str(PROJECT_ROOT / "assets"), 
 app.mount("/rules", NoCacheStaticFiles(directory=str(PROJECT_ROOT / "rules"), html=False), name="rules")
 
 
+@app.get("/api/auth/config")
+async def auth_config():
+    """Return auth configuration for client-side Google Sign-In."""
+    google_client_id = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
+    return {
+        "googleClientId": google_client_id,
+        "configured": bool(google_client_id)
+    }
+
+
 @app.get("/")
 async def root_redirect():
     """Redirect root to landing page."""
