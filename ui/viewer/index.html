@@ -1295,10 +1295,12 @@
     </nav>
 
     <main class="main-content">
-      <!-- Top Toolbar - Quick Actions Bar (visible when data loaded) -->
+      <!-- Top Toolbar (visible when data loaded) -->
       <div class="top-toolbar" id="top-toolbar" style="display: none;">
         <div class="top-toolbar-left">
-          <span style="font-size: 0.8em; color: #999; font-weight: 500;">Quick Actions</span>
+          <input type="text" id="global-search-input" placeholder="Search agreements, accounts, record IDs…" 
+                 style="padding: 8px 14px; border: none; background: transparent; font-size: 0.85em; width: 280px; color: #666; outline: none;" 
+                 onkeydown="handleGlobalSearchKeydown(event)">
           <span id="config-status-chip" style="display: none; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; margin-left: 12px;"></span>
         </div>
         <div class="top-toolbar-right">
@@ -1417,14 +1419,14 @@
             <p class="page-desc">All items requiring analyst review and action.</p>
           </div>
 
-          <!-- QUEUE 1: Manual Review (soft yellow tint) -->
-          <div class="triage-queue-section" style="margin-bottom: 24px; background: #fffef5; border-radius: 8px; padding: 16px;">
+          <!-- QUEUE 1: Manual Review -->
+          <div class="triage-queue-section" style="margin-bottom: 24px;">
             <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
               <h3 style="margin: 0; font-size: 1.05em; color: #333;">Manual Review <span id="manual-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
             </div>
-            <div class="queue-table-container" style="background: white; border: 1px solid #f0f0f0; border-radius: 6px; overflow: hidden;">
+            <div class="queue-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
-                <thead style="background: #fafafa; border-bottom: 1px solid #eee;">
+                <thead style="background: #f5f5f5; border-bottom: 1px solid #e0e0e0;">
                   <tr>
                     <th style="padding: 8px 12px;">Type</th>
                     <th style="padding: 8px 12px;">Record</th>
@@ -1434,21 +1436,21 @@
                     <th style="padding: 8px 12px;">Actions</th>
                   </tr>
                 </thead>
-                <tbody id="manual-queue-list">
+                <tbody id="manual-queue-list" style="background: #fffef5;">
                   <tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">No manual review items</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <!-- QUEUE 2: Salesforce Logic Flags (soft orange tint) -->
-          <div class="triage-queue-section" style="margin-bottom: 24px; background: #fffaf5; border-radius: 8px; padding: 16px;">
+          <!-- QUEUE 2: Salesforce Logic Flags -->
+          <div class="triage-queue-section" style="margin-bottom: 24px;">
             <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
               <h3 style="margin: 0; font-size: 1.05em; color: #333;">Salesforce Logic Flags <span id="sflogic-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
             </div>
-            <div class="queue-table-container" style="background: white; border: 1px solid #f0f0f0; border-radius: 6px; overflow: hidden;">
+            <div class="queue-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
-                <thead style="background: #fafafa; border-bottom: 1px solid #eee;">
+                <thead style="background: #f5f5f5; border-bottom: 1px solid #e0e0e0;">
                   <tr>
                     <th style="padding: 8px 12px;">Type</th>
                     <th style="padding: 8px 12px;">Record</th>
@@ -1458,22 +1460,22 @@
                     <th style="padding: 8px 12px;">Actions</th>
                   </tr>
                 </thead>
-                <tbody id="sflogic-queue-list">
+                <tbody id="sflogic-queue-list" style="background: #fffaf5;">
                   <tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">No Salesforce logic flags</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <!-- QUEUE 3: Patch Queue (soft blue tint) -->
-          <div class="triage-queue-section" style="margin-bottom: 24px; background: #f8fbff; border-radius: 8px; padding: 16px;">
+          <!-- QUEUE 3: Patch Queue -->
+          <div class="triage-queue-section" style="margin-bottom: 24px;">
             <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
               <h3 style="margin: 0; font-size: 1.05em; color: #333;">Patch Queue <span id="patch-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
               <button style="margin-left: auto; padding: 4px 10px; font-size: 0.75em; background: transparent; border: 1px solid #ddd; border-radius: 4px; color: #999; cursor: not-allowed;" disabled title="Filter coming soon">Filter</button>
             </div>
-            <div class="queue-table-container" style="background: white; border: 1px solid #f0f0f0; border-radius: 6px; overflow: hidden;">
+            <div class="queue-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
-                <thead style="background: #fafafa; border-bottom: 1px solid #eee;">
+                <thead style="background: #f5f5f5; border-bottom: 1px solid #e0e0e0;">
                   <tr>
                     <th style="padding: 8px 12px;">Type</th>
                     <th style="padding: 8px 12px;">Record</th>
@@ -1483,21 +1485,21 @@
                     <th style="padding: 8px 12px;">Actions</th>
                   </tr>
                 </thead>
-                <tbody id="patch-queue-list">
+                <tbody id="patch-queue-list" style="background: #f8fbff;">
                   <tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">No patch requests yet</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <!-- QUEUE 4: System Changes (soft gray tint) -->
-          <div class="triage-queue-section" style="margin-bottom: 24px; background: #fafafa; border-radius: 8px; padding: 16px;">
+          <!-- QUEUE 4: System Changes -->
+          <div class="triage-queue-section" style="margin-bottom: 24px;">
             <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
               <h3 style="margin: 0; font-size: 1.05em; color: #333;">System Changes <span id="system-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
             </div>
-            <div class="queue-table-container" style="background: white; border: 1px solid #f0f0f0; border-radius: 6px; overflow: hidden;">
+            <div class="queue-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
-                <thead style="background: #fafafa; border-bottom: 1px solid #eee;">
+                <thead style="background: #f5f5f5; border-bottom: 1px solid #e0e0e0;">
                   <tr>
                     <th style="padding: 8px 12px;">Type</th>
                     <th style="padding: 8px 12px;">Record</th>
@@ -1507,7 +1509,7 @@
                     <th style="padding: 8px 12px;">Actions</th>
                   </tr>
                 </thead>
-                <tbody id="system-queue-list">
+                <tbody id="system-queue-list" style="background: #fafafa;">
                   <tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">No system changes</td></tr>
                 </tbody>
               </table>
