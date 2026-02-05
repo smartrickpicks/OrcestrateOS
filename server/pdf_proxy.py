@@ -22,15 +22,20 @@ import socket
 from urllib.parse import urlparse, unquote
 from typing import Optional
 
+from pathlib import Path
 from fastapi import FastAPI, Query, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import httpx
 
 app = FastAPI(
     title="Orchestrate OS PDF Proxy",
-    description="CORS-safe PDF proxy for Single Row Review",
-    version="1.0.0"
+    description="CORS-safe PDF proxy for Single Row Review with static file serving",
+    version="1.1.0"
 )
+
+PROJECT_ROOT = Path(__file__).parent.parent
 
 DEFAULT_ALLOWED_HOSTS = [
     "app-myautobots-public-dev.s3.amazonaws.com",
@@ -213,6 +218,30 @@ async def proxy_pdf(url: str = Query(..., description="URL of the PDF to fetch")
     )
 
 
+class NoCacheStaticFiles(StaticFiles):
+    """Static files middleware with cache-control headers disabled."""
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+
+
+app.mount("/ui", NoCacheStaticFiles(directory=str(PROJECT_ROOT / "ui"), html=True), name="ui")
+app.mount("/out", NoCacheStaticFiles(directory=str(PROJECT_ROOT / "out"), html=False), name="out")
+app.mount("/config", NoCacheStaticFiles(directory=str(PROJECT_ROOT / "config"), html=False), name="config")
+app.mount("/examples", NoCacheStaticFiles(directory=str(PROJECT_ROOT / "examples"), html=False), name="examples")
+app.mount("/assets", NoCacheStaticFiles(directory=str(PROJECT_ROOT / "assets"), html=False), name="assets")
+
+
+@app.get("/")
+async def root_redirect():
+    """Redirect root to viewer."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/ui/viewer/index.html")
+
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=5000)

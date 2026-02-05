@@ -24,10 +24,6 @@ args = "Smoke Test"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Viewer Server"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "PDF Proxy"
 
 [[workflows.workflow]]
@@ -42,7 +38,7 @@ args = "bash scripts/replit_smoke.sh"
 outputType = "console"
 
 [[workflows.workflow]]
-name = "Viewer Server"
+name = "PDF Proxy"
 author = "agent"
 
 [workflows.workflow.metadata]
@@ -50,20 +46,8 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "bash scripts/serve_viewer.sh"
+args = "cd server && python -m uvicorn pdf_proxy:app --host 0.0.0.0 --port 5000"
 waitForPort = 5000
-
-[[workflows.workflow]]
-name = "PDF Proxy"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd server && python -m uvicorn pdf_proxy:app --host 0.0.0.0 --port 8000"
-waitForPort = 8000
-
-[workflows.workflow.metadata]
-outputType = "console"
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -72,7 +56,3 @@ run = ["python", "-m", "http.server", "5000", "--directory", "ui/viewer"]
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 8000
-externalPort = 8000

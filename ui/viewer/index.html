@@ -6686,11 +6686,12 @@
     
     // ========== PDF CACHE (v1.4.13) ==========
     // IndexedDB-based offline-first PDF cache with LRU eviction
-    // v1.4.17: PDF Proxy configuration with Supabase Edge Function as primary, FastAPI as fallback
-    // Priority: Supabase proxy (if env set) > FastAPI proxy (port 8000) > show warning
+    // v1.4.18: PDF Proxy configuration - unified server on same origin (port 5000)
+    // Priority: Supabase proxy (if env set) > FastAPI proxy (same origin) > show warning
     var PDF_PROXY_CONFIG = (function() {
       var host = window.location.hostname;
       var protocol = window.location.protocol;
+      var origin = window.location.origin;
       
       // Check for Supabase configuration (set via embedded config or env)
       var supabaseUrl = window.VITE_SUPABASE_URL || localStorage.getItem('SUPABASE_URL') || '';
@@ -6706,45 +6707,17 @@
         authHeader = 'Bearer ' + supabaseKey;
         proxyType = 'supabase';
       } else {
-        // Priority 2: FastAPI proxy on port 8000
-        baseUrl = 'http://localhost:8000/proxy/pdf';
-        
-        // Detect Replit environment and construct port 8000 URL
-        if (host.includes('.replit.dev')) {
-          if (host.includes('-00-')) {
-            baseUrl = protocol + '//' + host.replace('-00-', '-8000-') + '/proxy/pdf';
-          } else {
-            var parts = host.split('.');
-            if (parts.length > 0) {
-              parts[0] = parts[0] + '-8000';
-              baseUrl = protocol + '//' + parts.join('.') + '/proxy/pdf';
-            }
-          }
-          proxyType = 'fastapi';
-        } else if (host.includes('.replit.app')) {
-          var parts = host.split('.');
-          if (parts.length >= 2) {
-            parts[0] = parts[0].replace(/-5000$/, '') + '-8000';
-            baseUrl = protocol + '//' + parts.join('.') + '/proxy/pdf';
-          }
-          proxyType = 'fastapi';
-        } else if (host.includes('.repl.co')) {
-          var parts = host.split('.');
-          if (parts.length > 0) {
-            parts[0] = parts[0] + '-8000';
-            baseUrl = protocol + '//' + parts.join('.') + '/proxy/pdf';
-          }
-          proxyType = 'fastapi';
-        } else if (host === 'localhost' || host === '127.0.0.1') {
-          proxyType = 'fastapi';
-        }
+        // Priority 2: FastAPI proxy on SAME origin (unified server on port 5000)
+        // No port switching needed - proxy endpoint is at /proxy/pdf on same server
+        baseUrl = origin + '/proxy/pdf';
+        proxyType = 'fastapi';
       }
       
-      // v1.4.17: Debug logging (guarded by localStorage pdfDebug flag)
+      // v1.4.18: Debug logging (guarded by localStorage pdfDebug flag)
       if (localStorage.getItem('pdfDebug') === '1') {
         console.log('[PDF_PROXY_DEBUG]', JSON.stringify({
           proxyType: proxyType,
-          viewerOrigin: window.location.origin,
+          viewerOrigin: origin,
           viewerHost: host,
           proxyBaseUrl: baseUrl,
           hasSupabaseEnv: !!(supabaseUrl && supabaseKey),
