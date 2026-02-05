@@ -1427,49 +1427,67 @@
         <div id="analyst-triage-content">
           <div class="page-header">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <h2>Triage</h2>
-              <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.4.5</span>
+              <h2>My Patch Requests</h2>
+              <span style="font-size: 0.7em; color: #999;">PAGE: ANALYST-TRIAGE | BUILD v1.5.4</span>
             </div>
-            <p class="page-desc">Alert summary view. Click status cards to open filtered grid views.</p>
-            <div class="triage-session-info" id="triage-session-info" style="margin-top: 10px; font-size: 0.85em; color: #666;"></div>
+            <p class="page-desc">Track your submitted patches through the approval pipeline.</p>
           </div>
 
-          <div class="filters" id="filters">
-            <div class="filters-row">
-              <div class="filter-group">
-                <label>Search</label>
-                <input type="text" class="filter-search" id="filter-search" placeholder="Search all fields...">
-              </div>
-              <div class="filter-group">
-                <label>Severity</label>
-                <div class="filter-chips" id="severity-chips">
-                  <span class="filter-chip severity-blocking" data-severity="blocking">Blocking</span>
-                  <span class="filter-chip severity-warning" data-severity="warning">Warning</span>
-                  <span class="filter-chip severity-info" data-severity="info">Info</span>
-                </div>
-              </div>
-              <div class="filter-group">
-                <label>Status</label>
-                <div class="filter-chips" id="status-chips">
-                  <span class="filter-chip status-ready" data-status="ready">Ready</span>
-                  <span class="filter-chip status-needs_review" data-status="needs_review">Needs Review</span>
-                  <span class="filter-chip status-blocked" data-status="blocked">Blocked</span>
-                </div>
-              </div>
-              <div class="filter-group">
-                <label>Subtype</label>
-                <select class="filter-select" id="filter-subtype">
-                  <option value="">All Subtypes</option>
-                </select>
-              </div>
+          <!-- Analyst Triage Summary Cards -->
+          <div class="analyst-triage-summary" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 24px;">
+            <div class="at-summary-card" data-section="pending" style="background: #fff3e0; border: 1px solid #ffcc80; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer;">
+              <div style="font-size: 1.8em; font-weight: 700; color: #e65100;" id="at-count-pending">0</div>
+              <div style="font-size: 0.75em; color: #bf360c; text-transform: uppercase; font-weight: 600;">Pending Review</div>
+            </div>
+            <div class="at-summary-card" data-section="verifier" style="background: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer;">
+              <div style="font-size: 1.8em; font-weight: 700; color: #1565c0;" id="at-count-verifier">0</div>
+              <div style="font-size: 0.75em; color: #0d47a1; text-transform: uppercase; font-weight: 600;">At Verifier</div>
+            </div>
+            <div class="at-summary-card" data-section="admin" style="background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer;">
+              <div style="font-size: 1.8em; font-weight: 700; color: #7b1fa2;" id="at-count-admin">0</div>
+              <div style="font-size: 0.75em; color: #4a148c; text-transform: uppercase; font-weight: 600;">At Admin</div>
+            </div>
+            <div class="at-summary-card" data-section="clarification" style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer;">
+              <div style="font-size: 1.8em; font-weight: 700; color: #f57f17;" id="at-count-clarification">0</div>
+              <div style="font-size: 0.75em; color: #f57f17; text-transform: uppercase; font-weight: 600;">Needs Clarification</div>
+            </div>
+            <div class="at-summary-card" data-section="rejected" style="background: #ffebee; border: 1px solid #ef9a9a; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer;">
+              <div style="font-size: 1.8em; font-weight: 700; color: #c62828;" id="at-count-rejected">0</div>
+              <div style="font-size: 0.75em; color: #b71c1c; text-transform: uppercase; font-weight: 600;">Rejected</div>
+            </div>
+            <div class="at-summary-card" data-section="approved" style="background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer;">
+              <div style="font-size: 1.8em; font-weight: 700; color: #2e7d32;" id="at-count-approved">0</div>
+              <div style="font-size: 0.75em; color: #1b5e20; text-transform: uppercase; font-weight: 600;">Approved</div>
             </div>
           </div>
 
-          <div id="delta-container" style="display: none;"></div>
-          <div id="summary-container"></div>
-          <div id="contract-results-container"></div>
-          <div id="issues-container"></div>
-          <div id="field-actions-container"></div>
+          <!-- Status filter tabs -->
+          <div class="analyst-triage-tabs" style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+            <div class="at-tab active" data-filter="all" onclick="setAnalystTriageFilter('all')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600; background: #f5f5f5;">All <span id="at-tab-all">(0)</span></div>
+            <div class="at-tab" data-filter="pending" onclick="setAnalystTriageFilter('pending')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600;">Pending <span id="at-tab-pending">(0)</span></div>
+            <div class="at-tab" data-filter="clarification" onclick="setAnalystTriageFilter('clarification')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600;">Needs Response <span id="at-tab-clarification">(0)</span></div>
+            <div class="at-tab" data-filter="in_progress" onclick="setAnalystTriageFilter('in_progress')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600;">In Progress <span id="at-tab-in_progress">(0)</span></div>
+            <div class="at-tab" data-filter="complete" onclick="setAnalystTriageFilter('complete')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600;">Complete <span id="at-tab-complete">(0)</span></div>
+          </div>
+
+          <!-- Analyst Triage Table -->
+          <div class="analyst-triage-table-container" style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
+              <thead style="background: #f8f9fa; border-bottom: 1px solid #eee;">
+                <tr>
+                  <th style="padding: 12px;">Type</th>
+                  <th style="padding: 12px;">Record</th>
+                  <th style="padding: 12px;">Field</th>
+                  <th style="padding: 12px;">Status</th>
+                  <th style="padding: 12px;">Last Updated</th>
+                  <th style="padding: 12px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="analyst-triage-list">
+                <tr><td colspan="6" style="padding: 40px; text-align: center; color: #999;">No patch requests submitted yet</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div id="verifier-triage-content" style="display: none;">
@@ -3678,6 +3696,17 @@
         localStorage.setItem(this._key(patchRequest.request_id), JSON.stringify(patchRequest));
         console.log('[PatchRequestStore] Saved:', patchRequest.request_id);
         return true;
+      },
+      
+      update: function(patch_request_id, updates) {
+        var existing = this.get(patch_request_id);
+        if (!existing) {
+          console.error('[PatchRequestStore] Cannot update, not found:', patch_request_id);
+          return false;
+        }
+        var merged = Object.assign({}, existing, updates);
+        merged.updated_at_utc = new Date().toISOString();
+        return this.save(merged);
       },
       
       list: function() {
@@ -7891,6 +7920,9 @@
         } else {
           analystContent.style.display = 'block';
           verifierContent.style.display = 'none';
+          
+          // v1.5.4: Render analyst triage from PatchRequest store
+          renderAnalystTriage();
         }
       }
       
@@ -12295,6 +12327,240 @@
       return item.division_id === reviewerFilterState.division;
     }
     
+    // =====================
+    // ANALYST TRIAGE (v1.5.4) - Status-driven from PatchRequest store
+    // =====================
+    
+    var analystTriageState = {
+      filter: 'all',  // all, pending, clarification, in_progress, complete
+      items: []
+    };
+    
+    // Map PatchRequest status to analyst triage section
+    var ANALYST_STATUS_MAP = {
+      'Submitted': { section: 'pending', label: 'Pending Review', color: '#e65100' },
+      'Reviewer_Responded': { section: 'verifier', label: 'At Verifier', color: '#1565c0' },
+      'Reviewer_Approved': { section: 'admin', label: 'At Admin', color: '#7b1fa2' },
+      'Admin_Hold': { section: 'admin', label: 'Admin Hold', color: '#7b1fa2' },
+      'Needs_Clarification': { section: 'clarification', label: 'Needs Response', color: '#f57f17' },
+      'Admin_Approved': { section: 'approved', label: 'Approved', color: '#2e7d32' },
+      'Applied': { section: 'approved', label: 'Applied', color: '#2e7d32' },
+      'Sent_to_Kiwi': { section: 'approved', label: 'In Progress', color: '#2e7d32' },
+      'Kiwi_Returned': { section: 'approved', label: 'Kiwi Returned', color: '#2e7d32' },
+      'Rejected': { section: 'rejected', label: 'Rejected', color: '#c62828' },
+      'Cancelled': { section: 'rejected', label: 'Cancelled', color: '#c62828' },
+      'Draft': { section: 'pending', label: 'Draft', color: '#757575' }
+    };
+    
+    // Filter mapping for tabs
+    var ANALYST_FILTER_MAP = {
+      'all': null,
+      'pending': ['pending'],
+      'clarification': ['clarification'],
+      'in_progress': ['verifier', 'admin'],
+      'complete': ['approved', 'rejected']
+    };
+    
+    function loadAnalystTriageFromStore() {
+      var allPRs = PATCH_REQUEST_STORE.list();
+      console.log('[AnalystTriage] Loading from store, found:', allPRs.length);
+      
+      analystTriageState.items = allPRs.map(function(pr) {
+        var statusInfo = ANALYST_STATUS_MAP[pr.status] || { section: 'pending', label: pr.status || 'Unknown', color: '#757575' };
+        
+        // Determine patch type
+        var patchType = 'correction';
+        if (pr.artifact_type === 'rfi') patchType = 'rfi';
+        else if (pr.type) patchType = pr.type;
+        else if (pr.intent && pr.intent.category === 'blacklist') patchType = 'blacklist';
+        
+        return {
+          request_id: pr.request_id,
+          type: patchType,
+          record_id: pr.record_id || pr.payload?.record_id || 'Unknown',
+          contract_key: pr.contract_key || pr.payload?.contract_key,
+          field_name: pr.field_name || (pr.payload?.changes ? Object.keys(pr.payload.changes)[0] : 'Multiple'),
+          status: pr.status,
+          section: statusInfo.section,
+          status_label: statusInfo.label,
+          status_color: statusInfo.color,
+          updated_at: pr.updated_at_utc || pr.submitted_at_utc || pr.created_at_utc,
+          notes: pr.clarification_notes || pr.rejection_reason,
+          thread: pr.thread
+        };
+      }).sort(function(a, b) {
+        // Sort by updated_at descending
+        return (b.updated_at || '').localeCompare(a.updated_at || '');
+      });
+      
+      return analystTriageState.items;
+    }
+    
+    function setAnalystTriageFilter(filter) {
+      analystTriageState.filter = filter;
+      
+      // Update tab styling
+      document.querySelectorAll('.at-tab').forEach(function(tab) {
+        if (tab.dataset.filter === filter) {
+          tab.classList.add('active');
+          tab.style.background = '#f5f5f5';
+        } else {
+          tab.classList.remove('active');
+          tab.style.background = 'transparent';
+        }
+      });
+      
+      renderAnalystTriage();
+    }
+    
+    function renderAnalystTriage() {
+      var container = document.getElementById('analyst-triage-list');
+      if (!container) return;
+      
+      // Reload from store
+      loadAnalystTriageFromStore();
+      var items = analystTriageState.items;
+      
+      // Count by section for summary cards
+      var sectionCounts = { pending: 0, verifier: 0, admin: 0, clarification: 0, rejected: 0, approved: 0 };
+      items.forEach(function(item) {
+        if (sectionCounts.hasOwnProperty(item.section)) {
+          sectionCounts[item.section]++;
+        }
+      });
+      
+      // Update summary cards
+      document.getElementById('at-count-pending').textContent = sectionCounts.pending;
+      document.getElementById('at-count-verifier').textContent = sectionCounts.verifier;
+      document.getElementById('at-count-admin').textContent = sectionCounts.admin;
+      document.getElementById('at-count-clarification').textContent = sectionCounts.clarification;
+      document.getElementById('at-count-rejected').textContent = sectionCounts.rejected;
+      document.getElementById('at-count-approved').textContent = sectionCounts.approved;
+      
+      // Update tab counts
+      var tabCounts = {
+        all: items.length,
+        pending: sectionCounts.pending,
+        clarification: sectionCounts.clarification,
+        in_progress: sectionCounts.verifier + sectionCounts.admin,
+        complete: sectionCounts.approved + sectionCounts.rejected
+      };
+      document.getElementById('at-tab-all').textContent = '(' + tabCounts.all + ')';
+      document.getElementById('at-tab-pending').textContent = '(' + tabCounts.pending + ')';
+      document.getElementById('at-tab-clarification').textContent = '(' + tabCounts.clarification + ')';
+      document.getElementById('at-tab-in_progress').textContent = '(' + tabCounts.in_progress + ')';
+      document.getElementById('at-tab-complete').textContent = '(' + tabCounts.complete + ')';
+      
+      // Apply filter
+      var filtered = items;
+      var filterSections = ANALYST_FILTER_MAP[analystTriageState.filter];
+      if (filterSections) {
+        filtered = items.filter(function(item) {
+          return filterSections.includes(item.section);
+        });
+      }
+      
+      // Render table
+      if (filtered.length === 0) {
+        container.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: #999;">' +
+          (items.length === 0 ? 'No patch requests submitted yet. Go to Record Inspection to create one.' : 'No items match this filter') +
+          '</td></tr>';
+        return;
+      }
+      
+      container.innerHTML = filtered.map(function(item) {
+        var typeLabel = item.type === 'rfi' ? 'RFI' : item.type === 'blacklist' ? 'Blacklist' : 'Correction';
+        var typeBadgeColor = item.type === 'rfi' ? '#1565c0' : item.type === 'blacklist' ? '#c62828' : '#2e7d32';
+        
+        // Format timestamp
+        var timestamp = item.updated_at ? new Date(item.updated_at).toLocaleString() : 'Unknown';
+        
+        // Status badge with appropriate coloring
+        var statusBadge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + 
+          item.status_color + '15; color: ' + item.status_color + ';">' + item.status_label + '</span>';
+        
+        // Show notes icon if there are reviewer notes
+        var notesIndicator = item.notes ? '<span title="Has reviewer notes" style="margin-left: 4px; color: #f57f17;">💬</span>' : '';
+        
+        // Record display - prefer contract_key
+        var recordDisplay = item.contract_key || item.record_id || 'Unknown';
+        if (recordDisplay.length > 20) recordDisplay = recordDisplay.substring(0, 18) + '...';
+        
+        // Row highlight for needs_clarification
+        var rowStyle = item.section === 'clarification' ? 'background: #fff8e1;' : '';
+        
+        return '<tr style="border-bottom: 1px solid #eee; cursor: pointer; ' + rowStyle + '" onclick="openAnalystTriageItem(\'' + item.request_id + '\')">' +
+          '<td style="padding: 12px;"><span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + typeBadgeColor + '15; color: ' + typeBadgeColor + ';">' + typeLabel + '</span></td>' +
+          '<td style="padding: 12px; font-family: monospace; font-size: 0.85em;">' + recordDisplay + '</td>' +
+          '<td style="padding: 12px;">' + (item.field_name || '-') + '</td>' +
+          '<td style="padding: 12px;">' + statusBadge + notesIndicator + '</td>' +
+          '<td style="padding: 12px; color: #666; font-size: 0.85em;">' + timestamp + '</td>' +
+          '<td style="padding: 12px;"><button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75em;" onclick="event.stopPropagation(); openAnalystTriageItem(\'' + item.request_id + '\')">View</button></td>' +
+          '</tr>';
+      }).join('');
+    }
+    
+    function openAnalystTriageItem(requestId) {
+      console.log('[AnalystTriage] Opening item:', requestId);
+      var pr = PATCH_REQUEST_STORE.get(requestId);
+      if (!pr) {
+        console.error('[AnalystTriage] PatchRequest not found:', requestId);
+        showToast('Could not find patch request', 'error');
+        return;
+      }
+      
+      // Navigate to SRR with this record
+      var recordId = pr.record_id || pr.payload?.record_id;
+      if (recordId) {
+        // Try to load from canonical record store first
+        var recordKey = 'kiwi/v1/' + (pr.tenant_id || IDENTITY_CONTEXT.tenant_id) + '/records/' + (pr.dataset_id || IDENTITY_CONTEXT.dataset_id) + '/' + recordId + '.json';
+        var storedRecord = localStorage.getItem(recordKey);
+        
+        if (storedRecord) {
+          try {
+            var record = JSON.parse(storedRecord);
+            openRowReviewDrawer(record, 0, recordId);
+            
+            // If needs clarification, show the notes in thread
+            if (pr.status === 'Needs_Clarification' && pr.clarification_notes) {
+              setTimeout(function() {
+                showToast('Reviewer requested clarification: ' + pr.clarification_notes.substring(0, 100), 'warning');
+              }, 500);
+            }
+          } catch (e) {
+            console.error('[AnalystTriage] Error loading record:', e);
+            showToast('Could not load record data', 'error');
+          }
+        } else {
+          // Try finding in current workbook
+          if (workbook && workbook.data) {
+            var found = findRecordById(recordId);
+            if (found) {
+              openRowReviewDrawer(found.row, found.rowIndex, recordId);
+            } else {
+              showToast('Record not found. Please load the dataset first.', 'warning');
+            }
+          } else {
+            showToast('Please load the associated dataset to view this record.', 'warning');
+          }
+        }
+      } else {
+        showToast('Record ID not available for this patch request.', 'warning');
+      }
+    }
+    
+    // Summary card click handlers
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.at-summary-card').forEach(function(card) {
+        card.addEventListener('click', function() {
+          var section = card.dataset.section;
+          // Map section to appropriate filter
+          var filterMap = { 'pending': 'pending', 'verifier': 'in_progress', 'admin': 'in_progress', 'clarification': 'clarification', 'rejected': 'complete', 'approved': 'complete' };
+          setAnalystTriageFilter(filterMap[section] || 'all');
+        });
+      });
+    });
+    
     function renderVerifierTriage() {
       const container = document.getElementById('verifier-queue-list');
       if (!container) return;
@@ -15527,6 +15793,7 @@
     function renderSummary(summary) {
       summary = summary || allData.summary || {};
       const container = document.getElementById('summary-container');
+      if (!container) return; // v1.5.4: Skip if analyst triage removed this element
       container.innerHTML = `
         <h2>Summary</h2>
         <div class="summary">
@@ -15540,6 +15807,7 @@
 
     function renderTable(containerId, title, data, columns, type) {
       const container = document.getElementById(containerId);
+      if (!container) return; // v1.5.4: Skip if container removed
       const filtered = filterData(data, type);
       
       if (!data || data.length === 0) {
