@@ -10735,24 +10735,10 @@
       
       // 4. QA_FLAG: Attach informational flags from qa_flags.json
       // For v1, attach as informational markers based on field metadata presence
-      // v1.6.19: Only generate QA flags for primary data sheets (not meta/support sheets)
-      if (rulesBundleCache.qaFlags && rulesBundleCache.qaFlags.flags && meta && isPrimarySheet && !isMetaSheet) {
-        // Check for missing required pattern (F-REQ-001)
-        if (meta.requiredness === 'required' && isBlankValue(value)) {
-          var reqFlag = rulesBundleCache.qaFlags.flags.find(function(f) { return f.flag_id === 'F-REQ-001'; });
-          if (reqFlag) {
-            signals.push({
-              signal_type: 'QA_FLAG',
-              severity: reqFlag.flag_level.toLowerCase(),
-              message: reqFlag.message,
-              source: 'qa_flags',
-              flag_id: reqFlag.flag_id,
-              suggested_next_step: reqFlag.suggested_next_step,
-              field_label: meta.field_label || fieldKey
-            });
-          }
-        }
-      }
+      // v1.6.19: Disabled QA_FLAG generation for missing required (F-REQ-001) since
+      // MISSING_REQUIRED signal already covers this case. This prevents duplicate
+      // entries in triage queues (one in Patch Queue, one in SF Logic Flags).
+      // QA_FLAG should only be used for flags that don't have a dedicated signal type.
       
       // Sort signals alphabetically by signal_type for determinism
       signals.sort(function(a, b) {
