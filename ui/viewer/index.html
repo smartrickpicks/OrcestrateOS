@@ -1427,66 +1427,135 @@
         <div id="analyst-triage-content">
           <div class="page-header">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <h2>My Patch Requests</h2>
-              <span style="font-size: 0.7em; color: #999;">PAGE: ANALYST-TRIAGE | BUILD v1.5.4</span>
+              <h2>Triage</h2>
+              <span style="font-size: 0.7em; color: #999;">PAGE: ANALYST-TRIAGE | BUILD v1.5.5</span>
             </div>
-            <p class="page-desc">Track your submitted patches through the approval pipeline.</p>
+            <p class="page-desc">All items requiring analyst review and action.</p>
           </div>
 
-          <!-- Analyst Triage Summary Cards -->
-          <div class="analyst-triage-summary" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 24px;">
-            <div class="at-summary-card" data-section="pending" style="background: #fff3e0; border: 1px solid #ffcc80; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer;">
-              <div style="font-size: 1.8em; font-weight: 700; color: #e65100;" id="at-count-pending">0</div>
-              <div style="font-size: 0.75em; color: #bf360c; text-transform: uppercase; font-weight: 600;">Pending Review</div>
+          <!-- QUEUE 1: QA Issues -->
+          <div class="triage-queue-section" style="margin-bottom: 32px;">
+            <div class="queue-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3 style="margin: 0; font-size: 1.1em; color: #333;">QA Issues <span id="qa-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
             </div>
-            <div class="at-summary-card" data-section="verifier" style="background: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer;">
-              <div style="font-size: 1.8em; font-weight: 700; color: #1565c0;" id="at-count-verifier">0</div>
-              <div style="font-size: 0.75em; color: #0d47a1; text-transform: uppercase; font-weight: 600;">At Verifier</div>
-            </div>
-            <div class="at-summary-card" data-section="admin" style="background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer;">
-              <div style="font-size: 1.8em; font-weight: 700; color: #7b1fa2;" id="at-count-admin">0</div>
-              <div style="font-size: 0.75em; color: #4a148c; text-transform: uppercase; font-weight: 600;">At Admin</div>
-            </div>
-            <div class="at-summary-card" data-section="clarification" style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer;">
-              <div style="font-size: 1.8em; font-weight: 700; color: #f57f17;" id="at-count-clarification">0</div>
-              <div style="font-size: 0.75em; color: #f57f17; text-transform: uppercase; font-weight: 600;">Needs Clarification</div>
-            </div>
-            <div class="at-summary-card" data-section="rejected" style="background: #ffebee; border: 1px solid #ef9a9a; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer;">
-              <div style="font-size: 1.8em; font-weight: 700; color: #c62828;" id="at-count-rejected">0</div>
-              <div style="font-size: 0.75em; color: #b71c1c; text-transform: uppercase; font-weight: 600;">Rejected</div>
-            </div>
-            <div class="at-summary-card" data-section="approved" style="background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer;">
-              <div style="font-size: 1.8em; font-weight: 700; color: #2e7d32;" id="at-count-approved">0</div>
-              <div style="font-size: 0.75em; color: #1b5e20; text-transform: uppercase; font-weight: 600;">Approved</div>
+            <div class="queue-table-container" style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
+                <thead style="background: #f8f9fa; border-bottom: 1px solid #eee;">
+                  <tr>
+                    <th style="padding: 10px 12px;">Type</th>
+                    <th style="padding: 10px 12px;">Record</th>
+                    <th style="padding: 10px 12px;">Field</th>
+                    <th style="padding: 10px 12px;">Status</th>
+                    <th style="padding: 10px 12px;">Last Updated</th>
+                    <th style="padding: 10px 12px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="qa-queue-list">
+                  <tr><td colspan="6" style="padding: 24px; text-align: center; color: #999;">No QA issues pending</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <!-- Status filter tabs -->
-          <div class="analyst-triage-tabs" style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
-            <div class="at-tab active" data-filter="all" onclick="setAnalystTriageFilter('all')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600; background: #f5f5f5;">All <span id="at-tab-all">(0)</span></div>
-            <div class="at-tab" data-filter="pending" onclick="setAnalystTriageFilter('pending')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600;">Pending <span id="at-tab-pending">(0)</span></div>
-            <div class="at-tab" data-filter="clarification" onclick="setAnalystTriageFilter('clarification')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600;">Needs Response <span id="at-tab-clarification">(0)</span></div>
-            <div class="at-tab" data-filter="in_progress" onclick="setAnalystTriageFilter('in_progress')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600;">In Progress <span id="at-tab-in_progress">(0)</span></div>
-            <div class="at-tab" data-filter="complete" onclick="setAnalystTriageFilter('complete')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600;">Complete <span id="at-tab-complete">(0)</span></div>
+          <!-- QUEUE 2: Extraction Issues -->
+          <div class="triage-queue-section" style="margin-bottom: 32px;">
+            <div class="queue-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3 style="margin: 0; font-size: 1.1em; color: #333;">Extraction Issues <span id="extraction-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
+            </div>
+            <div class="queue-table-container" style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
+                <thead style="background: #f8f9fa; border-bottom: 1px solid #eee;">
+                  <tr>
+                    <th style="padding: 10px 12px;">Type</th>
+                    <th style="padding: 10px 12px;">Record</th>
+                    <th style="padding: 10px 12px;">Field</th>
+                    <th style="padding: 10px 12px;">Status</th>
+                    <th style="padding: 10px 12px;">Last Updated</th>
+                    <th style="padding: 10px 12px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="extraction-queue-list">
+                  <tr><td colspan="6" style="padding: 24px; text-align: center; color: #999;">No extraction issues pending</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <!-- Analyst Triage Table -->
-          <div class="analyst-triage-table-container" style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
-              <thead style="background: #f8f9fa; border-bottom: 1px solid #eee;">
-                <tr>
-                  <th style="padding: 12px;">Type</th>
-                  <th style="padding: 12px;">Record</th>
-                  <th style="padding: 12px;">Field</th>
-                  <th style="padding: 12px;">Status</th>
-                  <th style="padding: 12px;">Last Updated</th>
-                  <th style="padding: 12px;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="analyst-triage-list">
-                <tr><td colspan="6" style="padding: 40px; text-align: center; color: #999;">No patch requests submitted yet</td></tr>
-              </tbody>
-            </table>
+          <!-- QUEUE 3: Logic Issues -->
+          <div class="triage-queue-section" style="margin-bottom: 32px;">
+            <div class="queue-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3 style="margin: 0; font-size: 1.1em; color: #333;">Logic Issues <span id="logic-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
+            </div>
+            <div class="queue-table-container" style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
+                <thead style="background: #f8f9fa; border-bottom: 1px solid #eee;">
+                  <tr>
+                    <th style="padding: 10px 12px;">Type</th>
+                    <th style="padding: 10px 12px;">Record</th>
+                    <th style="padding: 10px 12px;">Field</th>
+                    <th style="padding: 10px 12px;">Status</th>
+                    <th style="padding: 10px 12px;">Last Updated</th>
+                    <th style="padding: 10px 12px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="logic-queue-list">
+                  <tr><td colspan="6" style="padding: 24px; text-align: center; color: #999;">No logic issues pending</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- QUEUE 4: Patch Queue (with pipeline cards) -->
+          <div class="triage-queue-section" style="margin-bottom: 32px;">
+            <div class="queue-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3 style="margin: 0; font-size: 1.1em; color: #333;">Patch Queue <span id="patch-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
+            </div>
+            
+            <!-- Patch Pipeline Cards -->
+            <div class="patch-pipeline-cards" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 16px;">
+              <div class="pipeline-card" style="background: #fff3e0; border: 1px solid #ffcc80; border-radius: 6px; padding: 12px; text-align: center;">
+                <div style="font-size: 1.5em; font-weight: 700; color: #e65100;" id="at-count-pending">0</div>
+                <div style="font-size: 0.7em; color: #bf360c; text-transform: uppercase; font-weight: 600;">Pending</div>
+              </div>
+              <div class="pipeline-card" style="background: #e3f2fd; border: 1px solid #90caf9; border-radius: 6px; padding: 12px; text-align: center;">
+                <div style="font-size: 1.5em; font-weight: 700; color: #1565c0;" id="at-count-verifier">0</div>
+                <div style="font-size: 0.7em; color: #0d47a1; text-transform: uppercase; font-weight: 600;">At Verifier</div>
+              </div>
+              <div class="pipeline-card" style="background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 6px; padding: 12px; text-align: center;">
+                <div style="font-size: 1.5em; font-weight: 700; color: #7b1fa2;" id="at-count-admin">0</div>
+                <div style="font-size: 0.7em; color: #4a148c; text-transform: uppercase; font-weight: 600;">At Admin</div>
+              </div>
+              <div class="pipeline-card" style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px; padding: 12px; text-align: center;">
+                <div style="font-size: 1.5em; font-weight: 700; color: #f57f17;" id="at-count-clarification">0</div>
+                <div style="font-size: 0.7em; color: #f57f17; text-transform: uppercase; font-weight: 600;">Clarification</div>
+              </div>
+              <div class="pipeline-card" style="background: #ffebee; border: 1px solid #ef9a9a; border-radius: 6px; padding: 12px; text-align: center;">
+                <div style="font-size: 1.5em; font-weight: 700; color: #c62828;" id="at-count-rejected">0</div>
+                <div style="font-size: 0.7em; color: #b71c1c; text-transform: uppercase; font-weight: 600;">Rejected</div>
+              </div>
+              <div class="pipeline-card" style="background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 6px; padding: 12px; text-align: center;">
+                <div style="font-size: 1.5em; font-weight: 700; color: #2e7d32;" id="at-count-approved">0</div>
+                <div style="font-size: 0.7em; color: #1b5e20; text-transform: uppercase; font-weight: 600;">Approved</div>
+              </div>
+            </div>
+            
+            <div class="queue-table-container" style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
+                <thead style="background: #f8f9fa; border-bottom: 1px solid #eee;">
+                  <tr>
+                    <th style="padding: 10px 12px;">Type</th>
+                    <th style="padding: 10px 12px;">Record</th>
+                    <th style="padding: 10px 12px;">Field</th>
+                    <th style="padding: 10px 12px;">Status</th>
+                    <th style="padding: 10px 12px;">Last Updated</th>
+                    <th style="padding: 10px 12px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="patch-queue-list">
+                  <tr><td colspan="6" style="padding: 24px; text-align: center; color: #999;">No patch requests submitted yet. Go to Record Inspection to create one.</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -12328,15 +12397,17 @@
     }
     
     // =====================
-    // ANALYST TRIAGE (v1.5.4) - Status-driven from PatchRequest store
+    // ANALYST TRIAGE (v1.5.5) - Multi-queue dashboard
     // =====================
     
     var analystTriageState = {
-      filter: 'all',  // all, pending, clarification, in_progress, complete
-      items: []
+      qaItems: [],
+      extractionItems: [],
+      logicItems: [],
+      patchItems: []
     };
     
-    // Map PatchRequest status to analyst triage section
+    // Map PatchRequest status to pipeline section
     var ANALYST_STATUS_MAP = {
       'Submitted': { section: 'pending', label: 'Pending Review', color: '#e65100' },
       'Reviewer_Responded': { section: 'verifier', label: 'At Verifier', color: '#1565c0' },
@@ -12352,23 +12423,14 @@
       'Draft': { section: 'pending', label: 'Draft', color: '#757575' }
     };
     
-    // Filter mapping for tabs
-    var ANALYST_FILTER_MAP = {
-      'all': null,
-      'pending': ['pending'],
-      'clarification': ['clarification'],
-      'in_progress': ['verifier', 'admin'],
-      'complete': ['approved', 'rejected']
-    };
-    
     function loadAnalystTriageFromStore() {
       var allPRs = PATCH_REQUEST_STORE.list();
       console.log('[AnalystTriage] Loading from store, found:', allPRs.length);
       
-      analystTriageState.items = allPRs.map(function(pr) {
+      // Map all patch requests to triage items
+      analystTriageState.patchItems = allPRs.map(function(pr) {
         var statusInfo = ANALYST_STATUS_MAP[pr.status] || { section: 'pending', label: pr.status || 'Unknown', color: '#757575' };
         
-        // Determine patch type
         var patchType = 'correction';
         if (pr.artifact_type === 'rfi') patchType = 'rfi';
         else if (pr.type) patchType = pr.type;
@@ -12389,115 +12451,97 @@
           thread: pr.thread
         };
       }).sort(function(a, b) {
-        // Sort by updated_at descending
         return (b.updated_at || '').localeCompare(a.updated_at || '');
       });
       
-      return analystTriageState.items;
+      // For now, QA/Extraction/Logic queues are empty placeholders
+      // They will be populated from different data sources in future versions
+      analystTriageState.qaItems = [];
+      analystTriageState.extractionItems = [];
+      analystTriageState.logicItems = [];
     }
     
-    function setAnalystTriageFilter(filter) {
-      analystTriageState.filter = filter;
+    function renderTriageQueueTable(items, containerId, emptyMessage) {
+      var container = document.getElementById(containerId);
+      if (!container) return;
       
-      // Update tab styling
-      document.querySelectorAll('.at-tab').forEach(function(tab) {
-        if (tab.dataset.filter === filter) {
-          tab.classList.add('active');
-          tab.style.background = '#f5f5f5';
-        } else {
-          tab.classList.remove('active');
-          tab.style.background = 'transparent';
-        }
-      });
+      if (items.length === 0) {
+        container.innerHTML = '<tr><td colspan="6" style="padding: 24px; text-align: center; color: #999;">' + emptyMessage + '</td></tr>';
+        return;
+      }
       
-      renderAnalystTriage();
+      container.innerHTML = items.map(function(item) {
+        var typeLabel = item.type === 'rfi' ? 'RFI' : item.type === 'blacklist' ? 'Blacklist' : item.type === 'qa' ? 'QA' : item.type === 'extraction' ? 'Extraction' : item.type === 'logic' ? 'Logic' : 'Correction';
+        var typeBadgeColor = item.type === 'rfi' ? '#1565c0' : item.type === 'blacklist' ? '#c62828' : item.type === 'qa' ? '#ff9800' : item.type === 'extraction' ? '#9c27b0' : item.type === 'logic' ? '#00bcd4' : '#2e7d32';
+        
+        var timestamp = item.updated_at ? new Date(item.updated_at).toLocaleString() : 'Unknown';
+        var statusBadge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + 
+          item.status_color + '15; color: ' + item.status_color + ';">' + item.status_label + '</span>';
+        var notesIndicator = item.notes ? '<span title="Has reviewer notes" style="margin-left: 4px; color: #f57f17;">💬</span>' : '';
+        
+        var recordDisplay = item.contract_key || item.record_id || 'Unknown';
+        if (recordDisplay.length > 20) recordDisplay = recordDisplay.substring(0, 18) + '...';
+        
+        var rowStyle = item.section === 'clarification' ? 'background: #fff8e1;' : '';
+        
+        return '<tr style="border-bottom: 1px solid #eee; cursor: pointer; ' + rowStyle + '" onclick="openAnalystTriageItem(\'' + item.request_id + '\')">' +
+          '<td style="padding: 10px 12px;"><span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + typeBadgeColor + '15; color: ' + typeBadgeColor + ';">' + typeLabel + '</span></td>' +
+          '<td style="padding: 10px 12px; font-family: monospace; font-size: 0.85em;">' + recordDisplay + '</td>' +
+          '<td style="padding: 10px 12px;">' + (item.field_name || '-') + '</td>' +
+          '<td style="padding: 10px 12px;">' + statusBadge + notesIndicator + '</td>' +
+          '<td style="padding: 10px 12px; color: #666; font-size: 0.85em;">' + timestamp + '</td>' +
+          '<td style="padding: 10px 12px;"><button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75em;" onclick="event.stopPropagation(); openAnalystTriageItem(\'' + item.request_id + '\')">View</button></td>' +
+          '</tr>';
+      }).join('');
     }
     
     function renderAnalystTriage() {
-      var container = document.getElementById('analyst-triage-list');
-      if (!container) return;
-      
       // Reload from store
       loadAnalystTriageFromStore();
-      var items = analystTriageState.items;
       
-      // Count by section for summary cards
+      // Update queue counts
+      var qaCount = analystTriageState.qaItems.length;
+      var extractionCount = analystTriageState.extractionItems.length;
+      var logicCount = analystTriageState.logicItems.length;
+      var patchCount = analystTriageState.patchItems.length;
+      
+      var qaCountEl = document.getElementById('qa-queue-count');
+      var extractionCountEl = document.getElementById('extraction-queue-count');
+      var logicCountEl = document.getElementById('logic-queue-count');
+      var patchCountEl = document.getElementById('patch-queue-count');
+      
+      if (qaCountEl) qaCountEl.textContent = '(' + qaCount + ')';
+      if (extractionCountEl) extractionCountEl.textContent = '(' + extractionCount + ')';
+      if (logicCountEl) logicCountEl.textContent = '(' + logicCount + ')';
+      if (patchCountEl) patchCountEl.textContent = '(' + patchCount + ')';
+      
+      // Update patch pipeline cards
       var sectionCounts = { pending: 0, verifier: 0, admin: 0, clarification: 0, rejected: 0, approved: 0 };
-      items.forEach(function(item) {
+      analystTriageState.patchItems.forEach(function(item) {
         if (sectionCounts.hasOwnProperty(item.section)) {
           sectionCounts[item.section]++;
         }
       });
       
-      // Update summary cards
-      document.getElementById('at-count-pending').textContent = sectionCounts.pending;
-      document.getElementById('at-count-verifier').textContent = sectionCounts.verifier;
-      document.getElementById('at-count-admin').textContent = sectionCounts.admin;
-      document.getElementById('at-count-clarification').textContent = sectionCounts.clarification;
-      document.getElementById('at-count-rejected').textContent = sectionCounts.rejected;
-      document.getElementById('at-count-approved').textContent = sectionCounts.approved;
+      var pendingEl = document.getElementById('at-count-pending');
+      var verifierEl = document.getElementById('at-count-verifier');
+      var adminEl = document.getElementById('at-count-admin');
+      var clarificationEl = document.getElementById('at-count-clarification');
+      var rejectedEl = document.getElementById('at-count-rejected');
+      var approvedEl = document.getElementById('at-count-approved');
       
-      // Update tab counts
-      var tabCounts = {
-        all: items.length,
-        pending: sectionCounts.pending,
-        clarification: sectionCounts.clarification,
-        in_progress: sectionCounts.verifier + sectionCounts.admin,
-        complete: sectionCounts.approved + sectionCounts.rejected
-      };
-      document.getElementById('at-tab-all').textContent = '(' + tabCounts.all + ')';
-      document.getElementById('at-tab-pending').textContent = '(' + tabCounts.pending + ')';
-      document.getElementById('at-tab-clarification').textContent = '(' + tabCounts.clarification + ')';
-      document.getElementById('at-tab-in_progress').textContent = '(' + tabCounts.in_progress + ')';
-      document.getElementById('at-tab-complete').textContent = '(' + tabCounts.complete + ')';
+      if (pendingEl) pendingEl.textContent = sectionCounts.pending;
+      if (verifierEl) verifierEl.textContent = sectionCounts.verifier;
+      if (adminEl) adminEl.textContent = sectionCounts.admin;
+      if (clarificationEl) clarificationEl.textContent = sectionCounts.clarification;
+      if (rejectedEl) rejectedEl.textContent = sectionCounts.rejected;
+      if (approvedEl) approvedEl.textContent = sectionCounts.approved;
       
-      // Apply filter
-      var filtered = items;
-      var filterSections = ANALYST_FILTER_MAP[analystTriageState.filter];
-      if (filterSections) {
-        filtered = items.filter(function(item) {
-          return filterSections.includes(item.section);
-        });
-      }
-      
-      // Render table
-      if (filtered.length === 0) {
-        container.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: #999;">' +
-          (items.length === 0 ? 'No patch requests submitted yet. Go to Record Inspection to create one.' : 'No items match this filter') +
-          '</td></tr>';
-        return;
-      }
-      
-      container.innerHTML = filtered.map(function(item) {
-        var typeLabel = item.type === 'rfi' ? 'RFI' : item.type === 'blacklist' ? 'Blacklist' : 'Correction';
-        var typeBadgeColor = item.type === 'rfi' ? '#1565c0' : item.type === 'blacklist' ? '#c62828' : '#2e7d32';
-        
-        // Format timestamp
-        var timestamp = item.updated_at ? new Date(item.updated_at).toLocaleString() : 'Unknown';
-        
-        // Status badge with appropriate coloring
-        var statusBadge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + 
-          item.status_color + '15; color: ' + item.status_color + ';">' + item.status_label + '</span>';
-        
-        // Show notes icon if there are reviewer notes
-        var notesIndicator = item.notes ? '<span title="Has reviewer notes" style="margin-left: 4px; color: #f57f17;">💬</span>' : '';
-        
-        // Record display - prefer contract_key
-        var recordDisplay = item.contract_key || item.record_id || 'Unknown';
-        if (recordDisplay.length > 20) recordDisplay = recordDisplay.substring(0, 18) + '...';
-        
-        // Row highlight for needs_clarification
-        var rowStyle = item.section === 'clarification' ? 'background: #fff8e1;' : '';
-        
-        return '<tr style="border-bottom: 1px solid #eee; cursor: pointer; ' + rowStyle + '" onclick="openAnalystTriageItem(\'' + item.request_id + '\')">' +
-          '<td style="padding: 12px;"><span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + typeBadgeColor + '15; color: ' + typeBadgeColor + ';">' + typeLabel + '</span></td>' +
-          '<td style="padding: 12px; font-family: monospace; font-size: 0.85em;">' + recordDisplay + '</td>' +
-          '<td style="padding: 12px;">' + (item.field_name || '-') + '</td>' +
-          '<td style="padding: 12px;">' + statusBadge + notesIndicator + '</td>' +
-          '<td style="padding: 12px; color: #666; font-size: 0.85em;">' + timestamp + '</td>' +
-          '<td style="padding: 12px;"><button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75em;" onclick="event.stopPropagation(); openAnalystTriageItem(\'' + item.request_id + '\')">View</button></td>' +
-          '</tr>';
-      }).join('');
+      // Render each queue table
+      renderTriageQueueTable(analystTriageState.qaItems, 'qa-queue-list', 'No QA issues pending');
+      renderTriageQueueTable(analystTriageState.extractionItems, 'extraction-queue-list', 'No extraction issues pending');
+      renderTriageQueueTable(analystTriageState.logicItems, 'logic-queue-list', 'No logic issues pending');
+      renderTriageQueueTable(analystTriageState.patchItems, 'patch-queue-list', 'No patch requests submitted yet. Go to Record Inspection to create one.');
     }
     
     function openAnalystTriageItem(requestId) {
@@ -12548,18 +12592,6 @@
         showToast('Record ID not available for this patch request.', 'warning');
       }
     }
-    
-    // Summary card click handlers
-    document.addEventListener('DOMContentLoaded', function() {
-      document.querySelectorAll('.at-summary-card').forEach(function(card) {
-        card.addEventListener('click', function() {
-          var section = card.dataset.section;
-          // Map section to appropriate filter
-          var filterMap = { 'pending': 'pending', 'verifier': 'in_progress', 'admin': 'in_progress', 'clarification': 'clarification', 'rejected': 'complete', 'approved': 'complete' };
-          setAnalystTriageFilter(filterMap[section] || 'all');
-        });
-      });
-    });
     
     function renderVerifierTriage() {
       const container = document.getElementById('verifier-queue-list');
