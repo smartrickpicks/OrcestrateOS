@@ -417,6 +417,8 @@
     .srr-doc-empty-state { text-align: center; padding: 40px; }
     .srr-doc-container { width: 100%; height: 100%; overflow: auto; }
     .srr-pdf-iframe { width: 100%; height: 100%; border: none; transform-origin: top left; }
+    .srr-pdf-object { width: 100%; height: 100%; border: none; transform-origin: top left; display: block; }
+    .srr-pdf-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f0f0f0; }
     .srr-anchor-overlay { position: absolute; border: 2px solid #1565c0; background: rgba(21, 101, 192, 0.1); pointer-events: auto; cursor: pointer; }
     .srr-anchor-overlay:hover { background: rgba(21, 101, 192, 0.25); }
     .srr-anchor-list { padding: 12px; border-top: 1px solid #e0e0e0; max-height: 150px; overflow-y: auto; }
@@ -1681,7 +1683,15 @@
                   </div>
                 </div>
                 <div class="srr-doc-container" id="srr-doc-container" style="display: none;">
-                  <iframe id="srr-pdf-iframe" class="srr-pdf-iframe" src="about:blank"></iframe>
+                  <object id="srr-pdf-object" class="srr-pdf-object" type="application/pdf" data="about:blank">
+                    <div class="srr-pdf-fallback" id="srr-pdf-fallback">
+                      <div style="text-align: center; padding: 40px;">
+                        <div style="font-size: 2em; margin-bottom: 10px;">📄</div>
+                        <div style="margin-bottom: 12px;">PDF viewer blocked by browser</div>
+                        <a id="srr-pdf-open-tab" href="#" target="_blank" class="btn-primary" style="display: inline-block; padding: 8px 16px; background: #1565c0; color: white; text-decoration: none; border-radius: 4px;">Open in New Tab</a>
+                      </div>
+                    </div>
+                  </object>
                 </div>
               </div>
               <div class="srr-anchor-list" id="srr-anchor-list">
@@ -10627,7 +10637,7 @@
     function srrLoadPdfForRecord(record) {
       var emptyEl = document.getElementById('srr-doc-empty');
       var containerEl = document.getElementById('srr-doc-container');
-      var iframeEl = document.getElementById('srr-pdf-iframe');
+      var iframeEl = document.getElementById('srr-pdf-object');
       var sourceEl = document.getElementById('srr-doc-source');
       var sourceTypeEl = document.getElementById('srr-doc-source-type');
       var sourceNameEl = document.getElementById('srr-doc-source-name');
@@ -10803,7 +10813,7 @@
     function srrRenderPdf(record, pdfUrl, sourceType, sourceName, logEntry) {
       var emptyEl = document.getElementById('srr-doc-empty');
       var containerEl = document.getElementById('srr-doc-container');
-      var iframeEl = document.getElementById('srr-pdf-iframe');
+      var iframeEl = document.getElementById('srr-pdf-object');
       var sourceEl = document.getElementById('srr-doc-source');
       var sourceTypeEl = document.getElementById('srr-doc-source-type');
       var sourceNameEl = document.getElementById('srr-doc-source-name');
@@ -10840,7 +10850,7 @@
     function srrShowEmptyState() {
       var emptyEl = document.getElementById('srr-doc-empty');
       var containerEl = document.getElementById('srr-doc-container');
-      var iframeEl = document.getElementById('srr-pdf-iframe');
+      var iframeEl = document.getElementById('srr-pdf-object');
       var sourceEl = document.getElementById('srr-doc-source');
       
       srrState.docPage = 1;
@@ -10852,7 +10862,7 @@
       if (emptyEl) emptyEl.style.display = 'block';
       if (containerEl) containerEl.style.display = 'none';
       if (sourceEl) sourceEl.style.display = 'none';
-      if (iframeEl) iframeEl.src = 'about:blank';
+      if (iframeEl) iframeEl.data = 'about:blank';
       srrUpdateZoomDisplay();
       srrUpdatePageDisplay();
       
@@ -10908,7 +10918,7 @@
     
     // v1.4.13: Update iframe src with fragment compatibility fallback
     function srrUpdateIframeSrc() {
-      var iframeEl = document.getElementById('srr-pdf-iframe');
+      var iframeEl = document.getElementById('srr-pdf-object');
       if (!iframeEl || !srrState.currentPdfUrl) return;
       
       var baseUrl = srrState.currentPdfUrl.split('#')[0];
@@ -10922,10 +10932,14 @@
       
       var newSrc = baseUrl + fragment;
       
-      // Only update if src changed (prevents unnecessary reloads)
-      if (iframeEl.src !== newSrc) {
-        iframeEl.src = newSrc;
-        console.log('[SRR_PDF] Set iframe src:', newSrc.length > 100 ? newSrc.substring(0, 100) + '...' : newSrc);
+      // Only update if data changed (prevents unnecessary reloads)
+      // v1.4.18: Use .data attribute for <object> element instead of .src for <iframe>
+      if (iframeEl.data !== newSrc) {
+        iframeEl.data = newSrc;
+        // Also update the fallback link
+        var openTabLink = document.getElementById('srr-pdf-open-tab');
+        if (openTabLink) openTabLink.href = newSrc;
+        console.log('[SRR_PDF] Set object data:', newSrc.length > 100 ? newSrc.substring(0, 100) + '...' : newSrc);
       }
     }
     
