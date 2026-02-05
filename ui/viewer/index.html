@@ -10494,9 +10494,10 @@
       
       // Attach change handler
       selector.onchange = function() {
-        gridState.sheet = selector.value;
+        gridState.sheet = selector.value || null;
         updateGridURL();
         renderGrid();
+        updateProgressBlock();
         
         // v1.6.39: Update field dropdown when sheet changes (for Patch Studio)
         if (typeof populateTargetFieldDropdown === 'function') {
@@ -10510,6 +10511,7 @@
       updateGridFilterChips();
       updateGridURL();
       renderGrid();
+        updateProgressBlock();
     }
 
     function updateGridFilterChips() {
@@ -18243,6 +18245,7 @@
           gridState.search = gridSearch.value;
           updateGridURL();
           renderGrid();
+        updateProgressBlock();
         });
       }
     });
