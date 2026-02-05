@@ -9856,12 +9856,41 @@
       changeMapStore.enabled = true;
       var changeCount = 0;
       
+      // v1.6.14: Helper to infer field name by matching old_value against target row
+      function inferFieldFromValue(targetSheet, rowIdx, oldValue, newValue) {
+        if (!oldValue && !newValue) return null;
+        
+        var sheet = workbook.sheets[targetSheet];
+        if (!sheet || !sheet.rows || !sheet.rows[rowIdx]) return null;
+        
+        var targetRow = sheet.rows[rowIdx];
+        var oldValStr = String(oldValue || '').trim().toLowerCase();
+        var newValStr = String(newValue || '').trim().toLowerCase();
+        
+        // Try to find a field whose value matches old_value or new_value
+        for (var key in targetRow) {
+          if (key === 'record_id' || key === 'sheet' || key === 'row_index') continue;
+          var cellVal = String(targetRow[key] || '').trim().toLowerCase();
+          
+          // Match on old_value (before change) or new_value (current value after change)
+          if (oldValStr && cellVal === oldValStr) return key;
+          if (newValStr && cellVal === newValStr) return key;
+        }
+        return null;
+      }
+      
       // 1. Parse change log sheets (*_change_log)
+      var inferredCount = 0;
+      var rowLevelCount = 0;
+      var changeLogSheets = Object.keys(workbook.sheets).filter(function(n) { return n.endsWith('_change_log'); });
+      console.log('[ChangeMap] Found change_log sheets:', changeLogSheets);
+      
       Object.keys(workbook.sheets).forEach(function(sheetName) {
         if (!sheetName.endsWith('_change_log')) return;
         
         var sheet = workbook.sheets[sheetName];
         var rows = sheet.rows || [];
+        console.log('[ChangeMap] Processing', sheetName, 'with', rows.length, 'rows');
         
         rows.forEach(function(row) {
           if (!row) return;
@@ -9872,7 +9901,15 @@
           var category = (row.category || '').toUpperCase();
           var changedBy = (row.changed_by || '').toLowerCase();
           
-          if (!targetSheet || isNaN(rowIndex) || !fieldName) return;
+          if (!targetSheet || isNaN(rowIndex)) return;
+          
+          var rowIdx = Math.floor(rowIndex);
+          
+          // v1.6.14: Try to infer field if not provided
+          if (!fieldName) {
+            fieldName = inferFieldFromValue(targetSheet, rowIdx, row.old_value, row.new_value);
+            if (fieldName) inferredCount++;
+          }
           
           // Determine change type
           var changeType = 'correction';  // default
@@ -9883,14 +9920,24 @@
           }
           
           // Build record ID (sheet:index)
-          var recordId = targetSheet + ':' + Math.floor(rowIndex);
+          var recordId = targetSheet + ':' + rowIdx;
           
           // Store change
           if (!changeMapStore.changes_by_cell[recordId]) {
             changeMapStore.changes_by_cell[recordId] = {};
           }
           
-          changeMapStore.changes_by_cell[recordId][fieldName] = {
+          // v1.6.14: Use _row_level marker if no field could be determined
+          var storeKey = fieldName || '_row_level';
+          if (!fieldName) rowLevelCount++;
+          
+          // Don't overwrite more specific field entries with row-level
+          if (storeKey === '_row_level' && Object.keys(changeMapStore.changes_by_cell[recordId]).length > 0) {
+            // Already have field-level changes, skip row-level marker
+            return;
+          }
+          
+          changeMapStore.changes_by_cell[recordId][storeKey] = {
             type: changeType,
             actor: changedBy === 'system' ? 'System' : 'Analyst',
             old_value: row.old_value || '',
@@ -9905,8 +9952,23 @@
         });
       });
       
+      console.log('[ChangeMap] Field inference: inferred=' + inferredCount + ', row-level=' + rowLevelCount);
+      
+      // v1.6.14: Debug logging for first few records with changes
+      var sampleRecords = Object.keys(changeMapStore.changes_by_cell).slice(0, 3);
+      if (sampleRecords.length > 0) {
+        console.log('[ChangeMap] Sample records:', sampleRecords);
+        sampleRecords.forEach(function(recId) {
+          var fields = Object.keys(changeMapStore.changes_by_cell[recId]);
+          console.log('[ChangeMap]   ' + recId + ': fields=' + fields.join(', '));
+        });
+      }
+      
       // 2. Parse RFIs & Analyst Notes
       var rfiSheet = workbook.sheets['RFIs & Analyst Notes'];
+      var rfiInferred = 0;
+      var rfiRowLevel = 0;
+      
       if (rfiSheet && rfiSheet.rows) {
         rfiSheet.rows.forEach(function(row) {
           if (!row) return;
@@ -9917,7 +9979,28 @@
           var noteType = (row['Note Type'] || '').toUpperCase();
           var detectedBy = (row['Detected By'] || '').toLowerCase();
           
-          if (!targetSheet || isNaN(rowNum) || !fieldName) return;
+          if (!targetSheet || isNaN(rowNum)) return;
+          
+          var rowIdx = Math.floor(rowNum);
+          
+          // v1.6.14: Try to infer field from Summary if not provided
+          if (!fieldName && row['Summary']) {
+            // Check if summary mentions a field name pattern
+            var summaryLower = (row['Summary'] || '').toLowerCase();
+            var sheet = workbook.sheets[targetSheet];
+            if (sheet && sheet.rows && sheet.rows[rowIdx]) {
+              var targetRow = sheet.rows[rowIdx];
+              for (var key in targetRow) {
+                if (key === 'record_id' || key === 'sheet' || key === 'row_index') continue;
+                var keyLower = key.toLowerCase().replace(/_c$/, '').replace(/_/g, ' ');
+                if (summaryLower.includes(keyLower) && keyLower.length > 3) {
+                  fieldName = key;
+                  rfiInferred++;
+                  break;
+                }
+              }
+            }
+          }
           
           // Determine change type from RFI data
           var changeType = 'rfi';  // default for this sheet
@@ -9927,15 +10010,19 @@
             changeType = 'system_change';
           }
           
-          var recordId = targetSheet + ':' + Math.floor(rowNum);
+          var recordId = targetSheet + ':' + rowIdx;
           
           if (!changeMapStore.changes_by_cell[recordId]) {
             changeMapStore.changes_by_cell[recordId] = {};
           }
           
+          // v1.6.14: Use _row_level marker if no field could be determined
+          var storeKey = fieldName || '_row_level';
+          if (!fieldName) rfiRowLevel++;
+          
           // Don't overwrite existing change log entries (they have more detail)
-          if (!changeMapStore.changes_by_cell[recordId][fieldName]) {
-            changeMapStore.changes_by_cell[recordId][fieldName] = {
+          if (!changeMapStore.changes_by_cell[recordId][storeKey]) {
+            changeMapStore.changes_by_cell[recordId][storeKey] = {
               type: changeType,
               actor: detectedBy === 'system' ? 'System' : 'Analyst',
               summary: row['Summary'] || '',
@@ -9949,6 +10036,8 @@
           }
         });
       }
+      
+      console.log('[ChangeMap] RFI inference: inferred=' + rfiInferred + ', row-level=' + rfiRowLevel);
       
       changeMapStore.stats.total = changeCount;
       
@@ -10104,6 +10193,7 @@
     }
     
     // Get change info for a specific cell
+    // v1.6.14: Also check for row-level changes as fallback
     function getCellChangeInfo(recordId, fieldKey) {
       if (!changeMapStore.enabled) return null;
       var recordChanges = changeMapStore.changes_by_cell[recordId];
@@ -10115,10 +10205,16 @@
       // Try normalized match
       var normKey = normalizeFieldKey(fieldKey);
       for (var key in recordChanges) {
-        if (normalizeFieldKey(key) === normKey) {
+        if (key !== '_row_level' && normalizeFieldKey(key) === normKey) {
           return recordChanges[key];
         }
       }
+      
+      // v1.6.14: Fall back to row-level change if no field match found
+      if (recordChanges['_row_level']) {
+        return recordChanges['_row_level'];
+      }
+      
       return null;
     }
     
