@@ -8036,30 +8036,62 @@
       return ws;
     }
     
-    // v1.6.29: Build RFIs & Analyst Notes sheet
+    // v1.6.29: Build RFIs & Analyst Notes sheet (includes all escalations)
     function buildRFISheet() {
       var headers = [
-        'record_id', 'sheet', 'field', 'question', 'current_value',
-        'analyst', 'timestamp', 'status', 'response', 'resolved_by'
+        'record_id', 'sheet', 'field', 'type', 'comment_or_question', 'current_value',
+        'submitted_by', 'submitted_at', 'escalated_to', 'escalation_status',
+        'response', 'resolved_by', 'resolved_at'
       ];
       var rows = [headers];
       
-      // Get RFI-type patch requests
+      // v1.6.29: Include ALL patch requests that have been promoted/escalated
+      // This tracks the full escalation trail through the role hierarchy
       var patchRequests = PATCH_REQUEST_STORE.list();
-      patchRequests.filter(function(pr) {
-        return pr.type === 'rfi' || pr.type === 'RFI';
-      }).forEach(function(pr) {
+      
+      patchRequests.forEach(function(pr) {
+        // Determine escalation status based on patch request status
+        var escalationStatus = 'Draft';
+        var escalatedTo = '';
+        
+        // Map status to escalation level
+        if (pr.status === 'Submitted' || pr.status === 'Pending_Review') {
+          escalationStatus = 'Analyst -> Reviewer';
+          escalatedTo = 'Reviewer';
+        } else if (pr.status === 'Needs_Clarification') {
+          escalationStatus = 'Reviewer -> Analyst (Returned)';
+          escalatedTo = 'Analyst';
+        } else if (pr.status === 'Verifier_Approved' || pr.status === 'Sent_to_Admin') {
+          escalationStatus = 'Reviewer -> Admin';
+          escalatedTo = 'Admin';
+        } else if (pr.status === 'Admin_Approved' || pr.status === 'Promoted') {
+          escalationStatus = 'Approved & Promoted';
+          escalatedTo = 'Baseline';
+        } else if (pr.status === 'Admin_Rejected' || pr.status === 'Rejected') {
+          escalationStatus = 'Rejected';
+          escalatedTo = 'Closed';
+        } else if (pr.status === 'Admin_Hold') {
+          escalationStatus = 'On Hold (Admin)';
+          escalatedTo = 'Admin';
+        } else if (pr.status === 'Draft') {
+          escalationStatus = 'Draft (Not Submitted)';
+          escalatedTo = '';
+        }
+        
         var row = [
           pr.record_id || '',
           pr.sheet || '',
           pr.field || '',
-          pr.comment || pr.question || '',
+          pr.type || 'correction',
+          pr.comment || pr.justification || pr.question || '',
           pr.current_value || pr.old_value || '',
-          pr.analyst || 'Analyst',
+          pr.analyst || pr.submitted_by || 'Analyst',
           pr.created_at_utc || '',
-          pr.status || 'Open',
-          pr.response || '',
-          pr.resolved_by || ''
+          escalatedTo,
+          escalationStatus,
+          pr.response || pr.verifier_notes || '',
+          pr.resolved_by || pr.approved_by || '',
+          pr.resolved_at || pr.updated_at_utc || ''
         ];
         rows.push(row);
       });
