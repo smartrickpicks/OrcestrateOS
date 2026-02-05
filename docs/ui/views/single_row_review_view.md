@@ -135,9 +135,50 @@ When RFI action is clicked, the Patch Editor displays:
 - Current field value (read-only)
 - Justification textarea (acts as the RFI question)
 
-**Field Ordering Rule (canonical):**
-- Primary: Schema order (deterministic, from `SRR_SCHEMA_ORDER`)
-- Fallback: Alphabetical for unknown fields not in schema
+**Field Inspector Ordering (v1.5.7):**
+
+The Field Inspector orders fields using the rules bundle for semantic grouping:
+
+1. **Account Name** (always first)
+   - Matches ACCOUNT_NAME_ALIASES: `Account_Name`, `Account_Name_c`, `account_name`, `account_name_c`
+   - First-match wins for deterministic selection
+
+2. **Primary Hinge Fields**
+   - Fields marked as `hinge_level: "Primary"` in `hinge_groups.json`
+   - Ordered by hinge definition sequence
+   - Group header: "Primary Hinge Fields (N)"
+
+3. **Secondary Hinge Fields**
+   - Fields marked as `hinge_level: "Secondary"` in `hinge_groups.json`
+   - Ordered by hinge definition sequence
+   - Group header: "Secondary Hinge Fields (N)"
+
+4. **Other Fields**
+   - All remaining fields not in above categories
+   - Sorted alphabetically
+   - Group header: "Other Fields (N)"
+
+**Rules Bundle Dependency:**
+
+The ordering system loads these files from `/rules/rules_bundle/` on app init:
+- `field_meta.json` — Field definitions and metadata
+- `hinge_groups.json` — Hinge field classifications per sheet
+- `sheet_order.json` — Canonical sheet ordering
+
+**Key Normalization:**
+
+Uses `normalizeFieldKey()` for case-insensitive matching:
+- Converts to lowercase
+- Removes underscores and special characters
+- Ensures `Account_Type_c` matches `account_type_c` in record keys
+
+**Fallback Behavior:**
+
+If the rules bundle fails to load:
+- `rulesBundleCache.loaded` remains `false`
+- Falls back to legacy `SRR_SCHEMA_ORDER` ordering
+- Unknown fields sorted alphabetically after schema fields
+- Console warning logged for debugging
 
 **Inline Editing Behavior:**
 - Click Patch action (or value display) to enter edit mode

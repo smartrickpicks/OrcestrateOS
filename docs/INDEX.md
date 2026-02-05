@@ -60,6 +60,7 @@
 - rules/salesforce_rules.txt
 - rules/qa_rules.txt
 - rules/resolver_rules.txt
+- docs/rules/rules_bundle.md — Rules Bundle overview and regeneration guide
 
 ## Config Templates
 - config/config_pack.base.json
