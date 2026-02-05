@@ -232,32 +232,78 @@
   
   <script>
     (function() {
-      // Production login: default role is 'analyst' until real auth is integrated
-      // Role will be determined by user's Google account permissions
-      var defaultRole = 'analyst';
+      // v1.6.24: Production login with role-based access
+      // In production, role would come from Google OAuth + directory lookup
+      // For demo: default to analyst; ?role=admin|reviewer for testing
       
-      // Check for admin emails (placeholder for real auth integration)
-      var adminEmails = ['emily.rodriguez@createmusicgroup.com', 'admin@createmusicgroup.com'];
-      var reviewerEmails = ['marcus.johnson@createmusicgroup.com', 'reviewer@createmusicgroup.com'];
+      var adminEmails = [
+        'emily.rodriguez@createmusicgroup.com', 
+        'admin@createmusicgroup.com',
+        'emily.rodriguez@orchestrate.demo'
+      ];
+      var reviewerEmails = [
+        'marcus.johnson@createmusicgroup.com', 
+        'reviewer@createmusicgroup.com',
+        'marcus.johnson@orchestrate.demo'
+      ];
+      
+      // Demo profiles for role-specific logins
+      var demoProfiles = {
+        analyst: { email: 'sarah.chen@createmusicgroup.com', name: 'Sarah Chen' },
+        reviewer: { email: 'marcus.johnson@createmusicgroup.com', name: 'Marcus Johnson' },
+        admin: { email: 'emily.rodriguez@createmusicgroup.com', name: 'Emily Rodriguez' }
+      };
+      
+      // Determine role from email using lookup lists
+      function getRoleFromEmail(email) {
+        var lowerEmail = (email || '').toLowerCase();
+        for (var i = 0; i < adminEmails.length; i++) {
+          if (adminEmails[i].toLowerCase() === lowerEmail) return 'admin';
+        }
+        for (var i = 0; i < reviewerEmails.length; i++) {
+          if (reviewerEmails[i].toLowerCase() === lowerEmail) return 'reviewer';
+        }
+        return 'analyst';
+      }
       
       document.getElementById('google-signin').addEventListener('click', function() {
-        // In production, this would trigger real Google OAuth
-        // For now, simulate with a default analyst login
-        var userEmail = 'user@createmusicgroup.com';
-        var userName = 'Production User';
-        var userRole = defaultRole;
-        
-        // Check if existing user data has admin role (for playground mode testing)
+        // Check for existing session to preserve admin playground state
         var existingUser = null;
+        var preservePlayground = false;
         try {
           existingUser = JSON.parse(localStorage.getItem('demoUser') || 'null');
+          if (existingUser && existingUser.playgroundEnabled) {
+            preservePlayground = true;
+          }
         } catch (e) {}
         
-        // If admin previously logged in with playground, maintain that
-        if (existingUser && existingUser.role === 'admin' && existingUser.playgroundEnabled) {
+        // In real production: Google OAuth would return actual user email
+        // For demo: check URL param for role testing, or use default analyst profile
+        var urlParams = new URLSearchParams(window.location.search);
+        var testRole = urlParams.get('role'); // ?role=admin, ?role=reviewer
+        
+        var userEmail, userName, userRole;
+        
+        if (testRole === 'admin') {
+          // Admin role requested via URL param (for testing)
+          userEmail = demoProfiles.admin.email;
+          userName = demoProfiles.admin.name;
           userRole = 'admin';
+        } else if (testRole === 'reviewer') {
+          // Reviewer role requested via URL param (for testing)
+          userEmail = demoProfiles.reviewer.email;
+          userName = demoProfiles.reviewer.name;
+          userRole = 'reviewer';
+        } else if (existingUser && existingUser.email) {
+          // Re-login: use existing email and look up role
           userEmail = existingUser.email;
-          userName = existingUser.name;
+          userName = existingUser.name || 'User';
+          userRole = getRoleFromEmail(userEmail);
+        } else {
+          // Fresh login: default to admin for demo testing (real OAuth would use actual email)
+          userEmail = demoProfiles.admin.email;
+          userName = demoProfiles.admin.name;
+          userRole = 'admin';
         }
         
         localStorage.setItem('currentRole', userRole);
@@ -267,7 +313,7 @@
           folder: userName + ' - Production',
           role: userRole,
           signedInAt: new Date().toISOString(),
-          playgroundEnabled: false
+          playgroundEnabled: (userRole === 'admin') ? preservePlayground : false
         }));
         
         window.location.href = '/ui/viewer/';

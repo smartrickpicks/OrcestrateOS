@@ -8587,8 +8587,30 @@
     
     // v1.6.22: Apply role-based restrictions to mode switcher
     // Analyst/Reviewer: locked to their role, cannot switch
-    // Admin: full "God mode" - can switch between all roles
+    // Admin: full "God mode" - can switch between all roles (when Playground enabled)
     var roleRestrictionsApplied = false;
+    
+    // v1.6.24: Check if playground mode is enabled for admin
+    function isPlaygroundEnabled() {
+      try {
+        var demoUser = JSON.parse(localStorage.getItem('demoUser') || '{}');
+        return demoUser.playgroundEnabled === true;
+      } catch (e) {
+        return false;
+      }
+    }
+    
+    // v1.6.24: Set playground mode for admin
+    function setPlaygroundEnabledFlag(enabled) {
+      try {
+        var demoUser = JSON.parse(localStorage.getItem('demoUser') || '{}');
+        demoUser.playgroundEnabled = enabled;
+        localStorage.setItem('demoUser', JSON.stringify(demoUser));
+      } catch (e) {
+        console.error('[Playground] Failed to save state:', e);
+      }
+    }
+    
     function applyRoleBasedModeRestrictions() {
       var loggedInRole = getLoggedInUserRole();
       var modeToggle = document.getElementById('mode-toggle-container');
@@ -8608,12 +8630,25 @@
       }
       roleRestrictionsApplied = true;
       
-      // Admin has full access - show all mode buttons at bottom
-      if (loggedInRole === 'admin') {
+      // v1.6.24: Admin with Playground enabled has full role switching access
+      if (loggedInRole === 'admin' && isPlaygroundEnabled()) {
         if (modeToggle) modeToggle.style.display = 'flex';
         if (lockedDisplayBottom) lockedDisplayBottom.style.display = 'none';
         if (lockedDisplayTop) lockedDisplayTop.style.display = 'none';
         if (modeSectionBottom) modeSectionBottom.style.display = 'block';
+        return;
+      }
+      
+      // v1.6.24: Admin without Playground is locked to admin mode
+      if (loggedInRole === 'admin') {
+        if (modeSectionBottom) modeSectionBottom.style.display = 'none';
+        if (lockedDisplayTop) {
+          lockedDisplayTop.innerHTML = '<span style="opacity: 0.7;">Mode:</span> Admin';
+          lockedDisplayTop.style.display = 'block';
+        }
+        if (currentMode !== 'admin') {
+          setMode('admin');
+        }
         return;
       }
       
@@ -8636,11 +8671,12 @@
         return;
       }
       
-      // No logged-in user or unrecognized role - default behavior (show toggle at bottom)
-      if (modeToggle) modeToggle.style.display = 'flex';
-      if (lockedDisplayBottom) lockedDisplayBottom.style.display = 'none';
-      if (lockedDisplayTop) lockedDisplayTop.style.display = 'none';
-      if (modeSectionBottom) modeSectionBottom.style.display = 'block';
+      // No logged-in user or unrecognized role - locked to analyst mode
+      if (modeSectionBottom) modeSectionBottom.style.display = 'none';
+      if (lockedDisplayTop) {
+        lockedDisplayTop.innerHTML = '<span style="opacity: 0.7;">Mode:</span> Analyst';
+        lockedDisplayTop.style.display = 'block';
+      }
     }
     
     function setMode(mode) {
@@ -17507,22 +17543,39 @@
       localStorage.setItem(DEMO_MODE_KEY, enabled ? 'true' : 'false');
     }
     
-    // v1.6.17: Environment mode toggle (Playground/Production)
+    // v1.6.24: Environment mode toggle (Playground/Production) - Admin only
     function setEnvMode(mode) {
+      // Only admins can toggle playground mode
+      var loggedInRole = getLoggedInUserRole();
+      if (loggedInRole !== 'admin') {
+        showToast('Only admins can toggle Playground mode', 'error');
+        return;
+      }
+      
       var isPlayground = mode === 'playground';
       setDemoMode(isPlayground);
+      setPlaygroundEnabledFlag(isPlayground); // v1.6.24: Store in demoUser
       updateEnvModeUI();
       renderUsersTable(); // Re-render to show/hide controls
-      showToast(isPlayground ? 'Switched to Playground mode' : 'Switched to Production mode', 'info');
-      console.log('[EnvMode] Set to:', mode);
+      applyRoleBasedModeRestrictions(); // v1.6.24: Re-apply to update role switching
+      showToast(isPlayground ? 'Playground mode enabled - role switching available' : 'Production mode - locked to Admin', 'info');
+      console.log('[EnvMode] Set to:', mode, 'by', loggedInRole);
     }
     
     function updateEnvModeUI() {
       var isPlayground = isDemoMode();
+      var loggedInRole = getLoggedInUserRole();
+      var envModeToggle = document.getElementById('env-mode-toggle');
+      var envModeSection = envModeToggle ? envModeToggle.closest('.admin-section') : null;
       var prodBtn = document.getElementById('env-mode-prod');
       var playBtn = document.getElementById('env-mode-playground');
       var addUserBtn = document.getElementById('add-user-btn');
       var modeDesc = document.getElementById('users-mode-desc');
+      
+      // v1.6.24: Hide entire Playground toggle section for non-admins
+      if (envModeSection) {
+        envModeSection.style.display = (loggedInRole === 'admin') ? 'block' : 'none';
+      }
       
       if (prodBtn && playBtn) {
         if (isPlayground) {
@@ -17539,7 +17592,8 @@
       }
       
       if (addUserBtn) {
-        if (isPlayground) {
+        // Only show add user button for admins in playground mode
+        if (isPlayground && loggedInRole === 'admin') {
           addUserBtn.style.display = 'flex';
           addUserBtn.disabled = false;
         } else {
@@ -17548,9 +17602,13 @@
       }
       
       if (modeDesc) {
-        modeDesc.textContent = isPlayground 
-          ? 'Playground mode: You can add, edit, and delete users. Changes persist locally.'
-          : 'Production mode: User management is read-only.';
+        if (loggedInRole !== 'admin') {
+          modeDesc.textContent = 'Production mode: User management is read-only.';
+        } else {
+          modeDesc.textContent = isPlayground 
+            ? 'Playground mode: You can add, edit, and delete users. Role switching is enabled.'
+            : 'Production mode: User management is read-only. Role switching is disabled.';
+        }
       }
     }
     
