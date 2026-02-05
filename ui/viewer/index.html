@@ -595,6 +595,24 @@
     .srr-chip-edited { background: #ff9800; color: white; }
     .srr-chip-needs-patch { background: #e91e63; color: white; }
     .srr-chip-required { background: #9c27b0; color: white; }
+    /* v1.6.10: Options/picklist field indicator */
+    .srr-chip-options { background: #0288d1; color: white; font-size: 0.65em; padding: 2px 5px; border-radius: 10px; }
+    .srr-chip-invalid-value { background: #ff5722; color: white; font-size: 0.65em; padding: 2px 5px; border-radius: 10px; }
+    /* v1.6.10: Dropdown field styling */
+    .srr-field-value-display.is-dropdown { cursor: pointer; }
+    .srr-field-value-display .dropdown-indicator { color: #666; font-size: 0.7em; margin-left: 4px; }
+    .srr-field-card.has-invalid-value { border-left: 3px solid #ff5722; }
+    .srr-field-card.is-picklist .srr-field-value-display:hover { background: rgba(2, 136, 209, 0.1); }
+    .srr-field-value-select { 
+      width: 100%; 
+      padding: 6px 8px; 
+      border: 1px solid #0288d1; 
+      border-radius: 4px; 
+      font-size: 0.9em; 
+      background: white;
+      outline: none;
+    }
+    .srr-field-value-select:focus { border-color: #01579b; box-shadow: 0 0 0 2px rgba(2, 136, 209, 0.2); }
     .srr-field-card-body { padding: 10px; }
     .srr-field-value-display { font-size: 0.85em; color: #333; word-break: break-word; padding: 6px 8px; background: #fafafa; border-radius: 4px; min-height: 24px; cursor: text; }
     .srr-field-value-display:hover { background: #f0f0f0; }
@@ -10228,22 +10246,31 @@
       //   b) Field is explicitly marked as picklist (meta.picklist === true)
       //   c) Field has defined options (meta.options.length > 0)
       //   d) Value is not blank/empty/null-like
-      if (meta && meta.picklist === true && meta.options && meta.options.length > 0 && !isBlankValue(value)) {
+      // v1.6.10: Only validate on primary data sheets, skip meta sheets
+      var PRIMARY_DATA_SHEETS = ['Accounts', 'Opportunity', 'Financials', 'Catalog', 'Schedule', 'Schedule Catalog', 'V2 Add Ons', 'Contacts'];
+      var isMetaSheet = sheetName && (sheetName.includes('_change_log') || sheetName === 'RFIs & Analyst Notes');
+      var isPrimarySheet = PRIMARY_DATA_SHEETS.indexOf(sheetName) >= 0;
+      
+      if (meta && meta.picklist === true && meta.options && meta.options.length > 0 && !isBlankValue(value) && !isMetaSheet && isPrimarySheet) {
         // Check dataset-level toggle before validating
         if (isPicklistValidationEnabled()) {
           var valueStr = String(value).trim();
-          var isValid = meta.options.some(function(opt) {
-            return String(opt).trim().toLowerCase() === valueStr.toLowerCase();
-          });
-          if (!isValid) {
-            signals.push({
-              signal_type: 'PICKLIST_INVALID',
-              severity: 'warning',
-              message: 'Value "' + valueStr + '" not in picklist options',
-              source: 'field_meta',
-              field_label: meta.field_label || fieldKey,
-              valid_options: meta.options.slice(0, 5) // Show first 5 options
+          // v1.6.10: Skip empty-like values (N/A, NULL, etc.)
+          var emptyLikeValues = ['', 'n/a', 'null', 'none', '-'];
+          if (emptyLikeValues.indexOf(valueStr.toLowerCase()) < 0) {
+            var isValid = meta.options.some(function(opt) {
+              return String(opt).trim().toLowerCase() === valueStr.toLowerCase();
             });
+            if (!isValid) {
+              signals.push({
+                signal_type: 'PICKLIST_INVALID',
+                severity: 'warning',
+                message: 'Value "' + valueStr + '" not in picklist options',
+                source: 'field_meta',
+                field_label: meta.field_label || fieldKey,
+                valid_options: meta.options.slice(0, 5) // Show first 5 options
+              });
+            }
           }
         }
       }
@@ -11103,12 +11130,40 @@
           .replace(/\b\w/g, function(l) { return l.toUpperCase(); })  // Title case
           .trim();
         
+        // v1.6.10: Get picklist metadata for dropdown rendering
+        var fieldMeta = getFieldMeta(srrState.currentSheet || 'Accounts', key);
+        var isPicklistField = fieldMeta && fieldMeta.picklist === true && fieldMeta.options && fieldMeta.options.length > 0;
+        var picklistOptions = isPicklistField ? fieldMeta.options : [];
+        
+        // v1.6.10: Check if current value is valid for picklist
+        var isInvalidPicklistValue = false;
+        if (isPicklistField && currentVal) {
+          var valLower = String(currentVal).trim().toLowerCase();
+          var emptyLikeValues = ['', 'n/a', 'null', 'none', '-'];
+          if (emptyLikeValues.indexOf(valLower) < 0) {
+            isInvalidPicklistValue = !picklistOptions.some(function(opt) {
+              return String(opt).trim().toLowerCase() === valLower;
+            });
+          }
+        }
+        
+        // v1.6.10: Add Options badge for picklist fields
+        if (isPicklistField) {
+          chips += '<span class="srr-chip srr-chip-options">Options</span>';
+        }
+        // v1.6.10: Add warning badge for invalid picklist values (subtle, no modal)
+        if (isInvalidPicklistValue) {
+          chips += '<span class="srr-chip srr-chip-invalid-value" title="Value not in options list">Invalid Value</span>';
+        }
+        
         // Add state-based classes (patched→submitted, rfi_pending→rfi for styling)
         var cardClass = 'srr-field-card';
         var displayState = fieldState === 'patched' ? 'submitted' : (fieldState === 'rfi_pending' ? 'rfi' : fieldState);
         if (displayState !== 'todo') cardClass += ' state-' + displayState;
         if (isLocked) cardClass += ' locked';
         if (srrState.selectedField === key) cardClass += ' active';
+        if (isPicklistField) cardClass += ' is-picklist';
+        if (isInvalidPicklistValue) cardClass += ' has-invalid-value';
         
         // v1.6.6: Check for patch highlight
         var patchInfo = getFieldPatchInfo(srrState.currentRecordKey, key);
@@ -11172,8 +11227,9 @@
             actionsHtml +
           '</div>' +
           '<div class="srr-field-card-body">' +
-            '<div class="srr-field-value-display" onclick="srrStartEdit(\'' + key + '\')" title="Click to edit">' + 
+            '<div class="srr-field-value-display' + (isPicklistField ? ' is-dropdown' : '') + '" onclick="srrStartEdit(\'' + key + '\')" title="Click to ' + (isPicklistField ? 'select' : 'edit') + '" data-is-picklist="' + (isPicklistField ? 'true' : 'false') + '" data-picklist-options="' + (isPicklistField ? encodeURIComponent(JSON.stringify(picklistOptions)) : '') + '">' + 
               (String(currentVal) || '<span style="color:#999;font-style:italic;">Empty</span>') + 
+              (isPicklistField ? ' <span class="dropdown-indicator">▼</span>' : '') +
             '</div>';
         
         // Show mini patch prompt if this field was just edited
@@ -11441,30 +11497,82 @@
         ? srrState.editedValues[fieldKey] 
         : (srrState.originalValues[fieldKey] || '');
       
-      // Replace display with input
-      valueDisplay.innerHTML = '<input type="text" class="srr-field-value-input" id="srr-edit-input-' + fieldKey + '" value="' + String(currentVal).replace(/"/g, '&quot;') + '">';
+      // v1.6.10: Check if this is a picklist field with options
+      var isPicklist = valueDisplay.getAttribute('data-is-picklist') === 'true';
+      var picklistOptionsStr = valueDisplay.getAttribute('data-picklist-options');
+      var picklistOptions = [];
+      if (isPicklist && picklistOptionsStr) {
+        try {
+          picklistOptions = JSON.parse(decodeURIComponent(picklistOptionsStr));
+        } catch (e) {
+          picklistOptions = [];
+        }
+      }
       
-      var input = document.getElementById('srr-edit-input-' + fieldKey);
-      if (!input) return;
-      
-      input.focus();
-      input.select();
-      
-      // Handle blur and Enter
-      input.addEventListener('blur', function() {
-        srrCommitEdit(fieldKey, input.value);
-      });
-      input.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
+      // v1.6.10: Render dropdown for picklist fields, text input for others
+      if (isPicklist && picklistOptions.length > 0) {
+        // Build dropdown HTML
+        var selectHtml = '<select class="srr-field-value-select" id="srr-edit-input-' + fieldKey + '">';
+        // Add empty option
+        selectHtml += '<option value=""' + (!currentVal ? ' selected' : '') + '>-- Select --</option>';
+        // Check if current value is in options (for invalid value handling)
+        var currentValLower = String(currentVal).trim().toLowerCase();
+        var foundCurrentVal = false;
+        picklistOptions.forEach(function(opt) {
+          var isSelected = String(opt).trim().toLowerCase() === currentValLower;
+          if (isSelected) foundCurrentVal = true;
+          selectHtml += '<option value="' + String(opt).replace(/"/g, '&quot;') + '"' + (isSelected ? ' selected' : '') + '>' + String(opt) + '</option>';
+        });
+        // If current value not in options, add it as an invalid option
+        if (currentVal && !foundCurrentVal) {
+          selectHtml += '<option value="' + String(currentVal).replace(/"/g, '&quot;') + '" selected style="color:#c62828;">' + String(currentVal) + ' (invalid)</option>';
+        }
+        selectHtml += '</select>';
+        valueDisplay.innerHTML = selectHtml;
+        
+        var select = document.getElementById('srr-edit-input-' + fieldKey);
+        if (!select) return;
+        
+        select.focus();
+        
+        // Handle change and blur
+        select.addEventListener('change', function() {
+          srrCommitEdit(fieldKey, select.value);
+        });
+        select.addEventListener('blur', function() {
+          // Small delay to allow change event to fire first
+          setTimeout(function() {
+            if (srrState.editingField === fieldKey) {
+              srrCommitEdit(fieldKey, select.value);
+            }
+          }, 100);
+        });
+      } else {
+        // Regular text input
+        valueDisplay.innerHTML = '<input type="text" class="srr-field-value-input" id="srr-edit-input-' + fieldKey + '" value="' + String(currentVal).replace(/"/g, '&quot;') + '">';
+        
+        var input = document.getElementById('srr-edit-input-' + fieldKey);
+        if (!input) return;
+        
+        input.focus();
+        input.select();
+        
+        // Handle blur and Enter
+        input.addEventListener('blur', function() {
           srrCommitEdit(fieldKey, input.value);
-        }
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          srrState.editingField = null;
-          renderSrrFields(srrState.currentRecord);
-        }
-      });
+        });
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            srrCommitEdit(fieldKey, input.value);
+          }
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            srrState.editingField = null;
+            renderSrrFields(srrState.currentRecord);
+          }
+        });
+      }
     }
     
     function srrCommitEdit(fieldKey, newValue) {
