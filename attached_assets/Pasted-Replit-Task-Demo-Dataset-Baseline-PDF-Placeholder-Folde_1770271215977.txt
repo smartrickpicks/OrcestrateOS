@@ -1,0 +1,43 @@
+Replit Task: Demo Dataset Baseline + PDF Placeholder Folder
+
+Goal
+Use the Ostereo dataset as the standard schema columns, generate a clean synthetic demo dataset, and wire a placeholder PDF folder so real PDFs can be dropped in later.
+
+Assumptions
+- Use Ostereo “Accounts” sheet columns as the canonical schema for demo rows (fallback: first sheet if “Accounts” not found).
+- Keep the PDF viewer functional using local placeholder paths, without external network dependencies.
+
+Requirements
+1) Add demo dataset JSON
+- Add `examples/datasets/ostereo_demo_v1.json` (from Codex) into this repo.
+- If it already exists, replace it.
+
+2) Build synthetic demo dataset from schema
+- Generate a lightweight demo dataset (e.g., 30–50 rows) using the Ostereo “Accounts” columns.
+- Save as `examples/datasets/ostereo_demo_synthetic.json`.
+- Use realistic placeholder values (names, addresses, emails, etc.). It doesn’t have to be perfect, just structured.
+
+3) Make the synthetic dataset the default demo load
+- Update `ui/viewer/index.html` to load `ostereo_demo_synthetic.json` as the default dataset on cold start.
+- Remove or disable legacy sample datasets (no “Sample Dataset” in menus).
+
+4) PDF placeholder support
+- Create a folder: `ui/viewer/assets/pdfs/`
+- Add a placeholder PDF file: `ui/viewer/assets/pdfs/placeholder.pdf` (simple one‑page stub).
+- Update dataset rows so their PDF path uses a local field (preferably existing `File_URL_c` or `file_url`):
+  Example: `/ui/viewer/assets/pdfs/placeholder.pdf`
+- Update the PDF loader to prefer local file paths when present and fall back to remote URLs if needed.
+
+5) UI feedback
+- If a PDF is missing, show a non-blocking inline message in the viewer:
+  “PDF not found. Drop files into ui/viewer/assets/pdfs/”
+- Do not break the SRR if PDF is missing.
+
+Acceptance
+- App boots with the synthetic demo dataset by default.
+- Field Inspector and triage operate on the Ostereo schema columns.
+- PDF viewer loads `placeholder.pdf` without errors.
+- There is a clear drop-in folder for future PDFs: `ui/viewer/assets/pdfs/`.
+
+Suggested commit message
+ui(demo): default ostereo synthetic dataset + pdf placeholder folder

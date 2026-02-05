@@ -3563,9 +3563,10 @@
 
   <script>
     const PRIMARY_PATH = 'out/sf_packet.preview.json';
-    const FALLBACK_PATH = 'examples/expected_outputs/sf_packet.example.json';
+    const FALLBACK_PATH = 'examples/datasets/ostereo_demo_v1.json';
     const RELATIVE_PRIMARY = '../../out/sf_packet.preview.json';
-    const RELATIVE_FALLBACK = '../../examples/expected_outputs/sf_packet.example.json';
+    const RELATIVE_FALLBACK = '../../examples/datasets/ostereo_demo_v1.json';
+    const DEFAULT_DATASET_URL = '/examples/datasets/ostereo_demo_v1.json';
     const COMMANDS_PATH = 'run_commands.json';
     const STORAGE_KEY = 'viewer_selection_v10';
     const PREFLIGHT_STORAGE_KEY = 'viewer_preflight_v10';
@@ -4476,8 +4477,9 @@
       if (banner) banner.style.display = 'none';
     }
     
-    // ========== SAMPLE DATASET (V1.2.5) ==========
-    const SAMPLE_DATASET = {"dataset_id":"sample_v1","version":"1.0.0","created_at":"2026-01-30T00:00:00Z","description":"Deterministic demo dataset for testing structured intent and the full workflow.","sheets":{"contracts":{"headers":["contract_key","file_url","file_name","label_name","artist_name","subtype","status","effective_date"],"rows":[{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","label_name":"Acme Records","artist_name":"The Samples","subtype":"exclusive","status":"active","effective_date":"2024-01-15"},{"contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","label_name":"Various Artists","artist_name":"","subtype":"compilation","status":"active","effective_date":"2024-02-20"},{"contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","label_name":"Indie House","artist_name":"Solo Artist","subtype":"non-exclusive","status":"pending","effective_date":""},{"contract_key":"","file_url":"https://example.org/contract_d.pdf","file_name":"contract_d.pdf","label_name":"Beta Music","artist_name":"Beta Band","subtype":"exclusive","status":"draft","effective_date":"2024-03-01"},{"contract_key":"CK-005","file_url":"","file_name":"contract_e.pdf","label_name":"Gamma Tunes","artist_name":"","subtype":"exclusive","status":"active","effective_date":"2024-04-10"}]},"catalog":{"headers":["contract_key","file_url","file_name","track_title","artist_name","isrc","release_date","genre"],"rows":[{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","track_title":"Sample Song One","artist_name":"The Samples","isrc":"US-ABC-24-00001","release_date":"2024-05-01","genre":"Rock"},{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","track_title":"Sample Song Two","artist_name":"The Samples","isrc":"US-ABC-24-00002","release_date":"2024-05-01","genre":"Rock"},{"contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","track_title":"Compilation Hit","artist_name":"","isrc":"","release_date":"2024-06-15","genre":"Pop"},{"contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","track_title":"","artist_name":"Solo Artist","isrc":"US-DEF-24-00003","release_date":"","genre":"Jazz"},{"contract_key":"CK-005","file_url":"","file_name":"contract_e.pdf","track_title":"Gamma Track","artist_name":"Gamma Star","isrc":"US-GHI-24-00004","release_date":"2024-07-20","genre":"Electronic"}]},"royalties":{"headers":["contract_key","file_url","file_name","period","gross_revenue","artist_share_pct","net_payable"],"rows":[{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","period":"2024-Q1","gross_revenue":"15000.00","artist_share_pct":"50","net_payable":"7500.00"},{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","period":"2024-Q2","gross_revenue":"18500.00","artist_share_pct":"50","net_payable":"9250.00"},{"contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","period":"2024-Q1","gross_revenue":"8000.00","artist_share_pct":"","net_payable":""},{"contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","period":"2024-Q2","gross_revenue":"","artist_share_pct":"40","net_payable":""}]}},"issues":[{"issue_id":"ISS-001","contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","sheet":"contracts","field":"artist_name","issue_type":"MISSING_REQUIRED","severity":"warning","message":"Compilation contract missing artist attribution"},{"issue_id":"ISS-002","contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","sheet":"contracts","field":"effective_date","issue_type":"MISSING_REQUIRED","severity":"blocking","message":"Contract missing effective date"},{"issue_id":"ISS-003","contract_key":"","file_url":"https://example.org/contract_d.pdf","file_name":"contract_d.pdf","sheet":"contracts","field":"contract_key","issue_type":"MISSING_REQUIRED","severity":"blocking","message":"Contract key is missing"},{"issue_id":"ISS-004","contract_key":"CK-005","file_url":"","file_name":"contract_e.pdf","sheet":"contracts","field":"file_url","issue_type":"MISSING_REQUIRED","severity":"warning","message":"File URL is missing"},{"issue_id":"ISS-005","contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","sheet":"catalog","field":"isrc","issue_type":"MISSING_REQUIRED","severity":"warning","message":"ISRC code missing for track"},{"issue_id":"ISS-006","contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","sheet":"catalog","field":"track_title","issue_type":"MISSING_REQUIRED","severity":"blocking","message":"Track title is missing"},{"issue_id":"ISS-007","contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","sheet":"royalties","field":"artist_share_pct","issue_type":"MISSING_REQUIRED","severity":"warning","message":"Artist share percentage missing"}],"field_actions":[{"action_id":"FA-001","contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","sheet":"contracts","field":"label_name","action":"REVIEW","triggered_by":"SF_R1_LABEL_NOT_ARTIST"},{"action_id":"FA-002","contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","sheet":"catalog","field":"artist_name","action":"VALIDATE","triggered_by":"SF_R2_ARTIST_REQUIRED"}],"contract_results":[{"contract_key":"CK-001","file_url":"https://example.org/contract_a.pdf","file_name":"contract_a.pdf","status":"ready","subtype":"exclusive","issue_count":0},{"contract_key":"CK-002","file_url":"https://example.org/contract_b.pdf","file_name":"contract_b.pdf","status":"needs_review","subtype":"compilation","issue_count":3},{"contract_key":"CK-003","file_url":"https://example.org/contract_c.pdf","file_name":"contract_c.pdf","status":"blocked","subtype":"non-exclusive","issue_count":2},{"contract_key":"","file_url":"https://example.org/contract_d.pdf","file_name":"contract_d.pdf","status":"blocked","subtype":"exclusive","issue_count":1},{"contract_key":"CK-005","file_url":"","file_name":"contract_e.pdf","status":"needs_review","subtype":"exclusive","issue_count":1}],"summary":{"total_contracts":5,"ready":1,"needs_review":2,"blocked":2,"total_issues":7,"blocking_issues":3,"warning_issues":4}};
+    // ========== DEFAULT DATASET (V1.6.3) ==========
+    // Ostereo Demo is now the sole default dataset - loaded from JSON file
+    var cachedDefaultDataset = null;
     
     // ========== NOMENCLATURE PACK (D4) ==========
     // Maps internal tokens to human-readable labels
@@ -14065,7 +14067,7 @@
         observation: 'Row 142 shows contract_type=LICENSING but label_vendor is blank.',
         expected: 'label_vendor = "Sony Music" based on contract header data.',
         justification: 'Header section row 1 references Sony Music as the licensing partner.',
-        repro: '1. Load sample_v1.json\n2. Navigate to row 142\n3. Observe label_vendor is empty\n4. Cross-reference with contract header'
+        repro: '1. Load ostereo_demo_v1.json\n2. Navigate to row 142\n3. Observe label_vendor is empty\n4. Cross-reference with contract header'
       },
       preflight: { schema: 'pass', conflicts: 'pass', evidence: 'pass' },
       revisions: []
@@ -14605,7 +14607,7 @@
         observation: 'Row 142 shows contract_type=LICENSING but label_vendor is blank.',
         expected: 'label_vendor = "Sony Music" based on contract header data.',
         justification: 'Header section row 1 references Sony Music as the licensing partner.',
-        repro: '1. Load sample_v1.json\n2. Navigate to row 142\n3. Observe label_vendor is empty\n4. Cross-reference with contract header'
+        repro: '1. Load ostereo_demo_v1.json\n2. Navigate to row 142\n3. Observe label_vendor is empty\n4. Cross-reference with contract header'
       },
       verifier: {
         actor: 'verifier@example.com',
@@ -17089,6 +17091,12 @@
         return;
       }
       
+      // v1.6.3: Default to ostereo_demo_v1.json on cold start
+      console.log('[Loader] Cold start - loading default dataset (ostereo_demo_v1.json)...');
+      await loadSampleDataset({ autoRedirect: false });
+      return;
+      
+      // Legacy: Try sf_packet files (kept for reference, now bypassed)
       let data = null;
       let source = '';
       let isFallback = false;
@@ -17113,12 +17121,9 @@
       }
       
       if (!data) {
-        // No data available - show error and stay in welcome state
-        const errorContainer = document.getElementById('error-container');
-        if (errorContainer) {
-          errorContainer.innerHTML = `<div class="info">No records loaded yet. Click "Data Sources" to load your Preview Packet.</div>`;
-        }
-        updateSessionChip();
+        // v1.6.3: No sf_packet available - auto-load ostereo_demo_v1 as default
+        console.log('[Loader] No sf_packet found, loading default dataset...');
+        await loadSampleDataset({ autoRedirect: false });
         return;
       }
       
@@ -19358,37 +19363,51 @@ Add any additional notes here.
     }
     
     // ========== LOADER HANDLERS (v1.4.3) ==========
-    function loadSampleDataset(options) {
+    // v1.6.3: Load default dataset (ostereo_demo_v1.json) - async fetch
+    async function loadSampleDataset(options) {
       options = options || {};
       try {
-        // Reset workbook and populate from sample dataset sheets (v1.4.3 INGEST-01)
+        // Fetch the default dataset if not cached
+        if (!cachedDefaultDataset) {
+          console.log('[Loader] Fetching default dataset from:', DEFAULT_DATASET_URL);
+          var resp = await fetch(DEFAULT_DATASET_URL);
+          if (!resp.ok) {
+            throw new Error('Failed to fetch default dataset: ' + resp.status);
+          }
+          cachedDefaultDataset = await resp.json();
+          console.log('[Loader] Default dataset fetched:', cachedDefaultDataset.dataset_id);
+        }
+        
+        var dataset = cachedDefaultDataset;
+        
+        // Reset workbook and populate from dataset sheets
         resetWorkbook();
         
-        if (SAMPLE_DATASET.sheets) {
-          Object.keys(SAMPLE_DATASET.sheets).forEach(function(sheetName) {
-            var sheet = SAMPLE_DATASET.sheets[sheetName];
+        if (dataset.sheets) {
+          Object.keys(dataset.sheets).forEach(function(sheetName) {
+            var sheet = dataset.sheets[sheetName];
             addSheet(sheetName, sheet.headers || [], sheet.rows || [], {});
           });
         }
         
-        // Transform sample dataset to match expected format
+        // Transform dataset to match expected format
         allData = {
-          contractResults: SAMPLE_DATASET.contract_results || [],
-          issues: SAMPLE_DATASET.issues || [],
-          fieldActions: SAMPLE_DATASET.field_actions || [],
+          contractResults: dataset.contract_results || [],
+          issues: dataset.issues || [],
+          fieldActions: dataset.field_actions || [],
           changeLog: [],
-          summary: SAMPLE_DATASET.summary || {},
-          sheets: SAMPLE_DATASET.sheets || {}
+          summary: dataset.summary || {},
+          sheets: dataset.sheets || {}
         };
         
         // Save to localStorage
-        localStorage.setItem(STORAGE_KEY_DATASET, JSON.stringify(SAMPLE_DATASET));
+        localStorage.setItem(STORAGE_KEY_DATASET, JSON.stringify(dataset));
         
         // Save to upload library
-        saveToUploadLibrary(SAMPLE_DATASET, 'Sample Dataset', 'sample');
+        saveToUploadLibrary(dataset, 'Ostereo Demo Dataset', 'ostereo_demo');
         
         dataLoaded = true;
-        currentArtifactPath = 'sample_v1';
+        currentArtifactPath = 'ostereo_demo_v1.json';
         currentDataset = null; // Reset cache
         updateUIForDataState();
         updateSessionChip();
@@ -19405,10 +19424,10 @@ Add any additional notes here.
         // v1.6.0: Generate signals for dataset
         generateSignalsForDataset();
         
-        console.log('[Loader] Sample dataset loaded:', workbook.order.length, 'sheets');
-        showToast('Sample dataset loaded successfully', 'success');
+        console.log('[Loader] Ostereo demo dataset loaded:', workbook.order.length, 'sheets');
+        showToast('Ostereo demo dataset loaded successfully', 'success');
         updateSidebarSheetSelector();
-        updateActiveDataSourceBar('sample_v1.json');
+        updateActiveDataSourceBar('ostereo_demo_v1.json');
         
         // Auto-redirect after loading (v1.4.4) - always go to grid after load
         if (options.autoRedirect !== false) {
@@ -19417,8 +19436,8 @@ Add any additional notes here.
           }, 300);
         }
       } catch (e) {
-        console.error('Failed to load sample dataset:', e);
-        showToast('Failed to load sample dataset', 'error');
+        console.error('Failed to load default dataset:', e);
+        showToast('Failed to load default dataset', 'error');
       }
     }
     

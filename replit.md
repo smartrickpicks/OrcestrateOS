@@ -20,7 +20,7 @@ The user interface features a dashboard shell with a queue-centric sidebar, righ
 
 ### Data Handling and Integration
 
-Data loading supports sample datasets, CSV/XLSX import with delimiter inference, and utilities for resetting demo state. The system includes a PDF proxy (FastAPI server on port 5000) for CORS-safe PDF fetching and field resolution, and utilizes `<object>` elements for PDF display. A Field Inspector and Patch Editor provide search-filtered fields, inline editing, and a lock-on-commit mechanism. The system features a Verifier Triage with a 4-queue system and automatic view swapping based on roles, plus a localStorage-backed mock filesystem for artifacts and a deterministic artifact ID system. A Canonical Record Store persists records to localStorage, enabling Single Row Review (SRR) rehydration.
+Data loading defaults to `ostereo_demo_v1.json` on cold start (v1.6.3). Supports CSV/XLSX import with delimiter inference, and utilities for resetting demo state. The system includes a PDF proxy (FastAPI server on port 5000) for CORS-safe PDF fetching and field resolution, and utilizes `<object>` elements for PDF display. A Field Inspector and Patch Editor provide search-filtered fields, inline editing, and a lock-on-commit mechanism. The system features a Verifier Triage with a 4-queue system and automatic view swapping based on roles, plus a localStorage-backed mock filesystem for artifacts and a deterministic artifact ID system. A Canonical Record Store persists records to localStorage, enabling Single Row Review (SRR) rehydration.
 
 ### Semantic Rules and Signals
 
