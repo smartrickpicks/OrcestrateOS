@@ -1288,6 +1288,9 @@
           <button class="active-data-source-change" id="active-data-source-action" onclick="openDataSourcePanel()">Change</button>
         </div>
 
+        <!-- Locked Role Display (for Analyst/Reviewer - appears above nav) -->
+        <div id="locked-role-display-top" style="display: none; margin: 12px 16px; padding: 8px 12px; font-size: 0.8em; background: rgba(21, 101, 192, 0.15); color: #64b5f6; border-radius: 6px; text-align: center; border: 1px solid rgba(21, 101, 192, 0.3);"></div>
+
         <div class="nav-divider"></div>
 
         <!-- Navigation Section -->
@@ -8356,7 +8359,9 @@
     function applyRoleBasedModeRestrictions() {
       var loggedInRole = getLoggedInUserRole();
       var modeToggle = document.getElementById('mode-toggle-container');
-      var lockedDisplay = document.getElementById('locked-role-display');
+      var lockedDisplayBottom = document.getElementById('locked-role-display');
+      var lockedDisplayTop = document.getElementById('locked-role-display-top');
+      var modeSectionBottom = document.querySelector('.nav-mode-section');
       var signOutLink = document.getElementById('sign-out-link');
       
       // Style the sign out link hover (only once)
@@ -8370,23 +8375,25 @@
       }
       roleRestrictionsApplied = true;
       
-      // Admin has full access - show all mode buttons
+      // Admin has full access - show all mode buttons at bottom
       if (loggedInRole === 'admin') {
         if (modeToggle) modeToggle.style.display = 'flex';
-        if (lockedDisplay) lockedDisplay.style.display = 'none';
+        if (lockedDisplayBottom) lockedDisplayBottom.style.display = 'none';
+        if (lockedDisplayTop) lockedDisplayTop.style.display = 'none';
+        if (modeSectionBottom) modeSectionBottom.style.display = 'block';
         return;
       }
       
       // Analyst and Reviewer are locked to their respective modes
       if (loggedInRole === 'analyst' || loggedInRole === 'reviewer') {
-        // Hide the mode toggle buttons
-        if (modeToggle) modeToggle.style.display = 'none';
+        // Hide the entire mode section at bottom (toggle buttons + bottom indicator)
+        if (modeSectionBottom) modeSectionBottom.style.display = 'none';
         
-        // Show locked role indicator
-        if (lockedDisplay) {
+        // Show locked role indicator at TOP (above navigation)
+        if (lockedDisplayTop) {
           var roleLabel = loggedInRole.charAt(0).toUpperCase() + loggedInRole.slice(1);
-          lockedDisplay.innerHTML = '<span style="opacity: 0.7;">Mode:</span> ' + roleLabel;
-          lockedDisplay.style.display = 'block';
+          lockedDisplayTop.innerHTML = '<span style="opacity: 0.7;">Mode:</span> ' + roleLabel;
+          lockedDisplayTop.style.display = 'block';
         }
         
         // Only force setMode if current mode doesn't match (avoid redundant reload)
@@ -8396,9 +8403,11 @@
         return;
       }
       
-      // No logged-in user or unrecognized role - default behavior (show toggle)
+      // No logged-in user or unrecognized role - default behavior (show toggle at bottom)
       if (modeToggle) modeToggle.style.display = 'flex';
-      if (lockedDisplay) lockedDisplay.style.display = 'none';
+      if (lockedDisplayBottom) lockedDisplayBottom.style.display = 'none';
+      if (lockedDisplayTop) lockedDisplayTop.style.display = 'none';
+      if (modeSectionBottom) modeSectionBottom.style.display = 'block';
     }
     
     function setMode(mode) {
