@@ -28,7 +28,7 @@ The system generates deterministic cell-level signals on dataset load using `fie
 
 ### Identity and Authentication
 
-Record identity is defined by `tenant_id`, `division_id`, `dataset_id`, `record_id`, with `record_id` generated based on a canonicalized row fingerprint. A landing page with mock Google sign-in and role selection (Analyst/Reviewer/Admin) handles user authentication and role-based access. Folder-based data sources are auto-mapped from user email.
+Record identity is defined by `tenant_id`, `division_id`, `dataset_id`, `record_id`, with `record_id` generated based on a canonicalized row fingerprint. A landing page with mock Google sign-in and role selection (Analyst/Reviewer/Admin) handles user authentication and role-based access. Folder-based data sources are auto-mapped from user email. v1.6.9 adds stable row mapping for meta sheets: change logs and RFI sheets use `{sheet}:{row}` format for record IDs instead of hash-based `rec_*` IDs, enabling deterministic row mapping between meta sheets and data sheets. The modified demo dataset (ostereo_demo_v1.json) is sanitized via `scripts/sanitize_demo_dataset.py` to remove error log text (timeout messages, auto-failure strings) and header-like values from data cells.
 
 ## External Dependencies
 

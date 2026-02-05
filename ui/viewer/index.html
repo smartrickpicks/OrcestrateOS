@@ -3920,8 +3920,23 @@
       var tid = IDENTITY_CONTEXT.tenant_id;
       var did = datasetId || IDENTITY_CONTEXT.dataset_id || 'ds_' + Date.now().toString(36);
       
+      // v1.6.9: Use stable sheet:row IDs for meta sheets (change logs, RFIs)
+      // This prevents random rec_* IDs and enables stable row mapping
+      var isMetaSheet = sheetName && (
+        sheetName.includes('_change_log') || 
+        sheetName === 'RFIs & Analyst Notes'
+      );
+      
       // Generate stable record_id if not present
-      var record_id = row.record_id || generateStableRecordId(tid, did, row);
+      var record_id = row.record_id;
+      if (!record_id) {
+        if (isMetaSheet) {
+          // Meta sheets use sheet:row format for stable mapping
+          record_id = sheetName + ':' + rawRowIndex;
+        } else {
+          record_id = generateStableRecordId(tid, did, row);
+        }
+      }
       
       // Extract UUID aliases
       var aliases = extractUuidAliases(row);
