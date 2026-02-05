@@ -1584,7 +1584,7 @@
       <!-- Loader Page (DEPRECATED - v1.2.9 uses drawer instead) -->
       <div class="page-content" id="page-loader" style="display: none !important;">
         <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-          <div style="font-size: 0.75em; color: #999; text-align: right; margin-bottom: 10px;">PAGE: LOADER | BUILD v1.6.41</div>
+          <div style="font-size: 0.75em; color: #999; text-align: right; margin-bottom: 10px;">PAGE: LOADER | BUILD v1.6.42</div>
           
           <!-- PRIMARY ACTION PANEL: Continue to Triage (shown when dataset active) -->
           <div id="loader-continue-panel" style="display: none; background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); border-radius: 12px; padding: 30px; margin-bottom: 30px; color: white; text-align: center;">
@@ -1673,7 +1673,7 @@
           <div class="page-header" style="position: relative;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <h2 id="triage-page-title">Triage</h2>
-              <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.6.41</span>
+              <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.6.42</span>
             </div>
             <p class="page-desc">All items requiring analyst review and action.</p>
             <!-- Sticky Search Bar (top right) - frosted glass style with scroll-aware behavior -->
@@ -1866,7 +1866,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>All-Data Grid</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ALL-DATA-GRID | BUILD v1.6.41</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ALL-DATA-GRID | BUILD v1.6.42</span>
           </div>
           <p class="page-desc">Dense spreadsheet view of all records with filtering and search.</p>
         </div>
@@ -1897,7 +1897,7 @@
         <div id="analyst-grid-controls" class="grid-controls" style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <label style="font-size: 0.85em; color: #666;">Sheet:</label>
-            <select id="grid-sheet-selector" class="filter-select" style="min-width: 160px;">
+            <select id="grid-sheet-selector" class="filter-select" style="min-width: 160px;" onchange="handleGridSheetSelectorChange(this.value)">
               <option value="">All Sheets</option>
             </select>
           </div>
@@ -1969,7 +1969,7 @@
         <div class="grid-footer" style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; color: #666; font-size: 0.85em;">
           <span id="grid-row-count">0 records</span>
           <span id="grid-filter-info"></span>
-          <span style="font-size: 0.75em; color: #aaa;">PAGE: ALL-DATA-GRID | BUILD v1.6.41</span>
+          <span style="font-size: 0.75em; color: #aaa;">PAGE: ALL-DATA-GRID | BUILD v1.6.42</span>
         </div>
       </div><!-- end page-grid -->
 
@@ -1978,7 +1978,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2 id="srr-page-title">Record Inspection</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: SINGLE-ROW-REVIEW | BUILD v1.6.41</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: SINGLE-ROW-REVIEW | BUILD v1.6.42</span>
           </div>
           <p class="page-desc">Per-record inspection with Evidence Pack authoring and Patch Request creation.</p>
         </div>
@@ -2272,7 +2272,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Patch Studio</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH-STUDIO | BUILD v1.6.41</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH-STUDIO | BUILD v1.6.42</span>
           </div>
           <p class="page-desc">Select records, build rule patches, validate with preflight gate, and export.</p>
         </div>
@@ -2342,7 +2342,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Review</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: CONFIG-INSPECTOR | BUILD v1.6.41</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: CONFIG-INSPECTOR | BUILD v1.6.42</span>
           </div>
           <p class="page-desc">Inspect config deltas, compare artifact versions, and generate evidence summaries.</p>
         </div>
@@ -2417,7 +2417,7 @@
               <h2 style="margin: 0;">Verifier Review</h2>
               <span class="vr-state-badge" id="vr-state-badge">Submitted</span>
             </div>
-            <span style="font-size: 0.7em; color: #999;">PAGE: VERIFIER-REVIEW | BUILD v1.6.41</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: VERIFIER-REVIEW | BUILD v1.6.42</span>
           </div>
           <p class="page-desc">Review submitted Patch Requests, request clarification, approve or reject.</p>
         </div>
@@ -2642,7 +2642,7 @@
               <h2 style="margin: 0;">Admin Approval</h2>
               <span class="aa-state-badge" id="aa-state-badge">Verifier Approved</span>
             </div>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-APPROVAL | BUILD v1.6.41</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-APPROVAL | BUILD v1.6.42</span>
           </div>
           <p class="page-desc">Final approval surface before Promote Patch to Baseline.</p>
         </div>
@@ -2830,7 +2830,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Admin Panel</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-PANEL | BUILD v1.6.41</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-PANEL | BUILD v1.6.42</span>
           </div>
           <p class="page-desc">Centralized admin tools for governance, config, standardization, and patch management.</p>
         </div>
@@ -3402,7 +3402,7 @@
             Upload Excel
           </button>
           <input type="file" id="drawer-excel-file-input" accept=".xlsx,.xls" style="display: none;" onchange="handleExcelUpload(this); closeDataSourceDrawer();">
-          <!-- v1.6.41: Clear Cache button for fresh start -->
+          <!-- v1.6.42: Clear Cache button for fresh start -->
           <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ddd;">
             <button id="clear-cache-btn" onclick="handleClearCacheAndReload()" 
                     style="padding: 6px 16px; background: transparent; color: #666; border: 1px solid #ccc; border-radius: 6px; font-size: 0.8em; cursor: pointer; transition: all 0.2s ease;"
@@ -4969,7 +4969,7 @@
       workbook.activeSheet = null;
     }
     
-    // v1.6.41: Workbook session cache (persists across page reloads)
+    // v1.6.42: Workbook session cache (persists across page reloads)
     var WORKBOOK_CACHE_KEY = 'orchestrate_workbook_cache';
     var NAV_STATE_CACHE_KEY = 'orchestrate_nav_state';
     
@@ -5038,7 +5038,7 @@
       } catch (e) { return null; }
     }
     
-    // v1.6.41: Clear cache and reload page for fresh start
+    // v1.6.42: Clear cache and reload page for fresh start
     function handleClearCacheAndReload() {
       if (confirm('This will clear your saved session data and reload the page. Continue?')) {
         clearWorkbookCache();
@@ -5406,7 +5406,7 @@
     async function masterlineAutoload() {
       if (!artifactRegistry.devMasterlineEnabled) return;
       
-      // v1.6.41: First try to restore from workbook cache (persists Excel uploads)
+      // v1.6.42: First try to restore from workbook cache (persists Excel uploads)
       var cachedWorkbook = loadWorkbookFromCache();
       if (cachedWorkbook && cachedWorkbook.workbook) {
         console.log('[Masterline] Restoring from workbook cache...');
@@ -7995,7 +7995,7 @@
       return (bytes / 1024 / 1024).toFixed(1) + ' MB';
     }
 
-    // v1.6.41: Update progress block from actual data (signals + patch requests)
+    // v1.6.42: Update progress block from actual data (signals + patch requests)
     // Now filters by current sheet view
     function updateProgressBlock() {
       var todoEl = document.getElementById('progress-todo');
@@ -8005,7 +8005,7 @@
       
       if (!todoEl || !reviewEl || !doneEl) return;
       
-      // v1.6.41: Get current sheet filter
+      // v1.6.42: Get current sheet filter
       var currentSheet = gridState.sheet || '';
       
       // v1.6.33: Count from actual data sources
@@ -8013,7 +8013,7 @@
       var review = 0;    // Patch requests submitted for reviewer/admin review
       var done = 0;      // Approved/promoted/verified records
       
-      // v1.6.41: TO DO: Count signals filtered by current sheet
+      // v1.6.42: TO DO: Count signals filtered by current sheet
       if (typeof signalStore !== 'undefined' && signalStore.signals_by_cell) {
         Object.keys(signalStore.signals_by_cell).forEach(function(recordId) {
           // Record IDs are formatted as "SheetName:rowIndex"
@@ -8027,7 +8027,7 @@
         });
       }
       
-      // v1.6.41: REVIEW + DONE: Count from patch requests by status, filtered by sheet
+      // v1.6.42: REVIEW + DONE: Count from patch requests by status, filtered by sheet
       var patchRequests = PATCH_REQUEST_STORE.list();
       patchRequests.forEach(function(pr) {
         // Check if patch request matches current sheet
@@ -8169,6 +8169,26 @@
       } else {
         gridState.sheet = value;
       }
+      renderGrid();
+      updateProgressBlock();
+      saveNavStateToCache();
+      // Sync grid selector
+      var gridSelector = document.getElementById('grid-sheet-selector');
+      if (gridSelector) gridSelector.value = gridState.sheet ? gridState.sheet : '';
+    }
+    
+    // v1.6.42: Grid sheet selector change handler - syncs both selectors
+    function handleGridSheetSelectorChange(value) {
+      console.log('[Grid] Sheet selector changed:', value);
+      if (value === '' || value === 'all') {
+        gridState.sheet = null;
+      } else {
+        gridState.sheet = value;
+      }
+      // Sync sidebar selector
+      var sidebarSelector = document.getElementById('sidebar-sheet-selector');
+      if (sidebarSelector) sidebarSelector.value = gridState.sheet ? gridState.sheet : 'all';
+      
       renderGrid();
       updateProgressBlock();
       saveNavStateToCache();
@@ -10422,12 +10442,12 @@
       search: '',
       visibleColumns: [],
       allColumns: [],
-      // v1.6.41: Column ordering and display preferences
+      // v1.6.42: Column ordering and display preferences
       columnOrder: null,  // User-defined column order (null = use default)
       hiddenColumns: ['file_url', 'File_URL_c', '_row_index', '_originalIdx', '_sheetRowIndex', 'sheet']  // Columns hidden by default
     };
     
-    // v1.6.41: Get Excel-style column letter (A, B, C, ... Z, AA, AB, etc.)
+    // v1.6.42: Get Excel-style column letter (A, B, C, ... Z, AA, AB, etc.)
     function getColumnLetter(index) {
       var letter = '';
       while (index >= 0) {
@@ -10437,7 +10457,7 @@
       return letter;
     }
     
-    // v1.6.41: Get preferred column order for display
+    // v1.6.42: Get preferred column order for display
     function getPreferredColumnOrder(columns) {
       // Priority columns to show first (account/identity fields)
       var priorityFields = [
@@ -10469,7 +10489,7 @@
       });
     }
     
-    // v1.6.41: Column drag and drop handlers
+    // v1.6.42: Column drag and drop handlers
     var draggedColumnIdx = null;
     
     function handleColumnDragStart(event) {
@@ -10798,7 +10818,7 @@
         });
       }
       
-      // v1.6.41: Apply preferred column order for display
+      // v1.6.42: Apply preferred column order for display
       gridState.allColumns = columns.slice();
       gridState.visibleColumns = getPreferredColumnOrder(columns);
       
@@ -10888,7 +10908,7 @@
               if (val === null || val === undefined) val = '';
               if (typeof val === 'object') val = JSON.stringify(val);
               
-              // v1.6.41: Make File_Name a clickable link using file_url
+              // v1.6.42: Make File_Name a clickable link using file_url
               var isFileNameCol = col.toLowerCase().includes('file_name');
               var cellContent = String(val);
               if (isFileNameCol && val) {
@@ -10923,7 +10943,7 @@
       updateGridSheetStats(records, filtered);
       perfLog('renderGrid', perfT);
       
-      // v1.6.41: Always hide upload loading after grid renders (catches non-virtualized path)
+      // v1.6.42: Always hide upload loading after grid renders (catches non-virtualized path)
       if (typeof hideUploadLoading === 'function') {
         hideUploadLoading();
       }
@@ -18430,7 +18450,7 @@
             if (val === null || val === undefined) val = '';
             if (typeof val === 'object') val = JSON.stringify(val);
             
-            // v1.6.41: Make File_Name a clickable link using file_url
+            // v1.6.42: Make File_Name a clickable link using file_url
             var isFileNameCol = col.toLowerCase().includes('file_name');
             var cellContent = String(val);
             if (isFileNameCol && val) {
@@ -18848,7 +18868,7 @@
           }
           
           console.log('[Loader] Workbook imported:', file.name, 'sheets:', result.order.length, 'total rows:', allRows.length);
-          // v1.6.41: Cache workbook for session persistence
+          // v1.6.42: Cache workbook for session persistence
           saveWorkbookToCache();
           showToast(ext.toUpperCase() + ' imported: ' + result.order.length + ' sheet(s), ' + allRows.length + ' rows', 'success');
           
