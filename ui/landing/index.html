@@ -97,68 +97,6 @@
       line-height: 1.5;
     }
     
-    .demo-section {
-      background: rgba(59, 130, 246, 0.08);
-      border: 1px solid rgba(59, 130, 246, 0.25);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 24px;
-    }
-    
-    .demo-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-    }
-    
-    .demo-label {
-      font-size: 13px;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .demo-badge {
-      display: inline-block;
-      background: #3b82f6;
-      color: #fff;
-      font-size: 10px;
-      padding: 3px 8px;
-      border-radius: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .role-options {
-      display: flex;
-      gap: 8px;
-    }
-    
-    .role-btn {
-      flex: 1;
-      padding: 12px 16px;
-      border: 2px solid #3b4559;
-      background: transparent;
-      color: #94a3b8;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-      transition: all 0.2s ease;
-    }
-    
-    .role-btn:hover {
-      border-color: #5c6b82;
-      color: #e2e8f0;
-    }
-    
-    .role-btn.selected {
-      border-color: #3b82f6;
-      background: rgba(59, 130, 246, 0.15);
-      color: #60a5fa;
-    }
-    
     .auth-section {
       margin-top: 8px;
     }
@@ -190,9 +128,9 @@
       height: 20px;
     }
     
-    .demo-hint {
-      margin-top: 10px;
-      font-size: 12px;
+    .auth-hint {
+      margin-top: 12px;
+      font-size: 13px;
       color: #64748b;
       line-height: 1.4;
     }
@@ -200,7 +138,7 @@
     .divider {
       display: flex;
       align-items: center;
-      margin: 20px 0;
+      margin: 24px 0;
       color: #475569;
       font-size: 12px;
     }
@@ -259,18 +197,6 @@
     <h1>Orchestrate OS</h1>
     <p class="tagline">Semantic Control Board for governance-first data operations</p>
     
-    <div class="demo-section">
-      <div class="demo-header">
-        <span class="demo-label">Select Demo Role</span>
-        <span class="demo-badge">Demo Mode</span>
-      </div>
-      <div class="role-options">
-        <button class="role-btn selected" data-role="analyst">Analyst</button>
-        <button class="role-btn" data-role="reviewer">Reviewer</button>
-        <button class="role-btn" data-role="admin">Admin</button>
-      </div>
-    </div>
-    
     <div class="auth-section">
       <button class="google-btn" id="google-signin">
         <svg class="google-icon" viewBox="0 0 24 24">
@@ -281,7 +207,7 @@
         </svg>
         Continue with Google
       </button>
-      <p class="demo-hint">Demo mode: role is selected locally. Real Google sign-in coming soon.</p>
+      <p class="auth-hint">Use your createmusicgroup.com account.</p>
     </div>
     
     <div class="divider"><span>or</span></div>
@@ -306,48 +232,46 @@
   
   <script>
     (function() {
-      var selectedRole = 'analyst';
+      // Production login: default role is 'analyst' until real auth is integrated
+      // Role will be determined by user's Google account permissions
+      var defaultRole = 'analyst';
       
-      document.querySelectorAll('.role-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          document.querySelectorAll('.role-btn').forEach(function(b) {
-            b.classList.remove('selected');
-          });
-          btn.classList.add('selected');
-          selectedRole = btn.getAttribute('data-role');
-        });
-      });
-      
-      // v1.4.24: Demo user profiles with realistic emails for folder auto-mapping
-      var demoProfiles = {
-        analyst: { email: 'sarah.chen@orchestrate.demo', name: 'Sarah Chen', folder: 'Sarah Chen - West Region' },
-        reviewer: { email: 'marcus.johnson@orchestrate.demo', name: 'Marcus Johnson', folder: 'Marcus Johnson - Central' },
-        admin: { email: 'emily.rodriguez@orchestrate.demo', name: 'Emily Rodriguez', folder: 'Emily Rodriguez - HQ' }
-      };
+      // Check for admin emails (placeholder for real auth integration)
+      var adminEmails = ['emily.rodriguez@createmusicgroup.com', 'admin@createmusicgroup.com'];
+      var reviewerEmails = ['marcus.johnson@createmusicgroup.com', 'reviewer@createmusicgroup.com'];
       
       document.getElementById('google-signin').addEventListener('click', function() {
-        var profile = demoProfiles[selectedRole];
-        localStorage.setItem('currentRole', selectedRole);
+        // In production, this would trigger real Google OAuth
+        // For now, simulate with a default analyst login
+        var userEmail = 'user@createmusicgroup.com';
+        var userName = 'Production User';
+        var userRole = defaultRole;
+        
+        // Check if existing user data has admin role (for playground mode testing)
+        var existingUser = null;
+        try {
+          existingUser = JSON.parse(localStorage.getItem('demoUser') || 'null');
+        } catch (e) {}
+        
+        // If admin previously logged in with playground, maintain that
+        if (existingUser && existingUser.role === 'admin' && existingUser.playgroundEnabled) {
+          userRole = 'admin';
+          userEmail = existingUser.email;
+          userName = existingUser.name;
+        }
+        
+        localStorage.setItem('currentRole', userRole);
         localStorage.setItem('demoUser', JSON.stringify({
-          email: profile.email,
-          name: profile.name,
-          folder: profile.folder,
-          role: selectedRole,
-          signedInAt: new Date().toISOString()
+          email: userEmail,
+          name: userName,
+          folder: userName + ' - Production',
+          role: userRole,
+          signedInAt: new Date().toISOString(),
+          playgroundEnabled: false
         }));
+        
         window.location.href = '/ui/viewer/';
       });
-      
-      var existingRole = localStorage.getItem('currentRole');
-      if (existingRole && ['analyst', 'reviewer', 'admin'].includes(existingRole)) {
-        document.querySelectorAll('.role-btn').forEach(function(btn) {
-          btn.classList.remove('selected');
-          if (btn.getAttribute('data-role') === existingRole) {
-            btn.classList.add('selected');
-            selectedRole = existingRole;
-          }
-        });
-      }
     })();
   </script>
 </body>
