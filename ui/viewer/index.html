@@ -3935,8 +3935,41 @@
         _stored_at: new Date().toISOString()
       };
       
-      localStorage.setItem(storageKey, JSON.stringify(storedRecord));
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(storedRecord));
+      } catch (e) {
+        if (e.name === 'QuotaExceededError' || e.code === 22) {
+          // v1.6.5: Handle quota exceeded gracefully - clear old records and retry once
+          console.warn('[RecordStore] Quota exceeded, clearing old records...');
+          clearOldRecordsFromStore();
+          try {
+            localStorage.setItem(storageKey, JSON.stringify(storedRecord));
+          } catch (e2) {
+            console.warn('[RecordStore] Still quota exceeded after cleanup, skipping persist');
+            return null;
+          }
+        } else {
+          console.warn('[RecordStore] Failed to persist record:', e);
+          return null;
+        }
+      }
       return storageKey;
+    }
+    
+    // v1.6.5: Clear old records from localStorage to free up quota
+    function clearOldRecordsFromStore() {
+      var keysToRemove = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (key && key.startsWith('kiwi/v1/') && key.endsWith('.json')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(function(key) {
+        localStorage.removeItem(key);
+      });
+      console.log('[RecordStore] Cleared', keysToRemove.length, 'old records from store');
+      return keysToRemove.length;
     }
     
     function loadRecordFromStore(tenantId, datasetId, recordId) {
@@ -19695,8 +19728,16 @@ Add any additional notes here.
         populateTargetFieldDropdown();
         updateLoaderPageUI();
         
+        // v1.6.5: Clear old records before persisting new ones to prevent quota issues
+        clearOldRecordsFromStore();
+        
         // v1.5.3: Persist all records to canonical store for SRR rehydration
-        persistAllRecordsToStore();
+        try {
+          persistAllRecordsToStore();
+        } catch (e) {
+          console.warn('[RecordStore] Non-critical: Failed to persist records:', e.message);
+          // Non-critical - dataset still loaded successfully in memory
+        }
         
         // v1.6.0: Generate signals for dataset
         generateSignalsForDataset();
