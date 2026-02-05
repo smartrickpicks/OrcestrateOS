@@ -2731,17 +2731,30 @@
 
         <!-- USERS TAB (v1.4.21) -->
         <div id="admin-tab-users" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <!-- Environment Mode Toggle (v1.6.17) -->
+          <div class="admin-section" style="background: white; padding: 16px 20px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h4 style="margin: 0 0 4px 0; font-size: 0.95em; color: #333;">Environment Mode</h4>
+                <p style="margin: 0; font-size: 0.8em; color: #666;">Playground mode enables user management. Production mode is read-only.</p>
+              </div>
+              <div id="env-mode-toggle" style="display: flex; border: 1px solid #ddd; border-radius: 6px; overflow: hidden;">
+                <button id="env-mode-prod" onclick="setEnvMode('production')" style="padding: 8px 16px; border: none; background: #f5f5f5; color: #666; cursor: pointer; font-size: 0.85em; font-weight: 500;">Production</button>
+                <button id="env-mode-playground" onclick="setEnvMode('playground')" style="padding: 8px 16px; border: none; background: #f5f5f5; color: #666; cursor: pointer; font-size: 0.85em; font-weight: 500;">Playground</button>
+              </div>
+            </div>
+          </div>
+          
           <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-              <h3 style="margin: 0; font-size: 1.1em; color: #333;">User Access <span class="info-icon" title="Manage user roles for the demo environment. Changes are stored locally.">&#9432;</span></h3>
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <span style="font-size: 0.75em; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 4px;">Demo Mode</span>
-                <button class="toolbar-btn" onclick="openAddUserModal()" style="background: #4caf50; color: white; padding: 8px 14px; font-size: 0.85em; display: flex; align-items: center; gap: 6px;">
+              <h3 style="margin: 0; font-size: 1.1em; color: #333;">User Access <span class="info-icon" title="Manage user roles. In Playground mode, changes are stored locally.">&#9432;</span></h3>
+              <div id="add-user-btn-container" style="display: flex; gap: 10px; align-items: center;">
+                <button id="add-user-btn" class="toolbar-btn" onclick="openAddUserModal()" style="background: #4caf50; color: white; padding: 8px 14px; font-size: 0.85em; display: flex; align-items: center; gap: 6px;">
                   <span style="font-size: 1.1em;">+</span> Add User
                 </button>
               </div>
             </div>
-            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Assign roles to demo users. Changes persist in local storage only.</p>
+            <p id="users-mode-desc" style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Assign roles to users. Changes persist in local storage only.</p>
             
             <div id="users-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
@@ -8446,6 +8459,7 @@
       if (!tbody) return;
       
       var users = getDemoUsers();
+      var isPlayground = isDemoMode();
       var currentUserEmail = null;
       try {
         var demoUser = JSON.parse(localStorage.getItem('demoUser') || '{}');
@@ -8463,11 +8477,17 @@
         html += '</div></td>';
         html += '<td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; color: #666;">' + user.email + '</td>';
         html += '<td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0;">';
-        html += '<select id="user-role-' + idx + '" data-user-idx="' + idx + '" data-original-role="' + user.role + '" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; cursor: pointer;">';
-        html += '<option value="analyst"' + (user.role === 'analyst' ? ' selected' : '') + '>Analyst</option>';
-        html += '<option value="reviewer"' + (user.role === 'reviewer' ? ' selected' : '') + '>Reviewer</option>';
-        html += '<option value="admin"' + (user.role === 'admin' ? ' selected' : '') + '>Admin</option>';
-        html += '</select></td>';
+        if (isPlayground) {
+          html += '<select id="user-role-' + idx + '" data-user-idx="' + idx + '" data-original-role="' + user.role + '" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; cursor: pointer;">';
+          html += '<option value="analyst"' + (user.role === 'analyst' ? ' selected' : '') + '>Analyst</option>';
+          html += '<option value="reviewer"' + (user.role === 'reviewer' ? ' selected' : '') + '>Reviewer</option>';
+          html += '<option value="admin"' + (user.role === 'admin' ? ' selected' : '') + '>Admin</option>';
+          html += '</select>';
+        } else {
+          var roleLabel = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+          html += '<span style="padding: 6px 10px; color: #333;">' + roleLabel + '</span>';
+        }
+        html += '</td>';
         html += '<td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: center;">';
         var statusStyle = user.status === 'active' ? 'background: #e8f5e9; color: #2e7d32;' : 
                           user.status === 'pending' ? 'background: #fff3e0; color: #e65100;' : 
@@ -8477,9 +8497,13 @@
         if (user.preProvisioned) html += ' <span style="font-size: 0.7em; color: #1976d2;" title="Pre-provisioned for future auth">&#9679;</span>';
         html += '</td>';
         html += '<td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: center;">';
-        html += '<button onclick="saveUserRole(' + idx + ')" class="toolbar-btn" style="padding: 6px 14px; font-size: 0.85em;">Save</button>';
-        if (user.preProvisioned) {
-          html += ' <button onclick="deleteUser(' + idx + ')" class="toolbar-btn" style="padding: 6px 10px; font-size: 0.85em; background: #ffebee; color: #c62828; border-color: #ffcdd2;" title="Delete user">×</button>';
+        if (isPlayground) {
+          html += '<button onclick="saveUserRole(' + idx + ')" class="toolbar-btn" style="padding: 6px 14px; font-size: 0.85em;">Save</button>';
+          if (user.preProvisioned) {
+            html += ' <button onclick="deleteUser(' + idx + ')" class="toolbar-btn" style="padding: 6px 10px; font-size: 0.85em; background: #ffebee; color: #c62828; border-color: #ffcdd2;" title="Delete user">×</button>';
+          }
+        } else {
+          html += '<span style="color: #999; font-size: 0.8em;">Read-only</span>';
         }
         html += '</td>';
         html += '</tr>';
@@ -8680,9 +8704,10 @@
       const tabs = ['governance', 'users', 'patch-queue', 'config', 'inspector', 'standardizer', 'patch-console', 'evidence', 'unknown-cols'];
       if (!tabs.includes(tabName)) tabName = 'governance';
       
-      // Render users table when switching to users tab
+      // Render users table and update env mode UI when switching to users tab
       if (tabName === 'users') {
         renderUsersTable();
+        updateEnvModeUI();
       }
       currentAdminTab = tabName;
       
@@ -17020,7 +17045,7 @@
       return true;
     }
     
-    // Demo mode flag
+    // Environment mode flag (v1.6.17: Playground/Production toggle)
     var DEMO_MODE_KEY = 'orchestrate.demo_mode';
     function isDemoMode() {
       var stored = localStorage.getItem(DEMO_MODE_KEY);
@@ -17029,6 +17054,53 @@
     
     function setDemoMode(enabled) {
       localStorage.setItem(DEMO_MODE_KEY, enabled ? 'true' : 'false');
+    }
+    
+    // v1.6.17: Environment mode toggle (Playground/Production)
+    function setEnvMode(mode) {
+      var isPlayground = mode === 'playground';
+      setDemoMode(isPlayground);
+      updateEnvModeUI();
+      renderUsersTable(); // Re-render to show/hide controls
+      showToast(isPlayground ? 'Switched to Playground mode' : 'Switched to Production mode', 'info');
+      console.log('[EnvMode] Set to:', mode);
+    }
+    
+    function updateEnvModeUI() {
+      var isPlayground = isDemoMode();
+      var prodBtn = document.getElementById('env-mode-prod');
+      var playBtn = document.getElementById('env-mode-playground');
+      var addUserBtn = document.getElementById('add-user-btn');
+      var modeDesc = document.getElementById('users-mode-desc');
+      
+      if (prodBtn && playBtn) {
+        if (isPlayground) {
+          prodBtn.style.background = '#f5f5f5';
+          prodBtn.style.color = '#666';
+          playBtn.style.background = '#4caf50';
+          playBtn.style.color = 'white';
+        } else {
+          prodBtn.style.background = '#1976d2';
+          prodBtn.style.color = 'white';
+          playBtn.style.background = '#f5f5f5';
+          playBtn.style.color = '#666';
+        }
+      }
+      
+      if (addUserBtn) {
+        if (isPlayground) {
+          addUserBtn.style.display = 'flex';
+          addUserBtn.disabled = false;
+        } else {
+          addUserBtn.style.display = 'none';
+        }
+      }
+      
+      if (modeDesc) {
+        modeDesc.textContent = isPlayground 
+          ? 'Playground mode: You can add, edit, and delete users. Changes persist locally.'
+          : 'Production mode: User management is read-only.';
+      }
     }
     
     // Record Drawer functions
