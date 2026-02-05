@@ -382,9 +382,9 @@
     .srr-footer { background: #f5f5f5; border-top: 1px solid #e0e0e0; padding: 8px 16px; text-align: center; }
     .srr-footer-filename { font-size: 0.85em; color: #666; font-weight: 500; }
     .srr-panel { background: white; border: 1px solid #e0e0e0; overflow-y: auto; }
-    .srr-panel-left { width: 280px; flex-shrink: 0; border-right: none; }
+    .srr-panel-left { flex: 0 0 320px; flex-shrink: 0; border-right: none; }
     .srr-panel-center { flex: 1; min-width: 300px; }
-    .srr-panel-right { width: 360px; flex-shrink: 0; border-left: none; }
+    .srr-panel-right { flex: 0 0 320px; flex-shrink: 0; border-left: none; }
     .srr-panel-header { background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #e0e0e0; font-weight: 600; font-size: 0.9em; color: #333; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 5; }
     .srr-panel-tabs { display: flex; gap: 4px; }
     .srr-panel-tab { padding: 4px 10px; font-size: 0.75em; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; color: #666; }
@@ -618,9 +618,14 @@
     .srr-chip-edited { background: #ff9800; color: white; }
     .srr-chip-needs-patch { background: #e91e63; color: white; }
     .srr-chip-required { background: #9c27b0; color: white; }
-    /* v1.6.10: Options/picklist field indicator */
-    .srr-chip-options { background: #0288d1; color: white; font-size: 0.65em; padding: 2px 5px; border-radius: 10px; }
-    .srr-chip-invalid-value { background: #ff5722; color: white; font-size: 0.65em; padding: 2px 5px; border-radius: 10px; }
+    /* v1.6.15: Asterisk markers for required/invalid fields (replaces pills) */
+    .srr-required-marker { color: #9c27b0; font-weight: 700; margin-left: 2px; }
+    .srr-invalid-marker { color: #ff5722; font-weight: 700; margin-left: 1px; }
+    /* Legend for asterisk markers */
+    .srr-field-legend { font-size: 0.7em; color: #888; padding: 6px 12px; background: #fafafa; border-bottom: 1px solid #e0e0e0; display: flex; gap: 12px; }
+    .srr-field-legend span { display: flex; align-items: center; gap: 3px; }
+    .srr-field-legend .legend-required { color: #9c27b0; }
+    .srr-field-legend .legend-invalid { color: #ff5722; }
     /* v1.6.10: Dropdown field styling */
     .srr-field-value-display.is-dropdown { cursor: pointer; }
     .srr-field-value-display .dropdown-indicator { color: #666; font-size: 0.7em; margin-left: 4px; }
@@ -1828,6 +1833,11 @@
                 <span class="srr-filter-chip" data-filter="rfi" onclick="srrSetFilter('rfi')">RFI <span class="chip-count" id="srr-count-rfi"></span></span>
                 <span class="srr-filter-chip" data-filter="patched" onclick="srrSetFilter('patched')">Patched <span class="chip-count" id="srr-count-patched"></span></span>
               </div>
+            </div>
+            <!-- v1.6.15: Asterisk legend -->
+            <div class="srr-field-legend">
+              <span><span class="legend-required">*</span> Options</span>
+              <span><span class="legend-invalid">**</span> Invalid</span>
             </div>
             <div class="srr-panel-body" id="srr-field-list" style="padding: 0;">
               <div class="srr-empty-state">No fields loaded</div>
@@ -11309,13 +11319,13 @@
           }
         }
         
-        // v1.6.10: Add Options badge for picklist fields
+        // v1.6.15: Asterisk markers for picklist/invalid fields (replaces pills)
+        var labelSuffix = '';
         if (isPicklistField) {
-          chips += '<span class="srr-chip srr-chip-options">Options</span>';
+          labelSuffix += '<span class="srr-required-marker" title="Options field">*</span>';
         }
-        // v1.6.10: Add warning badge for invalid picklist values (subtle, no modal)
         if (isInvalidPicklistValue) {
-          chips += '<span class="srr-chip srr-chip-invalid-value" title="Value not in options list">Invalid Value</span>';
+          labelSuffix += '<span class="srr-invalid-marker" title="Value not in options list">**</span>';
         }
         
         // Add state-based classes (patched→submitted, rfi_pending→rfi for styling)
@@ -11382,7 +11392,7 @@
         var cardHtml = '<div class="' + cardClass + '" data-field="' + key + '">' +
           '<div class="srr-field-card-header" onclick="srrSelectField(\'' + key + '\')">' +
             '<div>' +
-              '<div class="srr-field-card-label">' + label + '</div>' +
+              '<div class="srr-field-card-label">' + label + labelSuffix + '</div>' +
               '<div class="srr-field-card-api">' + key + '</div>' +
             '</div>' +
             '<div class="srr-field-card-chips">' + chips + patchIndicatorHtml + '</div>' +
