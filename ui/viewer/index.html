@@ -1403,12 +1403,12 @@
           <div class="page-header" style="position: relative;">
             <h2>Triage</h2>
             <p class="page-desc">All items requiring analyst review and action.</p>
-            <!-- Sticky Search Bar (top right) -->
-            <div id="triage-search-bar" style="position: fixed; top: 12px; right: 24px; z-index: 100; display: flex; align-items: center; gap: 8px; background: rgba(30, 41, 59, 0.95); padding: 8px 12px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+            <!-- Sticky Search Bar (top right) - frosted glass style -->
+            <div id="triage-search-bar" style="position: fixed; top: 12px; right: 24px; z-index: 100; display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
               <input type="text" id="global-search-input" placeholder="Search records…" 
-                     style="padding: 6px 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); border-radius: 4px; font-size: 0.8em; width: 180px; color: #e0e0e0; outline: none;" 
-                     onkeydown="handleGlobalSearchKeydown(event)" onfocus="this.style.borderColor='rgba(255,255,255,0.3)'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'">
-              <span style="font-size: 0.65em; color: rgba(255,255,255,0.4);">⌘K</span>
+                     style="padding: 5px 8px; border: none; background: transparent; border-radius: 4px; font-size: 0.8em; width: 160px; color: #444; outline: none;" 
+                     onkeydown="handleGlobalSearchKeydown(event)">
+              <span style="font-size: 0.6em; color: #999; padding: 2px 5px; background: rgba(0,0,0,0.06); border-radius: 3px;">⌘K</span>
             </div>
           </div>
 
