@@ -3385,6 +3385,31 @@
         <button class="drawer-close" onclick="closeDataSourceDrawer()">&times;</button>
       </div>
       <div class="drawer-body">
+        <!-- v1.6.39: Upload Excel Button (primary action for demo) -->
+        <div style="margin-bottom: 20px; padding: 16px; background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-radius: 10px; border: 1px solid #bbdefb; text-align: center;">
+          <div style="font-size: 2em; margin-bottom: 8px;">📊</div>
+          <div style="font-weight: 600; color: #1565c0; margin-bottom: 8px;">Import Your Data</div>
+          <p style="font-size: 0.85em; color: #666; margin: 0 0 12px;">Upload an Excel file (.xlsx) to start working</p>
+          <button id="drawer-upload-excel-btn" onclick="document.getElementById('drawer-excel-file-input').click()" 
+                  style="padding: 10px 24px; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; border: none; border-radius: 8px; font-size: 0.9em; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s ease; font-weight: 500;"
+                  onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';"
+                  onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.15)';">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Upload Excel
+          </button>
+          <input type="file" id="drawer-excel-file-input" accept=".xlsx,.xls" style="display: none;" onchange="handleExcelUpload(this); closeDataSourceDrawer();">
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <div style="flex: 1; height: 1px; background: #e0e0e0;"></div>
+          <span style="font-size: 0.75em; color: #999; text-transform: uppercase;">Or load demo data</span>
+          <div style="flex: 1; height: 1px; background: #e0e0e0;"></div>
+        </div>
+        
         <!-- Connected Folder Section (v1.4.24 - auto-mapped from email, read-only) -->
         <div id="data-source-folder-section" style="display: none; margin-bottom: 20px;">
           <div class="folder-connected-card" style="text-align: center;">
