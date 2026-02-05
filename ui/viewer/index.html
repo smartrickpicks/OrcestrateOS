@@ -7898,9 +7898,16 @@
     }
     
     function loadFromData(data, sourceType, fileName) {
+      // Start staged loader for this path
+      stagedLoader.start();
+      stagedLoader.setStage('loading');
+      
       if (!data || (!data.sf_summary && !data.sf_contract_results && !data.sf_issues && !data.sf_field_actions)) {
+        stagedLoader.finish();
         throw new Error('Invalid data format - expected Preview Packet structure');
       }
+      
+      stagedLoader.setStage('standardizing');
       
       sessionState.status = 'loaded';
       sessionState.sourceType = sourceType;
@@ -7917,6 +7924,9 @@
       
       renderSummary(data.sf_summary || {});
       populateSubtypeDropdown();
+      
+      // Rendering stage
+      stagedLoader.setStage('rendering');
       renderAllTables();
       
       dataLoaded = true;
@@ -7929,6 +7939,9 @@
       
       // v1.6.0: Generate signals for dataset
       generateSignalsForDataset();
+      
+      // Finish staged loader
+      stagedLoader.finish();
       
       // Detect unknown columns for Admin (uses current dataset with sheet awareness)
       if (typeof detectUnknownColumns === 'function') {
@@ -11103,6 +11116,9 @@
     
     // Generate signals for entire dataset
     function generateSignalsForDataset() {
+      // Stage: Validating rules
+      if (stagedLoader.startTime) stagedLoader.setStage('validating');
+      
       if (!rulesBundleCache.loaded) {
         console.warn('[SignalEngine] Rules bundle not loaded, skipping signal generation');
         return;
@@ -11189,6 +11205,9 @@
       
       // v1.6.2: Populate cell_styles metadata for export alignment
       populateCellStyles();
+      
+      // Stage: Building change map
+      if (stagedLoader.startTime) stagedLoader.setStage('changemap');
       
       // v1.6.8: Build change map from meta sheets (for modified dataset)
       buildChangeMapFromMetaSheets();
@@ -21569,6 +21588,10 @@ Add any additional notes here.
     async function loadSampleDataset(options) {
       options = options || {};
       try {
+        // Start staged loader
+        stagedLoader.start();
+        stagedLoader.setStage('loading');
+        
         // v1.6.8: Select dataset URL based on explicit variant parameter (default: original)
         var variant = options.variant || 'original';
         var isModified = (variant === 'modified');
@@ -21594,6 +21617,9 @@ Add any additional notes here.
           }
           console.log('[Loader] Demo dataset fetched:', cached.dataset_id || datasetName);
         }
+        
+        // Standardizing fields stage
+        stagedLoader.setStage('standardizing');
         
         var dataset = cached;
         
@@ -21660,6 +21686,10 @@ Add any additional notes here.
         // v1.6.8: Update saved datasets UI to show active indicator
         updateSavedDatasetsUI(variant);
         
+        // Rendering stage then finish staged loader
+        stagedLoader.setStage('rendering');
+        stagedLoader.finish();
+        
         // Auto-redirect after loading (v1.4.4) - always go to grid after load
         if (options.autoRedirect !== false) {
           setTimeout(function() {
@@ -21667,6 +21697,8 @@ Add any additional notes here.
           }, 300);
         }
       } catch (e) {
+        // Finish loader on error too
+        stagedLoader.finish();
         console.error('[Loader] Failed to load default dataset:', e.message || e, e.stack);
         showToast('Failed to load default dataset: ' + (e.message || 'Unknown error'), 'error');
       }
