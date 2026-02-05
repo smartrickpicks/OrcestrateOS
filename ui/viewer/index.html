@@ -1589,6 +1589,20 @@
             <p class="page-desc">All items requiring analyst review and action.</p>
             <!-- Sticky Search Bar (top right) - frosted glass style with scroll-aware behavior -->
             <div id="triage-search-bar" style="position: fixed; top: 12px; right: 24px; z-index: 100; display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: opacity 0.2s ease, transform 0.2s ease;">
+              <!-- v1.6.32: Upload Excel button (failsafe for data import) -->
+              <button id="upload-excel-btn" onclick="document.getElementById('excel-file-import').click()" 
+                      style="padding: 4px 10px; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; border: none; border-radius: 5px; font-size: 0.75em; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); transition: all 0.2s ease;"
+                      onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.2)';"
+                      onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.15)';"
+                      title="Upload Excel file (.xlsx)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Upload Excel
+              </button>
+              <input type="file" id="excel-file-import" accept=".xlsx,.xls" style="display: none;" onchange="handleExcelUpload(this)">
               <input type="text" id="global-search-input" placeholder="Search records…" 
                      style="padding: 5px 8px; border: none; background: transparent; border-radius: 4px; font-size: 0.8em; width: 160px; color: #444; outline: none;" 
                      onkeydown="handleGlobalSearchKeydown(event)">
@@ -7731,7 +7745,7 @@
       return (bytes / 1024 / 1024).toFixed(1) + ' MB';
     }
 
-    // v1.6.31: Update progress block from actual data (signals + patch requests)
+    // v1.6.32: Update progress block from actual data (signals + patch requests)
     function updateProgressBlock() {
       var todoEl = document.getElementById('progress-todo');
       var reviewEl = document.getElementById('progress-review');
@@ -7740,7 +7754,7 @@
       
       if (!todoEl || !reviewEl || !doneEl) return;
       
-      // v1.6.31: Count from actual data sources
+      // v1.6.32: Count from actual data sources
       var todo = 0;      // Records with signals/issues needing analyst attention
       var review = 0;    // Patch requests submitted for reviewer/admin review
       var done = 0;      // Approved/promoted/verified records
@@ -7921,7 +7935,7 @@
       });
     }
 
-    // ========== EXPORT / SAVE FUNCTIONALITY (v1.6.31) ==========
+    // ========== EXPORT / SAVE FUNCTIONALITY (v1.6.32) ==========
     function handleExportSave() {
       if (typeof XLSX === 'undefined') {
         showToast('Excel library not loaded. Please refresh and try again.', 'error');
@@ -7938,7 +7952,7 @@
       try {
         var wb = XLSX.utils.book_new();
         
-        // v1.6.31: Export all data sheets with styling metadata
+        // v1.6.32: Export all data sheets with styling metadata
         var dataSheets = getDataSheets();
         dataSheets.forEach(function(sheetName) {
           var sheetData = workbook.sheets[sheetName];
@@ -7960,7 +7974,7 @@
           
           var ws = XLSX.utils.aoa_to_sheet(sheetArray);
           
-          // v1.6.31: Apply column widths
+          // v1.6.32: Apply column widths
           var colWidths = sheetData.headers.map(function(h) {
             return { wch: Math.min(30, Math.max(10, h.length + 2)) };
           });
@@ -7969,25 +7983,25 @@
           XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31));
         });
         
-        // v1.6.31: Add _change_log sheet with all changes
+        // v1.6.32: Add _change_log sheet with all changes
         var changeLogWs = buildChangeLogSheet();
         if (changeLogWs) {
           XLSX.utils.book_append_sheet(wb, changeLogWs, '_change_log');
         }
         
-        // v1.6.31: Add RFIs & Analyst Notes sheet
+        // v1.6.32: Add RFIs & Analyst Notes sheet
         var rfiWs = buildRFISheet();
         if (rfiWs) {
           XLSX.utils.book_append_sheet(wb, rfiWs, 'RFIs & Analyst Notes');
         }
         
-        // v1.6.31: Add Signals Summary sheet
+        // v1.6.32: Add Signals Summary sheet
         var signalsWs = buildSignalsSummarySheet();
         if (signalsWs) {
           XLSX.utils.book_append_sheet(wb, signalsWs, '_signals_summary');
         }
         
-        // v1.6.31: Add Orchestrate OS Metadata sheet
+        // v1.6.32: Add Orchestrate OS Metadata sheet
         var metaWs = buildMetadataSheet();
         XLSX.utils.book_append_sheet(wb, metaWs, '_orchestrate_meta');
         
@@ -8008,7 +8022,7 @@
       }
     }
     
-    // v1.6.31: Build _change_log sheet from patch requests and changeMap
+    // v1.6.32: Build _change_log sheet from patch requests and changeMap
     function buildChangeLogSheet() {
       var headers = [
         'record_id', 'sheet', 'field', 'change_type', 'old_value', 'new_value',
@@ -8068,7 +8082,7 @@
       return ws;
     }
     
-    // v1.6.31: Build RFIs & Analyst Notes sheet (includes all escalations)
+    // v1.6.32: Build RFIs & Analyst Notes sheet (includes all escalations)
     function buildRFISheet() {
       var headers = [
         'record_id', 'sheet', 'field', 'type', 'comment_or_question', 'current_value',
@@ -8077,7 +8091,7 @@
       ];
       var rows = [headers];
       
-      // v1.6.31: Include ALL patch requests that have been promoted/escalated
+      // v1.6.32: Include ALL patch requests that have been promoted/escalated
       // This tracks the full escalation trail through the role hierarchy
       var patchRequests = PATCH_REQUEST_STORE.list();
       
@@ -8137,7 +8151,7 @@
       return ws;
     }
     
-    // v1.6.31: Build Signals Summary sheet
+    // v1.6.32: Build Signals Summary sheet
     function buildSignalsSummarySheet() {
       var headers = [
         'record_id', 'sheet', 'field', 'signal_type', 'severity', 'message', 'value'
@@ -8174,14 +8188,14 @@
       return ws;
     }
     
-    // v1.6.31: Build Orchestrate OS Metadata sheet
+    // v1.6.32: Build Orchestrate OS Metadata sheet
     function buildMetadataSheet() {
       var metadata = [
         ['Orchestrate OS Export Metadata'],
         [''],
         ['Property', 'Value'],
         ['Export Date', new Date().toISOString()],
-        ['Export Version', 'v1.6.31'],
+        ['Export Version', 'v1.6.32'],
         ['Dataset ID', IDENTITY_CONTEXT.dataset_id || ''],
         ['Tenant ID', IDENTITY_CONTEXT.tenant_id || ''],
         ['Division ID', IDENTITY_CONTEXT.division_id || ''],
@@ -8210,7 +8224,7 @@
       return ws;
     }
     
-    // v1.6.31: Get total record count across all sheets
+    // v1.6.32: Get total record count across all sheets
     function getTotalRecordCount() {
       var count = 0;
       if (workbook && workbook.sheets) {
@@ -8275,7 +8289,7 @@
       // v1.6.0: Generate signals for dataset
       generateSignalsForDataset();
       
-      // v1.6.31: Seed patch requests from RFI meta sheet (if present in modified dataset)
+      // v1.6.32: Seed patch requests from RFI meta sheet (if present in modified dataset)
       seedPatchRequestsFromMetaSheet();
       
       // Finish staged loader
@@ -8417,7 +8431,7 @@
             // v1.6.0: Generate signals for dataset
             generateSignalsForDataset();
             
-            // v1.6.31: Seed patch requests from RFI meta sheet
+            // v1.6.32: Seed patch requests from RFI meta sheet
             seedPatchRequestsFromMetaSheet();
             
             return true;
@@ -8975,7 +8989,7 @@
       }
     }
     
-    // v1.6.31: Get current user's display name for audit/export attribution
+    // v1.6.32: Get current user's display name for audit/export attribution
     function getCurrentUserName() {
       try {
         var demoUser = JSON.parse(localStorage.getItem('demoUser') || '{}');
@@ -10327,7 +10341,7 @@
       // Sort deterministically
       sheets.sort();
       
-      // v1.6.31: Default to first sheet instead of "All Sheets"
+      // v1.6.32: Default to first sheet instead of "All Sheets"
       if (!gridState.sheet && sheets.length > 0) {
         gridState.sheet = sheets[0];
       }
@@ -11219,15 +11233,15 @@
       perfLog('buildChangeMapFromMetaSheets', perfT);
     }
     
-    // ========== v1.6.31: SEED PATCH REQUESTS FROM META SHEET ==========
+    // ========== v1.6.32: SEED PATCH REQUESTS FROM META SHEET ==========
     // Parse RFIs & Analyst Notes sheet and create patch requests for Analyst Patch Queue
-    // v1.6.31: Track if already seeded for this dataset
+    // v1.6.32: Track if already seeded for this dataset
     var _patchSeedDatasetId = null;
     
     function seedPatchRequestsFromMetaSheet() {
       if (!workbook || !workbook.sheets) return;
       
-      // v1.6.31: Only seed once per dataset
+      // v1.6.32: Only seed once per dataset
       var currentDatasetId = ARTIFACT_STORE.current_dataset_id || IDENTITY_CONTEXT.dataset_id || 'ds_default';
       if (_patchSeedDatasetId === currentDatasetId) {
         console.log('[PatchSeed] Already seeded for dataset:', currentDatasetId);
@@ -11270,7 +11284,7 @@
         var status = row['Status'] || 'Submitted';
         var response = row['Response'] || '';
         
-        // v1.6.31: Field name may be empty for RFI comments - extract from summary if possible
+        // v1.6.32: Field name may be empty for RFI comments - extract from summary if possible
         if (!fieldName && summary) {
           var match = summary.match(/on\s+([A-Za-z0-9_]+)$/);
           if (match) fieldName = match[1];
@@ -11367,7 +11381,7 @@
       
       console.log('[PatchSeed] Imported', imported, 'RFIs to Patch Request store (', skipped, 'duplicates skipped)');
       
-      // v1.6.31: Mark as seeded for this dataset
+      // v1.6.32: Mark as seeded for this dataset
       _patchSeedDatasetId = currentDatasetId;
       
       return { imported: imported, skipped: skipped };
@@ -11420,7 +11434,7 @@
         var detectedBy = row['Detected By'] || 'Analyst';
         var sourceUrl = row['Source URL'] || '';
         
-        // v1.6.31: Field name may be empty for RFI comments - extract from summary if possible
+        // v1.6.32: Field name may be empty for RFI comments - extract from summary if possible
         if (!fieldName && summary) {
           var match = summary.match(/on\s+([A-Za-z0-9_]+)$/);
           if (match) fieldName = match[1];
@@ -11938,7 +11952,7 @@
       
       // Note: v1.6.9 RFI seeding is done in loadAnalystTriageFromStore after verifierQueueState is ready
       
-      // v1.6.31: Update progress block after signals generated
+      // v1.6.32: Update progress block after signals generated
       if (typeof updateProgressBlock === 'function') {
         updateProgressBlock();
       }
@@ -14932,7 +14946,7 @@
       }).join('; ') : '(no field changes)';
       
       var record = srrState.currentRecord || {};
-      var author = getCurrentUserName();  // v1.6.31: Use logged-in user
+      var author = getCurrentUserName();  // v1.6.32: Use logged-in user
       
       // Determine action type based on patch type
       var actionType = patchType === 'correction' ? 'SET_VALUE' : (patchType === 'blacklist' ? 'BLACKLIST' : 'RFI');
@@ -15781,7 +15795,7 @@
     var datasetLoadTimestamp = null;
     
     function loadAnalystTriageFromStore() {
-      // v1.6.31: Seed Patch Requests from meta sheet (RFIs from modified dataset)
+      // v1.6.32: Seed Patch Requests from meta sheet (RFIs from modified dataset)
       seedPatchRequestsFromMetaSheet();
       
       // v1.6.9: Seed Verifier RFI queue from meta sheet (if not already done)
@@ -15831,7 +15845,7 @@
         return item.signal_type === 'QA_FLAG' && (item.severity === 'error' || item.severity === 'warning');
       });
       
-      // v1.6.31: Patch Queue - only show actual patch requests (RFIs, corrections, etc.)
+      // v1.6.32: Patch Queue - only show actual patch requests (RFIs, corrections, etc.)
       // Validation signals (MISSING_REQUIRED, PICKLIST_INVALID) moved to Manual Review
       // Sort by updated_at descending to show most recent first
       patchRequestItems.sort(function(a, b) {
@@ -15841,7 +15855,7 @@
       });
       analystTriageState.patchItems = patchRequestItems;
       
-      // v1.6.31: Add validation signals to Manual Review queue (not Patch Queue)
+      // v1.6.32: Add validation signals to Manual Review queue (not Patch Queue)
       var validationSignals = signalItems.filter(function(item) {
         return item.signal_type === 'MISSING_REQUIRED' || item.signal_type === 'PICKLIST_INVALID';
       });
@@ -18084,6 +18098,24 @@
           navigateTo('grid');
         });
       }
+    }
+    
+    // v1.6.32: Excel-only upload handler for sticky header button
+    function handleExcelUpload(input) {
+      if (!input.files || input.files.length === 0) return;
+      
+      var file = input.files[0];
+      var ext = (file.name.split('.').pop() || '').toLowerCase();
+      
+      if (ext !== 'xlsx' && ext !== 'xls') {
+        showToast('Please upload an Excel file (.xlsx or .xls)', 'error');
+        input.value = '';  // Reset input
+        return;
+      }
+      
+      console.log('[Upload] Excel file selected:', file.name);
+      handleFileImport(file);
+      input.value = '';  // Reset input for future uploads
     }
     
     // v1.4.12: Unified file import handler with XLSX support via parseWorkbook
