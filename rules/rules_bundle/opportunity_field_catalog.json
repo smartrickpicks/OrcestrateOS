@@ -1,0 +1,698 @@
+{
+  "version": "v1",
+  "meta": {
+    "generated_at_utc": "2026-02-05T04:43:09.759605Z",
+    "glossary_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/Master Glossary [Holwerda, Data Dash].xlsx",
+    "hinge_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/App_Build_Order_Hinges_v1.xlsx"
+  },
+  "entries": [
+    {
+      "field_key": "File_Name_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "File_URL_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "url",
+      "notes": ""
+    },
+    {
+      "field_key": "Number_of_holdback_days_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Holdback / Recoup",
+      "data_type_guess": "integer",
+      "notes": ""
+    },
+    {
+      "field_key": "Acquired_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Percent_Uncrossed_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "Admin_Fee_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Economics Model",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "ADVANCE_DETAILS_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Holdback / Recoup",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Anything_uncrossed_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Artist_Inducement_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Holdback / Recoup",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Back_Catalog_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Catalog",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Back_Catalog_Distribution_Fee_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Economics Model",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "Back_Catalog_Split_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Catalog",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "Back_Catalog_Type_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Catalog",
+      "data_type_guess": "enum",
+      "notes": ""
+    },
+    {
+      "field_key": "CMA_INITIAL_TERM_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "CMA Branch",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "CMA_Renewal_Term_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "CMA Branch",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "CMA_SPLIT_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "CMA Branch",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "CMA_Term_Period_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "CMA Branch",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "CMA_Types_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Classifier",
+      "data_type_guess": "enum",
+      "notes": ""
+    },
+    {
+      "field_key": "Collection_Period_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Payment / Accounting",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Contract_Subtype_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Classifier",
+      "data_type_guess": "enum",
+      "notes": "Primary classifier: drives which branches (CMA/CPA/JV/Procurement/Catalog/etc) apply."
+    },
+    {
+      "field_key": "Contract_Type_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Classifier",
+      "data_type_guess": "enum",
+      "notes": "Primary classifier: drives which branches (CMA/CPA/JV/Procurement/Catalog/etc) apply."
+    },
+    {
+      "field_key": "Cover_Records_Split_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "CPA_Initial_Term_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "CPA Branch",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "CPA_Renewal_Term_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "CPA Branch",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "CPA_SPLIT_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "CPA Branch",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "CPA_Term_Period_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "CPA Branch",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Date_Signed_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Lifecycle / Term",
+      "data_type_guess": "date",
+      "notes": "Lifecycle hinge: term/renewal/options/termination requirements."
+    },
+    {
+      "field_key": "JV_Distribution_Fee_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Economics Model",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "Division2_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Profit_Share_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Economics Model",
+      "data_type_guess": "text",
+      "notes": "Economics mode: determines which split/fee/profit-share fields are expected."
+    },
+    {
+      "field_key": "Effective_Date_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Lifecycle / Term",
+      "data_type_guess": "date",
+      "notes": "Lifecycle hinge: term/renewal/options/termination requirements."
+    },
+    {
+      "field_key": "Excluded_Territories_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Territory",
+      "data_type_guess": "text",
+      "notes": "Territory scope: drives carve-outs and (often) ex-USA physical splits/restrictions."
+    },
+    {
+      "field_key": "Exclusivity_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Existing_Master_Recordings_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Catalog",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Exploitation_Period_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Front_Catalog_Split_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Catalog",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "Holdback_Amount_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Holdback / Recoup",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "Include_CPA_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Classifier",
+      "data_type_guess": "text",
+      "notes": "Toggle: if TRUE, CPA branch fields become required/validated."
+    },
+    {
+      "field_key": "Initial_Term_Length_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Lifecycle / Term",
+      "data_type_guess": "text",
+      "notes": "Lifecycle hinge: term/renewal/options/termination requirements."
+    },
+    {
+      "field_key": "JV_Operating_Budget_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "JV Branch",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Licensing_Rights_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Rights / Restrictions",
+      "data_type_guess": "text",
+      "notes": "Rights hinge: when included, corresponding splits/restrictions should be populated."
+    },
+    {
+      "field_key": "Mechanical_Split_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "Neighboring_Rights_included_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Rights / Restrictions",
+      "data_type_guess": "boolean/enum",
+      "notes": "Rights hinge: when included, corresponding splits/restrictions should be populated."
+    },
+    {
+      "field_key": "No_of_Social_Posts_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Notary_State_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "MasterNumber_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Number_of_Options_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Lifecycle / Term",
+      "data_type_guess": "integer",
+      "notes": "Lifecycle hinge: term/renewal/options/termination requirements."
+    },
+    {
+      "field_key": "Number_of_Singles_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "integer",
+      "notes": ""
+    },
+    {
+      "field_key": "Option_Master_Number_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "integer",
+      "notes": ""
+    },
+    {
+      "field_key": "Option_Type_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Lifecycle / Term",
+      "data_type_guess": "enum",
+      "notes": "Lifecycle hinge: term/renewal/options/termination requirements."
+    },
+    {
+      "field_key": "Other_Income_Split_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "Paying_Third_Party_Collaborators_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Frequency_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Payment / Accounting",
+      "data_type_guess": "enum",
+      "notes": ""
+    },
+    {
+      "field_key": "Payment_Interval_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Payment / Accounting",
+      "data_type_guess": "enum",
+      "notes": ""
+    },
+    {
+      "field_key": "Payment_Threshold_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Payment / Accounting",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Performance_Split_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "Procurement_Split_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Procurement",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "Procurement_Status_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Procurement",
+      "data_type_guess": "enum",
+      "notes": ""
+    },
+    {
+      "field_key": "Affiliation_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Pronoun_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Publishing_Rights_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Rights / Restrictions",
+      "data_type_guess": "text",
+      "notes": "Rights hinge: when included, corresponding splits/restrictions should be populated."
+    },
+    {
+      "field_key": "Release_Commitment_Window_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Remix_Split_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "Renewal_Term_Length_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Lifecycle / Term",
+      "data_type_guess": "text",
+      "notes": "Lifecycle hinge: term/renewal/options/termination requirements."
+    },
+    {
+      "field_key": "Restrictions_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Rights / Restrictions",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Retention_Period_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Payment / Accounting",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Sample_Licensing_Restrictions_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Rights / Restrictions",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "SubType_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Classifier",
+      "data_type_guess": "enum",
+      "notes": "Primary classifier: drives which branches (CMA/CPA/JV/Procurement/Catalog/etc) apply."
+    },
+    {
+      "field_key": "Sync_Licensing_Restrictions_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Rights / Restrictions",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Recoup_Term_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Holdback / Recoup",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Termination_Date_c",
+      "tier": "2.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Lifecycle / Term",
+      "data_type_guess": "date",
+      "notes": ""
+    },
+    {
+      "field_key": "Termination_Notice_Date_c",
+      "tier": "2.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Lifecycle / Term",
+      "data_type_guess": "date",
+      "notes": ""
+    },
+    {
+      "field_key": "Termination_Period_c",
+      "tier": "2.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Lifecycle / Term",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Termination_Type_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Lifecycle / Term",
+      "data_type_guess": "enum",
+      "notes": "Lifecycle hinge: term/renewal/options/termination requirements."
+    },
+    {
+      "field_key": "Territories_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Territory",
+      "data_type_guess": "text",
+      "notes": "Territory scope: drives carve-outs and (often) ex-USA physical splits/restrictions."
+    },
+    {
+      "field_key": "Type_of_Share_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Economics Model",
+      "data_type_guess": "enum",
+      "notes": "Economics mode: determines which split/fee/profit-share fields are expected."
+    },
+    {
+      "field_key": "Use_Holdback_Language_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Holdback / Recoup",
+      "data_type_guess": "text",
+      "notes": "Toggle: if TRUE, holdback fields become required/validated."
+    },
+    {
+      "field_key": "What_are_we_amending_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Lifecycle / Term",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "What_are_we_terminating_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Lifecycle / Term",
+      "data_type_guess": "text",
+      "notes": ""
+    },
+    {
+      "field_key": "Writer_Print_Split_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "YouTube_Channel_Link_c",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "url",
+      "notes": ""
+    },
+    {
+      "field_key": "Physical_Distribution_c",
+      "tier": "0.0",
+      "is_hinge": "TRUE",
+      "parent_group": "Physical Distribution",
+      "data_type_guess": "text",
+      "notes": "Toggle: if TRUE, physical splits become required/validated (incl ex-USA)."
+    },
+    {
+      "field_key": "Physical_Split_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Physical Distribution",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "Physical_Split_Ex_USA_c",
+      "tier": "1.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Physical Distribution",
+      "data_type_guess": "number/percent",
+      "notes": ""
+    },
+    {
+      "field_key": "row_status",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "meta",
+      "notes": ""
+    },
+    {
+      "field_key": "change_count",
+      "tier": "2.0",
+      "is_hinge": "FALSE",
+      "parent_group": "Other / Support",
+      "data_type_guess": "meta",
+      "notes": ""
+    }
+  ]
+}

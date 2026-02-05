@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Knowledge Keepers Bundle",
+  "type": "object",
+  "required": [
+    "version",
+    "entries"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "meta": {
+      "type": "object"
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "source"
+        ],
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "blocker_id": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "fields_involved": {
+            "type": "string"
+          },
+          "who_knows": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

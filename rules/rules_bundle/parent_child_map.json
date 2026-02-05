@@ -1,0 +1,162 @@
+{
+  "version": "v1",
+  "meta": {
+    "generated_at_utc": "2026-02-05T04:43:09.759605Z",
+    "glossary_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/Master Glossary [Holwerda, Data Dash].xlsx",
+    "hinge_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/App_Build_Order_Hinges_v1.xlsx"
+  },
+  "links": [
+    {
+      "parent_field_key": "Include_CPA_c",
+      "parent_trigger": "TRUE",
+      "child_field_key": "CPA_Initial_Term_c",
+      "child_requiredness": "REQ",
+      "reason": "CPA included -> CPA terms required",
+      "confidence": "Med"
+    },
+    {
+      "parent_field_key": "Include_CPA_c",
+      "parent_trigger": "TRUE",
+      "child_field_key": "CPA_Renewal_Term_c",
+      "child_requiredness": "COND",
+      "reason": "Often required if renewal exists; confirm policy",
+      "confidence": "Low"
+    },
+    {
+      "parent_field_key": "Include_CPA_c",
+      "parent_trigger": "TRUE",
+      "child_field_key": "CPA_SPLIT_c",
+      "child_requiredness": "REQ",
+      "reason": "CPA included -> CPA split required",
+      "confidence": "Med"
+    },
+    {
+      "parent_field_key": "Include_CPA_c",
+      "parent_trigger": "TRUE",
+      "child_field_key": "CPA_Term_Period_c",
+      "child_requiredness": "REQ",
+      "reason": "CPA included -> term period required",
+      "confidence": "Med"
+    },
+    {
+      "parent_field_key": "Use_Holdback_Language_c",
+      "parent_trigger": "TRUE",
+      "child_field_key": "Holdback_Amount_c",
+      "child_requiredness": "REQ",
+      "reason": "Holdback language -> amount required",
+      "confidence": "High"
+    },
+    {
+      "parent_field_key": "Use_Holdback_Language_c",
+      "parent_trigger": "TRUE",
+      "child_field_key": "Number_of_holdback_days_c",
+      "child_requiredness": "REQ",
+      "reason": "Holdback language -> days required",
+      "confidence": "High"
+    },
+    {
+      "parent_field_key": "Physical_Distribution_c",
+      "parent_trigger": "TRUE",
+      "child_field_key": "Physical_Split_c",
+      "child_requiredness": "REQ",
+      "reason": "Physical distro -> physical split required",
+      "confidence": "High"
+    },
+    {
+      "parent_field_key": "Physical_Distribution_c",
+      "parent_trigger": "TRUE",
+      "child_field_key": "Physical_Split_Ex_USA_c",
+      "child_requiredness": "COND",
+      "reason": "If territories include ex-USA -> ex-USA split required",
+      "confidence": "Med"
+    },
+    {
+      "parent_field_key": "Back_Catalog_c",
+      "parent_trigger": "TRUE",
+      "child_field_key": "Back_Catalog_Type_c",
+      "child_requiredness": "REQ",
+      "reason": "Back catalog toggle -> type required",
+      "confidence": "Med"
+    },
+    {
+      "parent_field_key": "Back_Catalog_c",
+      "parent_trigger": "TRUE",
+      "child_field_key": "Back_Catalog_Split_c",
+      "child_requiredness": "COND",
+      "reason": "If split-based economics -> split required",
+      "confidence": "Low"
+    },
+    {
+      "parent_field_key": "Procurement_Status_c",
+      "parent_trigger": "NOT BLANK",
+      "child_field_key": "Procurement_Split_c",
+      "child_requiredness": "COND",
+      "reason": "If procurement is in-scope -> split may be needed",
+      "confidence": "Low"
+    },
+    {
+      "parent_field_key": "Publishing_Rights_c",
+      "parent_trigger": "TRUE",
+      "child_field_key": "Writer_Print_Split_c",
+      "child_requiredness": "COND",
+      "reason": "If publishing rights included -> writer/print split expected",
+      "confidence": "Low"
+    },
+    {
+      "parent_field_key": "Licensing_Rights_c",
+      "parent_trigger": "TRUE",
+      "child_field_key": "Mechanical_Split_c",
+      "child_requiredness": "COND",
+      "reason": "If licensing includes mechanical -> mechanical split expected",
+      "confidence": "Low"
+    },
+    {
+      "parent_field_key": "Licensing_Rights_c",
+      "parent_trigger": "TRUE",
+      "child_field_key": "Performance_Split_c",
+      "child_requiredness": "COND",
+      "reason": "If licensing includes performance -> performance split expected",
+      "confidence": "Low"
+    },
+    {
+      "parent_field_key": "Neighboring_Rights_included_c",
+      "parent_trigger": "TRUE",
+      "child_field_key": "Restrictions_c",
+      "child_requiredness": "COND",
+      "reason": "Neighboring rights included -> check for restrictions/carve-outs",
+      "confidence": "Low"
+    },
+    {
+      "parent_field_key": "Termination_Type_c",
+      "parent_trigger": "NOT BLANK",
+      "child_field_key": "Termination_Period_c",
+      "child_requiredness": "COND",
+      "reason": "If termination type set -> period often required",
+      "confidence": "Med"
+    },
+    {
+      "parent_field_key": "Termination_Type_c",
+      "parent_trigger": "NOT BLANK",
+      "child_field_key": "Termination_Notice_Date_c",
+      "child_requiredness": "COND",
+      "reason": "If termination happening -> notice date expected",
+      "confidence": "Low"
+    },
+    {
+      "parent_field_key": "Option_Type_c",
+      "parent_trigger": "NOT BLANK",
+      "child_field_key": "Number_of_Options_c",
+      "child_requiredness": "REQ",
+      "reason": "If option type present -> number of options required",
+      "confidence": "High"
+    },
+    {
+      "parent_field_key": "Number_of_Options_c",
+      "parent_trigger": "> 0",
+      "child_field_key": "Option_Master_Number_c",
+      "child_requiredness": "COND",
+      "reason": "If options exist -> option master number may be required",
+      "confidence": "Low"
+    }
+  ]
+}

@@ -1,0 +1,310 @@
+{
+  "version": "v1",
+  "meta": {
+    "generated_at_utc": "2026-02-05T04:43:09.759605Z",
+    "glossary_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/Master Glossary [Holwerda, Data Dash].xlsx",
+    "hinge_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/App_Build_Order_Hinges_v1.xlsx"
+  },
+  "aliases": [
+    {
+      "sheet": "Accounts",
+      "alias": "Account",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Accounts",
+      "alias": "Party",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Accounts",
+      "alias": "Entity",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Accounts",
+      "alias": "Company",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Accounts",
+      "alias": "Label",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Accounts",
+      "alias": "Artist",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Accounts",
+      "alias": "Licensor",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Accounts",
+      "alias": "Licensee",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Accounts",
+      "alias": "DBA",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Accounts",
+      "alias": "PKA",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Accounts",
+      "alias": "Billing",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Contacts",
+      "alias": "Contact",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Contacts",
+      "alias": "Signatory",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Contacts",
+      "alias": "Representative",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Contacts",
+      "alias": "Authorized Signer",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Contacts",
+      "alias": "Manager",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Contacts",
+      "alias": "Attorney",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Contacts",
+      "alias": "Email",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Opportunity",
+      "alias": "Agreement",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Opportunity",
+      "alias": "Deal Terms",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Opportunity",
+      "alias": "Contract Terms",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Opportunity",
+      "alias": "Rights",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Opportunity",
+      "alias": "Territory",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Opportunity",
+      "alias": "Term",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Opportunity",
+      "alias": "Exclusivity",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Opportunity",
+      "alias": "Options",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Opportunity",
+      "alias": "Termination",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Schedule",
+      "alias": "Schedule",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Schedule",
+      "alias": "Exhibit",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Schedule",
+      "alias": "Annex",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Schedule",
+      "alias": "Attachment",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Schedule",
+      "alias": "Addendum",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Schedule",
+      "alias": "Record Type",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Catalog",
+      "alias": "Catalog",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Catalog",
+      "alias": "Track List",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Catalog",
+      "alias": "Masters",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Catalog",
+      "alias": "Albums",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Catalog",
+      "alias": "ISRC",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Catalog",
+      "alias": "UPC",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Catalog",
+      "alias": "ISWC",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Catalog",
+      "alias": "Release List",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Schedule Catalog",
+      "alias": "Schedule Catalog",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Schedule Catalog",
+      "alias": "Schedule A",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Schedule Catalog",
+      "alias": "Ownership",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Schedule Catalog",
+      "alias": "Composition Ownership",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Schedule Catalog",
+      "alias": "Master Ownership",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Schedule Catalog",
+      "alias": "Writer Split",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Financials",
+      "alias": "Financials",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Financials",
+      "alias": "Payments",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Financials",
+      "alias": "Advance",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Financials",
+      "alias": "Fees",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Financials",
+      "alias": "Thresholds",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Financials",
+      "alias": "Recoupment",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "Financials",
+      "alias": "Royalty",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "V2 Add Ons",
+      "alias": "Add Ons",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "V2 Add Ons",
+      "alias": "Add-on Terms",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "V2 Add Ons",
+      "alias": "Matching",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "V2 Add Ons",
+      "alias": "Exclusive Negotiation",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "V2 Add Ons",
+      "alias": "Additional Fees",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    },
+    {
+      "sheet": "V2 Add Ons",
+      "alias": "Optional Terms",
+      "notes": "Used for semantic lookup / 'also known as' mapping in UI."
+    }
+  ]
+}

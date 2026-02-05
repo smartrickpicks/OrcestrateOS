@@ -1,0 +1,437 @@
+{
+  "version": "v1",
+  "meta": {
+    "generated_at_utc": "2026-02-05T04:43:09.759605Z",
+    "glossary_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/Master Glossary [Holwerda, Data Dash].xlsx",
+    "hinge_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/App_Build_Order_Hinges_v1.xlsx"
+  },
+  "hinges": [
+    {
+      "sheet": "Accounts",
+      "field_key": "Account_Type_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Entity classification gates validation expectations (artist vs company).",
+      "downstream_child_groups": [
+        "Contacts linkage; legal fields requiredness"
+      ]
+    },
+    {
+      "sheet": "Accounts",
+      "field_key": "Legal_Name_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Canonical name for matching across sheets.",
+      "downstream_child_groups": [
+        "Opportunity party matching; signature validation"
+      ]
+    },
+    {
+      "sheet": "Accounts",
+      "field_key": "Company_Name_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Common-facing name; often appears in contract body.",
+      "downstream_child_groups": [
+        "Disambiguation; DBA/PKA handling"
+      ]
+    },
+    {
+      "sheet": "Accounts",
+      "field_key": "Type_of_Company_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Company type influences formation fields.",
+      "downstream_child_groups": [
+        "State_of_Formation requiredness"
+      ]
+    },
+    {
+      "sheet": "Accounts",
+      "field_key": "State_of_Formation_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Formation + jurisdiction used in legal sections.",
+      "downstream_child_groups": [
+        "Governing law / entity validation"
+      ]
+    },
+    {
+      "sheet": "Accounts",
+      "field_key": "Artist_Name_pka_or_dba_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Alias used in agreements.",
+      "downstream_child_groups": [
+        "Entity matching to contract language"
+      ]
+    },
+    {
+      "sheet": "Contacts",
+      "field_key": "Email_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Best unique identifier for a person contact.",
+      "downstream_child_groups": [
+        "Notification/ownership workflows"
+      ]
+    },
+    {
+      "sheet": "Contacts",
+      "field_key": "Legal_First_Name_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Identity validation + cross-sheet matching.",
+      "downstream_child_groups": [
+        "Signature block mapping"
+      ]
+    },
+    {
+      "sheet": "Contacts",
+      "field_key": "Legal_Last_Name_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Identity validation + cross-sheet matching.",
+      "downstream_child_groups": [
+        "Signature block mapping"
+      ]
+    },
+    {
+      "sheet": "Contacts",
+      "field_key": "Legal_Name_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Full legal name often used in signatures.",
+      "downstream_child_groups": [
+        "Contract signatory validation"
+      ]
+    },
+    {
+      "sheet": "Opportunity",
+      "field_key": "Contract_Type_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Deal family selector: drives most requiredness rules.",
+      "downstream_child_groups": [
+        "CMA/CPA/JV/Procurement/Catalog branches"
+      ]
+    },
+    {
+      "sheet": "Opportunity",
+      "field_key": "Contract_Subtype_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Refines deal family to correct ruleset.",
+      "downstream_child_groups": [
+        "More specific requiredness"
+      ]
+    },
+    {
+      "sheet": "Opportunity",
+      "field_key": "SubType_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Additional classifier used in downstream sheets (e.g., Financials).",
+      "downstream_child_groups": [
+        "Financial subtype expectations"
+      ]
+    },
+    {
+      "sheet": "Opportunity",
+      "field_key": "Include_CPA_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Toggle: turns on CPA branch requirements.",
+      "downstream_child_groups": [
+        "CPA_* fields required/validated"
+      ]
+    },
+    {
+      "sheet": "Opportunity",
+      "field_key": "Type_of_Share_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Economics mode gates which splits/fees are expected.",
+      "downstream_child_groups": [
+        "Split vs fee vs profit-share validation"
+      ]
+    },
+    {
+      "sheet": "Opportunity",
+      "field_key": "Territories_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Scope hinge for restrictions and ex-USA logic.",
+      "downstream_child_groups": [
+        "Excluded territories; physical ex-USA split"
+      ]
+    },
+    {
+      "sheet": "Opportunity",
+      "field_key": "Exclusivity_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Changes rights/restrictions expectations.",
+      "downstream_child_groups": [
+        "Restrictions",
+        "add-ons",
+        "negotiation periods"
+      ]
+    },
+    {
+      "sheet": "Opportunity",
+      "field_key": "Physical_Distribution_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Toggle: turns on physical economics.",
+      "downstream_child_groups": [
+        "Physical_Split",
+        "Physical_Split_Ex_USA"
+      ]
+    },
+    {
+      "sheet": "Opportunity",
+      "field_key": "Use_Holdback_Language_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Toggle: holdback validation branch.",
+      "downstream_child_groups": [
+        "Holdback_Amount",
+        "holdback days"
+      ]
+    },
+    {
+      "sheet": "Opportunity",
+      "field_key": "Effective_Date_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Lifecycle anchor for term validation.",
+      "downstream_child_groups": [
+        "Term/renewal/termination checks"
+      ]
+    },
+    {
+      "sheet": "Opportunity",
+      "field_key": "Initial_Term_Length_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Gates renewal/options expectations.",
+      "downstream_child_groups": [
+        "Renewal/option fields"
+      ]
+    },
+    {
+      "sheet": "Opportunity",
+      "field_key": "Number_of_Options_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Options branch activation.",
+      "downstream_child_groups": [
+        "Option_* fields"
+      ]
+    },
+    {
+      "sheet": "Opportunity",
+      "field_key": "Termination_Type_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Activates termination date/notice/period expectations.",
+      "downstream_child_groups": [
+        "Termination_* fields"
+      ]
+    },
+    {
+      "sheet": "Opportunity",
+      "field_key": "Licensing_Rights_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Rights branch activation.",
+      "downstream_child_groups": [
+        "Splits + restrictions"
+      ]
+    },
+    {
+      "sheet": "Opportunity",
+      "field_key": "Publishing_Rights_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Publishing branch activation.",
+      "downstream_child_groups": [
+        "Writer/print splits"
+      ]
+    },
+    {
+      "sheet": "Financials",
+      "field_key": "Event_Type_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Classifies the financial row (advance/fee/threshold/etc.).",
+      "downstream_child_groups": [
+        "Different requiredness per event type"
+      ]
+    },
+    {
+      "sheet": "Financials",
+      "field_key": "Type_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Secondary classifier for row meaning.",
+      "downstream_child_groups": [
+        "Field expectation set"
+      ]
+    },
+    {
+      "sheet": "Financials",
+      "field_key": "SubType_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Refines meaning; ties to Opportunity subtype.",
+      "downstream_child_groups": [
+        "Deal-specific validation"
+      ]
+    },
+    {
+      "sheet": "Financials",
+      "field_key": "Currency_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Validation for amounts + totals.",
+      "downstream_child_groups": [
+        "Amount/Total checks"
+      ]
+    },
+    {
+      "sheet": "Financials",
+      "field_key": "Min_Max_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Gates whether range is expected.",
+      "downstream_child_groups": [
+        "Amount vs range validation"
+      ]
+    },
+    {
+      "sheet": "Financials",
+      "field_key": "Recoupable__c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Recoup branch activation.",
+      "downstream_child_groups": [
+        "Recoup threshold fields"
+      ]
+    },
+    {
+      "sheet": "Financials",
+      "field_key": "Payment_Threshold_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Threshold branch activation.",
+      "downstream_child_groups": [
+        "Threshold days/values"
+      ]
+    },
+    {
+      "sheet": "Catalog",
+      "field_key": "Type_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Catalog row type (track/album/etc.).",
+      "downstream_child_groups": [
+        "Required IDs differ (ISRC/UPC)"
+      ]
+    },
+    {
+      "sheet": "Catalog",
+      "field_key": "Album_Type_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Album classification affects required IDs.",
+      "downstream_child_groups": [
+        "UPC and release logic"
+      ]
+    },
+    {
+      "sheet": "Catalog",
+      "field_key": "Release_Date_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Used for term/commitment timing checks.",
+      "downstream_child_groups": [
+        "Release window validation"
+      ]
+    },
+    {
+      "sheet": "Catalog",
+      "field_key": "ISRC_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Primary identifier for tracks.",
+      "downstream_child_groups": [
+        "Ownership + payouts linkage"
+      ]
+    },
+    {
+      "sheet": "Catalog",
+      "field_key": "UPC_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Primary identifier for releases.",
+      "downstream_child_groups": [
+        "Release-level linkage"
+      ]
+    },
+    {
+      "sheet": "Schedule",
+      "field_key": "RecordTypeId",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Meta hinge: determines which schedule/exhibit structure applies.",
+      "downstream_child_groups": [
+        "Which child tabs become relevant"
+      ]
+    },
+    {
+      "sheet": "Schedule Catalog",
+      "field_key": "Composition_Ownership__c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Ownership hinge that impacts rights/publishing expectations.",
+      "downstream_child_groups": [
+        "Publishing splits/restrictions"
+      ]
+    },
+    {
+      "sheet": "Schedule Catalog",
+      "field_key": "Master_Ownership__c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Ownership hinge that impacts distribution economics.",
+      "downstream_child_groups": [
+        "Royalty splits / rights assumptions"
+      ]
+    },
+    {
+      "sheet": "Schedule Catalog",
+      "field_key": "Writer_Name__c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Links compositions to people/contacts.",
+      "downstream_child_groups": [
+        "Writer credit validation"
+      ]
+    },
+    {
+      "sheet": "V2 Add Ons",
+      "field_key": "Add_Ons_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Add-on selector: turns on specific add-on rules.",
+      "downstream_child_groups": [
+        "Fee/split/term sub-branches"
+      ]
+    },
+    {
+      "sheet": "V2 Add Ons",
+      "field_key": "Type_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Add-on type classifier.",
+      "downstream_child_groups": [
+        "Requiredness per add-on type"
+      ]
+    },
+    {
+      "sheet": "V2 Add Ons",
+      "field_key": "Fee_Type_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Gates whether fee vs split is expected.",
+      "downstream_child_groups": [
+        "Fee_c vs Split_c requirements"
+      ]
+    },
+    {
+      "sheet": "V2 Add Ons",
+      "field_key": "Exclusivity_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "May override/augment Opportunity exclusivity.",
+      "downstream_child_groups": [
+        "Negotiation/matching fields"
+      ]
+    },
+    {
+      "sheet": "V2 Add Ons",
+      "field_key": "Matching_c",
+      "hinge_level": "Primary",
+      "why_it_hinges": "Matching branch activation.",
+      "downstream_child_groups": [
+        "Matching periods & completion windows"
+      ]
+    },
+    {
+      "sheet": "V2 Add Ons",
+      "field_key": "Term_c",
+      "hinge_level": "Secondary",
+      "why_it_hinges": "Add-on term validation.",
+      "downstream_child_groups": [
+        "Notice/exercise fields"
+      ]
+    }
+  ]
+}

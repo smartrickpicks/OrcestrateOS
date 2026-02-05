@@ -1,0 +1,91 @@
+{
+  "version": "v1",
+  "meta": {
+    "generated_at_utc": "2026-02-05T04:43:09.759605Z",
+    "glossary_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/Master Glossary [Holwerda, Data Dash].xlsx",
+    "hinge_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/App_Build_Order_Hinges_v1.xlsx"
+  },
+  "entries": [
+    {
+      "source": "master_glossary",
+      "blocker_id": "B-001",
+      "question": "What are the allowed values for Contract_Type_c / Subtype / SubType?",
+      "fields_involved": "Contract_Type_c; Contract_Subtype_c; SubType_c",
+      "who_knows": "<owner>",
+      "status": "Open",
+      "notes": "Needed to build deal-type matrix."
+    },
+    {
+      "source": "master_glossary",
+      "blocker_id": "B-002",
+      "question": "When is CPA considered 'included' and what exact logic gates CPA fields?",
+      "fields_involved": "Include_CPA_c; CPA_*",
+      "who_knows": "<owner>",
+      "status": "Open",
+      "notes": "Confirm requiredness for CPA terms & splits."
+    },
+    {
+      "source": "master_glossary",
+      "blocker_id": "B-003",
+      "question": "Define Type_of_Share_c values and which economic fields each implies.",
+      "fields_involved": "Type_of_Share_c; *_Split_c; *_Fee_c; Profit_Share_c",
+      "who_knows": "<owner>",
+      "status": "Open",
+      "notes": "Needed for completeness validation."
+    },
+    {
+      "source": "hinge_config",
+      "blocker_id": "B-VAL-001",
+      "question": "What are the allowed values for Contract_Type_c / Contract_Subtype_c / SubType_c?",
+      "fields_involved": "Opportunity.Contract_Type_c; Contract_Subtype_c; SubType_c",
+      "who_knows": "Build deal-family matrix + requiredness sets.",
+      "status": "Open",
+      "notes": ""
+    },
+    {
+      "source": "hinge_config",
+      "blocker_id": "B-VAL-002",
+      "question": "What are allowed values for Financials.Event_Type_c, Type_c, Min_Max_c?",
+      "fields_involved": "Financials.Event_Type_c; Type_c; Min_Max_c",
+      "who_knows": "Build financial-row requiredness rules.",
+      "status": "Open",
+      "notes": ""
+    },
+    {
+      "source": "hinge_config",
+      "blocker_id": "B-VAL-003",
+      "question": "Define mapping of Catalog.Type_c and Album_Type_c to required identifiers.",
+      "fields_involved": "Catalog.Type_c; Album_Type_c",
+      "who_knows": "Validate track vs release ID requirements (ISRC/UPC).",
+      "status": "Open",
+      "notes": ""
+    },
+    {
+      "source": "hinge_config",
+      "blocker_id": "B-VAL-004",
+      "question": "When is Physical_Split_Ex_USA_c required vs optional?",
+      "fields_involved": "Opportunity.Physical_Distribution_c; Territories_c; Physical_Split_Ex_USA_c",
+      "who_knows": "Territory-dependent physical economics validation.",
+      "status": "Open",
+      "notes": ""
+    },
+    {
+      "source": "hinge_config",
+      "blocker_id": "B-VAL-005",
+      "question": "What does Schedule.RecordTypeId values mean in Stereo exports?",
+      "fields_involved": "Schedule.RecordTypeId",
+      "who_knows": "Determine which exhibits/tabs are expected.",
+      "status": "Open",
+      "notes": ""
+    },
+    {
+      "source": "hinge_config",
+      "blocker_id": "B-VAL-006",
+      "question": "What are all possible Add_Ons_c and Matching_c values and their rule branches?",
+      "fields_involved": "V2 Add Ons.Add_Ons_c; Matching_c; Fee_Type_c",
+      "who_knows": "Add-on matrix and validation rules.",
+      "status": "Open",
+      "notes": ""
+    }
+  ]
+}

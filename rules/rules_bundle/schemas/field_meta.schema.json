@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Field Meta Bundle",
+  "type": "object",
+  "required": [
+    "version",
+    "fields"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "meta": {
+      "type": "object"
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sheet",
+          "field_key",
+          "requiredness"
+        ],
+        "properties": {
+          "sheet": {
+            "type": "string"
+          },
+          "field_key": {
+            "type": "string"
+          },
+          "field_label": {
+            "type": "string"
+          },
+          "definition": {
+            "type": "string"
+          },
+          "return_format": {
+            "type": "string"
+          },
+          "example_output": {
+            "type": "string"
+          },
+          "requiredness": {
+            "type": "string",
+            "enum": [
+              "required",
+              "optional",
+              "not_needed"
+            ]
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "picklist": {
+            "type": "boolean"
+          },
+          "source_sheet": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

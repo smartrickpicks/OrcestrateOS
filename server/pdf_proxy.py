@@ -218,6 +218,7 @@ app.mount("/out", NoCacheStaticFiles(directory=str(PROJECT_ROOT / "out"), html=F
 app.mount("/config", NoCacheStaticFiles(directory=str(PROJECT_ROOT / "config"), html=False), name="config")
 app.mount("/examples", NoCacheStaticFiles(directory=str(PROJECT_ROOT / "examples"), html=False), name="examples")
 app.mount("/assets", NoCacheStaticFiles(directory=str(PROJECT_ROOT / "assets"), html=False), name="assets")
+app.mount("/rules", NoCacheStaticFiles(directory=str(PROJECT_ROOT / "rules"), html=False), name="rules")
 
 
 @app.get("/")

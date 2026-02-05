@@ -442,6 +442,11 @@
     .srr-filter-chip:hover { background: #e0e0e0; }
     .srr-filter-chip.active { background: #1565c0; color: white; }
     
+    /* v1.5.7: Field group headers for hinge-based grouping */
+    .srr-field-group-header { font-size: 0.75em; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 12px 6px; margin-top: 8px; border-bottom: 1px solid #e0e0e0; background: #f8f9fa; }
+    .srr-field-group-header:first-child { margin-top: 0; }
+    .srr-group-count { font-weight: 400; color: #999; }
+    
     /* v1.4.18: Field Card enhancements - locked, changed */
     .srr-field-card.locked { background: #f8f8f8; opacity: 0.9; }
     .srr-field-card.locked .srr-field-value-display { pointer-events: none; cursor: not-allowed; }
@@ -8420,6 +8425,11 @@
       document.getElementById('data-source-drawer').classList.remove('active');
     }
     
+    // Stub for updateSessionUI (v1.5.7 - noop for now, could update session indicators)
+    function updateSessionUI() {
+      // Placeholder for session UI updates (e.g., user avatar, session indicators)
+    }
+    
     // Update Data Source drawer to show current state (v1.4.23 folder-based)
     function updateDataSourceDrawerState() {
       var drawer = document.getElementById('data-source-drawer');
@@ -9251,8 +9261,165 @@
       }
     };
     
-    // V2: Replace with real schema map from config/schema.json
-    // Canonical field order for Field Inspector (schema_order_with_fallback)
+    // v1.5.7: Rules Bundle Cache - loaded on app init
+    var rulesBundleCache = {
+      loaded: false,
+      loading: false,
+      fieldMeta: null,      // field_meta.json
+      hingeGroups: null,    // hinge_groups.json
+      sheetOrder: null      // sheet_order.json
+    };
+    
+    // v1.5.7: Account Name field key aliases (match any of these)
+    var ACCOUNT_NAME_ALIASES = ['Account_Name', 'Account_Name_c', 'account_name', 'account_name_c'];
+    
+    // v1.5.7: Load rules bundles from /rules/rules_bundle/
+    async function loadRulesBundle() {
+      if (rulesBundleCache.loaded || rulesBundleCache.loading) return;
+      rulesBundleCache.loading = true;
+      console.log('[RulesBundle] Loading bundles...');
+      
+      try {
+        var [fieldMetaRes, hingeGroupsRes, sheetOrderRes] = await Promise.all([
+          fetch('/rules/rules_bundle/field_meta.json'),
+          fetch('/rules/rules_bundle/hinge_groups.json'),
+          fetch('/rules/rules_bundle/sheet_order.json')
+        ]);
+        
+        if (fieldMetaRes.ok) {
+          rulesBundleCache.fieldMeta = await fieldMetaRes.json();
+          console.log('[RulesBundle] field_meta loaded:', rulesBundleCache.fieldMeta.fields?.length || 0, 'fields');
+        }
+        if (hingeGroupsRes.ok) {
+          rulesBundleCache.hingeGroups = await hingeGroupsRes.json();
+          console.log('[RulesBundle] hinge_groups loaded:', rulesBundleCache.hingeGroups.hinges?.length || 0, 'hinges');
+        }
+        if (sheetOrderRes.ok) {
+          rulesBundleCache.sheetOrder = await sheetOrderRes.json();
+          console.log('[RulesBundle] sheet_order loaded:', rulesBundleCache.sheetOrder.order?.length || 0, 'sheets');
+        }
+        
+        rulesBundleCache.loaded = true;
+        console.log('[RulesBundle] All bundles loaded successfully');
+      } catch (err) {
+        console.warn('[RulesBundle] Failed to load bundles:', err);
+      } finally {
+        rulesBundleCache.loading = false;
+      }
+    }
+    
+    // v1.5.7: Normalize field key for comparison (lowercase, no underscores/special chars)
+    function normalizeFieldKey(fieldKey) {
+      return fieldKey.toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+    
+    // v1.5.7: Check if field key matches Account Name aliases (use ACCOUNT_NAME_ALIASES)
+    function isAccountNameField(fieldKey) {
+      var normalized = normalizeFieldKey(fieldKey);
+      for (var i = 0; i < ACCOUNT_NAME_ALIASES.length; i++) {
+        if (normalizeFieldKey(ACCOUNT_NAME_ALIASES[i]) === normalized) return true;
+      }
+      return false;
+    }
+    
+    // v1.5.7: Get hinge info for a field (sheet + field_key -> hinge_level)
+    // Uses normalized comparison for case-insensitive matching
+    function getHingeInfo(sheetName, fieldKey) {
+      if (!rulesBundleCache.hingeGroups || !rulesBundleCache.hingeGroups.hinges) return null;
+      var hinges = rulesBundleCache.hingeGroups.hinges;
+      var normalizedKey = normalizeFieldKey(fieldKey);
+      for (var i = 0; i < hinges.length; i++) {
+        var h = hinges[i];
+        if (h.sheet === sheetName && normalizeFieldKey(h.field_key) === normalizedKey) {
+          return { level: h.hinge_level, why: h.why_it_hinges };
+        }
+      }
+      return null;
+    }
+    
+    // v1.5.7: Get all hinges for a sheet, grouped by level (stores normalized keys for lookup)
+    function getSheetHinges(sheetName) {
+      if (!rulesBundleCache.hingeGroups || !rulesBundleCache.hingeGroups.hinges) return { primary: [], secondary: [], primaryNorm: [], secondaryNorm: [] };
+      var hinges = rulesBundleCache.hingeGroups.hinges.filter(function(h) { return h.sheet === sheetName; });
+      var primary = hinges.filter(function(h) { return h.hinge_level === 'Primary'; }).map(function(h) { return h.field_key; });
+      var secondary = hinges.filter(function(h) { return h.hinge_level === 'Secondary'; }).map(function(h) { return h.field_key; });
+      return {
+        primary: primary,
+        secondary: secondary,
+        primaryNorm: primary.map(normalizeFieldKey),
+        secondaryNorm: secondary.map(normalizeFieldKey)
+      };
+    }
+    
+    // v1.5.7: Order fields for Field Inspector using rules_bundle
+    // Returns: { groups: [{name, fields: [key]}], orderedKeys: [key] }
+    function orderFieldsForInspector(record, sheetName) {
+      var allKeys = Object.keys(record).filter(function(k) { return !k.startsWith('_'); });
+      
+      // Get hinge configuration for this sheet
+      var hinges = getSheetHinges(sheetName);
+      
+      // Partition fields into groups using normalized comparison
+      var accountNameKey = null;
+      var primaryKeys = [];
+      var secondaryKeys = [];
+      var otherKeys = [];
+      
+      allKeys.forEach(function(k) {
+        var normKey = normalizeFieldKey(k);
+        if (isAccountNameField(k)) {
+          // Use first match (deterministic - iterate in record order)
+          if (!accountNameKey) accountNameKey = k;
+        } else if (hinges.primaryNorm.indexOf(normKey) >= 0) {
+          primaryKeys.push(k);
+        } else if (hinges.secondaryNorm.indexOf(normKey) >= 0) {
+          secondaryKeys.push(k);
+        } else {
+          otherKeys.push(k);
+        }
+      });
+      
+      // Sort each group: primary/secondary by hinge order (normalized), other alphabetically
+      primaryKeys.sort(function(a, b) { 
+        return hinges.primaryNorm.indexOf(normalizeFieldKey(a)) - hinges.primaryNorm.indexOf(normalizeFieldKey(b)); 
+      });
+      secondaryKeys.sort(function(a, b) { 
+        return hinges.secondaryNorm.indexOf(normalizeFieldKey(a)) - hinges.secondaryNorm.indexOf(normalizeFieldKey(b)); 
+      });
+      otherKeys.sort();
+      
+      // Build groups array for rendering with headers
+      var groups = [];
+      
+      // Account Name is always first (own group, no header)
+      if (accountNameKey) {
+        groups.push({ name: null, fields: [accountNameKey] });
+      }
+      
+      // Primary Hinge Fields
+      if (primaryKeys.length > 0) {
+        groups.push({ name: 'Primary Hinge Fields', fields: primaryKeys });
+      }
+      
+      // Secondary Hinge Fields
+      if (secondaryKeys.length > 0) {
+        groups.push({ name: 'Secondary Hinge Fields', fields: secondaryKeys });
+      }
+      
+      // Other Fields
+      if (otherKeys.length > 0) {
+        groups.push({ name: 'Other Fields', fields: otherKeys });
+      }
+      
+      // Build flat ordered keys for filtering/counting
+      var orderedKeys = [];
+      if (accountNameKey) orderedKeys.push(accountNameKey);
+      orderedKeys = orderedKeys.concat(primaryKeys).concat(secondaryKeys).concat(otherKeys);
+      
+      return { groups: groups, orderedKeys: orderedKeys };
+    }
+    
+    // Legacy fallback for schema order (used when bundle not loaded)
     var SRR_SCHEMA_ORDER = [
       'contract_key',
       'file_name',
@@ -9264,7 +9431,7 @@
       'label'
     ];
     
-    // Stub field groups (v1 - will load from config in v2)
+    // Stub field groups (legacy - now derived from hinge_groups.json)
     var SRR_FIELD_GROUPS = {
       'identity': ['contract_key', 'file_name', 'file_url'],
       'metadata': ['artist', 'label', 'subtype'],
@@ -9505,41 +9672,41 @@
         return;
       }
       
-      // Canonical field ordering: schema order (primary), alphabetical fallback (secondary)
-      var allKeys = Object.keys(record).filter(function(k) {
-        return !k.startsWith('_');
-      });
+      // v1.5.7: Use rules_bundle for ordering if loaded, else fallback to legacy schema-based order
+      var sheetName = srrState.currentSheetName || 'Accounts';
+      var ordering;
       
-      // Partition into schema-ordered and unknown fields
-      var schemaKeys = [];
-      var unknownKeys = [];
-      allKeys.forEach(function(k) {
-        if (SRR_SCHEMA_ORDER.indexOf(k) >= 0) {
-          schemaKeys.push(k);
-        } else {
-          unknownKeys.push(k);
-        }
-      });
-      
-      // Sort schema keys by schema order, unknown keys alphabetically
-      schemaKeys.sort(function(a, b) {
-        return SRR_SCHEMA_ORDER.indexOf(a) - SRR_SCHEMA_ORDER.indexOf(b);
-      });
-      unknownKeys.sort();
-      
-      // Final order: schema fields first, then unknown fields
-      var keys = schemaKeys.concat(unknownKeys);
-      
-      // Apply group filter
-      if (srrState.activeGroup !== 'all' && SRR_FIELD_GROUPS[srrState.activeGroup]) {
-        var groupFields = SRR_FIELD_GROUPS[srrState.activeGroup];
-        keys = keys.filter(function(k) { return groupFields.indexOf(k) >= 0; });
+      if (rulesBundleCache.loaded) {
+        ordering = orderFieldsForInspector(record, sheetName);
+      } else {
+        // Legacy fallback: schema order first, then unknown fields alphabetically
+        var allRecordKeys = Object.keys(record).filter(function(k) { return !k.startsWith('_'); });
+        var schemaKeys = [];
+        var unknownKeys = [];
+        allRecordKeys.forEach(function(k) {
+          if (SRR_SCHEMA_ORDER.indexOf(k) >= 0) {
+            schemaKeys.push(k);
+          } else {
+            unknownKeys.push(k);
+          }
+        });
+        schemaKeys.sort(function(a, b) {
+          return SRR_SCHEMA_ORDER.indexOf(a) - SRR_SCHEMA_ORDER.indexOf(b);
+        });
+        unknownKeys.sort();
+        var legacyKeys = schemaKeys.concat(unknownKeys);
+        ordering = { groups: [{ name: null, fields: legacyKeys }], orderedKeys: legacyKeys };
       }
       
-      // v1.4.18: Apply search filter
+      // Get all keys from groups for filtering
+      var allKeys = [];
+      ordering.groups.forEach(function(g) { allKeys = allKeys.concat(g.fields); });
+      
+      // v1.4.18: Apply search filter to orderedKeys
+      var filteredKeys = allKeys;
       if (srrState.searchQuery) {
         var query = srrState.searchQuery.toLowerCase();
-        keys = keys.filter(function(k) {
+        filteredKeys = allKeys.filter(function(k) {
           var val = srrState.editedValues.hasOwnProperty(k) ? srrState.editedValues[k] : srrState.originalValues[k];
           var valStr = val ? String(val).toLowerCase() : '';
           return k.toLowerCase().indexOf(query) >= 0 || valStr.indexOf(query) >= 0;
@@ -9547,14 +9714,11 @@
       }
       
       // Apply field state filter - verified/submitted hidden from To Do by default
-      keys = keys.filter(function(k) {
+      filteredKeys = filteredKeys.filter(function(k) {
         var state = srrState.fieldStates[k] || 'todo';
-        // States that clear from To Do: verified, submitted
-        var clearsFromToDo = (state === 'verified' || state === 'submitted');
         
-        if (srrState.activeFilter === 'all') return true;  // Show all fields
+        if (srrState.activeFilter === 'all') return true;
         if (srrState.activeFilter === 'todo') {
-          // To Do shows: todo, modified, rfi_pending (not verified, submitted, rfi, blocked)
           return state === 'todo' || state === 'modified' || state === 'rfi_pending';
         }
         if (srrState.activeFilter === 'verified') return state === 'verified';
@@ -9564,12 +9728,18 @@
         return true;
       });
       
+      // Create a Set for O(1) lookup of filtered keys
+      var filteredSet = {};
+      filteredKeys.forEach(function(k) { filteredSet[k] = true; });
+      
       // v1.4.20: Update filter chip counts
       srrUpdateFilterCounts();
       
-      document.getElementById('srr-field-count').textContent = keys.length + ' fields';
+      document.getElementById('srr-field-count').textContent = filteredKeys.length + ' fields';
       
-      var html = keys.map(function(key, idx) {
+      // v1.5.7: Build HTML with group headers using hinge-based ordering
+      // Helper function to render a single field card
+      function renderFieldCard(key) {
         var originalVal = srrState.originalValues[key];
         var currentVal = srrState.editedValues.hasOwnProperty(key) ? srrState.editedValues[key] : originalVal;
         if (currentVal === null || currentVal === undefined) currentVal = '';
@@ -9680,7 +9850,26 @@
         
         cardHtml += '</div></div>';
         return cardHtml;
-      }).join('');
+      }
+      
+      // v1.5.7: Build HTML with group headers
+      var html = '';
+      ordering.groups.forEach(function(group) {
+        // Filter group fields to only include those that passed search/state filters
+        var groupFields = group.fields.filter(function(k) { return filteredSet[k]; });
+        
+        if (groupFields.length === 0) return;  // Skip empty groups
+        
+        // Add group header if group has a name (Account Name has null name)
+        if (group.name) {
+          html += '<div class="srr-field-group-header">' + group.name + ' <span class="srr-group-count">(' + groupFields.length + ')</span></div>';
+        }
+        
+        // Render field cards in this group
+        groupFields.forEach(function(key) {
+          html += renderFieldCard(key);
+        });
+      });
       
       container.innerHTML = html || '<div class="srr-empty-state">No fields match current filter</div>';
     }
@@ -15052,9 +15241,10 @@
       content.innerHTML = html;
     }
     
-    // Initialize debug panel on load
+    // Initialize debug panel and rules bundle on load
     document.addEventListener('DOMContentLoaded', function() {
       initDebugPanel();
+      loadRulesBundle();  // v1.5.7: Load rules bundle for Field Inspector ordering
     });
     
     // Global Search Stub (V2)

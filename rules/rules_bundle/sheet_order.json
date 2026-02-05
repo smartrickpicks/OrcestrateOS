@@ -1,0 +1,135 @@
+{
+  "version": "v1",
+  "meta": {
+    "generated_at_utc": "2026-02-05T04:43:09.759605Z",
+    "glossary_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/Master Glossary [Holwerda, Data Dash].xlsx",
+    "hinge_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/App_Build_Order_Hinges_v1.xlsx"
+  },
+  "order": [
+    {
+      "order": 1,
+      "sheet": "Accounts",
+      "why": "Identity first. Fixing party/org data resolves the highest-volume, easiest extraction errors and prevents downstream mismatches.",
+      "primary_outputs": "Validated account + entity identifiers (legal name, type, formation, address).",
+      "search_aliases": [
+        "account",
+        "artist",
+        "label",
+        "company",
+        "legal entity",
+        "DBA",
+        "PKA",
+        "party",
+        "billing"
+      ]
+    },
+    {
+      "order": 2,
+      "sheet": "Contacts",
+      "why": "Confirm who the people are (signatories/points of contact). Reduces ambiguity before interpreting contract terms.",
+      "primary_outputs": "Validated contact identities (legal name, email) linked to Accounts.",
+      "search_aliases": [
+        "contact",
+        "signatory",
+        "representative",
+        "email",
+        "authorized",
+        "manager",
+        "attorney"
+      ]
+    },
+    {
+      "order": 3,
+      "sheet": "Opportunity",
+      "why": "Core deal classification + term/rights. This sheet is the hinge for most requiredness rules in the system.",
+      "primary_outputs": "Deal family selection (type/subtype), territory, term, rights toggles, options/termination.",
+      "search_aliases": [
+        "opportunity",
+        "deal",
+        "agreement",
+        "contract",
+        "terms",
+        "rights",
+        "territory",
+        "exclusivity",
+        "term",
+        "renewal",
+        "termination"
+      ]
+    },
+    {
+      "order": 4,
+      "sheet": "Schedule",
+      "why": "Schedule/Exhibit metadata can clarify record types or attachments that change how we interpret Catalog/Financials.",
+      "primary_outputs": "Attachment classification (e.g., record type / schedule presence).",
+      "search_aliases": [
+        "schedule",
+        "exhibit",
+        "attachment",
+        "annex",
+        "record type",
+        "addendum"
+      ]
+    },
+    {
+      "order": 5,
+      "sheet": "Catalog",
+      "why": "Defines what is being distributed (assets). This is needed to validate scope, counts, and ownership signals.",
+      "primary_outputs": "Asset list (albums/tracks), IDs (ISRC/UPC/ISWC), dates, writer links.",
+      "search_aliases": [
+        "catalog",
+        "track list",
+        "masters",
+        "albums",
+        "ISRC",
+        "UPC",
+        "ISWC",
+        "release"
+      ]
+    },
+    {
+      "order": 6,
+      "sheet": "Schedule Catalog",
+      "why": "Ownership splits at the composition/master level. Used to validate rights + financial logic and to catch mismatched ownership assumptions.",
+      "primary_outputs": "Per-asset ownership indicators (composition/master ownership).",
+      "search_aliases": [
+        "schedule A",
+        "ownership",
+        "composition",
+        "master ownership",
+        "writer",
+        "splits"
+      ]
+    },
+    {
+      "order": 7,
+      "sheet": "Financials",
+      "why": "Only after classification + scope. Financial rows are highly dependent on deal type, rights, and add-ons.",
+      "primary_outputs": "Payments/advances/fees/threshold structures linked to the deal.",
+      "search_aliases": [
+        "financials",
+        "payments",
+        "advances",
+        "fees",
+        "thresholds",
+        "recoup",
+        "currency"
+      ]
+    },
+    {
+      "order": 8,
+      "sheet": "V2 Add Ons",
+      "why": "Last: optional modules that branch off the core deal (matching, exclusivity add-ons, special fee constructs).",
+      "primary_outputs": "Add-on feature flags + addendum economics.",
+      "search_aliases": [
+        "add-ons",
+        "addendum",
+        "option",
+        "matching",
+        "exclusivity",
+        "negotiation period",
+        "fee type"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Hinge Groups Bundle",
+  "type": "object",
+  "required": [
+    "version",
+    "hinges"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "meta": {
+      "type": "object"
+    },
+    "hinges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sheet",
+          "field_key"
+        ],
+        "properties": {
+          "sheet": {
+            "type": "string"
+          },
+          "field_key": {
+            "type": "string"
+          },
+          "hinge_level": {
+            "type": "string"
+          },
+          "why_it_hinges": {
+            "type": "string"
+          },
+          "downstream_child_groups": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

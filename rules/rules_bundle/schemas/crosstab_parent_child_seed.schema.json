@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CrossTab Parent Child Seed Bundle",
+  "type": "object",
+  "required": [
+    "version",
+    "links"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "meta": {
+      "type": "object"
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "parent",
+          "child"
+        ],
+        "properties": {
+          "parent": {
+            "type": "string"
+          },
+          "trigger": {
+            "type": "string"
+          },
+          "child": {
+            "type": "string"
+          },
+          "requiredness": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "QA Flags Bundle",
+  "type": "object",
+  "required": [
+    "version",
+    "flags"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "meta": {
+      "type": "object"
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "flag_id"
+        ],
+        "properties": {
+          "flag_id": {
+            "type": "string"
+          },
+          "flag_level": {
+            "type": "string"
+          },
+          "trigger_rule": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "suggested_next_step": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

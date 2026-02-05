@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Sheet Order Bundle",
+  "type": "object",
+  "required": [
+    "version",
+    "order"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "meta": {
+      "type": "object"
+    },
+    "order": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sheet"
+        ],
+        "properties": {
+          "order": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "sheet": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          },
+          "primary_outputs": {
+            "type": "string"
+          },
+          "search_aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,31 @@
+{
+  "version": "v1",
+  "meta": {
+    "generated_at_utc": "2026-02-05T04:43:09.759605Z",
+    "glossary_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/Master Glossary [Holwerda, Data Dash].xlsx",
+    "hinge_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/App_Build_Order_Hinges_v1.xlsx"
+  },
+  "flags": [
+    {
+      "flag_id": "F-REQ-001",
+      "flag_level": "ERROR",
+      "trigger_rule": "Required field missing given selected classifier/trigger",
+      "message": "Missing required fields for this deal configuration.",
+      "suggested_next_step": "Open help drawer; complete required fields or correct classifier."
+    },
+    {
+      "flag_id": "F-PAT-001",
+      "flag_level": "WARN",
+      "trigger_rule": "Field population pattern suggests different classifier",
+      "message": "This looks like a different deal type than selected.",
+      "suggested_next_step": "Re-check Contract_Type/Subtype and CPA/JV/CMA toggles."
+    },
+    {
+      "flag_id": "F-NA-001",
+      "flag_level": "INFO",
+      "trigger_rule": "Fields populated that are NA for this configuration",
+      "message": "Some non-applicable fields have values.",
+      "suggested_next_step": "No action needed unless it indicates misclassification."
+    }
+  ]
+}

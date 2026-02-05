@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Sheet Aliases Bundle",
+  "type": "object",
+  "required": [
+    "version",
+    "aliases"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "meta": {
+      "type": "object"
+    },
+    "aliases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sheet",
+          "alias"
+        ],
+        "properties": {
+          "sheet": {
+            "type": "string"
+          },
+          "alias": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

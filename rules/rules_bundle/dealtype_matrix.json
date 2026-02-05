@@ -1,0 +1,34 @@
+{
+  "version": "v1",
+  "meta": {
+    "generated_at_utc": "2026-02-05T04:43:09.759605Z",
+    "glossary_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/Master Glossary [Holwerda, Data Dash].xlsx",
+    "hinge_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/App_Build_Order_Hinges_v1.xlsx"
+  },
+  "rules": [
+    {
+      "deal_type_value": "<fill>",
+      "field_key": "Contract_Type_c",
+      "requiredness": "REQ",
+      "notes": "Every record must be classified."
+    },
+    {
+      "deal_type_value": "<fill>",
+      "field_key": "Contract_Subtype_c",
+      "requiredness": "COND",
+      "notes": "If used by workflow/team."
+    },
+    {
+      "deal_type_value": "<fill>",
+      "field_key": "SubType_c",
+      "requiredness": "COND",
+      "notes": "If used by workflow/team."
+    },
+    {
+      "deal_type_value": "<fill>",
+      "field_key": "Include_CPA_c",
+      "requiredness": "COND",
+      "notes": "If CPA can be part of this deal family."
+    }
+  ]
+}

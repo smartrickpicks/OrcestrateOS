@@ -1,0 +1,114 @@
+{
+  "version": "v1",
+  "meta": {
+    "generated_at_utc": "2026-02-05T04:43:09.759605Z",
+    "glossary_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/Master Glossary [Holwerda, Data Dash].xlsx",
+    "hinge_source": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/App_Build_Order_Hinges_v1.xlsx"
+  },
+  "links": [
+    {
+      "parent": "Opportunity.Include_CPA_c",
+      "trigger": "TRUE",
+      "child": "Opportunity.CPA_SPLIT_c",
+      "requiredness": "REQ",
+      "notes": "CPA included -> CPA split required.",
+      "confidence": "Med"
+    },
+    {
+      "parent": "Opportunity.Include_CPA_c",
+      "trigger": "TRUE",
+      "child": "Opportunity.CPA_Term_Period_c",
+      "requiredness": "REQ",
+      "notes": "CPA included -> CPA term period required.",
+      "confidence": "Med"
+    },
+    {
+      "parent": "Opportunity.Use_Holdback_Language_c",
+      "trigger": "TRUE",
+      "child": "Opportunity.Holdback_Amount_c",
+      "requiredness": "REQ",
+      "notes": "Holdback language -> amount required.",
+      "confidence": "High"
+    },
+    {
+      "parent": "Opportunity.Use_Holdback_Language_c",
+      "trigger": "TRUE",
+      "child": "Opportunity.Number_of_holdback_days_c",
+      "requiredness": "REQ",
+      "notes": "Holdback language -> days required.",
+      "confidence": "High"
+    },
+    {
+      "parent": "Opportunity.Physical_Distribution_c",
+      "trigger": "TRUE",
+      "child": "Opportunity.Physical_Split_c",
+      "requiredness": "REQ",
+      "notes": "Physical distribution -> physical split required.",
+      "confidence": "High"
+    },
+    {
+      "parent": "Opportunity.Physical_Distribution_c",
+      "trigger": "TRUE",
+      "child": "Opportunity.Physical_Split_Ex_USA_c",
+      "requiredness": "COND",
+      "notes": "If territories include ex-USA -> ex-USA physical split.",
+      "confidence": "Med"
+    },
+    {
+      "parent": "Financials.Event_Type_c",
+      "trigger": "Advance",
+      "child": "Financials.Amount_c",
+      "requiredness": "REQ",
+      "notes": "Advance rows must have amount.",
+      "confidence": "Low"
+    },
+    {
+      "parent": "Financials.Event_Type_c",
+      "trigger": "Advance",
+      "child": "Financials.Recoupable__c",
+      "requiredness": "COND",
+      "notes": "Advance often recoupable; confirm policy.",
+      "confidence": "Low"
+    },
+    {
+      "parent": "Catalog.Type_c",
+      "trigger": "Track",
+      "child": "Catalog.ISRC_c",
+      "requiredness": "REQ",
+      "notes": "Track rows should have ISRC.",
+      "confidence": "Med"
+    },
+    {
+      "parent": "Catalog.Type_c",
+      "trigger": "Album/Release",
+      "child": "Catalog.UPC_c",
+      "requiredness": "REQ",
+      "notes": "Release rows should have UPC.",
+      "confidence": "Med"
+    },
+    {
+      "parent": "V2 Add Ons.Fee_Type_c",
+      "trigger": "Fee",
+      "child": "V2 Add Ons.Fee_c",
+      "requiredness": "REQ",
+      "notes": "Fee type indicates fee value required.",
+      "confidence": "Med"
+    },
+    {
+      "parent": "V2 Add Ons.Fee_Type_c",
+      "trigger": "Split",
+      "child": "V2 Add Ons.Split_c",
+      "requiredness": "REQ",
+      "notes": "Split type indicates split required.",
+      "confidence": "Med"
+    },
+    {
+      "parent": "Schedule.RecordTypeId",
+      "trigger": "Distribution Schedule",
+      "child": "Catalog.*",
+      "requiredness": "COND",
+      "notes": "If schedule indicates catalog exhibit, catalog tabs expected.",
+      "confidence": "Low"
+    }
+  ]
+}
