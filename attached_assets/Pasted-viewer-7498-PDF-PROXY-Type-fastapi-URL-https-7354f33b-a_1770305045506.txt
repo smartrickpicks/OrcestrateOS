@@ -1,0 +1,78 @@
+viewer/:7498 [PDF_PROXY] Type: fastapi | URL: https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0...
+viewer/:23200 [FirstRun] Clearing stale reviewer queue data
+viewer/:4308 [ArtifactStore] Reset playground, cleared 56 keys
+viewer/:23207 [FirstRun] Cleared 56 stale artifacts
+viewer/:23221 [FirstRun] Cleared 55 stale patch requests
+viewer/:23093 [LoaderUI] Updating, dataLoaded: false
+viewer/:23200 [FirstRun] Clearing stale reviewer queue data
+viewer/:4308 [ArtifactStore] Reset playground, cleared 0 keys
+viewer/:23207 [FirstRun] Cleared 0 stale artifacts
+viewer/:23221 [FirstRun] Cleared 0 stale patch requests
+viewer/:11728 [RFI Seed] No RFIs & Analyst Notes sheet found
+viewer/:16190 [AnalystTriage] Loading from store, found: 0
+viewer/:11563 [ManualReviewSeed] Dataset missing RFIs & Analyst Notes sheet - skipping Manual Review seeding
+viewer/:11636 [SystemChangesSeed] Dataset missing *_change_log sheets - skipping System Changes seeding
+viewer/:16272 [AnalystTriage] Queue counts from signals: Manual=0, SFLogic=0, Patch=0, System=0
+viewer/:7899 [Progress] Updated: To Do=0, Review=0, Done=0 (0%)
+viewer/:9764 [Admin] Tearing down admin state
+viewer/:8821 [Navigate] Attempting navigation to: grid, dataLoaded: false
+viewer/:8896 [Navigate] Showing page element: page-grid, found: yes
+viewer/:5296 [Masterline] Cold start - no sample data loaded (user must upload)
+viewer/:7899 [Progress] Updated: To Do=0, Review=0, Done=0 (0%)
+viewer/:10875 [RulesBundle] Loading bundles...
+viewer/:7539 [PDF_CACHE] IndexedDB opened successfully
+viewer/:7576 [PDF_CACHE] Loaded index: 6 entries
+viewer/:23450 [PDF_CACHE] Initialized, cached: 6 files, 10.9 MB
+/favicon.ico:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+viewer/:10887 [RulesBundle] field_meta loaded: 442 fields
+viewer/:10891 [RulesBundle] hinge_groups loaded: 47 hinges
+viewer/:10895 [RulesBundle] sheet_order loaded: 8 sheets
+viewer/:10899 [RulesBundle] qa_flags loaded: 3 flags
+viewer/:10903 [RulesBundle] All bundles loaded successfully
+viewer/:19707 [Router] Click on nav-item, page: triage queue: undefined
+viewer/:8821 [Navigate] Attempting navigation to: triage, dataLoaded: true
+viewer/:8896 [Navigate] Showing page element: page-triage, found: yes
+viewer/:18529 [Upload] Excel file selected: Ostereo - Labels.xlsx
+viewer/:5028 [ColumnMapping] Fallback: column A as file_name: File_Name_c
+viewer/:5032 [ColumnMapping] Fallback: column B as file_url: File_URL_c
+viewer/:5039 [ColumnMapping] Resolved: Object
+viewer/:5125 [parseWorkbook] Result: 8 sheets, errors: 0
+viewer/:4980 [Workbook] Added sheet: Accounts headers: 21 rows: 999 dataset: ds_ml9lwcem
+viewer/:4980 [Workbook] Added sheet: Ad-ons headers: 19 rows: 999 dataset: ds_ml9lwcem
+viewer/:4980 [Workbook] Added sheet: Catalog headers: 13 rows: 999 dataset: ds_ml9lwcem
+viewer/:4980 [Workbook] Added sheet: Catalog_Schedule headers: 6 rows: 999 dataset: ds_ml9lwcem
+viewer/:4980 [Workbook] Added sheet: Contacts headers: 6 rows: 999 dataset: ds_ml9lwcem
+viewer/:4980 [Workbook] Added sheet: Financials headers: 18 rows: 999 dataset: ds_ml9lwcem
+viewer/:4980 [Workbook] Added sheet: Opportunities headers: 84 rows: 999 dataset: ds_ml9lwcem
+viewer/:4980 [Workbook] Added sheet: Schedule headers: 3 rows: 999 dataset: ds_ml9lwcem
+viewer/:18660 [Loader] Import error: QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'orchestrate.dataset.v1' exceeded the quota.
+    at reader.onload (viewer/:18612:24)
+reader.onload @ viewer/:18660
+viewer/:18680 [Loader] Error: Failed to import file: Failed to execute 'setItem' on 'Storage': Setting the value of 'orchestrate.dataset.v1' exceeded the quota.
+showLoaderError @ viewer/:18680
+viewer/:19707 [Router] Click on nav-item, page: grid queue: undefined
+viewer/:8821 [Navigate] Attempting navigation to: grid, dataLoaded: true
+viewer/:8896 [Navigate] Showing page element: page-grid, found: yes
+viewer/:10377 [Grid] Dataset from workbook: 8 sheets, 7992 records
+viewer/:10622 [Grid] Using columns from sheet: Accounts 21 columns
+viewer/:19728 [Router] Hashchange to: grid
+viewer/:8821 [Navigate] Attempting navigation to: grid, dataLoaded: true
+viewer/:8896 [Navigate] Showing page element: page-grid, found: yes
+viewer/:10377 [Grid] Dataset from workbook: 8 sheets, 7992 records
+viewer/:10622 [Grid] Using columns from sheet: Accounts 21 columns
+viewer/:19707 [Router] Click on nav-item, page: triage queue: undefined
+viewer/:8821 [Navigate] Attempting navigation to: triage, dataLoaded: true
+viewer/:8896 [Navigate] Showing page element: page-triage, found: yes
+viewer/:19728 [Router] Hashchange to: triage
+viewer/:8821 [Navigate] Attempting navigation to: triage, dataLoaded: true
+viewer/:8896 [Navigate] Showing page element: page-triage, found: yes
+viewer/:19707 [Router] Click on nav-item, page: grid queue: undefined
+viewer/:8821 [Navigate] Attempting navigation to: grid, dataLoaded: true
+viewer/:8896 [Navigate] Showing page element: page-grid, found: yes
+viewer/:10377 [Grid] Dataset from workbook: 8 sheets, 7992 records
+viewer/:10622 [Grid] Using columns from sheet: Accounts 21 columns
+viewer/:19728 [Router] Hashchange to: grid
+viewer/:8821 [Navigate] Attempting navigation to: grid, dataLoaded: true
+viewer/:8896 [Navigate] Showing page element: page-grid, found: yes
+viewer/:10377 [Grid] Dataset from workbook: 8 sheets, 7992 records
+viewer/:10622 [Grid] Using columns from sheet: Accounts 21 columns
