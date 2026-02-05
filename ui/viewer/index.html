@@ -10417,10 +10417,19 @@
       var pageTitleEl = document.getElementById('srr-page-title');
       if (pageTitleEl) {
         if (fileName) {
-          // Truncate long file names for display
-          var displayName = fileName.length > 50 ? fileName.substring(0, 50) + '...' : fileName;
+          // v1.6.7: Format file name for display - remove underscores, convert .pdf to (PDF)
+          var formattedName = fileName
+            .replace(/_/g, ' ')  // Replace underscores with spaces
+            .replace(/\.pdf$/i, '')  // Remove .pdf extension (case insensitive)
+            .trim();
+          // Add (PDF) suffix if original had .pdf extension
+          if (/\.pdf$/i.test(fileName)) {
+            formattedName += ' (PDF)';
+          }
+          // Truncate long names for display
+          var displayName = formattedName.length > 50 ? formattedName.substring(0, 50) + '...' : formattedName;
           pageTitleEl.textContent = 'Record Inspection — ' + displayName;
-          pageTitleEl.title = fileName;  // Full name on hover
+          pageTitleEl.title = formattedName;  // Full formatted name on hover
         } else {
           pageTitleEl.textContent = 'Record Inspection';
           pageTitleEl.title = '';
