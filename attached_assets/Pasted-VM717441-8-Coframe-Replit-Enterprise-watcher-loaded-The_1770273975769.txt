@@ -1,0 +1,203 @@
+VM717441:8 [Coframe] Replit Enterprise watcher loaded
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+kiwi-semantic-control:1 The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+kiwi-semantic-control:1 The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+kiwi-semantic-control:1 The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+2842bbee84c14dbc.js:14 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+2842bbee84c14dbc.js:14 Download the Apollo DevTools for a better development experience: https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm
+2842bbee84c14dbc.js:14 [LaunchDarkly] LaunchDarkly client initialized
+2842bbee84c14dbc.js:14 [ai-chat] Creating connection with chat proxy enabled
+(anonymous) @ 2842bbee84c14dbc.js:14
+kiwi-semantic-control:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+9954129c7dd6dc22.js:2 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'ambient-light-sensor'.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'battery'.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'execution-while-not-rendered'.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'execution-while-out-of-viewport'.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'layout-animations'.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'legacy-image-formats'.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'navigation-override'.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'oversized-images'.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'publickey-credentials'.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'speaker-selection'.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'unoptimized-images'.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'unsized-media'.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Unrecognized feature: 'pointer-lock'.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Allow attribute will take precedence over 'allowfullscreen'.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Allow attribute will take precedence over 'allowpaymentrequest'.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+C @ 9954129c7dd6dc22.js:2
+9954129c7dd6dc22.js:2 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+C @ 9954129c7dd6dc22.js:2
+workspace_iframe.html?initialPath=%2F&id=%3Ar77%3A:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+workspace_iframe.html?initialPath=%2F&id=%3Ar77%3A:32 Unrecognized feature: 'ambient-light-sensor'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar77%3A:32 Unrecognized feature: 'battery'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar77%3A:32 Unrecognized feature: 'execution-while-not-rendered'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar77%3A:32 Unrecognized feature: 'execution-while-out-of-viewport'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar77%3A:32 Unrecognized feature: 'layout-animations'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar77%3A:32 Unrecognized feature: 'legacy-image-formats'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar77%3A:32 Unrecognized feature: 'navigation-override'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar77%3A:32 Unrecognized feature: 'oversized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar77%3A:32 Unrecognized feature: 'publickey-credentials'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar77%3A:32 Unrecognized feature: 'speaker-selection'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar77%3A:32 Unrecognized feature: 'unoptimized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar77%3A:32 Unrecognized feature: 'unsized-media'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar77%3A:32 Allow attribute will take precedence over 'allowfullscreen'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar77%3A:32 Allow attribute will take precedence over 'allowpaymentrequest'.
+injected.js:37 [PDF_PROXY] Type: fastapi | URL: https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0...
+injected.js:37 [FirstRun] Clearing stale reviewer queue data
+injected.js:37 [FirstRun] Cleared 0 stale patch requests
+injected.js:37 [LoaderUI] Updating, dataLoaded: false
+injected.js:37 [FirstRun] Clearing stale reviewer queue data
+injected.js:37 [FirstRun] Cleared 0 stale patch requests
+injected.js:37 [AnalystTriage] Loading from store, found: 0
+injected.js:37 [AnalystTriage] Queue counts from signals: Manual=0, SFLogic=0, Patch=0, System=0
+injected.js:37 [Admin] Tearing down admin state
+injected.js:37 [Navigate] Attempting navigation to: triage, dataLoaded: false
+injected.js:37 [Navigate] Showing page element: page-triage, found: yes
+injected.js:37 [Masterline] Cold start - loading demo dataset: ostereo_demo_original.json
+injected.js:37 [Loader] Fetching demo dataset from: /examples/datasets/ostereo_demo_original.json
+injected.js:37 [RulesBundle] Loading bundles...
+injected.js:37 [PDF_CACHE] IndexedDB opened successfully
+injected.js:37 [PDF_CACHE] Loaded index: 4 entries
+injected.js:37 [PDF_CACHE] Initialized, cached: 4 files, 6.1 MB
+injected.js:37 [RulesBundle] field_meta loaded: 442 fields
+injected.js:37 [RulesBundle] hinge_groups loaded: 47 hinges
+injected.js:37 [RulesBundle] sheet_order loaded: 8 sheets
+injected.js:37 [RulesBundle] qa_flags loaded: 3 flags
+injected.js:37 [RulesBundle] All bundles loaded successfully
+injected.js:37 [Loader] Demo dataset fetched: ostereo_demo_original
+injected.js:37 [Workbook] Added sheet: Accounts headers: 21 rows: 145 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Opportunity headers: 84 rows: 64 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Financials headers: 18 rows: 64 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Catalog headers: 13 rows: 64 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Schedule headers: 3 rows: 64 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Schedule Catalog headers: 6 rows: 369 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: V2 Add Ons headers: 19 rows: 67 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Contacts headers: 6 rows: 64 dataset: ds_ml938sxw
+injected.js:37 [Grid] Dataset from workbook: 8 sheets, 901 records
+injected.js:37 [Grid] Using columns from sheet: Accounts 21 columns
+injected.js:37 [LoaderUI] Updating, dataLoaded: true
+injected.js:37 [Loader] Failed to load default dataset: Failed to execute 'setItem' on 'Storage': Setting the value of 'kiwi/v1/tenant_default/records/ds_ml938sxw/rec_a6kp1b.json' exceeded the quota. QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'kiwi/v1/tenant_default/records/ds_ml938sxw/rec_a6kp1b.json' exceeded the quota.
+    at persistRecordToStore (https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:3939:20)
+    at https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:3974:13
+    at Array.forEach (<anonymous>)
+    at https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:3971:14
+    at Array.forEach (<anonymous>)
+    at persistAllRecordsToStore (https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:3966:36)
+    at loadSampleDataset (https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:19654:9)
+    at async masterlineAutoload (https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:4673:7)
+(anonymous) @ injected.js:37
+injected.js:37 [Workbook] Added sheet: Accounts headers: 21 rows: 145 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Opportunity headers: 84 rows: 64 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Financials headers: 18 rows: 64 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Catalog headers: 13 rows: 64 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Schedule headers: 3 rows: 64 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Schedule Catalog headers: 6 rows: 369 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: V2 Add Ons headers: 19 rows: 67 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Contacts headers: 6 rows: 64 dataset: ds_ml938sxw
+injected.js:37 [Grid] Dataset from workbook: 8 sheets, 901 records
+injected.js:37 [Grid] Using columns from sheet: Accounts 21 columns
+injected.js:37 [LoaderUI] Updating, dataLoaded: true
+injected.js:37 [Loader] Failed to load default dataset: Failed to execute 'setItem' on 'Storage': Setting the value of 'kiwi/v1/tenant_default/records/ds_ml938sxw/rec_a6kp1b.json' exceeded the quota. QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'kiwi/v1/tenant_default/records/ds_ml938sxw/rec_a6kp1b.json' exceeded the quota.
+    at persistRecordToStore (https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:3939:20)
+    at https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:3974:13
+    at Array.forEach (<anonymous>)
+    at https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:3971:14
+    at Array.forEach (<anonymous>)
+    at persistAllRecordsToStore (https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:3966:36)
+    at loadSampleDataset (https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:19654:9)
+    at HTMLDivElement.onclick (https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:3029:366)
+(anonymous) @ injected.js:37
+injected.js:37 [Workbook] Added sheet: Accounts headers: 21 rows: 145 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Opportunity headers: 84 rows: 64 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Financials headers: 18 rows: 64 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Catalog headers: 13 rows: 64 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Schedule headers: 3 rows: 64 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Schedule Catalog headers: 6 rows: 369 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: V2 Add Ons headers: 19 rows: 67 dataset: ds_ml938sxw
+injected.js:37 [Workbook] Added sheet: Contacts headers: 6 rows: 64 dataset: ds_ml938sxw
+injected.js:37 [Grid] Dataset from workbook: 8 sheets, 901 records
+injected.js:37 [Grid] Using columns from sheet: Accounts 21 columns
+injected.js:37 [LoaderUI] Updating, dataLoaded: true
+injected.js:37 [Loader] Failed to load default dataset: Failed to execute 'setItem' on 'Storage': Setting the value of 'kiwi/v1/tenant_default/records/ds_ml938sxw/rec_a6kp1b.json' exceeded the quota. QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'kiwi/v1/tenant_default/records/ds_ml938sxw/rec_a6kp1b.json' exceeded the quota.
+    at persistRecordToStore (https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:3939:20)
+    at https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:3974:13
+    at Array.forEach (<anonymous>)
+    at https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:3971:14
+    at Array.forEach (<anonymous>)
+    at persistAllRecordsToStore (https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:3966:36)
+    at loadSampleDataset (https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:19654:9)
+    at HTMLDivElement.onclick (https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0z.kirk.replit.dev/ui/viewer/:3029:366)
+(anonymous) @ injected.js:37
