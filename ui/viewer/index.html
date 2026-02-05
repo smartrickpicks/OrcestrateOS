@@ -15184,6 +15184,11 @@
       // Setup loader modal events
       setupLoaderModalEvents();
       
+      // v1.4.24: Clear stale reviewer data BEFORE setMode loads queues
+      if (!dataLoaded) {
+        clearStaleReviewerData();
+      }
+      
       // v1.4.20: Check for role from landing page first, then viewer mode
       let savedMode = localStorage.getItem('currentRole') || localStorage.getItem('viewer_mode_v10');
       // Convert legacy 'operator' mode to 'analyst'
@@ -18484,6 +18489,11 @@ Add any additional notes here.
         }
       } catch (e) { console.warn('[FirstRun] Error cleaning demo data:', e); }
       
+      // v1.4.24: Clear stale reviewer queue data if no actual data is loaded
+      if (!dataLoaded) {
+        clearStaleReviewerData();
+      }
+      
       // v1.4.24: Auto-map folder from demoUser email/folder (no manual selection)
       var mappedFolder = localStorage.getItem('ingestion_folder_name');
       if (!mappedFolder) {
@@ -18499,6 +18509,33 @@ Add any additional notes here.
         }
         updateDataSourceDrawerState();
         updateActiveDataSourceBar();
+      }
+    }
+    
+    // v1.4.24: Clear stale reviewer queue and patch request data
+    function clearStaleReviewerData() {
+      console.log('[FirstRun] Clearing stale reviewer queue data');
+      
+      // Clear verifier queue
+      localStorage.removeItem('srr_verifier_queue_v1');
+      
+      // Clear all patch requests from PATCH_REQUEST_STORE
+      var keysToRemove = [];
+      var prefix = 'pr:' + ARTIFACT_STORE.environment + ':';
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (key && key.startsWith(prefix)) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(function(key) {
+        localStorage.removeItem(key);
+      });
+      console.log('[FirstRun] Cleared', keysToRemove.length, 'stale patch requests');
+      
+      // Reset in-memory verifier queue state
+      if (typeof verifierQueueState !== 'undefined') {
+        verifierQueueState.payloads = [];
       }
     }
     
