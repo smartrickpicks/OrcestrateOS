@@ -10008,17 +10008,28 @@
       return badges.length > 0 ? '<div class="row-badges">' + badges.join('') + '</div>' : '';
     }
     
-    // v1.6.6: Build tooltip HTML for patch badge
+    // v1.6.6: Build tooltip HTML for patch badge (filters by kind for specific badges)
     function buildPatchBadgeTooltip(summary, filterKind) {
       if (!summary || !summary.items || summary.items.length === 0) {
         return '<div class="patch-tooltip"><div class="patch-tooltip-title">No details</div></div>';
       }
       
-      // Get unique fields for this summary (may include all or filtered by kind)
+      // Map signal categories to patch kinds for filtering
+      var kindMatches = function(itemKind, targetKind) {
+        if (targetKind === 'correction') return itemKind === 'correction';
+        if (targetKind === 'rfi') return itemKind === 'rfi';
+        if (targetKind === 'blacklist') return itemKind === 'blacklist';
+        if (targetKind === 'system_change') return itemKind === 'system_change';
+        return true; // show all if no filter
+      };
+      
+      // Get unique fields for this badge type only
       var seenFields = {};
       var items = [];
       for (var i = 0; i < summary.items.length; i++) {
         var item = summary.items[i];
+        // Filter by kind if specified
+        if (filterKind && !kindMatches(item.patch_kind, filterKind)) continue;
         var fieldNorm = normalizeFieldKey(item.field_key);
         if (!seenFields[fieldNorm]) {
           seenFields[fieldNorm] = true;
@@ -10026,12 +10037,16 @@
         }
       }
       
+      if (items.length === 0) {
+        return '<div class="patch-tooltip"><div class="patch-tooltip-title">No details</div></div>';
+      }
+      
       // Limit to first 5 fields to keep tooltip readable
       var displayItems = items.slice(0, 5);
       var hasMore = items.length > 5;
       
       var html = '<div class="patch-tooltip">';
-      html += '<div class="patch-tooltip-title">' + summary.total_count + ' patch' + (summary.total_count !== 1 ? 'es' : '') + '</div>';
+      html += '<div class="patch-tooltip-title">' + items.length + ' ' + formatPatchKind(filterKind || 'patch') + (items.length !== 1 ? 's' : '') + '</div>';
       
       for (var j = 0; j < displayItems.length; j++) {
         var item = displayItems[j];
