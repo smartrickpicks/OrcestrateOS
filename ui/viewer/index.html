@@ -7731,6 +7731,7 @@
       return (bytes / 1024 / 1024).toFixed(1) + ' MB';
     }
 
+    // v1.6.29: Update progress block from actual data (signals + patch requests)
     function updateProgressBlock() {
       var todoEl = document.getElementById('progress-todo');
       var reviewEl = document.getElementById('progress-review');
@@ -7739,20 +7740,51 @@
       
       if (!todoEl || !reviewEl || !doneEl) return;
       
-      var todo = parseInt(document.getElementById('queue-count-todo')?.textContent || '0', 10);
-      var needsReview = parseInt(document.getElementById('queue-count-needs_review')?.textContent || '0', 10);
-      var flagged = parseInt(document.getElementById('queue-count-flagged')?.textContent || '0', 10);
-      var blocked = parseInt(document.getElementById('queue-count-blocked')?.textContent || '0', 10);
-      var finalized = parseInt(document.getElementById('queue-count-finalized')?.textContent || '0', 10);
+      // v1.6.29: Count from actual data sources
+      var todo = 0;      // Records with signals/issues needing analyst attention
+      var review = 0;    // Patch requests submitted for reviewer/admin review
+      var done = 0;      // Approved/promoted/verified records
       
-      var reviewTotal = needsReview + flagged + blocked;
-      var total = todo + reviewTotal + finalized;
-      var progressPct = total > 0 ? Math.round((finalized / total) * 100) : 0;
+      // TO DO: Count records with active signals (from signalStore)
+      if (typeof signalStore !== 'undefined' && signalStore.stats) {
+        todo = signalStore.stats.total || 0;
+      }
+      
+      // REVIEW + DONE: Count from patch requests by status
+      var patchRequests = PATCH_REQUEST_STORE.list();
+      patchRequests.forEach(function(pr) {
+        var status = pr.status || '';
+        // In review: Submitted, Pending_Review, Sent_to_Admin, Verifier_Approved, Admin_Hold
+        if (['Submitted', 'Pending_Review', 'Sent_to_Admin', 'Verifier_Approved', 'Admin_Hold', 'Needs_Clarification'].includes(status)) {
+          review++;
+        }
+        // Done: Admin_Approved, Promoted, Applied
+        else if (['Admin_Approved', 'Promoted', 'Applied', 'Resolved'].includes(status)) {
+          done++;
+        }
+      });
+      
+      // Also count from triage queue if available
+      var manualCount = parseInt(document.getElementById('manual-queue-count')?.textContent?.match(/\d+/)?.[0] || '0', 10);
+      var sflogicCount = parseInt(document.getElementById('sflogic-queue-count')?.textContent?.match(/\d+/)?.[0] || '0', 10);
+      var patchCount = parseInt(document.getElementById('patch-queue-count')?.textContent?.match(/\d+/)?.[0] || '0', 10);
+      var systemCount = parseInt(document.getElementById('system-queue-count')?.textContent?.match(/\d+/)?.[0] || '0', 10);
+      
+      // Use triage counts if available and higher than signal count
+      var triageTotal = manualCount + sflogicCount + patchCount + systemCount;
+      if (triageTotal > 0 && triageTotal !== todo) {
+        todo = Math.max(todo, triageTotal);
+      }
+      
+      var total = todo + review + done;
+      var progressPct = total > 0 ? Math.round((done / total) * 100) : 0;
       
       todoEl.textContent = todo;
-      reviewEl.textContent = reviewTotal;
-      doneEl.textContent = finalized;
+      reviewEl.textContent = review;
+      doneEl.textContent = done;
       if (barFill) barFill.style.width = progressPct + '%';
+      
+      console.log('[Progress] Updated: To Do=' + todo + ', Review=' + review + ', Done=' + done + ' (' + progressPct + '%)');
     }
 
     function updateActiveDataSourceBar(filename) {
@@ -11718,6 +11750,11 @@
       buildChangeMapFromMetaSheets();
       
       // Note: v1.6.9 RFI seeding is done in loadAnalystTriageFromStore after verifierQueueState is ready
+      
+      // v1.6.29: Update progress block after signals generated
+      if (typeof updateProgressBlock === 'function') {
+        updateProgressBlock();
+      }
       
       return signalStore;
     }
