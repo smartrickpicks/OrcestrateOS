@@ -7889,8 +7889,275 @@
       });
     }
 
+    // ========== EXPORT / SAVE FUNCTIONALITY (v1.6.29) ==========
     function handleExportSave() {
-      showToast('Export / Save coming soon', 'info');
+      if (typeof XLSX === 'undefined') {
+        showToast('Excel library not loaded. Please refresh and try again.', 'error');
+        return;
+      }
+      
+      if (!workbook || !workbook.order || workbook.order.length === 0) {
+        showToast('No data to export. Please load a dataset first.', 'warning');
+        return;
+      }
+      
+      showToast('Preparing export...', 'info');
+      
+      try {
+        var wb = XLSX.utils.book_new();
+        
+        // v1.6.29: Export all data sheets with styling metadata
+        var dataSheets = getDataSheets();
+        dataSheets.forEach(function(sheetName) {
+          var sheetData = workbook.sheets[sheetName];
+          if (!sheetData || !sheetData.rows) return;
+          
+          // Build sheet array with headers
+          var sheetArray = [sheetData.headers.slice()];
+          
+          // Add rows
+          sheetData.rows.forEach(function(row) {
+            var rowArray = sheetData.headers.map(function(h) {
+              var val = row[h];
+              if (val === null || val === undefined) return '';
+              if (typeof val === 'object') return JSON.stringify(val);
+              return val;
+            });
+            sheetArray.push(rowArray);
+          });
+          
+          var ws = XLSX.utils.aoa_to_sheet(sheetArray);
+          
+          // v1.6.29: Apply column widths
+          var colWidths = sheetData.headers.map(function(h) {
+            return { wch: Math.min(30, Math.max(10, h.length + 2)) };
+          });
+          ws['!cols'] = colWidths;
+          
+          XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31));
+        });
+        
+        // v1.6.29: Add _change_log sheet with all changes
+        var changeLogWs = buildChangeLogSheet();
+        if (changeLogWs) {
+          XLSX.utils.book_append_sheet(wb, changeLogWs, '_change_log');
+        }
+        
+        // v1.6.29: Add RFIs & Analyst Notes sheet
+        var rfiWs = buildRFISheet();
+        if (rfiWs) {
+          XLSX.utils.book_append_sheet(wb, rfiWs, 'RFIs & Analyst Notes');
+        }
+        
+        // v1.6.29: Add Signals Summary sheet
+        var signalsWs = buildSignalsSummarySheet();
+        if (signalsWs) {
+          XLSX.utils.book_append_sheet(wb, signalsWs, '_signals_summary');
+        }
+        
+        // v1.6.29: Add Orchestrate OS Metadata sheet
+        var metaWs = buildMetadataSheet();
+        XLSX.utils.book_append_sheet(wb, metaWs, '_orchestrate_meta');
+        
+        // Generate filename with timestamp
+        var datasetName = IDENTITY_CONTEXT.dataset_id || 'dataset';
+        var timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+        var filename = 'orchestrate_' + datasetName + '_' + timestamp + '.xlsx';
+        
+        // Download file
+        XLSX.writeFile(wb, filename);
+        
+        showToast('Exported: ' + filename, 'success');
+        console.log('[Export] Generated:', filename, 'sheets:', wb.SheetNames.length);
+        
+      } catch (err) {
+        console.error('[Export] Error:', err);
+        showToast('Export failed: ' + err.message, 'error');
+      }
+    }
+    
+    // v1.6.29: Build _change_log sheet from patch requests and changeMap
+    function buildChangeLogSheet() {
+      var headers = [
+        'record_id', 'sheet', 'field', 'change_type', 'old_value', 'new_value',
+        'reason', 'analyst', 'timestamp', 'status', 'request_id'
+      ];
+      var rows = [headers];
+      
+      // Get all patch requests
+      var patchRequests = PATCH_REQUEST_STORE.list();
+      patchRequests.forEach(function(pr) {
+        var row = [
+          pr.record_id || '',
+          pr.sheet || '',
+          pr.field || '',
+          pr.type || 'correction',
+          pr.old_value || '',
+          pr.new_value || '',
+          pr.justification || pr.comment || '',
+          pr.analyst || 'Analyst',
+          pr.created_at_utc || '',
+          pr.status || 'Draft',
+          pr.request_id || ''
+        ];
+        rows.push(row);
+      });
+      
+      // Also include changeMap entries if available
+      if (typeof changeMap !== 'undefined' && changeMap.changes) {
+        Object.keys(changeMap.changes).forEach(function(recordId) {
+          var recordChanges = changeMap.changes[recordId];
+          Object.keys(recordChanges).forEach(function(field) {
+            var change = recordChanges[field];
+            var row = [
+              recordId,
+              change.sheet || '',
+              field,
+              change.type || 'correction',
+              change.old_value || '',
+              change.new_value || '',
+              change.notes || '',
+              change.analyst || '',
+              change.timestamp || '',
+              'Applied',
+              ''
+            ];
+            rows.push(row);
+          });
+        });
+      }
+      
+      if (rows.length <= 1) return null;
+      
+      var ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = headers.map(function(h) {
+        return { wch: Math.min(25, Math.max(12, h.length + 2)) };
+      });
+      return ws;
+    }
+    
+    // v1.6.29: Build RFIs & Analyst Notes sheet
+    function buildRFISheet() {
+      var headers = [
+        'record_id', 'sheet', 'field', 'question', 'current_value',
+        'analyst', 'timestamp', 'status', 'response', 'resolved_by'
+      ];
+      var rows = [headers];
+      
+      // Get RFI-type patch requests
+      var patchRequests = PATCH_REQUEST_STORE.list();
+      patchRequests.filter(function(pr) {
+        return pr.type === 'rfi' || pr.type === 'RFI';
+      }).forEach(function(pr) {
+        var row = [
+          pr.record_id || '',
+          pr.sheet || '',
+          pr.field || '',
+          pr.comment || pr.question || '',
+          pr.current_value || pr.old_value || '',
+          pr.analyst || 'Analyst',
+          pr.created_at_utc || '',
+          pr.status || 'Open',
+          pr.response || '',
+          pr.resolved_by || ''
+        ];
+        rows.push(row);
+      });
+      
+      if (rows.length <= 1) return null;
+      
+      var ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = headers.map(function(h) {
+        return { wch: Math.min(30, Math.max(12, h.length + 2)) };
+      });
+      return ws;
+    }
+    
+    // v1.6.29: Build Signals Summary sheet
+    function buildSignalsSummarySheet() {
+      var headers = [
+        'record_id', 'sheet', 'field', 'signal_type', 'severity', 'message', 'value'
+      ];
+      var rows = [headers];
+      
+      if (typeof signalStore !== 'undefined' && signalStore.signals_by_cell) {
+        Object.keys(signalStore.signals_by_cell).forEach(function(recordId) {
+          var recordSignals = signalStore.signals_by_cell[recordId];
+          Object.keys(recordSignals).forEach(function(field) {
+            var signals = recordSignals[field];
+            signals.forEach(function(sig) {
+              var row = [
+                recordId,
+                sig.sheet || '',
+                field,
+                sig.signal_type || '',
+                sig.severity || 'info',
+                sig.message || '',
+                sig.value || ''
+              ];
+              rows.push(row);
+            });
+          });
+        });
+      }
+      
+      if (rows.length <= 1) return null;
+      
+      var ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = headers.map(function(h) {
+        return { wch: Math.min(25, Math.max(12, h.length + 2)) };
+      });
+      return ws;
+    }
+    
+    // v1.6.29: Build Orchestrate OS Metadata sheet
+    function buildMetadataSheet() {
+      var metadata = [
+        ['Orchestrate OS Export Metadata'],
+        [''],
+        ['Property', 'Value'],
+        ['Export Date', new Date().toISOString()],
+        ['Export Version', 'v1.6.29'],
+        ['Dataset ID', IDENTITY_CONTEXT.dataset_id || ''],
+        ['Tenant ID', IDENTITY_CONTEXT.tenant_id || ''],
+        ['Division ID', IDENTITY_CONTEXT.division_id || ''],
+        ['Total Sheets', workbook.order.length],
+        ['Data Sheets', getDataSheets().length],
+        ['Meta Sheets', getMetaSheets().length],
+        ['Total Records', getTotalRecordCount()],
+        ['Signal Count', signalStore && signalStore.stats ? signalStore.stats.total : 0],
+        ['Patch Requests', PATCH_REQUEST_STORE.list().length],
+        [''],
+        ['Sheet Order'],
+        ...workbook.order.map(function(s, i) { return [(i + 1), s]; }),
+        [''],
+        ['Signal Types'],
+        ...Object.entries(signalStore && signalStore.stats && signalStore.stats.by_type ? signalStore.stats.by_type : {}).map(function(e) { return [e[0], e[1]]; }),
+        [''],
+        ['Nomenclature'],
+        ['System Name', 'Orchestrate OS'],
+        ['Purpose', 'Semantic Control Board'],
+        ['Mode', 'Governance-only control plane'],
+        ['Join Strategy', 'contract_key -> file_url -> file_name']
+      ];
+      
+      var ws = XLSX.utils.aoa_to_sheet(metadata);
+      ws['!cols'] = [{ wch: 25 }, { wch: 50 }];
+      return ws;
+    }
+    
+    // v1.6.29: Get total record count across all sheets
+    function getTotalRecordCount() {
+      var count = 0;
+      if (workbook && workbook.sheets) {
+        Object.keys(workbook.sheets).forEach(function(sheetName) {
+          var sheet = workbook.sheets[sheetName];
+          if (sheet && sheet.rows) {
+            count += sheet.rows.length;
+          }
+        });
+      }
+      return count;
     }
 
     // v1.4.13: Update cache display with formatted size
