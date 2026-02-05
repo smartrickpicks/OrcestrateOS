@@ -1,0 +1,463 @@
+ [Coframe] Replit Enterprise watcher loaded
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+kiwi-semantic-control:1 The source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+kiwi-semantic-control:1 The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+kiwi-semantic-control:1 The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+ 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+ Download the Apollo DevTools for a better development experience: https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm
+ [LaunchDarkly] LaunchDarkly client initialized
+ [ai-chat] Creating connection with chat proxy enabled
+(anonymous) @ d62c5b82cf1c455b.js:14
+kiwi-semantic-control:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+ Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+C @ 9954129c7dd6dc22.js:2
+ Unrecognized feature: 'ambient-light-sensor'.
+C @ 9954129c7dd6dc22.js:2
+ Unrecognized feature: 'battery'.
+C @ 9954129c7dd6dc22.js:2
+ Unrecognized feature: 'execution-while-not-rendered'.
+C @ 9954129c7dd6dc22.js:2
+ Unrecognized feature: 'execution-while-out-of-viewport'.
+C @ 9954129c7dd6dc22.js:2
+ Unrecognized feature: 'layout-animations'.
+C @ 9954129c7dd6dc22.js:2
+ Unrecognized feature: 'legacy-image-formats'.
+C @ 9954129c7dd6dc22.js:2
+ Unrecognized feature: 'navigation-override'.
+C @ 9954129c7dd6dc22.js:2
+ Unrecognized feature: 'oversized-images'.
+C @ 9954129c7dd6dc22.js:2
+ Unrecognized feature: 'publickey-credentials'.
+C @ 9954129c7dd6dc22.js:2
+ Unrecognized feature: 'speaker-selection'.
+C @ 9954129c7dd6dc22.js:2
+ Unrecognized feature: 'unoptimized-images'.
+C @ 9954129c7dd6dc22.js:2
+ Unrecognized feature: 'unsized-media'.
+C @ 9954129c7dd6dc22.js:2
+ Unrecognized feature: 'pointer-lock'.
+C @ 9954129c7dd6dc22.js:2
+ Allow attribute will take precedence over 'allowfullscreen'.
+C @ 9954129c7dd6dc22.js:2
+ Allow attribute will take precedence over 'allowpaymentrequest'.
+C @ 9954129c7dd6dc22.js:2
+ Cache data may be lost when replacing the hostingBuildDeployActionUpdates field of a Subscription object.
+
+This could cause additional (usually avoidable) network requests to fetch data that were otherwise cached.
+
+To address this problem (which is not a bug in Apollo Client), either ensure all objects of type HostingBuildDeployLogAction and HostingBuildDeployStatusAction have an ID or a custom merge function, or define a custom merge function for the Subscription.hostingBuildDeployActionUpdates field, so InMemoryCache can safely merge these objects:
+
+  existing: {"__typename":"HostingBuildDeployLogAction","log":"\r\u001b[38;2;169;169;169m2026-02-05T15:05:59Z\u001b[37m \u001b[32minfo\u001b[37m: Build: d77f2591-8554-4105-b7b4-3dcf34d86405\r\n"}
+  incoming: {"__typename":"HostingBuildDeployStatusAction","status":"security_scanning","message":null,"debugSummary":null}
+
+For more information about these options, please refer to the documentation:
+
+  * Ensuring entity objects have IDs: https://go.apollo.dev/c/generating-unique-identifiers
+  * Defining custom merge functions: https://go.apollo.dev/c/merging-non-normalized-objects
+
+(anonymous) @ d62c5b82cf1c455b.js:14
+ Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+C @ 9954129c7dd6dc22.js:2
+workspace_iframe.html?initialPath=%2F&id=%3Ar5v%3A:32 Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5v%3A:32 Unrecognized feature: 'ambient-light-sensor'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5v%3A:32 Unrecognized feature: 'battery'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5v%3A:32 Unrecognized feature: 'execution-while-not-rendered'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5v%3A:32 Unrecognized feature: 'execution-while-out-of-viewport'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5v%3A:32 Unrecognized feature: 'layout-animations'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5v%3A:32 Unrecognized feature: 'legacy-image-formats'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5v%3A:32 Unrecognized feature: 'navigation-override'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5v%3A:32 Unrecognized feature: 'oversized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5v%3A:32 Unrecognized feature: 'publickey-credentials'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5v%3A:32 Unrecognized feature: 'speaker-selection'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5v%3A:32 Unrecognized feature: 'unoptimized-images'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5v%3A:32 Unrecognized feature: 'unsized-media'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5v%3A:32 Allow attribute will take precedence over 'allowfullscreen'.
+workspace_iframe.html?initialPath=%2F&id=%3Ar5v%3A:32 Allow attribute will take precedence over 'allowpaymentrequest'.
+ Google OAuth not configured: Google OAuth not configured
+(anonymous) @ injected.js:37
+ [PDF_PROXY] Type: fastapi | URL: https://7354f33b-a077-4de3-ab82-58f42a85887b-00-2mzpxa5c0di0...
+ [FirstRun] Clearing stale reviewer queue data
+ [ArtifactStore] Reset playground, cleared 56 keys
+ [FirstRun] Cleared 56 stale artifacts
+ [FirstRun] Cleared 55 stale patch requests
+ [LoaderUI] Updating, dataLoaded: false
+ [FirstRun] Clearing stale reviewer queue data
+ [ArtifactStore] Reset playground, cleared 0 keys
+ [FirstRun] Cleared 0 stale artifacts
+ [FirstRun] Cleared 0 stale patch requests
+ [RFI Seed] No RFIs & Analyst Notes sheet found
+ [AnalystTriage] Loading from store, found: 0
+ [ManualReviewSeed] Dataset missing RFIs & Analyst Notes sheet - skipping Manual Review seeding
+ [SystemChangesSeed] Dataset missing *_change_log sheets - skipping System Changes seeding
+ [AnalystTriage] Queue counts from signals: Manual=0, SFLogic=0, Patch=0, System=0
+ [Progress] Updated: To Do=0, Review=0, Done=0 (0%)
+ [Admin] Tearing down admin state
+ [Navigate] Attempting navigation to: triage, dataLoaded: false
+ [Navigate] Showing page element: page-triage, found: yes
+ [Masterline] Demo mode cold start - loading demo dataset: ostereo_demo_v1.json
+ [Loader] Fetching demo dataset from: /examples/datasets/ostereo_demo_v1.json
+ [Progress] Updated: To Do=0, Review=0, Done=0 (0%)
+ [RulesBundle] Loading bundles...
+ [PDF_CACHE] IndexedDB opened successfully
+ [PDF_CACHE] Loaded index: 1 entries
+ [PDF_CACHE] Initialized, cached: 1 files, 4.7 MB
+ [RulesBundle] field_meta loaded: 442 fields
+ [RulesBundle] hinge_groups loaded: 47 hinges
+ [RulesBundle] sheet_order loaded: 8 sheets
+ [RulesBundle] qa_flags loaded: 3 flags
+ [RulesBundle] All bundles loaded successfully
+ [Loader] Demo dataset fetched: ostereo_demo_v1
+ [Workbook] Added sheet: Accounts headers: 23 rows: 145 dataset: ds_ml9lem62
+ [Workbook] Added sheet: Opportunity headers: 86 rows: 64 dataset: ds_ml9lem62
+ [Workbook] Added sheet: Financials headers: 20 rows: 64 dataset: ds_ml9lem62
+ [Workbook] Added sheet: Catalog headers: 15 rows: 64 dataset: ds_ml9lem62
+ [Workbook] Added sheet: Schedule headers: 5 rows: 64 dataset: ds_ml9lem62
+ [Workbook] Added sheet: Schedule Catalog headers: 8 rows: 369 dataset: ds_ml9lem62
+ [Workbook] Added sheet: V2 Add Ons headers: 21 rows: 67 dataset: ds_ml9lem62
+ [Workbook] Added sheet: Contacts headers: 8 rows: 64 dataset: ds_ml9lem62
+ [Workbook] Added sheet: Accounts_change_log headers: 22 rows: 551 dataset: ds_ml9lem62
+ [Workbook] Added sheet: Opportunity_change_log headers: 22 rows: 1 dataset: ds_ml9lem62
+ [Workbook] Added sheet: Financials_change_log headers: 22 rows: 0 dataset: ds_ml9lem62
+ [Workbook] Added sheet: Catalog_change_log headers: 22 rows: 0 dataset: ds_ml9lem62
+ [Workbook] Added sheet: Schedule_change_log headers: 22 rows: 0 dataset: ds_ml9lem62
+ [Workbook] Added sheet: Schedule Catalog_change_log headers: 22 rows: 1 dataset: ds_ml9lem62
+ [Workbook] Added sheet: V2 Add Ons_change_log headers: 22 rows: 0 dataset: ds_ml9lem62
+ [Workbook] Added sheet: Contacts_change_log headers: 22 rows: 31 dataset: ds_ml9lem62
+ [Workbook] Added sheet: RFIs & Analyst Notes headers: 13 rows: 68 dataset: ds_ml9lem62
+ [Progress] Updated: To Do=0, Review=0, Done=0 (0%)
+ [Grid] Dataset from workbook: 17 sheets, 1553 records
+ [Grid] Using columns from sheet: Accounts 23 columns
+ [LoaderUI] Updating, dataLoaded: true
+ [RecordStore] Cleared 1528 old records from store
+ [RecordStore] Persisted 1553 records to canonical store
+ [SignalEngine] Picklist validation enabled: true
+ [SignalEngine] Scan complete:
+   - Records scanned: 1553
+   - Signals generated: 1914
+   - Top signal types:
+       PICKLIST_INVALID: 1656
+       MISSING_REQUIRED: 258
+ [CellStyles] Populated metadata for 1528 records
+ [ChangeMap] Found change_log sheets: Array(8)
+ [ChangeMap] Processing Accounts_change_log with 551 rows
+ [ChangeMap] Processing Opportunity_change_log with 1 rows
+ [ChangeMap] Processing Financials_change_log with 0 rows
+ [ChangeMap] Processing Catalog_change_log with 0 rows
+ [ChangeMap] Processing Schedule_change_log with 0 rows
+ [ChangeMap] Processing Schedule Catalog_change_log with 1 rows
+ [ChangeMap] Processing V2 Add Ons_change_log with 0 rows
+ [ChangeMap] Processing Contacts_change_log with 31 rows
+ [ChangeMap] Field inference: inferred=556, row-level=28
+ [ChangeMap] Sample records: Array(3)
+ [ChangeMap]   Accounts:0: fields=Billing_City_c, State_of_Formation_c
+ [ChangeMap]   Accounts:1: fields=Billing_Address_c, Billing_City_c, State_of_Formation_c
+ [ChangeMap]   Accounts:2: fields=Billing_City_c, Artist_Name_pka_or_dba_c, State_of_Formation_c
+ [ChangeMap] RFI inference: inferred=9, row-level=59
+ [ChangeMap] Built change map: 607 changes across 163 records
+ [ChangeMap] By type: {"system_change":339,"correction":219,"blacklist":1,"rfi":48}
+ [Progress] Updated: To Do=1914, Review=0, Done=0 (0%)
+ [PatchRequestStore] Saved: pr_rfi_accounts_r4_0
+ [PatchRequestStore] Saved: pr_rfi_accounts_r5_1
+ [PatchRequestStore] Saved: pr_rfi_accounts_r5_2
+ [PatchRequestStore] Saved: pr_rfi_accounts_r6_3
+ [PatchRequestStore] Saved: pr_rfi_accounts_r6_4
+ [PatchRequestStore] Saved: pr_rfi_accounts_r6_5
+ [PatchRequestStore] Saved: pr_rfi_accounts_r21_6
+ [PatchRequestStore] Saved: pr_rfi_accounts_r22_7
+ [PatchRequestStore] Saved: pr_rfi_accounts_r24_8
+ [PatchRequestStore] Saved: pr_rfi_accounts_r28_9
+ [PatchRequestStore] Saved: pr_rfi_accounts_r37_10
+ [PatchRequestStore] Saved: pr_rfi_accounts_r38_11
+ [PatchRequestStore] Saved: pr_rfi_accounts_r40_12
+ [PatchRequestStore] Saved: pr_rfi_accounts_r41_13
+ [PatchRequestStore] Saved: pr_rfi_accounts_r43_14
+ [PatchRequestStore] Saved: pr_rfi_accounts_r45_15
+ [PatchRequestStore] Saved: pr_rfi_accounts_r45_16
+ [PatchRequestStore] Saved: pr_rfi_accounts_r45_17
+ [PatchRequestStore] Saved: pr_rfi_accounts_r54_18
+ [PatchRequestStore] Saved: pr_rfi_accounts_r55_19
+ [PatchRequestStore] Saved: pr_rfi_accounts_r55_20
+ [PatchRequestStore] Saved: pr_rfi_accounts_r60_21
+ [PatchRequestStore] Saved: pr_rfi_accounts_r64_22
+ [PatchRequestStore] Saved: pr_rfi_accounts_r65_23
+ [PatchRequestStore] Saved: pr_rfi_accounts_r66_24
+ [PatchRequestStore] Saved: pr_rfi_accounts_r67_25
+ [PatchRequestStore] Saved: pr_rfi_accounts_r68_26
+ [PatchRequestStore] Saved: pr_rfi_accounts_r69_28
+ [PatchRequestStore] Saved: pr_rfi_accounts_r70_30
+ [PatchRequestStore] Saved: pr_rfi_accounts_r71_32
+ [PatchRequestStore] Saved: pr_rfi_accounts_r72_34
+ [PatchRequestStore] Saved: pr_rfi_accounts_r73_36
+ [PatchRequestStore] Saved: pr_rfi_accounts_r74_38
+ [PatchRequestStore] Saved: pr_rfi_accounts_r76_40
+ [PatchRequestStore] Saved: pr_rfi_accounts_r78_41
+ [PatchRequestStore] Saved: pr_rfi_accounts_r97_42
+ [PatchRequestStore] Saved: pr_rfi_accounts_r98_43
+ [PatchRequestStore] Saved: pr_rfi_accounts_r99_44
+ [PatchRequestStore] Saved: pr_rfi_accounts_r101_45
+ [PatchRequestStore] Saved: pr_rfi_accounts_r105_46
+ [PatchRequestStore] Saved: pr_rfi_accounts_r114_47
+ [PatchRequestStore] Saved: pr_rfi_accounts_r116_48
+ [PatchRequestStore] Saved: pr_rfi_accounts_r116_49
+ [PatchRequestStore] Saved: pr_rfi_accounts_r127_50
+ [PatchRequestStore] Saved: pr_rfi_accounts_r128_51
+ [PatchRequestStore] Saved: pr_rfi_accounts_r136_53
+ [PatchRequestStore] Saved: pr_rfi_accounts_r140_54
+ [PatchRequestStore] Saved: pr_rfi_accounts_r141_55
+ [PatchRequestStore] Saved: pr_rfi_accounts_r142_57
+ [PatchRequestStore] Saved: pr_rfi_accounts_r143_59
+ [PatchRequestStore] Saved: pr_rfi_accounts_r144_61
+ [PatchRequestStore] Saved: pr_rfi_accounts_r145_63
+ [PatchRequestStore] Saved: pr_rfi_opportunity_r1_65
+ [PatchRequestStore] Saved: pr_rfi_opportunity_r1_66
+ [PatchRequestStore] Saved: pr_rfi_opportunity_r11_67
+ [PatchSeed] Imported 55 RFIs to Patch Request store ( 0 duplicates skipped)
+ [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_4_1770304195986_0
+ [ArtifactStore] Created artifact: art_rfi_accounts_4_1770304195986_0 rfi
+ [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_4_1770304195986_0
+ [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_5_1770304195986_1
+ [ArtifactStore] Created artifact: art_rfi_accounts_5_1770304195986_1 rfi
+ [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_5_1770304195986_1
+ [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_5_1770304195986_2
+ [ArtifactStore] Created artifact: art_rfi_accounts_5_1770304195986_2 rfi
+ [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_5_1770304195986_2
+ [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_6_1770304195986_3
+ [ArtifactStore] Created artifact: art_rfi_accounts_6_1770304195986_3 rfi
+ [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_6_1770304195986_3
+ [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_6_1770304195987_4
+ [ArtifactStore] Created artifact: art_rfi_accounts_6_1770304195987_4 rfi
+ [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_6_1770304195987_4
+ [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_6_1770304195987_5
+ [ArtifactStore] Created artifact: art_rfi_accounts_6_1770304195987_5 rfi
+ [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_6_1770304195987_5
+ [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_21_1770304195987_6
+ [ArtifactStore] Created artifact: art_rfi_accounts_21_1770304195987_6 rfi
+ [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_21_1770304195987_6
+ [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_22_1770304195987_7
+ [ArtifactStore] Created artifact: art_rfi_accounts_22_1770304195987_7 rfi
+ [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_22_1770304195987_7
+ [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_24_1770304195987_8
+ [ArtifactStore] Created artifact: art_rfi_accounts_24_1770304195987_8 rfi
+ [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_24_1770304195987_8
+ [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_28_1770304195987_9
+ [ArtifactStore] Created artifact: art_rfi_accounts_28_1770304195987_9 rfi
+ [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_28_1770304195987_9
+ [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_37_1770304195987_10
+ [ArtifactStore] Created artifact: art_rfi_accounts_37_1770304195987_10 rfi
+ [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_37_1770304195987_10
+ [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_38_1770304195988_11
+ [ArtifactStore] Created artifact: art_rfi_accounts_38_1770304195988_11 rfi
+ [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_38_1770304195988_11
+ [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_40_1770304195988_12
+ [ArtifactStore] Created artifact: art_rfi_accounts_40_1770304195988_12 rfi
+ [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_40_1770304195988_12
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_41_1770304195988_13
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_41_1770304195988_13 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_41_1770304195988_13
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_43_1770304195988_14
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_43_1770304195988_14 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_43_1770304195988_14
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_45_1770304195988_15
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_45_1770304195988_15 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_45_1770304195988_15
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_45_1770304195988_16
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_45_1770304195988_16 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_45_1770304195988_16
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_45_1770304195988_17
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_45_1770304195988_17 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_45_1770304195988_17
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_54_1770304195988_18
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_54_1770304195988_18 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_54_1770304195988_18
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_55_1770304195988_19
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_55_1770304195988_19 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_55_1770304195988_19
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_55_1770304195989_20
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_55_1770304195989_20 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_55_1770304195989_20
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_60_1770304195989_21
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_60_1770304195989_21 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_60_1770304195989_21
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_64_1770304195989_22
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_64_1770304195989_22 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_64_1770304195989_22
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_65_1770304195989_23
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_65_1770304195989_23 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_65_1770304195989_23
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_66_1770304195989_24
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_66_1770304195989_24 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_66_1770304195989_24
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_67_1770304195989_25
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_67_1770304195989_25 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_67_1770304195989_25
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_68_1770304195989_26
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_68_1770304195989_26 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_68_1770304195989_26
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_69_1770304195989_28
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_69_1770304195989_28 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_69_1770304195989_28
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_70_1770304195990_30
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_70_1770304195990_30 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_70_1770304195990_30
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_71_1770304195990_32
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_71_1770304195990_32 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_71_1770304195990_32
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_72_1770304195990_34
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_72_1770304195990_34 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_72_1770304195990_34
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_73_1770304195990_36
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_73_1770304195990_36 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_73_1770304195990_36
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_74_1770304195990_38
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_74_1770304195990_38 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_74_1770304195990_38
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_76_1770304195990_40
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_76_1770304195990_40 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_76_1770304195990_40
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_78_1770304195990_41
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_78_1770304195990_41 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_78_1770304195990_41
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_97_1770304195991_42
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_97_1770304195991_42 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_97_1770304195991_42
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_98_1770304195991_43
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_98_1770304195991_43 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_98_1770304195991_43
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_99_1770304195991_44
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_99_1770304195991_44 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_99_1770304195991_44
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_101_1770304195991_45
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_101_1770304195991_45 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_101_1770304195991_45
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_105_1770304195991_46
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_105_1770304195991_46 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_105_1770304195991_46
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_114_1770304195991_47
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_114_1770304195991_47 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_114_1770304195991_47
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_116_1770304195991_48
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_116_1770304195991_48 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_116_1770304195991_48
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_116_1770304195992_49
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_116_1770304195992_49 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_116_1770304195992_49
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_127_1770304195992_50
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_127_1770304195992_50 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_127_1770304195992_50
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_128_1770304195992_51
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_128_1770304195992_51 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_128_1770304195992_51
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_136_1770304195993_53
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_136_1770304195993_53 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_136_1770304195993_53
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_140_1770304195993_54
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_140_1770304195993_54 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_140_1770304195993_54
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_141_1770304195993_55
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_141_1770304195993_55 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_141_1770304195993_55
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_142_1770304195993_57
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_142_1770304195993_57 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_142_1770304195993_57
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_143_1770304195994_59
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_143_1770304195994_59 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_143_1770304195994_59
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_144_1770304195994_61
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_144_1770304195994_61 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_144_1770304195994_61
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_accounts_145_1770304195994_63
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_accounts_145_1770304195994_63 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_accounts_145_1770304195994_63
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_opportunity_1_1770304195994_65
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_opportunity_1_1770304195994_65 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_opportunity_1_1770304195994_65
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_opportunity_1_1770304195994_66
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_opportunity_1_1770304195994_66 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_opportunity_1_1770304195994_66
+injected.js:37 [ArtifactStore] Event logged: RFI_CREATED art_rfi_opportunity_11_1770304195994_67
+injected.js:37 [ArtifactStore] Created artifact: art_rfi_opportunity_11_1770304195994_67 rfi
+injected.js:37 [ArtifactStore] Event logged: RFI_IMPORTED art_rfi_opportunity_11_1770304195994_67
+injected.js:37 [RFI Seed] Imported 55 RFIs to Verifier queue ( 0 duplicates skipped)
+injected.js:37 [Grid] Dataset from workbook: 17 sheets, 1553 records
+injected.js:37 [Grid] Using columns from sheet: Accounts 23 columns
+injected.js:37 [Progress] Updated: To Do=1914, Review=55, Done=0 (0%)
+injected.js:37 [Loader] Ostereo demo dataset loaded: 17 sheets
+injected.js:37 [Upload] Excel file selected: Ostereo Distribution Agreement Extractions (2).xlsx
+injected.js:37 [ColumnMapping] Fallback: column A as file_name: File_Name_c
+injected.js:37 [ColumnMapping] Fallback: column B as file_url: File_URL_c
+injected.js:37 [ColumnMapping] Resolved: Object
+injected.js:37 [parseWorkbook] Result: 17 sheets, errors: 0
+injected.js:37 [Workbook] Added sheet: Accounts headers: 23 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Workbook] Added sheet: Accounts_change_log headers: 22 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Workbook] Added sheet: Catalog headers: 15 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Workbook] Added sheet: Catalog_change_log headers: 22 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Workbook] Added sheet: Contacts headers: 8 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Workbook] Added sheet: Contacts_change_log headers: 22 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Workbook] Added sheet: Financials headers: 20 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Workbook] Added sheet: Financials_change_log headers: 22 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Workbook] Added sheet: Opportunity headers: 86 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Workbook] Added sheet: Opportunity_change_log headers: 22 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Workbook] Added sheet: RFIs & Analyst Notes headers: 13 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Workbook] Added sheet: Schedule headers: 5 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Workbook] Added sheet: Schedule Catalog headers: 8 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Workbook] Added sheet: Schedule Catalog_change_log headers: 22 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Workbook] Added sheet: Schedule_change_log headers: 22 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Workbook] Added sheet: V2 Add Ons headers: 21 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Workbook] Added sheet: V2 Add Ons_change_log headers: 22 rows: 999 dataset: ds_ml9lem62
+injected.js:37 [Loader] Import error: QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'orchestrate.dataset.v1' exceeded the quota.
+    at reader.onload (viewer/:18561:24)
+(anonymous) @ injected.js:37
+injected.js:37 [Loader] Error: Failed to import file: Failed to execute 'setItem' on 'Storage': Setting the value of 'orchestrate.dataset.v1' exceeded the quota.
+(anonymous) @ injected.js:37

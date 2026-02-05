@@ -5253,19 +5253,14 @@
         return;
       }
       
-      // v1.6.35: On cold start, only load demo data in demo/playground mode
-      // Production mode should show "No dataset loaded" until user connects a data source
-      if (isDemoMode()) {
-        console.log('[Masterline] Demo mode cold start - loading demo dataset: ostereo_demo_v1.json');
-        await loadSampleDataset({ variant: 'modified', autoRedirect: false });
-      } else {
-        console.log('[Masterline] Production mode cold start - no sample data loaded');
-        // Show "No dataset loaded" state
-        var statusEl = document.querySelector('[data-session-status]');
-        if (statusEl) statusEl.textContent = 'No dataset loaded';
-        var nameEl = document.getElementById('dataset-name-display');
-        if (nameEl) nameEl.textContent = 'Connect a data source to begin';
-      }
+      // v1.6.37: All modes start with empty triage - user must upload data
+      // Demo and Production modes both show "No dataset loaded" until user uploads
+      console.log('[Masterline] Cold start - no sample data loaded (user must upload)');
+      // Show "No dataset loaded" state
+      var statusEl = document.querySelector('[data-session-status]');
+      if (statusEl) statusEl.textContent = 'No dataset loaded';
+      var nameEl = document.getElementById('dataset-name-display');
+      if (nameEl) nameEl.textContent = 'Upload Excel to begin';
       
       // Check artifacts for registry display (after loading demo data)
       await checkAllArtifacts();
@@ -20457,9 +20452,8 @@
         return;
       }
       
-      // v1.6.3: Default to ostereo_demo_v1.json on cold start
-      console.log('[Loader] Cold start - loading default dataset (ostereo_demo_v1.json)...');
-      await loadSampleDataset({ autoRedirect: false });
+      // v1.6.37: Removed auto-load - user must upload data via Upload Excel button
+      console.log('[Loader] Cold start - awaiting user data upload');
       return;
       
       // Legacy: Try sf_packet files (kept for reference, now bypassed)
