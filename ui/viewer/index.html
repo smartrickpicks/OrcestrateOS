@@ -377,7 +377,10 @@
     .filter-chip.active { background: #1976d2; color: white; border-color: #1565c0; }
 
     /* Single Row Review - Three Panel Layout */
-    .srr-layout { display: flex; height: calc(100vh - 160px); gap: 0; }
+    .srr-layout { display: flex; height: calc(100vh - 200px); gap: 0; }
+    /* v1.6.7: Footer with file name */
+    .srr-footer { background: #f5f5f5; border-top: 1px solid #e0e0e0; padding: 8px 16px; text-align: center; }
+    .srr-footer-filename { font-size: 0.85em; color: #666; font-weight: 500; }
     .srr-panel { background: white; border: 1px solid #e0e0e0; overflow-y: auto; }
     .srr-panel-left { width: 280px; flex-shrink: 0; border-right: none; }
     .srr-panel-center { flex: 1; min-width: 300px; }
@@ -1988,6 +1991,11 @@
               </div>
             </div><!-- end srr-tab-tester -->
           </div>
+        </div>
+        
+        <!-- v1.6.7: Footer with file name -->
+        <div class="srr-footer" id="srr-footer">
+          <span id="srr-file-name" class="srr-footer-filename"></span>
         </div>
       </div><!-- end page-row -->
 
@@ -10412,10 +10420,10 @@
       stateBadge.textContent = record.status || 'Unknown';
       stateBadge.className = 'srr-state-badge ' + status;
       
-      // v1.6.7: Update page header with file name (Field Inspector panel remains "Field Inspector")
+      // v1.6.7: Update footer with file name (moved from page header)
       var fileName = srrResolveFieldValue(record, 'file_name');
-      var pageTitleEl = document.getElementById('srr-page-title');
-      if (pageTitleEl) {
+      var fileNameEl = document.getElementById('srr-file-name');
+      if (fileNameEl) {
         if (fileName) {
           // v1.6.7: Format file name for display - remove underscores, convert .pdf to (PDF)
           var formattedName = fileName
@@ -10426,13 +10434,11 @@
           if (/\.pdf$/i.test(fileName)) {
             formattedName += ' (PDF)';
           }
-          // Truncate long names for display
-          var displayName = formattedName.length > 50 ? formattedName.substring(0, 50) + '...' : formattedName;
-          pageTitleEl.textContent = 'Record Inspection — ' + displayName;
-          pageTitleEl.title = formattedName;  // Full formatted name on hover
+          fileNameEl.textContent = formattedName;
+          fileNameEl.title = fileName;  // Original file name on hover
         } else {
-          pageTitleEl.textContent = 'Record Inspection';
-          pageTitleEl.title = '';
+          fileNameEl.textContent = '';
+          fileNameEl.title = '';
         }
       }
       
