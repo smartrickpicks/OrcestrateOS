@@ -3943,6 +3943,122 @@
       isModified: function() { return this.mode === 'modified'; }
     };
     
+    // ========== STAGED LOADER CONTROLLER ==========
+    // Shows staged progress overlay for dataset loading pipeline
+    // Only displays if load takes >300ms to avoid flicker on fast loads
+    var stagedLoader = {
+      stages: ['loading', 'standardizing', 'validating', 'changemap', 'rendering'],
+      currentStage: null,
+      startTime: null,
+      showTimeout: null,
+      visible: false,
+      DELAY_MS: 300, // Don't show loader for fast loads
+      
+      // Start the loading process (call before loading begins)
+      start: function() {
+        this.startTime = Date.now();
+        this.currentStage = null;
+        this.visible = false;
+        this.resetStages();
+        
+        // Schedule showing the loader after delay
+        var self = this;
+        this.showTimeout = setTimeout(function() {
+          self.show();
+        }, this.DELAY_MS);
+      },
+      
+      // Set current stage (call as each stage begins)
+      setStage: function(stageName) {
+        this.currentStage = stageName;
+        
+        // Mark previous stages as completed
+        var stageIdx = this.stages.indexOf(stageName);
+        for (var i = 0; i < this.stages.length; i++) {
+          var stageEl = document.querySelector('.staged-loader-stage[data-stage="' + this.stages[i] + '"]');
+          if (!stageEl) continue;
+          
+          stageEl.classList.remove('active', 'completed');
+          var iconEl = stageEl.querySelector('.stage-icon');
+          
+          if (i < stageIdx) {
+            stageEl.classList.add('completed');
+            if (iconEl) iconEl.textContent = '✓';
+          } else if (i === stageIdx) {
+            stageEl.classList.add('active');
+            if (iconEl) iconEl.textContent = '●';
+          } else {
+            if (iconEl) iconEl.textContent = '○';
+          }
+        }
+      },
+      
+      // Complete and hide the loader
+      finish: function() {
+        // Cancel scheduled show if still pending
+        if (this.showTimeout) {
+          clearTimeout(this.showTimeout);
+          this.showTimeout = null;
+        }
+        
+        // Mark all stages complete briefly before hiding
+        if (this.visible) {
+          for (var i = 0; i < this.stages.length; i++) {
+            var stageEl = document.querySelector('.staged-loader-stage[data-stage="' + this.stages[i] + '"]');
+            if (stageEl) {
+              stageEl.classList.remove('active');
+              stageEl.classList.add('completed');
+              var iconEl = stageEl.querySelector('.stage-icon');
+              if (iconEl) iconEl.textContent = '✓';
+            }
+          }
+          
+          // Hide after a brief moment to show completion
+          var self = this;
+          setTimeout(function() {
+            self.hide();
+          }, 150);
+        }
+        
+        this.currentStage = null;
+        this.startTime = null;
+      },
+      
+      // Show the overlay
+      show: function() {
+        var overlay = document.getElementById('staged-loader-overlay');
+        if (overlay) {
+          overlay.style.display = 'flex';
+          this.visible = true;
+          // Set current stage if one was already set
+          if (this.currentStage) {
+            this.setStage(this.currentStage);
+          }
+        }
+      },
+      
+      // Hide the overlay
+      hide: function() {
+        var overlay = document.getElementById('staged-loader-overlay');
+        if (overlay) {
+          overlay.style.display = 'none';
+          this.visible = false;
+        }
+      },
+      
+      // Reset all stages to initial state
+      resetStages: function() {
+        for (var i = 0; i < this.stages.length; i++) {
+          var stageEl = document.querySelector('.staged-loader-stage[data-stage="' + this.stages[i] + '"]');
+          if (stageEl) {
+            stageEl.classList.remove('active', 'completed');
+            var iconEl = stageEl.querySelector('.stage-icon');
+            if (iconEl) iconEl.textContent = '○';
+          }
+        }
+      }
+    };
+    
     // Meta sheet patterns - these are audit log sheets, not data sheets
     const META_SHEET_PATTERNS = ['_change_log', 'RFIs & Analyst Notes', '_meta', '_audit'];
     
