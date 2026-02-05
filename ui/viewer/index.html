@@ -18220,6 +18220,19 @@
           // v1.6.0: Generate signals for dataset
           generateSignalsForDataset();
           
+          // v1.6.33: Seed patch requests from RFI meta sheet (if present in uploaded file)
+          seedPatchRequestsFromMetaSheet();
+          
+          // v1.6.33: Also seed verifier RFI queue for reviewer view
+          if (typeof seedVerifierRFIQueueFromMetaSheet === 'function') {
+            seedVerifierRFIQueueFromMetaSheet();
+          }
+          
+          // v1.6.33: Update progress block after seeding
+          if (typeof updateProgressBlock === 'function') {
+            updateProgressBlock();
+          }
+          
           console.log('[Loader] Workbook imported:', file.name, 'sheets:', result.order.length, 'total rows:', allRows.length);
           showToast(ext.toUpperCase() + ' imported: ' + result.order.length + ' sheet(s), ' + allRows.length + ' rows', 'success');
           
@@ -22491,6 +22504,11 @@ Add any additional notes here.
         
         // v1.6.33: Seed patch requests from RFI meta sheet (modified dataset has RFIs)
         seedPatchRequestsFromMetaSheet();
+        
+        // v1.6.33: Also seed verifier RFI queue for reviewer view
+        if (typeof seedVerifierRFIQueueFromMetaSheet === 'function') {
+          seedVerifierRFIQueueFromMetaSheet();
+        }
         
         // v1.6.8 fix: Re-render grid after change map is built for cell highlighting
         renderGrid();
