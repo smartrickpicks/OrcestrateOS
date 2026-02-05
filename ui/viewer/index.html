@@ -9863,6 +9863,12 @@
     function seedVerifierRFIQueueFromMetaSheet() {
       if (!workbook || !workbook.sheets) return;
       
+      // Guard: verifierQueueState may not be initialized yet (defined later in file)
+      if (typeof verifierQueueState === 'undefined' || !verifierQueueState) {
+        console.log('[RFI Seed] Skipped - verifierQueueState not yet initialized');
+        return;
+      }
+      
       var rfiSheet = workbook.sheets['RFIs & Analyst Notes'];
       if (!rfiSheet || !rfiSheet.rows || rfiSheet.rows.length === 0) {
         console.log('[RFI Seed] No RFIs & Analyst Notes sheet found');
@@ -10373,8 +10379,7 @@
       // v1.6.8: Build change map from meta sheets (for modified dataset)
       buildChangeMapFromMetaSheets();
       
-      // v1.6.9: Seed Verifier RFI queue from meta sheet
-      seedVerifierRFIQueueFromMetaSheet();
+      // Note: v1.6.9 RFI seeding is done in loadAnalystTriageFromStore after verifierQueueState is ready
       
       return signalStore;
     }
@@ -14034,6 +14039,9 @@
     var datasetLoadTimestamp = null;
     
     function loadAnalystTriageFromStore() {
+      // v1.6.9: Seed Verifier RFI queue from meta sheet (if not already done)
+      seedVerifierRFIQueueFromMetaSheet();
+      
       var allPRs = PATCH_REQUEST_STORE.list();
       console.log('[AnalystTriage] Loading from store, found:', allPRs.length);
       
