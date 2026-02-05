@@ -1,0 +1,43 @@
+Replit Task: Unknown Columns Detection + Alerts (Analyst + Admin)
+
+Goal
+Treat the Ostereo schema as the canonical baseline. Any newly uploaded dataset columns that don’t exist in that baseline should be flagged as “Unknown Columns,” surfaced in Analyst Triage (Manual Review) and Admin Governance (Unknown Columns widget).
+
+Requirements
+
+1) Canonical Schema Baseline
+- Use `examples/datasets/ostereo_demo_v1.json` as the canonical schema.
+- Build a canonical field set from that file:
+  - Recommended: union of all headers across all sheets in the ostereo JSON.
+- Cache this canonical set in localStorage so it persists (e.g., `canonical_schema_fields`).
+- Canonical set is read-only; do not auto-update it based on new datasets.
+
+2) Detect Unknown Columns on Dataset Load
+- On any dataset load (CSV/XLSX/session restore):
+  - Compare incoming sheet headers to the canonical set.
+  - Collect unknown columns with `{sheet, field}`.
+- Store results in a small store, e.g.:
+  `unknownColumnsStore = { dataset_id, detected_at, columns:[{sheet, field}] }`
+
+3) Analyst Triage Alert (Manual Review)
+- In Analyst Triage, add an “Unknown Columns” list under Manual Review.
+- Show rows with: Type = Unknown Column, Sheet, Field, Status = Needs Review.
+- If none, show “No unknown columns detected.”
+
+4) Admin Governance Widget
+- Add a widget to Governance tab: “Unknown Columns”
+- Show the same list with counts.
+- Add a placeholder button “Review & Add to Schema” (disabled, Coming Soon).
+- If none, show “All columns match canonical schema.”
+
+5) Non‑blocking
+- Unknown columns do not block loading; they only generate alerts.
+
+Acceptance
+- Loading a dataset with extra columns shows them in Analyst Manual Review + Admin Governance.
+- Loading the Ostereo dataset shows no unknown columns.
+- Canonical schema persists across reloads.
+- Reset Playground clears unknown column store, but not the canonical schema unless explicitly reset.
+
+Suggested commit
+feat(qa): unknown columns detection + triage/admin alerts

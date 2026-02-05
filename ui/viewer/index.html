@@ -3004,6 +3004,21 @@
           <input type="text" id="data-source-search-input" placeholder="Search coming with Drive integration..." disabled style="width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 0.9em; box-sizing: border-box; background: #f5f5f5; color: #999; cursor: not-allowed;">
         </div>
         
+        <!-- Demo Dataset Section (v1.6.3) -->
+        <div id="data-source-demo-section" style="margin-bottom: 16px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+            <span style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase;">Demo Dataset</span>
+          </div>
+          <div id="demo-dataset-card" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f0f7ff; border: 1px solid #90caf9; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onclick="loadSampleDataset({ autoRedirect: true })" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#f0f7ff'">
+            <span style="font-size: 1.3em;">📋</span>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; font-size: 0.9em; color: #1565c0;">ostereo_demo_v1.json</div>
+              <div style="font-size: 0.75em; color: #666;">Sample dataset with 8 sheets, 442 fields</div>
+            </div>
+            <span style="color: #1976d2; font-size: 0.8em; font-weight: 600;">Load →</span>
+          </div>
+        </div>
+        
         <!-- Drive Files Section (v1.4.24 - read-only stub) -->
         <div id="data-source-library-header" style="margin-bottom: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
@@ -4616,37 +4631,20 @@
     async function masterlineAutoload() {
       if (!artifactRegistry.devMasterlineEnabled) return;
       
-      await checkAllArtifacts();
-      
-      // If Preview Packet exists, load it into the main data
-      var previewBinding = artifactRegistry.bindings.preview_packet;
-      if (previewBinding && previewBinding.status === 'loaded') {
-        try {
-          var response = await fetch(previewBinding.path);
-          if (response.ok) {
-            var data = await response.json();
-            if (data.sf_summary || data.sf_contract_results) {
-              allData.contractResults = data.sf_contract_results || [];
-              allData.issues = data.sf_issues || [];
-              allData.fieldActions = data.sf_field_actions || [];
-              allData.summary = data.sf_summary || {};
-              allData.changeLog = data.changelog || [];
-              dataLoaded = true;
-              sessionState.status = 'loaded';
-              sessionState.sourceType = 'masterline';
-              sessionState.loadedAt = new Date().toISOString();
-              currentArtifactPath = previewBinding.path;
-              updateUIForDataState();
-              renderSummary();
-              renderAllTables();
-              updateQueueCounts();
-              updateSessionChip();
-            }
-          }
-        } catch (e) {
-          console.warn('Masterline: Could not load Preview Packet:', e);
-        }
+      // First try to restore from localStorage session
+      if (restoreSessionFromStorage()) {
+        console.log('[Masterline] Restored from localStorage session');
+        // Also check artifacts for registry display
+        await checkAllArtifacts();
+        return;
       }
+      
+      // v1.6.3: On cold start (no localStorage session), always load ostereo_demo_v1 as default
+      console.log('[Masterline] Cold start - loading default dataset (ostereo_demo_v1.json)...');
+      await loadSampleDataset({ autoRedirect: false });
+      
+      // Check artifacts for registry display (after loading demo data)
+      await checkAllArtifacts();
       
       // Load Truth Config if exists
       var truthBinding = artifactRegistry.bindings.truth_config;
@@ -16786,8 +16784,9 @@
     }
 
     function populateSubtypeDropdown() {
-      const subtypes = [...new Set(allData.contractResults.map(r => r.detected_subtype).filter(Boolean))].sort();
+      const subtypes = [...new Set((allData.contractResults || []).map(r => r.detected_subtype).filter(Boolean))].sort();
       const select = document.getElementById('filter-subtype');
+      if (!select) return; // v1.6.3: Skip if element not found
       select.innerHTML = '<option value="">All Subtypes</option>' + 
         subtypes.map(s => `<option value="${s}">${s}</option>`).join('');
     }
@@ -19436,8 +19435,8 @@ Add any additional notes here.
           }, 300);
         }
       } catch (e) {
-        console.error('Failed to load default dataset:', e);
-        showToast('Failed to load default dataset', 'error');
+        console.error('[Loader] Failed to load default dataset:', e.message || e, e.stack);
+        showToast('Failed to load default dataset: ' + (e.message || 'Unknown error'), 'error');
       }
     }
     
