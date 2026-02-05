@@ -1380,11 +1380,20 @@
       </div>
       <div class="nav-mode-section">
         <div class="nav-mode-label">Role</div>
-        <div class="mode-toggle">
+        <div class="mode-toggle" id="mode-toggle-container">
           <button class="mode-btn mode-analyst active" data-mode="analyst">Analyst</button>
           <button class="mode-btn mode-reviewer" data-mode="reviewer">Reviewer</button>
           <button class="mode-btn mode-admin" data-mode="admin">Admin</button>
         </div>
+        <div id="locked-role-display" style="display: none; padding: 6px 12px; font-size: 0.75em; background: rgba(21, 101, 192, 0.15); color: #64b5f6; border-radius: 4px; text-align: center;"></div>
+      </div>
+      
+      <!-- Sign Out link -->
+      <div style="padding: 12px 20px; border-top: 1px solid #2d2d4a;">
+        <a href="/ui/landing/" id="sign-out-link" style="display: flex; align-items: center; gap: 8px; color: #888; text-decoration: none; font-size: 0.8em; transition: color 0.2s;">
+          <span style="font-size: 1.1em;">←</span>
+          <span>Sign Out</span>
+        </a>
       </div>
       
     </nav>
@@ -8321,6 +8330,77 @@
       return true;
     }
 
+    // v1.6.22: Get the logged-in user's actual role (from landing page login)
+    // Priority: demoUser.role (from login) > currentRole (from session) > fallback
+    function getLoggedInUserRole() {
+      try {
+        var demoUser = JSON.parse(localStorage.getItem('demoUser') || '{}');
+        if (demoUser.role) {
+          return demoUser.role.toLowerCase();
+        }
+      } catch (e) {}
+      
+      // Fallback to currentRole if demoUser is missing
+      var currentRole = localStorage.getItem('currentRole');
+      if (currentRole) {
+        return currentRole.toLowerCase();
+      }
+      
+      return '';
+    }
+    
+    // v1.6.22: Apply role-based restrictions to mode switcher
+    // Analyst/Reviewer: locked to their role, cannot switch
+    // Admin: full "God mode" - can switch between all roles
+    var roleRestrictionsApplied = false;
+    function applyRoleBasedModeRestrictions() {
+      var loggedInRole = getLoggedInUserRole();
+      var modeToggle = document.getElementById('mode-toggle-container');
+      var lockedDisplay = document.getElementById('locked-role-display');
+      var signOutLink = document.getElementById('sign-out-link');
+      
+      // Style the sign out link hover (only once)
+      if (signOutLink && !roleRestrictionsApplied) {
+        signOutLink.addEventListener('mouseenter', function() {
+          this.style.color = '#fff';
+        });
+        signOutLink.addEventListener('mouseleave', function() {
+          this.style.color = '#888';
+        });
+      }
+      roleRestrictionsApplied = true;
+      
+      // Admin has full access - show all mode buttons
+      if (loggedInRole === 'admin') {
+        if (modeToggle) modeToggle.style.display = 'flex';
+        if (lockedDisplay) lockedDisplay.style.display = 'none';
+        return;
+      }
+      
+      // Analyst and Reviewer are locked to their respective modes
+      if (loggedInRole === 'analyst' || loggedInRole === 'reviewer') {
+        // Hide the mode toggle buttons
+        if (modeToggle) modeToggle.style.display = 'none';
+        
+        // Show locked role indicator
+        if (lockedDisplay) {
+          var roleLabel = loggedInRole.charAt(0).toUpperCase() + loggedInRole.slice(1);
+          lockedDisplay.innerHTML = '<span style="opacity: 0.7;">Mode:</span> ' + roleLabel;
+          lockedDisplay.style.display = 'block';
+        }
+        
+        // Only force setMode if current mode doesn't match (avoid redundant reload)
+        if (currentMode !== loggedInRole) {
+          setMode(loggedInRole);
+        }
+        return;
+      }
+      
+      // No logged-in user or unrecognized role - default behavior (show toggle)
+      if (modeToggle) modeToggle.style.display = 'flex';
+      if (lockedDisplay) lockedDisplay.style.display = 'none';
+    }
+    
     function setMode(mode) {
       const modes = ['analyst', 'reviewer', 'admin'];
       if (!modes.includes(mode)) mode = 'analyst';
@@ -18184,6 +18264,9 @@
       if (localStorage.getItem('currentRole')) {
         localStorage.setItem('viewer_mode_v10', localStorage.getItem('currentRole'));
       }
+      
+      // v1.6.22: Apply role-based mode restrictions
+      applyRoleBasedModeRestrictions();
       
       // v1.4.22: Default route based on role
       const hash = window.location.hash.replace('#/', '') || '';
