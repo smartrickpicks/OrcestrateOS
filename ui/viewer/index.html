@@ -6969,7 +6969,7 @@
         return;
       }
       
-      var author = currentMode.charAt(0).toUpperCase() + currentMode.slice(1);
+      var author = getCurrentUserName();
       
       var patchRequest = createPatchRequest({
         target: comment.target_type,
@@ -7731,7 +7731,7 @@
       return (bytes / 1024 / 1024).toFixed(1) + ' MB';
     }
 
-    // v1.6.29: Update progress block from actual data (signals + patch requests)
+    // v1.6.30: Update progress block from actual data (signals + patch requests)
     function updateProgressBlock() {
       var todoEl = document.getElementById('progress-todo');
       var reviewEl = document.getElementById('progress-review');
@@ -7740,7 +7740,7 @@
       
       if (!todoEl || !reviewEl || !doneEl) return;
       
-      // v1.6.29: Count from actual data sources
+      // v1.6.30: Count from actual data sources
       var todo = 0;      // Records with signals/issues needing analyst attention
       var review = 0;    // Patch requests submitted for reviewer/admin review
       var done = 0;      // Approved/promoted/verified records
@@ -7921,7 +7921,7 @@
       });
     }
 
-    // ========== EXPORT / SAVE FUNCTIONALITY (v1.6.29) ==========
+    // ========== EXPORT / SAVE FUNCTIONALITY (v1.6.30) ==========
     function handleExportSave() {
       if (typeof XLSX === 'undefined') {
         showToast('Excel library not loaded. Please refresh and try again.', 'error');
@@ -7938,7 +7938,7 @@
       try {
         var wb = XLSX.utils.book_new();
         
-        // v1.6.29: Export all data sheets with styling metadata
+        // v1.6.30: Export all data sheets with styling metadata
         var dataSheets = getDataSheets();
         dataSheets.forEach(function(sheetName) {
           var sheetData = workbook.sheets[sheetName];
@@ -7960,7 +7960,7 @@
           
           var ws = XLSX.utils.aoa_to_sheet(sheetArray);
           
-          // v1.6.29: Apply column widths
+          // v1.6.30: Apply column widths
           var colWidths = sheetData.headers.map(function(h) {
             return { wch: Math.min(30, Math.max(10, h.length + 2)) };
           });
@@ -7969,25 +7969,25 @@
           XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31));
         });
         
-        // v1.6.29: Add _change_log sheet with all changes
+        // v1.6.30: Add _change_log sheet with all changes
         var changeLogWs = buildChangeLogSheet();
         if (changeLogWs) {
           XLSX.utils.book_append_sheet(wb, changeLogWs, '_change_log');
         }
         
-        // v1.6.29: Add RFIs & Analyst Notes sheet
+        // v1.6.30: Add RFIs & Analyst Notes sheet
         var rfiWs = buildRFISheet();
         if (rfiWs) {
           XLSX.utils.book_append_sheet(wb, rfiWs, 'RFIs & Analyst Notes');
         }
         
-        // v1.6.29: Add Signals Summary sheet
+        // v1.6.30: Add Signals Summary sheet
         var signalsWs = buildSignalsSummarySheet();
         if (signalsWs) {
           XLSX.utils.book_append_sheet(wb, signalsWs, '_signals_summary');
         }
         
-        // v1.6.29: Add Orchestrate OS Metadata sheet
+        // v1.6.30: Add Orchestrate OS Metadata sheet
         var metaWs = buildMetadataSheet();
         XLSX.utils.book_append_sheet(wb, metaWs, '_orchestrate_meta');
         
@@ -8008,7 +8008,7 @@
       }
     }
     
-    // v1.6.29: Build _change_log sheet from patch requests and changeMap
+    // v1.6.30: Build _change_log sheet from patch requests and changeMap
     function buildChangeLogSheet() {
       var headers = [
         'record_id', 'sheet', 'field', 'change_type', 'old_value', 'new_value',
@@ -8027,7 +8027,7 @@
           pr.old_value || '',
           pr.new_value || '',
           pr.justification || pr.comment || '',
-          pr.analyst || 'Analyst',
+          pr.analyst || getCurrentUserName(),
           pr.created_at_utc || '',
           pr.status || 'Draft',
           pr.request_id || ''
@@ -8068,7 +8068,7 @@
       return ws;
     }
     
-    // v1.6.29: Build RFIs & Analyst Notes sheet (includes all escalations)
+    // v1.6.30: Build RFIs & Analyst Notes sheet (includes all escalations)
     function buildRFISheet() {
       var headers = [
         'record_id', 'sheet', 'field', 'type', 'comment_or_question', 'current_value',
@@ -8077,7 +8077,7 @@
       ];
       var rows = [headers];
       
-      // v1.6.29: Include ALL patch requests that have been promoted/escalated
+      // v1.6.30: Include ALL patch requests that have been promoted/escalated
       // This tracks the full escalation trail through the role hierarchy
       var patchRequests = PATCH_REQUEST_STORE.list();
       
@@ -8117,7 +8117,7 @@
           pr.type || 'correction',
           pr.comment || pr.justification || pr.question || '',
           pr.current_value || pr.old_value || '',
-          pr.analyst || pr.submitted_by || 'Analyst',
+          pr.analyst || pr.submitted_by || getCurrentUserName(),
           pr.created_at_utc || '',
           escalatedTo,
           escalationStatus,
@@ -8137,7 +8137,7 @@
       return ws;
     }
     
-    // v1.6.29: Build Signals Summary sheet
+    // v1.6.30: Build Signals Summary sheet
     function buildSignalsSummarySheet() {
       var headers = [
         'record_id', 'sheet', 'field', 'signal_type', 'severity', 'message', 'value'
@@ -8174,14 +8174,14 @@
       return ws;
     }
     
-    // v1.6.29: Build Orchestrate OS Metadata sheet
+    // v1.6.30: Build Orchestrate OS Metadata sheet
     function buildMetadataSheet() {
       var metadata = [
         ['Orchestrate OS Export Metadata'],
         [''],
         ['Property', 'Value'],
         ['Export Date', new Date().toISOString()],
-        ['Export Version', 'v1.6.29'],
+        ['Export Version', 'v1.6.30'],
         ['Dataset ID', IDENTITY_CONTEXT.dataset_id || ''],
         ['Tenant ID', IDENTITY_CONTEXT.tenant_id || ''],
         ['Division ID', IDENTITY_CONTEXT.division_id || ''],
@@ -8210,7 +8210,7 @@
       return ws;
     }
     
-    // v1.6.29: Get total record count across all sheets
+    // v1.6.30: Get total record count across all sheets
     function getTotalRecordCount() {
       var count = 0;
       if (workbook && workbook.sheets) {
@@ -8966,6 +8966,27 @@
         localStorage.setItem('demoUser', JSON.stringify(demoUser));
       } catch (e) {
         console.error('[Playground] Failed to save state:', e);
+      }
+    }
+    
+    // v1.6.30: Get current user's display name for audit/export attribution
+    function getCurrentUserName() {
+      try {
+        var demoUser = JSON.parse(localStorage.getItem('demoUser') || '{}');
+        // Priority: name > email prefix > role-based default
+        if (demoUser.name && demoUser.name.trim()) {
+          return demoUser.name.trim();
+        }
+        if (demoUser.email) {
+          // Extract name from email (e.g., "john.doe@company.com" -> "John Doe")
+          var emailPrefix = demoUser.email.split('@')[0];
+          return emailPrefix.replace(/[._]/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+        }
+        // Fallback to role-based name
+        var role = getCurrentRole();
+        return role.charAt(0).toUpperCase() + role.slice(1);
+      } catch (e) {
+        return 'Analyst';
       }
     }
     
@@ -10300,7 +10321,7 @@
       // Sort deterministically
       sheets.sort();
       
-      // v1.6.29: Default to first sheet instead of "All Sheets"
+      // v1.6.30: Default to first sheet instead of "All Sheets"
       if (!gridState.sheet && sheets.length > 0) {
         gridState.sheet = sheets[0];
       }
@@ -11751,7 +11772,7 @@
       
       // Note: v1.6.9 RFI seeding is done in loadAnalystTriageFromStore after verifierQueueState is ready
       
-      // v1.6.29: Update progress block after signals generated
+      // v1.6.30: Update progress block after signals generated
       if (typeof updateProgressBlock === 'function') {
         updateProgressBlock();
       }
@@ -14745,7 +14766,7 @@
       }).join('; ') : '(no field changes)';
       
       var record = srrState.currentRecord || {};
-      var author = 'analyst@example.com';  // Demo actor
+      var author = getCurrentUserName();  // v1.6.30: Use logged-in user
       
       // Determine action type based on patch type
       var actionType = patchType === 'correction' ? 'SET_VALUE' : (patchType === 'blacklist' ? 'BLACKLIST' : 'RFI');
@@ -20208,7 +20229,7 @@
       
       const draft = getPatchStudioDraft();
       const identity = currentSelection.joinIdentity || {};
-      const author = 'Analyst';
+      const author = getCurrentUserName();
       
       var request = createPatchRequest({
         author: author,
