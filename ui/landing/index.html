@@ -272,11 +272,20 @@
         });
       });
       
+      // v1.4.24: Demo user profiles with realistic emails for folder auto-mapping
+      var demoProfiles = {
+        analyst: { email: 'sarah.chen@orchestrate.demo', name: 'Sarah Chen', folder: 'Sarah Chen - West Region' },
+        reviewer: { email: 'marcus.johnson@orchestrate.demo', name: 'Marcus Johnson', folder: 'Marcus Johnson - Central' },
+        admin: { email: 'emily.rodriguez@orchestrate.demo', name: 'Emily Rodriguez', folder: 'Emily Rodriguez - HQ' }
+      };
+      
       document.getElementById('google-signin').addEventListener('click', function() {
+        var profile = demoProfiles[selectedRole];
         localStorage.setItem('currentRole', selectedRole);
         localStorage.setItem('demoUser', JSON.stringify({
-          email: selectedRole + '@demo.orchestrate.os',
-          name: selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1) + ' User',
+          email: profile.email,
+          name: profile.name,
+          folder: profile.folder,
           role: selectedRole,
           signedInAt: new Date().toISOString()
         }));

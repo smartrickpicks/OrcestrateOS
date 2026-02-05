@@ -2900,35 +2900,23 @@
         <button class="drawer-close" onclick="closeDataSourceDrawer()">&times;</button>
       </div>
       <div class="drawer-body">
-        <!-- Connected Folder Section (v1.4.23 - shown when folder mapped) -->
+        <!-- Connected Folder Section (v1.4.24 - auto-mapped from email, read-only) -->
         <div id="data-source-folder-section" style="display: none; margin-bottom: 20px;">
-          <div class="folder-connected-card">
+          <div class="folder-connected-card" style="text-align: center;">
             <div class="folder-connected-icon">📁</div>
             <div class="folder-connected-label">Connected Folder</div>
-            <div class="folder-connected-name" id="connected-folder-name">—</div>
+            <div class="folder-connected-name" id="connected-folder-name" style="text-align: center;">—</div>
             <div class="folder-sync-time" id="folder-sync-time">Last sync: —</div>
-          </div>
-          <div style="display: flex; gap: 10px;">
-            <button class="modal-btn modal-btn-secondary" onclick="openFolderSelectionModal()" style="flex: 1;">
-              <span style="margin-right: 6px;">📂</span> Change Folder
-            </button>
-            <button class="modal-btn modal-btn-secondary" disabled style="flex: 1; opacity: 0.5; cursor: not-allowed;" title="Coming with Drive integration">
-              <span style="margin-right: 6px;">🔄</span> Sync Now <span style="font-size: 0.7em; background: #e0e0e0; padding: 1px 5px; border-radius: 3px; margin-left: 4px;">V2</span>
-            </button>
           </div>
         </div>
         
-        <!-- Empty State Section (shown when no folder mapped) -->
+        <!-- Empty State Section (v1.4.24 - should not appear, folder auto-mapped) -->
         <div id="data-source-empty-section" style="display: none;">
           <div style="text-align: center; padding: 24px 20px; color: #888; background: #f5f5f5; border-radius: 8px; border: 2px dashed #ddd; margin-bottom: 20px;">
             <div style="font-size: 2em; margin-bottom: 10px;">📁</div>
-            <div style="font-weight: 600; color: #333; margin-bottom: 8px;">No Folder Connected</div>
-            <p style="margin: 0; font-size: 0.9em;">Select your assigned ingestion folder to get started.</p>
+            <div style="font-weight: 600; color: #333; margin-bottom: 8px;">Folder Not Assigned</div>
+            <p style="margin: 0; font-size: 0.9em;">Please sign out and sign in again to assign your folder.</p>
           </div>
-          
-          <button class="modal-btn modal-btn-primary" onclick="openFolderSelectionModal()" style="width: 100%; padding: 14px; font-size: 1em;">
-            <span style="margin-right: 8px;">📂</span> Select Ingestion Folder
-          </button>
         </div>
         
         <!-- Active Dataset Section (shown when data loaded) -->
@@ -2965,15 +2953,18 @@
           <input type="text" id="data-source-search-input" placeholder="Search coming with Drive integration..." disabled style="width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 0.9em; box-sizing: border-box; background: #f5f5f5; color: #999; cursor: not-allowed;">
         </div>
         
-        <!-- Library Header (shown when saved datasets exist) -->
-        <div id="data-source-library-header" style="display: none; margin-bottom: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
-          <div style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase; margin-bottom: 6px;">Locally Cached Files</div>
-          <p style="color: #888; font-size: 0.8em; margin: 0;">Previously worked files saved locally.</p>
+        <!-- Drive Files Section (v1.4.24 - read-only stub) -->
+        <div id="data-source-library-header" style="margin-bottom: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase;">Drive Files</span>
+            <span style="font-size: 0.65em; background: #e0e0e0; padding: 2px 6px; border-radius: 3px; font-weight: 600; color: #666;">Coming Soon</span>
+          </div>
+          <p style="color: #888; font-size: 0.8em; margin: 0;">Files from your assigned folder (read-only).</p>
         </div>
         
-        <!-- Dataset List -->
+        <!-- Drive Files List (mocked) -->
         <div id="upload-library-list" style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- Populated by renderUploadLibrary() -->
+          <!-- Populated by renderDriveFilesList() -->
         </div>
         
         <div class="modal-status" id="data-source-status" style="display: none; margin-top: 15px;"></div>
@@ -3019,24 +3010,22 @@
           <div style="font-size: 0.75em; color: #888; margin-top: 6px;">Supported: CSV, XLSX files</div>
         </div>
         
-        <!-- Folder Connection Info (v1.4.23) -->
+        <!-- Folder Connection Info (v1.4.24 - auto-mapped, read-only) -->
         <div id="loader-folder-info" style="margin-bottom: 20px; padding: 15px; background: #e8f5e9; border-radius: 8px; border: 1px solid #81c784; display: none;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <span style="font-size: 1.2em;">📁</span>
-            <div style="flex: 1;">
+            <div style="flex: 1; text-align: center;">
               <div style="font-weight: 600; font-size: 0.9em; color: #2e7d32;">Connected Folder</div>
               <div id="loader-folder-name" style="font-size: 0.85em; color: #558b2f;">—</div>
             </div>
-            <button class="top-toolbar-btn" onclick="openFolderSelectionModal()" style="padding: 8px 16px;">Change</button>
           </div>
         </div>
         
-        <!-- Empty Folder State (v1.4.23) -->
+        <!-- Empty Folder State (v1.4.24 - should not appear) -->
         <div id="loader-no-folder" style="margin-bottom: 20px; padding: 15px; background: #fff3e0; border-radius: 8px; border: 1px solid #ff9800; display: none;">
           <div style="text-align: center;">
             <div style="font-size: 1.5em; margin-bottom: 8px;">📂</div>
-            <div style="font-weight: 600; font-size: 0.9em; color: #e65100; margin-bottom: 8px;">No Folder Selected</div>
-            <button class="modal-btn modal-btn-primary" onclick="openFolderSelectionModal()" style="padding: 10px 20px;">Select Ingestion Folder</button>
+            <div style="font-weight: 600; font-size: 0.9em; color: #e65100;">Please sign in again to assign your folder.</div>
           </div>
         </div>
         
@@ -3052,34 +3041,7 @@
     </div>
   </div>
 
-  <!-- Folder Selection Modal (v1.4.23) -->
-  <div class="folder-modal-overlay" id="folder-modal-overlay">
-    <div class="folder-modal">
-      <div class="folder-modal-header">
-        <h3>Select Your Ingestion Folder</h3>
-        <p>Choose your assigned data source folder to load datasets from.</p>
-      </div>
-      <div class="folder-modal-body">
-        <div class="folder-select-wrapper">
-          <div class="folder-select-label">Assigned Folder</div>
-          <select class="folder-select" id="folder-select">
-            <option value="">-- Select a folder --</option>
-            <option value="Sarah Chen - West Region">Sarah Chen - West Region</option>
-            <option value="Marcus Johnson - East Region">Marcus Johnson - East Region</option>
-            <option value="Emily Rodriguez - Central">Emily Rodriguez - Central</option>
-            <option value="David Kim - Enterprise">David Kim - Enterprise</option>
-            <option value="Jennifer Lee - SMB">Jennifer Lee - SMB</option>
-          </select>
-        </div>
-        <div style="font-size: 0.8em; color: #888; padding: 12px; background: #f5f5f5; border-radius: 6px;">
-          <strong>Note:</strong> This is a demo. In production, folders will sync from Google Drive.
-        </div>
-      </div>
-      <div class="folder-modal-footer">
-        <button class="folder-modal-btn primary" id="folder-confirm-btn" disabled onclick="confirmFolderSelection()">Connect Folder</button>
-      </div>
-    </div>
-  </div>
+  <!-- Folder Selection Modal removed (v1.4.24 - folder auto-mapped from email) -->
 
   <!-- Config Flows Drawer (right-side slide-over for admin config editing) -->
   <div class="drawer-overlay" id="config-flows-drawer">
@@ -8474,15 +8436,9 @@
         searchSection.style.display = mappedFolder ? 'block' : 'none';
       }
       
-      // Show library header only when there are real cached datasets
+      // v1.4.24: Always show Drive Files header (static stub content in HTML)
       if (libraryHeader) {
-        if (count > 0) {
-          libraryHeader.style.display = 'block';
-        } else {
-          // Show empty state message
-          libraryHeader.style.display = 'block';
-          libraryHeader.innerHTML = '<div style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase; margin-bottom: 6px;">Locally Cached Files</div><p style="color: #888; font-size: 0.8em; margin: 0;">No cached datasets yet. Work on a file to save it here.</p>';
-        }
+        libraryHeader.style.display = mappedFolder ? 'block' : 'none';
       }
       
       // Close disconnect menu
@@ -8490,42 +8446,11 @@
       if (disconnectMenu) disconnectMenu.style.display = 'none';
     }
     
-    // ========== FOLDER SELECTION (v1.4.23) ==========
-    function openFolderSelectionModal() {
-      var modal = document.getElementById('folder-modal-overlay');
-      if (modal) {
-        modal.classList.add('active');
-        // Reset selection
-        var select = document.getElementById('folder-select');
-        var confirmBtn = document.getElementById('folder-confirm-btn');
-        if (select) {
-          var currentFolder = localStorage.getItem('ingestion_folder_name');
-          select.value = currentFolder || '';
-          if (confirmBtn) confirmBtn.disabled = !currentFolder;
-        }
-      }
-    }
-    
-    function closeFolderSelectionModal() {
-      var modal = document.getElementById('folder-modal-overlay');
-      if (modal) modal.classList.remove('active');
-    }
-    
-    function confirmFolderSelection() {
-      var select = document.getElementById('folder-select');
-      if (!select || !select.value) return;
-      
-      var folderName = select.value;
-      localStorage.setItem('ingestion_folder_name', folderName);
-      localStorage.setItem('ingestion_folder_sync_time', new Date().toISOString());
-      
-      closeFolderSelectionModal();
-      updateDataSourceDrawerState();
-      updateActiveDataSourceBar();
-      updateLoaderFolderState();
-      showToast('Connected to: ' + folderName, 'success');
-      console.log('[Folder] Mapped to:', folderName);
-    }
+    // ========== FOLDER SELECTION (v1.4.24 - auto-mapped, no modal) ==========
+    // Legacy no-op functions (folder is now auto-mapped from email)
+    function openFolderSelectionModal() { /* Removed in v1.4.24 */ }
+    function closeFolderSelectionModal() { /* Removed in v1.4.24 */ }
+    function confirmFolderSelection() { /* Removed in v1.4.24 */ }
     
     function updateActiveDataSourceBar() {
       var nameEl = document.getElementById('active-data-source-name');
@@ -18179,50 +18104,34 @@ Add any additional notes here.
       return entry;
     }
     
+    // v1.4.24: Render mocked Drive files list (read-only stub)
     function renderUploadLibrary() {
       var listEl = document.getElementById('upload-library-list');
       if (!listEl) return;
       
-      var library = getUploadLibrary();
-      // v1.4.23: Filter out sample/demo datasets
-      var realLibrary = library.filter(function(e) { 
-        return e.dataset_id !== 'ds-sample' && e.source !== 'sample'; 
-      });
-      var activeId = localStorage.getItem(STORAGE_KEY_ACTIVE_DATASET);
-      // v1.4.23: Only show as Active if data is actually loaded in memory
-      var isReallyActive = dataLoaded && sessionState.status === 'loaded';
+      // Get folder name to generate contextual mock files
+      var folderName = localStorage.getItem('ingestion_folder_name') || 'Analyst';
+      var firstName = folderName.split(' ')[0] || 'Analyst';
       
-      if (realLibrary.length === 0) {
-        listEl.innerHTML = '<div class="upload-library-empty" style="text-align: center; padding: 40px 20px; color: #888; background: #f5f5f5; border-radius: 8px; border: 2px dashed #ddd;">' +
-          '<div style="font-size: 2em; margin-bottom: 10px;">📁</div>' +
-          '<p style="margin: 0 0 15px;">No cached datasets yet.</p>' +
-          '<p style="margin: 0; font-size: 0.85em; color: #aaa;">Work on a file to save it here.</p>' +
-          '</div>';
-        return;
-      }
+      // Mocked drive files derived from user's folder
+      var mockFiles = [
+        { name: 'Q4_2025_Contracts_' + firstName + '.xlsx', size: '2.4 MB', modified: 'Jan 28, 2026' },
+        { name: 'Vendor_Agreements_' + firstName + '.csv', size: '856 KB', modified: 'Jan 25, 2026' },
+        { name: 'License_Review_Batch_12.xlsx', size: '1.1 MB', modified: 'Jan 22, 2026' },
+        { name: 'Distribution_Terms_2026.csv', size: '445 KB', modified: 'Jan 18, 2026' }
+      ];
       
-      var html = realLibrary.map(function(entry) {
-        // v1.4.23: Only show as Active if data is actually loaded AND matches this entry
-        var isActive = isReallyActive && entry.dataset_id === activeId;
-        var dateStr = new Date(entry.created_at).toLocaleDateString();
-        return '<div class="upload-library-item" style="background: ' + (isActive ? '#e3f2fd' : 'white') + '; border: 1px solid ' + (isActive ? '#1976d2' : '#e0e0e0') + '; border-radius: 8px; padding: 15px;">' +
-          '<div style="display: flex; justify-content: space-between; align-items: flex-start;">' +
-            '<div>' +
-              '<div style="font-weight: 600; margin-bottom: 4px;">' + entry.filename + (isActive ? ' <span style="color: #1976d2; font-size: 0.8em;">(Active)</span>' : '') + '</div>' +
-              '<div style="font-size: 0.85em; color: #666;">' +
-                'ID: ' + entry.dataset_id + ' | Rev ' + entry.revision + ' | ' + dateStr +
-              '</div>' +
-              '<div style="font-size: 0.85em; color: #888; margin-top: 4px;">' +
-                entry.sheet_count + ' sheets, ' + entry.row_count + ' rows | Source: ' + entry.source +
-              '</div>' +
+      var html = mockFiles.map(function(file) {
+        var ext = file.name.split('.').pop().toUpperCase();
+        var icon = ext === 'XLSX' ? '📊' : '📄';
+        return '<div class="drive-file-item" style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 15px; opacity: 0.7;">' +
+          '<div style="display: flex; align-items: center; gap: 12px;">' +
+            '<span style="font-size: 1.3em;">' + icon + '</span>' +
+            '<div style="flex: 1; min-width: 0;">' +
+              '<div style="font-weight: 500; font-size: 0.9em; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + file.name + '</div>' +
+              '<div style="font-size: 0.8em; color: #888;">' + file.size + ' · Modified ' + file.modified + '</div>' +
             '</div>' +
-            '<div style="display: flex; gap: 8px;">' +
-              (isActive ? '' : '<button class="modal-btn modal-btn-primary" style="padding: 6px 12px; font-size: 0.85em;" onclick="activateDataset(\'' + entry.dataset_id + '\')">Activate</button>') +
-              '<button class="modal-btn modal-btn-secondary" style="padding: 6px 12px; font-size: 0.85em;" onclick="duplicateDataset(\'' + entry.dataset_id + '\')">Duplicate</button>' +
-              (isActive ? 
-                '<button class="modal-btn" style="padding: 6px 12px; font-size: 0.85em; background: #e0e0e0; color: #999; cursor: not-allowed;" disabled title="Disconnect first.">Delete</button>' :
-                '<button class="modal-btn" style="padding: 6px 12px; font-size: 0.85em; background: #ffebee; color: #c62828;" onclick="deleteDataset(\'' + entry.dataset_id + '\')">Delete</button>') +
-            '</div>' +
+            '<span style="font-size: 0.7em; background: #e0e0e0; padding: 2px 6px; border-radius: 3px; color: #666;">Read Only</span>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -18563,8 +18472,7 @@ Add any additional notes here.
     }
     
     function seedSampleDatasetOnFirstRun() {
-      // v1.4.23: Removed demo dataset auto-seeding - folder-based workflow
-      // Also clean up any existing sample dataset from localStorage
+      // v1.4.24: Clean up sample datasets and auto-map folder from email
       try {
         var library = JSON.parse(localStorage.getItem(STORAGE_KEY_LIBRARY) || '[]');
         var filtered = library.filter(function(e) { 
@@ -18576,15 +18484,41 @@ Add any additional notes here.
         }
       } catch (e) { console.warn('[FirstRun] Error cleaning demo data:', e); }
       
-      // Check if first-time user (no folder mapped) - show folder selection modal
+      // v1.4.24: Auto-map folder from demoUser email/folder (no manual selection)
       var mappedFolder = localStorage.getItem('ingestion_folder_name');
       if (!mappedFolder) {
-        console.log('[FirstRun] No folder mapped, will prompt for folder selection');
-        // Delay to let page render first
-        setTimeout(function() {
-          openFolderSelectionModal();
-        }, 500);
+        var folderName = deriveFolderFromUser();
+        if (folderName) {
+          localStorage.setItem('ingestion_folder_name', folderName);
+          localStorage.setItem('ingestion_folder_sync_time', new Date().toISOString());
+          console.log('[FirstRun] Auto-mapped folder from user:', folderName);
+        } else {
+          console.log('[FirstRun] Could not derive folder, using placeholder');
+          localStorage.setItem('ingestion_folder_name', 'Assigned Analyst Folder');
+          localStorage.setItem('ingestion_folder_sync_time', new Date().toISOString());
+        }
+        updateDataSourceDrawerState();
+        updateActiveDataSourceBar();
       }
+    }
+    
+    // v1.4.24: Derive folder name from demoUser stored in localStorage
+    function deriveFolderFromUser() {
+      try {
+        var demoUser = JSON.parse(localStorage.getItem('demoUser') || '{}');
+        // If folder is explicitly set in demoUser, use it
+        if (demoUser.folder) return demoUser.folder;
+        // Otherwise derive from name or email
+        if (demoUser.name) return demoUser.name;
+        if (demoUser.email) {
+          // sarah.chen@company.com → "Sarah Chen"
+          var local = demoUser.email.split('@')[0];
+          return local.split('.').map(function(p) {
+            return p.charAt(0).toUpperCase() + p.slice(1);
+          }).join(' ');
+        }
+        return null;
+      } catch (e) { return null; }
     }
     
     function updateLoaderSummary() {
