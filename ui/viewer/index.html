@@ -11,6 +11,80 @@
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; margin: 0; padding: 0; }
     h1 { margin-bottom: 10px; color: #1a1a2e; }
 
+    /* Staged Loader Overlay */
+    .staged-loader-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(26, 26, 46, 0.95);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .staged-loader-content {
+      text-align: center;
+      color: white;
+    }
+    .staged-loader-spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #64b5f6;
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      animation: staged-spin 1s linear infinite;
+    }
+    @keyframes staged-spin {
+      to { transform: rotate(360deg); }
+    }
+    .staged-loader-title {
+      font-size: 1.3em;
+      font-weight: 600;
+      margin-bottom: 24px;
+      color: #fff;
+    }
+    .staged-loader-stages {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 0 20px;
+    }
+    .staged-loader-stage {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95em;
+      color: rgba(255, 255, 255, 0.4);
+      transition: all 0.3s ease;
+    }
+    .staged-loader-stage.active {
+      color: #64b5f6;
+    }
+    .staged-loader-stage.active .stage-icon {
+      color: #64b5f6;
+      animation: pulse-icon 1s ease-in-out infinite;
+    }
+    .staged-loader-stage.completed {
+      color: #81c784;
+    }
+    .staged-loader-stage.completed .stage-icon {
+      color: #81c784;
+    }
+    .stage-icon {
+      font-size: 1.1em;
+      width: 18px;
+      text-align: center;
+    }
+    @keyframes pulse-icon {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
     .app-layout { display: flex; min-height: 100vh; }
     .nav-sidebar { width: 280px; background: #1a1a2e; color: white; flex-shrink: 0; display: flex; flex-direction: column; overflow-y: auto; }
     .nav-header { padding: 16px 20px; border-bottom: 1px solid #2d2d4a; }
@@ -3164,6 +3238,36 @@
 
     </main><!-- end main-content -->
   </div><!-- end app-layout -->
+
+  <!-- Staged Loader Overlay -->
+  <div id="staged-loader-overlay" class="staged-loader-overlay" style="display: none;">
+    <div class="staged-loader-content">
+      <div class="staged-loader-spinner"></div>
+      <div class="staged-loader-title">Loading Dataset</div>
+      <div class="staged-loader-stages">
+        <div class="staged-loader-stage" data-stage="loading">
+          <span class="stage-icon">○</span>
+          <span class="stage-label">Loading dataset</span>
+        </div>
+        <div class="staged-loader-stage" data-stage="standardizing">
+          <span class="stage-icon">○</span>
+          <span class="stage-label">Standardizing fields</span>
+        </div>
+        <div class="staged-loader-stage" data-stage="validating">
+          <span class="stage-icon">○</span>
+          <span class="stage-label">Validating rules</span>
+        </div>
+        <div class="staged-loader-stage" data-stage="changemap">
+          <span class="stage-icon">○</span>
+          <span class="stage-label">Building change map</span>
+        </div>
+        <div class="staged-loader-stage" data-stage="rendering">
+          <span class="stage-icon">○</span>
+          <span class="stage-label">Rendering grid</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Global Modals and Drawers (outside pages) -->
   <!-- Data Source Drawer (right-side slide-over) -->
