@@ -11189,6 +11189,12 @@
       changeMapStore.stats = { total: 0, by_type: {} };
       changeMapStore.enabled = false;
       
+      // v1.6.39: Skip change map for 'original' demo variant (clean baseline)
+      if (typeof activeDatasetVariant !== 'undefined' && activeDatasetVariant === 'original') {
+        console.log('[ChangeMap] Skipping change map build for original (clean) dataset');
+        return;
+      }
+      
       if (!workbook || !workbook.sheets) {
         console.log('[ChangeMap] No workbook data');
         return;
