@@ -431,6 +431,29 @@
     .srr-pdf-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f0f0f0; }
     .srr-anchor-overlay { position: absolute; border: 2px solid #1565c0; background: rgba(21, 101, 192, 0.1); pointer-events: auto; cursor: pointer; }
     .srr-anchor-overlay:hover { background: rgba(21, 101, 192, 0.25); }
+    
+    /* v1.6.12: Non-blocking PDF highlight overlay */
+    .srr-pdf-highlight-toast {
+      position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+      background: rgba(21, 101, 192, 0.95); color: white; padding: 10px 18px;
+      border-radius: 8px; font-size: 0.85em; font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 100;
+      display: flex; align-items: center; gap: 10px;
+      opacity: 1; transition: opacity 0.3s ease-out;
+      pointer-events: auto; max-width: 80%;
+    }
+    .srr-pdf-highlight-toast.fading { opacity: 0; }
+    .srr-pdf-highlight-toast .close-btn {
+      cursor: pointer; opacity: 0.7; font-size: 1.1em; margin-left: 8px;
+    }
+    .srr-pdf-highlight-toast .close-btn:hover { opacity: 1; }
+    .srr-pdf-highlight-box {
+      position: absolute; border: 3px solid #1565c0; background: rgba(21, 101, 192, 0.15);
+      border-radius: 4px; z-index: 50; pointer-events: none;
+      opacity: 1; transition: opacity 0.3s ease-out;
+      box-shadow: 0 0 12px rgba(21, 101, 192, 0.4);
+    }
+    .srr-pdf-highlight-box.fading { opacity: 0; }
     .srr-anchor-list { padding: 12px; border-top: 1px solid #e0e0e0; max-height: 150px; overflow-y: auto; }
     .srr-anchor-item { padding: 8px 10px; background: #f8f9fa; border-radius: 4px; margin-bottom: 6px; font-size: 0.8em; cursor: pointer; border-left: 3px solid #1565c0; }
     .srr-anchor-item:hover { background: #e3f2fd; }
@@ -1832,6 +1855,13 @@
                 <span id="srr-doc-source-name" style="margin-left: 6px; color: #888;"></span>
               </div>
               <div class="srr-doc-frame" id="srr-doc-frame">
+                <!-- v1.6.12: Non-blocking PDF highlight overlay -->
+                <div id="srr-pdf-highlight-toast" class="srr-pdf-highlight-toast" style="display: none;">
+                  <span id="srr-pdf-highlight-label">Field</span>
+                  <span class="close-btn" onclick="srrClearHighlight()" title="Close (Esc)">×</span>
+                </div>
+                <div id="srr-pdf-highlight-box" class="srr-pdf-highlight-box" style="display: none;"></div>
+                
                 <div class="srr-doc-empty-state" id="srr-doc-empty">
                   <div style="font-size: 3em; margin-bottom: 10px;">📄</div>
                   <div style="font-weight: 500;">No document attached</div>
@@ -12421,28 +12451,107 @@
       return changedFields.length > 0;
     }
     
+    // v1.6.12: Highlight state for auto-dismiss
+    var srrHighlightTimer = null;
+    
+    function srrClearHighlight() {
+      // Clear any pending timer
+      if (srrHighlightTimer) {
+        clearTimeout(srrHighlightTimer);
+        srrHighlightTimer = null;
+      }
+      
+      var toast = document.getElementById('srr-pdf-highlight-toast');
+      var box = document.getElementById('srr-pdf-highlight-box');
+      
+      if (toast) {
+        toast.classList.add('fading');
+        setTimeout(function() {
+          toast.style.display = 'none';
+          toast.classList.remove('fading');
+        }, 300);
+      }
+      if (box) {
+        box.classList.add('fading');
+        setTimeout(function() {
+          box.style.display = 'none';
+          box.classList.remove('fading');
+        }, 300);
+      }
+    }
+    
     function srrUpdateViewerHighlight(fieldKey) {
-      var docFrame = document.getElementById('srr-doc-frame');
+      var toast = document.getElementById('srr-pdf-highlight-toast');
+      var label = document.getElementById('srr-pdf-highlight-label');
+      var box = document.getElementById('srr-pdf-highlight-box');
       
-      // Remove existing overlays
-      docFrame.querySelectorAll('.srr-anchor-overlay').forEach(function(el) { el.remove(); });
+      // Clear any existing highlight first
+      if (srrHighlightTimer) {
+        clearTimeout(srrHighlightTimer);
+        srrHighlightTimer = null;
+      }
       
-      // If no field selected, do not change document viewer state (PDF viewer handles its own state)
+      // If no field selected, just clear
       if (!fieldKey) {
+        srrClearHighlight();
         return;
       }
       
-      // Show highlight placeholder for selected field
-      docFrame.innerHTML = '<div style="text-align: center;">' +
-        '<div style="font-size: 2.5em; margin-bottom: 10px;">🔍</div>' +
-        '<div style="font-weight: 600; color: #1565c0;">Viewing: ' + fieldKey + '</div>' +
-        '<div style="font-size: 0.85em; color: #666; margin-top: 8px;">Evidence anchor would appear here</div>' +
-        '<div style="margin-top: 16px; padding: 12px; background: rgba(21, 101, 192, 0.1); border: 2px dashed #1565c0; border-radius: 8px;">' +
-          '<div style="font-size: 0.8em; color: #1565c0;">📎 Anchor Placeholder</div>' +
-          '<div style="font-size: 0.75em; color: #666; margin-top: 4px;">Page 1, Bbox: [0.2, 0.3, 0.6, 0.1]</div>' +
-        '</div>' +
-      '</div>';
+      // Check if we have anchor data for this field (stub: always false for now)
+      var hasAnchor = false; // TODO: Check actual anchor data when available
+      
+      if (!hasAnchor) {
+        // Show toast notification that no anchor exists
+        showToast('No anchor found for: ' + fieldKey, 'info');
+      }
+      
+      // Format field label for display
+      var displayLabel = fieldKey.replace(/_c$/, '').replace(/_/g, ' ');
+      
+      // Show non-blocking toast
+      if (toast && label) {
+        toast.classList.remove('fading');
+        toast.style.display = 'flex';
+        label.textContent = '🔍 ' + displayLabel;
+      }
+      
+      // Show highlight box placeholder (positioned in center for demo)
+      if (box) {
+        box.classList.remove('fading');
+        box.style.display = 'block';
+        box.style.top = '30%';
+        box.style.left = '10%';
+        box.style.width = '80%';
+        box.style.height = '15%';
+      }
+      
+      // Auto-dismiss after 2.5 seconds
+      srrHighlightTimer = setTimeout(function() {
+        srrClearHighlight();
+      }, 2500);
     }
+    
+    // v1.6.12: ESC key handler for clearing highlight
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        var toast = document.getElementById('srr-pdf-highlight-toast');
+        if (toast && toast.style.display !== 'none') {
+          srrClearHighlight();
+        }
+      }
+    });
+    
+    // v1.6.12: Click outside to clear highlight
+    document.addEventListener('click', function(e) {
+      var toast = document.getElementById('srr-pdf-highlight-toast');
+      var box = document.getElementById('srr-pdf-highlight-box');
+      if (toast && toast.style.display !== 'none') {
+        // If click is not on the toast or box, clear
+        if (!toast.contains(e.target) && (!box || !box.contains(e.target))) {
+          srrClearHighlight();
+        }
+      }
+    });
     
     function srrUpdateAnchorList(fieldKey) {
       var container = document.getElementById('srr-anchor-list');
