@@ -3943,10 +3943,10 @@
 
   <script>
     const PRIMARY_PATH = 'out/sf_packet.preview.json';
-    const FALLBACK_PATH = 'examples/datasets/ostereo_demo_original.json';
+    const FALLBACK_PATH = 'examples/datasets/ostereo_demo_v1.json';
     const RELATIVE_PRIMARY = '../../out/sf_packet.preview.json';
-    const RELATIVE_FALLBACK = '../../examples/datasets/ostereo_demo_original.json';
-    const DEFAULT_DATASET_URL = '/examples/datasets/ostereo_demo_original.json';
+    const RELATIVE_FALLBACK = '../../examples/datasets/ostereo_demo_v1.json';
+    const DEFAULT_DATASET_URL = '/examples/datasets/ostereo_demo_v1.json';
     const MODIFIED_DATASET_URL = '/examples/datasets/ostereo_demo_v1.json';
     const COMMANDS_PATH = 'run_commands.json';
     const STORAGE_KEY = 'viewer_selection_v10';
@@ -5202,9 +5202,19 @@
         return;
       }
       
-      // v1.6.8: On cold start, load original demo dataset
-      console.log('[Masterline] Cold start - loading demo dataset: ostereo_demo_original.json');
-      await loadSampleDataset({ variant: 'original', autoRedirect: false });
+      // v1.6.35: On cold start, only load demo data in demo/playground mode
+      // Production mode should show "No dataset loaded" until user connects a data source
+      if (isDemoMode()) {
+        console.log('[Masterline] Demo mode cold start - loading demo dataset: ostereo_demo_v1.json');
+        await loadSampleDataset({ variant: 'modified', autoRedirect: false });
+      } else {
+        console.log('[Masterline] Production mode cold start - no sample data loaded');
+        // Show "No dataset loaded" state
+        var statusEl = document.querySelector('[data-session-status]');
+        if (statusEl) statusEl.textContent = 'No dataset loaded';
+        var nameEl = document.getElementById('dataset-name-display');
+        if (nameEl) nameEl.textContent = 'Connect a data source to begin';
+      }
       
       // Check artifacts for registry display (after loading demo data)
       await checkAllArtifacts();
@@ -11256,7 +11266,7 @@
       
       var rfiSheet = workbook.sheets['RFIs & Analyst Notes'];
       if (!rfiSheet || !rfiSheet.rows || rfiSheet.rows.length === 0) {
-        console.log('[PatchSeed] No RFIs & Analyst Notes sheet found');
+        console.log('[PatchSeed] Dataset missing RFIs & Analyst Notes sheet - skipping RFI seeding (this is normal for baseline datasets)');
         return { imported: 0, skipped: 0 };
       }
       
@@ -11391,6 +11401,208 @@
       _patchSeedDatasetId = currentDatasetId;
       
       return { imported: imported, skipped: skipped };
+    }
+
+    // v1.6.35: Canonical store for meta-derived triage items (shared across roles)
+    var META_TRIAGE_STORE = {
+      manualReviewItems: [],
+      systemChangesItems: [],
+      datasetId: null,
+      
+      setManualReview: function(items, datasetId) {
+        this.manualReviewItems = items || [];
+        this.datasetId = datasetId;
+        console.log('[MetaTriageStore] Stored', this.manualReviewItems.length, 'Manual Review items');
+      },
+      
+      setSystemChanges: function(items, datasetId) {
+        this.systemChangesItems = items || [];
+        this.datasetId = datasetId;
+        console.log('[MetaTriageStore] Stored', this.systemChangesItems.length, 'System Changes items');
+      },
+      
+      getManualReview: function() {
+        return this.manualReviewItems;
+      },
+      
+      getSystemChanges: function() {
+        return this.systemChangesItems;
+      },
+      
+      reset: function() {
+        this.manualReviewItems = [];
+        this.systemChangesItems = [];
+        this.datasetId = null;
+      }
+    };
+
+    // v1.6.35: Seed Manual Review queue from RFI meta sheet (Note Type = "Manual Review")
+    var _manualReviewSeedDatasetId = null;
+    var _manualReviewItems = [];
+    
+    function seedManualReviewFromMetaSheet() {
+      if (!workbook || !workbook.sheets) {
+        return [];
+      }
+      
+      var currentDatasetId = ARTIFACT_STORE.current_dataset_id || IDENTITY_CONTEXT.dataset_id || 'ds_default';
+      if (_manualReviewSeedDatasetId === currentDatasetId && _manualReviewItems.length > 0) {
+        console.log('[ManualReviewSeed] Already seeded for dataset:', currentDatasetId);
+        return _manualReviewItems;
+      }
+      
+      var rfiSheet = workbook.sheets['RFIs & Analyst Notes'];
+      if (!rfiSheet || !rfiSheet.rows || rfiSheet.rows.length === 0) {
+        console.log('[ManualReviewSeed] Dataset missing RFIs & Analyst Notes sheet - skipping Manual Review seeding');
+        return [];
+      }
+      
+      var items = [];
+      
+      rfiSheet.rows.forEach(function(row, rowIdx) {
+        if (!row) return;
+        
+        // Only process rows where Note Type == "Manual Review"
+        var noteType = (row['Note Type'] || '').trim().toLowerCase();
+        if (noteType !== 'manual review') return;
+        
+        var targetSheet = row['Sheet'] || '';
+        var rowNum = parseFloat(row['Row #']);
+        var fieldName = row['Field Name'] || '(general)';
+        var summary = row['Summary'] || '';
+        var status = row['Status'] || 'Open';
+        var timestamp = row['Timestamp'] || new Date().toISOString();
+        
+        if (!targetSheet || isNaN(rowNum)) return;
+        
+        var recordId = targetSheet + ':' + Math.floor(rowNum);
+        
+        items.push({
+          request_id: 'manual_review_' + rowIdx,
+          type: 'manual_review',
+          record_id: recordId,
+          field_name: fieldName,
+          signal_type: 'MANUAL_REVIEW',
+          severity: 'warning',
+          status: status,
+          status_label: status,
+          status_color: '#f57c00',
+          message: summary || 'Manual review required',
+          updated_at: timestamp,
+          sheet: targetSheet,
+          row_index: Math.floor(rowNum),
+          source: 'meta_sheet'
+        });
+      });
+      
+      _manualReviewSeedDatasetId = currentDatasetId;
+      _manualReviewItems = items;
+      
+      // v1.6.35: Store in canonical store for cross-role access
+      META_TRIAGE_STORE.setManualReview(items, currentDatasetId);
+      
+      console.log('[ManualReviewSeed] Seeded', items.length, 'Manual Review items from meta sheet');
+      return items;
+    }
+    
+    // v1.6.35: Seed System Changes queue from *_change_log sheets
+    var _systemChangesSeedDatasetId = null;
+    var _systemChangesItems = [];
+    
+    function seedSystemChangesFromChangeLog() {
+      if (!workbook || !workbook.sheets) {
+        return [];
+      }
+      
+      var currentDatasetId = ARTIFACT_STORE.current_dataset_id || IDENTITY_CONTEXT.dataset_id || 'ds_default';
+      if (_systemChangesSeedDatasetId === currentDatasetId && _systemChangesItems.length > 0) {
+        console.log('[SystemChangesSeed] Already seeded for dataset:', currentDatasetId);
+        return _systemChangesItems;
+      }
+      
+      // Find all *_change_log sheets
+      var changeLogSheets = Object.keys(workbook.sheets).filter(function(name) {
+        return name.endsWith('_change_log');
+      });
+      
+      if (changeLogSheets.length === 0) {
+        console.log('[SystemChangesSeed] Dataset missing *_change_log sheets - skipping System Changes seeding');
+        return [];
+      }
+      
+      var items = [];
+      
+      changeLogSheets.forEach(function(sheetName) {
+        var sheet = workbook.sheets[sheetName];
+        if (!sheet || !sheet.rows) return;
+        
+        var targetSheet = sheetName.replace('_change_log', '');
+        
+        sheet.rows.forEach(function(row, rowIdx) {
+          if (!row) return;
+          
+          var rowNum = parseFloat(row['Row #'] || row['row'] || row['Row'] || rowIdx);
+          var fieldName = row['Field'] || row['field'] || row['Field Name'] || row['Changed_Field'] || '';
+          var changeType = row['Change Type'] || row['change_type'] || row['Action'] || row['action'] || 'Update';
+          var oldValue = row['Old Value'] || row['old_value'] || row['Previous'] || '';
+          var newValue = row['New Value'] || row['new_value'] || row['Current'] || '';
+          var notes = row['Notes'] || row['notes'] || row['Summary'] || row['Reason'] || '';
+          var timestamp = row['Timestamp'] || row['timestamp'] || row['Date'] || new Date().toISOString();
+          var ruleId = row['Rule ID'] || row['rule_id'] || row['Rule'] || '';
+          
+          if (!fieldName && !notes) return;
+          
+          var recordId = targetSheet + ':' + Math.floor(rowNum);
+          
+          // Determine change type label
+          var typeLabel = changeType;
+          var typeColor = '#4caf50';
+          if (changeType.toLowerCase().includes('address') || changeType.toLowerCase().includes('standard')) {
+            typeLabel = 'Address Standardization';
+            typeColor = '#2196f3';
+          } else if (changeType.toLowerCase().includes('format')) {
+            typeLabel = 'Format Correction';
+            typeColor = '#9c27b0';
+          } else if (changeType.toLowerCase().includes('rule')) {
+            typeLabel = 'Rule-Based Correction';
+            typeColor = '#ff9800';
+          }
+          
+          var message = notes || (changeType + ': ' + fieldName);
+          if (oldValue && newValue) {
+            message = '"' + oldValue + '" → "' + newValue + '"' + (notes ? ' (' + notes + ')' : '');
+          }
+          
+          items.push({
+            request_id: 'system_change_' + sheetName + '_' + rowIdx,
+            type: 'system_change',
+            record_id: recordId,
+            field_name: fieldName || '(system)',
+            signal_type: 'SYSTEM_CHANGE',
+            severity: 'info',
+            status: 'Applied',
+            status_label: typeLabel,
+            status_color: typeColor,
+            message: message,
+            updated_at: timestamp,
+            sheet: targetSheet,
+            row_index: Math.floor(rowNum),
+            old_value: oldValue,
+            new_value: newValue,
+            rule_id: ruleId,
+            source: 'change_log'
+          });
+        });
+      });
+      
+      _systemChangesSeedDatasetId = currentDatasetId;
+      _systemChangesItems = items;
+      
+      // v1.6.35: Store in canonical store for cross-role access
+      META_TRIAGE_STORE.setSystemChanges(items, currentDatasetId);
+      
+      console.log('[SystemChangesSeed] Seeded', items.length, 'System Changes from', changeLogSheets.length, 'change_log sheets');
+      return items;
     }
     
     // ========== v1.6.9: SEED VERIFIER RFI QUEUE FROM META SHEET ==========
@@ -15870,10 +16082,28 @@
       });
       analystTriageState.manualItems = analystTriageState.manualItems.concat(validationSignals);
       
+      // v1.6.35: Add Manual Review items from canonical store (seeded from RFI meta sheet)
+      if (typeof seedManualReviewFromMetaSheet === 'function') {
+        seedManualReviewFromMetaSheet(); // Seed to canonical store
+      }
+      var metaManualItems = META_TRIAGE_STORE.getManualReview();
+      if (metaManualItems && metaManualItems.length > 0) {
+        analystTriageState.manualItems = analystTriageState.manualItems.concat(metaManualItems);
+      }
+      
       // System Changes: QA_FLAG with INFO severity
       analystTriageState.systemItems = signalItems.filter(function(item) {
         return item.signal_type === 'QA_FLAG' && item.severity === 'info';
       });
+      
+      // v1.6.35: Add System Changes from canonical store (seeded from *_change_log sheets)
+      if (typeof seedSystemChangesFromChangeLog === 'function') {
+        seedSystemChangesFromChangeLog(); // Seed to canonical store
+      }
+      var changeLogItems = META_TRIAGE_STORE.getSystemChanges();
+      if (changeLogItems && changeLogItems.length > 0) {
+        analystTriageState.systemItems = analystTriageState.systemItems.concat(changeLogItems);
+      }
       
       console.log('[AnalystTriage] Queue counts from signals: Manual=' + analystTriageState.manualItems.length + 
         ', SFLogic=' + analystTriageState.sflogicItems.length + 
