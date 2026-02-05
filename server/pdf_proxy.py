@@ -222,9 +222,9 @@ app.mount("/assets", NoCacheStaticFiles(directory=str(PROJECT_ROOT / "assets"), 
 
 @app.get("/")
 async def root_redirect():
-    """Redirect root to viewer."""
+    """Redirect root to landing page."""
     from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/ui/viewer/index.html")
+    return RedirectResponse(url="/ui/landing/index.html")
 
 
 if __name__ == "__main__":

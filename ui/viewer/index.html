@@ -14909,11 +14909,17 @@
       // Setup loader modal events
       setupLoaderModalEvents();
       
-      let savedMode = localStorage.getItem('viewer_mode_v10');
+      // v1.4.20: Check for role from landing page first, then viewer mode
+      let savedMode = localStorage.getItem('currentRole') || localStorage.getItem('viewer_mode_v10');
       // Convert legacy 'operator' mode to 'analyst'
       if (savedMode === 'operator') savedMode = 'analyst';
       if (savedMode) setMode(savedMode);
       else setMode('analyst');
+      
+      // Sync landing page role back to viewer mode storage
+      if (localStorage.getItem('currentRole')) {
+        localStorage.setItem('viewer_mode_v10', localStorage.getItem('currentRole'));
+      }
       
       // Default route is always triage
       const hash = window.location.hash.replace('#/', '') || 'triage';
