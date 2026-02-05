@@ -1,7 +1,7 @@
 # Orchestrate OS — Semantic Control Board
 
 ## Overview
-Orchestrate OS is a governance-only semantic control plane for DataDash + Kiwi. Its primary purpose is to define, validate, and preview semantic rules offline, serving as a single source of semantic truth. It enables rule authoring and review as configuration, providing an analyst-first reference with clear interfaces and checklists for explicit, deterministic, and auditable decisions. The project aims to improve operator ergonomics and streamline the patch request and review pipeline.
+Orchestrate OS is a governance-only semantic control plane. Its primary purpose is to define, validate, and preview semantic rules offline, serving as a single source of semantic truth. It enables rule authoring and review as configuration, providing an analyst-first reference with clear interfaces and checklists for explicit, deterministic, and auditable decisions. The project aims to improve operator ergonomics and streamline the patch request and review pipeline.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -23,5 +23,15 @@ The system generates deterministic cell-level signals on dataset load using `fie
 ### Identity and Authentication
 Record identity is defined by `tenant_id`, `division_id`, `dataset_id`, `record_id`, with `record_id` generated based on a canonicalized row fingerprint. A production-style landing page with Google sign-in handles user authentication, supporting `?role=admin|reviewer` URL parameters for testing. Admin-only Playground mode allows role switching, while Analyst/Reviewer users are locked to their roles. User creation and management are available in the Admin Panel for Demo/Playground mode, with changes persisting to localStorage. Production Google OAuth login checks a configured user list for role assignment.
 
+### Export / Save Functionality
+The Export/Save button generates an XLSX file using SheetJS with all data sheets, changelog, RFI notes, and signals summary. The export includes:
+- All data sheets with original structure preserved
+- `_change_log` sheet with corrections, status changes, and audit trail
+- `RFIs & Analyst Notes` sheet with all analyst questions and responses
+- `_signals_summary` sheet with validation flags and semantic signals
+- `_orchestrate_meta` sheet with dataset metadata, version info, and nomenclature
+
+Exported files are named `orchestrate_{dataset_id}_{timestamp}.xlsx` and downloaded directly to the user's device.
+
 ## External Dependencies
-None by design. This repository exclusively uses the Python standard library, with no external Python packages, database connections, API integrations, runtime services, or credentials/secrets. A FastAPI server is used as a local PDF proxy for CORS-safe PDF fetching.
+None by design. This repository exclusively uses the Python standard library, with no external Python packages, database connections, API integrations, runtime services, or credentials/secrets. A FastAPI server is used as a local PDF proxy for CORS-safe PDF fetching. SheetJS (XLSX) is loaded via CDN for Excel import/export functionality.
