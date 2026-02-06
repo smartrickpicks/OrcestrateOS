@@ -506,6 +506,11 @@
     .srr-state-badge.finalized { background: #bbdefb; color: #1565c0; }
     .srr-back-btn { background: #0f3460; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85em; display: flex; align-items: center; gap: 6px; }
     .srr-back-btn:hover { background: #1565c0; }
+    .srr-nav-group { display: flex; align-items: center; gap: 4px; margin-left: 8px; }
+    .srr-nav-btn { background: #e8eaf6; color: #1a237e; border: 1px solid #c5cae9; padding: 6px 10px; border-radius: 5px; cursor: pointer; font-size: 0.82em; font-weight: 600; display: flex; align-items: center; gap: 4px; transition: background 0.15s, opacity 0.15s; }
+    .srr-nav-btn:hover:not(:disabled) { background: #c5cae9; }
+    .srr-nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .srr-nav-pos { font-size: 0.75em; color: #888; white-space: nowrap; margin: 0 4px; }
     
     /* Field Inspector */
     .srr-field-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.15s; }
@@ -2044,6 +2049,11 @@
         <!-- Top Bar: Identity, State Badge, Back Button -->
         <div class="srr-top-bar">
           <button class="srr-back-btn" onclick="srrBackToGrid()">← Back to Grid</button>
+          <div class="srr-nav-group">
+            <button class="srr-nav-btn" id="srr-nav-prev" onclick="srrNavigatePrev()" disabled title="Previous record">← Prev</button>
+            <span class="srr-nav-pos" id="srr-nav-pos">—</span>
+            <button class="srr-nav-btn" id="srr-nav-next" onclick="srrNavigateNext()" disabled title="Next record">Next →</button>
+          </div>
           <div style="flex: 1;">
             <span style="font-size: 0.75em; color: #aaa; margin-right: 8px;">Record:</span>
             <span class="srr-identity" id="srr-record-id">—</span>
@@ -11475,6 +11485,7 @@
       
       // Update footer
       document.getElementById('grid-row-count').textContent = filtered.length + ' of ' + records.length + ' records';
+      gridState.filteredData = filtered;
       
       var filterInfo = [];
       if (gridState.sheet) filterInfo.push('Sheet: ' + gridState.sheet);
@@ -13664,6 +13675,7 @@
       srrState.lockedFields = {};  // v1.4.18: Reset locked fields
       srrState.editingField = null;
       srrState.activeFilter = 'todo';  // Default to To Do queue
+      srrUpdateNavButtons();
       srrState.activeGroup = 'all';
       srrState.searchQuery = '';  // v1.4.18: Reset search
       
@@ -14054,16 +14066,14 @@
       }
       
       if (allVerified && fieldKeys.length > 0) {
-        // Delay finalization to allow animation
         setTimeout(function() {
-          console.log('[SRR] All fields verified - record validated, routing to To Do queue');
+          console.log('[SRR] All fields verified - record complete');
           var recordKey = srrState.currentRecordKey;
           if (recordKey && window.localState && window.localState.recordStatus) {
             window.localState.recordStatus[recordKey] = 'finalized';
           }
           updateTriageCounts();
-          showToast('Record validated - all fields verified');
-          navigateTo('triage');
+          srrAutoAdvance('All fields verified');
         }, 300);
       }
     }
@@ -14089,6 +14099,9 @@
       srrState.patchDraft.blacklist_subject = label + ': ' + (currentVal || '(empty)');
       
       console.log('[SRR] Field BLACKLIST:', fieldKey, 'subject:', srrState.patchDraft.blacklist_subject);
+      if (srrCheckAllFieldsCompleted()) {
+        setTimeout(function() { srrAutoAdvance('All fields addressed'); }, 300);
+      }
       srrUpdatePatchFormSections();
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditor();
@@ -14118,6 +14131,9 @@
       srrState.patchDraft.patch_type = 'rfi';
       
       console.log('[SRR] Field RFI (pending):', fieldKey);
+      if (srrCheckAllFieldsCompleted()) {
+        setTimeout(function() { srrAutoAdvance('All fields addressed'); }, 300);
+      }
       srrUpdatePatchFormSections();
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditor();
@@ -14523,6 +14539,85 @@
     
     // Navigation guard
     // v1.4.20: Back to Grid with guard for unresolved fields
+    function getSrrNavigationList() {
+      var filtered = gridState.filteredData;
+      if (!filtered || filtered.length === 0) return [];
+      return filtered.map(function(r) {
+        return { sheet: r.sheet, idx: r._sheetRowIndex !== undefined ? r._sheetRowIndex : -1 };
+      });
+    }
+
+    function srrFindCurrentNavIndex() {
+      var list = getSrrNavigationList();
+      var curSheet = srrState.currentSheetName;
+      var curIdx = srrState.currentRowIndex;
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].sheet === curSheet && list[i].idx === curIdx) return i;
+      }
+      return -1;
+    }
+
+    function srrUpdateNavButtons() {
+      var list = getSrrNavigationList();
+      var pos = srrFindCurrentNavIndex();
+      var prevBtn = document.getElementById('srr-nav-prev');
+      var nextBtn = document.getElementById('srr-nav-next');
+      var posEl = document.getElementById('srr-nav-pos');
+      if (!prevBtn || !nextBtn || !posEl) return;
+      if (list.length === 0 || pos < 0) {
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        posEl.textContent = '—';
+        return;
+      }
+      prevBtn.disabled = (pos === 0);
+      nextBtn.disabled = (pos >= list.length - 1);
+      posEl.textContent = (pos + 1) + ' of ' + list.length;
+    }
+
+    function srrNavigatePrev() {
+      var list = getSrrNavigationList();
+      var pos = srrFindCurrentNavIndex();
+      if (pos <= 0) return;
+      var target = list[pos - 1];
+      openRowReviewDrawer(target.sheet, target.idx);
+    }
+
+    function srrNavigateNext() {
+      var list = getSrrNavigationList();
+      var pos = srrFindCurrentNavIndex();
+      if (pos < 0 || pos >= list.length - 1) return;
+      var target = list[pos + 1];
+      openRowReviewDrawer(target.sheet, target.idx);
+    }
+
+    function srrCheckAllFieldsCompleted() {
+      var completedStates = { verified: 1, rfi: 1, submitted: 1, blocked: 1, modified: 1 };
+      var fieldKeys = Object.keys(srrState.originalValues || {}).filter(function(k) {
+        return !k.startsWith('_');
+      });
+      if (fieldKeys.length === 0) return false;
+      for (var i = 0; i < fieldKeys.length; i++) {
+        var state = srrState.fieldStates[fieldKeys[i]] || 'todo';
+        if (!completedStates[state]) return false;
+      }
+      return true;
+    }
+
+    function srrAutoAdvance(reason) {
+      var list = getSrrNavigationList();
+      var pos = srrFindCurrentNavIndex();
+      if (pos >= 0 && pos < list.length - 1) {
+        showToast(reason + ' — advancing to next record');
+        setTimeout(function() {
+          var target = list[pos + 1];
+          openRowReviewDrawer(target.sheet, target.idx);
+        }, 600);
+      } else {
+        showToast(reason + ' — last record in list');
+      }
+    }
+
     function srrBackToGrid() {
       if (srrHasUnresolvedFields()) {
         srrShowGuardModal();
@@ -16266,6 +16361,9 @@
       
       // v1.5.0: Reset Patch Editor state after submission
       resetPatchEditorState();
+      if (srrCheckAllFieldsCompleted()) {
+        setTimeout(function() { srrAutoAdvance('Patch submitted — all fields addressed'); }, 800);
+      }
     }
     
     function resetPatchEditorState() {
