@@ -256,7 +256,8 @@
     (function() {
       var existingUser = null;
       try { existingUser = JSON.parse(localStorage.getItem('demoUser') || 'null'); } catch(e) {}
-      if (existingUser && existingUser.role && localStorage.getItem('currentRole')) {
+      var validRoles = ['analyst', 'reviewer', 'verifier', 'admin'];
+      if (existingUser && existingUser.role && validRoles.indexOf(existingUser.role.toLowerCase()) !== -1 && localStorage.getItem('currentRole')) {
         window.location.href = '/ui/viewer/';
         return;
       }
