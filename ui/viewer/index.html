@@ -727,7 +727,7 @@
     .srr-field-card.edited .srr-field-card-header { background: #fff3e0; }
     .srr-field-card-label { font-weight: 600; font-size: 0.85em; color: #333; display: flex; align-items: center; gap: 4px; }
     
-    /* v1.6.36: Glossary tooltip styles */
+    /* v1.6.36+: Glossary tooltip styles (portal-based, light theme) */
     .glossary-tooltip-wrapper { position: relative; display: inline-flex; align-items: center; }
     .glossary-icon { 
       font-size: 0.75em; 
@@ -737,46 +737,41 @@
       line-height: 1;
     }
     .glossary-icon:hover { color: #1976d2; }
-    .glossary-tooltip {
+    #glossary-portal-tooltip {
       display: none;
       position: fixed;
-      z-index: 10000;
-      background: #333;
-      color: white;
-      padding: 10px 14px;
-      border-radius: 6px;
-      font-size: 0.8em;
+      z-index: 99999;
+      background: #ffffff;
+      color: #222;
+      padding: 14px 16px;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+      font-size: 0.82em;
       font-weight: normal;
-      width: 260px;
-      max-width: 300px;
-      
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      margin-bottom: 8px;
+      width: 320px;
+      max-width: 360px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
       line-height: 1.5;
+      pointer-events: none;
     }
-    .glossary-tooltip::after {
-      content: '';
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 6px solid transparent;
-      border-top-color: #333;
-    }
-    .glossary-tooltip.visible { display: block; }
-    .glossary-tooltip-row { margin-bottom: 4px; }
-    .glossary-tooltip-label { color: #aaa; font-size: 0.85em; }
-    .glossary-tooltip-value { color: #fff; }
-    .glossary-tooltip-options { 
-      background: rgba(255,255,255,0.1); 
-      padding: 4px 6px; 
+    #glossary-portal-tooltip.visible { display: block; }
+    #glossary-portal-tooltip .gtt-row { margin-bottom: 6px; display: flex; gap: 6px; }
+    #glossary-portal-tooltip .gtt-label { color: #777; font-size: 0.85em; white-space: nowrap; min-width: 55px; }
+    #glossary-portal-tooltip .gtt-value { color: #222; font-weight: 500; }
+    #glossary-portal-tooltip .gtt-divider { border: none; border-top: 1px solid #eee; margin: 8px 0; }
+    #glossary-portal-tooltip .gtt-definition { color: #444; font-style: italic; line-height: 1.5; }
+    #glossary-portal-tooltip .gtt-options { 
+      background: #f5f5f5; 
+      padding: 6px 8px; 
       border-radius: 4px; 
       margin-top: 4px;
-      font-family: monospace;
+      font-family: 'Courier New', monospace;
       font-size: 0.9em;
       max-height: 80px;
       overflow-y: auto;
+      color: #555;
     }
+    #glossary-portal-tooltip .gtt-no-data { color: #999; font-style: italic; }
     .srr-field-card-api { font-size: 0.7em; color: #888; font-family: 'Courier New', monospace; }
     .srr-field-card-chips { display: flex; gap: 4px; }
     .srr-chip { padding: 2px 6px; border-radius: 8px; font-size: 0.65em; font-weight: 600; text-transform: uppercase; }
@@ -12377,71 +12372,82 @@
     }
     
     // Get field metadata from rules bundle (normalized lookup)
+    // Falls back to sheet-agnostic match if sheet-specific lookup fails
     function getFieldMeta(sheetName, fieldKey) {
       if (!rulesBundleCache.fieldMeta || !rulesBundleCache.fieldMeta.fields) return null;
       var fields = rulesBundleCache.fieldMeta.fields;
       var normKey = normalizeFieldKey(fieldKey);
+      var sheetMatch = null;
+      var anyMatch = null;
       for (var i = 0; i < fields.length; i++) {
         var f = fields[i];
-        if (f.sheet === sheetName && normalizeFieldKey(f.field_key) === normKey) {
-          return f;
+        if (normalizeFieldKey(f.field_key) === normKey) {
+          if (f.sheet === sheetName) {
+            sheetMatch = f;
+            break;
+          }
+          if (!anyMatch) anyMatch = f;
         }
       }
-      return null;
+      return sheetMatch || anyMatch || null;
     }
     
-    // v1.6.36: Build glossary hover tooltip from field metadata
+    // v1.6.36+: Build glossary icon with data attributes for portal tooltip
     function buildGlossaryTooltip(fieldMeta, fieldKey, sheetName) {
-      var tooltipContent = '';
+      var dataAttrs = 'data-field-key="' + escapeHtml(fieldKey) + '"';
+      if (sheetName) dataAttrs += ' data-sheet="' + escapeHtml(sheetName) + '"';
+      return '<span class="glossary-tooltip-wrapper">' +
+             '<span class="glossary-icon" ' + dataAttrs + '>ⓘ</span>' +
+             '</span>';
+    }
+
+    // v1.6.36+: Build tooltip HTML content for the portal from field metadata
+    function buildGlossaryPortalContent(fieldKey, sheetName) {
+      var fieldMeta = getFieldMeta(sheetName, fieldKey);
       
       if (!fieldMeta) {
-        // No glossary data available
-        tooltipContent = '<div class="glossary-tooltip-row">No glossary data available.</div>';
-      } else {
-        // Build tooltip content from metadata
-        var label = fieldMeta.field_label || fieldKey;
-        var type = fieldMeta.return_format || 'Unknown';
-        var required = fieldMeta.requiredness || 'not_needed';
-        var requiredLabel = required === 'required' ? 'Required' : 
-                           required === 'optional' ? 'Optional' : 'Not Required';
-        var definition = fieldMeta.definition || '';
-        var options = fieldMeta.options || [];
-        var hingeGroup = '';
-        // Look up hinge group from hinge_groups bundle
-        if (rulesBundleCache.hingeGroups && rulesBundleCache.hingeGroups.hinges) {
-          var normKey = normalizeFieldKey(fieldKey);
-          for (var i = 0; i < rulesBundleCache.hingeGroups.hinges.length; i++) {
-            var hinge = rulesBundleCache.hingeGroups.hinges[i];
-            if (hinge.fields && hinge.fields.some(function(f) { return normalizeFieldKey(f) === normKey; })) {
-              hingeGroup = hinge.hinge_group || hinge.name || '';
-              break;
-            }
+        console.log('[Glossary] No metadata for field:', fieldKey, 'sheet:', sheetName || '(none)');
+        return '<div class="gtt-no-data">No glossary data available.</div>';
+      }
+
+      var label = fieldMeta.field_label || fieldKey;
+      var type = fieldMeta.return_format || 'Unknown';
+      var required = fieldMeta.requiredness || 'not_needed';
+      var requiredLabel = required === 'required' ? 'Required' : 
+                         required === 'optional' ? 'Optional' : 'Not Required';
+      var definition = fieldMeta.definition || '';
+      var options = fieldMeta.options || [];
+      var hingeGroup = '';
+      if (rulesBundleCache.hingeGroups && rulesBundleCache.hingeGroups.hinges) {
+        var normKey = normalizeFieldKey(fieldKey);
+        for (var i = 0; i < rulesBundleCache.hingeGroups.hinges.length; i++) {
+          var hinge = rulesBundleCache.hingeGroups.hinges[i];
+          if (hinge.fields && hinge.fields.some(function(f) { return normalizeFieldKey(f) === normKey; })) {
+            hingeGroup = hinge.hinge_group || hinge.name || '';
+            break;
           }
         }
-        
-        tooltipContent += '<div class="glossary-tooltip-row"><span class="glossary-tooltip-label">Field:</span> <span class="glossary-tooltip-value">' + escapeHtml(label) + '</span></div>';
-        tooltipContent += '<div class="glossary-tooltip-row"><span class="glossary-tooltip-label">Type:</span> <span class="glossary-tooltip-value">' + escapeHtml(type) + '</span></div>';
-        tooltipContent += '<div class="glossary-tooltip-row"><span class="glossary-tooltip-label">Status:</span> <span class="glossary-tooltip-value">' + requiredLabel + '</span></div>';
-        
-        if (hingeGroup) {
-          tooltipContent += '<div class="glossary-tooltip-row"><span class="glossary-tooltip-label">Group:</span> <span class="glossary-tooltip-value">' + escapeHtml(hingeGroup) + '</span></div>';
-        }
-        
-        if (definition) {
-          tooltipContent += '<div class="glossary-tooltip-row" style="margin-top: 6px;"><span class="glossary-tooltip-label">Definition:</span><br><span class="glossary-tooltip-value" style="font-style: italic;">' + escapeHtml(definition) + '</span></div>';
-        }
-        
-        if (options && options.length > 0) {
-          var optionsDisplay = options.slice(0, 10).join(', ');
-          if (options.length > 10) optionsDisplay += ', ... (' + options.length + ' total)';
-          tooltipContent += '<div class="glossary-tooltip-row" style="margin-top: 6px;"><span class="glossary-tooltip-label">Options:</span><div class="glossary-tooltip-options">' + escapeHtml(optionsDisplay) + '</div></div>';
-        }
       }
-      
-      return '<span class="glossary-tooltip-wrapper">' +
-             '<span class="glossary-icon" title="Field glossary">ⓘ</span>' +
-             '<div class="glossary-tooltip">' + tooltipContent + '</div>' +
-             '</span>';
+
+      var html = '';
+      html += '<div class="gtt-row"><span class="gtt-label">Field:</span> <span class="gtt-value">' + escapeHtml(label) + '</span></div>';
+      html += '<div class="gtt-row"><span class="gtt-label">Type:</span> <span class="gtt-value">' + escapeHtml(type) + '</span></div>';
+      html += '<div class="gtt-row"><span class="gtt-label">Status:</span> <span class="gtt-value">' + requiredLabel + '</span></div>';
+      if (hingeGroup) {
+        html += '<div class="gtt-row"><span class="gtt-label">Group:</span> <span class="gtt-value">' + escapeHtml(hingeGroup) + '</span></div>';
+      }
+      if (definition) {
+        html += '<hr class="gtt-divider">';
+        html += '<div class="gtt-definition">' + escapeHtml(definition) + '</div>';
+      }
+      if (options && options.length > 0) {
+        html += '<hr class="gtt-divider">';
+        var optionsDisplay = options.slice(0, 10).join(', ');
+        if (options.length > 10) optionsDisplay += ', ... (' + options.length + ' total)';
+        html += '<div class="gtt-row"><span class="gtt-label">Options:</span></div>';
+        html += '<div class="gtt-options">' + escapeHtml(optionsDisplay) + '</div>';
+      }
+      return html;
     }
     
     // Check if value is blank (empty, null, undefined, whitespace only, or common null-like strings)
@@ -24113,5 +24119,71 @@ Add any additional notes here.
     updateUIForDataState();
     updateSessionChip();
   </script>
+
+    <!-- Glossary Portal Tooltip (v1.6.36+) -->
+    <div id="glossary-portal-tooltip"></div>
+    <script>
+    (function() {
+      var portal = document.getElementById('glossary-portal-tooltip');
+      var hoverTimer = null;
+      var currentIcon = null;
+
+      function showPortalTooltip(icon) {
+        var fieldKey = icon.getAttribute('data-field-key');
+        var sheet = icon.getAttribute('data-sheet') || '';
+        if (!fieldKey) return;
+
+        portal.innerHTML = buildGlossaryPortalContent(fieldKey, sheet);
+
+        var rect = icon.getBoundingClientRect();
+        var tw = 340;
+        var pad = 12;
+
+        var left = rect.left + rect.width / 2 - tw / 2;
+        if (left < pad) left = pad;
+        if (left + tw > window.innerWidth - pad) left = window.innerWidth - pad - tw;
+
+        portal.style.width = tw + 'px';
+        portal.style.left = left + 'px';
+        portal.classList.add('visible');
+
+        var ph = portal.offsetHeight;
+        if (rect.top - ph - 8 > pad) {
+          portal.style.top = (rect.top - ph - 8) + 'px';
+        } else {
+          portal.style.top = (rect.bottom + 8) + 'px';
+        }
+      }
+
+      function hidePortalTooltip() {
+        clearTimeout(hoverTimer);
+        hoverTimer = null;
+        currentIcon = null;
+        portal.classList.remove('visible');
+      }
+
+      document.addEventListener('mouseover', function(e) {
+        var icon = e.target.closest('.glossary-icon');
+        if (!icon) return;
+        if (icon === currentIcon) return;
+        clearTimeout(hoverTimer);
+        currentIcon = icon;
+        hoverTimer = setTimeout(function() {
+          showPortalTooltip(icon);
+        }, 150);
+      });
+
+      document.addEventListener('mouseout', function(e) {
+        var icon = e.target.closest('.glossary-icon');
+        if (icon && icon === currentIcon) {
+          hidePortalTooltip();
+        }
+      });
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') hidePortalTooltip();
+      });
+    })();
+    </script>
 </body>
 </html>
