@@ -15527,48 +15527,61 @@
       showToast('Draft saved', 'success');
     }
     
+    function srrCheckEvidenceGate(patchType, draft, changeCount, overrideEnabled) {
+      var missing = [];
+      if (patchType === 'correction') {
+        if (!draft.observation_type) missing.push('Observation type');
+        if (!draft.expected_type) missing.push('Expected behavior');
+        if (changeCount === 0) missing.push('At least one field change');
+        if (!overrideEnabled && !draft.repro_type) missing.push('Repro method (or enable Override)');
+        if (draft.repro_type === 'doc_evidence_mismatch' && !draft.repro_file) missing.push('File attachment for Doc Evidence Mismatch');
+        if (!draft.justification || draft.justification.trim().length < 10) missing.push('Justification (min 10 chars)');
+      } else {
+        if (!draft.justification || draft.justification.trim().length < 10) missing.push('Justification (min 10 chars)');
+      }
+      return missing;
+    }
+
+    function srrCheckPreflightGate() {
+      var steps = [
+        { key: 'baseVersion', label: 'Base Version Check' },
+        { key: 'validation', label: 'Validation Report' },
+        { key: 'conflict', label: 'Conflict Check' },
+        { key: 'smokeBaseline', label: 'Smoke Baseline' },
+        { key: 'smokeEdge', label: 'Smoke Edge' }
+      ];
+      var failed = [];
+      for (var i = 0; i < steps.length; i++) {
+        var step = steps[i];
+        var status = (preflightEvidence[step.key] && preflightEvidence[step.key].status) || 'pending';
+        if (status === 'pending') failed.push(step.label + ' (not run)');
+        else if (status === 'fail') failed.push(step.label + ' (failed)');
+      }
+      return failed;
+    }
+
     function srrSubmitPatchRequest() {
-      // Save current values
       srrSaveEvidenceDraft();
       
       var patchType = srrState.patchType;
       var changeCount = Object.keys(srrState.proposedChanges).length;
-      var justification = srrState.patchDraft.justification;
-      
-      // v1.4.19: Validation based on patch type
-      if (patchType === 'correction') {
-        // Correction: Observation + Expected + Justification required
-        var obsType = srrState.patchDraft.observation_type;
-        var expType = srrState.patchDraft.expected_type;
-        
-        if (!obsType) {
-          showToast('Please select an Observation type', 'warning');
-          return;
-        }
-        if (!expType) {
-          showToast('Please select an Expected behavior type', 'warning');
-          return;
-        }
-        if (changeCount === 0) {
-          showToast('Please make at least one field change', 'warning');
-          return;
-        }
-        // Repro required unless override is enabled
-        if (!srrState.overrideEnabled && !srrState.patchDraft.repro_type) {
-          showToast('Please select a Repro method (or enable Override)', 'warning');
-          return;
-        }
-        // Doc Evidence Mismatch requires file attachment
-        if (srrState.patchDraft.repro_type === 'doc_evidence_mismatch' && !srrState.patchDraft.repro_file) {
-          showToast('Doc Evidence Mismatch requires a file attachment', 'warning');
-          return;
-        }
-      } else {
-        // Blacklist Flag or RFI: Justification only required
-        if (!justification || justification.trim().length < 10) {
-          showToast('Please provide a justification (minimum 10 characters)', 'warning');
-          return;
-        }
+      var draft = srrState.patchDraft;
+      var justification = draft.justification;
+
+      // v1.6.46: Evidence Pack gate
+      var evidenceGaps = srrCheckEvidenceGate(patchType, draft, changeCount, srrState.overrideEnabled);
+      if (evidenceGaps.length > 0) {
+        showToast('Evidence Pack incomplete: ' + evidenceGaps.join(', '), 'warning');
+        console.log('[SRR] Submit blocked — evidence gaps:', evidenceGaps);
+        return;
+      }
+
+      // v1.6.46: Preflight gate
+      var preflightGaps = srrCheckPreflightGate();
+      if (preflightGaps.length > 0) {
+        showToast('Preflight gate incomplete: ' + preflightGaps.join(', '), 'warning');
+        console.log('[SRR] Submit blocked — preflight gaps:', preflightGaps);
+        return;
       }
       
       // v1.4.19: Build patch request based on type
