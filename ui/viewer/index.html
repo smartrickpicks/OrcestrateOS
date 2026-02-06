@@ -20372,27 +20372,7 @@
       loadRulesBundle();  // v1.5.7: Load rules bundle for Field Inspector ordering
     });
     
-    // v1.6.36: Glossary tooltip positioning (fixed positioning to escape container bounds)
-    document.addEventListener('mouseover', function(e) {
-      if (e.target.classList.contains('glossary-icon')) {
-        var tooltip = e.target.nextElementSibling;
-        if (tooltip && tooltip.classList.contains('glossary-tooltip')) {
-          var rect = e.target.getBoundingClientRect();
-          tooltip.style.left = (rect.left + rect.width / 2) + 'px';
-          tooltip.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
-          tooltip.style.transform = 'translateX(-50%)';
-          tooltip.classList.add('visible');
-        }
-      }
-    });
-    document.addEventListener('mouseout', function(e) {
-      if (e.target.classList.contains('glossary-icon')) {
-        var tooltip = e.target.nextElementSibling;
-        if (tooltip && tooltip.classList.contains('glossary-tooltip')) {
-          tooltip.classList.remove('visible');
-        }
-      }
-    });
+
     
     // Global Search Stub (V2)
     function handleGlobalSearchKeydown(event) {
