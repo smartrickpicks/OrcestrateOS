@@ -5,7 +5,7 @@ run = "python3 local_runner/validate_config.py --base config/config_pack.base.js
 
 [nix]
 channel = "stable-25_05"
-packages = ["nano"]
+packages = ["freetype", "gumbo", "harfbuzz", "jbig2dec", "libjpeg_turbo", "mupdf", "nano", "openjpeg", "swig", "xcbuild"]
 
 [agent]
 expertMode = true

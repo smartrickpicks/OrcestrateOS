@@ -48,4 +48,4 @@ The Export/Save button generates an XLSX file using SheetJS with all data sheets
 Exported files are named `orchestrate_{dataset_id}_{timestamp}.xlsx` and downloaded directly to the user's device.
 
 ## External Dependencies
-None by design. This repository exclusively uses the Python standard library, with no external Python packages, database connections, API integrations, runtime services, or credentials/secrets. A FastAPI server is used as a local PDF proxy for CORS-safe PDF fetching. SheetJS (XLSX) is loaded via CDN for Excel import/export functionality.
+None by design. This repository exclusively uses the Python standard library, with no external Python packages, database connections, API integrations, runtime services, or credentials/secrets. A FastAPI server is used as a local PDF proxy for CORS-safe PDF fetching and text extraction (PyMuPDF). The `/api/pdf/text` endpoint extracts per-page text for anchor-driven search; the viewer's match navigation bar lets users jump to pages containing a field's value with Previous/Next controls. SheetJS (XLSX) is loaded via CDN for Excel import/export functionality.

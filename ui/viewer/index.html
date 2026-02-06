@@ -543,28 +543,30 @@
     .srr-anchor-overlay { position: absolute; border: 2px solid #1565c0; background: rgba(21, 101, 192, 0.1); pointer-events: auto; cursor: pointer; }
     .srr-anchor-overlay:hover { background: rgba(21, 101, 192, 0.25); }
     
-    /* v1.6.12: Non-blocking PDF highlight overlay */
-    .srr-pdf-highlight-toast {
-      position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
-      background: rgba(21, 101, 192, 0.95); color: white; padding: 10px 18px;
-      border-radius: 8px; font-size: 0.85em; font-weight: 500;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 100;
-      display: flex; align-items: center; gap: 10px;
-      opacity: 1; transition: opacity 0.3s ease-out;
-      pointer-events: auto; max-width: 80%;
+    /* PDF anchor match navigation bar */
+    .srr-pdf-match-bar {
+      position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+      background: #fff; color: #333; padding: 6px 14px;
+      border-radius: 8px; font-size: 0.82em; font-weight: 500;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15); z-index: 100;
+      display: none; align-items: center; gap: 8px;
+      border: 1px solid #e0e0e0; pointer-events: auto;
     }
-    .srr-pdf-highlight-toast.fading { opacity: 0; }
-    .srr-pdf-highlight-toast .close-btn {
-      cursor: pointer; opacity: 0.7; font-size: 1.1em; margin-left: 8px;
+    .srr-pdf-match-bar.visible { display: flex; }
+    .srr-pdf-match-bar .match-label { color: #555; white-space: nowrap; }
+    .srr-pdf-match-bar .match-field { color: #1565c0; font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .srr-pdf-match-bar .match-count { color: #888; font-size: 0.9em; }
+    .srr-pdf-match-bar .match-nav-btn {
+      background: #e8eaf6; border: none; color: #1565c0; width: 26px; height: 26px;
+      border-radius: 50%; cursor: pointer; font-size: 0.9em; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
     }
-    .srr-pdf-highlight-toast .close-btn:hover { opacity: 1; }
-    .srr-pdf-highlight-box {
-      position: absolute; border: 3px solid #1565c0; background: rgba(21, 101, 192, 0.15);
-      border-radius: 4px; z-index: 50; pointer-events: none;
-      opacity: 1; transition: opacity 0.3s ease-out;
-      box-shadow: 0 0 12px rgba(21, 101, 192, 0.4);
-    }
-    .srr-pdf-highlight-box.fading { opacity: 0; }
+    .srr-pdf-match-bar .match-nav-btn:hover { background: #c5cae9; }
+    .srr-pdf-match-bar .match-nav-btn:disabled { opacity: 0.4; cursor: default; }
+    .srr-pdf-match-bar .match-close { cursor: pointer; color: #999; font-size: 1.1em; margin-left: 2px; }
+    .srr-pdf-match-bar .match-close:hover { color: #333; }
+    .srr-pdf-match-bar .match-not-found { color: #e65100; font-style: italic; }
+    .srr-pdf-match-bar .match-loading { color: #888; font-style: italic; }
     .srr-anchor-list { padding: 12px; border-top: 1px solid #e0e0e0; max-height: 150px; overflow-y: auto; }
     .srr-anchor-item { padding: 8px 10px; background: #f8f9fa; border-radius: 4px; margin-bottom: 6px; font-size: 0.8em; cursor: pointer; border-left: 3px solid #1565c0; }
     .srr-anchor-item:hover { background: #e3f2fd; }
@@ -2126,12 +2128,14 @@
                 <span id="srr-doc-source-name" style="margin-left: 6px; color: #888;"></span>
               </div>
               <div class="srr-doc-frame" id="srr-doc-frame">
-                <!-- v1.6.12: Non-blocking PDF highlight overlay -->
-                <div id="srr-pdf-highlight-toast" class="srr-pdf-highlight-toast" style="display: none;">
-                  <span id="srr-pdf-highlight-label">Field</span>
-                  <span class="close-btn" onclick="srrClearHighlight()" title="Close (Esc)">×</span>
+                <!-- PDF anchor match navigation bar -->
+                <div id="srr-pdf-match-bar" class="srr-pdf-match-bar">
+                  <span class="match-field" id="match-bar-field"></span>
+                  <span class="match-count" id="match-bar-count"></span>
+                  <button class="match-nav-btn" id="match-bar-prev" onclick="pdfMatchNav(-1)" title="Previous match">◀</button>
+                  <button class="match-nav-btn" id="match-bar-next" onclick="pdfMatchNav(1)" title="Next match">▶</button>
+                  <span class="match-close" onclick="pdfMatchDismiss()" title="Close (Esc)">✕</span>
                 </div>
-                <div id="srr-pdf-highlight-box" class="srr-pdf-highlight-box" style="display: none;"></div>
                 
                 <div class="srr-doc-empty-state" id="srr-doc-empty">
                   <div style="font-size: 3em; margin-bottom: 10px;">📄</div>
@@ -15267,128 +15271,166 @@
       return changedFields.length > 0;
     }
     
-    // v1.6.12: Highlight state for auto-dismiss
-    var srrHighlightTimer = null;
-    
-    function srrClearHighlight() {
-      // Clear any pending timer
-      if (srrHighlightTimer) {
-        clearTimeout(srrHighlightTimer);
-        srrHighlightTimer = null;
-      }
-      
-      var toast = document.getElementById('srr-pdf-highlight-toast');
-      var box = document.getElementById('srr-pdf-highlight-box');
-      
-      if (toast) {
-        toast.classList.add('fading');
-        setTimeout(function() {
-          toast.style.display = 'none';
-          toast.classList.remove('fading');
-        }, 300);
-      }
-      if (box) {
-        box.classList.add('fading');
-        setTimeout(function() {
-          box.style.display = 'none';
-          box.classList.remove('fading');
-        }, 300);
-      }
+    // PDF anchor search state
+    var pdfMatchState = { matches: [], current: -1, fieldKey: '', loading: false, searchToken: 0 };
+    var pdfMatchDismissTimer = null;
+
+    function pdfMatchDismiss() {
+      if (pdfMatchDismissTimer) { clearTimeout(pdfMatchDismissTimer); pdfMatchDismissTimer = null; }
+      pdfMatchState = { matches: [], current: -1, fieldKey: '', loading: false, searchToken: pdfMatchState.searchToken };
+      var bar = document.getElementById('srr-pdf-match-bar');
+      if (bar) bar.classList.remove('visible');
     }
-    
-    function srrUpdateViewerHighlight(fieldKey) {
-      var toast = document.getElementById('srr-pdf-highlight-toast');
-      var label = document.getElementById('srr-pdf-highlight-label');
-      var box = document.getElementById('srr-pdf-highlight-box');
-      
-      // Clear any existing highlight first
-      if (srrHighlightTimer) {
-        clearTimeout(srrHighlightTimer);
-        srrHighlightTimer = null;
-      }
-      
-      // If no field selected, just clear
-      if (!fieldKey) {
-        srrClearHighlight();
+
+    function pdfMatchUpdateBar() {
+      var bar = document.getElementById('srr-pdf-match-bar');
+      var fieldEl = document.getElementById('match-bar-field');
+      var countEl = document.getElementById('match-bar-count');
+      var prevBtn = document.getElementById('match-bar-prev');
+      var nextBtn = document.getElementById('match-bar-next');
+      if (!bar) return;
+
+      var displayLabel = pdfMatchState.fieldKey.replace(/_c$/, '').replace(/_/g, ' ');
+      fieldEl.textContent = displayLabel;
+
+      if (pdfMatchState.loading) {
+        countEl.innerHTML = '<span class="match-loading">Searching...</span>';
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        bar.classList.add('visible');
         return;
       }
-      
-      // Check if we have anchor data for this field (stub: always false for now)
-      var hasAnchor = false; // TODO: Check actual anchor data when available
-      
-      if (!hasAnchor) {
-        // Show toast notification that no anchor exists
-        showToast('No anchor found for: ' + fieldKey, 'info');
+
+      if (pdfMatchState.matches.length === 0) {
+        countEl.innerHTML = '<span class="match-not-found">No match found</span>';
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        bar.classList.add('visible');
+        if (pdfMatchDismissTimer) clearTimeout(pdfMatchDismissTimer);
+        var dismissToken = pdfMatchState.searchToken;
+        pdfMatchDismissTimer = setTimeout(function() {
+          if (pdfMatchState.searchToken === dismissToken) pdfMatchDismiss();
+        }, 3000);
+        return;
       }
-      
-      // Format field label for display
-      var displayLabel = fieldKey.replace(/_c$/, '').replace(/_/g, ' ');
-      
-      // Show non-blocking toast
-      if (toast && label) {
-        toast.classList.remove('fading');
-        toast.style.display = 'flex';
-        label.textContent = '🔍 ' + displayLabel;
-      }
-      
-      // Show highlight box placeholder (positioned in center for demo)
-      if (box) {
-        box.classList.remove('fading');
-        box.style.display = 'block';
-        box.style.top = '30%';
-        box.style.left = '10%';
-        box.style.width = '80%';
-        box.style.height = '15%';
-      }
-      
-      // Auto-dismiss after 2.5 seconds
-      srrHighlightTimer = setTimeout(function() {
-        srrClearHighlight();
-      }, 2500);
+
+      countEl.textContent = 'Match ' + (pdfMatchState.current + 1) + ' of ' + pdfMatchState.matches.length;
+      prevBtn.disabled = pdfMatchState.matches.length <= 1;
+      nextBtn.disabled = pdfMatchState.matches.length <= 1;
+      bar.classList.add('visible');
     }
-    
-    // v1.6.12: ESC key handler for clearing highlight
+
+    function pdfMatchNav(dir) {
+      if (pdfMatchState.matches.length === 0) return;
+      pdfMatchState.current = (pdfMatchState.current + dir + pdfMatchState.matches.length) % pdfMatchState.matches.length;
+      var page = pdfMatchState.matches[pdfMatchState.current];
+      pdfMatchUpdateBar();
+      srrNavigateToPage(page);
+    }
+
+    function srrNavigateToPage(pageNum) {
+      var obj = document.getElementById('srr-pdf-object');
+      if (!obj) return;
+      var currentData = obj.getAttribute('data') || '';
+      var baseUrl = currentData.replace(/#page=\d+/, '').replace(/#$/, '');
+      obj.setAttribute('data', baseUrl + '#page=' + pageNum);
+      console.log('[PDF_ANCHOR] Navigating to page', pageNum);
+    }
+
+    function srrClearHighlight() {
+      pdfMatchDismiss();
+    }
+
+    function srrUpdateViewerHighlight(fieldKey) {
+      if (!fieldKey) { pdfMatchDismiss(); return; }
+
+      var record = srrState.currentRecord;
+      if (!record) { pdfMatchDismiss(); return; }
+      var value = record[fieldKey];
+      if (!value || (typeof value === 'string' && !value.trim())) {
+        pdfMatchState = { matches: [], current: -1, fieldKey: fieldKey, loading: false };
+        pdfMatchUpdateBar();
+        return;
+      }
+      var searchQuery = String(value).trim();
+      var fileUrl = record['File_URL_c'] || record['file_url'] || '';
+      if (!fileUrl) {
+        showToast('No document URL for text search', 'info');
+        return;
+      }
+
+      if (pdfMatchDismissTimer) { clearTimeout(pdfMatchDismissTimer); pdfMatchDismissTimer = null; }
+      var token = ++pdfMatchState.searchToken;
+      pdfMatchState = { matches: [], current: -1, fieldKey: fieldKey, loading: true, searchToken: token };
+      pdfMatchUpdateBar();
+
+      var proxyBase = window._pdfProxyBaseUrl || '';
+      var apiUrl = proxyBase + '/api/pdf/text?url=' + encodeURIComponent(fileUrl);
+
+      fetch(apiUrl)
+        .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function(data) {
+          if (pdfMatchState.searchToken !== token) return;
+          var pages = data.pages || [];
+          var queryLower = searchQuery.toLowerCase();
+          var matchPages = [];
+          pages.forEach(function(p) {
+            if (p.text && p.text.toLowerCase().indexOf(queryLower) >= 0) {
+              matchPages.push(p.page);
+            }
+          });
+          pdfMatchState.matches = matchPages;
+          pdfMatchState.loading = false;
+          if (matchPages.length > 0) {
+            pdfMatchState.current = 0;
+            srrNavigateToPage(matchPages[0]);
+          }
+          pdfMatchUpdateBar();
+          console.log('[PDF_ANCHOR] Search for "' + searchQuery.substring(0, 30) + '": ' + matchPages.length + ' page matches');
+        })
+        .catch(function(err) {
+          if (pdfMatchState.searchToken !== token) return;
+          console.warn('[PDF_ANCHOR] Text extraction failed:', err);
+          pdfMatchState.loading = false;
+          pdfMatchState.matches = [];
+          pdfMatchUpdateBar();
+        });
+    }
+
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
-        var toast = document.getElementById('srr-pdf-highlight-toast');
-        if (toast && toast.style.display !== 'none') {
-          srrClearHighlight();
-        }
-      }
-    });
-    
-    // v1.6.12: Click outside to clear highlight
-    document.addEventListener('click', function(e) {
-      var toast = document.getElementById('srr-pdf-highlight-toast');
-      var box = document.getElementById('srr-pdf-highlight-box');
-      if (toast && toast.style.display !== 'none') {
-        // If click is not on the toast or box, clear
-        if (!toast.contains(e.target) && (!box || !box.contains(e.target))) {
-          srrClearHighlight();
+        var bar = document.getElementById('srr-pdf-match-bar');
+        if (bar && bar.classList.contains('visible')) {
+          pdfMatchDismiss();
         }
       }
     });
     
     function srrUpdateAnchorList(fieldKey) {
       var container = document.getElementById('srr-anchor-list');
+      if (!container) return;
       
       if (!fieldKey) {
         container.innerHTML = '<div style="font-size: 0.8em; font-weight: 600; color: #666; margin-bottom: 8px;">Evidence Anchors</div>' +
-          '<div class="srr-empty-state" style="padding: 10px;">No anchors defined</div>';
+          '<div class="srr-empty-state" style="padding: 10px;">Select a field to search in document</div>';
         return;
       }
       
-      // Stub anchor for selected field
-      container.innerHTML = '<div style="font-size: 0.8em; font-weight: 600; color: #666; margin-bottom: 8px;">Evidence Anchors for: ' + fieldKey + '</div>' +
-        '<div class="srr-anchor-item" onclick="srrJumpToAnchor(\'' + fieldKey + '\', 0)">' +
-          '<div style="font-weight: 500;">' + fieldKey + ' — Source</div>' +
-          '<div style="font-size: 0.75em; color: #888;">Page 1 • Click to highlight</div>' +
+      var record = srrState.currentRecord;
+      var value = record ? record[fieldKey] : null;
+      var hasValue = value && String(value).trim();
+      var displayLabel = fieldKey.replace(/_c$/, '').replace(/_/g, ' ');
+      
+      container.innerHTML = '<div style="font-size: 0.8em; font-weight: 600; color: #666; margin-bottom: 8px;">Evidence Anchors</div>' +
+        '<div class="srr-anchor-item" onclick="srrJumpToAnchor(\'' + fieldKey + '\')" style="' + (hasValue ? '' : 'opacity: 0.5; cursor: default;') + '">' +
+          '<div style="font-weight: 500;">' + escapeHtml(displayLabel) + '</div>' +
+          '<div style="font-size: 0.75em; color: #888;">' + (hasValue ? 'Click to find in document' : 'No value to search') + '</div>' +
         '</div>';
     }
     
-    function srrJumpToAnchor(fieldKey, anchorIdx) {
-      console.log('[SRR] Jumping to anchor: ' + fieldKey + ', index: ' + anchorIdx);
-      showToast('Anchor navigation: ' + fieldKey, 'info');
+    function srrJumpToAnchor(fieldKey) {
+      console.log('[SRR] Anchor search for:', fieldKey);
+      srrUpdateViewerHighlight(fieldKey);
     }
     
     function renderSrrPatchList() {
