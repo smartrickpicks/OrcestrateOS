@@ -13357,11 +13357,8 @@
         var iconReset = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 110 8h-1"/></svg>';
         
         var actionsHtml = '<div class="srr-field-actions">';
-        // v1.5.3 Fix: Verifier can action non-verified fields, verified fields are read-only
-        // Analyst: all actions available based on field state
-        // Verifier/Admin: actions available for non-verified/non-submitted states
-        var isFieldActionable = !srrState.isReadOnly || 
-          (srrState.verifierMode && fieldState !== 'verified' && fieldState !== 'submitted');
+        // v1.6.46: Analyst-only actions — Verifier/Admin see no SRR action buttons
+        var isFieldActionable = !srrState.isReadOnly;
         
         if (isFieldActionable) {
           if (fieldState === 'todo') {
@@ -13644,9 +13641,8 @@
       // v1.5.2: Select field for quick actions (works even in read-only mode)
       srrPeSelectField(fieldKey, fieldLabel);
       
-      // v1.5.1: Prevent editing in read-only mode (Verifier/Admin)
+      // v1.6.46: Verifier/Admin read-only — silently prevent editing (no toast)
       if (srrState.isReadOnly) {
-        showToast('Read-only mode: Use Patch Tester tab to review', 'info');
         return;
       }
       
