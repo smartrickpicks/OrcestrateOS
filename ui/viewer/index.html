@@ -1471,6 +1471,27 @@
     .catalog-toggle-btn { padding: 5px 12px; border-radius: 5px; font-size: 0.8em; font-weight: 600; cursor: pointer; border: 1px solid #1565c0; background: white; color: #1565c0; transition: all 0.15s; }
     .catalog-toggle-btn:hover { background: #e3f2fd; }
     .catalog-toggle-btn.active { background: #1565c0; color: white; border-color: #1565c0; }
+    .inspector-actions-bar { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-bottom: 1px solid #e0e0e0; background: #fafafa; position: relative; }
+    .inspector-action-trigger { width: 28px; height: 28px; border-radius: 6px; border: 1.5px dashed #bbb; background: #fff; color: #999; font-size: 1.1em; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s; position: relative; }
+    .inspector-action-trigger:hover { border-color: #1565c0; color: #1565c0; background: #e3f2fd; }
+    .inspector-action-trigger.has-active { border-style: solid; border-color: #1565c0; color: #1565c0; background: #e3f2fd; }
+    .inspector-actions-menu { position: absolute; top: 100%; left: 6px; margin-top: 2px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 220px; z-index: 50; overflow: hidden; }
+    .inspector-actions-menu-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; font-size: 0.82em; color: #333; cursor: pointer; transition: background 0.12s; border-bottom: 1px solid #f0f0f0; }
+    .inspector-actions-menu-item:last-child { border-bottom: none; }
+    .inspector-actions-menu-item:hover { background: #f5f7fa; }
+    .inspector-actions-menu-item .action-icon { width: 24px; height: 24px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 0.9em; flex-shrink: 0; }
+    .inspector-actions-menu-item .action-label { flex: 1; }
+    .inspector-actions-menu-item .action-label .action-title { font-weight: 600; display: block; }
+    .inspector-actions-menu-item .action-label .action-desc { font-size: 0.88em; color: #888; display: block; margin-top: 1px; }
+    .inspector-actions-menu-item .action-status { font-size: 0.75em; padding: 2px 8px; border-radius: 10px; font-weight: 600; white-space: nowrap; }
+    .inspector-actions-menu-item .action-status.active-status { background: #e3f2fd; color: #1565c0; }
+    .inspector-actions-menu-item .action-status.off-status { background: #f5f5f5; color: #aaa; }
+    .inspector-actions-menu-item.disabled { opacity: 0.45; pointer-events: none; }
+    .inspector-action-chips { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
+    .inspector-action-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; cursor: pointer; transition: all 0.12s; }
+    .inspector-action-chip:hover { background: #bbdefb; }
+    .inspector-action-chip .chip-x { font-size: 0.9em; margin-left: 2px; opacity: 0.6; }
+    .inspector-action-chip .chip-x:hover { opacity: 1; }
   </style>
 </head>
 <body>
@@ -2083,8 +2104,6 @@
             </select>
           </div>
           <span id="srr-group-badge" style="display:none;"></span>
-          <button id="srr-catalog-toggle-btn" class="catalog-toggle-btn" onclick="toggleCatalogItemsGroup()" style="display:none;" title="Mark this record as a Catalog Items group anchor">Set as Catalog Items Group</button>
-          <button id="srr-batch-add-btn" class="batch-add-btn" onclick="openBatchAddModal()" style="display:none;" title="Add missing items as child rows under this record">+ Add Missing Items</button>
         </div>
 
         <!-- Three-Panel Layout -->
@@ -2112,6 +2131,20 @@
             <div class="srr-field-legend">
               <span><span class="legend-required">*</span> Options</span>
               <span><span class="legend-invalid">**</span> Invalid</span>
+            </div>
+            <div class="inspector-actions-bar" id="inspector-actions-bar" style="display:none;">
+              <button class="inspector-action-trigger" id="inspector-action-trigger" onclick="toggleInspectorActionsMenu(event)" title="Record actions">+</button>
+              <div class="inspector-action-chips" id="inspector-action-chips"></div>
+              <div class="inspector-actions-menu" id="inspector-actions-menu" style="display:none;">
+                <div class="inspector-actions-menu-item" id="action-catalog-items" onclick="toggleCatalogItemsGroup()">
+                  <span class="action-icon" style="background: #e3f2fd; color: #1565c0;">&#9776;</span>
+                  <span class="action-label">
+                    <span class="action-title">Catalog Items Group</span>
+                    <span class="action-desc">Group records and batch-add items</span>
+                  </span>
+                  <span class="action-status off-status" id="action-catalog-status">Off</span>
+                </div>
+              </div>
             </div>
             <div class="srr-panel-body" id="srr-field-list" style="padding: 0;">
               <div class="srr-empty-state">No fields loaded</div>
@@ -3035,7 +3068,7 @@
           <!-- v1.6.48: Batch Add Settings -->
           <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Catalog Items Grouping <span class="info-icon" title="Catalog Items Grouping allows Analysts to mark records as group anchors and batch-add catalog items. The feature is per-record (off by default).">&#9432;</span></h3>
-            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Catalog Items Grouping is enabled per-record. Analysts use 'Set as Catalog Items Group' in Record Inspection. Per-sheet overrides below are optional.</p>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Catalog Items Grouping is enabled per-record. Analysts use the + menu in the Field Inspector. Per-sheet overrides below are optional.</p>
             <div id="admin-batch-add-toggles" style="display: flex; flex-direction: column; gap: 8px;">
               <div style="color: #999; font-size: 0.85em; font-style: italic;">Load a dataset to see available sheets.</div>
             </div>
@@ -4755,7 +4788,52 @@
       return sheet.headers[0] || null;
     }
 
-    function toggleCatalogItemsGroup() {
+    function toggleInspectorActionsMenu(e) {
+      if (e) e.stopPropagation();
+      var menu = document.getElementById('inspector-actions-menu');
+      if (!menu) return;
+      if (menu.style.display === 'none') {
+        menu.style.display = 'block';
+        setTimeout(function() {
+          document.addEventListener('click', closeInspectorActionsMenu, { once: true });
+        }, 10);
+      } else {
+        menu.style.display = 'none';
+      }
+    }
+
+    function closeInspectorActionsMenu() {
+      var menu = document.getElementById('inspector-actions-menu');
+      if (menu) menu.style.display = 'none';
+    }
+
+    function updateInspectorActionsState() {
+      var record = srrState.currentRecord;
+      var isAnalystOrAdmin = (currentMode === 'analyst' || currentMode === 'admin');
+      var actionsBar = document.getElementById('inspector-actions-bar');
+      if (actionsBar) actionsBar.style.display = isAnalystOrAdmin ? 'flex' : 'none';
+      var isAnchor = record && record._group && record._group.is_anchor;
+      var statusEl = document.getElementById('action-catalog-status');
+      if (statusEl) {
+        statusEl.textContent = isAnchor ? 'Active' : 'Off';
+        statusEl.className = 'action-status ' + (isAnchor ? 'active-status' : 'off-status');
+      }
+      var trigger = document.getElementById('inspector-action-trigger');
+      if (trigger) trigger.classList.toggle('has-active', !!isAnchor);
+      var chipsEl = document.getElementById('inspector-action-chips');
+      if (chipsEl) {
+        var chips = '';
+        if (isAnchor) {
+          chips += '<span class="inspector-action-chip" onclick="toggleCatalogItemsGroup()" title="Click to remove">' +
+            '&#9776; Catalog Group <span class="chip-x">&times;</span></span>';
+          chips += '<span class="inspector-action-chip" onclick="openBatchAddModal()" title="Add missing items" style="background: #fff; border-color: #1565c0; color: #1565c0; cursor: pointer;">' +
+            '+ Add Items</span>';
+        }
+        chipsEl.innerHTML = chips;
+      }
+    }
+
+        function toggleCatalogItemsGroup() {
       var sheetName = srrState.currentSheetName;
       var rowIndex = srrState.currentRowIndex;
       var record = srrState.currentRecord;
@@ -4777,16 +4855,9 @@
         showToast('Record set as Catalog Items group anchor.', 'success');
       }
 
-      var catalogBtn = document.getElementById('srr-catalog-toggle-btn');
-      var batchBtn = document.getElementById('srr-batch-add-btn');
       var isAnchor = record._group && record._group.is_anchor;
-      if (catalogBtn) {
-        catalogBtn.classList.toggle('active', !!isAnchor);
-        catalogBtn.textContent = isAnchor ? '✓ Catalog Items Group' : 'Set as Catalog Items Group';
-      }
-      if (batchBtn) {
-        batchBtn.style.display = isAnchor ? 'inline-block' : 'none';
-      }
+      updateInspectorActionsState();
+      closeInspectorActionsMenu();
       if (typeof updateSrrGroupBadge === 'function') updateSrrGroupBadge();
       if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
     }
@@ -13638,20 +13709,7 @@
       srrState.currentRowIndex = rowIndex;
       srrState.currentRecordKey = recordKey;
 
-      // v1.6.48: Per-record Catalog Items toggle + batch add button
-      var catalogBtn = document.getElementById('srr-catalog-toggle-btn');
-      var batchBtn = document.getElementById('srr-batch-add-btn');
-      var isAnalystOrAdmin = (currentMode === 'analyst' || currentMode === 'admin');
-      if (catalogBtn) {
-        catalogBtn.style.display = isAnalystOrAdmin ? 'inline-block' : 'none';
-        var isAnchor = record && record._group && record._group.is_anchor;
-        catalogBtn.classList.toggle('active', !!isAnchor);
-        catalogBtn.textContent = isAnchor ? '✓ Catalog Items Group' : 'Set as Catalog Items Group';
-      }
-      if (batchBtn) {
-        var isAnchor = record && record._group && record._group.is_anchor;
-        batchBtn.style.display = (isAnalystOrAdmin && isAnchor) ? 'inline-block' : 'none';
-      }
+      updateInspectorActionsState();
       if (typeof updateSrrGroupBadge === 'function') updateSrrGroupBadge();
       
       // v1.4.15: Single structured log per SRR open (use field resolver for Salesforce-style columns)
