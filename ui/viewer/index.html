@@ -488,7 +488,7 @@
     .srr-footer { background: #f5f5f5; border-top: 1px solid #e0e0e0; padding: 8px 16px; text-align: center; }
     .srr-footer-filename { font-size: 0.85em; color: #666; font-weight: 500; }
     .srr-panel { background: white; border: 1px solid #e0e0e0; overflow-y: auto; }
-    .srr-panel-left { flex: 0 0 320px; flex-shrink: 0; border-right: none; }
+    .srr-panel-left { flex: 0 0 380px; flex-shrink: 0; border-right: none; }
     .srr-panel-center { flex: 1; min-width: 300px; }
     .srr-panel-right { flex: 0 0 320px; flex-shrink: 0; border-left: none; }
     .srr-panel-header { background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #e0e0e0; font-weight: 600; font-size: 0.9em; color: #333; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 5; }
@@ -786,18 +786,16 @@
     .srr-chip-needs-patch { background: #e91e63; color: white; }
     .srr-chip-required { background: #9c27b0; color: white; }
     /* v1.6.15: Asterisk markers for required/invalid fields (replaces pills) */
-    .srr-required-marker { color: #9c27b0; font-weight: 700; margin-left: 2px; }
-    .srr-invalid-marker { color: #ff5722; font-weight: 700; margin-left: 1px; }
+    .srr-required-marker { color: #42a5f5; font-size: 0.75em; margin-left: 3px; opacity: 0.8; }
+    .srr-invalid-marker { color: #e65100; font-size: 0.8em; font-weight: 700; margin-left: 2px; }
     /* Legend for asterisk markers */
     .srr-field-legend { font-size: 0.7em; color: #888; padding: 6px 12px; background: #fafafa; border-bottom: 1px solid #e0e0e0; display: flex; gap: 12px; }
     .srr-field-legend span { display: flex; align-items: center; gap: 3px; }
     .srr-field-legend .legend-required { color: #9c27b0; }
     .srr-field-legend .legend-invalid { color: #ff5722; }
     /* v1.6.10: Dropdown field styling */
-    .srr-field-value-display.is-dropdown { cursor: pointer; }
-    .srr-field-value-display .dropdown-indicator { color: #666; font-size: 0.7em; margin-left: 4px; }
+
     .srr-field-card.has-invalid-value { border-left: 3px solid #ff5722; }
-    .srr-field-card.is-picklist .srr-field-value-display:hover { background: rgba(2, 136, 209, 0.1); }
     .srr-field-value-select { 
       width: 100%; 
       padding: 6px 8px; 
@@ -808,6 +806,16 @@
       outline: none;
     }
     .srr-field-value-select:focus { border-color: #01579b; box-shadow: 0 0 0 2px rgba(2, 136, 209, 0.2); }
+    .srr-inline-select {
+      width: 100%; padding: 6px 8px; border: 1px solid #e0e0e0; border-radius: 4px;
+      font-size: 0.85em; background: #fafafa; outline: none; color: #333;
+      cursor: pointer; font-family: inherit; appearance: auto;
+    }
+    .srr-inline-select:hover { border-color: #90caf9; background: #f5f9ff; }
+    .srr-inline-select:focus { border-color: #1565c0; box-shadow: 0 0 0 2px rgba(21, 101, 192, 0.15); background: white; }
+    .srr-inline-select.invalid { border-color: #ff5722; background: #fff8f6; }
+    .srr-inline-select:disabled { opacity: 0.6; cursor: not-allowed; }
+    .srr-inline-select option.invalid-opt { color: #c62828; }
     .srr-field-card-body { padding: 10px; }
     .srr-field-value-display { font-size: 0.85em; color: #333; word-break: break-word; padding: 6px 8px; background: #fafafa; border-radius: 4px; min-height: 24px; cursor: text; }
     .srr-field-value-display:hover { background: #f0f0f0; }
@@ -13850,6 +13858,36 @@
       
       // v1.5.7: Build HTML with group headers using hinge-based ordering
       // Helper function to render a single field card
+      function srrBuildInlineSelect(fieldKey, currentVal, options, isInvalid, isLocked) {
+        var valStr = String(currentVal || '').trim();
+        var valLower = valStr.toLowerCase();
+        var foundCurrent = false;
+        var html = '<select class="srr-inline-select' + (isInvalid ? ' invalid' : '') + '" ' +
+          'data-field="' + fieldKey + '" ' +
+          (isLocked ? 'disabled ' : '') +
+          'onchange="srrInlineSelectChange(this)">';
+        html += '<option value=""' + (!valStr ? ' selected' : '') + '>-- Select --</option>';
+        options.forEach(function(opt) {
+          var optStr = String(opt).trim();
+          var sel = optStr.toLowerCase() === valLower;
+          if (sel) foundCurrent = true;
+          html += '<option value="' + optStr.replace(/"/g, '&quot;') + '"' + (sel ? ' selected' : '') + '>' + optStr + '</option>';
+        });
+        if (valStr && !foundCurrent) {
+          html += '<option value="' + valStr.replace(/"/g, '&quot;') + '" selected class="invalid-opt">' + valStr + '</option>';
+        }
+        html += '</select>';
+        return html;
+      }
+
+      function srrInlineSelectChange(selectEl) {
+        var fieldKey = selectEl.getAttribute('data-field');
+        if (!fieldKey) return;
+        var newValue = selectEl.value;
+        srrPeSelectField(fieldKey, fieldKey.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); }));
+        srrCommitEdit(fieldKey, newValue);
+      }
+
       function renderFieldCard(key) {
         var originalVal = srrState.originalValues[key];
         var currentVal = srrState.editedValues.hasOwnProperty(key) ? srrState.editedValues[key] : originalVal;
@@ -13905,10 +13943,10 @@
         // v1.6.15: Asterisk markers for picklist/invalid fields (replaces pills)
         var labelSuffix = '';
         if (isPicklistField) {
-          labelSuffix += '<span class="srr-required-marker" title="Options field">*</span>';
+          labelSuffix += '<span class="srr-required-marker" title="Options field">•</span>';
         }
         if (isInvalidPicklistValue) {
-          labelSuffix += '<span class="srr-invalid-marker" title="Value not in options list">**</span>';
+          labelSuffix += '<span class="srr-invalid-marker" title="Value not in options list">!</span>';
         }
         
         // v1.6.36: Build glossary tooltip from field metadata
@@ -13982,10 +14020,10 @@
             actionsHtml +
           '</div>' +
           '<div class="srr-field-card-body">' +
-            '<div class="srr-field-value-display' + (isPicklistField ? ' is-dropdown' : '') + '" onclick="srrStartEdit(\'' + key + '\')" title="Click to ' + (isPicklistField ? 'select' : 'edit') + '" data-is-picklist="' + (isPicklistField ? 'true' : 'false') + '" data-picklist-options="' + (isPicklistField ? encodeURIComponent(JSON.stringify(picklistOptions)) : '') + '">' + 
+            (isPicklistField ? srrBuildInlineSelect(key, currentVal, picklistOptions, isInvalidPicklistValue, isLocked) :
+            '<div class="srr-field-value-display" onclick="srrStartEdit(\'' + key + '\')" title="Click to edit" data-is-picklist="false">' + 
               (String(currentVal) || '<span style="color:#999;font-style:italic;">Empty</span>') + 
-              (isPicklistField ? ' <span class="dropdown-indicator">▼</span>' : '') +
-            '</div>';
+            '</div>');
         
         // Show mini patch prompt if this field was just edited
         if (isEdited && srrState.editingField === key) {
