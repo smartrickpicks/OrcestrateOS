@@ -15329,11 +15329,8 @@
     }
 
     function srrNavigateToPage(pageNum) {
-      var obj = document.getElementById('srr-pdf-object');
-      if (!obj) return;
-      var currentData = obj.getAttribute('data') || '';
-      var baseUrl = currentData.replace(/#page=\d+/, '').replace(/#$/, '');
-      obj.setAttribute('data', baseUrl + '#page=' + pageNum);
+      srrState.docPage = pageNum;
+      srrUpdateIframeSrc();
       console.log('[PDF_ANCHOR] Navigating to page', pageNum);
     }
 
