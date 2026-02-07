@@ -1,0 +1,92 @@
+Replit Task: V1 Gate Enforcement + Replay Contract + No Self-Approval (UI + Docs)
+
+Alignment of task:
+- Enforce V1 governance gates and role-locked promotion flow.
+- Keep Submit as analyst-only request creation (not approval).
+- Require verifier test + gates before promote, and admin-only final promote.
+
+Repo targets:
+- /Users/zacharyholwerda/Documents/New project/kiwi-semantic-control/ui/viewer/index.html
+- /Users/zacharyholwerda/Documents/New project/kiwi-semantic-control/docs/ui/views/ui_evidence_pack.md
+- /Users/zacharyholwerda/Documents/New project/kiwi-semantic-control/docs/ui/views/patch_authoring_view.md
+- /Users/zacharyholwerda/Documents/New project/kiwi-semantic-control/docs/ui/ui_principles.md
+- /Users/zacharyholwerda/Documents/New project/kiwi-semantic-control/docs/ui_workbench.md
+
+Scope:
+1) Patch Studio submit must enforce same gates as SRR submit.
+2) Replay fields required for Correction/Blacklist; optional/NA for RFI.
+3) No self-approval and strict promotion role-locking.
+4) Docs aligned with implemented behavior.
+
+Hard policy rules:
+- Analyst role: Submit only; never approve/promote.
+- Verifier role: Must run test/checklist/gates before Promote.
+- Admin role: Final promote only.
+- Unauthorized actions must be hidden, not disabled.
+- Submit != approval.
+
+Implementation details:
+
+A) Gate parity (SRR and Patch Studio)
+- Reuse a single shared validation path for both submit surfaces.
+- Block submit if required gates fail:
+  - preflight complete
+  - evidence complete
+  - replay contract (per patch type rules below)
+- Keep error messages deterministic and actionable.
+
+B) Replay contract in Evidence Pack
+- Add/validate fields in payload:
+  - replay_type: MANUAL | STUBBED | NA
+  - replay_steps: string
+  - replay_expected_result: string
+- Validation rules:
+  - Correction: replay_type/replay_steps/replay_expected_result required (replay_type cannot be NA).
+  - Blacklist: same as Correction.
+  - RFI: replay_type may be NA; replay_steps and replay_expected_result optional.
+- If required replay fields are missing, block submit.
+
+C) No self-approval + promotion locking
+- Enforce author check:
+  - If current user is the patch author, block verifier/admin approval/promotion.
+- Enforce verifier promotion preconditions:
+  - verifier test/checklist complete
+  - gates pass
+- Enforce admin-only final promotion.
+- Hide actions for unauthorized roles instead of rendering disabled controls.
+
+D) Status and action integrity
+- Keep status flow deterministic and role-safe.
+- Ensure Submit creates/updates request state only; no implicit approval states.
+
+E) Docs alignment updates
+- /docs/ui/views/ui_evidence_pack.md
+  - remove PR-only contradiction
+  - add replay contract fields + V1 rules by patch type
+- /docs/ui/views/patch_authoring_view.md
+  - explicit “Submit != approval”
+  - no self-approval rule
+  - verifier test + gates before promote
+- /docs/ui/ui_principles.md
+  - codify positive friction explicitly
+  - keep “hidden not disabled” consistent
+- /docs/ui_workbench.md
+  - align in-app submit language with current product behavior
+
+Acceptance criteria:
+- Patch Studio submit and SRR submit fail/pass on identical gate conditions.
+- Correction/Blacklist submission is blocked without required replay fields.
+- RFI submission allows replay_type=NA.
+- Analyst cannot approve/promote.
+- Verifier cannot promote own patch and cannot promote without test+gates.
+- Admin is the only role with final promote action.
+- Unauthorized actions are hidden in UI.
+- Docs reflect exactly the above behavior with no contradictory wording.
+
+Required output format:
+1) Alignment of task
+2) Confirmed behavior matrix (before vs after)
+3) Files changed
+4) Validation rules implemented
+5) Smoke tests run
+6) Residual risks or deferred items

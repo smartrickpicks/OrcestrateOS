@@ -19,6 +19,7 @@
 | Intent Preview | Rendered WHEN/THEN/BECAUSE | Yes (live update) |
 | Preflight Results | Pass/Warn/Fail badges | After preflight run |
 | Evidence Pack Form | Observation, Expected, Justification, Repro | Yes |
+| Replay Contract | Replay Type, Steps, Expected Result | Yes (per patch type) |
 | Revision History | Previous revisions if editing | If editing |
 
 ## Sub-Tabs
@@ -27,7 +28,7 @@
 |-----|---------|
 | Draft | Structured intent authoring |
 | Preflight | Validation results and badge summary |
-| Evidence Pack | 4-block evidence assembly |
+| Evidence Pack | 4-block evidence assembly + Replay Contract |
 
 ## Allowed Actions by Role
 
@@ -42,6 +43,7 @@
 | Copy preflight report | Yes | Yes | Yes |
 | Edit evidence pack | Yes | Yes | Yes |
 | Submit Patch Request | Yes | Yes | Yes |
+| Approve/Promote patch | No | No | No |
 
 ## Disallowed Actions
 
@@ -49,17 +51,36 @@
 |--------|--------|
 | Submit without preflight pass | gate_preflight not satisfied |
 | Submit without evidence pack | gate_evidence not satisfied |
-| Approve own patch | Requires different actor at review |
+| Submit Correction/Blacklist without replay contract | gate_replay not satisfied |
+| Approve own patch | Self-approval is blocked; requires different actor |
 | Skip structured intent | All fields required |
+
+## Hard Policy Rules
+
+1. **Submit is not approval.** Submitting a patch request creates a reviewable item with status `Submitted`. No implicit approval state is set.
+2. **No self-approval.** The author of a patch cannot approve or promote their own patch at any stage (Verifier or Admin). The UI blocks this with an explicit error message.
+3. **Verifier must complete test + checklist + gates before promoting.** The Verifier approval requires a 6-item review checklist to be completed.
+4. **Admin is the only role that can perform final promotion.** The Promote Patch to Baseline action is restricted to Admin role. Unauthorized roles do not see the Promote button (hidden, not disabled).
 
 ## Gate Ownership
 
-This view owns two gates (see [gate_view_mapping.md](../gate_view_mapping.md)):
+This view owns three gates (see [gate_view_mapping.md](../gate_view_mapping.md)):
 
 | Gate | Condition | On Failure |
 |------|-----------|------------|
 | gate_preflight | All checks pass or warn (no fail) | Block submission, show errors |
-| gate_evidence | All 4 blocks populated | Block submission, highlight missing |
+| gate_evidence | All required blocks populated per patch type | Block submission, highlight missing |
+| gate_replay | Replay contract satisfied per patch type rules | Block submission, show missing replay fields |
+
+Gate parity: SRR submit and Patch Studio submit enforce identical gate conditions via the shared `validateSubmissionGates()` function.
+
+## Replay Contract Validation (v1.6.57)
+
+| Patch Type | replay_type | replay_steps | replay_expected_result |
+|------------|-------------|--------------|------------------------|
+| Correction | Required (cannot be NA) | Required (min 5 chars) | Required (min 5 chars) |
+| Blacklist | Required (cannot be NA) | Required (min 5 chars) | Required (min 5 chars) |
+| RFI | Optional (may be NA) | Optional | Optional |
 
 ## Audit/Evidence Requirements
 
@@ -75,6 +96,14 @@ This view owns two gates (see [gate_view_mapping.md](../gate_view_mapping.md)):
 | Draft | Submitted | Submit Patch Request | Analyst, Verifier, Admin |
 | Needs_Clarification | Submitted | Respond to Clarification | Author |
 
+## Promotion Flow (role-locked)
+
+| From State | To State | Action | Role |
+|------------|----------|--------|------|
+| Submitted | Verifier_Approved | Approve (Verifier) | Verifier only (not patch author) |
+| Verifier_Approved | Admin_Approved | Approve (Admin) | Admin only (not patch author) |
+| Admin_Approved | Applied | Promote Patch to Baseline | Admin only |
+
 ## Form Validation
 
 | Field | Required | Max Length |
@@ -83,10 +112,13 @@ This view owns two gates (see [gate_view_mapping.md](../gate_view_mapping.md)):
 | Condition Type | Yes | - |
 | Action Type | Yes | - |
 | Other (if selected) | Yes | 500 chars |
-| Observation | Yes | 1000 chars |
-| Expected | Yes | 1000 chars |
-| Justification | Yes | 1000 chars |
-| Repro | Yes | 2000 chars |
+| Observation | Yes (Correction) | 1000 chars |
+| Expected | Yes (Correction) | 1000 chars |
+| Justification | Yes (all types) | 1000 chars |
+| Repro | Yes (Correction) | 2000 chars |
+| Replay Type | Yes (Correction/Blacklist) | - |
+| Replay Steps | Yes (Correction/Blacklist) | 2000 chars |
+| Replay Expected Result | Yes (Correction/Blacklist) | 2000 chars |
 
 ## Related Documents
 
@@ -94,5 +126,3 @@ This view owns two gates (see [gate_view_mapping.md](../gate_view_mapping.md)):
 - [single_row_review_view.md](single_row_review_view.md) — Issue identification
 - [verifier_review_view.md](verifier_review_view.md) — Next stage after submit
 - [analyst.md](../roles/analyst.md) — Analyst role permissions
-
-Note: “Submit Patch Request” routes to Verifier Review and sets patch status to Submitted. No “queue” semantics are implied.

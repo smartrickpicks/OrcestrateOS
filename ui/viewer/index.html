@@ -2365,6 +2365,28 @@
                 </div>
               </div>
 
+              <!-- Replay Contract (v1.6.57: Correction/Blacklist required, RFI optional) -->
+              <div class="srr-evidence-block" id="srr-replay-contract-block" style="padding-top: 12px; border-top: 1px solid #e0e0e0;">
+                <div style="font-size: 0.85em; font-weight: 600; color: #333; margin-bottom: 8px;">Replay Contract</div>
+                <div class="srr-evidence-block" id="srr-replay-type-block">
+                  <div class="srr-evidence-label">Replay Type <span id="srr-replay-type-required" class="srr-repro-required">(required)</span></div>
+                  <select class="srr-evidence-select" id="srr-replay-type" onchange="srrSaveEvidenceDraft()">
+                    <option value="">-- Select replay type --</option>
+                    <option value="MANUAL">Manual</option>
+                    <option value="STUBBED">Stubbed</option>
+                    <option value="NA">N/A</option>
+                  </select>
+                </div>
+                <div class="srr-evidence-block" id="srr-replay-steps-block">
+                  <div class="srr-evidence-label">Replay Steps <span id="srr-replay-steps-required" class="srr-repro-required">(required)</span></div>
+                  <textarea class="srr-evidence-textarea" id="srr-replay-steps" placeholder="Describe the steps to replay this change..." oninput="srrSaveEvidenceDraft()"></textarea>
+                </div>
+                <div class="srr-evidence-block" id="srr-replay-expected-block">
+                  <div class="srr-evidence-label">Replay Expected Result <span id="srr-replay-expected-required" class="srr-repro-required">(required)</span></div>
+                  <textarea class="srr-evidence-textarea" id="srr-replay-expected-result" placeholder="What is the expected result of replaying?" oninput="srrSaveEvidenceDraft()"></textarea>
+                </div>
+              </div>
+
               <!-- Spacer to push buttons lower -->
               <div style="flex-grow: 1; min-height: 20px;"></div>
               
@@ -4222,6 +4244,26 @@
             <button class="toolbar-btn" onclick="copyEvidenceBlock('repro')" style="padding: 2px 8px; font-size: 0.75em;">Copy</button>
           </div>
           <textarea id="ps-evidence-repro" placeholder="Steps to reproduce the issue..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 50px;"></textarea>
+        </div>
+        <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
+          <h5 style="margin: 0 0 10px 0; font-size: 0.9em;">Replay Contract</h5>
+          <div style="margin-bottom: 10px;">
+            <label style="font-weight: 600; font-size: 0.85em;">Replay Type</label>
+            <select id="ps-replay-type" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; margin-top: 4px;">
+              <option value="">-- Select --</option>
+              <option value="MANUAL">Manual</option>
+              <option value="STUBBED">Stubbed</option>
+              <option value="NA">N/A</option>
+            </select>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <label style="font-weight: 600; font-size: 0.85em;">Replay Steps</label>
+            <textarea id="ps-replay-steps" placeholder="Steps to replay this change..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 40px;"></textarea>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <label style="font-weight: 600; font-size: 0.85em;">Replay Expected Result</label>
+            <textarea id="ps-replay-expected-result" placeholder="Expected result of replaying..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 40px;"></textarea>
+          </div>
         </div>
       </div>
     </div>
@@ -7183,7 +7225,10 @@
           observation: options.evidence_observation || '',
           expected_behavior: options.evidence_expected || '',
           rule_justification: options.evidence_justification || '',
-          repro_steps: options.evidence_repro || ''
+          repro_steps: options.evidence_repro || '',
+          replay_type: options.replay_type || '',
+          replay_steps: options.replay_steps || '',
+          replay_expected_result: options.replay_expected_result || ''
         },
         evidence: {
           observation: options.evidence_observation || '',
@@ -8096,6 +8141,13 @@
     function approveAsVerifier(requestId) {
       var author = currentMode || 'Verifier';
       var reviewNotes = document.getElementById('pr-review-notes')?.value || '';
+
+      // v1.6.57: No self-approval check
+      var pr = getPatchRequest(requestId);
+      if (pr && isSelfApproval(pr)) {
+        showToast('Self-approval is not permitted. A different reviewer must approve.', 'error');
+        return;
+      }
 
       if (!getChecklistConfirmation('verifier', requestId)) {
         if (!confirm('Review Checklist not yet completed for this patch.\n\nBy clicking OK, you confirm you have reviewed:\n- Intent Clarity\n- Schema Correctness\n- Preview Validity\n- Conflict Assessment\n- Evidence Pack\n- Smoke Verification\n\nProceed with approval?')) {
@@ -14326,6 +14378,9 @@
       document.getElementById('srr-expected-type').value = srrState.patchDraft.expected_type || '';
       document.getElementById('srr-justification').value = srrState.patchDraft.justification || '';
       document.getElementById('srr-repro-type').value = srrState.patchDraft.repro_type || '';
+      if (document.getElementById('srr-replay-type')) document.getElementById('srr-replay-type').value = srrState.patchDraft.replay_type || '';
+      if (document.getElementById('srr-replay-steps')) document.getElementById('srr-replay-steps').value = srrState.patchDraft.replay_steps || '';
+      if (document.getElementById('srr-replay-expected-result')) document.getElementById('srr-replay-expected-result').value = srrState.patchDraft.replay_expected_result || '';
       // RFI target stub - no input to restore (coming soon)
       
       // v1.4.18: Render Patch Editor
@@ -16990,6 +17045,9 @@
       srrState.patchDraft.expected_type = document.getElementById('srr-expected-type').value;
       srrState.patchDraft.justification = document.getElementById('srr-justification').value;
       srrState.patchDraft.repro_type = document.getElementById('srr-repro-type').value;
+      srrState.patchDraft.replay_type = document.getElementById('srr-replay-type') ? document.getElementById('srr-replay-type').value : '';
+      srrState.patchDraft.replay_steps = document.getElementById('srr-replay-steps') ? document.getElementById('srr-replay-steps').value : '';
+      srrState.patchDraft.replay_expected_result = document.getElementById('srr-replay-expected-result') ? document.getElementById('srr-replay-expected-result').value : '';
       // RFI target stub - no input field yet (coming soon)
       srrState.patchDraft.rfi_target = '';
       srrState.patchDraft.override_enabled = srrState.overrideEnabled;
@@ -17021,10 +17079,37 @@
         if (!overrideEnabled && !draft.repro_type) missing.push('Repro method (or enable Override)');
         if (draft.repro_type === 'doc_evidence_mismatch' && !draft.repro_file) missing.push('File attachment for Doc Evidence Mismatch');
         if (!draft.justification || draft.justification.trim().length < 10) missing.push('Justification (min 10 chars)');
+        // v1.6.57: Replay contract required for Correction
+        if (!draft.replay_type || draft.replay_type === 'NA') missing.push('Replay Type (cannot be N/A for Correction)');
+        if (!draft.replay_steps || draft.replay_steps.trim().length < 5) missing.push('Replay Steps (min 5 chars)');
+        if (!draft.replay_expected_result || draft.replay_expected_result.trim().length < 5) missing.push('Replay Expected Result (min 5 chars)');
+      } else if (patchType === 'blacklist') {
+        if (!draft.justification || draft.justification.trim().length < 10) missing.push('Justification (min 10 chars)');
+        // v1.6.57: Replay contract required for Blacklist
+        if (!draft.replay_type || draft.replay_type === 'NA') missing.push('Replay Type (cannot be N/A for Blacklist)');
+        if (!draft.replay_steps || draft.replay_steps.trim().length < 5) missing.push('Replay Steps (min 5 chars)');
+        if (!draft.replay_expected_result || draft.replay_expected_result.trim().length < 5) missing.push('Replay Expected Result (min 5 chars)');
       } else {
+        // RFI: replay_type may be NA; replay_steps and replay_expected_result optional
         if (!draft.justification || draft.justification.trim().length < 10) missing.push('Justification (min 10 chars)');
       }
       return missing;
+    }
+
+    // v1.6.57: Shared submission gate validation (used by both SRR and Patch Studio)
+    function validateSubmissionGates(patchType, draft, changeCount, overrideEnabled) {
+      var result = { pass: true, evidenceGaps: [], preflightGaps: [] };
+      result.evidenceGaps = srrCheckEvidenceGate(patchType, draft, changeCount, overrideEnabled);
+      result.preflightGaps = srrCheckPreflightGate();
+      result.pass = (result.evidenceGaps.length === 0 && result.preflightGaps.length === 0);
+      return result;
+    }
+
+    // v1.6.57: Self-approval check — returns true if current user authored the patch
+    function isSelfApproval(patchRequest) {
+      if (!patchRequest) return false;
+      var currentUser = getCurrentUserName();
+      return currentUser && patchRequest.author && currentUser.toLowerCase() === patchRequest.author.toLowerCase();
     }
 
     function srrCheckPreflightGate() {
@@ -17117,6 +17202,9 @@
         evidence_expected: patchType === 'correction' ? srrState.patchDraft.expected_type : '',
         evidence_justification: justification,
         evidence_repro: patchType === 'correction' ? srrState.patchDraft.repro_type : '',
+        replay_type: srrState.patchDraft.replay_type || '',
+        replay_steps: srrState.patchDraft.replay_steps || '',
+        replay_expected_result: srrState.patchDraft.replay_expected_result || '',
         rfi_target: patchType === 'rfi' ? srrState.patchDraft.rfi_target : '',
         rationale: changeSummary
       });
@@ -18950,6 +19038,15 @@
         var el = document.getElementById(id);
         if (el) el.style.display = 'none';
       });
+      // v1.6.57: Show replay contract for RFI but mark as optional
+      var replayBlock = document.getElementById('srr-replay-contract-block');
+      if (replayBlock) replayBlock.style.display = 'block';
+      ['srr-replay-type-required', 'srr-replay-steps-required', 'srr-replay-expected-required'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = '(optional)';
+      });
+      var naOption = document.querySelector('#srr-replay-type option[value="NA"]');
+      if (naOption) naOption.disabled = false;
     }
     
     function srrReplyToRFI() {
@@ -18991,6 +19088,15 @@
       if (patchTypeSelector) patchTypeSelector.style.display = '';
       
       // Restore evidence pack sections
+      // v1.6.57: Restore replay contract as required for Correction/Blacklist
+      var replayBlock = document.getElementById('srr-replay-contract-block');
+      if (replayBlock) replayBlock.style.display = 'block';
+      ['srr-replay-type-required', 'srr-replay-steps-required', 'srr-replay-expected-required'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = '(required)';
+      });
+      var naOption = document.querySelector('#srr-replay-type option[value="NA"]');
+      if (naOption) naOption.disabled = true;
       ['srr-observation-block', 'srr-expected-block', 'srr-repro-block'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.style.display = '';
@@ -19465,6 +19571,20 @@
       var btnApprove = document.getElementById('vr-btn-approve');
       var btnReject = document.getElementById('vr-btn-reject');
       
+      var role = currentMode || 'Analyst';
+      
+      // v1.6.57: Hidden not disabled — hide actions for unauthorized roles
+      if (role === 'Analyst') {
+        if (btnBegin) btnBegin.style.display = 'none';
+        if (btnClarify) btnClarify.style.display = 'none';
+        if (btnApprove) btnApprove.style.display = 'none';
+        if (btnReject) btnReject.style.display = 'none';
+        return;
+      }
+      
+      // Show all for Verifier/Admin
+      [btnBegin, btnClarify, btnApprove, btnReject].forEach(function(b) { if (b) b.style.display = ''; });
+
       // Reset all
       btnBegin.disabled = true;
       btnClarify.disabled = true;
@@ -19551,6 +19671,13 @@
 
     function vrApprove() {
       if (vrState.reviewState !== 'Under_Review') return;
+
+      // v1.6.57: No self-approval
+      var currentPR = vrState.patchRequestId ? getPatchRequest(vrState.patchRequestId) : null;
+      if (currentPR && isSelfApproval(currentPR)) {
+        showToast('Self-approval is not permitted. A different reviewer must approve this patch.', 'error');
+        return;
+      }
 
       var confirmBox = document.getElementById('vr-chk-confirm');
       if (!confirmBox || !confirmBox.checked) {
@@ -19684,6 +19811,17 @@
       var btnRelease = document.getElementById('aa-btn-release');
       var btnPromote = document.getElementById('aa-btn-promote');
       
+      var role = currentMode || 'Analyst';
+      
+      // v1.6.57: Only Admin can see admin approval actions
+      if (role !== 'Admin') {
+        [btnApprove, btnHold, btnRelease, btnPromote].forEach(function(b) { if (b) b.style.display = 'none'; });
+        return;
+      }
+      
+      // Show all for Admin
+      [btnApprove, btnHold, btnRelease, btnPromote].forEach(function(b) { if (b) b.style.display = ''; });
+
       // Reset all
       btnApprove.disabled = true;
       btnHold.disabled = true;
@@ -19837,6 +19975,13 @@
 
     function aaAdminApprove() {
       if (aaState.reviewState !== 'Verifier_Approved') return;
+
+      // v1.6.57: No self-approval check
+      var currentPR = aaState.currentPatchId ? getPatchRequest(aaState.currentPatchId) : null;
+      if (currentPR && isSelfApproval(currentPR)) {
+        showToast('Self-approval is not permitted. A different admin must approve.', 'error');
+        return;
+      }
       
       if (aaState.smokeStatus !== 'pass') {
         showToast('Smoke (Strict) must pass before Admin Approve', 'warning');
@@ -22676,7 +22821,10 @@
           observation: document.getElementById('ps-evidence-observation')?.value || '',
           expected_behavior: document.getElementById('ps-evidence-expected')?.value || '',
           rule_justification: document.getElementById('ps-evidence-justification')?.value || '',
-          repro_steps: document.getElementById('ps-evidence-repro')?.value || ''
+          repro_steps: document.getElementById('ps-evidence-repro')?.value || '',
+          replay_type: document.getElementById('ps-replay-type')?.value || '',
+          replay_steps: document.getElementById('ps-replay-steps')?.value || '',
+          replay_expected_result: document.getElementById('ps-replay-expected-result')?.value || ''
         }
       };
     }
@@ -22697,6 +22845,9 @@
       document.getElementById('ps-evidence-expected').value = '';
       document.getElementById('ps-evidence-justification').value = '';
       document.getElementById('ps-evidence-repro').value = '';
+      if (document.getElementById('ps-replay-type')) document.getElementById('ps-replay-type').value = '';
+      if (document.getElementById('ps-replay-steps')) document.getElementById('ps-replay-steps').value = '';
+      if (document.getElementById('ps-replay-expected-result')) document.getElementById('ps-replay-expected-result').value = '';
       updateIntentPreview();
     }
     
@@ -22730,6 +22881,25 @@
       const draft = getPatchStudioDraft();
       const identity = currentSelection.joinIdentity || {};
       const author = getCurrentUserName();
+
+      // v1.6.57: Gate parity — apply same evidence + preflight gates as SRR
+      var psDraft = {
+        observation_type: draft.evidence.observation || '',
+        expected_type: draft.evidence.expected_behavior || '',
+        justification: draft.evidence.rule_justification || '',
+        repro_type: draft.evidence.repro_steps || '',
+        replay_type: draft.evidence.replay_type || '',
+        replay_steps: draft.evidence.replay_steps || '',
+        replay_expected_result: draft.evidence.replay_expected_result || ''
+      };
+      var patchType = draft.patch_kind || 'correction';
+      var gateResult = validateSubmissionGates(patchType, psDraft, 1, false);
+      if (!gateResult.pass) {
+        var allGaps = gateResult.evidenceGaps.concat(gateResult.preflightGaps);
+        showToast('Submission blocked: ' + allGaps[0], 'warning');
+        console.log('[PatchStudio] Submit blocked — gaps:', allGaps);
+        return;
+      }
       
       var request = createPatchRequest({
         author: author,
@@ -22750,7 +22920,10 @@
         evidence_observation: draft.evidence.observation,
         evidence_expected: draft.evidence.expected_behavior,
         evidence_justification: draft.evidence.rule_justification,
-        evidence_repro: draft.evidence.repro_steps
+        evidence_repro: draft.evidence.repro_steps,
+        replay_type: draft.evidence.replay_type || '',
+        replay_steps: draft.evidence.replay_steps || '',
+        replay_expected_result: draft.evidence.replay_expected_result || ''
       });
       
       var submittedRequest = submitPatchRequest(request.request_id, author, currentMode || 'Analyst');
@@ -22846,6 +23019,9 @@
         case 'expected': value = document.getElementById('ps-evidence-expected')?.value || ''; break;
         case 'justification': value = document.getElementById('ps-evidence-justification')?.value || ''; break;
         case 'repro': value = document.getElementById('ps-evidence-repro')?.value || ''; break;
+        case 'replay_type': value = document.getElementById('ps-replay-type')?.value || ''; break;
+        case 'replay_steps': value = document.getElementById('ps-replay-steps')?.value || ''; break;
+        case 'replay_expected': value = document.getElementById('ps-replay-expected-result')?.value || ''; break;
       }
       copyToClipboard(value).then(function(success) {
         showToast(success ? 'Evidence block copied' : 'Failed to copy', success ? 'success' : 'error');
