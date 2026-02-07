@@ -397,12 +397,40 @@
         return div.innerHTML;
       }
 
+      var DEFAULT_DEMO_USERS = [
+        { id: 'user_001', name: '', email: '', role: 'analyst', status: 'active' },
+        { id: 'user_002', name: '', email: '', role: 'analyst', status: 'active' },
+        { id: 'user_003', name: '', email: '', role: 'verifier', status: 'active' },
+        { id: 'user_004', name: '', email: '', role: 'verifier', status: 'active' },
+        { id: 'user_005', name: 'Zachary Holwerda', email: 'zachary.holwerda@createmusicgroup.com', role: 'admin', status: 'active' },
+        { id: 'user_006', name: '', email: '', role: 'admin', status: 'active' }
+      ];
+
       function getSavedUsers() {
         try {
           var stored = localStorage.getItem(DEMO_USERS_KEY);
-          if (stored) return JSON.parse(stored);
+          if (stored) {
+            var users = JSON.parse(stored);
+            var hasAnyEmail = users.some(function(u) { return u.email && u.email.trim(); });
+            if (!hasAnyEmail) {
+              for (var i = 0; i < DEFAULT_DEMO_USERS.length; i++) {
+                var def = DEFAULT_DEMO_USERS[i];
+                if (def.email && def.email.trim()) {
+                  var match = users.find(function(u) { return u.id === def.id; });
+                  if (match && !match.email) {
+                    match.name = def.name;
+                    match.email = def.email;
+                    match.role = def.role;
+                  }
+                }
+              }
+              localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(users));
+            }
+            return users;
+          }
         } catch (e) {}
-        return [];
+        localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(DEFAULT_DEMO_USERS));
+        return JSON.parse(JSON.stringify(DEFAULT_DEMO_USERS));
       }
 
       function findUserByEmail(email) {
