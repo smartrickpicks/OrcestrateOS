@@ -6175,7 +6175,7 @@
         
         // Update UI
         updateActiveDataSourceBar(cachedWorkbook.filename);
-        generateAllSignals();
+        try { if (typeof generateAllSignals === 'function') generateAllSignals(); } catch (e) { console.warn('[Masterline] generateAllSignals skipped:', e.message); }
         
         // Restore nav state
         var navState = loadNavStateFromCache();
@@ -6186,6 +6186,7 @@
         
         var restorePage = (navState && navState.hash) ? navState.hash.replace(/^#\/?/, '') : 'grid';
         populateGridSheetSelector();
+        updateSidebarSheetSelector();
         renderGrid();
         updateProgressBlock();
         navigateTo(restorePage || 'grid');
@@ -8839,9 +8840,13 @@
       
       filtered.forEach(function(r) {
         var status = (r.status || '').toLowerCase().replace(/\s+/g, '_');
-        if (status === 'ready') {
+        if (status === 'ready' || status === 'verified' || status === 'approved' || status === 'completed') {
           done++;
+        } else if (status === 'submitted' || status === 'pending_review' || status === 'sent_to_admin' || status === 'verifier_approved') {
+          review++;
         } else if (status === 'needs_review' || status === 'blocked') {
+          review++;
+        } else {
           todo++;
         }
       });
@@ -8960,8 +8965,8 @@
       if (!selector || !workbook || !workbook.order) return;
       
       selector.innerHTML = '<option value="all">All Sheets</option>';
-      // v1.6.4: Only show data sheets, hide meta sheets
-      getDataSheets().forEach(function(sheetName) {
+      var dataSheets = getDataSheets();
+      dataSheets.forEach(function(sheetName) {
         var sheet = workbook.sheets[sheetName];
         if (!sheet) return;
         var opt = document.createElement('option');
@@ -8969,6 +8974,11 @@
         opt.textContent = sheetName + ' (' + (sheet.rows ? sheet.rows.length : 0) + ')';
         selector.appendChild(opt);
       });
+      if (gridState.sheet) {
+        selector.value = gridState.sheet;
+      } else {
+        selector.value = 'all';
+      }
     }
 
     function handleSheetSelectorChange(value) {
@@ -10312,12 +10322,7 @@
     // v1.4.22: Navigate to role-specific default landing page
     // v1.6.37: Default to All Data Grid (Accounts sheet) instead of Triage
     function navigateToRoleDefault() {
-      if (currentMode === 'admin') {
-        navigateTo('admin');
-      } else {
-        // Analyst and Verifier default to All Data Grid
-        navigateTo('grid');
-      }
+      navigateTo('grid');
     }
     
     function applyModeVisibility(mode) {
