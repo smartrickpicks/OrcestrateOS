@@ -1,0 +1,60 @@
+Replit Task: V1 PDF + Grid Polish and Final Doc Drift Cleanup
+
+Alignment of task:
+Audit timeline is complete. Finalize V1 UX correctness for record navigation, PDF anchor behavior, status color semantics, and remaining doc mismatch.
+
+Repo targets:
+- ui/viewer/index.html
+- docs/ui/views/single_row_review_view.md
+- docs/ui/views/ui_evidence_pack.md
+- docs/ui/ui_principles.md
+
+Scope:
+1) Grid click behavior
+- Row click in all-data/triage opens Record Inspection (never triggers file download).
+- Download must be explicit via dedicated action only.
+
+2) PDF anchor behavior finalization
+- Anchor click:
+  - jump to first match page
+  - show active match index
+  - next/prev moves through matches and updates page
+- If no match:
+  - non-blocking toast only
+  - no sticky overlays
+- Prevent route reload or session reset on anchor operations.
+
+3) PDF viewer cleanup
+- Ensure only one active viewer surface is rendered at a time (no double-viewer artifacts).
+- Remove any duplicate mount logic that can create competing iframe/object states.
+
+4) Status color consistency
+- Normalize triage/grid/record status color mapping to one source of truth.
+- Ensure same status uses same color in:
+  - row badges
+  - queue chips
+  - field chips
+- Add a small status legend reference in UI if needed.
+
+5) SRR doc mismatch cleanup (explicit issue)
+- In docs/ui/views/single_row_review_view.md:
+  - fields marked “coming soon” (Blacklist Category, RFI Target) must not be listed as V1-required or optional validation rules.
+  - Clearly mark as future-only, non-enforced in V1.
+
+6) Evidence/doc sanity pass
+- Confirm docs/ui/views/ui_evidence_pack.md and docs/ui/ui_principles.md remain aligned with implemented gate behavior from recent releases.
+
+Acceptance criteria:
+- Clicking any grid/triage row opens Record Inspection; no unintended downloads.
+- Anchor jump visibly navigates and iterates matches without page reload.
+- No duplicate PDF viewer rendering.
+- Status colors are consistent across surfaces.
+- SRR “coming soon” fields are not treated as active validation requirements in docs.
+
+Required output format:
+1) Alignment of task
+2) Before vs after behavior matrix
+3) Files changed
+4) Visual consistency checklist (status colors + viewer behavior)
+5) Smoke tests run
+6) Remaining risks/deferred items
