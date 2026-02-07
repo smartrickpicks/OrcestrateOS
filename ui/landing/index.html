@@ -11,7 +11,7 @@
       padding: 0;
       box-sizing: border-box;
     }
-    
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
       background: linear-gradient(135deg, #1a1f2e 0%, #2d3748 100%);
@@ -23,7 +23,7 @@
       position: relative;
       overflow: hidden;
     }
-    
+
     body::before {
       content: '';
       position: absolute;
@@ -31,7 +31,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background-image: 
+      background-image:
         radial-gradient(1px 1px at 20px 30px, rgba(255,255,255,0.3), transparent),
         radial-gradient(1px 1px at 40px 70px, rgba(255,255,255,0.2), transparent),
         radial-gradient(1px 1px at 50px 160px, rgba(255,255,255,0.3), transparent),
@@ -57,12 +57,12 @@
       pointer-events: none;
       z-index: 0;
     }
-    
+
     @keyframes starfield {
       0% { transform: translateY(0); }
       100% { transform: translateY(-250px); }
     }
-    
+
     .login-container {
       position: relative;
       z-index: 1;
@@ -74,45 +74,28 @@
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
       text-align: center;
     }
-    
+
     .logo {
       width: 64px;
       height: 64px;
       margin-bottom: 24px;
       filter: drop-shadow(0 0 8px rgba(100, 200, 255, 0.6)) drop-shadow(0 0 16px rgba(100, 200, 255, 0.3));
     }
-    
+
     h1 {
       font-size: 28px;
       font-weight: 600;
       margin-bottom: 8px;
       color: #fff;
     }
-    
+
     .tagline {
       color: #94a3b8;
       font-size: 15px;
       margin-bottom: 32px;
       line-height: 1.5;
     }
-    
-    .auth-section {
-      margin-top: 8px;
-    }
-    
-    .google-signin-container {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 12px;
-    }
-    
-    .auth-hint {
-      margin-top: 12px;
-      font-size: 13px;
-      color: #64748b;
-      line-height: 1.4;
-    }
-    
+
     .error-message {
       background: rgba(239, 68, 68, 0.1);
       border: 1px solid rgba(239, 68, 68, 0.3);
@@ -123,78 +106,143 @@
       margin-bottom: 16px;
       display: none;
     }
-    
-    .divider {
+
+    .tab-bar {
       display: flex;
-      align-items: center;
-      margin: 24px 0;
-      color: #475569;
-      font-size: 12px;
+      background: #161b27;
+      border-radius: 8px;
+      padding: 3px;
+      margin-bottom: 24px;
     }
-    
-    .divider::before,
-    .divider::after {
-      content: '';
+
+    .tab-btn {
       flex: 1;
-      height: 1px;
-      background: #2d3748;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      background: transparent;
+      color: #64748b;
+      transition: all 0.2s ease;
     }
-    
-    .divider span {
-      padding: 0 12px;
+
+    .tab-btn.active {
+      background: #3b82f6;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
     }
-    
-    .coming-soon-section {
-      opacity: 0.5;
+
+    .tab-btn:not(.active):hover {
+      color: #94a3b8;
     }
-    
-    .sso-btn {
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .local-form-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .local-form-group label {
+      display: block;
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+
+    .local-name-input {
+      width: 100%;
+      padding: 12px 14px;
+      background: #161b27;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .local-name-input:focus {
+      border-color: #3b82f6;
+    }
+
+    .local-name-input::placeholder {
+      color: #475569;
+    }
+
+    .role-selector {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
+      gap: 8px;
+    }
+
+    .local-role-btn {
+      flex: 1;
+      padding: 10px 8px;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      background: #161b27;
+      color: #64748b;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .local-role-btn.selected {
+      border-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.1);
+      color: #60a5fa;
+    }
+
+    .local-role-btn:hover:not(.selected) {
+      border-color: #475569;
+      color: #94a3b8;
+    }
+
+    .local-start-btn {
       width: 100%;
       padding: 12px 24px;
-      background: transparent;
-      border: 1px dashed #3b4559;
+      background: #3b82f6;
+      border: none;
       border-radius: 8px;
-      font-size: 14px;
-      color: #64748b;
-      cursor: not-allowed;
-      margin-bottom: 10px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.2s;
     }
-    
-    .sso-btn svg {
-      width: 18px;
-      height: 18px;
-      opacity: 0.6;
+
+    .local-start-btn:hover {
+      background: #2563eb;
     }
-    
-    .coming-tag {
-      font-size: 10px;
-      background: #2d3748;
-      color: #94a3b8;
-      padding: 2px 6px;
-      border-radius: 3px;
-      margin-left: 4px;
+
+    .local-hint {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #475569;
     }
-    
-    .demo-link {
-      margin-top: 24px;
-      padding-top: 20px;
-      border-top: 1px solid #2d3748;
+
+    .google-signin-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 12px;
     }
-    
-    .demo-link a {
-      color: #60a5fa;
-      text-decoration: none;
+
+    .auth-hint {
+      margin-top: 12px;
       font-size: 13px;
+      color: #64748b;
+      line-height: 1.4;
     }
-    
-    .demo-link a:hover {
-      text-decoration: underline;
-    }
-    
+
     .setup-notice {
       background: rgba(251, 191, 36, 0.1);
       border: 1px solid rgba(251, 191, 36, 0.3);
@@ -206,10 +254,15 @@
       text-align: left;
       line-height: 1.5;
     }
-    
+
     .setup-notice strong {
       display: block;
       margin-bottom: 8px;
+    }
+
+    .demo-footer {
+      margin-top: 28px;
+      text-align: center;
     }
   </style>
 </head>
@@ -218,62 +271,63 @@
     <img src="/assets/brand/orchestrate-os-logo.svg" alt="Orchestrate OS" class="logo">
     <h1>Orchestrate OS</h1>
     <p class="tagline">Semantic Control Board for governance-first data operations</p>
-    
+
     <div id="error-message" class="error-message"></div>
-    
-    <div id="setup-notice" class="setup-notice" style="display: none;">
-      <strong>Google OAuth Setup Required</strong>
-      To enable production login, configure your Google OAuth credentials in the Secrets panel.
-      <br><br>
-      <a href="/ui/demo/" style="color: #60a5fa;">Use Demo Mode</a> for testing in the meantime.
+
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="local" onclick="switchTab('local')">Local</button>
+      <button class="tab-btn" data-tab="google" onclick="switchTab('google')">Google</button>
     </div>
-    
-    <div class="auth-section">
+
+    <div id="panel-local" class="tab-panel active">
+      <div class="local-form-group">
+        <label for="local-name-input">Enter your name</label>
+        <input type="text" id="local-name-input" class="local-name-input" placeholder="Your name" autocomplete="off">
+      </div>
+      <div class="local-form-group">
+        <label>Role</label>
+        <div class="role-selector">
+          <button class="local-role-btn selected" data-role="analyst" onclick="selectRole(this)">Analyst</button>
+          <button class="local-role-btn" data-role="verifier" onclick="selectRole(this)">Verifier</button>
+          <button class="local-role-btn" data-role="admin" onclick="selectRole(this)">Admin</button>
+        </div>
+      </div>
+      <button class="local-start-btn" onclick="handleLocalStart()">Start</button>
+      <p class="local-hint">Your session will be saved locally in this browser</p>
+    </div>
+
+    <div id="panel-google" class="tab-panel">
+      <div id="setup-notice" class="setup-notice" style="display: none;">
+        <strong>Google OAuth Setup Required</strong>
+        To enable production login, configure your Google OAuth credentials in the Secrets panel.
+      </div>
       <div id="google-signin-container" class="google-signin-container">
-        <!-- Google Sign-In button will be rendered here -->
       </div>
       <p class="auth-hint">Use your createmusicgroup.com account.</p>
     </div>
-    
-    <div class="divider"><span>or</span></div>
-    
-    <div class="coming-soon-section">
-      <button class="sso-btn" disabled>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-          <circle cx="12" cy="16" r="1"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
-        Enterprise SSO <span class="coming-tag">Coming Soon</span>
-      </button>
-      <button class="sso-btn" disabled>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-        </svg>
-        Connect Google Drive <span class="coming-tag">Coming Soon</span>
-      </button>
-    </div>
-    
-    <div class="demo-link">
-      <a href="/ui/demo/">Switch to Demo Mode</a>
+
+    <div class="demo-footer">
+      <a href="/ui/demo/" style="color: #555; font-size: 0.75em;">Demo Mode (testing only)</a>
     </div>
   </div>
-  
+
   <script>
     (function() {
       var existingUser = null;
       try { existingUser = JSON.parse(localStorage.getItem('demoUser') || 'null'); } catch(e) {}
       var validRoles = ['analyst', 'reviewer', 'verifier', 'admin'];
       if (existingUser && existingUser.role && validRoles.indexOf(existingUser.role.toLowerCase()) !== -1 && localStorage.getItem('currentRole')) {
+        if (existingUser.isLocal) {
+          window.location.href = '/ui/viewer/';
+          return;
+        }
         window.location.href = '/ui/viewer/';
         return;
       }
 
-      // v1.6.27: Role assignment from saved user list
       var DEMO_USERS_KEY = 'orchestrate_demo_users';
       var allowedDomain = 'createmusicgroup.com';
-      
-      // Get saved users from localStorage (shared with viewer)
+
       function getSavedUsers() {
         try {
           var stored = localStorage.getItem(DEMO_USERS_KEY);
@@ -281,26 +335,21 @@
         } catch (e) {}
         return [];
       }
-      
+
       function getRoleFromEmail(email) {
         var lowerEmail = (email || '').toLowerCase();
         var users = getSavedUsers();
-        
-        // Check saved user list for matching email
         for (var i = 0; i < users.length; i++) {
           if (users[i].email && users[i].email.toLowerCase() === lowerEmail) {
-            // Check if user is active
             if (users[i].status === 'disabled') {
-              return null; // Disabled user
+              return null;
             }
             return users[i].role || 'analyst';
           }
         }
-        
-        // No match in user list - deny access
         return null;
       }
-      
+
       function isUserConfigured(email) {
         var users = getSavedUsers();
         var lowerEmail = (email || '').toLowerCase();
@@ -311,47 +360,83 @@
         }
         return false;
       }
-      
-      function showError(message) {
+
+      window.showError = function(message) {
         var errorEl = document.getElementById('error-message');
         errorEl.textContent = message;
         errorEl.style.display = 'block';
+      };
+
+      function hideError() {
+        document.getElementById('error-message').style.display = 'none';
       }
-      
+
+      window.switchTab = function(tab) {
+        hideError();
+        var btns = document.querySelectorAll('.tab-btn');
+        for (var i = 0; i < btns.length; i++) {
+          btns[i].classList.toggle('active', btns[i].getAttribute('data-tab') === tab);
+        }
+        document.getElementById('panel-local').classList.toggle('active', tab === 'local');
+        document.getElementById('panel-google').classList.toggle('active', tab === 'google');
+      };
+
+      window.selectRole = function(btn) {
+        var btns = document.querySelectorAll('.local-role-btn');
+        for (var i = 0; i < btns.length; i++) {
+          btns[i].classList.remove('selected');
+        }
+        btn.classList.add('selected');
+      };
+
+      window.handleLocalStart = function() {
+        var name = document.getElementById('local-name-input').value.trim();
+        if (!name) { showError('Please enter your name'); return; }
+        var role = document.querySelector('.local-role-btn.selected').getAttribute('data-role') || 'analyst';
+
+        localStorage.setItem('currentRole', role);
+        localStorage.setItem('demoUser', JSON.stringify({
+          name: name,
+          email: name.toLowerCase().replace(/\s+/g, '.') + '@local',
+          folder: name + ' - Local',
+          role: role,
+          signedInAt: new Date().toISOString(),
+          isDemo: false,
+          isLocal: true,
+          playgroundEnabled: (role === 'admin')
+        }));
+        window.location.href = '/ui/viewer/';
+      };
+
       function handleGoogleSignIn(response) {
-        // Decode JWT token to get user info
         var payload = JSON.parse(atob(response.credential.split('.')[1]));
         var email = payload.email;
         var name = payload.name || payload.given_name || email.split('@')[0];
         var emailVerified = payload.email_verified;
-        
-        // Verify email is from allowed domain
+
         var emailDomain = email.split('@')[1];
         if (emailDomain !== allowedDomain) {
           showError('Access denied. Please use your ' + allowedDomain + ' account.');
           return;
         }
-        
+
         if (!emailVerified) {
           showError('Email not verified. Please verify your Google account.');
           return;
         }
-        
-        // v1.6.27: Check if user is configured in the user list
+
         if (!isUserConfigured(email)) {
           showError('User not configured. Contact your administrator to add your email to the user list.');
           return;
         }
-        
-        // Determine role from saved user list
+
         var role = getRoleFromEmail(email);
-        
+
         if (role === null) {
           showError('Your account is disabled. Contact your administrator.');
           return;
         }
-        
-        // Store user session
+
         localStorage.setItem('currentRole', role);
         localStorage.setItem('demoUser', JSON.stringify({
           email: email,
@@ -362,12 +447,10 @@
           isDemo: false,
           playgroundEnabled: false
         }));
-        
-        // Redirect to viewer
+
         window.location.href = '/ui/viewer/';
       }
-      
-      // Fetch Google Client ID from server config
+
       fetch('/api/auth/config')
         .then(function(res) {
           if (!res.ok) throw new Error('Config not available');
@@ -377,16 +460,14 @@
           if (!config.googleClientId) {
             throw new Error('Google OAuth not configured');
           }
-          
-          // Initialize Google Sign-In
+
           google.accounts.id.initialize({
             client_id: config.googleClientId,
             callback: handleGoogleSignIn,
             auto_select: false,
             cancel_on_tap_outside: true
           });
-          
-          // Render the button
+
           google.accounts.id.renderButton(
             document.getElementById('google-signin-container'),
             {
