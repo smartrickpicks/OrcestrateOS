@@ -10277,19 +10277,15 @@
       }
       
       // v1.5.3 Fix: Reset SRR state when switching roles to prevent stale isReadOnly
-      if (mode === 'analyst') {
-        // Analyst: ensure editing is enabled
+      if (mode === 'analyst' || mode === 'admin') {
         srrState.isReadOnly = false;
         srrState.verifierMode = false;
-        // Reset verifier SRR mode to restore analyst UI (tabs, chips, etc.)
         if (srrState.currentRecord) {
           resetVerifierSRRMode();
           renderSrrFields(srrState.currentRecord);
         }
-      } else if (mode === 'verifier' || mode === 'admin') {
-        // Verifier/Admin: set read-only mode
+      } else if (mode === 'verifier') {
         srrState.isReadOnly = true;
-        // Initialize verifier SRR mode if SRR is open (tabs, panel state)
         if (srrState.currentRecord) {
           srrState.verifierMode = true;
           initVerifierSRRMode();
@@ -13838,16 +13834,12 @@
       // Analyst mode: always editable (isReadOnly = false)
       // Verifier/Admin mode WITH artifact context: read-only (isReadOnly = true)
       // Verifier/Admin mode WITHOUT artifact context (direct grid nav): still read-only for field inspector
-      if (currentMode === 'analyst') {
-        // Analyst can always edit - reset read-only state
+      if (currentMode === 'analyst' || currentMode === 'admin') {
         srrState.isReadOnly = false;
         srrState.verifierMode = false;
-      } else if (currentMode === 'verifier' || currentMode === 'admin') {
-        // Verifier/Admin: read-only mode for field inspector
-        // Only set verifierMode if coming from artifact context (vrOpenSingleRowReview sets this)
+      } else if (currentMode === 'verifier') {
         srrState.isReadOnly = true;
       } else {
-        // Default to editable
         srrState.isReadOnly = false;
       }
       
