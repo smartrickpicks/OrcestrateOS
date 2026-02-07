@@ -14962,20 +14962,10 @@
       prevBtn.disabled = (pos === 0);
       nextBtn.disabled = (pos >= list.length - 1);
       posEl.textContent = (pos + 1) + ' of ' + list.length;
-      // v1.6.55: Show row position within the current sheet, not total across all sheets
       var subtitleEl = document.getElementById('srr-page-subtitle');
       if (subtitleEl) {
-        var curSheet = srrState.currentSheetName;
-        var sheetRows = list.filter(function(r) { return r.sheet === curSheet; });
-        var sheetPos = -1;
-        for (var si = 0; si < sheetRows.length; si++) {
-          if (sheetRows[si].idx === list[pos].idx) { sheetPos = si; break; }
-        }
-        if (sheetPos >= 0) {
-          subtitleEl.textContent = 'Row ' + (sheetPos + 1) + ' of ' + sheetRows.length;
-        } else {
-          subtitleEl.textContent = 'Row ' + (pos + 1) + ' of ' + list.length;
-        }
+        var sheetLabel = gridState.sheet || srrState.currentSheetName || '';
+        subtitleEl.textContent = 'Row ' + (pos + 1) + ' of ' + list.length + (sheetLabel ? ' — ' + sheetLabel : '');
       }
     }
 
