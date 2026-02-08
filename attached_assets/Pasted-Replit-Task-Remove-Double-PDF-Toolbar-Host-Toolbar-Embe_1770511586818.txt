@@ -1,0 +1,62 @@
+Replit Task: Remove Double PDF Toolbar (Host Toolbar + Embedded Viewer Toolbar)
+
+Alignment of task:
+The issue is not clipping. Record Inspection currently shows two toolbars: our host “Document Viewer” toolbar and the embedded PDF viewer’s native toolbar. Keep only one toolbar.
+
+Problem:
+- Outer app frame renders its own PDF controls (Prev/Next, page, zoom).
+- Embedded PDF viewer (inside iframe/object) renders another full toolbar.
+- Result: duplicate bars and noisy UX.
+
+Goal:
+Use a single control surface in V1.
+
+Preferred approach:
+- Keep the outer app toolbar as canonical.
+- Hide embedded viewer chrome/toolbar if possible via URL params or viewer mode.
+- If embedded toolbar cannot be hidden for this rendering path, remove outer duplicate controls and keep only embedded toolbar.
+- Choose one path and apply consistently.
+
+Repo targets:
+- ui/viewer/index.html
+- any PDF render helper/styles tied to Record Inspection
+
+Implementation tasks:
+1) Identify all toolbar render paths
+- Host toolbar DOM in Record Inspection
+- Embedded toolbar from iframe/object/pdf.js viewer
+
+2) Enforce one-toolbar policy
+- Either:
+  A) Host toolbar only:
+     - Configure embed URL to hide native toolbar/nav panes if supported
+     - Keep host controls wired
+  B) Embedded toolbar only:
+     - Remove/hide host Prev/Next/page/zoom row and keep title/action row
+- Do not leave both visible.
+
+3) Keep title/action row
+- Keep file title + Edit Link + Download row above viewer content.
+
+4) Preserve anchor behavior
+- Anchor jump/search should still work.
+- No route refresh/reset.
+- No duplicate event firing from removed toolbar path.
+
+5) Clean CSS
+- Remove spacing/margins reserved for now-removed duplicate bar.
+- Ensure viewer fills available area cleanly.
+
+Acceptance criteria:
+- Exactly one toolbar is visible in Document Viewer at all times.
+- File title/action row remains visible and functional.
+- Prev/Next/page/zoom still function through the chosen canonical toolbar.
+- Anchor jump/match flow still works.
+- No console errors and no duplicate handlers.
+
+Required output format:
+1) Alignment of task
+2) Chosen one-toolbar strategy (A or B) and why
+3) Files changed
+4) Before vs after behavior
+5) Smoke test results
