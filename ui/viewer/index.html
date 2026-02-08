@@ -5427,26 +5427,48 @@
 
       UUID_PATH_RE: /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i,
 
+      _HEADER_LIKE_VALUES: /^(file_name_c|file_name|file_url|file_url_c|contract_key|sheet|status|record_id|dataset_id|group_id|document_type|capabilities)$/i,
+
+      _isHeaderLike: function(val) {
+        if (!val || typeof val !== 'string') return true;
+        var v = val.trim();
+        if (!v || v.length < 2) return true;
+        return this._HEADER_LIKE_VALUES.test(v);
+      },
+
+      _extractFileIdentifier: function(url) {
+        if (!url) return null;
+        var parts = url.split('/');
+        var fname = parts[parts.length - 1] || '';
+        fname = fname.split('?')[0].split('#')[0];
+        return fname || null;
+      },
+
       deriveContractId: function(row) {
         var fileUrl = (row.file_url || row.File_URL_c || '').trim();
         var fileName = (row.file_name || row.contract_key || '').trim();
-        if (fileUrl) {
-          var uuidMatch = fileUrl.match(this.UUID_PATH_RE);
-          if (uuidMatch) return 'ctr_' + uuidMatch[0].toLowerCase().replace(/-/g, '').substring(0, 16);
+        var validUrl = fileUrl && !this._isHeaderLike(fileUrl);
+        var validName = fileName && !this._isHeaderLike(fileName);
+        if (validUrl) {
+          var fileId = this._extractFileIdentifier(fileUrl);
+          if (fileId && !this._isHeaderLike(fileId)) {
+            return 'ctr_' + simpleHash(fileId);
+          }
           return 'ctr_' + simpleHash(fileUrl);
         }
-        if (fileName) {
-          var sig = fileName + '|' + (row.sheet || '');
-          return 'ctr_' + simpleHash(sig);
+        if (validName) {
+          return 'ctr_' + simpleHash(fileName);
         }
         return null;
       },
 
       deriveDocumentId: function(row) {
         var fileUrl = (row.file_url || row.File_URL_c || '').trim();
-        if (fileUrl) return 'doc_' + simpleHash(fileUrl);
         var fileName = (row.file_name || row.contract_key || '').trim();
-        if (fileName) return 'doc_' + simpleHash(fileName);
+        var validUrl = fileUrl && !this._isHeaderLike(fileUrl);
+        var validName = fileName && !this._isHeaderLike(fileName);
+        if (validUrl) return 'doc_' + simpleHash(fileUrl);
+        if (validName) return 'doc_' + simpleHash(fileName);
         return null;
       },
 
@@ -5492,7 +5514,18 @@
               if (!index.contracts[contractId]) {
                 index.contracts[contractId] = {
                   contract_id: contractId,
-                  file_name: (row.file_name || row.contract_key || '').trim(),
+                  file_name: (function() {
+                    var fn = (row.file_name || '').trim();
+                    var ck = (row.contract_key || '').trim();
+                    if (fn && !self._isHeaderLike(fn)) return fn;
+                    if (ck && !self._isHeaderLike(ck)) return ck;
+                    var furl = (row.file_url || row.File_URL_c || '').trim();
+                    if (furl) {
+                      var extracted = self._extractFileIdentifier(furl);
+                      if (extracted && !self._isHeaderLike(extracted)) return extracted;
+                    }
+                    return '';
+                  })(),
                   file_url: (row.file_url || row.File_URL_c || '').trim(),
                   documents: {},
                   row_count: 0,
@@ -6279,7 +6312,28 @@
         return;
       }
 
-      var contracts = ContractIndex.listContracts();
+      var activeSheet = (typeof gridState !== 'undefined' && gridState.sheet) ? gridState.sheet : null;
+      var allContracts = ContractIndex.listContracts();
+
+      var contracts = [];
+      if (activeSheet && ContractIndex._index) {
+        Object.keys(ContractIndex._index.contracts).forEach(function(cid) {
+          var c = ContractIndex._index.contracts[cid];
+          if (c.sheets && c.sheets[activeSheet] && c.sheets[activeSheet].length > 0) {
+            contracts.push({
+              contract_id: cid,
+              file_name: c.file_name,
+              file_url: c.file_url,
+              row_count: c.sheets[activeSheet].length,
+              sheet_count: Object.keys(c.sheets).length,
+              document_count: Object.keys(c.documents).length
+            });
+          }
+        });
+      } else {
+        contracts = allContracts;
+      }
+
       if (contracts.length === 0) {
         if (filterGroup) filterGroup.style.display = 'none';
         if (statContracts) statContracts.style.display = 'none';
@@ -12187,6 +12241,7 @@
       } else {
         gridState.sheet = value;
       }
+      populateContractSelector();
       renderGrid();
       updateProgressBlock();
       saveNavStateToCache(); scheduleAutosave();
@@ -12207,6 +12262,7 @@
       var sidebarSelector = document.getElementById('sidebar-sheet-selector');
       if (sidebarSelector) sidebarSelector.value = gridState.sheet ? gridState.sheet : 'all';
       
+      populateContractSelector();
       renderGrid();
       updateProgressBlock();
       saveNavStateToCache(); scheduleAutosave();
