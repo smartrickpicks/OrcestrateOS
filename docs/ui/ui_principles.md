@@ -1,4 +1,4 @@
-# UI Principles (V1)
+# UI Principles (V2.3)
 
 > Human authority governs all semantic decisions. The UI exists to surface evidence, enable decisions, and record audit trails.
 
@@ -40,6 +40,11 @@ All documentation, UI labels, and schemas must use canonical terms only. No syno
 - Role escalation is explicit and logged
 - Degraded views show read-only content with clear "no permission" messaging
 - Unauthorized actions are never rendered — hiding is always preferred over disabling
+
+#### Sandbox vs Production (V2.3)
+- **Sandbox** (default when OAuth not configured): Permissionless — all actions allowed regardless of role. No Admin role enforcement. Intended for training and offline review.
+- **Production** (when Google OAuth configured): Strict role gates enforced via `_governedDecisions.canPerformAction()`. See `docs/memos/V23_MODE_SPLIT.md` for full permission matrix.
+- Governed decision points: `submitPatchRequest`, `verifierApprove`, `adminApprove`, `createPatchRollback`.
 
 ### 3. State-Driven Navigation
 - Navigation reflects data state (empty → load, loaded → triage/grid)

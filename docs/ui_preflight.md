@@ -28,4 +28,26 @@ Determinism & authority
 - Smoke Evidence is the arbiter; editor diagnostics are non‑authoritative.
 - Sorting rules: severity then identity keys; nulls last.
 
+## Pre-Flight Triage (V2.3)
+
+Pre-Flight is the first triage bucket in the Analyst view. It surfaces blockers that must be resolved before semantic review can proceed.
+
+### Blocker Types
+| Type | Description | Default Severity |
+|------|-------------|-----------------|
+| UNKNOWN_COLUMN | Column not in canonical schema | Computed: >0 non-empty = warning, >3 non-empty = blocker |
+| OCR_UNREADABLE | Document text extraction failed | blocker |
+| LOW_CONFIDENCE | Extraction confidence below threshold | warning |
+| MOJIBAKE | Character encoding corruption detected | blocker |
+
+### Unknown Column Severity (V2.3 Locked)
+Severity for unknown columns is computed from the rollup, not hardcoded:
+- `non_empty > 0` → `severity: 'warning'`
+- `non_empty > 3` → `severity: 'blocker'`
+
+Thresholds are constants: `_UNKNOWN_WARN_THRESHOLD = 0`, `_UNKNOWN_BLOCKER_THRESHOLD = 3`.
+
+### One-Click Patch Creation
+Each Pre-Flight blocker with `can_create_patch: true` offers a "Create Patch from Blocker" action that generates a governed patch routed through the standard lifecycle.
+
 [screenshot: Preflight with chips]

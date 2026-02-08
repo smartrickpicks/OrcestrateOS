@@ -24,7 +24,11 @@
 - docs/05_operator_validator_sop.md
 - docs/06_how_to_add_rules.md
 
-## Decision Memos (V2.3 Locked)
+## Decision Memos (V2.2+)
+- docs/memos/INDEX.md — Memo index with purpose and version
+- docs/memos/V23_GATE_DECISIONS.md — G1–G9 locked gate rules (derivation, rebuild, thresholds, routing, sanitization, storage, selector, orphan, payload)
+- docs/memos/V23_MODE_SPLIT.md — Production vs Sandbox mode split, permission gates, Admin role scope
+- docs/memos/V23_ID_MODEL.md — Identity model: Tenant → Contract → Document → Record; ID derivation and contract_id_source
 - docs/decisions/DECISION_HIERARCHY.md — Batch→contract→document→sheet→row hierarchy and rebuild policy
 - docs/decisions/DECISION_ID_EXTRACTION.md — ID extraction priority, URL canonicalization, orphan policy
 - docs/decisions/DECISION_UNKNOWN_COLUMNS.md — Unknown column thresholds, frequency-vote attachment, audit payload
@@ -32,6 +36,11 @@
 - docs/decisions/DECISION_SANDBOX_PRODUCTION.md — Sandbox (permissionless) vs Production (strict gates) split
 - docs/UNDO_VS_ROLLBACK.md — Undo (local, session-scoped) vs Rollback (governed, append-only)
 - config/id_extraction_rules.json — Machine-readable ID extraction and URL canonicalization rules
+
+## V2.3 Release Readiness
+- docs/V23_GATE_VERIFICATION_RUNBOOK.md — Deterministic verification steps for G1–G9 gates
+- docs/V23_RELEASE_CHECKLIST.md — Pre-flight checklist, regression checklist, ship/no-ship signoff
+- docs/V23_NAV_MAP.md — Quick-reference: where to find gate policy, mode split, audit contract, verification, signoff
 
 ## Governance Docs (Scope-Locked)
 - docs/SCOPE_control_plane.md

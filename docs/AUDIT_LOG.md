@@ -78,7 +78,8 @@ All audit events are persisted in an IndexedDB database (`orchestrate_audit`) wi
 | undo_local | UndoManager.undo | Local draft edit undone (session-scoped) (v2.2 P1) |
 | rollback_created | RollbackEngine.createRollback | Rollback artifact created (not yet applied) (v2.2 P1) |
 | rollback_applied | RollbackEngine.applyRollback | Rollback artifact applied (append-only) (v2.2 P1) |
-| preflight_blocker_detected | loadAnalystTriageFromStore | Pre-Flight blocker detected (unknown column, OCR, mojibake) (v2.2 P2) |
+| ROW_SANITIZED_HEADER_ECHO | parseWorkbook | Header-echo row removed at parse time when token overlap >= 60% (v2.3). Payload: sheet_name, row_index, match_ratio |
+| preflight_blocker_detected | _governedDecisions triage | Pre-Flight blocker detected (v2.3 updated). Payload: record_id, field_key, metadata.blocker_type, metadata.sheet, metadata.non_empty, metadata.scope. Severity computed from rollup: >0 warning, >3 blocker |
 | patch_from_preflight_blocker | createPatchFromBlocker | Patch created from Pre-Flight blocker (v2.2 P2) |
 
 ### No Synthetic Events
