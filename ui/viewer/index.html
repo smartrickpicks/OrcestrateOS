@@ -1863,7 +1863,7 @@
               </div>
             <p class="page-desc">All items requiring analyst review and action.</p>
             <!-- V2.2 P0: Audit Header Dropdown (3-tier) -->
-            <div id="audit-header-dropdown-container" style="position: absolute; top: 12px; right: 16px; z-index: 90;">
+            <div id="audit-header-dropdown-container" style="display: inline-flex; margin-left: auto; z-index: 90;">
               <button onclick="toggleAuditHeaderDropdown()" id="btn-audit-header" style="padding: 6px 14px; font-size: 0.8em; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
                 <span style="font-size: 1.1em;">&#128220;</span> Audit <span id="audit-header-badge" style="background: #e3f2fd; color: #1565c0; padding: 1px 6px; border-radius: 10px; font-size: 0.85em; min-width: 16px; text-align: center;">0</span>
               </button>
@@ -1876,7 +1876,7 @@
               </div>
             </div>
             <!-- Sticky Search Bar (top right) - repositioned to avoid audit overlap (P0.1) -->
-            <div id="triage-search-bar" style="position: fixed; top: 12px; right: 24px; z-index: 100; display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: opacity 0.2s ease, transform 0.2s ease;">
+            <div id="triage-search-bar" style="position: fixed; top: 56px; right: 24px; z-index: 100; display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: opacity 0.2s ease, transform 0.2s ease;">
               <!-- v1.6.33: Upload Excel button (failsafe for data import) -->
               <button id="upload-excel-btn" onclick="document.getElementById('excel-file-import').click()" 
                       style="padding: 4px 10px; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; border: none; border-radius: 5px; font-size: 0.75em; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); transition: all 0.2s ease;"
@@ -1998,7 +1998,7 @@
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Unknown Cols</span><span id="ta-pf-unknown" style="font-weight: 600;">0</span></div>
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">OCR Unreadable</span><span id="ta-pf-ocr" style="font-weight: 600;">0</span></div>
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Low Confidence</span><span id="ta-pf-lowconf" style="font-weight: 600;">0</span></div>
-                  <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Mojibake</span><span id="ta-pf-mojibake" style="font-weight: 600;">0</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Doc Type</span><span id="ta-pf-doctype" style="font-weight: 600;">0</span></div>
                 </div>
               </div>
               <div class="ta-lane-card" onclick="TriageAnalytics.handleLaneClick('semantic')" style="background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 16px; cursor: pointer; transition: box-shadow 0.2s; border-top: 3px solid #ff9800;">
@@ -2011,7 +2011,6 @@
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Accepted</span><span id="ta-sem-accepted" style="font-weight: 600; color: #2e7d32;">0</span></div>
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Rejected</span><span id="ta-sem-rejected" style="font-weight: 600; color: #c62828;">0</span></div>
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Pending</span><span id="ta-sem-pending" style="font-weight: 600; color: #e65100;">0</span></div>
-                  <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Hinge</span><span id="ta-sem-hinge" style="font-weight: 600; color: #7b1fa2;">0</span></div>
                 </div>
               </div>
               <div class="ta-lane-card" onclick="TriageAnalytics.handleLaneClick('patch')" style="background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 16px; cursor: pointer; transition: box-shadow 0.2s; border-top: 3px solid #1976d2;">
@@ -2062,6 +2061,8 @@
               <div id="ta-schema-empty-state" style="display: none; padding: 12px; text-align: center; color: #999; font-size: 0.8em; border-top: 1px solid #eee; margin-top: 12px;">No matching items found for this filter. Try loading a dataset with more columns.</div>
             </div>
           </div>
+
+
 
           <!-- QUEUE 1: Pre-Flight -->
           <div class="triage-queue-section" style="margin-bottom: 24px;">
@@ -2651,7 +2652,7 @@
               </div>
 
               <!-- Replay Contract (v1.6.57: Correction/Blacklist required, RFI optional) -->
-              <div class="srr-evidence-block" id="srr-replay-contract-block" style="padding-top: 12px; border-top: 1px solid #e0e0e0;">
+              <div class="srr-evidence-block" id="srr-replay-contract-block" style="padding-top: 12px; border-top: 1px solid #e0e0e0; display: none;">
                 <div style="font-size: 0.85em; font-weight: 600; color: #333; margin-bottom: 8px;">Replay Contract</div>
                 <div class="srr-evidence-block" id="srr-replay-type-block">
                   <div class="srr-evidence-label">Replay Type <span id="srr-replay-type-required" class="srr-repro-required">(required)</span></div>
@@ -6532,7 +6533,13 @@
         return;
       }
 
-      var allContracts = ContractIndex.listContracts();
+      var allContracts = ContractIndex.listContracts().filter(function(c) {
+        var fn = (c.file_name || c.contract_id || '').toLowerCase();
+        if (fn.includes('_change_log') || fn === 'rfis & analyst notes' || fn.includes('glossary_reference') || fn.includes('_reference')) {
+          if (c.row_count <= 1) return false;
+        }
+        return true;
+      });
       var datasetWideCount = allContracts.length;
       console.log('[V2.3-GATE][G7] PASS contract count dataset-wide: ' + datasetWideCount + ' contracts across all sheets');
 
@@ -6563,6 +6570,12 @@
 
       if (!selector) return;
       var html = '<option value="">All Contracts (' + datasetWideCount + ')</option>';
+      var seen = {};
+      allContracts = allContracts.filter(function(c) {
+        if (seen[c.contract_id]) return false;
+        seen[c.contract_id] = true;
+        return true;
+      });
       allContracts.sort(function(a, b) { return (a.file_name || '').localeCompare(b.file_name || ''); });
       allContracts.forEach(function(c) {
         var label = (c.file_name || c.contract_id).substring(0, 40);
@@ -13909,7 +13922,7 @@
     // v1.4.22: Navigate to role-specific default landing page
     // v1.6.37: Default to All Data Grid (Accounts sheet) instead of Triage
     function navigateToRoleDefault() {
-      navigateTo('grid');
+      navigateTo('triage');
     }
     
     function applyModeVisibility(mode) {
@@ -17536,10 +17549,11 @@
 
       var expanded = _guidanceCardExpanded;
       var html = '<div id="section-guidance-card" class="section-guidance-card" style="margin-bottom: 16px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #fafbff;">';
+      var guidanceTitle = (guidance._section_label || guidance.label || 'Section Guidance');
       html += '<div class="section-guidance-toggle" onclick="toggleGuidanceCard()" style="padding: 10px 14px; background: #f0f4ff; display: flex; justify-content: space-between; align-items: center; border-bottom: ' + (expanded ? '1px solid #e0e0e0' : 'none') + ';">';
       html += '<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">';
       html += '<span style="font-size: 1.1em;">\u{1F4D6}</span>';
-      html += '<span style="font-weight: 600; font-size: 0.85em; color: #333;">Section Guidance</span>';
+      html += '<span style="font-weight: 600; font-size: 0.85em; color: #333;">' + guidanceTitle + '</span>';
       if (docRole) html += '<span style="padding: 2px 8px; background: #e8eaf6; color: #3949ab; border-radius: 10px; font-size: 0.75em;">' + docRole + '</span>';
       if (docType) html += '<span style="padding: 2px 8px; background: #e0f2f1; color: #00695c; border-radius: 10px; font-size: 0.75em;">' + docType + '</span>';
       if (confidence) {
@@ -21957,9 +21971,10 @@
           if (bt === 'UNKNOWN_COLUMN') cache.lanes.preflight.unknown_columns++;
           else if (bt === 'OCR_UNREADABLE') cache.lanes.preflight.ocr_unreadable++;
           else if (bt === 'LOW_CONFIDENCE') cache.lanes.preflight.low_confidence++;
-          else if (bt === 'MOJIBAKE' || bt === 'MOJIBAKE_DETECTED') cache.lanes.preflight.mojibake++;
+          else if (bt === 'MOJIBAKE' || bt === 'MOJIBAKE_DETECTED') { cache.lanes.preflight.mojibake++; cache.lanes.preflight.ocr_unreadable++; }
+          else if (bt === 'DOCUMENT_TYPE_MISSING') cache.lanes.preflight.document_type = (cache.lanes.preflight.document_type || 0) + 1;
         });
-        cache.lanes.preflight.total = cache.lanes.preflight.unknown_columns + cache.lanes.preflight.ocr_unreadable + cache.lanes.preflight.low_confidence + cache.lanes.preflight.mojibake;
+        cache.lanes.preflight.total = cache.lanes.preflight.unknown_columns + cache.lanes.preflight.ocr_unreadable + cache.lanes.preflight.low_confidence + (cache.lanes.preflight.document_type || 0);
 
         if (typeof SystemPass !== 'undefined' && SystemPass._proposals) {
           SystemPass._proposals.forEach(function(p) {
@@ -22150,14 +22165,14 @@
         if (el('ta-pf-unknown')) el('ta-pf-unknown').textContent = cache.lanes.preflight.unknown_columns;
         if (el('ta-pf-ocr')) el('ta-pf-ocr').textContent = cache.lanes.preflight.ocr_unreadable;
         if (el('ta-pf-lowconf')) el('ta-pf-lowconf').textContent = cache.lanes.preflight.low_confidence;
-        if (el('ta-pf-mojibake')) el('ta-pf-mojibake').textContent = cache.lanes.preflight.mojibake;
+        if (el('ta-pf-doctype')) el('ta-pf-doctype').textContent = cache.lanes.preflight.document_type || 0;
 
         if (el('ta-semantic-total')) el('ta-semantic-total').textContent = cache.lanes.semantic.total;
         if (el('ta-sem-proposals')) el('ta-sem-proposals').textContent = cache.lanes.semantic.proposals_created;
         if (el('ta-sem-accepted')) el('ta-sem-accepted').textContent = cache.lanes.semantic.accepted;
         if (el('ta-sem-rejected')) el('ta-sem-rejected').textContent = cache.lanes.semantic.rejected;
         if (el('ta-sem-pending')) el('ta-sem-pending').textContent = cache.lanes.semantic.pending;
-        if (el('ta-sem-hinge')) el('ta-sem-hinge').textContent = cache.lanes.semantic.hinge_impacted;
+
 
         if (el('ta-patch-total')) el('ta-patch-total').textContent = cache.lanes.patch_review.total;
         if (el('ta-pr-draft')) el('ta-pr-draft').textContent = cache.lanes.patch_review.draft;
@@ -22212,15 +22227,15 @@
         var container = document.getElementById('ta-lifecycle-stages');
         if (!container) return;
         var stages = [
-          { key: 'loaded', label: 'Loaded', icon: '\u{1F4E5}' },
-          { key: 'preflight_complete', label: 'Pre-Flight', icon: '\u2705' },
-          { key: 'system_pass_complete', label: 'System Pass', icon: '\u2699\uFE0F' },
-          { key: 'system_changes_reviewed', label: 'Reviewed', icon: '\u{1F50D}' },
-          { key: 'patch_submitted', label: 'Patch Sub.', icon: '\u{1F4DD}' },
-          { key: 'rfi_submitted', label: 'RFI', icon: '\u2753' },
-          { key: 'verifier_complete', label: 'Verifier', icon: '\u2696\uFE0F' },
-          { key: 'admin_promoted', label: 'Promoted', icon: '\u{1F451}' },
-          { key: 'applied', label: 'Applied', icon: '\u{1F680}' }
+          { key: 'loaded', label: 'Loaded', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' },
+          { key: 'preflight_complete', label: 'Pre-Flight', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' },
+          { key: 'system_pass_complete', label: 'System Pass', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' },
+          { key: 'system_changes_reviewed', label: 'Reviewed', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' },
+          { key: 'patch_submitted', label: 'Patch Sub.', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' },
+          { key: 'rfi_submitted', label: 'RFI', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' },
+          { key: 'verifier_complete', label: 'Verifier', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' },
+          { key: 'admin_promoted', label: 'Promoted', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>' },
+          { key: 'applied', label: 'Applied', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>' }
         ];
         var html = '';
         stages.forEach(function(s, i) {
@@ -22229,11 +22244,10 @@
           var bg = active ? '#e3f2fd' : '#f5f5f5';
           var border = active ? '#1976d2' : '#e0e0e0';
           var color = active ? '#1565c0' : '#999';
-          html += '<div class="ta-lifecycle-stage" onclick="TriageAnalytics.handleStageClick(\'' + s.key + '\')" style="flex: 1; min-width: 80px; text-align: center; padding: 10px 4px; background: ' + bg + '; border: 1px solid ' + border + '; border-radius: 6px; cursor: pointer;">';
-          html += '<div style="font-size: 1.1em;">' + s.icon + '</div>';
-          html += '<div style="font-size: 0.68em; font-weight: 600; color: ' + color + '; margin: 3px 0 1px;">' + s.label + '</div>';
-          html += '<div style="font-size: 1em; font-weight: 700; color: ' + (active ? '#1565c0' : '#bbb') + ';">' + data.count + '</div>';
-          html += '<div style="font-size: 0.62em; color: ' + color + ';">' + data.pct + '%</div>';
+          html += '<div class="ta-lifecycle-stage" onclick="TriageAnalytics.handleStageClick(\'' + s.key + '\')" style="flex: 1; min-width: 64px; text-align: center; padding: 6px 3px; background: ' + bg + '; border: 1px solid ' + border + '; border-radius: 5px; cursor: pointer; line-height: 1.2;">';
+          html += '<div style="font-size: 0.85em; color: ' + color + '; display:flex; align-items:center; justify-content:center;">' + s.icon + '</div>';
+          html += '<div style="font-size: 0.62em; font-weight: 600; color: ' + color + '; margin: 2px 0 0;">' + s.label + '</div>';
+          html += '<div style="font-size: 0.9em; font-weight: 700; color: ' + (active ? '#1565c0' : '#bbb') + ';">' + data.count + ' <span style="font-size:0.65em; font-weight:400;">(' + data.pct + '%)</span></div>';
           html += '</div>';
           if (i < stages.length - 1) html += '<div style="display: flex; align-items: center; color: #ccc; font-size: 0.7em;">\u25B6</div>';
         });
@@ -22891,9 +22905,9 @@
         return {
           request_id: pr.request_id,
           type: patchType,
-          record_id: pr.record_id || pr.payload?.record_id || 'Unknown',
-          contract_key: pr.contract_key || pr.payload?.contract_key,
-          field_name: pr.field_name || (pr.payload?.changes ? Object.keys(pr.payload.changes)[0] : 'Multiple'),
+          record_id: pr.record_id || (pr.payload && pr.payload.record_id) || 'Unknown',
+          contract_key: pr.contract_key || (pr.payload && pr.payload.contract_key),
+          field_name: pr.field_name || ((pr.payload && pr.payload.changes) ? Object.keys(pr.payload.changes)[0] : 'Multiple'),
           status: pr.status,
           section: statusInfo.section,
           status_label: statusInfo.label,
@@ -22961,7 +22975,8 @@
         UNKNOWN_COLUMN: { label: 'Unknown Column', badge: 'fail', icon: '\u2753', desc: 'Column not found in field_meta.json. Threshold: columns with >0 non-empty values are flagged.' },
         OCR_UNREADABLE: { label: 'OCR Unreadable', badge: 'fail', icon: '\ud83d\udeab', desc: 'OCR extraction returned unreadable or garbled text. Manual review required.' },
         LOW_CONFIDENCE: { label: 'Low Confidence', badge: 'warn', icon: '\u26a0', desc: 'Extraction confidence below 60%. Values may be unreliable.' },
-        MOJIBAKE: { label: 'Mojibake', badge: 'fail', icon: '\ud83d\udd20', desc: 'Text contains encoding artifacts (mojibake). Source document may need re-extraction.' }
+        MOJIBAKE: { label: 'OCR / Encoding', badge: 'fail', icon: '\ud83d\udeab', desc: 'Text contains encoding artifacts (mojibake). Merged under OCR Unreadable family. Source document may need re-extraction.' },
+        DOCUMENT_TYPE_MISSING: { label: 'Document Type', badge: 'warn', icon: '\ud83d\udcc4', desc: 'Document type not assigned or not recognized. Assign a valid document type before proceeding.' }
       };
 
       // v2.3 T11: Timeline lock alignment - governed decision enforcement
@@ -23233,7 +23248,7 @@
           '<td style="padding: 10px 12px;"><span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + typeBadgeColor + '15; color: ' + typeBadgeColor + ';">' + typeLabel + '</span>' + preflightBadge + '</td>' +
           '<td style="padding: 10px 12px; font-family: monospace; font-size: 0.85em;">' + recordDisplay + '</td>' +
           '<td style="padding: 10px 12px;">' + (item.field_name || '-') + '</td>' +
-          '<td style="padding: 10px 12px;">' + statusBadge + notesIndicator + '</td>' +
+          '<td style="padding: 10px 12px;">' + statusBadge + notesIndicator + (isPreFlight && item.blocker_type ? ' <span style="font-size:0.72em; color:#795548; font-style:italic;">(' + (item.blocker_type || '').replace(/_/g, ' ').toLowerCase() + ')</span>' : '') + '</td>' +
           '<td style="padding: 10px 12px; color: #666; font-size: 0.85em;">' + timestamp + '</td>' +
           '<td style="padding: 10px 12px;"><button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75em;" onclick="event.stopPropagation(); ' + viewHandler + '">View</button>' + patchFromBlockerBtn + '</td>' +
           '</tr>';
@@ -23416,7 +23431,7 @@
       }
       
       // Navigate to SRR with this record
-      var recordId = pr.record_id || pr.payload?.record_id;
+      var recordId = pr.record_id || (pr.payload && pr.payload.record_id);
       if (recordId) {
         // Try to load from canonical record store first
         var recordKey = 'kiwi/v1/' + (pr.tenant_id || IDENTITY_CONTEXT.tenant_id) + '/records/' + (pr.dataset_id || IDENTITY_CONTEXT.dataset_id) + '/' + recordId + '.json';
@@ -23451,7 +23466,17 @@
           }
         }
       } else {
-        showToast('Record ID not available for this patch request.', 'warning');
+        var contractId = pr.contract_id || ((pr.payload && pr.payload.contract_id) || "") || pr.contract_key || '';
+        if (contractId) {
+          console.log('[AnalystTriage] No record pointer, falling back to contract-filtered grid: ' + contractId);
+          _activeContractFilter = contractId;
+          navigateTo('grid');
+          setTimeout(function() { if (typeof renderGrid === 'function') renderGrid(); }, 100);
+        } else {
+          console.log('[AnalystTriage] No record or contract pointer, fallback to grid with warning');
+          navigateTo('grid');
+          showToast('No specific record or contract found. Showing all data.', 'warning');
+        }
       }
     }
     
@@ -24083,7 +24108,8 @@
       });
       // v1.6.57: Show replay contract for RFI but mark as optional
       var replayBlock = document.getElementById('srr-replay-contract-block');
-      if (replayBlock) replayBlock.style.display = 'block';
+      var currentMode = localStorage.getItem('viewer_mode_v10') || 'analyst';
+      if (replayBlock) replayBlock.style.display = (currentMode === 'verifier' || currentMode === 'admin') ? 'block' : 'none';
       ['srr-replay-type-required', 'srr-replay-steps-required', 'srr-replay-expected-required'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.textContent = '(optional)';
@@ -24375,7 +24401,7 @@
       
       // v1.5.2: Load PatchRequest by patch_request_id first
       var patchRequest = null;
-      var patchRequestId = payload?.patch_request_id || null;
+      var patchRequestId = (payload && payload.patch_request_id) || null;
       
       if (patchRequestId) {
         patchRequest = PATCH_REQUEST_STORE.get(patchRequestId);
@@ -24432,7 +24458,7 @@
         srrState.currentDatasetId = datasetId;
         srrState.currentRecordId = recordId;
         srrState.currentPatchRequestId = patchRequestId;
-        srrState.currentArtifactId = payload?.artifact?.artifact_id || vrState.selectedPayloadId || null;
+        srrState.currentArtifactId = ((payload && payload.artifact) ? payload.artifact.artifact_id : null) || vrState.selectedPayloadId || null;
         srrState.isReadOnly = (currentMode === 'verifier' || currentMode === 'admin');
         srrState.currentPatchRequest = patchRequest;  // Store for Patch Tester
         
@@ -26298,7 +26324,7 @@
       var bgColor = '#2e7d32';
       if (type === 'error') bgColor = '#c62828';
       else if (type === 'warning') bgColor = '#f57c00';
-      toast.style.cssText = 'position: fixed; top: 16px; left: 50%; transform: translateX(-50%); padding: 12px 24px; background: ' + bgColor + '; color: white; border-radius: 6px; font-size: 0.9em; z-index: 10001; box-shadow: 0 4px 12px rgba(0,0,0,0.3); max-width: 90vw;';
+      toast.style.cssText = 'position: fixed; top: 64px; left: 50%; transform: translateX(-50%); padding: 12px 24px; background: ' + bgColor + '; color: white; border-radius: 6px; font-size: 0.9em; z-index: 10001; box-shadow: 0 4px 12px rgba(0,0,0,0.3); max-width: 90vw;';
       console.log('[TRIAGE-ANALYTICS][P0.2] layout_safezone_applied: toast=top-center, fab=bottom-right, audit-dropdown=z90, search-bar=z100');
       toast.textContent = message;
       document.body.appendChild(toast);
