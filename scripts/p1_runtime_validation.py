@@ -69,20 +69,26 @@ async def run():
         print(f"[P1] Upload: {result}")
         await page.wait_for_timeout(4000)
 
+        wb_check = await page.evaluate("typeof workbook !== 'undefined' && workbook.order ? workbook.order.length : 0")
+        print(f"[P1] Workbook sheets after upload: {wb_check}")
+
         await page.evaluate("if(typeof navigateTo==='function') navigateTo('triage')")
         await page.wait_for_timeout(3000)
 
         await page.evaluate("""
-            if(typeof TriageAnalytics !== 'undefined' && typeof TriageAnalytics.recompute === 'function') {
-                TriageAnalytics.recompute();
-                if(typeof TriageAnalytics.renderHeader === 'function') TriageAnalytics.renderHeader();
-            }
-            if(typeof TriageTelemetry !== 'undefined' && typeof TriageTelemetry.recompute === 'function') {
-                TriageTelemetry.recompute();
-                TriageTelemetry.renderBanner();
-                TriageTelemetry.renderLifecycleDeltas();
-                TriageTelemetry.renderContractChips();
-            }
+            (function() {
+                if(typeof TriageAnalytics !== 'undefined' && typeof TriageAnalytics.recompute === 'function') {
+                    TriageAnalytics.recompute();
+                    if(typeof TriageAnalytics.renderHeader === 'function') TriageAnalytics.renderHeader();
+                }
+                if(typeof TriageTelemetry !== 'undefined') {
+                    if (TriageTelemetry._debounceTimer) clearTimeout(TriageTelemetry._debounceTimer);
+                    TriageTelemetry.recompute();
+                    TriageTelemetry.renderBanner();
+                    TriageTelemetry.renderLifecycleDeltas();
+                    TriageTelemetry.renderContractChips();
+                }
+            })()
         """)
         await page.wait_for_timeout(2000)
 
