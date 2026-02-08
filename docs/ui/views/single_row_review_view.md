@@ -249,7 +249,7 @@ Patch Type is displayed as a horizontal chip row with auto-selection based on fi
 - Blacklist Subject: Read-only, auto-derived from selected field name and value
   - Format: `{field_label}: {current_value}`
   - Example: "Artist Name: John Doe"
-- Blacklist Category: *(planned — not yet implemented)* Dropdown selector with options:
+- Blacklist Category: *(V2 — not enforced in V1)* Dropdown selector with options:
   - Duplicate Entry
   - Invalid Format
   - Prohibited Value
@@ -263,7 +263,7 @@ Patch Type is displayed as a horizontal chip row with auto-selection based on fi
 - RFI behavior: The Justification textarea **is** the question
   - Placeholder: "What is your question about this field?"
   - The entered text becomes the RFI question body
-- RFI Target: *(planned — not yet implemented)* Optional routing field (Team Lead, Legal, Data Steward, etc.)
+- RFI Target: *(V2 — not enforced in V1)* Optional routing field (Team Lead, Legal, Data Steward, etc.)
 - Field change: Optional (RFI does not require value edit)
 
 ## Evidence Pack (v1.4.19)
@@ -303,8 +303,8 @@ Dropdown options:
 
 ## Patch Type Behavior
 
-| Type | Required Fields | Optional | Coming Soon |
-|------|-----------------|----------|-------------|
+| Type | Required Fields | Optional | Deferred (V2) |
+|------|-----------------|----------|----------------|
 | Correction | Observation + Expected + Justification + Repro (unless Override) + Field changes | Override | — |
 | Blacklist Flag | Justification (min 10 chars) | Field changes | Blacklist Category |
 | RFI | Justification (min 10 chars) | Field changes | RFI Target |
@@ -320,12 +320,12 @@ Dropdown options:
 
 ### Blacklist Flag
 - Justification: Required (minimum 10 characters)
-- Blacklist Category: *(planned — UI not yet implemented)*
+- Blacklist Category: *(V2 — not enforced in V1, no validation rules active)*
 - Field changes: Optional
 
 ### RFI
 - Justification: Required (minimum 10 characters) — this is the question
-- RFI Target: *(planned — UI not yet implemented)*
+- RFI Target: *(V2 — not enforced in V1, no validation rules active)*
 - Field changes: Optional
 
 ## Patch Editor Reset Behavior (v1.5.0)

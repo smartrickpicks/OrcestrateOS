@@ -2031,6 +2031,12 @@
             <span class="filter-chip status-needs_review" data-filter="needs_review" onclick="setGridFilter('needs_review')">Needs Review</span>
             <span class="filter-chip status-blocked" data-filter="blocked" onclick="setGridFilter('blocked')">Blocked</span>
           </div>
+          <div id="grid-status-legend" style="display: flex; gap: 12px; padding: 4px 0 8px 0; font-size: 0.75em; color: #666;">
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#2e7d32;margin-right:4px;vertical-align:middle;"></span>Ready</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f57c00;margin-right:4px;vertical-align:middle;"></span>Needs Review</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#c62828;margin-right:4px;vertical-align:middle;"></span>Blocked</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#1565c0;margin-right:4px;vertical-align:middle;"></span>Finalized</span>
+          </div>
           <button class="top-toolbar-btn" id="grid-column-toggle" onclick="toggleColumnMenu()" title="Toggle columns">Columns</button>
         </div>
 
@@ -4323,6 +4329,14 @@
     const SETTINGS_STORAGE_KEY = 'viewer_settings_v12';
     const FIRST_RUN_DISMISSED_KEY = 'viewer_first_run_dismissed_v12';
     const DEMO_TOGGLE_KEY = 'viewer_demo_toggle_v1';
+
+    var STATUS_COLOR_MAP = {
+      ready: { text: '#2e7d32', bg: '#e8f5e9', border: '#c8e6c9' },
+      needs_review: { text: '#f57c00', bg: '#fff3e0', border: '#ffe0b2' },
+      blocked: { text: '#c62828', bg: '#ffebee', border: '#ffcdd2' },
+      finalized: { text: '#1565c0', bg: '#e3f2fd', border: '#bbdefb' },
+      flagged: { text: '#7b1fa2', bg: '#f3e5f5', border: '#e1bee7' }
+    };
     
     // v1.6.4: Demo toggle state (Original = baseline, Modified = in-progress)
     var demoToggleState = {
@@ -16345,7 +16359,6 @@
         fragment += '&search=' + encodeURIComponent(searchText);
       }
       var newSrc = baseUrl + fragment;
-      obj.data = 'about:blank';
       setTimeout(function() {
         obj.data = newSrc;
         var openTabLink = document.getElementById('srr-pdf-open-tab');
@@ -21217,11 +21230,7 @@
       const issues = (allData.issues || []).filter(i => getJoinKey(i) === joinKey);
       const actions = (allData.fieldActions || []).filter(a => getJoinKey(a) === joinKey);
       
-      const statusColor = {
-        'ready': '#4caf50',
-        'needs_review': '#ff9800',
-        'blocked': '#f44336'
-      }[contract.sf_contract_status?.toLowerCase()] || '#757575';
+      const statusColor = STATUS_COLOR_MAP[(contract.sf_contract_status || '').toLowerCase()]?.text || '#757575';
       
       let html = `
         <div style="margin-bottom: 20px;">
