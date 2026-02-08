@@ -2,6 +2,17 @@
 
 > Alert summary view showing Review State counts and status cards for quick navigation.
 
+## Recent Changes (v2.3 P0.2)
+
+- **Header IA reorder**: Sections now follow canonical hierarchy: Batch Summary → Contract Summary → Lane Cards → Lifecycle → Schema Snapshot.
+- **Batch Summary strip**: New compact row at top showing contracts_total, records_total, completed, needs_review, pending, updated_at. Shows "Unassigned rows" count with tooltip when orphan rows exist.
+- **Contract count reconciliation**: Lane + lifecycle totals cross-checked against contract summary. Warning badge shown on mismatch, diagnostic log emitted.
+- **Route hardening**: Warning toast shown on final grid fallback. All route decisions logged with `route_decision_record` / `route_decision_contract` / `route_decision_fallback`.
+- **Metadata leak guard**: Per-refresh exclusion counters emitted: meta_sheets, ref_sheets, sys_fields.
+- **Schema empty-state helper**: Empty-state message shown when schema click-through yields zero results.
+- **Layout safezone**: Toast position, FAB, audit dropdown, search bar z-index verified and logged.
+- **Logging**: 12 distinct `[TRIAGE-ANALYTICS][P0.2]` events.
+
 ## Recent Changes (v2.3 P0.1)
 
 - **Lifecycle count fix**: Removed false "Unassigned (Batch Level)" pseudo-contract from lifecycle denominator. Orphan rows are tracked internally but excluded from contract-level progression counts.
@@ -52,9 +63,42 @@ Triage is accessible via:
 | Filter controls | Search, severity, status, subtype | Yes |
 | Triage Analytics Header | Lane cards, lifecycle tracker, contract table, schema snapshot (V2.3) | Yes (after data load) |
 
-## Triage Analytics Header (V2.3 P0 + P0.1)
+## Triage Analytics Header (V2.3 P0 + P0.1 + P0.2)
 
 The analytics header renders above the existing triage grid after data load. It aggregates metrics from existing stores with no data duplication.
+
+### Header Section Order (P0.2)
+
+| # | Section | Description |
+|---|---------|-------------|
+| 1 | Batch Summary | Compact row with totals, unassigned rows indicator, reconciliation badge |
+| 2 | Contract Summary | Collapsible table (collapsed by default) with per-contract detail |
+| 3 | Lane Cards | Pre-Flight, Semantic, Patch Review health cards |
+| 4 | Lifecycle Progression | 9-stage horizontal tracker |
+| 5 | Schema Snapshot | Field matching, unknown columns, drift |
+
+### Batch Summary (P0.2)
+
+Compact horizontal strip showing batch-level totals:
+
+| Metric | ID | Description |
+|--------|-----|-------------|
+| Contracts | ta-bs-contracts | Total indexed contracts |
+| Records | ta-bs-records | Total data rows (excluding meta sheets) |
+| Completed | ta-bs-completed | Contracts at "applied" stage |
+| Needs Review | ta-bs-review | Contracts with active alerts |
+| Pending | ta-bs-pending | Contracts without alerts or completion |
+| Updated | ta-bs-updated | Last refresh timestamp |
+| Unassigned rows | ta-bs-unassigned | Rows without contract assignment (tooltip explains exclusion policy) |
+| Count mismatch | ta-reconcile-warn | Warning badge if lifecycle/contract totals don't reconcile |
+
+### Contract Count Reconciliation (P0.2)
+
+On each refresh, lifecycle stage totals are summed and compared against the contract summary count. If they don't match:
+- Warning badge displayed in Batch Summary strip
+- Diagnostic log emitted: `lifecycle_reconcile_mismatch` with delta
+
+If they match: `lifecycle_reconcile_ok` logged.
 
 ### Data Sources (read-only)
 
@@ -137,7 +181,7 @@ Actions:
 
 ### Schema Snapshot
 
-Clickable mini-panel (P0.1):
+Clickable mini-panel (P0.1 + P0.2):
 
 | Metric | Click Action | Description |
 |--------|--------------|-------------|
@@ -146,36 +190,49 @@ Clickable mini-panel (P0.1):
 | Missing Required | → blocked filter | Required canonical fields not found in workbook |
 | Schema Drift | → needs-review filter | Sum of unknown + missing required |
 
-### Pre-Flight View Routing (P0.1)
+If a click-through yields zero results, an empty-state helper message is shown inline (P0.2).
+
+### Pre-Flight View Routing (P0.1 + P0.2)
 
 Deterministic fallback order when clicking a pre-flight item:
 
-1. If row-level record_id exists and found in workbook → open Record Inspection
-2. If contract-level pointer exists → open All Data Grid filtered by contract
-3. Final fallback → open All Data Grid (unfiltered)
+1. If row-level record_id exists and found in workbook → open Record Inspection (`route_decision_record`)
+2. If contract-level pointer exists → open All Data Grid filtered by contract (`route_decision_contract`)
+3. Final fallback → open All Data Grid (unfiltered) with warning toast (`route_decision_fallback`)
 
-Each decision logged with `[TRIAGE-ANALYTICS][P0.1] preflight_view_route`.
+No dead ends: the final fallback always navigates to a visible result set with a toast explaining the fallback.
 
-### Patch Queue Sanitization (P0.1)
+Each decision logged with `[TRIAGE-ANALYTICS][P0.2] route_decision_*`.
+
+### Patch Queue Sanitization (P0.1 + P0.2)
 
 Items filtered from actionable patch queue:
 - Rows from meta sheets (change_log, RFIs, etc.)
 - Rows from reference/glossary sheets
 - Fields starting with `__meta`, `_glossary`, `_system`, `_internal`
 
-Sanitization count logged: `[TRIAGE-ANALYTICS][P0.1] patch_queue_sanitize`.
+P0.2 adds per-type exclusion counters: `meta_sheets`, `ref_sheets`, `sys_fields` emitted in `queue_exclusions_applied` log.
 
 ### Console Logging
 
-All analytics operations log with `[TRIAGE-ANALYTICS][P0.1]` prefix:
+P0.1 operations log with `[TRIAGE-ANALYTICS][P0.1]` prefix:
 - `lifecycle_recompute`: Contract count and orphan exclusion
 - `refresh`: Lane totals, contract count, schema match
 - `renderHeader`: Display state and contract count
-- `contract_summary`: Completed/review/pending breakdown
-- `preflight_view_route`: Routing decision for pre-flight items
-- `patch_queue_sanitize`: Pre/post sanitization counts
-- `schema_snapshot_click`: Schema card click-through type
-- `overlap_layout_guard`: Toast repositioning
+
+P0.2 operations log with `[TRIAGE-ANALYTICS][P0.2]` prefix (12 events):
+- `header_reorder_applied`: Confirms section order applied
+- `batch_summary_recomputed`: Batch-level totals with unassigned count
+- `contract_summary_recomputed`: Completed/review/pending breakdown
+- `lifecycle_reconcile_ok`: Lifecycle and contract totals match
+- `lifecycle_reconcile_mismatch`: Lifecycle and contract totals differ (includes delta)
+- `route_decision_start`: Route evaluation initiated
+- `route_decision_record`: Navigating to Record Inspection
+- `route_decision_contract`: Navigating to filtered grid by contract
+- `route_decision_fallback`: Final fallback to unfiltered grid with warning toast
+- `queue_exclusions_applied`: Per-type exclusion counts (meta_sheets, ref_sheets, sys_fields)
+- `snapshot_filter_applied`: Schema card click-through type
+- `layout_safezone_applied`: Layout z-index and position verification
 
 ### Refresh Triggers
 

@@ -1905,7 +1905,77 @@
           </div>
           <!-- V2.3: Triage Analytics Header -->
           <div id="triage-analytics-header" style="margin-bottom: 24px; display: none;">
-            <!-- A) 3 Lanes -->
+            <!-- 1) Batch Summary -->
+            <div id="ta-batch-summary" style="display: flex; gap: 20px; align-items: center; padding: 12px 16px; background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 10px; margin-bottom: 16px; flex-wrap: wrap;">
+              <div style="text-align: center; min-width: 60px;">
+                <div style="font-size: 0.7em; color: #666; text-transform: uppercase; font-weight: 600;">Contracts</div>
+                <div id="ta-bs-contracts" style="font-size: 1.3em; font-weight: 700; color: #1565c0;">0</div>
+              </div>
+              <div style="width: 1px; height: 28px; background: #ddd;"></div>
+              <div style="text-align: center; min-width: 60px;">
+                <div style="font-size: 0.7em; color: #666; text-transform: uppercase; font-weight: 600;">Records</div>
+                <div id="ta-bs-records" style="font-size: 1.3em; font-weight: 700; color: #333;">0</div>
+              </div>
+              <div style="width: 1px; height: 28px; background: #ddd;"></div>
+              <div style="text-align: center; min-width: 60px;">
+                <div style="font-size: 0.7em; color: #666; text-transform: uppercase; font-weight: 600;">Completed</div>
+                <div id="ta-bs-completed" style="font-size: 1.3em; font-weight: 700; color: #2e7d32;">0</div>
+              </div>
+              <div style="text-align: center; min-width: 60px;">
+                <div style="font-size: 0.7em; color: #666; text-transform: uppercase; font-weight: 600;">Needs Review</div>
+                <div id="ta-bs-review" style="font-size: 1.3em; font-weight: 700; color: #e65100;">0</div>
+              </div>
+              <div style="text-align: center; min-width: 60px;">
+                <div style="font-size: 0.7em; color: #666; text-transform: uppercase; font-weight: 600;">Pending</div>
+                <div id="ta-bs-pending" style="font-size: 1.3em; font-weight: 700; color: #555;">0</div>
+              </div>
+              <div style="width: 1px; height: 28px; background: #ddd;"></div>
+              <div style="text-align: center; min-width: 80px;">
+                <div style="font-size: 0.7em; color: #666; text-transform: uppercase; font-weight: 600;">Updated</div>
+                <div id="ta-bs-updated" style="font-size: 0.8em; color: #999;">--</div>
+              </div>
+              <div id="ta-bs-unassigned" style="display: none;">
+                <span style="padding: 2px 10px; border-radius: 8px; background: #fff3e0; color: #e65100; font-size: 0.75em; cursor: help;" title="Rows without a contract assignment. Excluded from lifecycle tracking by policy.">&#9888; <span id="ta-bs-unassigned-count">0</span> Unassigned rows</span>
+              </div>
+              <div id="ta-reconcile-warn" style="display: none;">
+                <span style="padding: 2px 10px; border-radius: 8px; background: #ffebee; color: #c62828; font-size: 0.75em; cursor: help;" title="Contract count mismatch detected. See console for details.">&#9888; Count mismatch</span>
+              </div>
+            </div>
+            <!-- 2) Contract Summary -->
+            <!-- C) Contract Summary Table (collapsible) -->
+            <div id="ta-contract-section" style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
+              <div onclick="TriageAnalytics.toggleContractTable()" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #eee; cursor: pointer; user-select: none;" title="Click to expand/collapse">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span id="ta-contract-toggle" style="font-size: 0.7em; color: #999; transition: transform 0.2s;">&#9654;</span>
+                  <h4 style="margin: 0; font-size: 0.9em; color: #333;">Contract Summary</h4>
+                  <span id="ta-contract-filter-badge" style="display: none; font-size: 0.7em; padding: 1px 8px; border-radius: 10px; background: #e3f2fd; color: #1565c0; font-weight: 600;"></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span id="ta-contract-count" style="font-size: 0.8em; color: #666;">0 contracts</span>
+                  <span id="ta-contract-summary-chips" style="display: flex; gap: 6px; font-size: 0.72em;"></span>
+                  <button id="ta-contract-view-grid" onclick="event.stopPropagation(); TriageAnalytics.viewFilteredInGrid();" style="display: none; font-size: 0.7em; padding: 2px 10px; border-radius: 10px; border: 1px solid #1976d2; background: #e3f2fd; color: #1565c0; cursor: pointer; font-weight: 600;">View in Grid</button>
+                </div>
+              </div>
+              <div id="ta-contract-body" style="max-height: 280px; overflow-y: auto; display: none;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">
+                  <thead style="background: #fafafa; position: sticky; top: 0;">
+                    <tr>
+                      <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #555;">Contract</th>
+                      <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #555;">Doc Role</th>
+                      <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #555;">Stage</th>
+                      <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #f44336;">Pre-Flight</th>
+                      <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #ff9800;">Semantic</th>
+                      <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #1976d2;">Patches</th>
+                      <th style="padding: 8px 12px; text-align: right; font-weight: 600; color: #555;">Rows</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ta-contract-tbody">
+                    <tr><td colspan="7" style="padding: 20px; text-align: center; color: #999;">No contracts indexed</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <!-- 3) Lane Health -->
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px;">
               <div class="ta-lane-card" onclick="TriageAnalytics.handleLaneClick('preflight')" style="background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 16px; cursor: pointer; transition: box-shadow 0.2s; border-top: 3px solid #f44336;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -1947,7 +2017,7 @@
                 </div>
               </div>
             </div>
-            <!-- B) Lifecycle Stage Tracker -->
+            <!-- 4) Lifecycle Progression -->
             <div style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 16px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <h4 style="margin: 0; font-size: 0.9em; color: #333;">Lifecycle Progression</h4>
@@ -1955,40 +2025,7 @@
               </div>
               <div id="ta-lifecycle-stages" style="display: flex; gap: 2px; align-items: stretch; overflow-x: auto;"></div>
             </div>
-            <!-- C) Contract Summary Table (collapsible) -->
-            <div id="ta-contract-section" style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
-              <div onclick="TriageAnalytics.toggleContractTable()" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #eee; cursor: pointer; user-select: none;" title="Click to expand/collapse">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span id="ta-contract-toggle" style="font-size: 0.7em; color: #999; transition: transform 0.2s;">&#9654;</span>
-                  <h4 style="margin: 0; font-size: 0.9em; color: #333;">Contract Summary</h4>
-                  <span id="ta-contract-filter-badge" style="display: none; font-size: 0.7em; padding: 1px 8px; border-radius: 10px; background: #e3f2fd; color: #1565c0; font-weight: 600;"></span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span id="ta-contract-count" style="font-size: 0.8em; color: #666;">0 contracts</span>
-                  <span id="ta-contract-summary-chips" style="display: flex; gap: 6px; font-size: 0.72em;"></span>
-                  <button id="ta-contract-view-grid" onclick="event.stopPropagation(); TriageAnalytics.viewFilteredInGrid();" style="display: none; font-size: 0.7em; padding: 2px 10px; border-radius: 10px; border: 1px solid #1976d2; background: #e3f2fd; color: #1565c0; cursor: pointer; font-weight: 600;">View in Grid</button>
-                </div>
-              </div>
-              <div id="ta-contract-body" style="max-height: 280px; overflow-y: auto; display: none;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">
-                  <thead style="background: #fafafa; position: sticky; top: 0;">
-                    <tr>
-                      <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #555;">Contract</th>
-                      <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #555;">Doc Role</th>
-                      <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #555;">Stage</th>
-                      <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #f44336;">Pre-Flight</th>
-                      <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #ff9800;">Semantic</th>
-                      <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #1976d2;">Patches</th>
-                      <th style="padding: 8px 12px; text-align: right; font-weight: 600; color: #555;">Rows</th>
-                    </tr>
-                  </thead>
-                  <tbody id="ta-contract-tbody">
-                    <tr><td colspan="7" style="padding: 20px; text-align: center; color: #999;">No contracts indexed</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <!-- D) Schema Snapshot -->
+            <!-- 5) Schema Snapshot -->
             <div style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 16px;">
               <h4 style="margin: 0 0 12px; font-size: 0.9em; color: #333;">Schema Snapshot</h4>
               <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
@@ -2010,6 +2047,7 @@
                   <div style="font-size: 0.75em; color: #666;">Schema Drift</div>
                 </div>
               </div>
+              <div id="ta-schema-empty-state" style="display: none; padding: 12px; text-align: center; color: #999; font-size: 0.8em; border-top: 1px solid #eee; margin-top: 12px;">No matching items found for this filter. Try loading a dataset with more columns.</div>
             </div>
           </div>
 
@@ -22039,6 +22077,48 @@
         this._lastRefreshedAt = cache.refreshed_at;
         console.log('[TRIAGE-ANALYTICS][P0.1] lifecycle_recompute: contracts=' + cache.total_contracts + ', orphan_excluded=' + (cache._orphan_row_count || 0));
         console.log('[TRIAGE-ANALYTICS][P0.1] refresh: PreFlight=' + cache.lanes.preflight.total + ', Semantic=' + cache.lanes.semantic.total + ', PatchReview=' + cache.lanes.patch_review.total + ', Contracts=' + cache.total_contracts + ', Schema=' + cache.schema.standard_matched + '/' + cache.schema.standard_total);
+
+        // P0.2: Compute batch summary
+        var totalRecords = 0;
+        if (typeof workbook !== 'undefined' && workbook.order) {
+          workbook.order.forEach(function(sn) {
+            var sh = workbook.sheets[sn];
+            if (sh && sh.rows && !(typeof isMetaSheet === 'function' && isMetaSheet(sn))) {
+              totalRecords += sh.rows.length;
+            }
+          });
+        }
+        cache.batch_summary = {
+          contracts_total: cache.total_contracts,
+          records_total: totalRecords,
+          completed: 0,
+          needs_review: 0,
+          pending: 0,
+          unassigned_rows: cache._orphan_row_count || 0,
+          updated_at: cache.refreshed_at
+        };
+        cache.contracts.forEach(function(c) {
+          if (c.current_stage === 'applied') cache.batch_summary.completed++;
+          else if (c.preflight_alerts > 0 || c.semantic_alerts > 0 || c.patch_alerts > 0) cache.batch_summary.needs_review++;
+          else cache.batch_summary.pending++;
+        });
+        console.log('[TRIAGE-ANALYTICS][P0.2] batch_summary_recomputed: contracts=' + cache.batch_summary.contracts_total + ', records=' + cache.batch_summary.records_total + ', completed=' + cache.batch_summary.completed + ', review=' + cache.batch_summary.needs_review + ', pending=' + cache.batch_summary.pending + ', unassigned=' + cache.batch_summary.unassigned_rows);
+
+        // P0.2: Reconciliation check
+        var lifecycleTotal = 0;
+        Object.keys(cache.lifecycle).forEach(function(k) { lifecycleTotal += cache.lifecycle[k].count; });
+        var contractSummaryTotal = cache.contracts.length;
+        cache._reconciliation = {
+          lifecycle_total: lifecycleTotal,
+          contract_summary_total: contractSummaryTotal,
+          match: lifecycleTotal === contractSummaryTotal
+        };
+        if (cache._reconciliation.match) {
+          console.log('[TRIAGE-ANALYTICS][P0.2] lifecycle_reconcile_ok: lifecycle=' + lifecycleTotal + ', contracts=' + contractSummaryTotal);
+        } else {
+          console.warn('[TRIAGE-ANALYTICS][P0.2] lifecycle_reconcile_mismatch: lifecycle=' + lifecycleTotal + ', contracts=' + contractSummaryTotal + ', delta=' + (lifecycleTotal - contractSummaryTotal));
+        }
+
         return cache;
       },
 
@@ -22081,6 +22161,29 @@
 
         if (el('ta-lifecycle-updated')) el('ta-lifecycle-updated').textContent = 'Updated: ' + new Date(cache.refreshed_at).toLocaleTimeString();
         console.log('[TRIAGE-ANALYTICS][P0.1] renderHeader: displayed=' + (header.style.display !== 'none') + ', lifecycle_stages=9, contracts=' + cache.total_contracts);
+
+        // P0.2: Render batch summary
+        if (el('ta-bs-contracts')) el('ta-bs-contracts').textContent = cache.batch_summary ? cache.batch_summary.contracts_total : cache.total_contracts;
+        if (el('ta-bs-records')) el('ta-bs-records').textContent = cache.batch_summary ? cache.batch_summary.records_total : 0;
+        if (el('ta-bs-completed')) el('ta-bs-completed').textContent = cache.batch_summary ? cache.batch_summary.completed : 0;
+        if (el('ta-bs-review')) el('ta-bs-review').textContent = cache.batch_summary ? cache.batch_summary.needs_review : 0;
+        if (el('ta-bs-pending')) el('ta-bs-pending').textContent = cache.batch_summary ? cache.batch_summary.pending : 0;
+        if (el('ta-bs-updated')) el('ta-bs-updated').textContent = cache.batch_summary ? new Date(cache.batch_summary.updated_at).toLocaleTimeString() : '--';
+        var unassignedEl = el('ta-bs-unassigned');
+        if (unassignedEl) {
+          if (cache.batch_summary && cache.batch_summary.unassigned_rows > 0) {
+            unassignedEl.style.display = '';
+            if (el('ta-bs-unassigned-count')) el('ta-bs-unassigned-count').textContent = cache.batch_summary.unassigned_rows;
+          } else {
+            unassignedEl.style.display = 'none';
+          }
+        }
+        // P0.2: Reconciliation warning badge
+        var reconcileWarn = el('ta-reconcile-warn');
+        if (reconcileWarn) {
+          reconcileWarn.style.display = (cache._reconciliation && !cache._reconciliation.match) ? '' : 'none';
+        }
+        console.log('[TRIAGE-ANALYTICS][P0.2] header_reorder_applied: batch_summary=true, contract_summary=true, lanes=true, lifecycle=true, schema=true');
       },
 
       _renderLifecycle: function(cache) {
@@ -22139,7 +22242,7 @@
             '<span style="padding:1px 6px; border-radius:8px; background:#fff3e0; color:#e65100; font-weight:600;">' + reviewC + ' review</span>' +
             '<span style="padding:1px 6px; border-radius:8px; background:#f5f5f5; color:#666; font-weight:600;">' + pendingC + ' pending</span>';
         }
-        console.log('[TRIAGE-ANALYTICS][P0.1] contract_summary: total=' + cache.contracts.length + ', completed=' + completedC + ', review=' + reviewC + ', pending=' + pendingC);
+        console.log('[TRIAGE-ANALYTICS][P0.2] contract_summary_recomputed: total=' + cache.contracts.length + ', completed=' + completedC + ', review=' + reviewC + ', pending=' + pendingC);
 
         if (contracts.length === 0) {
           tbody.innerHTML = '<tr><td colspan="7" style="padding: 20px; text-align: center; color: #999;">' + (stageFilter ? 'No contracts at this stage' : 'No contracts indexed') + '</td></tr>';
@@ -22249,14 +22352,22 @@
       },
 
       handleSchemaClick: function(type) {
-        console.log('[TRIAGE-ANALYTICS][P0.1] schema_snapshot_click: type=' + type);
-        if (type === 'unknown') {
-          navigateToGridFiltered('preflight');
-        } else if (type === 'missing') {
-          navigateToGridFiltered('blocked');
-        } else if (type === 'drift') {
-          navigateToGridFiltered('needs_review');
+        console.log('[TRIAGE-ANALYTICS][P0.2] snapshot_filter_applied: type=' + type);
+        var emptyState = document.getElementById('ta-schema-empty-state');
+        if (emptyState) emptyState.style.display = 'none';
+        var targetFilter = type === 'unknown' ? 'preflight' : (type === 'missing' ? 'blocked' : 'needs_review');
+        var count = 0;
+        var cache = this.getCache();
+        if (type === 'unknown') count = cache.schema.unknown_columns;
+        else if (type === 'missing') count = cache.schema.missing_required;
+        else if (type === 'drift') count = cache.schema.schema_drift;
+        if (count === 0 && emptyState) {
+          emptyState.style.display = '';
+          emptyState.textContent = 'No ' + (type === 'unknown' ? 'unknown columns' : type === 'missing' ? 'missing required fields' : 'schema drift items') + ' detected in current dataset.';
+          return;
         }
+        navigateToGridFiltered(targetFilter);
+      },
       },
 
       handleContractClick: function(contractId, stage) {
@@ -22355,15 +22466,16 @@
         return bTime.localeCompare(aTime);
       });
       var preSanitizeCount = patchRequestItems.length;
+      var _excludedMeta = 0, _excludedRef = 0, _excludedSysFields = 0;
       patchRequestItems = patchRequestItems.filter(function(item) {
         var sheet = item.sheet || item.sheet_name || '';
-        if (sheet && (typeof isMetaSheet === 'function' && isMetaSheet(sheet))) return false;
-        if (sheet && (typeof isReferenceSheet === 'function' && isReferenceSheet(sheet))) return false;
+        if (sheet && (typeof isMetaSheet === 'function' && isMetaSheet(sheet))) { _excludedMeta++; return false; }
+        if (sheet && (typeof isReferenceSheet === 'function' && isReferenceSheet(sheet))) { _excludedRef++; return false; }
         var fld = (item.field_name || '').toLowerCase();
-        if (fld.indexOf('__meta') === 0 || fld.indexOf('_glossary') === 0 || fld === '_system' || fld === '_internal') return false;
+        if (fld.indexOf('__meta') === 0 || fld.indexOf('_glossary') === 0 || fld === '_system' || fld === '_internal') { _excludedSysFields++; return false; }
         return true;
       });
-      console.log('[TRIAGE-ANALYTICS][P0.1] patch_queue_sanitize: pre=' + preSanitizeCount + ', post=' + patchRequestItems.length + ', removed=' + (preSanitizeCount - patchRequestItems.length));
+      console.log('[TRIAGE-ANALYTICS][P0.2] queue_exclusions_applied: pre=' + preSanitizeCount + ', post=' + patchRequestItems.length + ', removed=' + (preSanitizeCount - patchRequestItems.length) + ', meta_sheets=' + _excludedMeta + ', ref_sheets=' + _excludedRef + ', sys_fields=' + _excludedSysFields);
       analystTriageState.patchItems = patchRequestItems;
       
       // v1.6.33: Add validation signals to Manual Review queue (not Patch Queue)
@@ -22772,12 +22884,12 @@
     }
     
     function openPreflightItem(requestId, recordId, contractId, fieldName) {
-      console.log('[TRIAGE-ANALYTICS][P0.1] preflight_view_route: requestId=' + requestId + ', recordId=' + recordId + ', contractId=' + contractId);
+      console.log('[TRIAGE-ANALYTICS][P0.2] route_decision_start: requestId=' + requestId + ', recordId=' + recordId + ', contractId=' + contractId);
       // Deterministic fallback: row-level > contract-level > grid
       if (recordId && recordId !== 'undefined' && recordId !== '') {
         var found = typeof findRecordById === 'function' ? findRecordById(recordId) : null;
         if (found) {
-          console.log('[TRIAGE-ANALYTICS][P0.1] preflight_view_route: opening Record Inspection for ' + recordId);
+          console.log('[TRIAGE-ANALYTICS][P0.2] route_decision_record: opening Record Inspection for ' + recordId);
           openRowReviewDrawer(found.row, found.rowIndex, recordId);
           if (fieldName && fieldName !== 'undefined') {
             setTimeout(function() { if (typeof focusFieldInInspector === 'function') focusFieldInInspector(fieldName); }, 300);
@@ -22786,12 +22898,12 @@
         }
       }
       if (contractId && contractId !== 'undefined' && contractId !== '') {
-        console.log('[TRIAGE-ANALYTICS][P0.1] preflight_view_route: fallback to grid filtered by contract ' + contractId);
+        console.log('[TRIAGE-ANALYTICS][P0.2] route_decision_contract: fallback to grid filtered by contract ' + contractId);
         navigateTo('grid', { queryParams: 'contract=' + encodeURIComponent(contractId) });
         return;
       }
-      console.log('[TRIAGE-ANALYTICS][P0.1] preflight_view_route: final fallback to all-data grid');
-      navigateTo('grid');
+      console.log('[TRIAGE-ANALYTICS][P0.2] route_decision_fallback: final fallback to all-data grid with warning');
+      navigateTo('grid'); if (typeof showToast === 'function') { showToast('No specific record or contract found. Showing all data.', 'warning'); }
     }
 
     function renderAnalystTriage() {
@@ -25719,7 +25831,7 @@
       if (type === 'error') bgColor = '#c62828';
       else if (type === 'warning') bgColor = '#f57c00';
       toast.style.cssText = 'position: fixed; top: 16px; left: 50%; transform: translateX(-50%); padding: 12px 24px; background: ' + bgColor + '; color: white; border-radius: 6px; font-size: 0.9em; z-index: 10001; box-shadow: 0 4px 12px rgba(0,0,0,0.3); max-width: 90vw;';
-      console.log('[TRIAGE-ANALYTICS][P0.1] overlap_layout_guard: toast repositioned to top-center');
+      console.log('[TRIAGE-ANALYTICS][P0.2] layout_safezone_applied: toast=top-center, fab=bottom-right, audit-dropdown=z90, search-bar=z100');
       toast.textContent = message;
       document.body.appendChild(toast);
       setTimeout(function() { toast.remove(); }, 3000);
