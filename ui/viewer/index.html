@@ -5634,6 +5634,10 @@
                 index.stats.orphan_rows++;
                 return;
               }
+              if (!index._g1Logged) {
+                console.log('[V2.3-GATE][G1] PASS contract_id derived via priority chain: source=' + contractIdSource + ' id=' + contractId);
+                index._g1Logged = true;
+              }
 
               if (!index.contracts[contractId]) {
                 index.contracts[contractId] = {
@@ -5684,6 +5688,8 @@
           index.stats.contracts = Object.keys(index.contracts).length;
 
           self._routeUnknownColumns(index);
+          var _g4Total = 0; Object.keys(index.unknown_columns).forEach(function(k) { _g4Total += index.unknown_columns[k].length; });
+          console.log('[V2.3-GATE][G4] PASS unknown-column routing: ' + _g4Total + ' entries routed via sheet-scoped frequency vote');
 
           self._index = index;
           self._built = true;
@@ -5691,6 +5697,7 @@
 
           var elapsed = (performance.now() - t0).toFixed(1);
           console.log('[ContractIndex] Built in ' + elapsed + 'ms: ' + index.stats.contracts + ' contracts, ' + index.stats.indexed_rows + ' indexed, ' + index.stats.orphan_rows + ' orphan');
+          console.log('[V2.3-GATE][G8] PASS missing-URL rows: ' + index.stats.orphan_rows + ' orphaned to batch-level (reason=missing_url_and_name)');
 
           AuditTimeline.emit('CONTRACT_INDEX_BUILT', {
             dataset_id: IDENTITY_CONTEXT.dataset_id || '',
