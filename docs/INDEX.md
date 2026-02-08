@@ -77,6 +77,9 @@
 - examples/expected_outputs/sf_packet.example.json
 - local_runner/README.md
 
+## Feature Requests
+- docs/features/STANDARDIZER_SCHEMA_EDITOR.md — Schema Tree Editor for Admin Standardizer tab (V2 proposal)
+
 ## Handoff & Status
 - docs/handoff/srr-handoff-status.md — SRR handoff documentation audit (v1.5.2)
 - docs/handoff/TASKS_UI.md — UI backlog tracker
