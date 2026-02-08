@@ -3140,6 +3140,30 @@
               <div style="color: #999; font-size: 0.85em; font-style: italic;">Load a dataset to see available sheets.</div>
             </div>
           </div>
+        <div class="admin-section" id="batch-merge-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+  <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Merge Batches <span class="info-icon" title="Merge two or more existing batches into a single governance container. Contract IDs remain stable. Tenant rules do NOT auto-inherit.">&#9432;</span></h3>
+  <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Combine source batches into a single merged batch. Source batch lineage is preserved read-only. Tenant rules require explicit promotion.</p>
+  <div id="batch-merge-controls" style="display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <label style="font-size: 0.85em; color: #555; min-width: 120px;">Source Batches:</label>
+      <div id="batch-merge-source-list" style="flex: 1; display: flex; flex-direction: column; gap: 6px;"></div>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <label style="font-size: 0.85em; color: #555; min-width: 120px;">Merged Label:</label>
+      <input type="text" id="batch-merge-label" placeholder="e.g., Q4 Combined Review" style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em;">
+    </div>
+    <div style="display: flex; gap: 10px; margin-top: 8px;">
+      <button class="toolbar-btn" onclick="BatchMerge.refreshSourceList()">Refresh Sources</button>
+      <button class="toolbar-btn" onclick="BatchMerge.executeMerge()" style="background: #1976d2; color: white;">Merge Batches</button>
+    </div>
+  </div>
+  <div id="batch-merge-status" style="display: none; margin-top: 12px; padding: 10px; border-radius: 6px; font-size: 0.85em;"></div>
+  <!-- Merged Batch Governance Panel -->
+  <div id="merged-batch-panel" style="display: none; margin-top: 20px; border-top: 1px solid #e0e0e0; padding-top: 15px;">
+    <h4 style="margin: 0 0 10px; font-size: 1em; color: #333;">Active Merged Batches</h4>
+    <div id="merged-batch-list"></div>
+  </div>
+</div>
         </div><!-- end admin-tab-governance -->
 
         <!-- USERS TAB (v1.4.21) -->
@@ -5649,6 +5673,409 @@
       }
     };
 
+    // ========== BATCH MERGE ENGINE (v2.2 P2) ==========
+    var MERGED_BATCHES = {};
+
+    var BatchMerge = {
+      _mergedBatches: MERGED_BATCHES,
+
+      refreshSourceList: function() {
+        var container = document.getElementById('batch-merge-source-list');
+        if (!container) return;
+        
+        var sources = [];
+        if (ContractIndex.isAvailable() && ContractIndex._index) {
+          sources.push({
+            id: ContractIndex._index.batch_id,
+            label: ContractIndex._index.batch_id,
+            contracts: ContractIndex._index.stats.contracts,
+            rows: ContractIndex._index.stats.total_rows
+          });
+        }
+        
+        Object.keys(this._mergedBatches).forEach(function(mbId) {
+          var mb = BatchMerge._mergedBatches[mbId];
+          if (mb && mb.merged_from) {
+            sources.push({
+              id: mbId,
+              label: mb.label || mbId,
+              contracts: mb.stats ? mb.stats.contracts : 0,
+              rows: mb.stats ? mb.stats.total_rows : 0,
+              isMerged: true
+            });
+          }
+        });
+        
+        if (sources.length === 0) {
+          container.innerHTML = '<div style="color: #999; font-size: 0.85em; font-style: italic;">No batches available. Upload a dataset first.</div>';
+          return;
+        }
+        
+        var html = '';
+        sources.forEach(function(s) {
+          var checked = !s.isMerged ? 'checked' : '';
+          html += '<label style="display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: #f9f9f9; border-radius: 4px; font-size: 0.85em; cursor: pointer;">';
+          html += '<input type="checkbox" class="batch-merge-source-cb" value="' + escapeHtml(s.id) + '" ' + checked + '>';
+          html += '<span>' + escapeHtml(s.label) + '</span>';
+          html += '<span style="color: #888; font-size: 0.8em;">(' + s.contracts + ' contracts, ' + s.rows + ' rows)</span>';
+          if (s.isMerged) html += '<span style="background: #e3f2fd; color: #1565c0; padding: 1px 6px; border-radius: 3px; font-size: 0.75em;">merged</span>';
+          html += '</label>';
+        });
+        container.innerHTML = html;
+      },
+
+      executeMerge: function() {
+        var statusEl = document.getElementById('batch-merge-status');
+        
+        try {
+          var checkboxes = document.querySelectorAll('.batch-merge-source-cb:checked');
+          var sourceIds = [];
+          checkboxes.forEach(function(cb) { sourceIds.push(cb.value); });
+          
+          if (sourceIds.length < 2) {
+            this._showStatus('Select at least two batches to merge.', 'warning');
+            return;
+          }
+          
+          var label = (document.getElementById('batch-merge-label') || {}).value || '';
+          if (!label.trim()) {
+            this._showStatus('Enter a label for the merged batch.', 'warning');
+            return;
+          }
+          
+          var mergedId = 'MERGED_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6);
+          var mergedBatch = {
+            id: mergedId,
+            label: label.trim(),
+            merged_from: sourceIds.slice(),
+            created_at: new Date().toISOString(),
+            created_by: (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.email) || 'admin',
+            lineage_readonly: true,
+            tenant_rule_inheritance: false,
+            promoted_rules: [],
+            contract_refs: {},
+            stats: { total_rows: 0, contracts: 0, documents: 0 }
+          };
+          
+          var contractsSeen = {};
+          sourceIds.forEach(function(sid) {
+            if (ContractIndex.isAvailable() && ContractIndex._index && ContractIndex._index.batch_id === sid) {
+              Object.keys(ContractIndex._index.contracts).forEach(function(cid) {
+                if (contractsSeen[cid]) return;
+                contractsSeen[cid] = true;
+                var c = ContractIndex._index.contracts[cid];
+                mergedBatch.contract_refs[cid] = {
+                  contract_id: cid,
+                  source_batch: sid,
+                  file_name: c.file_name,
+                  file_url: c.file_url,
+                  row_count: c.row_count,
+                  sheets: Object.keys(c.sheets),
+                  document_count: Object.keys(c.documents).length
+                };
+                mergedBatch.stats.contracts++;
+                mergedBatch.stats.total_rows += c.row_count;
+                mergedBatch.stats.documents += Object.keys(c.documents).length;
+              });
+            } else if (BatchMerge._mergedBatches[sid]) {
+              var prevMerged = BatchMerge._mergedBatches[sid];
+              Object.keys(prevMerged.contract_refs || {}).forEach(function(cid) {
+                if (contractsSeen[cid]) return;
+                contractsSeen[cid] = true;
+                var ref = prevMerged.contract_refs[cid];
+                mergedBatch.contract_refs[cid] = {
+                  contract_id: cid,
+                  source_batch: ref.source_batch,
+                  file_name: ref.file_name,
+                  file_url: ref.file_url,
+                  row_count: ref.row_count,
+                  sheets: ref.sheets,
+                  document_count: ref.document_count
+                };
+                mergedBatch.stats.contracts++;
+                mergedBatch.stats.total_rows += ref.row_count;
+                mergedBatch.stats.documents += ref.document_count;
+              });
+            }
+          });
+          
+          if (mergedBatch.stats.contracts === 0) {
+            this._showStatus('No contracts found in selected source batches.', 'error');
+            return;
+          }
+          
+          this._mergedBatches[mergedId] = mergedBatch;
+          this._persistMergedBatch(mergedBatch);
+          
+          AuditTimeline.emit('BATCH_MERGED', {
+            dataset_id: (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.dataset_id) || '',
+            metadata: {
+              merged_batch_id: mergedId,
+              label: mergedBatch.label,
+              source_batches: sourceIds,
+              contracts: mergedBatch.stats.contracts,
+              total_rows: mergedBatch.stats.total_rows,
+              documents: mergedBatch.stats.documents,
+              tenant_rule_inheritance: false,
+              created_by: mergedBatch.created_by
+            }
+          });
+          
+          this._showStatus('Batch "' + escapeHtml(label) + '" created with ' + mergedBatch.stats.contracts + ' contracts and ' + mergedBatch.stats.total_rows + ' rows.', 'success');
+          this.renderMergedBatchPanel();
+          this.refreshSourceList();
+          populateContractSelector();
+          
+          if (typeof showToast === 'function') showToast('Merged batch created: ' + label, 'success');
+          
+        } catch (err) {
+          console.error('[BatchMerge] Merge failed:', err);
+          this._showStatus('Merge failed: ' + (err.message || 'Unknown error') + '. Source batches are unchanged.', 'error');
+        }
+      },
+
+      _persistMergedBatch: function(batch) {
+        var payload = {
+          id: 'merged_batch_' + batch.id,
+          type: 'merged_batch',
+          data: batch
+        };
+        SessionDB._put(SessionDB.WORKBOOK_STORE, payload).then(function() {
+          console.log('[BatchMerge] Persisted merged batch:', batch.id);
+        }).catch(function(e) {
+          console.warn('[BatchMerge] SessionDB persist failed:', e);
+        });
+        
+        try {
+          var ptrs = JSON.parse(localStorage.getItem('orchestrate_merged_batches_ptr') || '[]');
+          if (!ptrs.includes(batch.id)) ptrs.push(batch.id);
+          localStorage.setItem('orchestrate_merged_batches_ptr', JSON.stringify(ptrs));
+        } catch(e) {}
+      },
+
+      restoreFromSession: function() {
+        var self = this;
+        var ptrs = [];
+        try { ptrs = JSON.parse(localStorage.getItem('orchestrate_merged_batches_ptr') || '[]'); } catch(e) {}
+        if (ptrs.length === 0) return Promise.resolve();
+        
+        var promises = ptrs.map(function(mbId) {
+          return SessionDB._get(SessionDB.WORKBOOK_STORE, 'merged_batch_' + mbId).then(function(record) {
+            if (record && record.data) {
+              self._mergedBatches[mbId] = record.data;
+            }
+          }).catch(function() {});
+        });
+        
+        return Promise.all(promises).then(function() {
+          console.log('[BatchMerge] Restored', Object.keys(self._mergedBatches).length, 'merged batches');
+          self.renderMergedBatchPanel();
+        });
+      },
+
+      promoteTenantRule: function(mergedBatchId, sheet, fieldKey, rule) {
+        var batch = this._mergedBatches[mergedBatchId];
+        if (!batch) {
+          if (typeof showToast === 'function') showToast('Merged batch not found', 'error');
+          return;
+        }
+        
+        var entry = {
+          sheet: sheet,
+          field: fieldKey,
+          rule: rule,
+          promoted_at: new Date().toISOString(),
+          promoted_by: (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.email) || 'admin'
+        };
+        
+        batch.promoted_rules.push(entry);
+        this._persistMergedBatch(batch);
+        
+        AuditTimeline.emit('TENANT_RULE_PROMOTED_TO_BATCH', {
+          dataset_id: (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.dataset_id) || '',
+          metadata: {
+            merged_batch_id: mergedBatchId,
+            batch_label: batch.label,
+            sheet: sheet,
+            field: fieldKey,
+            rule: rule,
+            promoted_by: entry.promoted_by,
+            total_promoted: batch.promoted_rules.length
+          }
+        });
+        
+        if (typeof showToast === 'function') showToast('Tenant rule promoted to "' + batch.label + '"', 'success');
+        this.renderMergedBatchPanel();
+      },
+
+      renderMergedBatchPanel: function() {
+        var panel = document.getElementById('merged-batch-panel');
+        var list = document.getElementById('merged-batch-list');
+        if (!panel || !list) return;
+        
+        var batchIds = Object.keys(this._mergedBatches);
+        if (batchIds.length === 0) {
+          panel.style.display = 'none';
+          return;
+        }
+        
+        panel.style.display = 'block';
+        var html = '';
+        
+        batchIds.forEach(function(mbId) {
+          var mb = BatchMerge._mergedBatches[mbId];
+          if (!mb) return;
+          
+          html += '<div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 12px; background: #fafafa;">';
+          html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">';
+          html += '<div><strong style="font-size: 1em;">' + escapeHtml(mb.label || mbId) + '</strong>';
+          html += ' <span style="font-size: 0.75em; color: #888; font-family: monospace;">' + escapeHtml(mbId) + '</span></div>';
+          html += '<span style="font-size: 0.75em; color: #888;">' + (mb.created_at || '').substring(0, 19) + '</span>';
+          html += '</div>';
+          
+          html += '<div style="display: flex; gap: 15px; margin-bottom: 10px; font-size: 0.85em;">';
+          html += '<span><strong>' + (mb.stats.contracts || 0) + '</strong> contracts</span>';
+          html += '<span><strong>' + (mb.stats.total_rows || 0) + '</strong> rows</span>';
+          html += '<span><strong>' + (mb.stats.documents || 0) + '</strong> documents</span>';
+          html += '</div>';
+          
+          html += '<div style="margin-bottom: 10px;">';
+          html += '<div style="font-size: 0.8em; color: #666; font-weight: 600; margin-bottom: 4px;">Source Lineage (read-only):</div>';
+          (mb.merged_from || []).forEach(function(sid) {
+            html += '<span style="display: inline-block; padding: 2px 8px; background: #e3f2fd; border-radius: 3px; font-size: 0.8em; margin-right: 4px; margin-bottom: 2px; font-family: monospace;">' + escapeHtml(sid) + '</span>';
+          });
+          html += '</div>';
+          
+          html += '<div style="padding: 8px 12px; background: #fff3e0; border-radius: 6px; border-left: 3px solid #ff9800; margin-bottom: 10px; font-size: 0.85em;">';
+          html += '<strong style="color: #e65100;">Tenant Rule Inheritance: OFF</strong>';
+          html += ' &mdash; Source batch tenant rules do not auto-apply. Use "Promote Rule" to explicitly apply.';
+          html += '</div>';
+          
+          if (mb.promoted_rules && mb.promoted_rules.length > 0) {
+            html += '<div style="margin-bottom: 10px;">';
+            html += '<div style="font-size: 0.8em; color: #666; font-weight: 600; margin-bottom: 4px;">Promoted Rules (' + mb.promoted_rules.length + '):</div>';
+            mb.promoted_rules.forEach(function(pr) {
+              html += '<div style="font-size: 0.82em; padding: 3px 0; border-bottom: 1px solid #f0f0f0;">';
+              html += '<span style="font-weight: 600;">' + escapeHtml(pr.field) + '</span>';
+              html += ' <span style="color: #888;">(sheet: ' + escapeHtml(pr.sheet) + ')</span>';
+              html += ' &mdash; <em>' + escapeHtml(pr.rule) + '</em>';
+              html += ' <span style="color: #aaa; font-size: 0.85em;">' + (pr.promoted_at || '').substring(0, 19) + '</span>';
+              html += '</div>';
+            });
+            html += '</div>';
+          }
+          
+          html += '<div style="display: flex; gap: 8px; flex-wrap: wrap;">';
+          html += '<button class="toolbar-btn" onclick="BatchMerge._promptPromoteRule(\'' + escapeHtml(mbId) + '\')" style="font-size: 0.82em;">Promote Tenant Rule</button>';
+          html += '<button class="toolbar-btn" onclick="BatchMerge._viewContractLineage(\'' + escapeHtml(mbId) + '\')" style="font-size: 0.82em;">View Contract Lineage</button>';
+          html += '<button class="toolbar-btn" onclick="BatchMerge.deleteMergedBatch(\'' + escapeHtml(mbId) + '\')" style="font-size: 0.82em; color: #c62828;">Delete</button>';
+          html += '</div>';
+          
+          html += '</div>';
+        });
+        
+        list.innerHTML = html;
+      },
+
+      _promptPromoteRule: function(mergedBatchId) {
+        var sheet = prompt('Enter sheet name for the tenant rule:');
+        if (!sheet) return;
+        var field = prompt('Enter field key:');
+        if (!field) return;
+        var rule = prompt('Enter tenant rule description:');
+        if (!rule) return;
+        this.promoteTenantRule(mergedBatchId, sheet.trim(), field.trim(), rule.trim());
+      },
+
+      _viewContractLineage: function(mergedBatchId) {
+        var batch = this._mergedBatches[mergedBatchId];
+        if (!batch || !batch.contract_refs) return;
+        
+        var html = '<div style="max-height: 400px; overflow-y: auto;">';
+        html += '<table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">';
+        html += '<thead><tr style="background: #f5f5f5;">';
+        html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #ddd;">Contract ID</th>';
+        html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #ddd;">File</th>';
+        html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #ddd;">Source Batch</th>';
+        html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #ddd;">Rows</th>';
+        html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #ddd;">Sheets</th>';
+        html += '</tr></thead><tbody>';
+        
+        Object.keys(batch.contract_refs).forEach(function(cid) {
+          var ref = batch.contract_refs[cid];
+          html += '<tr style="border-bottom: 1px solid #f0f0f0;">';
+          html += '<td style="padding: 5px 8px; font-family: monospace; font-size: 0.9em;">' + escapeHtml(cid.substring(0, 20)) + '</td>';
+          html += '<td style="padding: 5px 8px;">' + escapeHtml((ref.file_name || '').substring(0, 30)) + '</td>';
+          html += '<td style="padding: 5px 8px; font-family: monospace; font-size: 0.9em;">' + escapeHtml(ref.source_batch) + '</td>';
+          html += '<td style="padding: 5px 8px;">' + (ref.row_count || 0) + '</td>';
+          html += '<td style="padding: 5px 8px;">' + (ref.sheets || []).join(', ') + '</td>';
+          html += '</tr>';
+        });
+        
+        html += '</tbody></table></div>';
+        
+        var statusEl = document.getElementById('batch-merge-status');
+        if (statusEl) {
+          statusEl.style.display = 'block';
+          statusEl.style.background = '#f5f5f5';
+          statusEl.style.border = '1px solid #e0e0e0';
+          statusEl.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"><strong>Contract Lineage: ' + escapeHtml(batch.label || mergedBatchId) + '</strong><button class="toolbar-btn" onclick="document.getElementById(\'batch-merge-status\').style.display=\'none\'" style="font-size: 0.8em;">Close</button></div>' + html;
+        }
+      },
+
+      deleteMergedBatch: function(mergedBatchId) {
+        if (!confirm('Delete merged batch "' + (this._mergedBatches[mergedBatchId] || {}).label + '"? Source batches are not affected.')) return;
+        
+        delete this._mergedBatches[mergedBatchId];
+        SessionDB._delete(SessionDB.WORKBOOK_STORE, 'merged_batch_' + mergedBatchId).catch(function() {});
+        
+        try {
+          var ptrs = JSON.parse(localStorage.getItem('orchestrate_merged_batches_ptr') || '[]');
+          ptrs = ptrs.filter(function(p) { return p !== mergedBatchId; });
+          localStorage.setItem('orchestrate_merged_batches_ptr', JSON.stringify(ptrs));
+        } catch(e) {}
+        
+        this.renderMergedBatchPanel();
+        this.refreshSourceList();
+        populateContractSelector();
+        if (typeof showToast === 'function') showToast('Merged batch deleted', 'info');
+      },
+
+      getMergedBatch: function(mergedBatchId) {
+        return this._mergedBatches[mergedBatchId] || null;
+      },
+
+      listMergedBatches: function() {
+        var self = this;
+        return Object.keys(this._mergedBatches).map(function(id) {
+          var mb = self._mergedBatches[id];
+          return {
+            id: id,
+            label: mb.label,
+            merged_from: mb.merged_from,
+            contracts: mb.stats.contracts,
+            total_rows: mb.stats.total_rows,
+            created_at: mb.created_at
+          };
+        });
+      },
+
+      _showStatus: function(msg, type) {
+        var el = document.getElementById('batch-merge-status');
+        if (!el) return;
+        el.style.display = 'block';
+        var colors = { success: '#e8f5e9;border:1px solid #66bb6a', error: '#ffebee;border:1px solid #ef5350', warning: '#fff3e0;border:1px solid #ffb74d' };
+        el.style.cssText += ';background:' + (colors[type] || '#f5f5f5;border:1px solid #e0e0e0') + ';display:block;margin-top:12px;padding:10px;border-radius:6px;font-size:0.85em;';
+        el.innerHTML = msg;
+      },
+
+      reset: function() {
+        this._mergedBatches = {};
+        MERGED_BATCHES = {};
+        try { localStorage.removeItem('orchestrate_merged_batches_ptr'); } catch(e) {}
+      }
+    };
+
     // ========== CONTRACT UI FUNCTIONS (v2.2 P0) ==========
 
     var _activeContractFilter = '';
@@ -6637,6 +7064,7 @@
       workbook.order = [];
       workbook.activeSheet = null;
       if (typeof ContractIndex !== 'undefined') ContractIndex.reset();
+      if (typeof BatchMerge !== 'undefined') BatchMerge.reset();
     }
     
     // v1.6.46: Workbook session cache (persists across page reloads)
@@ -7290,6 +7718,8 @@
           }
           populateContractSelector();
         } catch(e) { console.warn('[ContractIndex] Restore/build failed:', e); }
+        // v2.2 P2: Restore merged batches from SessionDB
+        try { await BatchMerge.restoreFromSession(); } catch(e) { console.warn('[BatchMerge] Restore failed:', e); }
 
         stagedLoader.setStage('changemap');
         var restorePage = (navState && navState.hash) ? navState.hash.replace(/^#\/?/, '') : 'grid';
@@ -12542,6 +12972,7 @@
       // v1.6.48: Render batch add toggles when governance tab is shown
       if (tabName === 'governance') {
         if (typeof renderBatchAddAdminToggles === 'function') renderBatchAddAdminToggles();
+        if (typeof BatchMerge !== 'undefined') { BatchMerge.refreshSourceList(); BatchMerge.renderMergedBatchPanel(); }
       }
       
       console.log('[Admin] Switched to tab:', tabName);
@@ -19065,7 +19496,9 @@
         'BATCH_CREATED': '#e8eaf6',
         'UNKNOWN_COLUMN_DETECTED': '#fff3e0',
         'CONTRACT_ROLLUP_UPDATED': '#e0f7fa',
-        'SESSION_RESTORED': '#eceff1'
+        'SESSION_RESTORED': '#eceff1',
+        'BATCH_MERGED': '#e8eaf6',
+        'TENANT_RULE_PROMOTED_TO_BATCH': '#f3e5f5'
       };
 
       var html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">';

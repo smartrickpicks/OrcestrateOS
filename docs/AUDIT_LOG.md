@@ -67,6 +67,13 @@ All audit events are persisted in an IndexedDB database (`orchestrate_audit`) wi
 | SENT_TO_KIWI | updatePatchRequestStatus | Patch sent to external system |
 | KIWI_RETURN_INGESTED | updatePatchRequestStatus | External system response ingested |
 | PATCH_APPLIED | updatePatchRequestStatus | Patch applied to dataset |
+| CONTRACT_INDEX_BUILT | ContractIndex.build | Contract index built after workbook population (v2.2 P0) |
+| CONTRACT_ROLLUP_UPDATED | openContractDetailDrawer | Contract rollup viewed with aggregate counts (v2.2 P0) |
+| UNKNOWN_COLUMN_DETECTED | ContractIndex._routeUnknownColumns | Unknown column detected in sheet (v2.2 P0) |
+| BATCH_CREATED | ContractIndex.build | Batch created from workbook data (v2.2 P0) |
+| SCHEMA_CHANGE | SchemaTreeEditor | Schema change with subtype: alias_patch, schema_patch, tenant_rule_patch, suppression_patch (v2.2 P1) |
+| BATCH_MERGED | BatchMerge.executeMerge | Batches merged into governance container (v2.2 P2) |
+| TENANT_RULE_PROMOTED_TO_BATCH | BatchMerge.promoteTenantRule | Tenant rule manually promoted to merged batch (v2.2 P2) |
 
 ### No Synthetic Events
 All timeline entries are built exclusively from persisted events. No placeholder or demo rows are generated at render time.

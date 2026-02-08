@@ -1,0 +1,76 @@
+Replit Task: P2 — Batch Merge + Governance Hardening (no P0/P1 regressions)
+
+Context:
+- P0 validation passed.
+- Keep existing P0/P1 behavior intact.
+- Reuse existing SessionDB + AuditTimeline.
+- Use repo-relative paths only.
+
+Goal:
+Implement batch merge as an admin governance action and harden scope/promotion behavior for tenant rules in merged batches.
+
+Scope:
+
+1) Admin > Governance: Merge Batches UI
+- Add a “Merge Batches” action in Governance.
+- Inputs:
+  - source batches: batchA, batchB (extendable to N)
+  - merged batch label/name
+- Output:
+  - new `batch_id`
+  - `merged_from: [batchA, batchB, ...]`
+- Keep contract IDs stable (derived from File_URL logic already in place).
+
+2) Merge data model + storage
+- Persist merged batch in SessionDB.
+- Represent merged batch as container with read-only child lineage.
+- Do not duplicate full row payloads when avoidable; use references/pointers.
+- Preserve row-level access and SRR routing.
+
+3) Tenant/legal-entity rule inheritance policy (OFF by default)
+- Tenant rules from source batches must NOT auto-apply to merged batch.
+- Add explicit promotion path:
+  - “Promote rule to merged batch” action (manual, auditable).
+- Surface this clearly in UI (badge/message in merged batch governance panel).
+
+4) Triage and views behavior for merged batch
+- Triage and contract views should treat merged batch as a single selectable container.
+- Contract detail should show source lineage (which source batch each contract/row came from).
+- Keep All Data Grid row-default behavior.
+
+5) AuditTimeline events
+- Emit:
+  - `batch_merged` with source batch IDs, new batch ID, counts
+  - `tenant_rule_promoted_to_batch` when manual promotion occurs
+- Keep payloads compact with aggregate counts + sample IDs.
+
+6) Governance hardening + docs alignment
+- Remove outdated lifecycle wording and ensure docs reflect V2.2 behavior:
+  - merged lineage is read-only
+  - tenant rule inheritance is OFF
+  - explicit promotion required
+- Update docs for:
+  - merge semantics
+  - audit events
+  - scope behavior (batch vs merged batch)
+
+7) Safety and fallback
+- If merge build fails, do not corrupt source batches.
+- Show non-blocking error and keep original batches functional.
+
+Acceptance checklist (must PASS):
+- Create merged batch from two existing batches.
+- `merged_from[]` is persisted and visible.
+- Contracts retain stable contract IDs.
+- Tenant rules do not auto-inherit into merged batch.
+- Manual tenant-rule promotion works and is auditable.
+- Triage/grid/SRR continue to function for source + merged batches.
+- `batch_merged` event appears in AuditTimeline and exported audit sheet.
+- No regressions in P0/P1 flows.
+
+Output format:
+1) Alignment of Task: <one line>
+2) Files/functions touched with approx line ranges
+3) Checklist table: Item | PASS/FAIL | Evidence
+4) Any FAIL: minimal patch plan
+5) Manual demo steps for merged batch flow
