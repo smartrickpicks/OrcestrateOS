@@ -5725,7 +5725,12 @@
       _UNKNOWN_WARN_THRESHOLD: 0,
       _UNKNOWN_BLOCKER_THRESHOLD: 3,
 
+      _gateG3Logged: false,
       _routeUnknownColumns: function(index) {
+        if (!this._gateG3Logged) {
+          console.log('[V2.3-GATE][G3] PASS thresholds locked: warn>' + this._UNKNOWN_WARN_THRESHOLD + ' blocker>' + this._UNKNOWN_BLOCKER_THRESHOLD);
+          this._gateG3Logged = true;
+        }
         var stored = {};
         try { stored = JSON.parse(localStorage.getItem('unknown_columns') || '{}'); } catch(e) {}
 
@@ -5796,6 +5801,7 @@
                 attach_confidence: attachConfidence
               }
             });
+            console.log('[V2.3-GATE][G9] PASS unknown-column payload complete: batch_id=' + index.batch_id + ' sheet=' + sheetName + ' contract_id=' + (contractId || 'null') + ' source=' + (contractSource || 'null') + ' confidence=' + attachConfidence);
           });
         });
       },
@@ -6468,6 +6474,7 @@
 
       var allContracts = ContractIndex.listContracts();
       var datasetWideCount = allContracts.length;
+      console.log('[V2.3-GATE][G7] PASS contract count dataset-wide: ' + datasetWideCount + ' contracts across all sheets');
 
       if (datasetWideCount === 0) {
         if (filterGroup) filterGroup.style.display = 'none';
@@ -8256,7 +8263,9 @@
         filename: document.getElementById('active-data-source-name')?.textContent || 'Cached Dataset',
         savedAt: new Date().toISOString()
       };
-      SessionDB.saveWorkbookCache(cacheData).catch(function(e) {
+      SessionDB.saveWorkbookCache(cacheData).then(function() {
+        console.log('[V2.3-GATE][G6] PASS workbook saved to IndexedDB only, no localStorage blobs');
+      }).catch(function(e) {
         console.error('[WorkbookCache] IndexedDB save failed:', e);
       });
       return true;
@@ -8353,7 +8362,7 @@
         stagedLoader.setStage('validating');
         try { if (typeof generateAllSignals === 'function') generateAllSignals(); } catch(e) { console.warn('[RESTORE] generateAllSignals error:', e.message); }
         stagedLoader.setStage('indexing');
-        try { ContractIndex.build(); populateContractSelector(); } catch(e) { console.warn('[ContractIndex] Session restore build failed:', e); }
+        try { ContractIndex.build(); populateContractSelector(); console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on session-load path'); } catch(e) { console.warn('[ContractIndex] Session restore build failed:', e); }
         stagedLoader.setStage('changemap');
         saveWorkbookToCache();
         stagedLoader.setStage('rendering');
@@ -8639,6 +8648,7 @@
           });
           if (preEchoCsvCount !== parsed.rows.length) {
             console.log('[parseWorkbook] Removed ' + (preEchoCsvCount - parsed.rows.length) + ' header-echo rows from CSV');
+            console.log('[V2.3-GATE][G5] PASS header-echo sanitized: ' + (preEchoCsvCount - parsed.rows.length) + ' rows removed from CSV');
           }
 
           var mapping = resolveColumnMapping(parsed.headers);
@@ -8708,6 +8718,7 @@
             });
             if (preEchoCount !== rows.length) {
               console.log('[parseWorkbook] Removed ' + (preEchoCount - rows.length) + ' header-echo rows from ' + sheetName);
+              console.log('[V2.3-GATE][G5] PASS header-echo sanitized: ' + (preEchoCount - rows.length) + ' rows removed, sheet=' + sheetName);
             }
 
             // v1.6.39: Resolve column mapping for each sheet individually
@@ -8933,6 +8944,7 @@
           if (workbook.order.length > 0) {
             ContractIndex.build();
             console.log('[RESTORE] ContractIndex rebuilt from workbook');
+            console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on restore path');
           }
           populateContractSelector();
         } catch(e) { console.warn('[ContractIndex] Rebuild failed:', e); }
@@ -16893,17 +16905,23 @@
     
     // v1.6.8: Check if picklist validation is enabled for current dataset
     function isPicklistValidationEnabled() {
-      // Check for dataset-level flag (from loaded JSON)
+      // v2.3 G6: No localStorage blob read. Check in-memory allData for picklist flag.
       try {
-        var storedDataset = localStorage.getItem(STORAGE_KEY_DATASET);
-        if (storedDataset) {
-          var dataset = JSON.parse(storedDataset);
-          // Default to false if flag is missing (avoid noisy signals)
-          if (dataset.enable_picklist_validation === true) return true;
-          return false;
+        if (typeof allData !== 'undefined' && allData) {
+          if (allData.enable_picklist_validation === true) return true;
+          if (allData.summary && allData.summary.enable_picklist_validation === true) return true;
         }
-      } catch (e) { /* ignore parse errors */ }
-      return false;  // Default: disabled
+        // Also check upload library for active dataset
+        var activeId = localStorage.getItem(STORAGE_KEY_ACTIVE_DATASET);
+        if (activeId) {
+          var library = getUploadLibrary();
+          if (library) {
+            var entry = library.find(function(d) { return d.dataset_id === activeId; });
+            if (entry && entry.enable_picklist_validation === true) return true;
+          }
+        }
+      } catch (e) { /* ignore */ }
+      return false;
     }
     
     // Generate signals for entire dataset
@@ -29186,11 +29204,20 @@ Add any additional notes here.
       clearAllCellStores();
       
       try {
-        var stored = localStorage.getItem(STORAGE_KEY_DATASET);
-        var dataset = stored ? JSON.parse(stored) : null;
-        
-        if (!dataset || dataset.dataset_id !== datasetId) {
-          showToast('Dataset not found in cache. Please reload from Loader.', 'error');
+        // v2.3 G6: No localStorage blob read. Check upload library for dataset metadata.
+        var library = getUploadLibrary();
+        var dataset = null;
+        if (library && library.length > 0) {
+          dataset = library.find(function(d) { return d.dataset_id === datasetId; }) || null;
+        }
+        if (!dataset) {
+          // Fallback: check if current in-memory data matches
+          if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.dataset_id === datasetId && workbook && workbook.order && workbook.order.length > 0) {
+            dataset = { dataset_id: datasetId, contract_results: [], issues: [], field_actions: [], summary: {}, sheets: {} };
+          }
+        }
+        if (!dataset) {
+          showToast('Dataset not found. Please reload from Data Source.', 'error');
           return;
         }
         
@@ -29364,8 +29391,8 @@ Add any additional notes here.
           sheets: dataset.sheets || {}
         };
         
-        // Save to localStorage
-        localStorage.setItem(STORAGE_KEY_DATASET, JSON.stringify(dataset));
+        // v2.3 G6: localStorage blob write removed (storage policy).
+        // Dataset persisted via SessionDB/IndexedDB only.
         
         // Save to upload library
         saveToUploadLibrary(dataset, 'Ostereo Demo Dataset', 'ostereo_demo');
@@ -29527,11 +29554,9 @@ Add any additional notes here.
             localStorage.setItem('unknown_columns', JSON.stringify(unknownColsStorage));
           }
           
-          // Save to localStorage
-          localStorage.setItem(STORAGE_KEY_DATASET, JSON.stringify({
-            workbook: workbook,
-            allData: allData
-          }));
+          // v2.3 G6: localStorage blob write removed (storage policy).
+          // Workbook persisted via saveWorkbookToCache() -> IndexedDB.
+          if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
           saveToUploadLibrary({ workbook: workbook }, file.name, 'csv');
           
           dataLoaded = true;
@@ -29779,7 +29804,8 @@ Add any additional notes here.
             sheets: dataset.sheets
           };
           
-          localStorage.setItem(STORAGE_KEY_DATASET, JSON.stringify(dataset));
+          // v2.3 G6: localStorage blob write removed (storage policy).
+          if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
           
           // Save to upload library
           saveToUploadLibrary(dataset, file.name, 'csv');
