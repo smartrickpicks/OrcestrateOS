@@ -22416,14 +22416,15 @@
           var rollup = ContractIndex.getRollup(c.contract_id);
           if (rollup && rollup.unknown_columns && rollup.unknown_columns.length > 0) {
             rollup.unknown_columns.forEach(function(uc) {
+              var ucSeverity = uc.severity || (Number(uc.non_empty || 0) > 3 ? 'blocker' : 'warning');
               analystTriageState.manualItems.push({
                 request_id: 'preflight_unk_' + c.contract_id + '_' + uc.column,
                 type: 'preflight_blocker',
                 signal_type: 'UNKNOWN_COLUMN',
                 record_id: c.contract_id,
                 field_name: uc.column,
-                severity: 'blocker',
-                message: 'Unknown column: ' + uc.column + ' (sheet: ' + uc.sheet + ', non-empty: ' + uc.non_empty + ')',
+                severity: ucSeverity,
+                message: 'Unknown column: ' + uc.column + ' (sheet: ' + uc.sheet + ', non-empty: ' + uc.non_empty + ', severity: ' + ucSeverity + ')',
                 status: 'open',
                 updated_at: new Date().toISOString(),
                 source: 'preflight',
@@ -29434,6 +29435,13 @@ Add any additional notes here.
           updateProgressBlock();
         }
         
+        // v2.3: Rebuild ContractIndex from live workbook on demo/sandbox path
+        try {
+          ContractIndex.build();
+          populateContractSelector();
+          console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on demo/sandbox path');
+        } catch(e) { console.warn('[ContractIndex] Demo/sandbox build failed:', e); }
+
         console.log('[Loader] Ostereo demo dataset loaded:', workbook.order.length, 'sheets');
         showToast('Ostereo demo dataset loaded successfully', 'success');
         updateSidebarSheetSelector();
