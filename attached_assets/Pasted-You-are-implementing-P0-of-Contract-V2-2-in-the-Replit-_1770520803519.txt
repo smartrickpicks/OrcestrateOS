@@ -1,0 +1,43 @@
+You are implementing P0 of Contract V2.2 in the Replit runtime branch (source of truth). Use repo-relative paths only.
+
+Alignment of Task (required first line in your output):
+"Alignment of Task: Implement contract-root indexing (batch->contract->document->sheet->row), preserve row-default UI, and wire SessionDB/AuditTimeline with fail-open safety."
+
+Constraints:
+- Do not introduce backend services.
+- Reuse existing SessionDB + AuditTimeline modules already present in this runtime branch.
+- Keep row click -> SRR behavior unchanged.
+- Unknown columns alert threshold: non-empty > 3.
+- Unknown column alert attachment:
+  - attach to contract if contract_id derivable from affected rows,
+  - otherwise attach at batch level until linkage exists.
+- Use deterministic id derivation:
+  - contract_id: UUID in File_URL path -> hash(File_URL) -> fallback hash(file_name + row signature)
+  - document_id: derive independently from file URL
+  - batch_id: upload_session_id (fallback dataset_id if needed)
+
+Execution order:
+1) Confirm real parse/population entrypoints for XLSX/SheetJS + CSV (legacy names allowed).
+2) Add id derivation helpers.
+3) Build ContractIndex after workbook population.
+4) Persist ContractIndex in SessionDB payload (avoid duplicating large row payloads; use refs).
+5) Add contract rollups and unknown column routing.
+6) Add grid contract grouping/filter + View Contract action.
+7) Add Contract Detail view (collapsible by sheet).
+8) Emit AuditTimeline events:
+   - CONTRACT_INDEX_BUILT
+   - CONTRACT_ROLLUP_UPDATED
+   - UNKNOWN_COLUMN_DETECTED
+   - BATCH_CREATED
+9) Add fail-open warning banner and row-only fallback.
+
+Expected file edits:
+- ui/viewer/index.html (main)
+- Any minimal helper file only if absolutely required
+
+In your output include:
+1) Alignment of Task line
+2) Entrypoint confirmation (actual function names for XLSX/CSV parse and workbook population)
+3) Diff summary by function and approximate line range
+4) Smoke test results
+5) Acceptance checklist status (pass/fail per item)

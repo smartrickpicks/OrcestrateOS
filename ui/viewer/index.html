@@ -2022,6 +2022,13 @@
               <option value="">All Sheets</option>
             </select>
           </div>
+          <div id="contract-filter-group" style="display: none; align-items: center; gap: 8px;">
+            <label style="font-size: 0.85em; color: #666;">Contract:</label>
+            <select id="grid-contract-selector" class="filter-select" style="min-width: 180px; max-width: 280px;" onchange="handleContractFilterChange(this.value)">
+              <option value="">All Contracts</option>
+            </select>
+            <button id="btn-view-contract" class="top-toolbar-btn" style="display:none; padding: 4px 10px; font-size: 0.8em;" onclick="openContractDetailDrawer()" title="View contract details">View Contract</button>
+          </div>
           <div style="flex: 1; min-width: 200px;">
             <input type="text" id="grid-search" class="filter-search" placeholder="Search all fields..." style="width: 100%;">
           </div>
@@ -2055,6 +2062,8 @@
           <span id="grid-stat-blocked"><strong>Blocked:</strong> <span class="stat-value" style="color: #c62828;">0</span></span>
           <span class="stat-divider admin-only-content" style="color: #ccc; display: none;">|</span>
           <span id="grid-stat-unknown" class="admin-only-content" style="display: none; cursor: pointer;" onclick="openLoaderDrawer()" title="Click to load data"><strong>Unknown Cols:</strong> <span class="stat-value" style="color: #7b1fa2;">0</span></span>
+          <span class="stat-divider" id="contract-stat-divider" style="color: #ccc; display: none;">|</span>
+          <span id="grid-stat-contracts" style="display: none;"><strong>Contracts:</strong> <span class="stat-value" style="color: #1565c0;">0</span></span>
         </div>
         
         <!-- v1.6.11: Change Map Legend (shown only for modified dataset) -->
@@ -5257,6 +5266,446 @@
       return row;
     }
     
+
+    // ========== CONTRACT INDEX ENGINE (v2.2 P0) ==========
+
+    var ContractIndex = {
+      _index: null,
+      _built: false,
+      _failOpen: false,
+
+      UUID_PATH_RE: /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i,
+
+      deriveContractId: function(row) {
+        var fileUrl = (row.file_url || row.File_URL_c || '').trim();
+        var fileName = (row.file_name || row.contract_key || '').trim();
+        if (fileUrl) {
+          var uuidMatch = fileUrl.match(this.UUID_PATH_RE);
+          if (uuidMatch) return 'ctr_' + uuidMatch[0].toLowerCase().replace(/-/g, '').substring(0, 16);
+          return 'ctr_' + simpleHash(fileUrl);
+        }
+        if (fileName) {
+          var sig = fileName + '|' + (row.sheet || '');
+          return 'ctr_' + simpleHash(sig);
+        }
+        return null;
+      },
+
+      deriveDocumentId: function(row) {
+        var fileUrl = (row.file_url || row.File_URL_c || '').trim();
+        if (fileUrl) return 'doc_' + simpleHash(fileUrl);
+        var fileName = (row.file_name || row.contract_key || '').trim();
+        if (fileName) return 'doc_' + simpleHash(fileName);
+        return null;
+      },
+
+      deriveBatchId: function() {
+        return IDENTITY_CONTEXT.dataset_id || 'batch_' + Date.now().toString(36);
+      },
+
+      build: function() {
+        var self = this;
+        var t0 = performance.now();
+        try {
+          if (!workbook || !workbook.order || workbook.order.length === 0) {
+            console.warn('[ContractIndex] No workbook data, skipping build');
+            return null;
+          }
+
+          var batchId = self.deriveBatchId();
+          var index = {
+            batch_id: batchId,
+            built_at: new Date().toISOString(),
+            contracts: {},
+            orphan_rows: [],
+            stats: { total_rows: 0, indexed_rows: 0, orphan_rows: 0, contracts: 0, documents: 0 },
+            unknown_columns: {}
+          };
+
+          workbook.order.forEach(function(sheetName) {
+            var sheet = workbook.sheets[sheetName];
+            if (!sheet || !sheet.rows) return;
+
+            sheet.rows.forEach(function(row, rowIdx) {
+              index.stats.total_rows++;
+              var contractId = self.deriveContractId(row);
+              var documentId = self.deriveDocumentId(row);
+              var recordId = row.record_id || (row._identity && row._identity.record_id) || 'row_' + rowIdx;
+
+              if (!contractId) {
+                index.orphan_rows.push({ sheet: sheetName, row_index: rowIdx, record_id: recordId });
+                index.stats.orphan_rows++;
+                return;
+              }
+
+              if (!index.contracts[contractId]) {
+                index.contracts[contractId] = {
+                  contract_id: contractId,
+                  file_name: (row.file_name || row.contract_key || '').trim(),
+                  file_url: (row.file_url || row.File_URL_c || '').trim(),
+                  documents: {},
+                  row_count: 0,
+                  sheets: {}
+                };
+              }
+              var contract = index.contracts[contractId];
+              contract.row_count++;
+
+              if (documentId && !contract.documents[documentId]) {
+                contract.documents[documentId] = {
+                  document_id: documentId,
+                  file_url: (row.file_url || row.File_URL_c || '').trim(),
+                  row_refs: []
+                };
+                index.stats.documents++;
+              }
+              if (documentId && contract.documents[documentId]) {
+                contract.documents[documentId].row_refs.push({ sheet: sheetName, row_index: rowIdx, record_id: recordId });
+              }
+
+              if (!contract.sheets[sheetName]) {
+                contract.sheets[sheetName] = [];
+              }
+              contract.sheets[sheetName].push({ row_index: rowIdx, record_id: recordId });
+
+              index.stats.indexed_rows++;
+            });
+          });
+
+          index.stats.contracts = Object.keys(index.contracts).length;
+
+          self._routeUnknownColumns(index);
+
+          self._index = index;
+          self._built = true;
+          self._failOpen = false;
+
+          var elapsed = (performance.now() - t0).toFixed(1);
+          console.log('[ContractIndex] Built in ' + elapsed + 'ms: ' + index.stats.contracts + ' contracts, ' + index.stats.indexed_rows + ' indexed, ' + index.stats.orphan_rows + ' orphan');
+
+          AuditTimeline.emit('CONTRACT_INDEX_BUILT', {
+            dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+            metadata: {
+              batch_id: batchId,
+              contracts: index.stats.contracts,
+              documents: index.stats.documents,
+              indexed_rows: index.stats.indexed_rows,
+              orphan_rows: index.stats.orphan_rows,
+              elapsed_ms: elapsed
+            }
+          });
+
+          AuditTimeline.emit('BATCH_CREATED', {
+            dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+            metadata: { batch_id: batchId, total_rows: index.stats.total_rows, sheets: workbook.order.length }
+          });
+
+          self._persistToSession();
+
+          return index;
+        } catch (err) {
+          console.error('[ContractIndex] Build failed (fail-open):', err);
+          self._failOpen = true;
+          self._built = false;
+          self._index = null;
+          self._showFailOpenBanner(err.message);
+          return null;
+        }
+      },
+
+      _routeUnknownColumns: function(index) {
+        var stored = {};
+        try { stored = JSON.parse(localStorage.getItem('unknown_columns') || '{}'); } catch(e) {}
+
+        var threshold = 3;
+        Object.keys(stored).forEach(function(sheetName) {
+          var cols = stored[sheetName] || [];
+          cols.forEach(function(col) {
+            if (col.count_nonempty <= threshold) return;
+
+            var contractId = null;
+            if (workbook.sheets[sheetName] && workbook.sheets[sheetName].rows) {
+              for (var i = 0; i < Math.min(workbook.sheets[sheetName].rows.length, 5); i++) {
+                var rid = ContractIndex.deriveContractId(workbook.sheets[sheetName].rows[i]);
+                if (rid) { contractId = rid; break; }
+              }
+            }
+
+            var attachTo = contractId || index.batch_id;
+            var attachLevel = contractId ? 'contract' : 'batch';
+            if (!index.unknown_columns[attachTo]) index.unknown_columns[attachTo] = [];
+            index.unknown_columns[attachTo].push({
+              sheet: sheetName,
+              column: col.original_name,
+              normalized: col.normalized_name,
+              non_empty: col.count_nonempty,
+              level: attachLevel
+            });
+
+            AuditTimeline.emit('UNKNOWN_COLUMN_DETECTED', {
+              dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+              metadata: {
+                column: col.original_name,
+                sheet: sheetName,
+                non_empty: col.count_nonempty,
+                attached_to: attachTo,
+                level: attachLevel
+              }
+            });
+          });
+        });
+      },
+
+      _persistToSession: function() {
+        if (!this._index) return;
+        var ref = {
+          batch_id: this._index.batch_id,
+          built_at: this._index.built_at,
+          stats: this._index.stats,
+          contract_keys: Object.keys(this._index.contracts),
+          contract_summaries: {},
+          unknown_columns: this._index.unknown_columns
+        };
+        Object.keys(this._index.contracts).forEach(function(cid) {
+          var c = ContractIndex._index.contracts[cid];
+          ref.contract_summaries[cid] = {
+            contract_id: cid,
+            file_name: c.file_name,
+            file_url: c.file_url,
+            row_count: c.row_count,
+            sheets: Object.keys(c.sheets),
+            document_count: Object.keys(c.documents).length
+          };
+        });
+        try {
+          localStorage.setItem('orchestrate_contract_index_ref', JSON.stringify(ref));
+        } catch(e) { console.warn('[ContractIndex] Failed to persist ref:', e); }
+      },
+
+      _showFailOpenBanner: function(msg) {
+        var existing = document.getElementById('contract-failopen-banner');
+        if (existing) existing.remove();
+        var banner = document.createElement('div');
+        banner.id = 'contract-failopen-banner';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#fff3e0;border-bottom:2px solid #ff9800;padding:10px 20px;display:flex;align-items:center;gap:12px;font-size:0.9em;color:#e65100;';
+        banner.innerHTML = '<span style="font-size:1.3em;">&#9888;</span>' +
+          '<span><strong>Contract indexing unavailable</strong> \u2014 operating in row-only mode. ' + escapeHtml(msg || '') + '</span>' +
+          '<button onclick="this.parentNode.remove()" style="margin-left:auto;background:none;border:1px solid #ff9800;border-radius:4px;padding:4px 12px;cursor:pointer;color:#e65100;">Dismiss</button>';
+        document.body.prepend(banner);
+      },
+
+      getContract: function(contractId) {
+        if (!this._index || !this._index.contracts) return null;
+        return this._index.contracts[contractId] || null;
+      },
+
+      getContractForRow: function(row) {
+        if (!this._built || !this._index) return null;
+        var cid = this.deriveContractId(row);
+        return cid ? this.getContract(cid) : null;
+      },
+
+      listContracts: function() {
+        if (!this._index) return [];
+        return Object.keys(this._index.contracts).map(function(cid) {
+          var c = ContractIndex._index.contracts[cid];
+          return {
+            contract_id: cid,
+            file_name: c.file_name,
+            file_url: c.file_url,
+            row_count: c.row_count,
+            sheet_count: Object.keys(c.sheets).length,
+            document_count: Object.keys(c.documents).length
+          };
+        });
+      },
+
+      getContractRows: function(contractId) {
+        if (!this._index || !this._index.contracts[contractId]) return [];
+        var contract = this._index.contracts[contractId];
+        var rows = [];
+        Object.keys(contract.sheets).forEach(function(sheetName) {
+          if (!workbook.sheets[sheetName]) return;
+          contract.sheets[sheetName].forEach(function(ref) {
+            var row = workbook.sheets[sheetName].rows[ref.row_index];
+            if (row) {
+              var r = Object.assign({}, row);
+              r.sheet = sheetName;
+              r._sheetRowIndex = ref.row_index;
+              rows.push(r);
+            }
+          });
+        });
+        return rows;
+      },
+
+      getRollup: function(contractId) {
+        var contract = this.getContract(contractId);
+        if (!contract) return null;
+        var rows = this.getContractRows(contractId);
+        var statusCounts = {};
+        var signalCount = 0;
+        rows.forEach(function(r) {
+          var s = (r.status || 'needs_review').toLowerCase().replace(/\s+/g, '_');
+          statusCounts[s] = (statusCounts[s] || 0) + 1;
+          if (r._signals && r._signals.length) signalCount += r._signals.length;
+        });
+        return {
+          contract_id: contractId,
+          file_name: contract.file_name,
+          row_count: contract.row_count,
+          sheets: Object.keys(contract.sheets),
+          status_counts: statusCounts,
+          signal_count: signalCount,
+          unknown_columns: this._index.unknown_columns[contractId] || []
+        };
+      },
+
+      isAvailable: function() {
+        return this._built && this._index !== null;
+      },
+
+      reset: function() {
+        this._index = null;
+        this._built = false;
+        this._failOpen = false;
+        try { localStorage.removeItem('orchestrate_contract_index_ref'); } catch(e) {}
+      }
+    };
+
+    // ========== CONTRACT UI FUNCTIONS (v2.2 P0) ==========
+
+    var _activeContractFilter = '';
+
+    function populateContractSelector() {
+      var selector = document.getElementById('grid-contract-selector');
+      var filterGroup = document.getElementById('contract-filter-group');
+      var statContracts = document.getElementById('grid-stat-contracts');
+      var statDivider = document.getElementById('contract-stat-divider');
+
+      if (!ContractIndex.isAvailable()) {
+        if (filterGroup) filterGroup.style.display = 'none';
+        if (statContracts) statContracts.style.display = 'none';
+        if (statDivider) statDivider.style.display = 'none';
+        return;
+      }
+
+      var contracts = ContractIndex.listContracts();
+      if (contracts.length === 0) {
+        if (filterGroup) filterGroup.style.display = 'none';
+        if (statContracts) statContracts.style.display = 'none';
+        if (statDivider) statDivider.style.display = 'none';
+        return;
+      }
+
+      if (filterGroup) filterGroup.style.display = 'flex';
+      if (statContracts) {
+        statContracts.style.display = '';
+        statContracts.querySelector('.stat-value').textContent = contracts.length;
+      }
+      if (statDivider) statDivider.style.display = '';
+
+      if (!selector) return;
+      var html = '<option value="">All Contracts (' + contracts.length + ')</option>';
+      contracts.sort(function(a, b) { return (a.file_name || '').localeCompare(b.file_name || ''); });
+      contracts.forEach(function(c) {
+        var label = (c.file_name || c.contract_id).substring(0, 40);
+        if (label.length < (c.file_name || c.contract_id).length) label += '...';
+        html += '<option value="' + c.contract_id + '">' + escapeHtml(label) + ' (' + c.row_count + ' rows)</option>';
+      });
+      selector.innerHTML = html;
+
+      if (_activeContractFilter) {
+        selector.value = _activeContractFilter;
+      }
+    }
+
+    function handleContractFilterChange(contractId) {
+      _activeContractFilter = contractId || '';
+      var btn = document.getElementById('btn-view-contract');
+      if (btn) btn.style.display = contractId ? 'inline-block' : 'none';
+      renderGrid();
+    }
+
+    function openContractDetailDrawer() {
+      var cid = _activeContractFilter;
+      if (!cid || !ContractIndex.isAvailable()) return;
+
+      var drawer = document.getElementById('contract-detail-drawer');
+      if (!drawer) return;
+
+      var rollup = ContractIndex.getRollup(cid);
+      if (!rollup) {
+        showToast('Contract not found in index', 'error');
+        return;
+      }
+
+      AuditTimeline.emit('CONTRACT_ROLLUP_UPDATED', {
+        dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+        metadata: { contract_id: cid, file_name: rollup.file_name, row_count: rollup.row_count, sheets: rollup.sheets.length }
+      });
+
+      document.getElementById('contract-detail-name').textContent = rollup.file_name || cid;
+
+      var body = document.getElementById('contract-detail-body');
+      var html = '';
+
+      html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">';
+      html += '<div style="background:#f5f5f5; padding:12px; border-radius:8px;"><div style="font-size:0.75em; color:#888;">Rows</div><div style="font-size:1.4em; font-weight:700; color:#333;">' + rollup.row_count + '</div></div>';
+      html += '<div style="background:#f5f5f5; padding:12px; border-radius:8px;"><div style="font-size:0.75em; color:#888;">Sheets</div><div style="font-size:1.4em; font-weight:700; color:#333;">' + rollup.sheets.length + '</div></div>';
+      html += '<div style="background:#f5f5f5; padding:12px; border-radius:8px;"><div style="font-size:0.75em; color:#888;">Signals</div><div style="font-size:1.4em; font-weight:700; color:#e65100;">' + rollup.signal_count + '</div></div>';
+      var statusKeys = Object.keys(rollup.status_counts);
+      var statusHtml = statusKeys.map(function(s) { return s + ': ' + rollup.status_counts[s]; }).join(', ') || 'n/a';
+      html += '<div style="background:#f5f5f5; padding:12px; border-radius:8px;"><div style="font-size:0.75em; color:#888;">Status</div><div style="font-size:0.85em; font-weight:600; color:#333;">' + statusHtml + '</div></div>';
+      html += '</div>';
+
+      if (rollup.file_name) {
+        html += '<div style="margin-bottom:16px; padding:10px; background:#e3f2fd; border-radius:6px; font-size:0.85em;">';
+        html += '<strong>Contract ID:</strong> <code style="font-size:0.85em;">' + escapeHtml(cid) + '</code><br>';
+        html += '<strong>File:</strong> ' + escapeHtml(rollup.file_name);
+        html += '</div>';
+      }
+
+      if (rollup.unknown_columns.length > 0) {
+        html += '<div style="margin-bottom:16px; padding:10px; background:#fff3e0; border-radius:6px; border-left:3px solid #ff9800;">';
+        html += '<div style="font-weight:600; color:#e65100; margin-bottom:6px;">Unknown Columns (' + rollup.unknown_columns.length + ')</div>';
+        rollup.unknown_columns.forEach(function(uc) {
+          html += '<div style="font-size:0.85em; padding:2px 0;"><code>' + escapeHtml(uc.column) + '</code> <span style="color:#888;">(sheet: ' + escapeHtml(uc.sheet) + ', non-empty: ' + uc.non_empty + ')</span></div>';
+        });
+        html += '</div>';
+      }
+
+      rollup.sheets.forEach(function(sheetName) {
+        var contract = ContractIndex.getContract(cid);
+        var sheetRefs = contract && contract.sheets[sheetName] ? contract.sheets[sheetName] : [];
+        html += '<details style="margin-bottom:12px; border:1px solid #e0e0e0; border-radius:6px;" open>';
+        html += '<summary style="padding:10px 14px; cursor:pointer; font-weight:600; background:#fafafa; border-radius:6px 6px 0 0; font-size:0.9em;">' + escapeHtml(sheetName) + ' <span style="color:#888; font-weight:400;">(' + sheetRefs.length + ' rows)</span></summary>';
+        html += '<div style="max-height:300px; overflow-y:auto;">';
+        html += '<table style="width:100%; border-collapse:collapse; font-size:0.8em;">';
+        html += '<thead><tr style="background:#f5f5f5;"><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Row</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Record ID</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Status</th></tr></thead>';
+        html += '<tbody>';
+        sheetRefs.forEach(function(ref) {
+          var row = workbook.sheets[sheetName] && workbook.sheets[sheetName].rows[ref.row_index];
+          var status = row ? (row.status || 'needs_review') : '?';
+          var recId = (ref.record_id || '').substring(0, 20);
+          html += '<tr style="cursor:pointer; border-bottom:1px solid #f0f0f0;" data-sheet="' + escapeHtml(sheetName) + '" data-ridx="' + ref.row_index + '" onclick="closeContractDetailDrawer(); openRowReviewDrawer(this.dataset.sheet, parseInt(this.dataset.ridx))">';
+          html += '<td style="padding:5px 8px;">' + (ref.row_index + 1) + '</td>';
+          html += '<td style="padding:5px 8px; font-family:monospace; font-size:0.9em;">' + escapeHtml(recId) + '</td>';
+          html += '<td style="padding:5px 8px;">' + escapeHtml(status) + '</td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table></div></details>';
+      });
+
+      body.innerHTML = html;
+      drawer.style.display = 'block';
+    }
+
+    function closeContractDetailDrawer() {
+      var drawer = document.getElementById('contract-detail-drawer');
+      if (drawer) drawer.style.display = 'none';
+    }
+
     // ========== BATCH ADD: GROUP ANCHOR MODEL (v1.6.48) ==========
 
     var BATCH_ADD_STORAGE_KEY = 'orchestrate_batch_add_sheets';
@@ -6102,6 +6551,7 @@
       workbook.sheets = {};
       workbook.order = [];
       workbook.activeSheet = null;
+      if (typeof ContractIndex !== 'undefined') ContractIndex.reset();
     }
     
     // v1.6.46: Workbook session cache (persists across page reloads)
@@ -6746,6 +7196,9 @@
           gridState.filter = navState.filter || 'all';
         }
         
+        // v2.2: Rebuild contract index on session restore
+        try { ContractIndex.build(); populateContractSelector(); } catch(e) { console.warn('[ContractIndex] Restore build failed:', e); }
+
         stagedLoader.setStage('changemap');
         var restorePage = (navState && navState.hash) ? navState.hash.replace(/^#\/?/, '') : 'grid';
         
@@ -12262,6 +12715,13 @@
           return Object.values(r).some(function(v) {
             return String(v).toLowerCase().includes(searchLower);
           });
+        });
+      }
+
+      // v2.2: Contract filter
+      if (_activeContractFilter && ContractIndex.isAvailable()) {
+        filtered = filtered.filter(function(r) {
+          return ContractIndex.deriveContractId(r) === _activeContractFilter;
         });
       }
       
@@ -17838,6 +18298,10 @@
         'PATCH_SUBMITTED': '#e3f2fd',
         'PATCH_ADMIN_PROMOTED': '#f3e5f5',
         'CATALOG_GROUP_SET': '#e0f2f1',
+        'CONTRACT_INDEX_BUILT': '#e3f2fd',
+        'BATCH_CREATED': '#e8eaf6',
+        'UNKNOWN_COLUMN_DETECTED': '#fff3e0',
+        'CONTRACT_ROLLUP_UPDATED': '#e0f7fa',
         'SESSION_RESTORED': '#eceff1'
       };
 
@@ -21046,7 +21510,10 @@
           
           // v1.6.0: Generate signals for dataset
           generateSignalsForDataset();
-          
+
+          // v2.2: Build contract index after signals
+          try { ContractIndex.build(); populateContractSelector(); } catch(e) { console.error('[ContractIndex] Post-import build failed:', e); }
+
           // v1.6.33: Seed patch requests from RFI meta sheet (if present in uploaded file)
           seedPatchRequestsFromMetaSheet();
           
@@ -26520,5 +26987,19 @@ Add any additional notes here.
   </div>
 </div>
 <!-- /Feedback FAB -->
+
+    <!-- Contract Detail Drawer (v2.2) -->
+    <div id="contract-detail-drawer" style="display:none; position:fixed; top:0; right:0; bottom:0; width:520px; background:white; box-shadow:-4px 0 20px rgba(0,0,0,0.15); z-index:9000; overflow-y:auto; border-left:3px solid #1565c0;">
+      <div style="padding: 20px; border-bottom: 1px solid #eee; display:flex; align-items:center; gap:12px;">
+        <button onclick="closeContractDetailDrawer()" style="background:none; border:none; font-size:1.4em; cursor:pointer; color:#666; padding:4px;">&times;</button>
+        <div>
+          <div style="font-weight:700; font-size:1.1em; color:#1565c0;">Contract Detail</div>
+          <div id="contract-detail-name" style="font-size:0.85em; color:#666; margin-top:2px;"></div>
+        </div>
+      </div>
+      <div id="contract-detail-body" style="padding: 20px;">
+        <div style="text-align:center; padding:40px; color:#888;">Select a contract to view details</div>
+      </div>
+    </div>
 </body>
 </html>

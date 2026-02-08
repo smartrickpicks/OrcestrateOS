@@ -1,0 +1,59 @@
+You are working in Replit on the source-of-truth runtime branch. Your last audit claimed `SessionDB` and `AuditTimeline` do not exist (no `indexedDB|SessionDB|AuditTimeline` symbols), which is a red-flag because our documented pipeline relies on IndexedDB-backed session caching + audit events.
+
+TASK 0 (MANDATORY FIRST): Branch + parity verification
+1) Confirm you are reading the SAME `ui/viewer/index.html` that the live app is running.
+   - Print the exact file path and last modified timestamp.
+   - Print a unique build fingerprint (e.g., SHA/hash of the file contents or a version string visible in UI).
+2) Search for persistence and audit modules by synonyms:
+   - `indexedDB`, `IDB`, `idb`, `db`, `store`, `objectStore`, `persist`, `autosave`, `session`, `saveSession`, `restoreSession`, `audit`, `timeline`, `logEvent`, `events`.
+   - If persistence exists under different names, report those symbols and the exact line ranges.
+
+If (and only if) persistence/audit truly do not exist in this runtime branch:
+
+TASK 1: Implement persistence foundation (P0 blocker)
+Implement these two modules INSIDE `ui/viewer/index.html` (vanilla JS, no libraries):
+
+A) SessionDB (IndexedDB-backed)
+- Stores:
+  - active workbook (or serialized dataset object)
+  - navigation state (active dataset, active sheet, active row/contract selection)
+  - contract index (when added later)
+  - up to 10 named sessions
+  - autosave snapshot
+- Behavior:
+  - autosave every 3 seconds (workbook + nav state)
+  - restore on reload
+  - localStorage pointer for fast check (e.g., `active_session_ptr`)
+  - fallback to localStorage if IndexedDB unavailable
+  - migration: if legacy localStorage payload exists, migrate to IndexedDB on first load
+- Expose API (minimum):
+  - `SessionDB.init()`
+  - `SessionDB.saveAutosave(state)`
+  - `SessionDB.loadAutosave()`
+  - `SessionDB.saveNamedSession(name, state)`
+  - `SessionDB.listNamedSessions()`
+  - `SessionDB.loadNamedSession(name)`
+  - `SessionDB.deleteNamedSession(name)`
+  - `SessionDB.clearAll()`
+
+B) AuditTimeline (append-only event store)
+- Stores:
+  - audit events for governance actions (schema changes, patch actions, batch merge later)
+- Expose API (minimum):
+  - `AuditTimeline.init()`
+  - `AuditTimeline.emit(eventType, payload)` (auto-add timestamp, actor role if available)
+  - `AuditTimeline.query({ since, limit, filterType })`
+
+TASK 2: Confirm functionality
+- Add a tiny diagnostics panel or console logs that prove:
+  - autosave writes to IndexedDB
+  - refresh restores last state
+  - saving/loading named sessions works
+  - emitting and querying audit events works
+
+OUTPUT REQUIRED
+Return:
+- Confirmation of branch parity (how you verified you are on the correct Replit runtime version)
+- Whether persistence existed under different names OR you implemented it
+- Exact line ranges / sections added for SessionDB and AuditTimeline
+- A short manual test checklist + results (PASS/FAIL)
