@@ -1,0 +1,40 @@
+# Replit conversation attachments (screenshots, pasted images)
+attached_assets/
+
+# Brand source assets (canonical copies live in assets/brand/)
+Brand Assets/
+
+# Unused oversized brand duplicates
+assets/brand/biggerMain.svg
+assets/brand/orchestrate-os-logo.png
+
+# Large unreferenced diagram exports
+docs/assets/miro/cold_route_flow.svg
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
