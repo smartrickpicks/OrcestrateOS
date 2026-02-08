@@ -1,0 +1,62 @@
+Replit Task: P1 Implement Schema Tree Editor + Alias Bundle Migration
+
+Goal:
+Upgrade Admin Standardizer into a lazy-render Schema Tree Editor and migrate column alias logic from code into rules_bundle JSON.
+
+Constraints:
+- Use repo-relative paths only.
+- Reuse existing SessionDB and AuditTimeline.
+- Keep current V1 flows working (non-regression).
+- No backend/services.
+
+Scope (P1):
+1) Rules bundle alias migration
+- Add/maintain rules_bundle/column_aliases.json as canonical alias source.
+- Refactor resolver to load aliases at startup from rules_bundle/column_aliases.json.
+- Alias normalization: case/underscore/punctuation insensitive.
+- Alias conflicts hard-fail to Manual Review with admin decision required.
+
+2) Schema Tree Editor (Admin > Standardizer)
+- Lazy render tree (expand on demand), ordered by sheet_order.
+- Render/edit:
+  - rules_bundle/field_meta.json
+  - rules_bundle/hinge_groups.json
+  - rules_bundle/sheet_order.json
+  - rules_bundle/qa_flags.json
+  - config/document_types.json
+  - rules_bundle/column_aliases.json
+- Unknown columns as PENDING nodes under mapped sheet or Unassigned.
+
+3) Unknown classification actions
+- Rename to existing -> create alias patch candidate
+- Add new canonical field -> schema patch candidate
+- Create legal-entity rule -> tenant_rule patch candidate
+- Ignore/suppress -> suppression patch candidate
+
+4) Change buffer + draft + diff
+- Track per-node edits in a diff buffer.
+- Undo per-node.
+- Save Draft to SessionDB.
+- Preview Diff.
+- Export Patch artifact.
+- Apply Locally (runtime apply only; still requires lifecycle for promotion).
+
+5) AuditTimeline events
+- Emit generic schema_change with subtype:
+  - schema_patch
+  - doctype_patch
+  - alias_patch
+  - tenant_rule_patch
+  - suppression_patch
+- Aggregate where possible (counts + sample IDs).
+
+6) Non-regression checks
+- Existing dropdown fields and glossary tooltips still work.
+- Existing triage, SRR, and patch submit flows unchanged.
+
+Output format:
+- Alignment of Task: <one line>
+- Exact files/functions touched with approximate line ranges
+- P1 checklist with PASS/FAIL
+- Demo steps
+- Any deferred items marked for P2
