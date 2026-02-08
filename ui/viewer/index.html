@@ -1924,11 +1924,12 @@
                   <h4 style="margin: 0; font-size: 0.9em; color: #333;">Semantic</h4>
                   <span id="ta-semantic-total" style="background: #fff3e0; color: #e65100; padding: 2px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">0</span>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.8em;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; font-size: 0.8em;">
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Proposals</span><span id="ta-sem-proposals" style="font-weight: 600;">0</span></div>
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Accepted</span><span id="ta-sem-accepted" style="font-weight: 600; color: #2e7d32;">0</span></div>
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Rejected</span><span id="ta-sem-rejected" style="font-weight: 600; color: #c62828;">0</span></div>
-                  <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Hinge-Impacted</span><span id="ta-sem-hinge" style="font-weight: 600; color: #e65100;">0</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Pending</span><span id="ta-sem-pending" style="font-weight: 600; color: #e65100;">0</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Hinge</span><span id="ta-sem-hinge" style="font-weight: 600; color: #7b1fa2;">0</span></div>
                 </div>
               </div>
               <div class="ta-lane-card" onclick="TriageAnalytics.handleLaneClick('patch')" style="background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 16px; cursor: pointer; transition: box-shadow 0.2s; border-top: 3px solid #1976d2;">
@@ -1936,9 +1937,11 @@
                   <h4 style="margin: 0; font-size: 0.9em; color: #333;">Patch Review</h4>
                   <span id="ta-patch-total" style="background: #e3f2fd; color: #1565c0; padding: 2px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">0</span>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.8em;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; font-size: 0.8em;">
+                  <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Draft</span><span id="ta-pr-draft" style="font-weight: 600;">0</span></div>
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Submitted</span><span id="ta-pr-submitted" style="font-weight: 600;">0</span></div>
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">At Verifier</span><span id="ta-pr-verifier" style="font-weight: 600;">0</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Admin</span><span id="ta-pr-admin" style="font-weight: 600;">0</span></div>
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">RFIs</span><span id="ta-pr-rfi" style="font-weight: 600;">0</span></div>
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Promoted</span><span id="ta-pr-promoted" style="font-weight: 600; color: #2e7d32;">0</span></div>
                 </div>
@@ -21880,7 +21883,7 @@
           lanes: {
             preflight: { unknown_columns: 0, ocr_unreadable: 0, low_confidence: 0, mojibake: 0, total: 0 },
             semantic: { proposals_created: 0, accepted: 0, rejected: 0, pending: 0, hinge_impacted: 0, total: 0 },
-            patch_review: { submitted: 0, in_verifier: 0, rfi_submitted: 0, clarification: 0, promoted: 0, applied: 0, total: 0 }
+            patch_review: { draft: 0, submitted: 0, in_verifier: 0, in_admin: 0, rfi_submitted: 0, clarification: 0, promoted: 0, applied: 0, total: 0 }
           },
           lifecycle: {
             loaded: { count: 0, pct: 0 },
@@ -21922,11 +21925,13 @@
         var allPatches = typeof PATCH_REQUEST_STORE !== 'undefined' ? PATCH_REQUEST_STORE.list() : [];
         allPatches.forEach(function(pr) {
           var s = (pr.status || '').toLowerCase().replace(/\s+/g, '_');
-          if (s === 'submitted' || s === 'draft') cache.lanes.patch_review.submitted++;
+          if (s === 'draft') cache.lanes.patch_review.draft++;
+          else if (s === 'submitted') cache.lanes.patch_review.submitted++;
           else if (s === 'verifier_responded' || s === 'verifier_reviewing') cache.lanes.patch_review.in_verifier++;
           else if (s.indexOf('rfi') >= 0) cache.lanes.patch_review.rfi_submitted++;
           else if (s === 'needs_clarification') cache.lanes.patch_review.clarification++;
-          else if (s === 'admin_approved' || s === 'verifier_approved') cache.lanes.patch_review.promoted++;
+          else if (s === 'verifier_approved') cache.lanes.patch_review.in_admin++;
+          else if (s === 'admin_approved') cache.lanes.patch_review.promoted++;
           else if (s === 'applied' || s === 'closed') cache.lanes.patch_review.applied++;
         });
         cache.lanes.patch_review.total = allPatches.length;
@@ -22038,6 +22043,7 @@
 
         this._cache = cache;
         this._lastRefreshedAt = cache.refreshed_at;
+        console.log('[TRIAGE-ANALYTICS][P0] refresh: PreFlight=' + cache.lanes.preflight.total + ', Semantic=' + cache.lanes.semantic.total + ', PatchReview=' + cache.lanes.patch_review.total + ', Contracts=' + cache.total_contracts + ', Schema=' + cache.schema.standard_matched + '/' + cache.schema.standard_total);
         return cache;
       },
 
@@ -22063,11 +22069,14 @@
         if (el('ta-sem-proposals')) el('ta-sem-proposals').textContent = cache.lanes.semantic.proposals_created;
         if (el('ta-sem-accepted')) el('ta-sem-accepted').textContent = cache.lanes.semantic.accepted;
         if (el('ta-sem-rejected')) el('ta-sem-rejected').textContent = cache.lanes.semantic.rejected;
+        if (el('ta-sem-pending')) el('ta-sem-pending').textContent = cache.lanes.semantic.pending;
         if (el('ta-sem-hinge')) el('ta-sem-hinge').textContent = cache.lanes.semantic.hinge_impacted;
 
         if (el('ta-patch-total')) el('ta-patch-total').textContent = cache.lanes.patch_review.total;
+        if (el('ta-pr-draft')) el('ta-pr-draft').textContent = cache.lanes.patch_review.draft;
         if (el('ta-pr-submitted')) el('ta-pr-submitted').textContent = cache.lanes.patch_review.submitted;
         if (el('ta-pr-verifier')) el('ta-pr-verifier').textContent = cache.lanes.patch_review.in_verifier;
+        if (el('ta-pr-admin')) el('ta-pr-admin').textContent = cache.lanes.patch_review.in_admin;
         if (el('ta-pr-rfi')) el('ta-pr-rfi').textContent = cache.lanes.patch_review.rfi_submitted;
         if (el('ta-pr-promoted')) el('ta-pr-promoted').textContent = cache.lanes.patch_review.promoted;
 
@@ -22076,6 +22085,7 @@
         this._renderSchemaSnapshot(cache);
 
         if (el('ta-lifecycle-updated')) el('ta-lifecycle-updated').textContent = 'Updated: ' + new Date(cache.refreshed_at).toLocaleTimeString();
+        console.log('[TRIAGE-ANALYTICS][P0] renderHeader: displayed=' + (header.style.display !== 'none') + ', lifecycle_stages=9, contracts=' + cache.total_contracts);
       },
 
       _renderLifecycle: function(cache) {
