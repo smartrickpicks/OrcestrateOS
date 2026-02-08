@@ -1,0 +1,78 @@
+Replit Task: V2.2 P0 Implementation (Document Role + System Pass + Pre-Flight + Audit UX)
+
+Alignment of Task must be included in output.
+
+Hard constraints:
+- Use repo-relative paths only: `ui/viewer/index.html`, `rules_bundle/*`, `docs/*`.
+- Keep current persistence as-is (reuse existing SessionDB + AuditTimeline).
+- Do not silently mutate working data from rules/inference.
+
+Scope:
+
+1) Document Role + Document Type UI/model
+- Add `document_role` as first-class, separate from `document_type`.
+- `document_role` enum (UI): Root Agreement, Amendment, Addendum, Schedule, Exhibit, Statement of Work (SOW), Side Letter, Rider, Termination Notice, Other, Unknown.
+- `document_type` enum (classifier): distribution_agreement, amendment, termination, work_for_hire, license, publishing_admin, joint_venture, catalog_schedule_only, unknown.
+- Default `document_role = Unknown`.
+- Inference is allowed but suggestion-only:
+  - produce suggestion + confidence
+  - no direct assignment
+  - requires Analyst/Admin explicit confirm to apply
+  - confirmation emits audit event.
+- In Contract Inspector > Documents, render `"<Role> — <Type>"` with confidence badge.
+- Keep model separation: Contract contains Document(s).
+
+2) System Pass (deterministic, rerunnable, proposal-only)
+- Rename Salesforce logic UX label to `System Pass`.
+- Add manual `Re-run System Pass` button with reason picker.
+- Add auto-rerun triggers:
+  - OCR becomes readable + extraction regenerates
+  - hinge field modified/applied
+- Outputs are proposals only (never silent overwrite):
+  - include before/after, rule_id, why, confidence
+  - route to Triage bucket: System Changes
+  - allow accept/reject per proposal and bulk accept.
+- If proposal touches hinge field:
+  - must go through patch artifact lifecycle (cannot direct-apply).
+
+3) Triage bucket rename + blocker behavior
+- Rename `Manual Review` to `Pre-Flight`.
+- Buckets: Pre-Flight, System Changes, Pending/Review Queues.
+- Pre-Flight blockers: unknown columns, unreadable OCR, low-confidence extraction, mojibake.
+- Unknown-column attachment:
+  - attach to contract rollup when contract_id exists
+  - otherwise attach at batch level.
+
+4) Audit UX (3-tier) + export
+- Header dropdown: last 10 events.
+- “See all” full panel with filters:
+  - scope (batch/contract/document/row)
+  - type (patch/schema_change/system_change/rollback/session)
+  - actor role
+- Add `Export Audit Log only` button (separate from full export).
+- Ensure export columns:
+  - event_id, timestamp, actor_role, scope_type, scope_id, event_type, subtype, payload_summary, artifact_refs.
+
+5) Event emissions (AuditTimeline)
+Emit consistently:
+- `system_pass_rerun`
+- `system_change_proposed`
+- `system_change_accepted`
+- `system_change_rejected`
+- `preflight_blocker_detected`
+(keep schema_change/rollback events for P1 phase)
+
+Acceptance criteria:
+- No System Pass path mutates data without explicit accept/patch flow.
+- Document role defaults to Unknown; inferred role appears as proposal with confidence and confirm action.
+- Pre-Flight bucket appears and receives blocker items correctly.
+- System Changes bucket populated by proposals with accept/reject actions.
+- Header audit dropdown + full panel filters + audit-only export work.
+- Existing SRR/grid navigation and contract/document model remain intact.
+
+Output format:
+1) Alignment of Task: <one line>
+2) Files/functions touched with approx line ranges
+3) PASS/FAIL checklist with evidence
+4) Any FAIL item + minimal patch plan
+5) Demo walkthrough steps
