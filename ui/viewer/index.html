@@ -13535,7 +13535,7 @@
         
         // v1.5.3 Fix: Set IDENTITY_CONTEXT.dataset_id before persisting
         if (!IDENTITY_CONTEXT.dataset_id) {
-          IDENTITY_CONTEXT.dataset_id = sheetName;
+          IDENTITY_CONTEXT.dataset_id = file.name;
         }
         
         // Clear any cached version of this sheet to treat re-import as fresh
@@ -22762,6 +22762,7 @@
           
           // Populate workbook
           resetWorkbook();
+          IDENTITY_CONTEXT.dataset_id = file.name;
           result.order.forEach(function(sheetName) {
             var sheet = result.sheets[sheetName];
             addSheet(sheetName, sheet.headers, sheet.rows, sheet.meta);
