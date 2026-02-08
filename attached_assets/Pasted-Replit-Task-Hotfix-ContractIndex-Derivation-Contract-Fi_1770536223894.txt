@@ -1,0 +1,49 @@
+Replit Task: Hotfix ContractIndex Derivation + Contract Filter Accuracy
+
+Alignment of Task: Fix incorrect contract grouping (2 contracts only) by correcting ID derivation and excluding header-like metadata rows.
+
+Scope:
+- File: `ui/viewer/index.html`
+- Target ContractIndex functions:
+  - `deriveContractId(...)`
+  - `deriveDocumentId(...)`
+  - contract label builder / selector population (`populateContractSelector(...)` or equivalent)
+  - row normalization guards used during ContractIndex build
+
+Required fixes:
+
+1) Contract ID derivation must not use shared folder UUID
+- If URL pattern is like `/files/{batch_uuid}/{filename}`:
+  - DO NOT derive `contract_id` from `{batch_uuid}`.
+- Derive `contract_id` by:
+  - Prefer stable contract key if valid and non-header-like.
+  - Else hash normalized full file URL (path + filename).
+  - Else hash normalized filename + sheet + row signature fallback.
+- `document_id` should be independently derived (hash full URL + filename), not copied from contract_id.
+
+2) Ignore header-like/system-marker values in derivation
+- Treat values as invalid for ID/label if they look like column names:
+  - `File_Name_c`, `file_name`, `File URL`, `file_url`, etc.
+- If only invalid/header-like values are present, route to Pre-Flight blocker (don’t create fake contract label).
+
+3) Contract selector must reflect current view context
+- In All Data Grid with sheet filter active, contract selector/counts must be based on visible sheet rows, not global workbook row totals.
+- Remove bogus options like `File_Name_c (1 rows)`.
+
+4) Keep existing behavior intact
+- Row click still opens Record Inspection.
+- View Contract still works.
+- No regression to Pre-Flight, System Changes, or merged batch handling.
+
+Acceptance criteria:
+- On Ostereo dataset in Accounts view:
+  - Contract selector no longer shows `File_Name_c`.
+  - Contract count is realistic for Accounts rows (not collapsed into 1 mega-contract).
+  - No contract bucket with impossible aggregate count from unrelated sheets.
+- Existing SRR/grid navigation unchanged.
+
+Output format:
+1) Alignment of Task: <one line>
+2) Functions touched + approx line ranges
+3) PASS/FAIL checklist with evidence
+4) If FAIL: minimal follow-up patch plan
