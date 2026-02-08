@@ -2198,7 +2198,7 @@
               <button class="file-action-btn cancel" onclick="srrCancelEditLink()">Cancel</button>
             </div>
             <div class="srr-doc-viewer">
-              <div class="srr-doc-controls">
+              <div class="srr-doc-controls" style="display: none;">
                 <button class="srr-doc-btn" id="srr-prev-btn" onclick="srrPrevPage()" title="Previous page">← Prev</button>
                 <span class="srr-page-indicator" id="srr-page-indicator" style="display:none;">Page 1</span>
                 <button class="srr-doc-btn" id="srr-next-btn" onclick="srrNextPage()" title="Next page">Next →</button>
@@ -16388,7 +16388,7 @@
       if (!obj || !srrState.currentPdfUrl) return;
       srrUpdatePageDisplay();
       var baseUrl = srrState.currentPdfUrl.split('#')[0];
-      var fragment = '#page=' + pageNum + '&navpanes=0&scrollbar=1&toolbar=0&view=FitH';
+      var fragment = '#page=' + pageNum + '&navpanes=0&scrollbar=1&toolbar=1&view=FitH';
       if (srrState.useFragmentZoom !== false) {
         fragment += '&zoom=' + srrState.zoom;
       }
@@ -17083,7 +17083,7 @@
       // Build fragment: page is always included, zoom only if useFragmentZoom is true
       // Some PDF renderers break with zoom fragment, so we keep it UI-only in those cases
       // v1.6.13: Add navpanes=0 to hide thumbnail sidebar, scrollbar=1 for continuous scroll
-      var fragment = '#page=' + srrState.docPage + '&navpanes=0&scrollbar=1&toolbar=0&view=FitH';
+      var fragment = '#page=' + srrState.docPage + '&navpanes=0&scrollbar=1&toolbar=1&view=FitH';
       if (srrState.useFragmentZoom !== false) {
         fragment += '&zoom=' + srrState.zoom;
       }
