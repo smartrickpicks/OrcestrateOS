@@ -1,0 +1,68 @@
+Replit Task: V2.2 P1 — Hinge-Governed Apply + Undo vs Rollback + Audit Events
+
+Alignment of Task must be included in output.
+
+Constraints:
+- Use repo-relative paths only (`ui/viewer/index.html`, `docs/*`, `rules_bundle/*`).
+- Reuse existing SessionDB + AuditTimeline.
+- Keep System Pass proposal-only behavior (no silent mutation).
+- No role/permission expansion beyond existing gating.
+
+Scope:
+
+1) Hinge-governed application path
+- For `system_change_proposed` items touching hinge fields:
+  - Block direct apply/accept.
+  - Require creation of a patch artifact (`system-suggested`) and route through patch lifecycle gates.
+- Non-hinge proposals can still be accepted/rejected directly.
+
+2) Local Undo (short window)
+- Add `undo_local` for draft-only edits in SRR/Patch Studio.
+- Window-based behavior (short-lived), local session only.
+- Must emit audit event `undo_local`.
+- Must not alter approved/submitted artifacts.
+
+3) Governed Rollback artifacts
+- Implement rollback creation + apply flow for:
+  - Field
+  - Patch
+  - Contract
+  - Batch
+- Rollback must:
+  - Create rollback artifact referencing original event/artifact.
+  - Never delete history.
+  - Apply by writing a new state (append-only behavior).
+- Emit:
+  - `rollback_created`
+  - `rollback_applied`
+
+4) Rollback-triggered rerun
+- If rollback affects hinge fields:
+  - Trigger `system_pass_rerun` automatically with reason `rollback_hinge_affected`.
+
+5) Audit/log + export alignment
+- Ensure undo/rollback events render in:
+  - Header last-10 dropdown
+  - Full audit panel filters
+  - Audit-only XLSX export
+
+6) Docs update (P1-only)
+- Update docs for:
+  - Undo vs Rollback distinction
+  - Hinge-governed system-change application
+  - New audit events and expected payloads
+
+Acceptance criteria:
+- Hinge-touch proposal cannot be directly accepted; patch artifact path is enforced.
+- `undo_local` works only for local draft window and is auditable.
+- Rollback flow creates artifacts and applies append-only state writes.
+- Hinge-affected rollback auto-reruns System Pass.
+- Audit UI and audit-only export include undo/rollback events.
+- No regression to P0 triage, contract/document model, or SRR navigation.
+
+Output format:
+1) Alignment of Task: <one line>
+2) Files/functions touched with approximate line ranges
+3) PASS/FAIL checklist with evidence
+4) Any FAIL item + minimal fix plan
+5) Demo walkthrough steps
