@@ -6498,32 +6498,24 @@
       if (statDivider) statDivider.style.display = '';
 
       var activeSheet = (typeof gridState !== 'undefined' && gridState.sheet) ? gridState.sheet : null;
-      var selectorContracts = allContracts;
+      var sheetContractIds = {};
       if (activeSheet && ContractIndex._index) {
-        selectorContracts = [];
         Object.keys(ContractIndex._index.contracts).forEach(function(cid) {
           var c = ContractIndex._index.contracts[cid];
           if (c.sheets && c.sheets[activeSheet] && c.sheets[activeSheet].length > 0) {
-            selectorContracts.push({
-              contract_id: cid,
-              file_name: c.file_name,
-              file_url: c.file_url,
-              row_count: c.sheets[activeSheet].length,
-              sheet_count: Object.keys(c.sheets).length,
-              document_count: Object.keys(c.documents).length
-            });
+            sheetContractIds[cid] = c.sheets[activeSheet].length;
           }
         });
       }
 
       if (!selector) return;
-      var sheetLabel = activeSheet ? ' in ' + activeSheet : '';
-      var html = '<option value="">All Contracts (' + selectorContracts.length + sheetLabel + ')</option>';
-      selectorContracts.sort(function(a, b) { return (a.file_name || '').localeCompare(b.file_name || ''); });
-      selectorContracts.forEach(function(c) {
+      var html = '<option value="">All Contracts (' + datasetWideCount + ')</option>';
+      allContracts.sort(function(a, b) { return (a.file_name || '').localeCompare(b.file_name || ''); });
+      allContracts.forEach(function(c) {
         var label = (c.file_name || c.contract_id).substring(0, 40);
         if (label.length < (c.file_name || c.contract_id).length) label += '...';
-        html += '<option value="' + c.contract_id + '">' + escapeHtml(label) + ' (' + c.row_count + ' rows)</option>';
+        var sheetNote = (activeSheet && sheetContractIds[c.contract_id]) ? ' [' + sheetContractIds[c.contract_id] + ' in sheet]' : '';
+        html += '<option value="' + c.contract_id + '">' + escapeHtml(label) + ' (' + c.row_count + ' rows)' + sheetNote + '</option>';
       });
       selector.innerHTML = html;
 
@@ -8646,7 +8638,7 @@
               if (typeof AuditTimeline !== 'undefined') {
                 AuditTimeline.emit('ROW_SANITIZED_HEADER_ECHO', {
                   dataset_id: '',
-                  metadata: { sheet: sheetName, row_index: ri, match_ratio: matchRatio.toFixed(2) }
+                  metadata: { sheet_name: sheetName, row_index: ri, match_ratio: matchRatio.toFixed(2) }
                 });
               }
               return false;
@@ -8716,7 +8708,7 @@
                 if (typeof AuditTimeline !== 'undefined') {
                   AuditTimeline.emit('ROW_SANITIZED_HEADER_ECHO', {
                     dataset_id: '',
-                    metadata: { sheet: sheetName, row_index: ri, match_ratio: matchRatio.toFixed(2) }
+                    metadata: { sheet_name: sheetName, row_index: ri, match_ratio: matchRatio.toFixed(2) }
                   });
                 }
                 return false;
@@ -14995,10 +14987,6 @@
       
       if (currentDataset) return currentDataset;
       
-      var cached = localStorage.getItem('sample_dataset');
-      if (cached) {
-        try { currentDataset = JSON.parse(cached); } catch(e) {}
-      }
       if (!currentDataset && window.allData && window.allData.contractResults) {
         currentDataset = { sf_contract_results: window.allData.contractResults };
       }
@@ -25030,7 +25018,7 @@
           generateSignalsForDataset();
 
           // v2.2: Build contract index after signals
-          try { ContractIndex.build(); populateContractSelector(); } catch(e) { console.error('[ContractIndex] Post-import build failed:', e); }
+          try { ContractIndex.build(); populateContractSelector(); console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on upload path'); } catch(e) { console.error('[ContractIndex] Post-import build failed:', e); }
 
           // v1.6.33: Seed patch requests from RFI meta sheet (if present in uploaded file)
           seedPatchRequestsFromMetaSheet();
