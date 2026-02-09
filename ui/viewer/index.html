@@ -4968,7 +4968,8 @@
       'glossary', 'field_dictionary', 'field dictionary', 
       'opportunity_field_catalog', 'opportunity field catalog',
       'qa_flags', 'hinge', 'mapping', 'dictionary', 'catalog_meta',
-      'field_catalog', 'field catalog', 'reference', 'lookup'
+      'field_catalog', 'field catalog', 'reference', 'lookup',
+      'fields definitions', 'fields definit', 'field definitions'
     ];
 
     var OPERATIONAL_SHEET_ALLOWLIST = ['Accounts', 'Opportunities', 'Opportunity', 'Financials', 'Catalog', 'Schedule', 'Schedule Catalog', 'V2 Add Ons', 'Contacts', 'Contact'];
@@ -25050,6 +25051,38 @@
                   }
                 }
               });
+              if (sn.toLowerCase().indexOf('fields defini') >= 0 && sh && sh.headers && sh.rows) {
+                var apiIdx = -1; var labelIdx = -1;
+                for (var hi = 0; hi < sh.headers.length; hi++) {
+                  var hn = sh.headers[hi].toLowerCase();
+                  if (hn === 'field api name' || hn === 'field_api_name' || hn === 'api name' || hn === 'api_name') apiIdx = hi;
+                  if (hn === 'field label' || hn === 'field_label' || hn === 'label') labelIdx = hi;
+                }
+                sh.rows.forEach(function(row) {
+                  var apiVal = apiIdx >= 0 ? (row[sh.headers[apiIdx]] || '') : '';
+                  var labelVal = labelIdx >= 0 ? (row[sh.headers[labelIdx]] || '') : '';
+                  if (apiVal) {
+                    wbCols[apiVal.toLowerCase()] = true;
+                    wbCols[_normKey(apiVal)] = true;
+                  }
+                  if (labelVal) {
+                    wbCols[labelVal.toLowerCase()] = true;
+                    wbCols[_normKey(labelVal)] = true;
+                    var labelNorm = _normKey(labelVal);
+                    if (typeof COLUMN_ALIAS_MAP !== 'undefined' && COLUMN_ALIAS_MAP[labelNorm]) {
+                      var lEntries = COLUMN_ALIAS_MAP[labelNorm];
+                      if (Array.isArray(lEntries)) {
+                        lEntries.forEach(function(le) {
+                          if (le && le.canonical_key) {
+                            wbCanonicals[le.canonical_key.toLowerCase()] = true;
+                            wbCanonicals[_normKey(le.canonical_key)] = true;
+                          }
+                        });
+                      }
+                    }
+                  }
+                });
+              }
             });
           }
           var _fieldMatches = function(fk) {

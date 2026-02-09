@@ -82,7 +82,8 @@
       "canonical_key": "billing_postal_code_c",
       "sheet": "Accounts",
       "aliases": [
-        "Billing Zip/Postal Code"
+        "Billing Zip/Postal Code",
+        "Billing Postal Code"
       ],
       "source": "field_meta"
     },
@@ -90,7 +91,8 @@
       "canonical_key": "billing_state_c",
       "sheet": "Accounts",
       "aliases": [
-        "Billing State/Province"
+        "Billing State/Province",
+        "Billing State"
       ],
       "source": "field_meta"
     },
@@ -122,7 +124,8 @@
       "canonical_key": "currency_iso_code_c",
       "sheet": "Accounts",
       "aliases": [
-        "Account Currency"
+        "Account Currency",
+        "Currency Iso Code"
       ],
       "source": "field_meta"
     },
@@ -130,7 +133,8 @@
       "canonical_key": "description_c",
       "sheet": "Accounts",
       "aliases": [
-        "Account Description"
+        "Account Description",
+        "Description"
       ],
       "source": "field_meta"
     },
@@ -138,7 +142,8 @@
       "canonical_key": "fax_c",
       "sheet": "Accounts",
       "aliases": [
-        "Account Fax"
+        "Account Fax",
+        "Fax"
       ],
       "source": "field_meta"
     },
@@ -146,7 +151,8 @@
       "canonical_key": "id_c",
       "sheet": "Accounts",
       "aliases": [
-        "Account ID"
+        "Account ID",
+        "Id"
       ],
       "source": "field_meta"
     },
@@ -162,7 +168,8 @@
       "canonical_key": "is_customer_portal_c",
       "sheet": "Accounts",
       "aliases": [
-        "Customer Portal Account"
+        "Customer Portal Account",
+        "Is Customer Portal"
       ],
       "source": "field_meta"
     },
@@ -170,7 +177,8 @@
       "canonical_key": "jigsaw_c",
       "sheet": "Accounts",
       "aliases": [
-        "Data.com Key"
+        "Data.com Key",
+        "Jigsaw"
       ],
       "source": "field_meta"
     },
@@ -186,7 +194,8 @@
       "canonical_key": "last_activity_date_c",
       "sheet": "Accounts",
       "aliases": [
-        "Last Activity"
+        "Last Activity",
+        "Last Activity Date"
       ],
       "source": "field_meta"
     },
@@ -226,7 +235,8 @@
       "canonical_key": "number_of_employees_c",
       "sheet": "Accounts",
       "aliases": [
-        "Employees"
+        "Employees",
+        "Number Of Employees"
       ],
       "source": "field_meta"
     },
@@ -234,7 +244,8 @@
       "canonical_key": "operating_hours_id_c",
       "sheet": "Accounts",
       "aliases": [
-        "Operating Hour ID"
+        "Operating Hour ID",
+        "Operating Hours Id"
       ],
       "source": "field_meta"
     },
@@ -258,7 +269,8 @@
       "canonical_key": "parent_id_c",
       "sheet": "Accounts",
       "aliases": [
-        "Parent Account ID"
+        "Parent Account ID",
+        "Parent Id"
       ],
       "source": "field_meta"
     },
@@ -266,7 +278,8 @@
       "canonical_key": "phone_c",
       "sheet": "Accounts",
       "aliases": [
-        "Account Phone"
+        "Account Phone",
+        "Phone"
       ],
       "source": "field_meta"
     },
@@ -282,7 +295,8 @@
       "canonical_key": "rating_c",
       "sheet": "Accounts",
       "aliases": [
-        "Tiers"
+        "Tiers",
+        "Rating"
       ],
       "source": "field_meta"
     },
@@ -346,7 +360,8 @@
       "canonical_key": "shipping_postal_code_c",
       "sheet": "Accounts",
       "aliases": [
-        "Shipping Zip/Postal Code"
+        "Shipping Zip/Postal Code",
+        "Shipping Postal Code"
       ],
       "source": "field_meta"
     },
@@ -354,7 +369,8 @@
       "canonical_key": "shipping_state_c",
       "sheet": "Accounts",
       "aliases": [
-        "Shipping State/Province"
+        "Shipping State/Province",
+        "Shipping State"
       ],
       "source": "field_meta"
     },
@@ -370,7 +386,8 @@
       "canonical_key": "sic_c",
       "sheet": "Accounts",
       "aliases": [
-        "SIC Code"
+        "SIC Code",
+        "Sic"
       ],
       "source": "field_meta"
     },
@@ -378,7 +395,8 @@
       "canonical_key": "sic_desc_c",
       "sheet": "Accounts",
       "aliases": [
-        "SIC Description"
+        "SIC Description",
+        "Sic Desc"
       ],
       "source": "field_meta"
     },
@@ -386,7 +404,8 @@
       "canonical_key": "site_c",
       "sheet": "Accounts",
       "aliases": [
-        "Account Site"
+        "Account Site",
+        "Site"
       ],
       "source": "field_meta"
     },
@@ -402,7 +421,8 @@
       "canonical_key": "tier_c",
       "sheet": "Accounts",
       "aliases": [
-        "Einstein Account Tier"
+        "Einstein Account Tier",
+        "Tier"
       ],
       "source": "field_meta"
     },
@@ -426,7 +446,8 @@
       "canonical_key": "a_r_c",
       "sheet": "Accounts",
       "aliases": [
-        "Current A&R"
+        "Current A&R",
+        "A R"
       ],
       "source": "field_meta"
     },
@@ -442,7 +463,8 @@
       "canonical_key": "account_prefill_link_c",
       "sheet": "Accounts",
       "aliases": [
-        "CMG Account Prefill link"
+        "CMG Account Prefill link",
+        "Account Prefill Link"
       ],
       "source": "field_meta"
     },
@@ -514,7 +536,8 @@
       "canonical_key": "cmbg_account_prefill_link_c",
       "sheet": "Accounts",
       "aliases": [
-        "CBMG Account Prefill link"
+        "CBMG Account Prefill link",
+        "Cmbg Account Prefill Link"
       ],
       "source": "field_meta"
     },
@@ -578,7 +601,8 @@
       "canonical_key": "dba_name_c",
       "sheet": "Accounts",
       "aliases": [
-        "Legal Name"
+        "Legal Name",
+        "Dba Name"
       ],
       "source": "field_meta"
     },
@@ -594,7 +618,8 @@
       "canonical_key": "division_c",
       "sheet": "Accounts",
       "aliases": [
-        "Legacy Division"
+        "Legacy Division",
+        "Division"
       ],
       "source": "field_meta"
     },
@@ -626,7 +651,8 @@
       "canonical_key": "genre2_c",
       "sheet": "Accounts",
       "aliases": [
-        "Genre"
+        "Genre",
+        "Genre2"
       ],
       "source": "field_meta"
     },
@@ -914,7 +940,8 @@
       "canonical_key": "x18_digit_id_c",
       "sheet": "Accounts",
       "aliases": [
-        "18 Digit ID"
+        "18 Digit ID",
+        "X18 Digit Id"
       ],
       "source": "field_meta"
     },
@@ -946,7 +973,8 @@
       "canonical_key": "youtube_name_c",
       "sheet": "Accounts",
       "aliases": [
-        "YouTube Channel Name"
+        "YouTube Channel Name",
+        "Youtube Name"
       ],
       "source": "field_meta"
     },
@@ -954,7 +982,8 @@
       "canonical_key": "AccountId",
       "sheet": "Contacts",
       "aliases": [
-        "Account ID"
+        "Account ID",
+        "Accountid"
       ],
       "source": "field_meta"
     },
@@ -962,7 +991,8 @@
       "canonical_key": "AssistantName",
       "sheet": "Contacts",
       "aliases": [
-        "Assistant's Name"
+        "Assistant's Name",
+        "Assistantname"
       ],
       "source": "field_meta"
     },
@@ -970,7 +1000,8 @@
       "canonical_key": "AssistantPhone",
       "sheet": "Contacts",
       "aliases": [
-        "Asst. Phone"
+        "Asst. Phone",
+        "Assistantphone"
       ],
       "source": "field_meta"
     },
@@ -994,7 +1025,8 @@
       "canonical_key": "CreatedDate",
       "sheet": "Contacts",
       "aliases": [
-        "Created Date"
+        "Created Date",
+        "Createddate"
       ],
       "source": "field_meta"
     },
@@ -1018,7 +1050,8 @@
       "canonical_key": "Description",
       "sheet": "Contacts",
       "aliases": [
-        "Contact Description"
+        "Contact Description",
+        "Description"
       ],
       "source": "field_meta"
     },
@@ -1026,7 +1059,8 @@
       "canonical_key": "DoNotCall",
       "sheet": "Contacts",
       "aliases": [
-        "Do Not Call"
+        "Do Not Call",
+        "Donotcall"
       ],
       "source": "field_meta"
     },
@@ -1042,7 +1076,8 @@
       "canonical_key": "EmailBouncedDate",
       "sheet": "Contacts",
       "aliases": [
-        "Email Bounced Date"
+        "Email Bounced Date",
+        "Emailbounceddate"
       ],
       "source": "field_meta"
     },
@@ -1050,7 +1085,8 @@
       "canonical_key": "EmailBouncedReason",
       "sheet": "Contacts",
       "aliases": [
-        "Email Bounced Reason"
+        "Email Bounced Reason",
+        "Emailbouncedreason"
       ],
       "source": "field_meta"
     },
@@ -1058,7 +1094,8 @@
       "canonical_key": "Fax",
       "sheet": "Contacts",
       "aliases": [
-        "Business Fax"
+        "Business Fax",
+        "Fax"
       ],
       "source": "field_meta"
     },
@@ -1066,7 +1103,8 @@
       "canonical_key": "FirstName",
       "sheet": "Contacts",
       "aliases": [
-        "Legal First Name"
+        "Legal First Name",
+        "Firstname"
       ],
       "source": "field_meta"
     },
@@ -1074,7 +1112,8 @@
       "canonical_key": "HasOptedOutOfEmail",
       "sheet": "Contacts",
       "aliases": [
-        "Email Opt Out"
+        "Email Opt Out",
+        "Hasoptedoutofemail"
       ],
       "source": "field_meta"
     },
@@ -1082,7 +1121,8 @@
       "canonical_key": "HasOptedOutOfFax",
       "sheet": "Contacts",
       "aliases": [
-        "Fax Opt Out"
+        "Fax Opt Out",
+        "Hasoptedoutoffax"
       ],
       "source": "field_meta"
     },
@@ -1090,7 +1130,8 @@
       "canonical_key": "HomePhone",
       "sheet": "Contacts",
       "aliases": [
-        "Home Phone"
+        "Home Phone",
+        "Homephone"
       ],
       "source": "field_meta"
     },
@@ -1098,7 +1139,8 @@
       "canonical_key": "Id",
       "sheet": "Contacts",
       "aliases": [
-        "Contact ID"
+        "Contact ID",
+        "Id"
       ],
       "source": "field_meta"
     },
@@ -1106,7 +1148,8 @@
       "canonical_key": "IndividualId",
       "sheet": "Contacts",
       "aliases": [
-        "Individual ID"
+        "Individual ID",
+        "Individualid"
       ],
       "source": "field_meta"
     },
@@ -1114,7 +1157,8 @@
       "canonical_key": "InformalName",
       "sheet": "Contacts",
       "aliases": [
-        "Informal Name"
+        "Informal Name",
+        "Informalname"
       ],
       "source": "field_meta"
     },
@@ -1122,7 +1166,8 @@
       "canonical_key": "IsEmailBounced",
       "sheet": "Contacts",
       "aliases": [
-        "Is Email Bounced"
+        "Is Email Bounced",
+        "Isemailbounced"
       ],
       "source": "field_meta"
     },
@@ -1130,7 +1175,8 @@
       "canonical_key": "Jigsaw",
       "sheet": "Contacts",
       "aliases": [
-        "Data.com Key"
+        "Data.com Key",
+        "Jigsaw"
       ],
       "source": "field_meta"
     },
@@ -1138,7 +1184,8 @@
       "canonical_key": "JigsawContactId",
       "sheet": "Contacts",
       "aliases": [
-        "Jigsaw Contact ID"
+        "Jigsaw Contact ID",
+        "Jigsawcontactid"
       ],
       "source": "field_meta"
     },
@@ -1146,7 +1193,8 @@
       "canonical_key": "LastActivityDate",
       "sheet": "Contacts",
       "aliases": [
-        "Last Activity"
+        "Last Activity",
+        "Lastactivitydate"
       ],
       "source": "field_meta"
     },
@@ -1154,7 +1202,8 @@
       "canonical_key": "LastCURequestDate",
       "sheet": "Contacts",
       "aliases": [
-        "Last Stay-in-Touch Request Date"
+        "Last Stay-in-Touch Request Date",
+        "Lastcurequestdate"
       ],
       "source": "field_meta"
     },
@@ -1162,7 +1211,8 @@
       "canonical_key": "LastCUUpdateDate",
       "sheet": "Contacts",
       "aliases": [
-        "Last Stay-in-Touch Save Date"
+        "Last Stay-in-Touch Save Date",
+        "Lastcuupdatedate"
       ],
       "source": "field_meta"
     },
@@ -1178,7 +1228,8 @@
       "canonical_key": "LastModifiedDate",
       "sheet": "Contacts",
       "aliases": [
-        "Last Modified Date"
+        "Last Modified Date",
+        "Lastmodifieddate"
       ],
       "source": "field_meta"
     },
@@ -1186,7 +1237,8 @@
       "canonical_key": "LastName",
       "sheet": "Contacts",
       "aliases": [
-        "Legal Last Name"
+        "Legal Last Name",
+        "Lastname"
       ],
       "source": "field_meta"
     },
@@ -1194,7 +1246,8 @@
       "canonical_key": "LeadSource",
       "sheet": "Contacts",
       "aliases": [
-        "Lead Source"
+        "Lead Source",
+        "Leadsource"
       ],
       "source": "field_meta"
     },
@@ -1202,7 +1255,8 @@
       "canonical_key": "MailingAddress",
       "sheet": "Contacts",
       "aliases": [
-        "Mailing Address"
+        "Mailing Address",
+        "Mailingaddress"
       ],
       "source": "field_meta"
     },
@@ -1210,7 +1264,8 @@
       "canonical_key": "MailingCity",
       "sheet": "Contacts",
       "aliases": [
-        "Mailing City"
+        "Mailing City",
+        "Mailingcity"
       ],
       "source": "field_meta"
     },
@@ -1218,7 +1273,8 @@
       "canonical_key": "MailingCountry",
       "sheet": "Contacts",
       "aliases": [
-        "Mailing Country"
+        "Mailing Country",
+        "Mailingcountry"
       ],
       "source": "field_meta"
     },
@@ -1226,7 +1282,8 @@
       "canonical_key": "MailingGeocodeAccuracy",
       "sheet": "Contacts",
       "aliases": [
-        "Mailing Geocode Accuracy"
+        "Mailing Geocode Accuracy",
+        "Mailinggeocodeaccuracy"
       ],
       "source": "field_meta"
     },
@@ -1234,7 +1291,8 @@
       "canonical_key": "MailingLatitude",
       "sheet": "Contacts",
       "aliases": [
-        "Mailing Latitude"
+        "Mailing Latitude",
+        "Mailinglatitude"
       ],
       "source": "field_meta"
     },
@@ -1242,7 +1300,8 @@
       "canonical_key": "MailingLongitude",
       "sheet": "Contacts",
       "aliases": [
-        "Mailing Longitude"
+        "Mailing Longitude",
+        "Mailinglongitude"
       ],
       "source": "field_meta"
     },
@@ -1250,7 +1309,8 @@
       "canonical_key": "MailingPostalCode",
       "sheet": "Contacts",
       "aliases": [
-        "Mailing Zip/Postal Code"
+        "Mailing Zip/Postal Code",
+        "Mailingpostalcode"
       ],
       "source": "field_meta"
     },
@@ -1258,7 +1318,8 @@
       "canonical_key": "MailingState",
       "sheet": "Contacts",
       "aliases": [
-        "Mailing State/Province"
+        "Mailing State/Province",
+        "Mailingstate"
       ],
       "source": "field_meta"
     },
@@ -1266,7 +1327,8 @@
       "canonical_key": "MailingStreet",
       "sheet": "Contacts",
       "aliases": [
-        "Mailing Street"
+        "Mailing Street",
+        "Mailingstreet"
       ],
       "source": "field_meta"
     },
@@ -1274,7 +1336,8 @@
       "canonical_key": "MasterRecordId",
       "sheet": "Contacts",
       "aliases": [
-        "Master Record ID"
+        "Master Record ID",
+        "Masterrecordid"
       ],
       "source": "field_meta"
     },
@@ -1282,7 +1345,8 @@
       "canonical_key": "MiddleName",
       "sheet": "Contacts",
       "aliases": [
-        "Legal Middle Name"
+        "Legal Middle Name",
+        "Middlename"
       ],
       "source": "field_meta"
     },
@@ -1290,7 +1354,8 @@
       "canonical_key": "MobilePhone",
       "sheet": "Contacts",
       "aliases": [
-        "Mobile Phone"
+        "Mobile Phone",
+        "Mobilephone"
       ],
       "source": "field_meta"
     },
@@ -1306,7 +1371,8 @@
       "canonical_key": "OtherAddress",
       "sheet": "Contacts",
       "aliases": [
-        "Other Address"
+        "Other Address",
+        "Otheraddress"
       ],
       "source": "field_meta"
     },
@@ -1314,7 +1380,8 @@
       "canonical_key": "OtherCity",
       "sheet": "Contacts",
       "aliases": [
-        "Other City"
+        "Other City",
+        "Othercity"
       ],
       "source": "field_meta"
     },
@@ -1322,7 +1389,8 @@
       "canonical_key": "OtherCountry",
       "sheet": "Contacts",
       "aliases": [
-        "Other Country"
+        "Other Country",
+        "Othercountry"
       ],
       "source": "field_meta"
     },
@@ -1330,7 +1398,8 @@
       "canonical_key": "OtherGeocodeAccuracy",
       "sheet": "Contacts",
       "aliases": [
-        "Other Geocode Accuracy"
+        "Other Geocode Accuracy",
+        "Othergeocodeaccuracy"
       ],
       "source": "field_meta"
     },
@@ -1338,7 +1407,8 @@
       "canonical_key": "OtherLatitude",
       "sheet": "Contacts",
       "aliases": [
-        "Other Latitude"
+        "Other Latitude",
+        "Otherlatitude"
       ],
       "source": "field_meta"
     },
@@ -1346,7 +1416,8 @@
       "canonical_key": "OtherLongitude",
       "sheet": "Contacts",
       "aliases": [
-        "Other Longitude"
+        "Other Longitude",
+        "Otherlongitude"
       ],
       "source": "field_meta"
     },
@@ -1354,7 +1425,8 @@
       "canonical_key": "OtherPhone",
       "sheet": "Contacts",
       "aliases": [
-        "Other Phone"
+        "Other Phone",
+        "Otherphone"
       ],
       "source": "field_meta"
     },
@@ -1362,7 +1434,8 @@
       "canonical_key": "OtherPostalCode",
       "sheet": "Contacts",
       "aliases": [
-        "Other Zip/Postal Code"
+        "Other Zip/Postal Code",
+        "Otherpostalcode"
       ],
       "source": "field_meta"
     },
@@ -1370,7 +1443,8 @@
       "canonical_key": "OtherState",
       "sheet": "Contacts",
       "aliases": [
-        "Other State/Province"
+        "Other State/Province",
+        "Otherstate"
       ],
       "source": "field_meta"
     },
@@ -1378,7 +1452,8 @@
       "canonical_key": "OtherStreet",
       "sheet": "Contacts",
       "aliases": [
-        "Other Street"
+        "Other Street",
+        "Otherstreet"
       ],
       "source": "field_meta"
     },
@@ -1394,7 +1469,8 @@
       "canonical_key": "Phone",
       "sheet": "Contacts",
       "aliases": [
-        "Business Phone"
+        "Business Phone",
+        "Phone"
       ],
       "source": "field_meta"
     },
@@ -1402,7 +1478,8 @@
       "canonical_key": "PhotoUrl",
       "sheet": "Contacts",
       "aliases": [
-        "Photo URL"
+        "Photo URL",
+        "Photourl"
       ],
       "source": "field_meta"
     },
@@ -1418,7 +1495,8 @@
       "canonical_key": "ReportsToId",
       "sheet": "Contacts",
       "aliases": [
-        "Reports To ID"
+        "Reports To ID",
+        "Reportstoid"
       ],
       "source": "field_meta"
     },
@@ -1490,7 +1568,8 @@
       "canonical_key": "Contact_Id__c",
       "sheet": "Contacts",
       "aliases": [
-        "ContactId"
+        "ContactId",
+        "Contact Id "
       ],
       "source": "field_meta"
     },
@@ -1634,7 +1713,8 @@
       "canonical_key": "typeform__Typeform_Form_Mapping__c",
       "sheet": "Contacts",
       "aliases": [
-        "Typeform Form Mapping"
+        "Typeform Form Mapping",
+        "Typeform  Typeform Form Mapping "
       ],
       "source": "field_meta"
     },
@@ -1642,7 +1722,8 @@
       "canonical_key": "Number_of_holdback_days__c",
       "sheet": "Opportunity",
       "aliases": [
-        "# of holdback days"
+        "# of holdback days",
+        "Number Of Holdback Days "
       ],
       "source": "field_meta"
     },
@@ -1666,7 +1747,8 @@
       "canonical_key": "Percent_Uncrossed__c",
       "sheet": "Opportunity",
       "aliases": [
-        "% Uncrossed"
+        "% Uncrossed",
+        "Percent Uncrossed "
       ],
       "source": "field_meta"
     },
@@ -1682,7 +1764,8 @@
       "canonical_key": "ADVANCE_DETAILS__c",
       "sheet": "Opportunity",
       "aliases": [
-        "Advance Payment Details"
+        "Advance Payment Details",
+        "Advance Details "
       ],
       "source": "field_meta"
     },
@@ -1714,7 +1797,8 @@
       "canonical_key": "COMPANY_RIGHTS_LIMITATIONS__c",
       "sheet": "Opportunity",
       "aliases": [
-        "Approval Works Limitations"
+        "Approval Works Limitations",
+        "Company Rights Limitations "
       ],
       "source": "field_meta"
     },
@@ -1802,7 +1886,8 @@
       "canonical_key": "CMA_Term_Period__c",
       "sheet": "Opportunity",
       "aliases": [
-        "CMA Termination Notice Period"
+        "CMA Termination Notice Period",
+        "Cma Term Period "
       ],
       "source": "field_meta"
     },
@@ -1946,7 +2031,8 @@
       "canonical_key": "CPA_Term_Period__c",
       "sheet": "Opportunity",
       "aliases": [
-        "CPA Termination Notice Period"
+        "CPA Termination Notice Period",
+        "Cpa Term Period "
       ],
       "source": "field_meta"
     },
@@ -1986,7 +2072,8 @@
       "canonical_key": "JV_Distribution_Fee__c",
       "sheet": "Opportunity",
       "aliases": [
-        "Distribution Fee"
+        "Distribution Fee",
+        "Jv Distribution Fee "
       ],
       "source": "field_meta"
     },
@@ -2002,7 +2089,8 @@
       "canonical_key": "Profit_Share__c",
       "sheet": "Opportunity",
       "aliases": [
-        "Division Profit Share"
+        "Division Profit Share",
+        "Profit Share "
       ],
       "source": "field_meta"
     },
@@ -2154,7 +2242,8 @@
       "canonical_key": "Matching__c",
       "sheet": "Opportunity",
       "aliases": [
-        "Matching Rights/Right of First Refusal"
+        "Matching Rights/Right of First Refusal",
+        "Matching "
       ],
       "source": "field_meta"
     },
@@ -2178,7 +2267,8 @@
       "canonical_key": "MERCH_SPLIT__c",
       "sheet": "Opportunity",
       "aliases": [
-        "Merchandise Split"
+        "Merchandise Split",
+        "Merch Split "
       ],
       "source": "field_meta"
     },
@@ -2210,7 +2300,8 @@
       "canonical_key": "MasterNumber__c",
       "sheet": "Opportunity",
       "aliases": [
-        "Number of New Masters"
+        "Number of New Masters",
+        "Masternumber "
       ],
       "source": "field_meta"
     },
@@ -2306,7 +2397,8 @@
       "canonical_key": "Frequency__c",
       "sheet": "Opportunity",
       "aliases": [
-        "Payment Frequency"
+        "Payment Frequency",
+        "Frequency "
       ],
       "source": "field_meta"
     },
@@ -2346,7 +2438,8 @@
       "canonical_key": "Procurement_Split__c",
       "sheet": "Opportunity",
       "aliases": [
-        "Pitching Procurement Split"
+        "Pitching Procurement Split",
+        "Procurement Split "
       ],
       "source": "field_meta"
     },
@@ -2354,7 +2447,8 @@
       "canonical_key": "Procurement_Status__c",
       "sheet": "Opportunity",
       "aliases": [
-        "Pitching Procurement Type"
+        "Pitching Procurement Type",
+        "Procurement Status "
       ],
       "source": "field_meta"
     },
@@ -2362,7 +2456,8 @@
       "canonical_key": "Affiliation__c",
       "sheet": "Opportunity",
       "aliases": [
-        "PRO"
+        "PRO",
+        "Affiliation "
       ],
       "source": "field_meta"
     },
@@ -2514,7 +2609,8 @@
       "canonical_key": "Recoup_Term__c",
       "sheet": "Opportunity",
       "aliases": [
-        "Term Options"
+        "Term Options",
+        "Recoup Term "
       ],
       "source": "field_meta"
     },
@@ -2538,7 +2634,8 @@
       "canonical_key": "Termination_Period__c",
       "sheet": "Opportunity",
       "aliases": [
-        "Termination Notice Period"
+        "Termination Notice Period",
+        "Termination Period "
       ],
       "source": "field_meta"
     },
@@ -2802,7 +2899,8 @@
       "canonical_key": "Division2__c",
       "sheet": "Catalog",
       "aliases": [
-        "Division"
+        "Division",
+        "Division2 "
       ],
       "source": "field_meta"
     },
@@ -2842,7 +2940,9 @@
       "canonical_key": "OwnerId",
       "sheet": "Catalog",
       "aliases": [
-        "Owner"
+        "Owner",
+        "Owner ID",
+        "Ownerid"
       ],
       "source": "field_meta"
     },
@@ -2874,7 +2974,8 @@
       "canonical_key": "Contract_Advance_Cash__c",
       "sheet": "Financials",
       "aliases": [
-        "Cash Advance"
+        "Cash Advance",
+        "Contract Advance Cash "
       ],
       "source": "field_meta"
     },
@@ -3098,7 +3199,8 @@
       "canonical_key": "Division__c",
       "sheet": "Schedule",
       "aliases": [
-        "Division"
+        "Division",
+        "Division Old"
       ],
       "source": "field_meta"
     },
@@ -3122,7 +3224,9 @@
       "canonical_key": "RecordTypeId",
       "sheet": "Schedule",
       "aliases": [
-        "Record Type"
+        "Record Type",
+        "Record Type ID",
+        "Recordtypeid"
       ],
       "source": "field_meta"
     },
@@ -3378,7 +3482,8 @@
       "canonical_key": "Number_of_Albums__c",
       "sheet": "Add Ons",
       "aliases": [
-        "# of Albums"
+        "# of Albums",
+        "Number Of Albums "
       ],
       "source": "field_meta"
     },
@@ -3386,7 +3491,8 @@
       "canonical_key": "Number_of_Masters__c",
       "sheet": "Add Ons",
       "aliases": [
-        "# of Masters"
+        "# of Masters",
+        "Number Of Masters "
       ],
       "source": "field_meta"
     },
@@ -3394,7 +3500,13 @@
       "canonical_key": "Name",
       "sheet": "Add Ons",
       "aliases": [
-        "Add On Number"
+        "Add On Number",
+        "Legal Name",
+        "Name",
+        "Catalog Item Name",
+        "Financial Name",
+        "Schedule Number",
+        "Schedule Catalog Name"
       ],
       "source": "field_meta"
     },
@@ -3402,7 +3514,9 @@
       "canonical_key": "CreatedById",
       "sheet": "Add Ons",
       "aliases": [
-        "Created By"
+        "Created By",
+        "Created By ID",
+        "Createdbyid"
       ],
       "source": "field_meta"
     },
@@ -3410,7 +3524,9 @@
       "canonical_key": "CurrencyIsoCode",
       "sheet": "Add Ons",
       "aliases": [
-        "Currency"
+        "Currency",
+        "Contact Currency",
+        "Currencyisocode"
       ],
       "source": "field_meta"
     },
@@ -3458,7 +3574,9 @@
       "canonical_key": "LastModifiedById",
       "sheet": "Add Ons",
       "aliases": [
-        "Last Modified By"
+        "Last Modified By",
+        "Last Modified By ID",
+        "Lastmodifiedbyid"
       ],
       "source": "field_meta"
     },
@@ -3538,7 +3656,8 @@
       "canonical_key": "Third_Party_Agreement_Completion_Period__c",
       "sheet": "Add Ons",
       "aliases": [
-        "Third\u2011Party Agreement Completion Period (Days)"
+        "Third\u2011Party Agreement Completion Period (Days)",
+        "Third Party Agreement Completion Period "
       ],
       "source": "field_meta"
     }
