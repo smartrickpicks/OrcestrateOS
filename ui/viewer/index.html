@@ -2077,6 +2077,8 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                   <h4 style="margin: 0; font-size: 0.9em; color: #333;">Pre-Flight</h4>
                   <span id="ta-preflight-total" style="background: #ffebee; color: #c62828; padding: 2px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">0</span>
+                  <div style="display: flex; justify-content: space-between; margin-top: 4px;"><span style="color: #666;">Affected Contracts</span><span id="ta-pf-affected" style="font-weight: 600;">0</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Records Impacted</span><span id="ta-pf-impacted" style="font-weight: 600;">0</span></div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.8em;">
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Unknown Cols</span><span id="ta-pf-unknown" style="font-weight: 600;">0</span></div>
@@ -2357,7 +2359,7 @@
             <button id="btn-view-contract" class="top-toolbar-btn" style="display:none; padding: 4px 10px; font-size: 0.8em;" onclick="openContractDetailDrawer()" title="View contract details">View Contract</button>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <label style="font-size: 0.85em; color: #666;">Sheet:</label>
+            <label style="font-size: 0.85em; color: #666;">Contract Section:</label>
             <select id="grid-sheet-selector" class="filter-select" style="min-width: 160px;" onchange="handleGridSheetSelectorChange(this.value)">
               <option value="">All Sheets</option>
             </select>
@@ -3861,7 +3863,7 @@
             <table class="grid-table" id="unknown-cols-table" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
               <thead style="background: #f5f5f5;">
                 <tr>
-                  <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Sheet</th>
+                  <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Contract Section</th>
                   <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Original Name</th>
                   <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Normalized</th>
                   <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Sample Values</th>
@@ -4958,6 +4960,14 @@
       'qa_flags', 'hinge', 'mapping', 'dictionary', 'catalog_meta',
       'field_catalog', 'field catalog', 'reference', 'lookup'
     ];
+
+    var OPERATIONAL_SHEET_ALLOWLIST = ['Accounts', 'Opportunities', 'Financials', 'Catalog', 'Schedule', 'Schedule Catalog', 'V2 Add Ons', 'Contacts'];
+
+    function isOperationalSheet(sheetName) {
+      if (!sheetName) return false;
+      var lower = sheetName.toLowerCase().trim();
+      return OPERATIONAL_SHEET_ALLOWLIST.some(function(op) { return lower === op.toLowerCase(); });
+    }
     
     // Default settings (used when no user config exists)
     const DEFAULT_SETTINGS = {
@@ -17002,7 +17012,7 @@
 
         html += '<div class="' + bodyClass + '">';
         html += '<table><thead><tr>';
-        html += '<th>Sheet</th><th>Field</th><th>Reason</th><th>Severity</th><th>Status</th><th>Actions</th>';
+        html += '<th>Contract Section</th><th>Field</th><th>Reason</th><th>Severity</th><th>Status</th><th>Actions</th>';
         html += '</tr></thead><tbody>';
 
         for (var ri = 0; ri < gItems.length; ri++) {
@@ -17050,6 +17060,7 @@
 
       container.innerHTML = html;
       console.log('[P1D-PREFLIGHT] total_groups=' + groupOrder.length + ' total_items=' + items.length);
+      console.log('[TRIAGE-CANONICAL][P1X] grouping_rendered: groups=' + groupOrder.length + ', items=' + items.length);
     }
 
 
@@ -24365,6 +24376,7 @@
           else if (bt === 'DOCUMENT_TYPE_MISSING') cache.lanes.preflight.document_type = (cache.lanes.preflight.document_type || 0) + 1;
         });
         cache.lanes.preflight.total = cache.lanes.preflight.unknown_columns + cache.lanes.preflight.ocr_unreadable + cache.lanes.preflight.low_confidence + (cache.lanes.preflight.document_type || 0);
+        console.log('[TRIAGE-CANONICAL][P1X] ocr_parent_rollup: total=' + cache.lanes.preflight.ocr_unreadable);
 
         if (typeof SystemPass !== 'undefined' && SystemPass._proposals) {
           SystemPass._proposals.forEach(function(p) {
@@ -24500,7 +24512,7 @@
         if (typeof workbook !== 'undefined' && workbook.order) {
           workbook.order.forEach(function(sn) {
             var sh = workbook.sheets[sn];
-            if (sh && sh.rows && !(typeof isMetaSheet === 'function' && isMetaSheet(sn))) {
+            if (sh && sh.rows && (typeof isOperationalSheet === 'function' ? isOperationalSheet(sn) : !(typeof isMetaSheet === 'function' && isMetaSheet(sn)))) {
               totalRecords += sh.rows.length;
             }
           });
@@ -24511,6 +24523,8 @@
           completed: 0,
           needs_review: 0,
           pending: 0,
+          affected_contracts: 0,
+          records_impacted: 0,
           unassigned_rows: cache._orphan_row_count || 0,
           updated_at: cache.refreshed_at
         };
@@ -24519,6 +24533,18 @@
           else if (c.preflight_alerts > 0 || c.semantic_alerts > 0 || c.patch_alerts > 0) cache.batch_summary.needs_review++;
           else cache.batch_summary.pending++;
         });
+        var _affectedCk = {};
+        var _impactedRecords = 0;
+        (analystTriageState.manualItems || []).forEach(function(item) {
+          if (item.contract_key || item.contract_id) _affectedCk[item.contract_key || item.contract_id] = true;
+          if (item.record_id) _impactedRecords++;
+        });
+        (typeof _p1fBatchScanItems !== 'undefined' ? _p1fBatchScanItems : []).forEach(function(item) {
+          if (item.contract_key || item.contract_id) _affectedCk[item.contract_key || item.contract_id] = true;
+        });
+        cache.batch_summary.affected_contracts = Object.keys(_affectedCk).length;
+        cache.batch_summary.records_impacted = _impactedRecords;
+        console.log('[TRIAGE-CANONICAL][P1X] counts_computed: contracts=' + cache.batch_summary.contracts_total + ', records=' + cache.batch_summary.records_total + ', affected=' + cache.batch_summary.affected_contracts + ', impacted=' + cache.batch_summary.records_impacted);
         console.log('[TRIAGE-ANALYTICS][P0.2] batch_summary_recomputed: contracts=' + cache.batch_summary.contracts_total + ', records=' + cache.batch_summary.records_total + ', completed=' + cache.batch_summary.completed + ', review=' + cache.batch_summary.needs_review + ', pending=' + cache.batch_summary.pending + ', unassigned=' + cache.batch_summary.unassigned_rows);
 
         // P0.2: Reconciliation check
@@ -24556,6 +24582,8 @@
         if (el('ta-pf-ocr')) el('ta-pf-ocr').textContent = cache.lanes.preflight.ocr_unreadable;
         if (el('ta-pf-lowconf')) el('ta-pf-lowconf').textContent = cache.lanes.preflight.low_confidence;
         if (el('ta-pf-doctype')) el('ta-pf-doctype').textContent = cache.lanes.preflight.document_type || 0;
+        if (el('ta-pf-affected')) el('ta-pf-affected').textContent = cache.batch_summary ? cache.batch_summary.affected_contracts : 0;
+        if (el('ta-pf-impacted')) el('ta-pf-impacted').textContent = cache.batch_summary ? cache.batch_summary.records_impacted : 0;
 
         if (el('ta-semantic-total')) el('ta-semantic-total').textContent = cache.lanes.semantic.total;
         if (el('ta-sem-proposals')) el('ta-sem-proposals').textContent = cache.lanes.semantic.proposals_created;
@@ -24816,6 +24844,7 @@
           if (!_hasRowTarget && emptyState) {
             emptyState.style.display = '';
             emptyState.textContent = count + ' ' + type + ' item(s) found. This is batch-level drift; no individual record row available. Items are listed in the Pre-Flight queue below.';
+            console.log('[TRIAGE-CANONICAL][P1X] batch_level_explainer_shown: type=' + type + ', count=' + count);
             console.log('[P1A] schema_deeplink_batch_level: type=' + type + ', count=' + count);
             return;
           }
@@ -26053,6 +26082,7 @@
     }
     
     function openPreflightItem(requestId, recordId, contractId, fieldName) {
+      console.log('[TRIAGE-CANONICAL][P1X] route_decision: request_id=' + requestId + ', contract=' + (contractId || 'none'));
       console.log('[P1D-PREFLIGHT] view_routed: contract=' + contractId + ' record=' + recordId + ' field=' + fieldName);
       console.log('[TRIAGE-ANALYTICS][P0.2] route_decision_start: requestId=' + requestId + ', recordId=' + recordId + ', contractId=' + contractId);
       var item = {
@@ -29946,7 +29976,7 @@
         { key: 'severity', label: 'Severity' },
         { key: 'contract_key', label: 'Contract Key' },
         { key: 'file_name', label: 'File Name' },
-        { key: 'sheet', label: 'Sheet' },
+        { key: 'sheet', label: 'Contract Section' },
         { key: 'field', label: 'Field' },
         { key: 'issue_type', label: 'Issue Type' },
         { key: 'details', label: 'Details' }
@@ -29956,7 +29986,7 @@
         { key: 'severity', label: 'Severity' },
         { key: 'contract_key', label: 'Contract Key' },
         { key: 'file_name', label: 'File Name' },
-        { key: 'sheet', label: 'Sheet' },
+        { key: 'sheet', label: 'Contract Section' },
         { key: 'field', label: 'Field' },
         { key: 'action', label: 'Action' },
         { key: 'proposed_value', label: 'Proposed Value' },
@@ -29998,7 +30028,7 @@
         } else {
           content = renderSelectionControls('issues', related.length) + renderDrawerTable(related, [
             { key: 'severity', label: 'Severity' },
-            { key: 'sheet', label: 'Sheet' },
+            { key: 'sheet', label: 'Contract Section' },
             { key: 'field', label: 'Field' },
             { key: 'issue_type', label: 'Type' },
             { key: 'details', label: 'Details' }
@@ -30012,7 +30042,7 @@
         } else {
           content = renderSelectionControls('actions', related.length) + renderDrawerTable(related, [
             { key: 'severity', label: 'Severity' },
-            { key: 'sheet', label: 'Sheet' },
+            { key: 'sheet', label: 'Contract Section' },
             { key: 'field', label: 'Field' },
             { key: 'action', label: 'Action' },
             { key: 'proposed_value', label: 'Value' },
@@ -30027,7 +30057,7 @@
         } else {
           content = renderSelectionControls('changelog', related.length) + renderDrawerTable(related, [
             { key: 'severity', label: 'Severity' },
-            { key: 'sheet', label: 'Sheet' },
+            { key: 'sheet', label: 'Contract Section' },
             { key: 'field', label: 'Field' },
             { key: 'notes', label: 'Notes' }
           ], 'changelog');

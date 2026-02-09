@@ -309,6 +309,8 @@ Dropdown options:
 
 ## Patch Type Behavior
 
+> **V1/V2 Boundary**: Blacklist Category and RFI Target are deferred to V2. They appear in the UI as disabled/informational but have no validation rules and no enforcement in V1. Do not treat them as required fields.
+
 | Type | Required Fields | Optional | Deferred (V2) |
 |------|-----------------|----------|----------------|
 | Correction | Observation + Expected + Justification + Repro (unless Override) + Field changes | Override | — |
