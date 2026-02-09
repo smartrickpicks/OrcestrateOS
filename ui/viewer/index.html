@@ -16518,6 +16518,7 @@
         if (sheet === gridState.sheet) opt.selected = true;
         selector.appendChild(opt);
       });
+      updateSidebarSheetSelector();
       
       // Attach change handler
       selector.onchange = function() {
