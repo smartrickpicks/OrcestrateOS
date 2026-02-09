@@ -18032,7 +18032,6 @@
           try { origShowComplete(); } catch(e) { console.warn('[RERUN-PREFLIGHT] origShowComplete error:', e); }
           _p1fShowComplete = origShowComplete;
           console.log('[RERUN-PREFLIGHT] Batch PDF scan complete, refreshing triage');
-          try { renderAnalystTriage(); } catch(e) { console.warn('[RERUN-PREFLIGHT] Triage render error:', e); }
           _rerunResetBtn(btn);
           showToast('Pre-Flight rerun complete. Check triage for OCR flags.', 'success');
         };
@@ -18133,15 +18132,8 @@
                 skipped: _p1fScanState.skipped
               });
               _p1fShowComplete();
-              _p1fRenderContractHealth();
               console.log('[TRIAGE-CONTRACT-HEALTH][P1F.2] metrics_recomputed | total_contracts=' + _p1fScanState.total + ', clean=' + _p1fScanState.clean + ', flagged=' + (_p1fScanState.mojibake + _p1fScanState.nonSearchable) + ', errors=' + _p1fScanState.errors);
               try { renderAnalystTriage(); } catch(e) { console.warn('[P1F] Post-scan triage render error:', e); }
-              _p1f2MergeCleanToSystemPass();
-              try {
-                var sysCountEl = document.getElementById('system-queue-count');
-                if (sysCountEl) sysCountEl.textContent = '(' + analystTriageState.systemItems.length + ')';
-                renderTriageQueueTable(analystTriageState.systemItems, 'system-queue-list', 'No system changes');
-              } catch(e) { console.warn('[P1F.2] System queue re-render error:', e); }
             }
           });
         }
@@ -26781,6 +26773,9 @@
       // Reload from store
       loadAnalystTriageFromStore();
 
+      // P1F/P1F.2: Re-merge batch scan items after store reload (store rebuild wipes them)
+      if (typeof _p1fMergeBatchItems === 'function') _p1fMergeBatchItems();
+      if (typeof _p1f2MergeCleanToSystemPass === 'function') _p1f2MergeCleanToSystemPass();
       // V2.3: Refresh and render analytics header
       if (typeof TriageAnalytics !== 'undefined') {
         try { TriageAnalytics.refresh(); TriageAnalytics.renderHeader(); } catch(e) { console.warn('[V2.3] Analytics render error:', e); }
