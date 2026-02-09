@@ -2165,17 +2165,6 @@
             <div id="p1a-preflight-sheet-tabs" style="display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; font-size: 0.82em;"></div>
             <div id="p1f1-live-intake-wrapper" style="display:none;">
               <div id="p1f1-summary-bar" class="p1f1-summary-bar"></div>
-              <table class="p1f1-live-intake" id="p1f1-live-table">
-                <thead><tr>
-                  <th>Contract</th>
-                  <th>File</th>
-                  <th>Status</th>
-                  <th>Reason</th>
-                  <th>Started</th>
-                  <th>Finished</th>
-                </tr></thead>
-                <tbody id="p1f1-live-tbody"></tbody>
-              </table>
             </div>
             <div id="p1d-preflight-container" class="p1d-preflight-container">
               <div class="p1d-empty-state">No pre-flight items</div>
@@ -17488,8 +17477,6 @@
       if (scanLabel) scanLabel.style.display = 'none';
 
       var t = preflightLiveState.totals;
-      var liveTable = document.getElementById('p1f1-live-table');
-      if (liveTable) liveTable.style.display = 'none';
 
       var summaryBar = document.getElementById('p1f1-summary-bar');
       if (summaryBar) {
@@ -17505,21 +17492,9 @@
           + '<span style="color:#546e7a;">·</span>'
           + '<span style="color:#2e7d32;">' + t.clean + ' clean</span>'
           + (t.error > 0 ? '<span style="color:#546e7a;">·</span><span style="color:#e65100;">' + t.error + ' errors</span>' : '')
-          + '<a href="#" id="p1f1-toggle-log" style="margin-left:auto;font-size:0.88em;color:#1565c0;text-decoration:none;font-weight:500;">Show scan log ▼</a>'
+          
           + '</span>';
         console.log('[TRIAGE-CONTRACT-HEALTH][P1F.2] summary_intake_attached | total=' + t.total + ', flagged=' + t.flagged + ', clean=' + t.clean + ', errors=' + t.error);
-        var toggleLink = document.getElementById('p1f1-toggle-log');
-        if (toggleLink) {
-          toggleLink.onclick = function(ev) {
-            ev.preventDefault();
-            var tbl = document.getElementById('p1f1-live-table');
-            if (tbl) {
-              var visible = tbl.style.display !== 'none';
-              tbl.style.display = visible ? 'none' : '';
-              this.innerHTML = visible ? 'Show scan log ▼' : 'Hide scan log ▲';
-            }
-          };
-        }
       }
     }
 
@@ -17549,8 +17524,6 @@
       var t = preflightLiveState.totals;
       if (t.total === 0) { wrapper.style.display = 'none'; return; }
       wrapper.style.display = '';
-      var liveTable = document.getElementById('p1f1-live-table');
-      if (liveTable && preflightLiveState.active) liveTable.style.display = '';
       var summaryBar = document.getElementById('p1f1-summary-bar');
       if (summaryBar) {
         summaryBar.style.display = '';
@@ -17560,28 +17533,6 @@
           + '<span class="p1f1-stat p1f1-stat-error">Errors ' + t.error + '</span>'
           + (preflightLiveState.active ? '<span class="p1f1-scan-active-label" id="p1f1-scan-active-label">Scanning\u2026</span>' : '');
       }
-      var tbody = document.getElementById('p1f1-live-tbody');
-      if (!tbody) return;
-      var html = '';
-      var statusLabels = { queued: 'Queued', scanning: 'Scanning\u2026', flagged: 'Flagged', clean: 'Clean', error: 'Error' };
-      for (var i = 0; i < preflightLiveState.order.length; i++) {
-        var ck = preflightLiveState.order[i];
-        var e = preflightLiveState.entries[ck];
-        if (!e) continue;
-        var fname = e.file_name || ck;
-        var displayFname = fname.length > 40 ? fname.substring(0, 38) + '\u2026' : fname;
-        var displayLabel = e.contract_label || ck;
-        var displayLabelShort = displayLabel.length > 35 ? displayLabel.substring(0, 33) + '\u2026' : displayLabel;
-        html += '<tr>';
-        html += '<td title="' + (typeof escapeHtml === 'function' ? escapeHtml(displayLabel) : displayLabel) + '">' + (typeof escapeHtml === 'function' ? escapeHtml(displayLabelShort) : displayLabelShort) + '</td>';
-        html += '<td title="' + (typeof escapeHtml === 'function' ? escapeHtml(fname) : fname) + '">' + (typeof escapeHtml === 'function' ? escapeHtml(displayFname) : displayFname) + '</td>';
-        html += '<td class="p1f1-status-' + e.status + '">' + (statusLabels[e.status] || e.status) + '</td>';
-        html += '<td>' + (e.reason_codes.length > 0 ? (typeof escapeHtml === 'function' ? escapeHtml(e.reason_codes.join(', ')) : e.reason_codes.join(', ')) : '\u2014') + '</td>';
-        html += '<td>' + _p1f1TimeStr(e.started_at) + '</td>';
-        html += '<td>' + _p1f1TimeStr(e.finished_at) + '</td>';
-        html += '</tr>';
-      }
-      tbody.innerHTML = html;
     }
 
     function _p1f1ForceExpandAll() {
@@ -18004,10 +17955,6 @@
       if (typeof _p1f1UnlockAccordion === 'function') _p1f1UnlockAccordion();
 
       var _liveWrapper = document.getElementById('p1f1-live-intake-wrapper');
-      if (_liveWrapper) _liveWrapper.style.display = 'none';
-      var _liveTable = document.getElementById('p1f1-live-table');
-      if (_liveTable) _liveTable.style.display = '';
-      var _liveTbody = document.getElementById('p1f1-live-tbody');
       if (_liveTbody) _liveTbody.innerHTML = '';
       var _summaryBar = document.getElementById('p1f1-summary-bar');
       if (_summaryBar) { _summaryBar.style.display = 'none'; _summaryBar.innerHTML = ''; }
@@ -24934,6 +24881,7 @@
           lifecycle: {
             loaded: { count: 0, pct: 0 },
             preflight_complete: { count: 0, pct: 0 },
+            system_pass_ready: { count: 0, pct: 0 },
             system_pass_complete: { count: 0, pct: 0 },
             system_changes_reviewed: { count: 0, pct: 0 },
             patch_submitted: { count: 0, pct: 0 },
@@ -25001,6 +24949,8 @@
             if (_scanResult) {
               if (_scanResult === 'clean') {
                 stage = 'preflight_complete';
+                var _isRoutedToSP = (typeof _p1f2CleanItems !== 'undefined') && _p1f2CleanItems.some(function(ci) { return ci.contract_key === cid; });
+                if (_isRoutedToSP) stage = 'system_pass_ready';
               }
             } else {
               var hasBlockers = false;
@@ -25315,8 +25265,8 @@
           return;
         }
 
-        var SL = { loaded: 'Loaded', preflight_complete: 'Pre-Flight Done', system_pass_complete: 'System Pass', system_changes_reviewed: 'Reviewed', patch_submitted: 'Patch Sub.', rfi_submitted: 'RFI', verifier_complete: 'Verifier Done', admin_promoted: 'Promoted', applied: 'Applied' };
-        var SC = { loaded: '#9e9e9e', preflight_complete: '#4caf50', system_pass_complete: '#ff9800', system_changes_reviewed: '#2196f3', patch_submitted: '#1976d2', rfi_submitted: '#f57f17', verifier_complete: '#7b1fa2', admin_promoted: '#00897b', applied: '#2e7d32' };
+        var SL = { loaded: 'Loaded', preflight_complete: 'Pre-Flight Done', system_pass_ready: 'SP Ready', system_pass_complete: 'System Pass', system_changes_reviewed: 'Reviewed', patch_submitted: 'Patch Sub.', rfi_submitted: 'RFI', verifier_complete: 'Verifier Done', admin_promoted: 'Promoted', applied: 'Applied' };
+        var SC = { loaded: '#9e9e9e', preflight_complete: '#4caf50', system_pass_ready: '#66bb6a', system_pass_complete: '#ff9800', system_changes_reviewed: '#2196f3', patch_submitted: '#1976d2', rfi_submitted: '#f57f17', verifier_complete: '#7b1fa2', admin_promoted: '#00897b', applied: '#2e7d32' };
 
         var html = '';
         contracts.forEach(function(c) {
@@ -25402,13 +25352,13 @@
         body.style.display = '';
         if (toggle) toggle.style.transform = 'rotate(90deg)';
 
-        var SL = { loaded: 'Loaded', preflight_complete: 'Pre-Flight', system_pass_complete: 'System Pass', system_changes_reviewed: 'Reviewed', patch_submitted: 'Patch Sub.', rfi_submitted: 'RFI', verifier_complete: 'Verifier', admin_promoted: 'Promoted', applied: 'Applied' };
+        var SL = { loaded: 'Loaded', preflight_complete: 'Pre-Flight', system_pass_ready: 'SP Ready', system_pass_complete: 'System Pass', system_changes_reviewed: 'Reviewed', patch_submitted: 'Patch Sub.', rfi_submitted: 'RFI', verifier_complete: 'Verifier', admin_promoted: 'Promoted', applied: 'Applied' };
         if (badge) { badge.textContent = SL[stage] || stage; badge.style.display = 'inline'; }
         var gridBtn = document.getElementById('ta-contract-view-grid');
         if (gridBtn) gridBtn.style.display = 'inline';
 
         document.querySelectorAll('.ta-lifecycle-stage').forEach(function(el) { el.style.outline = ''; });
-        var idx = ['loaded','preflight_complete','system_pass_complete','system_changes_reviewed','patch_submitted','rfi_submitted','verifier_complete','admin_promoted','applied'].indexOf(stage);
+        var idx = ['loaded','preflight_complete','system_pass_ready','system_pass_complete','system_changes_reviewed','patch_submitted','rfi_submitted','verifier_complete','admin_promoted','applied'].indexOf(stage);
         var stageEls = document.querySelectorAll('.ta-lifecycle-stage');
         if (idx >= 0 && stageEls[idx]) stageEls[idx].style.outline = '2px solid #1976d2';
 
@@ -25491,6 +25441,7 @@
         'dataset_loaded':            { stage: 'loaded',                 delta: +1 },
         'file_parsed':               { stage: 'loaded',                 delta: +1 },
         'preflight_complete':        { stage: 'preflight_complete',     delta: +1 },
+        'system_pass_ready':         { stage: 'system_pass_ready',      delta: +1 },
         'preflight_blocker_detected':{ stage: 'loaded',                 delta: 0  },
         'system_pass_complete':      { stage: 'system_pass_complete',   delta: +1 },
         'proposal_accepted':         { stage: 'system_changes_reviewed',delta: +1 },
@@ -25576,7 +25527,7 @@
         state.lane_counts.patch_review = cache.lanes.patch_review.total;
 
         // Lifecycle stage counts from cache
-        var stageKeys = ['loaded','preflight_complete','system_pass_complete','system_changes_reviewed','patch_submitted','rfi_submitted','verifier_complete','admin_promoted','applied'];
+        var stageKeys = ['loaded','preflight_complete','system_pass_ready','system_pass_complete','system_changes_reviewed','patch_submitted','rfi_submitted','verifier_complete','admin_promoted','applied'];
         var totalContracts = cache.total_contracts || 0;
         stageKeys.forEach(function(sk) {
           var count = cache.lifecycle[sk] ? cache.lifecycle[sk].count : 0;
@@ -25702,7 +25653,7 @@
 
         // Dominant stage
         if (stageEl) {
-          var SL = { loaded: 'Loaded', preflight_complete: 'Pre-Flight', system_pass_complete: 'System Pass', system_changes_reviewed: 'Reviewed', patch_submitted: 'Patch', rfi_submitted: 'RFI', verifier_complete: 'Verifier', admin_promoted: 'Promoted', applied: 'Applied' };
+          var SL = { loaded: 'Loaded', preflight_complete: 'Pre-Flight', system_pass_ready: 'SP Ready', system_pass_complete: 'System Pass', system_changes_reviewed: 'Reviewed', patch_submitted: 'Patch', rfi_submitted: 'RFI', verifier_complete: 'Verifier', admin_promoted: 'Promoted', applied: 'Applied' };
           var dominant = this._getDominantStage();
           stageEl.textContent = dominant ? ('Stage: ' + (SL[dominant] || dominant)) : '';
         }
@@ -25740,7 +25691,7 @@
       // P1-2: Render lifecycle deltas and percentages on existing stage elements
       renderLifecycleDeltas: function() {
         if (!this._state) return;
-        var stageKeys = ['loaded','preflight_complete','system_pass_complete','system_changes_reviewed','patch_submitted','rfi_submitted','verifier_complete','admin_promoted','applied'];
+        var stageKeys = ['loaded','preflight_complete','system_pass_ready','system_pass_complete','system_changes_reviewed','patch_submitted','rfi_submitted','verifier_complete','admin_promoted','applied'];
         var stageEls = document.querySelectorAll('.ta-lifecycle-stage');
 
         stageKeys.forEach(function(sk, idx) {
@@ -26217,7 +26168,7 @@
         });
       }
 
-      // v2.3.5-P1F: Merge batch PDF scan items into manualItems
+      // P1F.2: Merge batch scan flagged items into manualItems for Contract Health table
       if (typeof _p1fBatchScanItems !== 'undefined' && _p1fBatchScanItems.length > 0) {
         var _existKeys = {};
         analystTriageState.manualItems.forEach(function(m) {
@@ -34983,7 +34934,7 @@ var P022_RuntimeValidation = {
   },
 
   verifyLifecycle: function(cache) {
-    var stages = ['loaded', 'preflight_complete', 'system_pass_complete', 'system_changes_reviewed',
+    var stages = ['loaded', 'preflight_complete', 'system_pass_ready', 'system_pass_complete', 'system_changes_reviewed',
                   'patch_submitted', 'rfi_submitted', 'verifier_complete', 'admin_promoted', 'applied'];
     var sum = 0;
     var breakdown = [];
