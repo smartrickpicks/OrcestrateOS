@@ -3720,11 +3720,10 @@
                   <th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Status</th>
                   <th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Updated</th>
                   <th style="padding: 10px 8px; text-align: center; border-bottom: 1px solid #e0e0e0;">Actions</th>
-                  <th style="padding: 10px 8px; text-align: center; border-bottom: 1px solid #e0e0e0;">Health</th>
                 </tr>
               </thead>
               <tbody id="patch-console-tbody">
-                <tr><td colspan="8" style="padding: 20px; text-align: center; color: #888;">No patch requests in this queue</td></tr>
+                <tr><td colspan="7" style="padding: 20px; text-align: center; color: #888;">No patch requests in this queue</td></tr>
               </tbody>
             </table>
           </div>
@@ -8589,7 +8588,7 @@
       html += '</div>';
       html += '<div style="max-height:250px; overflow-y:auto; border:1px solid #e0e0e0; border-radius:4px;">';
       html += '<table style="width:100%; border-collapse:collapse; font-size:0.8em;">';
-      html += '<thead><tr style="background:#f5f5f5;"><th style="padding:4px 8px; text-align:left;">Field</th><th style="padding:4px 8px; text-align:left;">Rule</th><th style="padding:4px 8px; text-align:left;">Confidence</th><th style="padding:4px 8px; text-align:left;">Why</th><th style="padding:4px 8px; text-align:left;">Hinge</th><th style="padding:4px 8px; text-align:left;">Status</th><th style="padding:4px 8px;">Actions</th><th style="padding:4px 8px; text-align:center;">Health</th></tr></thead>';
+      html += '<thead><tr style="background:#f5f5f5;"><th style="padding:4px 8px; text-align:left;">Field</th><th style="padding:4px 8px; text-align:left;">Rule</th><th style="padding:4px 8px; text-align:left;">Confidence</th><th style="padding:4px 8px; text-align:left;">Why</th><th style="padding:4px 8px; text-align:left;">Hinge</th><th style="padding:4px 8px; text-align:left;">Status</th><th style="padding:4px 8px;">Actions</th></tr></thead>';
       html += '<tbody>';
       sorted.forEach(function(p) {
         var statusColor = p.status === 'pending' ? '#ff9800' : p.status === 'accepted' ? '#4caf50' : p.status === 'routed_to_patch' ? '#1565c0' : '#f44336';
@@ -8612,22 +8611,7 @@
             html += '<button onclick="rejectSystemPassProposal(\'' + p.proposal_id + '\')" style="padding:1px 6px; font-size:0.8em; background:#ffebee; border:1px solid #ef9a9a; border-radius:3px; cursor:pointer;">Reject</button>';
           }
         }
-        html += '</td>';
-        var spHealthHtml = '<td style="padding:4px 8px; text-align:center;">';
-        if (typeof ContractHealthScore !== 'undefined') {
-          var spCk = p.contract_key || p.contract_id || '';
-          var spHs = spCk ? ContractHealthScore._scores[spCk] : null;
-          if (spHs) {
-            spHealthHtml += '<span style="padding:2px 6px;border-radius:10px;font-size:0.85em;background:' + spHs.band.bg + ';color:' + spHs.band.color + ';font-weight:600;">' + spHs.score + '</span>';
-          } else {
-            spHealthHtml += '<span style="color:#ccc;">-</span>';
-          }
-        } else {
-          spHealthHtml += '<span style="color:#ccc;">-</span>';
-        }
-        spHealthHtml += '</td>';
-        html += spHealthHtml;
-        html += '</tr>';
+        html += '</td></tr>';
       });
       html += '</tbody></table></div>';
       if (hingeCount > 0) {
@@ -11670,7 +11654,7 @@
       updatePatchQueueCounts();
       
       if (requests.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="padding: 20px; text-align: center; color: #888;">No patch requests in this queue</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="padding: 20px; text-align: center; color: #888;">No patch requests in this queue</td></tr>';
         return;
       }
       
@@ -11689,7 +11673,6 @@
           '<td><span class="patch-status-chip ' + statusClass + '">' + escapeHtml(r.status) + '</span></td>' +
           '<td style="font-size: 0.85em;">' + updatedDate + '</td>' +
           '<td style="text-align: center;"><button class="toolbar-btn" style="padding: 4px 8px; font-size: 0.8em;" onclick="viewPatchRequestDetail(\'' + r.request_id + '\')">View</button></td>' +
-          (function() { var patchHealthHtml = '<td style="text-align:center;">'; if (typeof ContractHealthScore !== 'undefined') { var pCk = (r.target_scope && r.target_scope.contract_key) || ''; var pHs = pCk ? ContractHealthScore._scores[pCk] : null; if (pHs) { patchHealthHtml += '<span style="padding:2px 6px;border-radius:10px;font-size:0.85em;background:' + pHs.band.bg + ';color:' + pHs.band.color + ';font-weight:600;">' + pHs.score + '</span>'; } else { patchHealthHtml += '<span style="color:#ccc;">-</span>'; } } else { patchHealthHtml += '<span style="color:#ccc;">-</span>'; } patchHealthHtml += '</td>'; return patchHealthHtml; })() +
           '</tr>';
       }).join('');
     }
@@ -17301,7 +17284,6 @@
       html += '<th>Severity</th>';
       html += '<th>Contract Sections</th>';
       html += '<th>Actions</th>';
-      html += '<th>Health</th>';
       html += '</tr></thead><tbody>';
 
       var childrenRendered = 0;
@@ -17365,21 +17347,6 @@
         html += '<td>' + sevSummary + '</td>';
         html += '<td class="p1d1-sections">' + sectionChips + '</td>';
         html += '<td>' + viewContractAction + '</td>';
-        var healthHtml = '';
-        if (typeof ContractHealthScore !== 'undefined' && ContractHealthScore._scores[gk]) {
-          var hs = ContractHealthScore._scores[gk];
-          var band = hs.band;
-          var tooltipLines = ['Score: ' + hs.score + '/100 (' + band.label + ')'];
-          if (hs.penalties.length > 0) {
-            tooltipLines.push('---');
-            hs.penalties.forEach(function(p) { tooltipLines.push('-' + p.value + ' ' + p.reason + ' (' + p.detail + ')'); });
-          }
-          var tt = tooltipLines.join('\n').replace(/"/g, '&quot;');
-          healthHtml = '<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:0.85em;background:' + band.bg + ';color:' + band.color + ';font-weight:600;cursor:help;" title="' + tt + '">' + hs.score + '</span>';
-        } else {
-          healthHtml = '<span style="color:#ccc;">-</span>';
-        }
-        html += '<td style="padding:8px 6px;text-align:center;">' + healthHtml + '</td>';
         html += '</tr>';
 
         var childDisplay = isCollapsed ? 'none' : '';
@@ -17421,7 +17388,6 @@
           html += '<td>' + stBadge + '</td>';
           html += '<td></td>';
           html += '<td><button class="p1d1-view-btn small" onclick="event.stopPropagation(); ' + viewHandler + '">View</button>' + patchBtn + '</td>';
-          html += '<td></td>';
           html += '</tr>';
           childrenRendered++;
         }
@@ -25137,35 +25103,18 @@
         var stage = contractData.current_stage || 'loaded';
 
         var pfBlockers = 0, pfWarnings = 0;
-        var _pfSeenIds = {};
-        if (typeof _p1fBatchScanItems !== 'undefined' && _p1fBatchScanItems.length > 0) {
+        if (typeof _p1fBatchScanItems !== 'undefined') {
           _p1fBatchScanItems.forEach(function(item) {
-            var ck = item.contract_key || item.contract_id || '';
-            var cid = item.contract_id || item.contract_key || '';
-            if (ck === contractId || cid === contractId) {
-              var itemKey = (item.request_id || '') + '_' + (item.field_name || '') + '_' + (item.sheet_name || '');
-              if (_pfSeenIds[itemKey]) return;
-              _pfSeenIds[itemKey] = true;
+            if (item.contract_id === contractId || item.contract_key === contractId) {
               var sev = (item.severity || item.condition || '').toLowerCase();
-              var sigType = (item.signal_type || '').toLowerCase();
-              if (sev.indexOf('blocker') >= 0 || sev.indexOf('not_searchable') >= 0 || sev.indexOf('mojibake') >= 0 || sigType.indexOf('not_searchable') >= 0 || sigType.indexOf('mojibake') >= 0 || sigType.indexOf('ocr') >= 0) pfBlockers++;
+              if (sev.indexOf('blocker') >= 0 || sev.indexOf('not_searchable') >= 0 || sev.indexOf('mojibake') >= 0) pfBlockers++;
               else pfWarnings++;
             }
           });
         }
         if (typeof analystTriageState !== 'undefined' && analystTriageState.manualItems) {
           analystTriageState.manualItems.forEach(function(item) {
-            var ck = item.contract_key || item.contract_id || '';
-            var cid = item.contract_id || item.contract_key || '';
-            if (ck === contractId || cid === contractId) {
-              var itemKey = (item.request_id || '') + '_' + (item.field_name || '') + '_' + (item.sheet_name || '');
-              if (_pfSeenIds[itemKey]) return;
-              _pfSeenIds[itemKey] = true;
-              var sev = (item.severity || '').toLowerCase();
-              var sigType = (item.signal_type || '').toLowerCase();
-              if (sev.indexOf('blocker') >= 0 || sigType.indexOf('not_searchable') >= 0 || sigType.indexOf('mojibake') >= 0 || sigType.indexOf('ocr') >= 0) pfBlockers++;
-              else pfWarnings++;
-            }
+            if (item.contract_id === contractId || item.contract_key === contractId) pfWarnings++;
           });
         }
         if (pfBlockers === 0 && pfWarnings === 0 && pfAlerts > 0) {
@@ -26830,7 +26779,7 @@
       if (!container) return;
       
       if (items.length === 0) {
-        container.innerHTML = '<tr><td colspan="' + (isPreFlight ? '8' : '7') + '" style="padding: 24px; text-align: center; color: #999;">' + emptyMessage + '</td></tr>';
+        container.innerHTML = '<tr><td colspan="' + (isPreFlight ? '7' : '6') + '" style="padding: 24px; text-align: center; color: #999;">' + emptyMessage + '</td></tr>';
         return;
       }
       
@@ -26897,7 +26846,6 @@
           '<td style="padding: 10px 12px;">' + statusBadge + notesIndicator + '</td>' +
           '<td style="padding: 10px 12px; color: #666; font-size: 0.85em;">' + timestamp + '</td>' +
           '<td style="padding: 10px 12px;"><button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75em;" onclick="event.stopPropagation(); ' + viewHandler + '">View</button>' + patchFromBlockerBtn + '</td>' +
-          (function() { var qHealthHtml = '<td style="padding:10px 12px; text-align:center;">'; if (typeof ContractHealthScore !== 'undefined') { var qCk = item.contract_key || item.contract_id || ''; var qHs = qCk ? ContractHealthScore._scores[qCk] : null; if (qHs) { qHealthHtml += '<span style="padding:2px 6px;border-radius:10px;font-size:0.85em;background:' + qHs.band.bg + ';color:' + qHs.band.color + ';font-weight:600;cursor:help;" title="Health: ' + qHs.score + '/100 (' + qHs.band.label + ')">' + qHs.score + '</span>'; } else { qHealthHtml += '-'; } } else { qHealthHtml += '-'; } qHealthHtml += '</td>'; return qHealthHtml; })() +
           '</tr>';
       }).join('');
     }
