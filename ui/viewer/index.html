@@ -159,6 +159,13 @@
     .page-header .page-desc { color: #666; font-size: 0.9em; }
 
     .mode-hidden { display: none !important; }
+
+.triage-icon-btn { padding: 5px 6px; border: none; border-radius: 6px; font-size: 0.72em; cursor: pointer; display: inline-flex; align-items: center; gap: 0; white-space: nowrap; overflow: hidden; max-width: 30px; transition: max-width 0.25s ease, padding 0.2s ease, gap 0.2s ease, box-shadow 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.triage-icon-btn:hover { max-width: 160px; padding: 5px 10px; gap: 5px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); }
+.triage-icon-btn .btn-label { opacity: 0; transition: opacity 0.15s ease 0.05s; font-weight: 500; }
+.triage-icon-btn:hover .btn-label { opacity: 1; }
+.triage-icon-btn svg { flex-shrink: 0; }
+
     .mode-dimmed { opacity: 0.5; pointer-events: none; }
     h2 { margin: 20px 0 10px; color: #16213e; border-bottom: 2px solid #0f3460; padding-bottom: 5px; }
     .subtitle { color: #666; margin-bottom: 20px; font-size: 0.9em; }
@@ -1934,34 +1941,32 @@
             <!-- Sticky Search Bar (top right) - repositioned to avoid audit overlap (P0.1) -->
             <div id="triage-search-bar" style="position: fixed; top: 56px; right: 24px; z-index: 100; display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: opacity 0.2s ease, transform 0.2s ease;">
               <!-- v1.6.33: Upload Excel button (failsafe for data import) -->
-              <button id="btn-rerun-preflight" onclick="rerunPreFlight()" 
-                      style="padding: 4px 10px; background: linear-gradient(135deg, #e65100 0%, #bf360c 100%); color: white; border: none; border-radius: 5px; font-size: 0.75em; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); transition: all 0.2s ease;"
-                      onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.2)';"
-                      onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.15)';"
-                      title="Rerun the full pre-flight pipeline: signals, OCR scan, triage routing">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <button id="btn-rerun-preflight" onclick="rerunPreFlight()" class="triage-icon-btn"
+                      style="background: linear-gradient(135deg, #e65100 0%, #bf360c 100%); color: white;"
+                      title="Rerun Pre-Flight">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="23 4 23 10 17 10"/>
                   <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
                 </svg>
-                Rerun Pre-Flight
+                <span class="btn-label">Rerun</span>
               </button>
-              <button id="upload-excel-btn" onclick="document.getElementById('excel-file-import').click()" 
-                      style="padding: 4px 10px; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; border: none; border-radius: 5px; font-size: 0.75em; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); transition: all 0.2s ease;"
-                      onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.2)';"
-                      onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.15)';"
-                      title="Upload Excel file (.xlsx)">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <button id="upload-excel-btn" onclick="document.getElementById('excel-file-import').click()" class="triage-icon-btn"
+                      style="background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white;"
+                      title="Upload Excel">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                   <polyline points="17 8 12 3 7 8"/>
                   <line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
-                Upload Excel
+                <span class="btn-label">Upload</span>
               </button>
               <div id="audit-header-dropdown-container" style="position: relative; display: inline-flex;">
-                <button onclick="toggleAuditHeaderDropdown()" id="btn-audit-header" title="Audit Log"
-                        style="padding: 4px 8px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 5px; font-size: 0.75em; cursor: pointer; display: flex; align-items: center; gap: 3px; color: #555;">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                  Audit <span id="audit-header-badge" style="background: #e3f2fd; color: #1565c0; padding: 1px 6px; border-radius: 10px; font-size: 0.85em; min-width: 16px; text-align: center;">0</span>
+                <button onclick="toggleAuditHeaderDropdown()" id="btn-audit-header" class="triage-icon-btn" title="Audit Log"
+                        style="background: #f5f5f5; border: 1px solid #e0e0e0; color: #555; max-width: 52px;"
+                        onmouseover="this.style.maxWidth='140px'" onmouseout="this.style.maxWidth='52px'">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <span id="audit-header-badge" style="background: #e3f2fd; color: #1565c0; padding: 1px 5px; border-radius: 10px; font-size: 0.85em; min-width: 14px; text-align: center; flex-shrink: 0;">0</span>
+                  <span class="btn-label">Audit</span>
                 </button>
                 <div id="audit-header-dropdown" style="display: none; position: absolute; right: 0; top: 32px; width: 380px; max-height: 420px; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 1000; overflow: hidden;">
                   <div style="padding: 12px 16px; background: #fafafa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
@@ -2073,18 +2078,20 @@
             </div>
             <!-- 3) Lane Health -->
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px;">
-              <div class="ta-lane-card" onclick="TriageAnalytics.handleLaneClick('preflight')" style="background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 16px; cursor: pointer; transition: box-shadow 0.2s; border-top: 3px solid #f44336;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                  <h4 style="margin: 0; font-size: 0.9em; color: #333;">Pre-Flight</h4>
-                  <span id="ta-preflight-total" style="background: #ffebee; color: #c62828; padding: 2px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">0</span>
-                  <div style="display: flex; justify-content: space-between; margin-top: 4px;"><span style="color: #666;">Affected Contracts</span><span id="ta-pf-affected" style="font-weight: 600;">0</span></div>
-                  <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Records Impacted</span><span id="ta-pf-impacted" style="font-weight: 600;">0</span></div>
+              <div class="ta-lane-card" onclick="TriageAnalytics.handleLaneClick('preflight')" style="background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: box-shadow 0.2s; border-top: 3px solid #f44336;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                  <h4 style="margin: 0; font-size: 0.85em; font-weight: 600; color: #333; letter-spacing: 0.01em;">Pre-Flight</h4>
+                  <span id="ta-preflight-total" style="background: #ffebee; color: #c62828; padding: 2px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 600;">0</span>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.8em;">
-                  <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Unknown Cols</span><span id="ta-pf-unknown" style="font-weight: 600;">0</span></div>
-                  <div style="display: flex; justify-content: space-between;"><span style="color: #666;">OCR / Mojibake</span><span id="ta-pf-ocr" style="font-weight: 600;">0</span></div>
-                  <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Low Confidence</span><span id="ta-pf-lowconf" style="font-weight: 600;">0</span></div>
-                  <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Doc Type</span><span id="ta-pf-doctype" style="font-weight: 600;">0</span></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-size: 0.78em; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0;">
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="color: #888; font-size: 0.92em;">Affected Contracts</span><span id="ta-pf-affected" style="font-weight: 700; color: #c62828; font-size: 1.05em;">0</span></div>
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="color: #888; font-size: 0.92em;">Records Impacted</span><span id="ta-pf-impacted" style="font-weight: 700; color: #c62828; font-size: 1.05em;">0</span></div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-size: 0.78em;">
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="color: #999;">Unknown Cols</span><span id="ta-pf-unknown" style="font-weight: 600; color: #555;">0</span></div>
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="color: #999;">OCR / Mojibake</span><span id="ta-pf-ocr" style="font-weight: 600; color: #555;">0</span></div>
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="color: #999;">Low Confidence</span><span id="ta-pf-lowconf" style="font-weight: 600; color: #555;">0</span></div>
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="color: #999;">Doc Type</span><span id="ta-pf-doctype" style="font-weight: 600; color: #555;">0</span></div>
                 </div>
               </div>
               <div class="ta-lane-card" onclick="TriageAnalytics.handleLaneClick('semantic')" style="background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 16px; cursor: pointer; transition: box-shadow 0.2s; border-top: 3px solid #ff9800;">
@@ -17429,7 +17436,9 @@
       if (btn) {
         btn.disabled = false;
         btn.style.opacity = '1';
-        btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Rerun Pre-Flight';
+        btn.className = 'triage-icon-btn';
+        btn.style.cssText = 'background: linear-gradient(135deg, #e65100 0%, #bf360c 100%); color: white;';
+        btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span class="btn-label">Rerun</span>';
       }
     }
 
