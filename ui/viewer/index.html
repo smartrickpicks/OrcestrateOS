@@ -16913,11 +16913,12 @@
     }
 
     function _p1dGetGroupKey(item) {
-      if (item.contract_id || item.contract_key) return item.contract_id || item.contract_key;
-      var fu = item.file_url || '';
-      var fn = item.file_name || '';
-      if (fu) return 'file:' + fu;
+      var fn = (item.file_name || '').replace(/\s+/g, '_').trim();
       if (fn) return 'file:' + fn;
+      var ck = item.contract_key || item.contract_id || '';
+      if (ck) return ck;
+      var fu = item.file_url || '';
+      if (fu) return 'file:' + fu;
       return '_batch_level';
     }
 
@@ -25476,6 +25477,26 @@
       // v1.6.0: Populate queues from signalStore
       var signalItems = getSignalTriageItems();
       
+      // v2.3.5-P1D.1: Build record_id → contract reverse map for pre-flight enrichment
+      var _rid2contract = {};
+      if (typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable() && ContractIndex._index) {
+        var _ciContracts = ContractIndex._index.contracts;
+        var _ciKeys = Object.keys(_ciContracts);
+        for (var _ci = 0; _ci < _ciKeys.length; _ci++) {
+          var _cid = _ciKeys[_ci];
+          var _cObj = _ciContracts[_cid];
+          var _shKeys = Object.keys(_cObj.sheets || {});
+          for (var _si = 0; _si < _shKeys.length; _si++) {
+            var _shRows = _cObj.sheets[_shKeys[_si]];
+            for (var _ri = 0; _ri < _shRows.length; _ri++) {
+              var _rid = _shRows[_ri].record_id;
+              if (_rid) _rid2contract[_rid] = { contract_id: _cid, file_name: _cObj.file_name || '', file_url: _cObj.file_url || '' };
+            }
+          }
+        }
+        console.log('[TRIAGE-CONTRACT-HEALTH][P1D.1] enrichment_map_built: records=' + Object.keys(_rid2contract).length + ', contracts=' + _ciKeys.length);
+      }
+
       // Manual Review: OCR_UNREADABLE (encoding artifacts / mojibake)
       analystTriageState.manualItems = signalItems.filter(function(item) {
         return item.signal_type === 'OCR_UNREADABLE' || item.signal_type === 'OCR_MOJIBAKE';
@@ -25485,6 +25506,13 @@
           item._preflightRouted = true;
           item.blocker_type = item.signal_type;
           item.reason_summary = item.signal_type === 'OCR_UNREADABLE' ? 'High Impact — Unreadable' : 'Encoding artifacts (mojibake)';
+        }
+        if (!item.contract_key && !item.contract_id && item.record_id && _rid2contract[item.record_id]) {
+          var _cm = _rid2contract[item.record_id];
+          item.contract_id = _cm.contract_id;
+          item.contract_key = _cm.contract_id;
+          item.file_name = _cm.file_name;
+          item.file_url = _cm.file_url;
         }
       });
       
@@ -25517,6 +25545,15 @@
       // v1.6.33: Add validation signals to Manual Review queue (not Patch Queue)
       var validationSignals = signalItems.filter(function(item) {
         return item.signal_type === 'MISSING_REQUIRED' || item.signal_type === 'PICKLIST_INVALID';
+      });
+      validationSignals.forEach(function(item) {
+        if (!item.contract_key && !item.contract_id && item.record_id && _rid2contract[item.record_id]) {
+          var _cm = _rid2contract[item.record_id];
+          item.contract_id = _cm.contract_id;
+          item.contract_key = _cm.contract_id;
+          item.file_name = _cm.file_name;
+          item.file_url = _cm.file_url;
+        }
       });
       analystTriageState.manualItems = analystTriageState.manualItems.concat(validationSignals);
       
