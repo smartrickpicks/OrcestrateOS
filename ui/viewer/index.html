@@ -17241,6 +17241,7 @@
         + '<span id="p1f-stat-count">0/0</span>'
         + '<span class="p1f-scan-stat-ok" id="p1f-stat-ok"></span>'
         + '<span class="p1f-scan-stat-bad" id="p1f-stat-bad"></span>'
+        + '<span id="p1f-stat-scope" style="opacity:0.7;font-size:0.85em;margin-left:4px;"></span>'
         + '</div>';
       document.body.appendChild(banner);
       return banner;
@@ -17256,9 +17257,17 @@
       if (!bar) return;
       var pct = s.total > 0 ? Math.round((s.scanned / s.total) * 100) : 0;
       bar.style.width = pct + '%';
-      count.textContent = s.scanned + '/' + s.total;
+      count.textContent = s.scanned + '/' + s.total + ' contracts';
       if (s.running) {
         label.textContent = 'Scanning PDFs for text quality...';
+      }
+      var scopeEl = document.getElementById('p1f-stat-scope');
+      if (scopeEl && !scopeEl._filled) {
+        var scope = _p1fGetDatasetScope();
+        if (scope) {
+          scopeEl.textContent = '(' + scope + ')';
+          scopeEl._filled = true;
+        }
       }
       ok.textContent = s.clean > 0 ? (s.clean + ' clean') : '';
       var badCount = s.mojibake + s.nonSearchable;
@@ -17269,16 +17278,18 @@
       var s = _p1fScanState;
       var banner = document.getElementById('p1f-scan-banner');
       var label = document.getElementById('p1f-scan-label');
+      var count = document.getElementById('p1f-stat-count');
       var bar = document.getElementById('p1f-progress-bar');
       if (!banner || !label) return;
       bar.style.width = '100%';
+      count.textContent = s.total + ' contracts';
       var badCount = s.mojibake + s.nonSearchable;
       if (badCount > 0) {
         banner.classList.add('has-issues');
         label.textContent = 'PDF scan complete: ' + badCount + ' contract' + (badCount !== 1 ? 's' : '') + ' flagged in Pre-Flight';
       } else {
         banner.classList.add('p1f-scan-done');
-        label.textContent = 'PDF scan complete: all ' + s.clean + ' contracts clean';
+        label.textContent = 'PDF scan complete: all ' + s.total + ' contracts clean';
       }
       setTimeout(function() {
         banner.classList.remove('visible');
@@ -17485,6 +17496,21 @@
         _rerunResetBtn(btn);
         showToast('Pre-Flight signals refreshed (no PDF scan available).', 'info');
       }
+    }
+
+    function _p1fGetDatasetScope() {
+      if (!workbook || !workbook.sheets) return '';
+      var counts = [];
+      var sheetNames = Object.keys(workbook.sheets);
+      for (var i = 0; i < sheetNames.length; i++) {
+        var name = sheetNames[i];
+        if (name.indexOf('_change_log') !== -1) continue;
+        if (name === 'RFIs & Analyst Notes') continue;
+        var sheet = workbook.sheets[name];
+        if (!sheet || !sheet.rows || sheet.rows.length === 0) continue;
+        counts.push(sheet.rows.length + ' ' + name);
+      }
+      return counts.length > 0 ? counts.join(', ') : '';
     }
 
     function _p1fBatchPdfScan() {
