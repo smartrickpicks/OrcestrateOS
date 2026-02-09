@@ -17766,11 +17766,6 @@
           });
         }
         columns = getPreferredColumnOrder(columns);
-        if (gridState.visibleColumns && gridState.allColumns) {
-          columns = columns.filter(function(c) {
-            return gridState.visibleColumns.indexOf(c) >= 0;
-          });
-        }
 
         // Table
         var tbl = document.createElement('table');
