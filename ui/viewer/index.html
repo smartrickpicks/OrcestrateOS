@@ -15261,23 +15261,8 @@
         }
       }
       
-      // v1.4.22: Navigate to role-specific default landing on role change
-      var currentHash = window.location.hash.replace('#/', '') || '';
-      var needsRedirect = false;
-      
-      // Check if current page is restricted for new role
-      if (currentHash.includes('admin') && mode !== 'admin') {
-        needsRedirect = true;
-      } else if ((currentHash.includes('review') || currentHash === 'verifier-review') && mode === 'analyst') {
-        needsRedirect = true;
-      } else if (currentHash === 'patch' && mode !== 'analyst') {
-        needsRedirect = true;
-      }
-      
-      if (needsRedirect) {
-        showToast('Role changed - redirecting to your dashboard', 'info');
-        navigateToRoleDefault();
-      }
+      // Always route to Triage (home) on any role change
+      navigateToRoleDefault();
       
       applyModeVisibility(mode);
       localStorage.setItem('viewer_mode_v10', mode);
