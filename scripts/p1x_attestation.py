@@ -14,8 +14,8 @@ DATASET_PATH = 'examples/datasets/ostereo_demo_v1.json'
 RESULTS = []
 CONSOLE_LOG_BUFFER = []
 
-OPERATIONAL_SHEETS = ['Accounts', 'Opportunities', 'Financials', 'Catalog',
-                      'Schedule', 'Schedule Catalog', 'V2 Add Ons', 'Contacts']
+OPERATIONAL_SHEETS = ['Accounts', 'Opportunities', 'Opportunity', 'Financials', 'Catalog',
+                      'Schedule', 'Schedule Catalog', 'V2 Add Ons', 'Contacts', 'Contact']
 
 
 def report(name, passed, detail=''):
