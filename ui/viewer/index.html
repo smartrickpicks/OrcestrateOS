@@ -29550,8 +29550,11 @@
       updateSidebarUserProfile();
       
       // v1.4.22: Default route based on role
+      // v2.3.6: Always default to triage on initial load for all roles
+      // Only preserve hash for deep-linked pages (admin-review, srr)
       var _initHash = window.location.hash.replace('#/', '') || '';
-      if (_initHash && _initHash !== 'loader') {
+      var _isDeepLink = _initHash && (_initHash.indexOf('admin-review/') === 0 || _initHash.indexOf('srr/') === 0);
+      if (_isDeepLink) {
         navigateTo(_initHash);
       } else {
         navigateToRoleDefault();
