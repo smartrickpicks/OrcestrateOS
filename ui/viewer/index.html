@@ -9732,6 +9732,7 @@
         try { ContractIndex.build(); populateContractSelector(); console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on session-load path'); } catch(e) { console.warn('[ContractIndex] Session restore build failed:', e); }
         stagedLoader.setStage('changemap');
         saveWorkbookToCache();
+        dataLoaded = true;
         stagedLoader.setStage('rendering');
         populateGridSheetSelector();
         updateSidebarSheetSelector();
@@ -10384,6 +10385,7 @@
         stagedLoader.setStage('changemap');
         var restorePage = (navState && navState.hash) ? navState.hash.replace(/^#\/?/, '') : 'grid';
         
+        dataLoaded = true;
         stagedLoader.setStage('rendering');
         populateGridSheetSelector();
         updateSidebarSheetSelector();
@@ -16506,10 +16508,7 @@
       // Sort deterministically
       sheets.sort();
       
-      // v1.6.33: Default to first sheet instead of "All Sheets"
-      if (!gridState.sheet && sheets.length > 0) {
-        gridState.sheet = sheets[0];
-      }
+      // v1.6.33: Keep "All Sheets" as default; only set first sheet if explicitly needed
       
       sheets.forEach(function(sheet) {
         var opt = document.createElement('option');
