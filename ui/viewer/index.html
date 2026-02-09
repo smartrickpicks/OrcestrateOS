@@ -1934,6 +1934,17 @@
             <!-- Sticky Search Bar (top right) - repositioned to avoid audit overlap (P0.1) -->
             <div id="triage-search-bar" style="position: fixed; top: 56px; right: 24px; z-index: 100; display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: opacity 0.2s ease, transform 0.2s ease;">
               <!-- v1.6.33: Upload Excel button (failsafe for data import) -->
+              <button id="btn-rerun-preflight" onclick="rerunPreFlight()" 
+                      style="padding: 4px 10px; background: linear-gradient(135deg, #e65100 0%, #bf360c 100%); color: white; border: none; border-radius: 5px; font-size: 0.75em; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); transition: all 0.2s ease;"
+                      onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.2)';"
+                      onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.15)';"
+                      title="Rerun the full pre-flight pipeline: signals, OCR scan, triage routing">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+                Rerun Pre-Flight
+              </button>
               <button id="upload-excel-btn" onclick="document.getElementById('excel-file-import').click()" 
                       style="padding: 4px 10px; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; border: none; border-radius: 5px; font-size: 0.75em; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); transition: all 0.2s ease;"
                       onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.2)';"
@@ -9686,6 +9697,8 @@
         updateActiveDataSourceBar(session.filename || session.name);
         stagedLoader.setStage('validating');
         try { if (typeof generateAllSignals === 'function') generateAllSignals(); } catch(e) { console.warn('[RESTORE] generateAllSignals error:', e.message); }
+        // v2.3.5-P1F: Batch PDF scan on saved session load
+        if (typeof _p1fBatchPdfScan === 'function') _p1fBatchPdfScan();
         stagedLoader.setStage('indexing');
         try { ContractIndex.build(); populateContractSelector(); console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on session-load path'); } catch(e) { console.warn('[ContractIndex] Session restore build failed:', e); }
         stagedLoader.setStage('changemap');
@@ -10346,6 +10359,10 @@
         navigateTo(restorePage || 'grid');
         stagedLoader.finish();
         
+        // v2.3.5-P1F: Generate signals and run batch PDF scan on IndexedDB restore
+        try { if (typeof generateSignalsForDataset === 'function') generateSignalsForDataset(); } catch(e) { console.warn('[RESTORE] generateSignalsForDataset error:', e.message); }
+        if (typeof _p1fBatchPdfScan === 'function') _p1fBatchPdfScan();
+
         console.log('[RESTORE] Complete in', (performance.now() - t0).toFixed(1) + 'ms, ref: active_workbook, sheets:', workbook.order.length);
         showToast('Session restored: ' + cachedWorkbook.filename, 'success');
         AuditTimeline.emit('SESSION_RESTORED', {
@@ -14487,6 +14504,9 @@
             
             // v1.6.33: Seed patch requests from RFI meta sheet
             seedPatchRequestsFromMetaSheet();
+
+            // v2.3.5-P1F: Batch PDF scan on session restore
+            if (typeof _p1fBatchPdfScan === 'function') _p1fBatchPdfScan();
             
             return true;
           }
@@ -17400,6 +17420,70 @@
         _p1fLog('preflight_routed', { condition: condition, contract: contractKey });
       } else {
         _p1fLog('preflight_dedup_skipped', { condition: condition, contract: contractKey });
+      }
+    }
+
+    function _rerunResetBtn(btn) {
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Rerun Pre-Flight';
+      }
+    }
+
+    function rerunPreFlight() {
+      if (!dataLoaded || !workbook || !workbook.order || workbook.order.length === 0) {
+        showToast('No data loaded. Upload an Excel file first.', 'warning');
+        return;
+      }
+      console.log('[RERUN-PREFLIGHT] Starting full pre-flight pipeline rerun');
+
+      var btn = document.getElementById('btn-rerun-preflight');
+      if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Running...';
+      }
+
+      analystTriageState.manualItems = [];
+
+      _p1fScanState.running = false;
+      _p1fScanState.total = 0;
+      _p1fScanState.scanned = 0;
+      _p1fScanState.clean = 0;
+      _p1fScanState.mojibake = 0;
+      _p1fScanState.nonSearchable = 0;
+      _p1fScanState.errors = 0;
+      _p1fScanState.skipped = 0;
+      _p1fScanState.results = {};
+
+      try { generateSignalsForDataset(); } catch(e) { console.warn('[RERUN-PREFLIGHT] Signal generation error:', e); }
+
+      try { if (typeof detectUnknownColumns === 'function') { detectUnknownColumns(allData.contractResults, sessionState.fileName || 'rerun'); } } catch(e) {}
+
+      if (typeof _p1fBatchPdfScan === 'function') {
+        var origShowComplete = typeof _p1fShowComplete === 'function' ? _p1fShowComplete : function() {};
+        _p1fShowComplete = function() {
+          try { origShowComplete(); } catch(e) { console.warn('[RERUN-PREFLIGHT] origShowComplete error:', e); }
+          _p1fShowComplete = origShowComplete;
+          console.log('[RERUN-PREFLIGHT] Batch PDF scan complete, refreshing triage');
+          try { renderAnalystTriage(); } catch(e) { console.warn('[RERUN-PREFLIGHT] Triage render error:', e); }
+          _rerunResetBtn(btn);
+          showToast('Pre-Flight rerun complete. Check triage for OCR flags.', 'success');
+        };
+        try {
+          _p1fBatchPdfScan();
+        } catch(e) {
+          console.warn('[RERUN-PREFLIGHT] Batch scan error:', e);
+          _p1fShowComplete = origShowComplete;
+          try { renderAnalystTriage(); } catch(e2) {}
+          _rerunResetBtn(btn);
+          showToast('Pre-Flight scan encountered an error. Signals refreshed.', 'warning');
+        }
+      } else {
+        try { renderAnalystTriage(); } catch(e) {}
+        _rerunResetBtn(btn);
+        showToast('Pre-Flight signals refreshed (no PDF scan available).', 'info');
       }
     }
 
