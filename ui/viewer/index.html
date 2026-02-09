@@ -1658,14 +1658,12 @@
         <!-- Navigation Section -->
         <div class="nav-section">
           <div class="nav-section-header">Navigation</div>
-          
           <!-- Sheet Selector (stub) -->
           <div style="padding: 4px 16px 8px;">
             <select class="sheet-selector" id="sidebar-sheet-selector" onchange="handleSheetSelectorChange(this.value)">
               <option value="all">All Sheets</option>
             </select>
           </div>
-          
           <!-- View Mode Buttons: Triage → All Data Grid → Record Inspection -->
           <a class="nav-item" data-page="triage" href="#/triage">
             <span class="nav-icon">📋</span>
@@ -1781,7 +1779,6 @@
       <div class="page-content" id="page-loader" style="display: none !important;">
         <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
 
-          
           <!-- PRIMARY ACTION PANEL: Continue to Triage (shown when dataset active) -->
           <div id="loader-continue-panel" style="display: none; background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); border-radius: 12px; padding: 30px; margin-bottom: 30px; color: white; text-align: center;">
             <div style="font-size: 2em; margin-bottom: 10px;">✅</div>
@@ -1792,7 +1789,6 @@
               <button id="btn-copy-bundle-primary" class="top-toolbar-btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="copyBundleJSON()">Copy Bundle JSON</button>
             </div>
           </div>
-          
           <!-- PRIMARY ACTION PANEL: Import CSV (shown when no dataset) -->
           <div id="loader-import-panel" style="display: none; background: linear-gradient(135deg, #455a64 0%, #37474f 100%); border-radius: 12px; padding: 30px; margin-bottom: 20px; color: white; text-align: center;">
             <div style="font-size: 2em; margin-bottom: 10px;">📄</div>
@@ -1801,10 +1797,8 @@
             <input type="file" id="file-import-csv-primary" accept=".csv" style="display: none;">
             <button id="btn-import-csv-primary" class="empty-queue-cta" style="background: white; color: #37474f; font-size: 1.1em; padding: 14px 28px; border-radius: 8px;">Import CSV</button>
           </div>
-          
           <!-- SECONDARY ACTION: Load Sample Dataset (hidden v1.4.23 - folder-based workflow) -->
           <div id="loader-sample-panel" style="display: none !important;"></div>
-          
           <!-- COLLAPSIBLE: Other Actions -->
           <div id="loader-other-actions" style="background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
             <button id="loader-toggle-actions" style="width: 100%; padding: 14px 20px; background: none; border: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 0.95em; color: #333;">
@@ -1846,7 +1840,6 @@
               </div>
             </div>
           </div>
-          
         </div>
       </div>
 
@@ -2255,7 +2248,6 @@
             <h2 id="verifier-triage-title">Triage - Verifier</h2>
             <p class="page-desc">Review submitted RFIs, Corrections, and Blacklist requests.</p>
           </div>
-          
           <!-- v1.5.2: Division + Status filter bar -->
           <div class="verifier-filter-bar" style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px; padding: 12px 16px; background: #f8f9fa; border-radius: 8px; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -2277,7 +2269,6 @@
             </div>
             <span id="verifier-filter-count" style="font-size: 0.85em; color: #666; margin-left: auto;"></span>
           </div>
-          
           <!-- v1.5.3: Patch Type tabs (Corrections, Blacklist, RFI) -->
           <div class="patch-type-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">
             <div class="pt-tab active" data-ptype="" onclick="setVerifierPatchType('')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0;">All Types <span id="pt-count-all">(0)</span></div>
@@ -2285,7 +2276,6 @@
             <div class="pt-tab" data-ptype="blacklist" onclick="setVerifierPatchType('blacklist')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #f5f5f5; color: #333; border: 1px solid #ddd;">Blacklist <span id="pt-count-blacklist">(0)</span></div>
             <div class="pt-tab" data-ptype="rfi" onclick="setVerifierPatchType('rfi')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #f5f5f5; color: #333; border: 1px solid #ddd;">RFI <span id="pt-count-rfi">(0)</span></div>
           </div>
-          
           <div class="verifier-tabs" style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
             <div class="v-tab active" data-vqueue="pending" onclick="setVerifierQueue('pending')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600; background: #f5f5f5;">Pending <span id="v-count-pending">(0)</span></div>
             <div class="v-tab" data-vqueue="needs_clarification" onclick="setVerifierQueue('needs_clarification')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600;">Clarification <span id="v-count-clarification">(0)</span></div>
@@ -3547,7 +3537,6 @@
               </div>
             </div>
           </div>
-          
           <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
               <h3 style="margin: 0; font-size: 1.1em; color: #333;">User Access <span class="info-icon" title="Manage user roles. In Sandbox mode, changes are stored locally. No Admin role in Sandbox.">&#9432;</span></h3>
@@ -3670,7 +3659,6 @@
         <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Patch Requests Console <span class="info-icon" title="Manage patch requests through their lifecycle. Track requests from creation through Kiwi processing to final application.">&#9432;</span></h3>
           <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Track and manage patch requests. Batch export to Kiwi, import returns, and apply changes.</p>
-          
           <!-- Queue Tabs -->
           <div id="patch-queue-tabs" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px;">
             <button class="queue-tab active" data-queue="new" onclick="switchPatchQueueTab('new')">New <span class="queue-count">0</span></button>
@@ -3679,7 +3667,6 @@
             <button class="queue-tab" data-queue="applied" onclick="switchPatchQueueTab('applied')">Applied <span class="queue-count">0</span></button>
             <button class="queue-tab" data-queue="rejected" onclick="switchPatchQueueTab('rejected')">Rejected <span class="queue-count">0</span></button>
           </div>
-          
           <!-- Batch Actions -->
           <div id="patch-batch-actions" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
             <button class="toolbar-btn" onclick="selectAllCurrentQueue()">Select All</button>
@@ -3689,7 +3676,6 @@
             <button class="toolbar-btn" onclick="batchMarkApplied()" style="background: #2e7d32;">Mark Applied</button>
             <button class="toolbar-btn" onclick="batchCopyCommitPack()" style="background: #f57c00;">Copy Batch Commit Pack</button>
           </div>
-          
           <!-- Compact Table -->
           <div id="patch-console-table-container" style="max-height: 300px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px;">
             <table id="patch-console-table" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
@@ -3709,7 +3695,6 @@
               </tbody>
             </table>
           </div>
-          
           <!-- Summary Stats -->
           <div id="patch-console-summary" style="margin-top: 15px; display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.85em; color: #666;">
             <span>Total: <strong id="patch-total-count">0</strong></span>
@@ -3856,13 +3841,11 @@
         <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Unknown Columns (Schema Drift) <span class="info-icon" title="Columns found in imported data that don't match any canonical field. Decide how to handle each.">&#9432;</span></h3>
           <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Columns detected during standardization that aren't in the canonical schema. Decide how to classify each one.</p>
-          
           <div style="display: flex; gap: 10px; margin-bottom: 15px;">
             <button class="toolbar-btn" onclick="refreshUnknownColumnsTable()">Refresh</button>
             <button class="toolbar-btn" onclick="exportUnknownColumnsRequest()">Export Update Request (Copy)</button>
             <button class="toolbar-btn" onclick="clearUnknownColumnsDecisions()">Clear Decisions</button>
           </div>
-          
           <div id="unknown-cols-table-container" style="overflow-x: auto;">
             <table class="grid-table" id="unknown-cols-table" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
               <thead style="background: #f5f5f5;">
@@ -4210,12 +4193,10 @@
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
             <span style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase;">Saved Datasets</span>
           </div>
-          
           <!-- v1.6.8: In-Progress Banner (shown when modified dataset is active) -->
           <div id="demo-modified-banner" style="display: none; margin-bottom: 10px; padding: 8px 12px; background: #fff3e0; border: 1px solid #ffb74d; border-radius: 6px; font-size: 0.8em; color: #e65100;">
             <span style="margin-right: 6px;">⚠️</span> Demo dataset is in-progress (partial completion).
           </div>
-          
           <!-- Original Dataset Card -->
           <div id="demo-dataset-card-original" class="demo-dataset-card" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f0f7ff; border: 2px solid #90caf9; border-radius: 8px; cursor: pointer; transition: all 0.2s; margin-bottom: 8px;" onclick="loadSampleDataset({ variant: 'original', autoRedirect: true })" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background=this.classList.contains('active') ? '#e3f2fd' : '#f0f7ff'">
             <span style="font-size: 1.3em;">📋</span>
@@ -4225,7 +4206,6 @@
             </div>
             <span class="demo-card-load-arrow" style="color: #1976d2; font-size: 0.8em; font-weight: 600;">Load →</span>
           </div>
-          
           <!-- Modified Dataset Card -->
           <div id="demo-dataset-card-modified" class="demo-dataset-card" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onclick="loadSampleDataset({ variant: 'modified', autoRedirect: true })" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=this.classList.contains('active') ? '#fff3e0' : '#fafafa'">
             <span style="font-size: 1.3em;">📝</span>
@@ -4383,7 +4363,6 @@
             <h4 id="config-flow-stage-title" style="margin: 0 0 5px; font-size: 1.1em;">Data Sources</h4>
             <p id="config-flow-stage-desc" style="margin: 0; color: #666; font-size: 0.9em;">Configure where data is loaded from.</p>
           </div>
-          
           <div class="stage-tabs" style="display: flex; gap: 0; border-bottom: 1px solid #e0e0e0; margin-bottom: 15px;">
             <button class="stage-tab active" data-tab="plain-english" onclick="selectConfigFlowTab('plain-english')">Plain-English</button>
             <button class="stage-tab" data-tab="payload" onclick="selectConfigFlowTab('payload')">Payload</button>
@@ -4391,7 +4370,6 @@
             <button class="stage-tab" data-tab="diff" onclick="selectConfigFlowTab('diff')">Diff</button>
             <button class="stage-tab" data-tab="history" onclick="selectConfigFlowTab('history')">History</button>
           </div>
-          
           <div id="config-flow-tab-content">
             <!-- Tab content rendered dynamically -->
             <div style="padding: 20px; background: #f5f5f5; border-radius: 6px; color: #666;">
@@ -4879,10 +4857,8 @@
         for (var i = 0; i < this.stages.length; i++) {
           var stageEl = document.querySelector('.staged-loader-stage[data-stage="' + this.stages[i] + '"]');
           if (!stageEl) continue;
-          
           stageEl.classList.remove('active', 'completed');
           var iconEl = stageEl.querySelector('.stage-icon');
-          
           if (i < stageIdx) {
             stageEl.classList.add('completed');
             if (iconEl) iconEl.textContent = '✓';
@@ -4914,7 +4890,6 @@
               if (iconEl) iconEl.textContent = '✓';
             }
           }
-          
           // Hide after a brief moment to show completion
           var self = this;
           setTimeout(function() {
@@ -6262,10 +6237,9 @@
             unknown_columns: cache.lanes.preflight.unknown_columns,
             ocr_unreadable: cache.lanes.preflight.ocr_unreadable,
             low_confidence: cache.lanes.preflight.low_confidence,
-            mojibake: cache.lanes.preflight.mojibake,
             document_type: cache.lanes.preflight.document_type || 0,
             total: cache.lanes.preflight.total
-          } : { unknown_columns: 0, ocr_unreadable: 0, low_confidence: 0, mojibake: 0, document_type: 0, total: 0 }
+          } : { unknown_columns: 0, ocr_unreadable: 0, low_confidence: 0, document_type: 0, total: 0 }
         };
         this._renderCalibrationPanel();
       },
@@ -6279,7 +6253,6 @@
           unknown_columns: cache.lanes.preflight.unknown_columns,
           ocr_unreadable: cache.lanes.preflight.ocr_unreadable,
           low_confidence: cache.lanes.preflight.low_confidence,
-          mojibake: cache.lanes.preflight.mojibake,
           document_type: cache.lanes.preflight.document_type || 0,
           total: cache.lanes.preflight.total
         };
@@ -7388,18 +7361,15 @@
           var checkboxes = document.querySelectorAll('.batch-merge-source-cb:checked');
           var sourceIds = [];
           checkboxes.forEach(function(cb) { sourceIds.push(cb.value); });
-          
           if (sourceIds.length < 2) {
             this._showStatus('Select at least two batches to merge.', 'warning');
             return;
           }
-          
           var label = (document.getElementById('batch-merge-label') || {}).value || '';
           if (!label.trim()) {
             this._showStatus('Enter a label for the merged batch.', 'warning');
             return;
           }
-          
           var mergedId = 'MERGED_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6);
           var mergedBatch = {
             id: mergedId,
@@ -7413,7 +7383,6 @@
             contract_refs: {},
             stats: { total_rows: 0, contracts: 0, documents: 0 }
           };
-          
           var contractsSeen = {};
           sourceIds.forEach(function(sid) {
             if (ContractIndex.isAvailable() && ContractIndex._index && ContractIndex._index.batch_id === sid) {
@@ -7455,15 +7424,12 @@
               });
             }
           });
-          
           if (mergedBatch.stats.contracts === 0) {
             this._showStatus('No contracts found in selected source batches.', 'error');
             return;
           }
-          
           this._mergedBatches[mergedId] = mergedBatch;
           this._persistMergedBatch(mergedBatch);
-          
           AuditTimeline.emit('batch_merged', {
             dataset_id: (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.dataset_id) || '',
             metadata: {
@@ -7477,14 +7443,11 @@
               created_by: mergedBatch.created_by
             }
           });
-          
           this._showStatus('Batch "' + escapeHtml(label) + '" created with ' + mergedBatch.stats.contracts + ' contracts and ' + mergedBatch.stats.total_rows + ' rows.', 'success');
           this.renderMergedBatchPanel();
           this.refreshSourceList();
           populateContractSelector();
-          
           if (typeof showToast === 'function') showToast('Merged batch created: ' + label, 'success');
-          
         } catch (err) {
           console.error('[BatchMerge] Merge failed:', err);
           this._showStatus('Merge failed: ' + (err.message || 'Unknown error') + '. Source batches are unchanged.', 'error');
@@ -7582,32 +7545,27 @@
         batchIds.forEach(function(mbId) {
           var mb = BatchMerge._mergedBatches[mbId];
           if (!mb) return;
-          
           html += '<div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 12px; background: #fafafa;">';
           html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">';
           html += '<div><strong style="font-size: 1em;">' + escapeHtml(mb.label || mbId) + '</strong>';
           html += ' <span style="font-size: 0.75em; color: #888; font-family: monospace;">' + escapeHtml(mbId) + '</span></div>';
           html += '<span style="font-size: 0.75em; color: #888;">' + (mb.created_at || '').substring(0, 19) + '</span>';
           html += '</div>';
-          
           html += '<div style="display: flex; gap: 15px; margin-bottom: 10px; font-size: 0.85em;">';
           html += '<span><strong>' + (mb.stats.contracts || 0) + '</strong> contracts</span>';
           html += '<span><strong>' + (mb.stats.total_rows || 0) + '</strong> rows</span>';
           html += '<span><strong>' + (mb.stats.documents || 0) + '</strong> documents</span>';
           html += '</div>';
-          
           html += '<div style="margin-bottom: 10px;">';
           html += '<div style="font-size: 0.8em; color: #666; font-weight: 600; margin-bottom: 4px;">Source Lineage (read-only):</div>';
           (mb.merged_from || []).forEach(function(sid) {
             html += '<span style="display: inline-block; padding: 2px 8px; background: #e3f2fd; border-radius: 3px; font-size: 0.8em; margin-right: 4px; margin-bottom: 2px; font-family: monospace;">' + escapeHtml(sid) + '</span>';
           });
           html += '</div>';
-          
           html += '<div style="padding: 8px 12px; background: #fff3e0; border-radius: 6px; border-left: 3px solid #ff9800; margin-bottom: 10px; font-size: 0.85em;">';
           html += '<strong style="color: #e65100;">Tenant Rule Inheritance: OFF</strong>';
           html += ' &mdash; Source batch tenant rules do not auto-apply. Use "Promote Rule" to explicitly apply.';
           html += '</div>';
-          
           if (mb.promoted_rules && mb.promoted_rules.length > 0) {
             html += '<div style="margin-bottom: 10px;">';
             html += '<div style="font-size: 0.8em; color: #666; font-weight: 600; margin-bottom: 4px;">Promoted Rules (' + mb.promoted_rules.length + '):</div>';
@@ -7621,13 +7579,11 @@
             });
             html += '</div>';
           }
-          
           html += '<div style="display: flex; gap: 8px; flex-wrap: wrap;">';
           html += '<button class="toolbar-btn" onclick="BatchMerge._promptPromoteRule(\'' + escapeHtml(mbId) + '\')" style="font-size: 0.82em;">Promote Tenant Rule</button>';
           html += '<button class="toolbar-btn" onclick="BatchMerge._viewContractLineage(\'' + escapeHtml(mbId) + '\')" style="font-size: 0.82em;">View Contract Lineage</button>';
           html += '<button class="toolbar-btn" onclick="BatchMerge.deleteMergedBatch(\'' + escapeHtml(mbId) + '\')" style="font-size: 0.82em; color: #c62828;">Delete</button>';
           html += '</div>';
-          
           html += '</div>';
         });
         
@@ -9991,7 +9947,6 @@
           var text = typeof data === 'string' ? data : new TextDecoder().decode(data);
           var parsed = parseCSV(text);
           var sheetName = filename.replace(/\.[^.]+$/, '') || 'Sheet1';
-          
           // v2.3: Header-echo sanitization for CSV
           var preEchoCsvCount = parsed.rows.length;
           parsed.rows = parsed.rows.filter(function(rowObj, ri) {
@@ -10024,22 +9979,18 @@
           var mapping = resolveColumnMapping(parsed.headers);
           result.mapping = mapping;
           var normalizedRows = applyColumnMapping(parsed.rows, parsed.headers, mapping);
-          
           for (var _csvSi = 0; _csvSi < parsed.rows.length; _csvSi++) {
             sanitizeDoubleSlashAnnotations(parsed.rows[_csvSi], parsed.headers);
           }
           result.sheets[sheetName] = { headers: parsed.headers, rows: normalizedRows, meta: { delimiter: parsed.delimiter } };
           result.order.push(sheetName);
-          
         } else if (ext === 'xlsx' || ext === 'xls') {
           if (typeof XLSX === 'undefined') {
             result.errors.push('XLSX library not loaded. Please refresh the page.');
             return result;
           }
-          
           var arrayBuffer = data instanceof ArrayBuffer ? data : data.buffer;
           var workbookXLSX = XLSX.read(arrayBuffer, { type: 'array' });
-          
           // v1.6.39: Apply column mapping per-sheet, not just first sheet
           workbookXLSX.SheetNames.forEach(function(sheetName, idx) {
             var sheet = workbookXLSX.Sheets[sheetName];
@@ -10105,7 +10056,6 @@
             result.sheets[sheetName] = { headers: headers, rows: normalizedRows, meta: { sheetIndex: idx, mapping: sheetMapping } };
             result.order.push(sheetName);
           });
-          
           result.order.sort();
         } else {
           result.errors.push('Unsupported file type: .' + ext);
@@ -13438,7 +13388,6 @@
           var tx = pdfCacheDB.transaction([PDF_CACHE_CONFIG.INDEX_STORE], 'readonly');
           var store = tx.objectStore(PDF_CACHE_CONFIG.INDEX_STORE);
           var req = store.get('cache_index');
-          
           req.onsuccess = function() {
             if (req.result && Array.isArray(req.result.entries)) {
               pdfCacheIndex = req.result.entries;
@@ -13449,7 +13398,6 @@
             console.log('[PDF_CACHE] Loaded index:', pdfCacheIndex.length, 'entries');
             resolve();
           };
-          
           req.onerror = function() {
             pdfCacheIndex = [];
             updateCacheStatsFromIndex();
@@ -13507,7 +13455,6 @@
           var tx = pdfCacheDB.transaction([PDF_CACHE_CONFIG.STORE_NAME], 'readonly');
           var store = tx.objectStore(PDF_CACHE_CONFIG.STORE_NAME);
           var req = store.get(cacheKey);
-          
           req.onsuccess = function() {
             if (req.result && req.result.blob) {
               // Update last_accessed_at
@@ -13517,7 +13464,6 @@
               resolve(null);
             }
           };
-          
           req.onerror = function() { resolve(null); };
         } catch (e) {
           resolve(null);
@@ -13652,13 +13598,11 @@
           var tx = pdfCacheDB.transaction([PDF_CACHE_CONFIG.STORE_NAME], 'readwrite');
           var store = tx.objectStore(PDF_CACHE_CONFIG.STORE_NAME);
           store.delete(cacheKey);
-          
           tx.oncomplete = function() {
             pdfCacheIndex = pdfCacheIndex.filter(function(e) { return e.key !== cacheKey; });
             updateCacheStatsFromIndex();
             resolve();
           };
-          
           tx.onerror = function() {
             pdfCacheIndex = pdfCacheIndex.filter(function(e) { return e.key !== cacheKey; });
             updateCacheStatsFromIndex();
@@ -13685,14 +13629,12 @@
           var tx = pdfCacheDB.transaction([PDF_CACHE_CONFIG.STORE_NAME, PDF_CACHE_CONFIG.INDEX_STORE], 'readwrite');
           tx.objectStore(PDF_CACHE_CONFIG.STORE_NAME).clear();
           tx.objectStore(PDF_CACHE_CONFIG.INDEX_STORE).clear();
-          
           tx.oncomplete = function() {
             pdfCacheIndex = [];
             updateCacheStatsFromIndex();
             console.log('[PDF_CACHE] All cached PDFs cleared');
             resolve();
           };
-          
           tx.onerror = function() {
             pdfCacheIndex = [];
             updateCacheStatsFromIndex();
@@ -14019,7 +13961,6 @@
         dataSheets.forEach(function(sheetName) {
           var sheetData = workbook.sheets[sheetName];
           if (!sheetData || !sheetData.rows) return;
-          
           // Build sheet array with headers + orchestrate columns
           var exportHeaders = sheetData.headers.slice();
           var extraCols = ['batch_id', 'contract_id', 'document_id', 'document_role', 'document_type', 'capabilities', 'merged_from', 'group_id'];
@@ -14027,7 +13968,6 @@
             if (exportHeaders.indexOf(c) < 0) exportHeaders.push(c);
           });
           var sheetArray = [exportHeaders];
-          
           // Add rows
           sheetData.rows.forEach(function(row) {
             var rowArray = exportHeaders.map(function(h) {
@@ -14050,15 +13990,12 @@
             });
             sheetArray.push(rowArray);
           });
-          
           var ws = XLSX.utils.aoa_to_sheet(sheetArray);
-          
           // v1.6.33: Apply column widths
           var colWidths = sheetData.headers.map(function(h) {
             return { wch: Math.min(30, Math.max(10, h.length + 2)) };
           });
           ws['!cols'] = colWidths;
-          
           XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31));
         });
         
@@ -14567,10 +14504,8 @@
           const tab = e.target.closest('.loader-tab');
           if (!tab) return;
           const panelId = tab.dataset.panel;
-          
           tabContainer.querySelectorAll('.loader-tab').forEach(t => t.classList.remove('active'));
           tab.classList.add('active');
-          
           const section = tabContainer.closest('.loader-section');
           if (section) {
             section.querySelectorAll('.loader-panel').forEach(p => p.classList.remove('active'));
@@ -15271,7 +15206,6 @@
         if (mode === 'verifier' || mode === 'admin') {
           analystContent.style.display = 'none';
           verifierContent.style.display = 'block';
-          
           // v1.5.3 Fix: Always reload verifier queue from canonical stores (not dependent on analyst SRR state)
           reloadVerifierQueuesFromStore();
           initVerifierFilters();
@@ -15279,7 +15213,6 @@
         } else {
           analystContent.style.display = 'block';
           verifierContent.style.display = 'none';
-          
           // v1.5.4: Render analyst triage from PatchRequest store
           renderAnalystTriage();
         }
@@ -16837,7 +16770,6 @@
           if (!recordId) {
             recordId = sheetName + ':' + sheetRowIdx;
           }
-          
           // v1.6.18: Build row classes with change highlighting
           var rowClasses = ['clickable'];
           var changeSummary = getRecordChangeSummary(recordId);
@@ -16847,11 +16779,9 @@
             else if (changeSummary.by_type.removed) rowClasses.push('row-removed');
             else rowClasses.push('row-changed'); // correction, rfi, system_change
           }
-          
           // v1.5.2: Verifier mode - apply PR status highlighting
           var rowStyle = '';
           var clickHandler = 'openRowReviewDrawer(\'' + sheetName + '\',' + sheetRowIdx + ')';
-          
           if (isVerifierMode) {
             var highlight = getVerifierRowHighlight(recordId);
             if (highlight) {
@@ -16860,10 +16790,8 @@
             // Route verifier clicks through handleVerifierRowClick
             clickHandler = 'handleVerifierRowClick(\'' + escapeHtml(recordId) + '\', \'' + sheetName + '\', ' + sheetRowIdx + ')';
           }
-          
           // v1.6.2: Add row badges for signal counts
           var rowBadgesHtml = renderRowBadges(recordId);
-          
           return '<tr class="' + rowClasses.join(' ') + '" style="' + rowStyle + '" data-sheet-name="' + sheetName + '" data-record-index="' + sheetRowIdx + '" data-record-id="' + escapeHtml(recordId) + '" onclick="' + clickHandler + '">' +
             '<td class="row-index">' + (idx + 1) + rowBadgesHtml + '</td>' +
             gridState.visibleColumns.map(function(col) {
@@ -18109,7 +18037,7 @@
       MISSING_REQUIRED: { severity: 'error', source: 'field_meta' },
       PICKLIST_INVALID: { severity: 'warning', source: 'field_meta' },
       QA_FLAG: { severity: 'info', source: 'qa_flags' },
-      MOJIBAKE_DETECTED: { severity: 'warning', source: 'encoding_check' }
+      OCR_UNREADABLE: { severity: 'warning', source: 'encoding_check' }
     };
     
     // v1.6.2: Central Signal Style Map - single source of truth for UI and export
@@ -18260,7 +18188,6 @@
         for (var key in targetRow) {
           if (key === 'record_id' || key === 'sheet' || key === 'row_index') continue;
           var cellVal = String(targetRow[key] || '').trim().toLowerCase();
-          
           // Match on old_value (before change) or new_value (current value after change)
           if (oldValStr && cellVal === oldValStr) return key;
           if (newValStr && cellVal === newValStr) return key;
@@ -18283,23 +18210,18 @@
         
         rows.forEach(function(row) {
           if (!row) return;
-          
           var targetSheet = row.sheet_name || '';
           var rowIndex = parseFloat(row.row_index);
           var fieldName = row.field_name || '';
           var category = (row.category || '').toUpperCase();
           var changedBy = (row.changed_by || '').toLowerCase();
-          
           if (!targetSheet || isNaN(rowIndex)) return;
-          
           var rowIdx = Math.floor(rowIndex);
-          
           // v1.6.14: Try to infer field if not provided
           if (!fieldName) {
             fieldName = inferFieldFromValue(targetSheet, rowIdx, row.old_value, row.new_value);
             if (fieldName) inferredCount++;
           }
-          
           // Determine change type
           var changeType = 'correction';  // default
           if (category === 'SYSTEM_CHANGE' || changedBy === 'system') {
@@ -18307,25 +18229,20 @@
           } else if (category === 'BLACKLIST' || row.blacklist_value) {
             changeType = 'blacklist';
           }
-          
           // Build record ID (sheet:index)
           var recordId = targetSheet + ':' + rowIdx;
-          
           // Store change
           if (!changeMapStore.changes_by_cell[recordId]) {
             changeMapStore.changes_by_cell[recordId] = {};
           }
-          
           // v1.6.14: Use _row_level marker if no field could be determined
           var storeKey = fieldName || '_row_level';
           if (!fieldName) rowLevelCount++;
-          
           // Don't overwrite more specific field entries with row-level
           if (storeKey === '_row_level' && Object.keys(changeMapStore.changes_by_cell[recordId]).length > 0) {
             // Already have field-level changes, skip row-level marker
             return;
           }
-          
           changeMapStore.changes_by_cell[recordId][storeKey] = {
             type: changeType,
             actor: changedBy === 'system' ? 'System' : 'Analyst',
@@ -18335,7 +18252,6 @@
             timestamp: row.changed_at || '',
             source: 'change_log'
           };
-          
           changeCount++;
           changeMapStore.stats.by_type[changeType] = (changeMapStore.stats.by_type[changeType] || 0) + 1;
         });
@@ -18361,17 +18277,13 @@
       if (rfiSheet && rfiSheet.rows) {
         rfiSheet.rows.forEach(function(row) {
           if (!row) return;
-          
           var targetSheet = row['Sheet'] || '';
           var rowNum = parseFloat(row['Row #']);
           var fieldName = row['Field Name'] || '';
           var noteType = (row['Note Type'] || '').toUpperCase();
           var detectedBy = (row['Detected By'] || '').toLowerCase();
-          
           if (!targetSheet || isNaN(rowNum)) return;
-          
           var rowIdx = Math.floor(rowNum);
-          
           // v1.6.14: Try to infer field from Summary if not provided
           if (!fieldName && row['Summary']) {
             // Check if summary mentions a field name pattern
@@ -18390,7 +18302,6 @@
               }
             }
           }
-          
           // Determine change type from RFI data
           var changeType = 'rfi';  // default for this sheet
           if (noteType === 'BLACKLIST') {
@@ -18398,17 +18309,13 @@
           } else if (detectedBy === 'system' || (row['Category'] || '').includes('AUTO')) {
             changeType = 'system_change';
           }
-          
           var recordId = targetSheet + ':' + rowIdx;
-          
           if (!changeMapStore.changes_by_cell[recordId]) {
             changeMapStore.changes_by_cell[recordId] = {};
           }
-          
           // v1.6.14: Use _row_level marker if no field could be determined
           var storeKey = fieldName || '_row_level';
           if (!fieldName) rfiRowLevel++;
-          
           // Don't overwrite existing change log entries (they have more detail)
           if (!changeMapStore.changes_by_cell[recordId][storeKey]) {
             changeMapStore.changes_by_cell[recordId][storeKey] = {
@@ -18729,7 +18636,6 @@
         
         sheet.rows.forEach(function(row, rowIdx) {
           if (!row) return;
-          
           var rowNum = parseFloat(row['Row #'] || row['row'] || row['Row'] || rowIdx);
           var fieldName = row['Field'] || row['field'] || row['Field Name'] || row['Changed_Field'] || '';
           var changeType = row['Change Type'] || row['change_type'] || row['Action'] || row['action'] || 'Update';
@@ -18738,11 +18644,8 @@
           var notes = row['Notes'] || row['notes'] || row['Summary'] || row['Reason'] || '';
           var timestamp = row['Timestamp'] || row['timestamp'] || row['Date'] || new Date().toISOString();
           var ruleId = row['Rule ID'] || row['rule_id'] || row['Rule'] || '';
-          
           if (!fieldName && !notes) return;
-          
           var recordId = targetSheet + ':' + Math.floor(rowNum);
-          
           // Determine change type label
           var typeLabel = changeType;
           var typeColor = '#4caf50';
@@ -18756,12 +18659,10 @@
             typeLabel = 'Rule-Based Correction';
             typeColor = '#ff9800';
           }
-          
           var message = notes || (changeType + ': ' + fieldName);
           if (oldValue && newValue) {
             message = '"' + oldValue + '" → "' + newValue + '"' + (notes ? ' (' + notes + ')' : '');
           }
-          
           items.push({
             request_id: 'system_change_' + sheetName + '_' + rowIdx,
             type: 'system_change',
@@ -19050,7 +18951,7 @@
         case 'QA_FLAG':
           if (severity === 'error' || severity === 'warning') return 'SALESFORCE_LOGIC';
           return 'SYSTEM_CHANGE';
-        case 'MOJIBAKE_DETECTED':
+        case 'OCR_UNREADABLE':
           return 'MANUAL_REVIEW';
         default:
           return 'CLEAN';
@@ -19123,11 +19024,9 @@
           var style = getCellHighestPriorityStyle(recordId, fieldKey);
           var signals = recordSignals[fieldKey];
           var category = 'CLEAN';
-          
           if (signals.length > 0) {
             category = mapSignalToStyleCategory(signals[0].signal_type, signals[0].severity);
           }
-          
           cellStylesStore[recordId][fieldKey] = {
             status: category,
             color: style.bg,
@@ -19283,10 +19182,10 @@
         }
       }
       
-      // 3. MOJIBAKE_DETECTED: Encoding issues
+      // 3. OCR_UNREADABLE: Encoding issues (mojibake)
       if (!isBlankValue(value) && typeof value === 'string' && MOJIBAKE_REGEX.test(value)) {
         signals.push({
-          signal_type: 'MOJIBAKE_DETECTED',
+          signal_type: 'OCR_UNREADABLE',
           severity: 'warning',
           message: 'Possible encoding issue detected',
           source: 'encoding_check',
@@ -19365,17 +19264,14 @@
         rows.forEach(function(row, idx) {
           if (!row) return;
           recordCount++;
-          
           // Get record_id (from _identity or generate)
           var recordId = (row._identity && row._identity.record_id) 
             ? row._identity.record_id 
             : sheetName + ':' + idx;
-          
           // Initialize cell map for this record
           if (!signalStore.signals_by_cell[recordId]) {
             signalStore.signals_by_cell[recordId] = {};
           }
-          
           // Backfill document_type and capabilities
           if (!row._document_type) row._document_type = 'Unknown';
           if (!row._document_role) row._document_role = 'Unknown';
@@ -19386,7 +19282,6 @@
           var fieldKeys = Object.keys(row).filter(function(k) {
             return !k.startsWith('_');
           }).sort(); // Sort for determinism
-          
           // Generate signals for each cell
           fieldKeys.forEach(function(fieldKey) {
             var signals = generateCellSignals(row, fieldKey, sheetName, recordId);
@@ -19634,7 +19529,6 @@
           var patchKind = 'correction';  // default
           var source = 'system_rule';
           var reasonCategory = sig.signal_type || 'unknown';
-          
           // Determine patch_kind from signal type
           if (sig.signal_type === 'SYSTEM_CHANGE' || reasonCategory.indexOf('system') >= 0) {
             patchKind = 'system_change';
@@ -19652,7 +19546,6 @@
             patchKind = 'correction';
             source = 'legacy_diff_import';
           }
-          
           items.push({
             field_key: fieldKey,
             patch_kind: patchKind,
@@ -20055,7 +19948,6 @@
             return;
           }
           var sheet = workbook.sheets[sheetName];
-          
           if (sheet && sheet.rows) {
             var foundIdx = sheet.rows.findIndex(function(r) {
               return String(r.contract_key) === String(rowId);
@@ -20484,7 +20376,6 @@
           var existingJustification = change ? (change.justification || '') : '';
           var existingComment = change ? (change.comment || '') : '';
           var existingCategory = change ? (change.category || 'Correction') : 'Correction';
-          
           cardHtml += '<div class="srr-mini-patch">' +
             '<div class="srr-mini-patch-label">Patch Details</div>' +
             '<select class="srr-patch-type" id="srr-patch-type-' + key + '" onchange="srrUpdateChangeCategory(\'' + key + '\', this.value)">' +
@@ -22223,7 +22114,6 @@
         for (var j = 0; j < aliases.length; j++) {
           var alias = aliases[j].toLowerCase().replace(/_/g, '').replace(/\s+/g, '');
           var keyNorm = keyLower.replace(/_/g, '');
-          
           if (keyNorm === alias || keyLower === aliases[j]) {
             var val = record[key];
             if (val) return srrNormalizePdfValue(val);
@@ -22542,7 +22432,6 @@
           var objectUrl = URL.createObjectURL(blob);
           var sourceName = fileName || networkUrl.split('/').pop().split('?')[0];
           var sourceLabel = usingProxy ? 'Proxy' : 'URL';
-          
           // Check if file is too large to cache
           if (blob.size > PDF_CACHE_CONFIG.MAX_FILE_BYTES) {
             srrState.cacheStatus = 'too-large';
@@ -22559,7 +22448,6 @@
         .catch(function(err) {
           console.warn('[SRR_PDF] Fetch failed:', err.message, usingProxy ? '(proxy)' : '(direct)');
           srrState.cacheStatus = usingProxy ? 'proxy-failed' : 'cors-blocked';
-          
           // v1.4.16: If proxy failed, show clear message
           if (usingProxy) {
             // Proxy unavailable - show deterministic message
@@ -22572,7 +22460,6 @@
             }
             return;
           }
-          
           // v1.4.15: CORS fallback - try direct iframe src if local fallback unavailable
           if (srrState.localAttachmentFallback) {
             srrRenderPdf(record, srrState.localAttachmentFallback.url, 'Local Attachment (offline fallback)', srrState.localAttachmentFallback.name, srrBuildLogEntry('Local Attachment', 'offline-fallback', 'local-attachment'));
@@ -24351,7 +24238,7 @@
         var cache = {
           refreshed_at: new Date().toISOString(),
           lanes: {
-            preflight: { unknown_columns: 0, ocr_unreadable: 0, low_confidence: 0, mojibake: 0, document_type: 0, total: 0 },
+            preflight: { unknown_columns: 0, ocr_unreadable: 0, low_confidence: 0, document_type: 0, total: 0 },
             semantic: { proposals_created: 0, accepted: 0, rejected: 0, pending: 0, hinge_impacted: 0, total: 0 },
             patch_review: { draft: 0, submitted: 0, in_verifier: 0, in_admin: 0, rfi_submitted: 0, clarification: 0, promoted: 0, applied: 0, total: 0 }
           },
@@ -24377,7 +24264,6 @@
           if (bt === 'UNKNOWN_COLUMN') cache.lanes.preflight.unknown_columns++;
           else if (bt === 'OCR_UNREADABLE') cache.lanes.preflight.ocr_unreadable++;
           else if (bt === 'LOW_CONFIDENCE') cache.lanes.preflight.low_confidence++;
-          else if (bt === 'MOJIBAKE' || bt === 'MOJIBAKE_DETECTED') { cache.lanes.preflight.mojibake++; cache.lanes.preflight.ocr_unreadable++; }
           else if (bt === 'DOCUMENT_TYPE_MISSING') { cache.lanes.preflight.document_type++; }
           else if (bt === 'DOCUMENT_TYPE_MISSING') cache.lanes.preflight.document_type = (cache.lanes.preflight.document_type || 0) + 1;
         });
@@ -25314,7 +25200,6 @@
         UNKNOWN_COLUMN: { label: 'Unknown Column', badge: 'fail', icon: '\u2753', desc: 'Column not found in field_meta.json. Threshold: columns with >0 non-empty values are flagged.' },
         OCR_UNREADABLE: { label: 'OCR Unreadable', badge: 'fail', icon: '\ud83d\udeab', desc: 'OCR extraction returned unreadable or garbled text. Manual review required.' },
         LOW_CONFIDENCE: { label: 'Low Confidence', badge: 'warn', icon: '\u26a0', desc: 'Extraction confidence below 60%. Values may be unreliable.' },
-        MOJIBAKE: { label: 'OCR / Encoding', badge: 'fail', icon: '\ud83d\udeab', desc: 'Text contains encoding artifacts (mojibake). Merged under OCR Unreadable family. Source document may need re-extraction.' },
         DOCUMENT_TYPE_MISSING: { label: 'Document Type Missing', badge: 'warn', icon: '\ud83d\udcc4', desc: 'Document type not assigned or not recognized. Assign a valid document type before proceeding.' },
         MISSING_REQUIRED: { label: 'Missing Required', badge: 'fail', icon: '\u2757', desc: 'A required field defined in field_meta.json is missing or empty in this record.' },
         PICKLIST_INVALID: { label: 'Invalid Picklist', badge: 'warn', icon: '\ud83d\udcdd', desc: 'Field value does not match any allowed option in the picklist.' }
@@ -25364,15 +25249,15 @@
       // v1.6.0: Populate queues from signalStore
       var signalItems = getSignalTriageItems();
       
-      // Manual Review: MOJIBAKE_DETECTED (also routes to Pre-Flight as OCR/Encoding family)
+      // Manual Review: OCR_UNREADABLE (encoding artifacts / mojibake)
       analystTriageState.manualItems = signalItems.filter(function(item) {
-        return item.signal_type === 'MOJIBAKE_DETECTED';
+        return item.signal_type === 'OCR_UNREADABLE';
       });
-      // P0.4: Ensure mojibake signals also appear in preflight lane count
+      // P0.4: Ensure OCR_UNREADABLE signals appear in preflight lane
       analystTriageState.manualItems.forEach(function(item) {
-        if (item.signal_type === 'MOJIBAKE_DETECTED' && !item._preflightRouted) {
+        if (item.signal_type === 'OCR_UNREADABLE' && !item._preflightRouted) {
           item._preflightRouted = true;
-          item.blocker_type = 'MOJIBAKE';
+          item.blocker_type = 'OCR_UNREADABLE';
           item.reason_summary = 'Encoding artifacts detected (mojibake)';
         }
       });
@@ -25518,7 +25403,7 @@
           if (rollup && rollup.extraction_signals) {
             (rollup.extraction_signals || []).forEach(function(sig) {
               var bt = sig.blocker_type || '';
-              if (['OCR_UNREADABLE', 'LOW_CONFIDENCE', 'MOJIBAKE'].indexOf(bt) >= 0) {
+              if (['OCR_UNREADABLE', 'LOW_CONFIDENCE'].indexOf(bt) >= 0) {
                 var meta = _preflightBlockerTypes[bt] || {};
                 analystTriageState.manualItems.push({
                   request_id: 'preflight_' + bt.toLowerCase() + '_' + c.contract_id + '_' + (sig.field || sig.sheet || ''),
@@ -25589,7 +25474,6 @@
         
         fieldKeys.forEach(function(fieldKey) {
           var signals = fieldSignals[fieldKey];
-          
           signals.forEach(function(signal) {
             items.push({
               id: recordId + '|' + fieldKey + '|' + signal.signal_type,
@@ -25618,7 +25502,7 @@
       switch (signalType) {
         case 'MISSING_REQUIRED': return 'required';
         case 'PICKLIST_INVALID': return 'picklist';
-        case 'MOJIBAKE_DETECTED': return 'encoding';
+        case 'OCR_UNREADABLE': return 'encoding';
         case 'QA_FLAG': return 'qa';
         default: return 'signal';
       }
@@ -25628,7 +25512,7 @@
       switch (signalType) {
         case 'MISSING_REQUIRED': return 'Required';
         case 'PICKLIST_INVALID': return 'Invalid Value';
-        case 'MOJIBAKE_DETECTED': return 'Encoding Issue';
+        case 'OCR_UNREADABLE': return 'Encoding Issue';
         case 'QA_FLAG': return 'QA Flag';
         default: return signalType;
       }
@@ -26288,7 +26172,6 @@
         var artifact = getArtifact(payloadId);
         if (artifact) {
           updateArtifact(payloadId, { status: newStatus });
-          
           // Log appropriate event based on status change
           var eventType = null;
           if (newStatus === 'sent_to_admin') {
@@ -26300,7 +26183,6 @@
           } else if (newStatus === 'resolved') {
             eventType = 'ADMIN_APPROVED';
           }
-          
           if (eventType) {
             logArtifactEvent(eventType, {
               artifact_id: payloadId,
@@ -27028,28 +26910,23 @@
           typeBadge.textContent = 'RFI';
           typeBadge.style.background = '#ff9800';
           document.getElementById('vr-rfi-content').style.display = 'block';
-          
           // Populate RFI fields
           document.getElementById('vr-rfi-field').textContent = payload.field || '—';
           document.getElementById('vr-rfi-value').textContent = payload.old_value || '(empty)';
           document.getElementById('vr-rfi-comment').textContent = payload.comment || '—';
-          
         } else if (payload.type === 'blacklist') {
           typeBadge.textContent = 'BLACKLIST';
           typeBadge.style.background = '#d32f2f';
           document.getElementById('vr-blacklist-content').style.display = 'block';
-          
           // Populate Blacklist fields
           document.getElementById('vr-bl-field').textContent = payload.field || '—';
           document.getElementById('vr-bl-value').textContent = payload.old_value || '(empty)';
           document.getElementById('vr-bl-subject').textContent = payload.field + ': ' + (payload.old_value || '(empty)');
           document.getElementById('vr-bl-comment').textContent = payload.comment || '—';
-          
         } else {
           typeBadge.textContent = 'CORRECTION';
           typeBadge.style.background = '#1565c0';
           document.getElementById('vr-correction-content').style.display = 'block';
-          
           // Populate Correction fields
           document.getElementById('vr-corr-field').textContent = payload.field || '—';
           document.getElementById('vr-corr-old').textContent = payload.old_value || '(empty)';
@@ -27209,7 +27086,6 @@
           var srcPointers = storedRecord.source_pointers || {};
           foundSheet = srcPointers.sheet_name || datasetId;
           foundIdx = srcPointers.row_index || 0;
-          
           // Inject into workbook for subsequent lookups
           if (!workbook.sheets[foundSheet]) {
             workbook.sheets[foundSheet] = { name: foundSheet, headers: Object.keys(foundRecord), rows: [] };
@@ -27218,7 +27094,6 @@
           if (!workbook.sheets[foundSheet].rows[foundIdx]) {
             workbook.sheets[foundSheet].rows[foundIdx] = foundRecord;
           }
-          
           // Set SRR context and open
           srrState.currentSheetName = foundSheet;
           srrState.currentDatasetId = datasetId;
@@ -27228,7 +27103,6 @@
           srrState.currentArtifactId = artifactId;
           srrState.isReadOnly = (currentMode === 'verifier' || currentMode === 'admin');
           srrState.currentPatchRequest = patchRequest;
-          
           updateDebugPanel({
             role: currentMode,
             tenant_id: fallbackTenantId,
@@ -27236,7 +27110,6 @@
             record_id: recordId,
             record_load: 'STORE_FALLBACK'
           });
-          
           navigateTo('row/' + foundIdx);
         } else {
           var storeKey = 'kiwi/v1/' + fallbackTenantId + '/records/' + datasetId + '/' + recordId + '.json';
@@ -28046,7 +27919,6 @@
         Object.keys(record).forEach(function(key) {
           if (seenCols.has(key)) return;
           seenCols.add(key);
-          
           var normalized = normalizeColumnName(key);
           if (!CANONICAL_FIELDS.includes(normalized) && !key.startsWith('_')) {
             var sampleValues = [];
@@ -28320,22 +28192,18 @@
         try {
           var data = ext === 'csv' ? e.target.result : new Uint8Array(e.target.result);
           var result = parseWorkbook(data, file.name);
-          
           if (result.errors.length > 0) {
             showLoaderError(result.errors.join('; '));
             return;
           }
-          
           if (result.order.length === 0) {
             showLoaderError('No sheets detected in file. Please check the file format.');
             return;
           }
-          
           // Show column mapping warning if not fully resolved
           if (result.mapping && result.mapping.missingColumns.length > 0) {
             showColumnMappingBanner(result.mapping.missingColumns);
           }
-          
           // Populate workbook
           resetWorkbook();
           IDENTITY_CONTEXT.dataset_id = file.name;
@@ -28344,7 +28212,6 @@
             var sheet = result.sheets[sheetName];
             addSheet(sheetName, sheet.headers, sheet.rows, sheet.meta);
           });
-          
           // v1.6.39: Reset gridState.sheet if it doesn't exist in the new workbook
           if (gridState.sheet && result.order.indexOf(gridState.sheet) === -1) {
             console.log('[Grid] Resetting invalid sheet selection from:', gridState.sheet, 'to:', result.order[0] || '');
@@ -28352,7 +28219,6 @@
           } else if (!gridState.sheet && result.order.length > 0) {
             gridState.sheet = result.order[0];
           }
-          
           // Also populate allData for legacy compatibility
           var allRows = [];
           result.order.forEach(function(sheetName) {
@@ -28363,7 +28229,6 @@
               allRows.push(row);
             });
           });
-          
           allData = {
             contractResults: allRows,
             issues: [],
@@ -28376,11 +28241,9 @@
               blocked: 0
             }
           };
-          
           // v2.3: Workbook data persisted to IndexedDB only (no localStorage blobs)
           // localStorage used for prefs/pointers only
           saveToUploadLibrary({ workbook: workbook }, file.name, ext);
-          
           dataLoaded = true;
           // P0.6: Notify TruthPack of dataset upload
           if (typeof TruthPack !== 'undefined' && TruthPack.isActive()) {
@@ -28394,10 +28257,8 @@
           populateGridSheetSelector();
           renderAllTables();
           renderGrid();
-          
           // v1.5.3: Persist all records to canonical store
           persistAllRecordsToStore();
-          
           // v1.6.0: Generate signals for dataset
           generateSignalsForDataset();
 
@@ -28406,17 +28267,14 @@
 
           // v1.6.33: Seed patch requests from RFI meta sheet (if present in uploaded file)
           seedPatchRequestsFromMetaSheet();
-          
           // v1.6.33: Also seed verifier RFI queue for verifier view
           if (typeof seedVerifierRFIQueueFromMetaSheet === 'function') {
             seedVerifierRFIQueueFromMetaSheet();
           }
-          
           // v1.6.33: Update progress block after seeding
           if (typeof updateProgressBlock === 'function') {
             updateProgressBlock();
           }
-          
           console.log('[Loader] Workbook imported:', file.name, 'sheets:', result.order.length, 'total rows:', allRows.length);
           // v1.6.46: Cache workbook for session persistence
           if (workbook.order.length > 0 && typeof saveCurrentSession === 'function') {
@@ -28427,7 +28285,6 @@
           }
           saveWorkbookToCache();
           showToast(ext.toUpperCase() + ' imported: ' + result.order.length + ' sheet(s), ' + allRows.length + ' rows', 'success');
-          
           if (!validateWorkbookState()) {
             showLoaderError('Import completed but no data was loaded. Please check the file format.');
             return;
@@ -28716,7 +28573,6 @@
             'ElevatedToPatchRequest': { bg: '#ede7f6', border: '#5e35b1' },
             'Closed': { bg: '#f5f5f5', border: '#757575' }
           }[c.status] || { bg: '#f5f5f5', border: '#757575' };
-          
           const date = new Date(c.created_at_utc).toLocaleDateString();
           var elevateBtn = c.status === 'Resolved' ? '<button class="toolbar-btn" style="padding: 2px 8px; font-size: 0.75em;" onclick="elevateCommentToPatchRequest(\'' + c.comment_id + '\')">Elevate to Patch</button>' : '';
           var resolveBtn = c.status === 'Open' ? '<button class="toolbar-btn" style="padding: 2px 8px; font-size: 0.75em;" onclick="resolveCommentById(\'' + c.comment_id + '\')">Resolve</button>' : '';
@@ -29926,7 +29782,6 @@
         if (removedKeys.length > 0) {
           const compareArr = getCompareArray(type);
           const removedRecords = compareArr.filter(r => removedKeys.includes(getRowKey(r, type)));
-          
           removedRows = removedRecords.map((row, idx) => {
             const cells = columns.map(c => {
               let val = formatValue(row[c.key]);
@@ -32434,7 +32289,6 @@ Add any additional notes here.
             idx,
             { contract_key: row.contract_key }
           );
-          
           var record = {
             record_id: recordId,
             dataset_id: bundle.dataset_id,
@@ -32446,9 +32300,7 @@ Add any additional notes here.
             status: 'needs_review',
             data: row
           };
-          
           recordIndex.push(record);
-          
           // Route to queue: if has issues -> Needs Review, else -> To Do
           if (row._has_issue) {
             queueRecords.needs_review.push(record);
@@ -32686,11 +32538,9 @@ Add any additional notes here.
           originalCard.style.background = '#fafafa';
           originalCard.style.border = '1px solid #e0e0e0';
           originalCard.classList.remove('active');
-          
           modifiedCard.style.background = '#fff3e0';
           modifiedCard.style.border = '2px solid #ff9800';
           modifiedCard.classList.add('active');
-          
           // Show in-progress banner
           if (modifiedBanner) modifiedBanner.style.display = 'block';
         } else {
@@ -32698,11 +32548,9 @@ Add any additional notes here.
           originalCard.style.background = '#e3f2fd';
           originalCard.style.border = '2px solid #1976d2';
           originalCard.classList.add('active');
-          
           modifiedCard.style.background = '#fafafa';
           modifiedCard.style.border = '1px solid #e0e0e0';
           modifiedCard.classList.remove('active');
-          
           // Hide in-progress banner
           if (modifiedBanner) modifiedBanner.style.display = 'none';
         }
@@ -32864,23 +32712,18 @@ Add any additional notes here.
         try {
           var csvText = e.target.result;
           var parsed = parseCSV(csvText);
-          
           if (!parsed.rows || parsed.rows.length === 0) {
             showToast('No data rows found in CSV', 'error');
             return;
           }
-          
           // Sheet name from file (single sheet for CSV)
           var sheetName = file.name.replace(/\.[^.]+$/, '') || 'Sheet1';
-          
           // Reset and populate workbook (v1.4.3 INGEST-01)
           resetWorkbook();
-          
           // Normalize headers while preserving originals
           var normalizedHeaders = parsed.headers.map(normalizeHeader);
           var headerMap = {};
           parsed.headers.forEach(function(h, i) { headerMap[h] = normalizedHeaders[i]; });
-          
           // Detect unknown columns
           var unknownColumns = [];
           normalizedHeaders.forEach(function(nh, i) {
@@ -32892,7 +32735,6 @@ Add any additional notes here.
               });
             }
           });
-          
           // Build rows with ALL columns preserved
           var normalizedRows = parsed.rows.map(function(row, idx) {
             var newRow = { _row_index: idx };
@@ -32905,7 +32747,6 @@ Add any additional notes here.
             if (!newRow.status) newRow.status = 'needs_review';
             return newRow;
           });
-          
           // Add sheet to workbook
           addSheet(sheetName, normalizedHeaders, normalizedRows, {
             originalHeaders: parsed.headers,
@@ -32913,7 +32754,6 @@ Add any additional notes here.
             unknownColumns: unknownColumns,
             delimiter: parsed.delimiter
           });
-          
           // Also populate allData for legacy compatibility
           allData = {
             contractResults: normalizedRows.map(function(r) {
@@ -32931,7 +32771,6 @@ Add any additional notes here.
               blocked: 0
             }
           };
-          
           // Detect unknown columns for Admin UI
           if (unknownColumns.length > 0) {
             var unknownColsStorage = JSON.parse(localStorage.getItem('unknown_columns') || '{}');
@@ -32945,12 +32784,10 @@ Add any additional notes here.
             });
             localStorage.setItem('unknown_columns', JSON.stringify(unknownColsStorage));
           }
-          
           // v2.3 G6: localStorage blob write removed (storage policy).
           // Workbook persisted via saveWorkbookToCache() -> IndexedDB.
           if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
           saveToUploadLibrary({ workbook: workbook }, file.name, 'csv');
-          
           dataLoaded = true;
           currentArtifactPath = file.name;
           currentDataset = null; // Reset cache
@@ -32960,16 +32797,12 @@ Add any additional notes here.
           populateGridSheetSelector();
           renderAllTables();
           renderGrid();
-          
           // v1.5.3: Persist all records to canonical store
           persistAllRecordsToStore();
-          
           // v1.6.0: Generate signals for dataset
           generateSignalsForDataset();
-          
           console.log('[Loader] CSV imported:', sheetName, 'headers:', normalizedHeaders.length, 'rows:', normalizedRows.length, 'unknown:', unknownColumns.length);
           showToast('CSV imported: ' + parsed.rows.length + ' rows, ' + unknownColumns.length + ' unknown columns', 'success');
-          
           if (callback) callback();
         } catch (err) {
           console.error('CSV import error:', err);
@@ -33159,7 +32992,6 @@ Add any additional notes here.
           var text = e.target.result;
           var parsed = parseCSV(text);
           var sheetName = file.name.replace(/\.[^/.]+$/, '').toLowerCase().replace(/[^a-z0-9_]/g, '_');
-          
           var dataset = {
             dataset_id: 'import_' + Date.now(),
             version: '1.0.0',
@@ -33172,7 +33004,6 @@ Add any additional notes here.
             summary: {}
           };
           dataset.sheets[sheetName] = parsed;
-          
           // Generate contract_results from rows if contract_key exists
           if (parsed.headers.includes('contract_key')) {
             parsed.rows.forEach(function(row, idx) {
@@ -33186,7 +33017,6 @@ Add any additional notes here.
               });
             });
           }
-          
           allData = {
             contractResults: dataset.contract_results,
             issues: dataset.issues,
@@ -33195,13 +33025,10 @@ Add any additional notes here.
             summary: dataset.summary,
             sheets: dataset.sheets
           };
-          
           // v2.3 G6: localStorage blob write removed (storage policy).
           if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
-          
           // Save to upload library
           saveToUploadLibrary(dataset, file.name, 'csv');
-          
           dataLoaded = true;
           currentArtifactPath = file.name;
           updateUIForDataState();
@@ -33210,15 +33037,11 @@ Add any additional notes here.
           renderAllTables();
           populateTargetFieldDropdown();
           updateLoaderPageUI();
-          
           // v1.5.3: Persist all records to canonical store
           persistAllRecordsToStore();
-          
           // v1.6.0: Generate signals for dataset
           generateSignalsForDataset();
-          
           showToast('Imported ' + parsed.rows.length + ' rows from ' + file.name, 'success');
-          
           // Auto-redirect after CSV import (v1.2.7) - use intended route if stored
           setTimeout(function() {
             var nextRoute = sessionStorage.getItem('kiwi_next_route') || 'triage';
@@ -34624,7 +34447,7 @@ var P022_RuntimeValidation = {
         checks.push(this._check('_preflightBlockerTypes defined', typeof _preflightBlockerTypes !== 'undefined'));
         var types = typeof _preflightBlockerTypes !== 'undefined' ? _preflightBlockerTypes : {};
         checks.push(this._check('UNKNOWN_COLUMN type', !!types['UNKNOWN_COLUMN']));
-        checks.push(this._check('MOJIBAKE type', !!types['MOJIBAKE']));
+        checks.push(this._check('OCR_UNREADABLE type', !!types['OCR_UNREADABLE']));
         checks.push(this._check('DOCUMENT_TYPE_MISSING type', !!types['DOCUMENT_TYPE_MISSING']));
         checks.push(this._check('MISSING_REQUIRED type', !!types['MISSING_REQUIRED']));
         checks.push(this._check('PICKLIST_INVALID type', !!types['PICKLIST_INVALID']));
