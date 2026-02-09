@@ -24642,18 +24642,35 @@
         if (typeof rulesBundleCache !== 'undefined' && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.fields) {
           var allFields = rulesBundleCache.fieldMeta.fields;
           cache.schema.standard_total = allFields.length;
+          var _normKey = function(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); };
           var wbCols = {};
+          var wbCanonicals = {};
           if (typeof workbook !== 'undefined' && workbook.order) {
             workbook.order.forEach(function(sn) {
               var sh = workbook.sheets[sn];
-              if (sh && sh.headers) sh.headers.forEach(function(h) { wbCols[h.toLowerCase()] = true; });
+              if (sh && sh.headers) sh.headers.forEach(function(h) {
+                wbCols[h.toLowerCase()] = true;
+                wbCols[_normKey(h)] = true;
+                var aliasNorm = _normKey(h);
+                if (typeof COLUMN_ALIAS_MAP !== 'undefined' && COLUMN_ALIAS_MAP[aliasNorm]) {
+                  wbCanonicals[COLUMN_ALIAS_MAP[aliasNorm].toLowerCase()] = true;
+                  wbCanonicals[_normKey(COLUMN_ALIAS_MAP[aliasNorm])] = true;
+                }
+              });
             });
           }
+          var _fieldMatches = function(fk) {
+            var fkl = fk.toLowerCase();
+            var fkn = _normKey(fk);
+            if (wbCols[fkl] || wbCols[fkl + '_c'] || wbCols[fkn] || wbCols[fkn + '_c']) return true;
+            if (wbCanonicals[fkl] || wbCanonicals[fkn]) return true;
+            return false;
+          };
           allFields.forEach(function(f) {
-            if (wbCols[f.field_key.toLowerCase()] || wbCols[(f.field_key + '_c').toLowerCase()]) cache.schema.standard_matched++;
+            if (_fieldMatches(f.field_key)) cache.schema.standard_matched++;
           });
           cache.schema.missing_required = allFields.filter(function(f) {
-            return f.required && !wbCols[f.field_key.toLowerCase()] && !wbCols[(f.field_key + '_c').toLowerCase()];
+            return f.required && !_fieldMatches(f.field_key);
           }).length;
         }
         if (typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable() && ContractIndex._index && ContractIndex._index.unknown_columns) {
