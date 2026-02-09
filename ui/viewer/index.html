@@ -1909,6 +1909,9 @@
             <button onclick="handleMergedBatchFilterChange('')" style="margin-left: 12px; padding: 2px 8px; background: white; border: 1px solid #bbdefb; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Clear</button>
           </div>
           <!-- V2.3: Triage Analytics Header -->
+          <!-- P0.6: Truth Pack Calibration Panel (Architect-only) -->
+          <div id="truth-pack-calibration-panel" style="display: none; margin-bottom: 16px;"></div>
+
           <div id="triage-analytics-header" style="margin-bottom: 24px; display: none;">
             <!-- P1: Processing Status Banner -->
             <div id="ta-processing-banner" style="display: none; padding: 8px 16px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 8px; margin-bottom: 12px; font-size: 0.82em;">
@@ -3444,6 +3447,21 @@
   </div>
 </div>
         </div><!-- end admin-tab-governance -->
+
+        <!-- P0.6: Truth Pack Controls (Architect-only) -->
+        <div id="truth-pack-admin-section" class="admin-section" style="display: none; background: #f3e5f5; padding: 16px 20px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #ce93d8;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h4 style="margin: 0; font-size: 0.95em; color: #6a1b9a;">Architect Controls</h4>
+            <span style="font-size: 0.7em; padding: 2px 8px; background: #7b1fa2; color: white; border-radius: 10px; font-weight: 600;">ARCHITECT ONLY</span>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label style="font-size: 0.85em; color: #555; display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="architect-mode-toggle" onchange="if(this.checked){TruthPack.enableArchitectMode();}else{TruthPack.disableArchitectMode();}">
+              Enable Architect Mode
+            </label>
+          </div>
+          <div id="truth-pack-admin-controls" style="display: none;"></div>
+        </div>
 
         <!-- USERS TAB (v1.4.21) -->
         <div id="admin-tab-users" class="admin-tab-panel" data-admin-section="true" style="display: none;">
@@ -5173,7 +5191,7 @@
             return { id: du.email || du.name || 'unknown', role: (du.role || currentMode || 'analyst').toLowerCase() };
           }
         } catch(e) {}
-        return { id: playgroundActors[currentMode] || 'unknown@example.com', role: currentMode || 'analyst' };
+        return { id: playgroundActors[currentMode] || 'unknown@example.com', role: (typeof TruthPack !== 'undefined' && TruthPack.isArchitect()) ? 'architect' : (currentMode || 'analyst') };
       },
 
       emit: function(eventType, data) {
@@ -5587,6 +5605,343 @@
     
 
     // ========== CONTRACT INDEX ENGINE (v2.2 P0) ==========
+
+    // =========================================================================
+    // P0.6: Truth Pack Bootstrap — Architect-only clean-room workflow
+    // =========================================================================
+    var TRUTH_PACK_ARCHITECT_ALLOWLIST = ['architect@orchestrate.local'];
+    var TruthPack = {
+      _active: false,
+      _baselineMarked: false,
+      _calibrationRun: null,
+      _sessionId: null,
+
+      isActive: function() { return this._active; },
+
+      isArchitect: function() {
+        var mode = (localStorage.getItem('viewer_mode_v10') || '').toLowerCase();
+        if (mode === 'architect') return true;
+        var archEnabled = localStorage.getItem('truth_pack_architect_enabled');
+        if (archEnabled === 'true' && mode === 'admin') return true;
+        return false;
+      },
+
+      _isInAllowlist: function() {
+        var actor = (typeof AuditTimeline !== 'undefined') ? AuditTimeline._resolveActor() : { id: '' };
+        for (var ai = 0; ai < TRUTH_PACK_ARCHITECT_ALLOWLIST.length; ai++) {
+          if (actor.id === TRUTH_PACK_ARCHITECT_ALLOWLIST[ai]) return true;
+        }
+        return false;
+      },
+
+      enableArchitectMode: function() {
+        var actor = AuditTimeline._resolveActor();
+        var allowed = false;
+        for (var ai = 0; ai < TRUTH_PACK_ARCHITECT_ALLOWLIST.length; ai++) {
+          if (actor.id === TRUTH_PACK_ARCHITECT_ALLOWLIST[ai]) { allowed = true; break; }
+        }
+        if (!allowed) {
+          var mode = (localStorage.getItem('viewer_mode_v10') || '').toLowerCase();
+          if (mode !== 'admin') {
+            if (typeof showToast === 'function') showToast('Architect access denied: not in allowlist', 'error');
+            console.log('[TRUTH-PACK][P0.6] architect_denied: actor=' + actor.id);
+            return;
+          }
+        }
+        localStorage.setItem('truth_pack_architect_enabled', 'true');
+        localStorage.setItem('viewer_mode_v10', 'architect');
+        if (typeof currentMode !== 'undefined') currentMode = 'architect';
+        console.log('[TRUTH-PACK][P0.6] architect_mode_enabled');
+        AuditTimeline.emit('truth_pack_architect_enabled', { actor_role: 'architect', metadata: { action: 'enable_architect_mode' } });
+        if (typeof showToast === 'function') showToast('Architect mode enabled', 'success');
+        this._renderControls();
+        if (typeof applyModeVisibility === 'function') applyModeVisibility('architect');
+      },
+
+      disableArchitectMode: function() {
+        localStorage.removeItem('truth_pack_architect_enabled');
+        localStorage.setItem('viewer_mode_v10', 'admin');
+        if (typeof currentMode !== 'undefined') currentMode = 'admin';
+        console.log('[TRUTH-PACK][P0.6] architect_mode_disabled');
+        if (typeof showToast === 'function') showToast('Architect mode disabled', 'info');
+        this._renderControls();
+        if (typeof applyModeVisibility === 'function') applyModeVisibility('admin');
+      },
+
+      _cleanRoom: function() {
+        console.log('[TRUTH-PACK][P0.6] clean_room_start');
+        try {
+          if (typeof workbook !== 'undefined') { workbook = { sheets: {}, order: [] }; }
+          if (typeof dataLoaded !== 'undefined') dataLoaded = false;
+          if (typeof ContractIndex !== 'undefined' && ContractIndex.clear) ContractIndex.clear();
+          if (typeof analystTriageState !== 'undefined') {
+            analystTriageState.manualItems = [];
+            analystTriageState.sflogicItems = [];
+            analystTriageState.patchItems = [];
+            analystTriageState.systemItems = [];
+          }
+          if (typeof TriageAnalytics !== 'undefined' && TriageAnalytics._cache) {
+            TriageAnalytics._cache = null;
+          }
+          var keysToRemove = [];
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k && (k.indexOf('workbook_session_') === 0 || k.indexOf('orchestrate_artifact_') === 0)) {
+              keysToRemove.push(k);
+            }
+          }
+          keysToRemove.forEach(function(k) { localStorage.removeItem(k); });
+          if (typeof SessionDB !== 'undefined' && SessionDB.clearWorkbookCache) {
+            SessionDB.clearWorkbookCache().catch(function() {});
+          }
+          if (typeof clearAllCellStores === 'function') clearAllCellStores();
+        } catch(e) {
+          console.warn('[TRUTH-PACK][P0.6] clean_room_error:', e);
+        }
+        console.log('[TRUTH-PACK][P0.6] clean_room_complete');
+      },
+
+      startSession: function() {
+        if (!this.isArchitect()) {
+          if (typeof showToast === 'function') showToast('Architect role required', 'error');
+          return;
+        }
+        this._sessionId = 'tp_' + Date.now().toString(36);
+        this._active = true;
+        this._baselineMarked = false;
+        this._calibrationRun = null;
+        localStorage.setItem('truth_pack_active', 'true');
+        localStorage.setItem('truth_pack_session_id', this._sessionId);
+        this._cleanRoom();
+        console.log('[TRUTH-PACK][P0.6] session_started: id=' + this._sessionId);
+        AuditTimeline.emit('truth_pack_session_started', {
+          actor_role: 'architect',
+          metadata: { session_id: this._sessionId, action: 'start' }
+        });
+        if (typeof showToast === 'function') showToast('Truth Pack session started (clean room)', 'success');
+        this._renderControls();
+        this._renderCalibrationPanel();
+        this._suppressSampleDatasets();
+        if (typeof navigateTo === 'function') navigateTo('triage');
+        if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
+      },
+
+      resetSession: function() {
+        if (!this.isArchitect() || !this._active) return;
+        this._calibrationRun = null;
+        this._baselineMarked = false;
+        this._cleanRoom();
+        console.log('[TRUTH-PACK][P0.6] session_reset: id=' + this._sessionId);
+        AuditTimeline.emit('truth_pack_session_reset', {
+          actor_role: 'architect',
+          metadata: { session_id: this._sessionId, action: 'reset' }
+        });
+        if (typeof showToast === 'function') showToast('Truth Pack session reset (clean room)', 'info');
+        this._renderCalibrationPanel();
+        if (typeof navigateTo === 'function') navigateTo('triage');
+        if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
+      },
+
+      exitSession: function() {
+        if (!this.isArchitect()) return;
+        this._active = false;
+        this._calibrationRun = null;
+        this._baselineMarked = false;
+        localStorage.removeItem('truth_pack_active');
+        localStorage.removeItem('truth_pack_session_id');
+        console.log('[TRUTH-PACK][P0.6] session_exited: id=' + this._sessionId);
+        AuditTimeline.emit('truth_pack_session_exited', {
+          actor_role: 'architect',
+          metadata: { session_id: this._sessionId, action: 'exit' }
+        });
+        this._sessionId = null;
+        if (typeof showToast === 'function') showToast('Truth Pack session ended', 'info');
+        this._renderControls();
+        this._renderCalibrationPanel();
+        this._restoreSampleDatasets();
+      },
+
+      _suppressSampleDatasets: function() {
+        var cards = ['demo-dataset-card-original', 'demo-dataset-card-modified', 'data-source-demo-section'];
+        cards.forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) el.style.display = 'none';
+        });
+        console.log('[TRUTH-PACK][P0.6] sample_datasets_suppressed');
+      },
+
+      _restoreSampleDatasets: function() {
+        var el1 = document.getElementById('demo-dataset-card-original');
+        var el2 = document.getElementById('demo-dataset-card-modified');
+        var sec = document.getElementById('data-source-demo-section');
+        if (el1) el1.style.display = '';
+        if (el2) el2.style.display = '';
+        if (sec) sec.style.display = '';
+        console.log('[TRUTH-PACK][P0.6] sample_datasets_restored');
+      },
+
+      onDatasetUploaded: function(datasetName, datasetId) {
+        if (!this._active) return;
+        console.log('[TRUTH-PACK][P0.6] dataset_uploaded: name=' + datasetName + ', id=' + datasetId);
+        AuditTimeline.emit('truth_pack_calibration_started', {
+          actor_role: 'architect',
+          metadata: { session_id: this._sessionId, dataset_name: datasetName, dataset_id: datasetId }
+        });
+        var cache = (typeof TriageAnalytics !== 'undefined' && TriageAnalytics._cache) ? TriageAnalytics._cache : null;
+        this._calibrationRun = {
+          dataset_name: datasetName,
+          dataset_id: datasetId,
+          run_timestamp: new Date().toISOString(),
+          total_contracts: cache ? cache.total_contracts : 0,
+          preflight_counts: cache ? {
+            unknown_columns: cache.lanes.preflight.unknown_columns,
+            ocr_unreadable: cache.lanes.preflight.ocr_unreadable,
+            low_confidence: cache.lanes.preflight.low_confidence,
+            mojibake: cache.lanes.preflight.mojibake,
+            document_type: cache.lanes.preflight.document_type || 0,
+            total: cache.lanes.preflight.total
+          } : { unknown_columns: 0, ocr_unreadable: 0, low_confidence: 0, mojibake: 0, document_type: 0, total: 0 }
+        };
+        this._renderCalibrationPanel();
+      },
+
+      refreshCalibrationCounts: function() {
+        if (!this._active || !this._calibrationRun) return;
+        var cache = (typeof TriageAnalytics !== 'undefined' && TriageAnalytics._cache) ? TriageAnalytics._cache : null;
+        if (!cache) return;
+        this._calibrationRun.total_contracts = cache.total_contracts;
+        this._calibrationRun.preflight_counts = {
+          unknown_columns: cache.lanes.preflight.unknown_columns,
+          ocr_unreadable: cache.lanes.preflight.ocr_unreadable,
+          low_confidence: cache.lanes.preflight.low_confidence,
+          mojibake: cache.lanes.preflight.mojibake,
+          document_type: cache.lanes.preflight.document_type || 0,
+          total: cache.lanes.preflight.total
+        };
+        this._renderCalibrationPanel();
+        console.log('[TRUTH-PACK][P0.6] calibration_counts_refreshed: pf_total=' + this._calibrationRun.preflight_counts.total);
+      },
+
+      markAsBaseline: function() {
+        if (!this._active || !this._calibrationRun) return;
+        this._baselineMarked = true;
+        this._calibrationRun.baseline_marked = true;
+        this._calibrationRun.baseline_marked_at = new Date().toISOString();
+        console.log('[TRUTH-PACK][P0.6] baseline_marked: dataset=' + this._calibrationRun.dataset_name);
+        AuditTimeline.emit('truth_pack_baseline_marked', {
+          actor_role: 'architect',
+          metadata: { session_id: this._sessionId, dataset_name: this._calibrationRun.dataset_name, dataset_id: this._calibrationRun.dataset_id, preflight_counts: this._calibrationRun.preflight_counts }
+        });
+        if (typeof showToast === 'function') showToast('Marked as baseline candidate', 'success');
+        this._renderCalibrationPanel();
+      },
+
+      exportSnapshot: function() {
+        if (!this._active || !this._calibrationRun) return;
+        var snapshot = {
+          export_type: 'truth_pack_calibration_snapshot',
+          version: 'P0.6',
+          session_id: this._sessionId,
+          dataset_name: this._calibrationRun.dataset_name,
+          dataset_id: this._calibrationRun.dataset_id,
+          run_timestamp: this._calibrationRun.run_timestamp,
+          exported_at: new Date().toISOString(),
+          total_contracts: this._calibrationRun.total_contracts,
+          preflight_counts: this._calibrationRun.preflight_counts,
+          baseline_marked: this._baselineMarked,
+          affected_contracts: [],
+          affected_records: []
+        };
+        if (typeof ContractIndex !== 'undefined' && ContractIndex._index) {
+          var idx = ContractIndex._index;
+          var cKeys = Object.keys(idx.contracts || {});
+          for (var ci = 0; ci < cKeys.length; ci++) {
+            var c = idx.contracts[cKeys[ci]];
+            snapshot.affected_contracts.push({ contract_id: c.contract_id, file_name: c.file_name, row_count: c.row_count });
+          }
+          for (var oi = 0; oi < (idx.orphan_rows || []).length; oi++) {
+            snapshot.affected_records.push(idx.orphan_rows[oi]);
+          }
+        }
+        var blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'truth_pack_snapshot_' + (this._calibrationRun.dataset_name || 'unknown').replace(/[^a-zA-Z0-9]/g, '_') + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        console.log('[TRUTH-PACK][P0.6] snapshot_exported: dataset=' + this._calibrationRun.dataset_name);
+        AuditTimeline.emit('truth_pack_snapshot_exported', {
+          actor_role: 'architect',
+          metadata: { session_id: this._sessionId, dataset_name: this._calibrationRun.dataset_name, contracts: snapshot.affected_contracts.length }
+        });
+        if (typeof showToast === 'function') showToast('Calibration snapshot exported', 'success');
+      },
+
+      _renderControls: function() {
+        var container = document.getElementById('truth-pack-admin-controls');
+        if (!container) return;
+        if (!this.isArchitect()) {
+          container.style.display = 'none';
+          return;
+        }
+        container.style.display = '';
+        var isActive = this._active;
+        container.innerHTML = '<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">' +
+          '<span style="font-size: 0.85em; font-weight: 600; color: #7b1fa2;">Truth Pack</span>' +
+          (isActive ? '<span style="padding: 2px 8px; background: #e8f5e9; color: #2e7d32; border-radius: 10px; font-size: 0.75em; font-weight: 600;">ACTIVE</span>' : '<span style="padding: 2px 8px; background: #f5f5f5; color: #999; border-radius: 10px; font-size: 0.75em;">INACTIVE</span>') +
+          (!isActive ? '<button onclick="TruthPack.startSession()" style="padding: 4px 12px; font-size: 0.8em; background: #7b1fa2; color: white; border: none; border-radius: 4px; cursor: pointer;">Start Session</button>' : '') +
+          (isActive ? '<button onclick="TruthPack.resetSession()" style="padding: 4px 12px; font-size: 0.8em; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer;">Reset</button>' : '') +
+          (isActive ? '<button onclick="TruthPack.exitSession()" style="padding: 4px 12px; font-size: 0.8em; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Exit Session</button>' : '') +
+          '</div>';
+      },
+
+      _renderCalibrationPanel: function() {
+        var panel = document.getElementById('truth-pack-calibration-panel');
+        if (!panel) return;
+        if (!this._active || !this.isArchitect()) {
+          panel.style.display = 'none';
+          return;
+        }
+        panel.style.display = '';
+        var run = this._calibrationRun;
+        if (!run) {
+          panel.innerHTML = '<div style="padding: 12px 16px; background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 8px; font-size: 0.85em; color: #6a1b9a;">' +
+            '<strong>Truth Pack Mode</strong> — Upload a dataset to begin calibration run. No sample data loaded.' +
+            '</div>';
+          return;
+        }
+        var pf = run.preflight_counts;
+        panel.innerHTML = '<div style="padding: 12px 16px; background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 8px;">' +
+          '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">' +
+          '<span style="font-weight: 600; font-size: 0.9em; color: #6a1b9a;">Calibration Run</span>' +
+          '<span style="font-size: 0.75em; color: #999;">' + (run.run_timestamp || '') + '</span>' +
+          '</div>' +
+          '<div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 8px;">' +
+          '<div style="text-align: center;"><div style="font-size: 1.1em; font-weight: 700; color: #333;">' + (run.dataset_name || '—') + '</div><div style="font-size: 0.7em; color: #888;">Dataset</div></div>' +
+          '<div style="text-align: center;"><div style="font-size: 1.1em; font-weight: 700; color: #1565c0;">' + run.total_contracts + '</div><div style="font-size: 0.7em; color: #888;">Contracts</div></div>' +
+          '<div style="text-align: center;"><div style="font-size: 1.1em; font-weight: 700; color: #e65100;">' + pf.total + '</div><div style="font-size: 0.7em; color: #888;">Pre-Flight Issues</div></div>' +
+          '<div style="text-align: center;"><div style="font-size: 0.85em; color: #555;">' + pf.unknown_columns + ' unk | ' + pf.ocr_unreadable + ' ocr | ' + pf.low_confidence + ' conf | ' + pf.document_type + ' doc</div><div style="font-size: 0.7em; color: #888;">Breakdown</div></div>' +
+          '</div>' +
+          '<div style="display: flex; gap: 8px;">' +
+          '<button onclick="TruthPack.markAsBaseline()" style="padding: 4px 12px; font-size: 0.8em; background: ' + (this._baselineMarked ? '#e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7' : '#7b1fa2; color: white; border: none') + '; border-radius: 4px; cursor: pointer;">' + (this._baselineMarked ? 'Baseline Marked' : 'Mark as Baseline') + '</button>' +
+          '<button onclick="TruthPack.exportSnapshot()" style="padding: 4px 12px; font-size: 0.8em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Export Snapshot</button>' +
+          '<button onclick="TruthPack.refreshCalibrationCounts()" style="padding: 4px 12px; font-size: 0.8em; background: #f5f5f5; color: #555; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">Refresh</button>' +
+          '</div>' +
+          '</div>';
+      },
+
+      restoreFromStorage: function() {
+        if (localStorage.getItem('truth_pack_active') === 'true') {
+          this._active = true;
+          this._sessionId = localStorage.getItem('truth_pack_session_id') || 'tp_restored';
+          console.log('[TRUTH-PACK][P0.6] session_restored_from_storage: id=' + this._sessionId);
+          this._suppressSampleDatasets();
+        }
+        this._renderControls();
+        this._renderCalibrationPanel();
+      }
+    };
 
     var ContractIndex = {
       _index: null,
@@ -13494,7 +13849,7 @@
       
       // v1.4.22: RBAC route guards - show Access Restricted page with specific message
       var restrictedReason = null;
-      if (page === 'admin' && currentMode !== 'admin') {
+      if (page === 'admin' && currentMode !== 'admin' && currentMode !== 'architect') {
         console.log('[Navigate] Admin page requires admin mode');
         restrictedReason = 'The Admin Panel is only available to users with the Admin role.';
         adminTab = null;
@@ -13988,18 +14343,20 @@
     }
     
     function applyModeVisibility(mode) {
+      // P0.6: Architect inherits admin visibility
+      var effectiveMode = (mode === 'architect') ? 'admin' : mode;
       const revElements = document.querySelectorAll('[data-mode-verifier]');
       const anlElements = document.querySelectorAll('[data-mode-analyst]');
       const admElements = document.querySelectorAll('[data-mode-admin]');
       
-      revElements.forEach(el => {
-        el.classList.toggle('mode-hidden', mode !== 'verifier' && mode !== 'admin');
+      revElements.forEach(function(el) {
+        el.classList.toggle('mode-hidden', effectiveMode !== 'verifier' && effectiveMode !== 'admin');
       });
-      anlElements.forEach(el => {
-        el.classList.toggle('mode-hidden', mode !== 'analyst');
+      anlElements.forEach(function(el) {
+        el.classList.toggle('mode-hidden', effectiveMode !== 'analyst');
       });
-      admElements.forEach(el => {
-        el.classList.toggle('mode-hidden', mode !== 'admin');
+      admElements.forEach(function(el) {
+        el.classList.toggle('mode-hidden', effectiveMode !== 'admin');
       });
     }
 
@@ -14309,6 +14666,15 @@
     // Admin Console Tab Switching
     var currentAdminTab = 'governance';
     function switchAdminTab(tabName) {
+      // P0.6: Show architect controls if admin/architect
+      var archSection = document.getElementById('truth-pack-admin-section');
+      if (archSection) {
+        var _mode = (localStorage.getItem('viewer_mode_v10') || '').toLowerCase();
+        archSection.style.display = (_mode === 'admin' || _mode === 'architect') ? '' : 'none';
+        var _toggle = document.getElementById('architect-mode-toggle');
+        if (_toggle) _toggle.checked = (_mode === 'architect' || localStorage.getItem('truth_pack_architect_enabled') === 'true');
+        if (typeof TruthPack !== 'undefined') TruthPack._renderControls();
+      }
       const tabs = ['governance', 'users', 'patch-queue', 'config', 'inspector', 'standardizer', 'patch-console', 'evidence', 'unknown-cols'];
       if (!tabs.includes(tabName)) tabName = 'governance';
       
@@ -25678,6 +26044,12 @@
       // v1.6.38: Clear all cell-level caches BEFORE loading new dataset to prevent stale highlights
       clearAllCellStores();
       
+      // P0.6: Truth Pack — enforce clean pre-flight from zero
+      if (typeof TruthPack !== 'undefined' && TruthPack.isActive()) {
+        console.log('[TRUTH-PACK][P0.6] upload_in_truth_pack_mode: file=' + file.name);
+        TruthPack._cleanRoom();
+      }
+      
       var ext = (file.name.split('.').pop() || '').toLowerCase();
       
       if (ext !== 'csv' && ext !== 'xlsx' && ext !== 'xls') {
@@ -25751,6 +26123,10 @@
           saveToUploadLibrary({ workbook: workbook }, file.name, ext);
           
           dataLoaded = true;
+          // P0.6: Notify TruthPack of dataset upload
+          if (typeof TruthPack !== 'undefined' && TruthPack.isActive()) {
+            setTimeout(function() { TruthPack.onDatasetUploaded(file.name, IDENTITY_CONTEXT.dataset_id || file.name); }, 500);
+          }
           currentArtifactPath = file.name;
           currentDataset = null;
           updateUIForDataState();
@@ -30075,6 +30451,11 @@ Add any additional notes here.
     }
     
     async function loadSampleDataset(options) {
+      if (typeof TruthPack !== 'undefined' && TruthPack.isActive()) {
+        console.log('[TRUTH-PACK][P0.6] sample_dataset_blocked: truth-pack mode active');
+        if (typeof showToast === 'function') showToast('Sample datasets disabled in Truth Pack mode', 'warning');
+        return;
+      }
       options = options || {};
       
       // v1.6.39: Clear all cell stores before loading new dataset
@@ -30901,6 +31282,7 @@ Add any additional notes here.
     (async function() {
       await SessionDB.init();
       await AuditTimeline.init();
+    if (typeof TruthPack !== 'undefined') { TruthPack.restoreFromStorage(); }
       await SessionDB.migrateFromLocalStorage();
       if (artifactRegistry.devMasterlineEnabled) {
         await masterlineAutoload();
