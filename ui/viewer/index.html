@@ -1863,7 +1863,7 @@
               </div>
             <p class="page-desc">All items requiring analyst review and action.</p>
             <!-- V2.2 P0: Audit Header Dropdown (3-tier) -->
-            <div id="audit-header-dropdown-container" style="display: inline-flex; margin-left: auto; z-index: 90;">
+            <div id="audit-header-dropdown-container" style="display: inline-flex; margin-left: auto; z-index: 90; position: relative;">
               <button onclick="toggleAuditHeaderDropdown()" id="btn-audit-header" style="padding: 6px 14px; font-size: 0.8em; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
                 <span style="font-size: 1.1em;">&#128220;</span> Audit <span id="audit-header-badge" style="background: #e3f2fd; color: #1565c0; padding: 1px 6px; border-radius: 10px; font-size: 0.85em; min-width: 16px; text-align: center;">0</span>
               </button>
@@ -7694,6 +7694,7 @@
     var _activeContractFilter = '';
 
     function populateContractSelector() {
+      console.log('[P0.9-CLEANUP] contract_filter_primary: populating contract selector');
       var selector = document.getElementById('grid-contract-selector');
       var filterGroup = document.getElementById('contract-filter-group');
       var statContracts = document.getElementById('grid-stat-contracts');
@@ -9903,6 +9904,9 @@
           result.mapping = mapping;
           var normalizedRows = applyColumnMapping(parsed.rows, parsed.headers, mapping);
           
+          for (var _csvSi = 0; _csvSi < parsed.rows.length; _csvSi++) {
+            sanitizeDoubleSlashAnnotations(parsed.rows[_csvSi], parsed.headers);
+          }
           result.sheets[sheetName] = { headers: parsed.headers, rows: normalizedRows, meta: { delimiter: parsed.delimiter } };
           result.order.push(sheetName);
           
@@ -9937,6 +9941,7 @@
               headers.forEach(function(h, colIdx) {
                 rowObj[h] = rowArr[colIdx] !== undefined ? String(rowArr[colIdx]) : null;
               });
+              sanitizeDoubleSlashAnnotations(rowObj, headers);
               rows.push(rowObj);
             }
             
@@ -9991,6 +9996,65 @@
       
       console.log('[parseWorkbook] Result:', result.order.length, 'sheets, errors:', result.errors.length);
       return result;
+    }
+
+    function sanitizeDoubleSlashAnnotations(rowObj, headers) {
+      var urlPattern = /^https?:\/\//i;
+      var sanitized = [];
+      for (var hi = 0; hi < headers.length; hi++) {
+        var h = headers[hi];
+        if (!h) continue;
+        var val = rowObj[h];
+        if (val === null || val === undefined) continue;
+        var sVal = String(val);
+        if (sVal.indexOf('//') === -1) continue;
+        if (urlPattern.test(sVal)) {
+          var urlEndIdx = sVal.indexOf(' //');
+          if (urlEndIdx === -1) urlEndIdx = sVal.indexOf('\t//');
+          if (urlEndIdx === -1) {
+            var dblSlashPositions = [];
+            var searchFrom = sVal.indexOf('://')  + 3;
+            while (searchFrom < sVal.length) {
+              var pos = sVal.indexOf('//', searchFrom);
+              if (pos === -1) break;
+              dblSlashPositions.push(pos);
+              searchFrom = pos + 2;
+            }
+            if (dblSlashPositions.length > 0) {
+              urlEndIdx = dblSlashPositions[dblSlashPositions.length - 1];
+            }
+          }
+          if (urlEndIdx > 0) {
+            var cleanUrl = sVal.substring(0, urlEndIdx).trim();
+            var annotation = sVal.substring(urlEndIdx + 2).trim();
+            if (annotation.length > 0) {
+              rowObj[h] = cleanUrl;
+              if (!rowObj['_imported_comment']) rowObj['_imported_comment'] = '';
+              rowObj['_imported_comment'] += (rowObj['_imported_comment'] ? '; ' : '') + h + ': ' + annotation;
+              sanitized.push({ field: h, raw: sVal, clean: cleanUrl, annotation: annotation, type: 'url' });
+            }
+          }
+        } else {
+          var parts = sVal.split('//');
+          if (parts.length >= 2) {
+            var cleanVal = parts[0].trim();
+            var annot = parts.slice(1).join('//').trim();
+            if (annot.length > 0 && cleanVal.length > 0) {
+              rowObj[h] = cleanVal;
+              if (!rowObj['_imported_comment']) rowObj['_imported_comment'] = '';
+              rowObj['_imported_comment'] += (rowObj['_imported_comment'] ? '; ' : '') + h + ': ' + annot;
+              sanitized.push({ field: h, raw: sVal, clean: cleanVal, annotation: annot, type: 'business' });
+            }
+          }
+        }
+      }
+      if (sanitized.length > 0) {
+        console.log('[P0.9-CLEANUP] legacy_slash_sanitized: count=' + sanitized.length + ', fields=' + sanitized.map(function(s) { return s.field; }).join(','));
+        if (typeof AuditTimeline !== 'undefined') {
+          AuditTimeline.emit('legacy_slash_sanitized', { metadata: { count: sanitized.length, fields: sanitized.map(function(s) { return s.field; }) } });
+        }
+      }
+      return sanitized;
     }
     
     function showColumnMappingBanner(missingColumns) {
@@ -15010,8 +15074,8 @@
     }
     
     function setMode(mode) {
-      const modes = ['analyst', 'verifier', 'admin'];
-      if (!modes.includes(mode)) mode = 'analyst';
+      var modes = ['analyst', 'verifier', 'admin'];
+      if (modes.indexOf(mode) === -1) mode = 'analyst';
       currentMode = mode;
       updateSidebarUserProfile();
       
@@ -15022,20 +15086,20 @@
       if (triageTitle) triageTitle.textContent = 'Triage - ' + roleLabel;
       if (verifierTitle) verifierTitle.textContent = 'Triage - ' + roleLabel;
       
-      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-      const modeBtn = document.querySelector(`.mode-btn[data-mode="${mode}"]`);
+      document.querySelectorAll('.mode-btn').forEach(function(b) { b.classList.remove('active'); });
+      var modeBtn = document.querySelector('.mode-btn[data-mode="' + mode + '"]');
       if (modeBtn) modeBtn.classList.add('active');
       
       // Toggle nav visibility based on mode using CSS classes
-      const appLayout = document.querySelector('.app-layout');
+      var appLayout = document.querySelector('.app-layout');
       if (appLayout) {
         appLayout.classList.remove('mode-analyst', 'mode-verifier', 'mode-admin');
-        appLayout.classList.add(`mode-${mode}`);
+        appLayout.classList.add('mode-' + mode);
       }
 
       // v1.5.3 Fix: Toggle Triage view visibility + ALWAYS reload queues from canonical store
-      const analystContent = document.getElementById('analyst-triage-content');
-      const verifierContent = document.getElementById('verifier-triage-content');
+      var analystContent = document.getElementById('analyst-triage-content');
+      var verifierContent = document.getElementById('verifier-triage-content');
       if (analystContent && verifierContent) {
         if (mode === 'verifier' || mode === 'admin') {
           analystContent.style.display = 'none';
@@ -15111,6 +15175,7 @@
     // v1.4.22: Navigate to role-specific default landing page
     // v1.6.37: Default to All Data Grid (Accounts sheet) instead of Triage
     function navigateToRoleDefault() {
+      console.log('[P0.9-CLEANUP] route_default_triage: role=' + currentMode);
       navigateTo('triage');
     }
     
@@ -18763,8 +18828,14 @@
       html += '<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">';
       html += '<span style="font-size: 1.1em;">\u{1F4D6}</span>';
       html += '<span style="font-weight: 600; font-size: 0.85em; color: #333;">' + guidanceTitle + '</span>';
-      if (docRole) html += '<span style="padding: 2px 8px; background: #e8eaf6; color: #3949ab; border-radius: 10px; font-size: 0.75em;">' + docRole + '</span>';
-      if (docType) html += '<span style="padding: 2px 8px; background: #e0f2f1; color: #00695c; border-radius: 10px; font-size: 0.75em;">' + docType + '</span>';
+      var _safeRole = (docRole && docRole.toLowerCase() !== 'unknown') ? docRole : '';
+      var _safeType = (docType && docType.toLowerCase() !== 'unknown') ? docType : '';
+      if (!_safeRole && !_safeType && _sheetLabel) {
+        _safeRole = _sheetLabel;
+      }
+      if (_safeRole) html += '<span style="padding: 2px 8px; background: #e8eaf6; color: #3949ab; border-radius: 10px; font-size: 0.75em;">' + _safeRole + '</span>';
+      if (_safeType) html += '<span style="padding: 2px 8px; background: #e0f2f1; color: #00695c; border-radius: 10px; font-size: 0.75em;">' + _safeType + '</span>';
+      console.log('[P0.9-CLEANUP] guidance_labels_resolved: role=' + _safeRole + ', type=' + _safeType + ', sheet=' + (_sheetLabel || ''));
       if (confidence) {
         var confColor = confidence >= 0.8 ? '#2e7d32' : confidence >= 0.6 ? '#e65100' : '#c62828';
         html += '<span style="padding: 2px 8px; background: ' + confColor + '18; color: ' + confColor + '; border-radius: 10px; font-size: 0.75em;">' + Math.round(confidence * 100) + '% conf</span>';
@@ -23613,7 +23684,12 @@
         else if (type === 'drift') count = cache.schema.schema_drift;
         if (count === 0 && emptyState) {
           emptyState.style.display = '';
-          emptyState.textContent = 'No ' + (type === 'unknown' ? 'unknown columns' : type === 'missing' ? 'missing required fields' : 'schema drift items') + ' detected in current dataset. Load or refresh data to update this view.';
+          var _emptyReasons = {
+            unknown: 'No unknown columns detected. All imported columns match the canonical schema.',
+            missing: 'No missing required fields. All required fields from field_meta.json are present in the active dataset.',
+            drift: 'No schema drift detected. This may indicate batch-level drift only — check Admin > Schema Tree for cross-batch comparison.'
+          };
+          emptyState.textContent = _emptyReasons[type] || 'No items found for this filter.';
           return;
         }
         navigateToGridFiltered(targetFilter);
@@ -24627,6 +24703,7 @@
     }
 
     function executeTriageResolution(item) {
+      console.log('[P0.9-CLEANUP] ds_route_resolved: item_id=' + (item.request_id || 'unknown') + ', source=' + (item.source || ''));
       var activeDatasetId = (typeof IDENTITY_CONTEXT !== 'undefined') ? IDENTITY_CONTEXT.dataset_id : null;
       var resolution = resolveRecordForTriageItem(item, activeDatasetId);
 
@@ -25505,9 +25582,11 @@
         if (el) el.style.display = 'none';
       });
       // v1.6.57: Show replay contract for RFI but mark as optional
+      // P0.9: Analyst sees no replay controls
       var replayBlock = document.getElementById('srr-replay-contract-block');
-      var currentMode = localStorage.getItem('viewer_mode_v10') || 'analyst';
-      if (replayBlock) replayBlock.style.display = (currentMode === 'verifier' || currentMode === 'admin') ? 'block' : 'none';
+      var _replayCurrentMode = localStorage.getItem('viewer_mode_v10') || 'analyst';
+      var _showReplay = (_replayCurrentMode === 'verifier' || _replayCurrentMode === 'admin');
+      if (replayBlock) replayBlock.style.display = _showReplay ? 'block' : 'none';
       ['srr-replay-type-required', 'srr-replay-steps-required', 'srr-replay-expected-required'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.textContent = '(optional)';
@@ -27735,7 +27814,8 @@
       var bgColor = '#2e7d32';
       if (type === 'error') bgColor = '#c62828';
       else if (type === 'warning') bgColor = '#f57c00';
-      toast.style.cssText = 'position: fixed; top: 64px; left: 50%; transform: translateX(-50%); padding: 12px 24px; background: ' + bgColor + '; color: white; border-radius: 6px; font-size: 0.9em; z-index: 10001; box-shadow: 0 4px 12px rgba(0,0,0,0.3); max-width: 90vw;';
+      toast.style.cssText = 'position: fixed; top: 100px; left: 50%; transform: translateX(-50%); padding: 12px 24px; background: ' + bgColor + '; color: white; border-radius: 6px; font-size: 0.9em; z-index: 10001; box-shadow: 0 4px 12px rgba(0,0,0,0.3); max-width: 80vw; max-width: calc(100vw - 200px);';
+      console.log('[P0.9-CLEANUP] overlap_guard_ok: toast positioned clear of toolbar');
       console.log('[TRIAGE-ANALYTICS][P0.2] layout_safezone_applied: toast=top-center, fab=bottom-right, audit-dropdown=z90, search-bar=z100');
       toast.textContent = message;
       document.body.appendChild(toast);
@@ -28202,17 +28282,17 @@
         });
       });
       
-      document.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          setMode(btn.dataset.mode);
+      document.querySelectorAll('.mode-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          setMode(btn.getAttribute('data-mode'));
         });
       });
       
       // v1.4.14: Track full route including params to prevent loops
       var currentRoute = 'triage';
       
-      window.addEventListener('hashchange', () => {
-        const hash = window.location.hash.replace('#/', '') || 'triage';
+      window.addEventListener('hashchange', function() {
+        var hash = window.location.hash.replace('#/', '') || 'triage';
         // Prevent duplicate navigation - compare full route, not just page name
         if (currentRoute !== hash) {
           console.log('[Router] Hashchange to:', hash);
@@ -28234,7 +28314,7 @@
       }
       
       // v1.4.20: Check for role from landing page first, then viewer mode
-      let savedMode = localStorage.getItem('currentRole') || localStorage.getItem('viewer_mode_v10');
+      var savedMode = localStorage.getItem('currentRole') || localStorage.getItem('viewer_mode_v10');
       // Convert legacy 'operator' mode to 'analyst'
       if (savedMode === 'operator') savedMode = 'analyst';
       if (savedMode) setMode(savedMode);
@@ -28250,11 +28330,10 @@
       updateSidebarUserProfile();
       
       // v1.4.22: Default route based on role
-      const hash = window.location.hash.replace('#/', '') || '';
-      if (hash && hash !== 'loader') {
-        navigateTo(hash);
+      var _initHash = window.location.hash.replace('#/', '') || '';
+      if (_initHash && _initHash !== 'loader') {
+        navigateTo(_initHash);
       } else {
-        // No hash or loader - go to role default
         navigateToRoleDefault();
       }
       
@@ -32599,6 +32678,7 @@ Add any additional notes here.
 
     /* V2.3: Triage Analytics Header */
     .ta-lane-card { position: relative; overflow: hidden; }
+    .ta-lane-card .stat-value { font-weight: 600; }
     .ta-lane-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
     .ta-lane-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
     #triage-analytics-header { animation: ta-fade-in 0.3s ease; }
