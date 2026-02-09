@@ -16951,6 +16951,48 @@
       return '';
     }
 
+
+    // P1X-ref: Resolve a meaningful business reference for a pre-flight item
+    function _p1xGetReference(item) {
+      var REF_FIELDS = [
+        'Account_Name_c', 'Account_Name', 'Artist_Name_pka_or_dba_c',
+        'Opportunity_Name', 'Opportunity_Name_c',
+        'Legal_Name_c', 'Legal_First_Name_c',
+        'Album_Name_c', 'Artist_Name_c', 'Name',
+        'Payee_c', 'Description', 'Title',
+        'Writer_Name__c', 'Writer_Name_c',
+        'Add_Ons_c', 'Type_c'
+      ];
+      var ck = item.contract_key || item.contract_id || '';
+      var sn = item.sheet_name || '';
+      // Try to find the first row in workbook matching this contract
+      if (typeof workbook !== 'undefined' && workbook.sheets && sn && workbook.sheets[sn]) {
+        var rows = workbook.sheets[sn].rows || [];
+        for (var ri = 0; ri < rows.length; ri++) {
+          var r = rows[ri];
+          var rck = r.contract_key || r.File_Name_c || r.File_Name || '';
+          if (rck === ck) {
+            for (var fi = 0; fi < REF_FIELDS.length; fi++) {
+              var val = r[REF_FIELDS[fi]];
+              if (val && typeof val === 'string' && val.trim() && val !== 'N/A' && val !== '-') {
+                var ref = val.trim();
+                return ref.length > 40 ? ref.substring(0, 38) + '...' : ref;
+              }
+            }
+            break;
+          }
+        }
+      }
+      // Fallback: clean up file_name or contract_key
+      var fn = item.file_name || ck || '';
+      if (fn) {
+        fn = fn.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ');
+        fn = fn.replace(/\s+/g, ' ').trim();
+        return fn.length > 40 ? fn.substring(0, 38) + '...' : fn;
+      }
+      return sn || '-';
+    }
+
     function _p1dRenderGrouped(items, containerId) {
       var container = document.getElementById(containerId);
       if (!container) return;
@@ -17019,13 +17061,13 @@
 
         html += '<div class="' + bodyClass + '">';
         html += '<table><thead><tr>';
-        html += '<th>Contract Section</th><th>Field</th><th>Reason</th><th>Severity</th><th>Status</th><th>Actions</th>';
+        html += '<th>Contract Section</th><th>Reference</th><th>Issue</th><th>Severity</th><th>Status</th><th>Actions</th>';
         html += '</tr></thead><tbody>';
 
         for (var ri = 0; ri < gItems.length; ri++) {
           var item = gItems[ri];
           var sName = escapeHtml(item.sheet_name || 'Unknown');
-          var fName = escapeHtml(item.field_name || item.field_key || '-');
+          var fName = escapeHtml(_p1xGetReference(item));
 
           var reasonHtml = '-';
           if (item.blocker_type && typeof _preflightBlockerTypes !== 'undefined') {
