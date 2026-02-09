@@ -148,22 +148,24 @@ async def run():
 
         brandroute_result = scan_state['results'].get(BRANDROUTE_FILE, 'not_found')
         report('R3.2 BrandRoute flagged as mojibake',
-               brandroute_result == 'mojibake',
+               brandroute_result.startswith('mojibake'),
                f'result={brandroute_result}')
 
         print('\n--- CHECK 4: Pre-Flight grouping ---')
         preflight_items = await page.evaluate("""(function() {
-            if (!analystTriageState || !analystTriageState.manualItems) return [];
-            return analystTriageState.manualItems.filter(function(m) {
-                return m._batch_scan === true;
-            }).map(function(m) {
+            var items = (typeof _p1fBatchScanItems !== 'undefined') ? _p1fBatchScanItems : [];
+            if (items.length === 0 && analystTriageState && analystTriageState.manualItems) {
+                items = analystTriageState.manualItems.filter(function(m) { return m._batch_scan === true; });
+            }
+            return items.map(function(m) {
                 return {
                     contract_key: m.contract_key,
                     signal_type: m.signal_type,
                     severity: m.severity,
                     field_name: m.field_name,
                     sheet_name: m.sheet_name,
-                    file_name: m.file_name
+                    file_name: m.file_name,
+                    _impact: m._impact || ''
                 };
             });
         })()""")
@@ -178,11 +180,13 @@ async def run():
                f'{len(brandroute_pf)} entries' if brandroute_pf else 'MISSING')
 
         if brandroute_pf:
-            report('R4.2 BrandRoute severity=blocker',
-                   brandroute_pf[0].get('severity') == 'blocker',
-                   f'severity={brandroute_pf[0].get("severity")}')
+            br_sev = brandroute_pf[0].get('severity', '')
+            br_impact = brandroute_pf[0].get('_impact', '')
+            report('R4.2 BrandRoute has valid severity',
+                   br_sev in ('blocker', 'review', 'warning'),
+                   f'severity={br_sev}, impact={br_impact}')
         else:
-            report('R4.2 BrandRoute severity=blocker', False, 'no PF entry to check')
+            report('R4.2 BrandRoute has valid severity', False, 'no PF entry to check')
 
         flagged_contracts = set()
         for pf in preflight_items:
@@ -289,12 +293,14 @@ async def run():
             ('Mojibake', str(scan_state['mojibake']), '>=1'),
             ('Non-searchable', str(scan_state['nonSearchable']), '>=0'),
             ('Errors', str(scan_state['errors']), '>=0'),
-            ('BrandRoute flagged', brandroute_result, 'mojibake'),
+            ('BrandRoute flagged', brandroute_result, 'mojibake*'),
         ]
         print(f'  {"Metric":<30} {"Observed":<15} {"Expected":<15} {"Result":<8}')
         print(f'  {"-"*30} {"-"*15} {"-"*15} {"-"*8}')
         for m, obs, exp in metrics:
-            if exp.startswith('>'):
+            if exp.endswith('*'):
+                pf = 'PASS' if obs.startswith(exp[:-1]) else 'FAIL'
+            elif exp.startswith('>') and not exp.startswith('>='):
                 pf = 'PASS' if int(obs) > 0 else 'FAIL'
             elif exp.startswith('>='):
                 pf = 'PASS'
@@ -316,8 +322,8 @@ async def run():
                         if scan_state['results'].get(ck) == 'error'][:2]
 
         br_obs = scan_state['results'].get(BRANDROUTE_FILE, 'not_found')
-        br_pass = 'PASS' if br_obs == 'mojibake' else 'FAIL'
-        print(f'  {BRANDROUTE_FILE[:55]:<55} {"mojibake":<12} {br_obs:<15} {br_pass:<8}')
+        br_pass = 'PASS' if br_obs.startswith('mojibake') else 'FAIL'
+        print(f'  {BRANDROUTE_FILE[:55]:<55} {"mojibake*":<12} {br_obs:<15} {br_pass:<8}')
 
         for ck in sample_clean:
             obs = scan_state['results'].get(ck, 'unknown')

@@ -2080,7 +2080,7 @@
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.8em;">
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Unknown Cols</span><span id="ta-pf-unknown" style="font-weight: 600;">0</span></div>
-                  <div style="display: flex; justify-content: space-between;"><span style="color: #666;">OCR Unreadable</span><span id="ta-pf-ocr" style="font-weight: 600;">0</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: #666;">OCR / Mojibake</span><span id="ta-pf-ocr" style="font-weight: 600;">0</span></div>
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Low Confidence</span><span id="ta-pf-lowconf" style="font-weight: 600;">0</span></div>
                   <div style="display: flex; justify-content: space-between;"><span style="color: #666;">Doc Type</span><span id="ta-pf-doctype" style="font-weight: 600;">0</span></div>
                 </div>
@@ -6371,7 +6371,7 @@
           '<div style="text-align: center;"><div style="font-size: 1.1em; font-weight: 700; color: #333;">' + (run.dataset_name || '—') + '</div><div style="font-size: 0.7em; color: #888;">Dataset</div></div>' +
           '<div style="text-align: center;"><div style="font-size: 1.1em; font-weight: 700; color: #1565c0;">' + run.total_contracts + '</div><div style="font-size: 0.7em; color: #888;">Contracts</div></div>' +
           '<div style="text-align: center;"><div style="font-size: 1.1em; font-weight: 700; color: #e65100;">' + pf.total + '</div><div style="font-size: 0.7em; color: #888;">Pre-Flight Issues</div></div>' +
-          '<div style="text-align: center;"><div style="font-size: 0.85em; color: #555;">' + pf.unknown_columns + ' unk | ' + pf.ocr_unreadable + ' ocr | ' + pf.low_confidence + ' conf | ' + pf.document_type + ' doc</div><div style="font-size: 0.7em; color: #888;">Breakdown</div></div>' +
+          '<div style="text-align: center;"><div style="font-size: 0.85em; color: #555;">' + pf.unknown_columns + ' unk | ' + pf.ocr_unreadable + ' ocr/moji | ' + pf.low_confidence + ' conf | ' + pf.document_type + ' doc</div><div style="font-size: 0.7em; color: #888;">Breakdown</div></div>' +
           '</div>' +
           '<div style="display: flex; gap: 8px;">' +
           '<button onclick="TruthPack.markAsBaseline()" style="padding: 4px 12px; font-size: 0.8em; background: ' + (this._baselineMarked ? '#e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7' : '#7b1fa2; color: white; border: none') + '; border-radius: 4px; cursor: pointer;">' + (this._baselineMarked ? 'Baseline Marked' : 'Mark as Baseline') + '</button>' +
@@ -17131,12 +17131,12 @@
     }
 
     function _p1eDetectMojibake(text) {
-      if (!text || typeof text !== 'string') return { isMojibake: false, reason: '' };
+      if (!text || typeof text !== 'string') return { isMojibake: false, reason: '', impact: '' };
       var controlCount = 0;
       var replacementCount = 0;
       var highNonLatinCount = 0;
       var totalChars = text.length;
-      if (totalChars < 5) return { isMojibake: false, reason: '' };
+      if (totalChars < 5) return { isMojibake: false, reason: '', impact: '' };
       for (var i = 0; i < totalChars; i++) {
         var code = text.charCodeAt(i);
         if (code === 0xFFFD) replacementCount++;
@@ -17146,10 +17146,21 @@
       var replacementRatio = replacementCount / totalChars;
       var controlRatio = controlCount / totalChars;
       var highRatio = highNonLatinCount / totalChars;
-      if (replacementRatio > 0.05) return { isMojibake: true, reason: 'HIGH_REPLACEMENT_CHARS', ratio: replacementRatio };
-      if (controlRatio > 0.03) return { isMojibake: true, reason: 'CONTROL_CHAR_EXCESS', ratio: controlRatio };
-      if (highRatio > 0.4 && totalChars > 20) return { isMojibake: true, reason: 'ENCODING_MISMATCH', ratio: highRatio };
-      return { isMojibake: false, reason: '' };
+      var reason = '';
+      var ratio = 0;
+      if (replacementRatio >= controlRatio && replacementRatio >= highRatio) { reason = 'HIGH_REPLACEMENT_CHARS'; ratio = replacementRatio; }
+      else if (controlRatio >= highRatio) { reason = 'CONTROL_CHAR_EXCESS'; ratio = controlRatio; }
+      else { reason = 'ENCODING_MISMATCH'; ratio = highRatio; }
+      if (replacementRatio > 0.15 || controlRatio > 0.08 || (highRatio > 0.4 && totalChars > 20)) {
+        return { isMojibake: true, reason: reason, ratio: ratio, impact: 'high' };
+      }
+      if (replacementRatio > 0.05 || controlRatio > 0.03) {
+        return { isMojibake: true, reason: reason, ratio: ratio, impact: 'medium' };
+      }
+      if (replacementRatio > 0.01 || controlRatio > 0.005) {
+        return { isMojibake: true, reason: reason, ratio: ratio, impact: 'low' };
+      }
+      return { isMojibake: false, reason: '', ratio: 0, impact: '' };
     }
 
     function _p1eDetectNonSearchable(pages) {
@@ -17182,7 +17193,8 @@
         field_name: 'file_url',
         field_key: 'file_url',
         sheet_name: srrState.currentSheetName || '',
-        severity: condition === 'OCR_UNREADABLE' ? 'blocker' : 'warning',
+        severity: overrideSeverity || (condition === 'OCR_UNREADABLE' ? 'blocker' : 'warning'),
+        _impact: impact || '',
         message: reason,
         status: 'open',
         status_label: 'Open',
@@ -17211,11 +17223,15 @@
       scanned: 0,
       clean: 0,
       mojibake: 0,
+      mojibakeLow: 0,
+      mojibakeMedium: 0,
+      mojibakeHigh: 0,
       nonSearchable: 0,
       errors: 0,
       skipped: 0,
       results: {}
     };
+    var _p1fBatchScanItems = [];
 
     function _p1fLog(event, detail) {
       var msg = '[PDF-BATCH-SCAN][P1F] ' + event;
@@ -17271,7 +17287,12 @@
       }
       ok.textContent = s.clean > 0 ? (s.clean + ' clean') : '';
       var badCount = s.mojibake + s.nonSearchable;
-      bad.textContent = badCount > 0 ? (badCount + ' flagged') : '';
+      var badParts = [];
+      if (s.mojibakeHigh > 0) badParts.push(s.mojibakeHigh + ' high');
+      if (s.mojibakeMedium > 0) badParts.push(s.mojibakeMedium + ' med');
+      if (s.mojibakeLow > 0) badParts.push(s.mojibakeLow + ' low');
+      if (s.nonSearchable > 0) badParts.push(s.nonSearchable + ' no-text');
+      bad.textContent = badCount > 0 ? (badCount + ' flagged' + (badParts.length > 0 ? ' (' + badParts.join(', ') + ')' : '')) : '';
     }
 
     function _p1fShowComplete() {
@@ -17371,16 +17392,24 @@
           var mojibake = _p1eDetectMojibake(allText);
           if (mojibake.isMojibake) {
             _p1fScanState.mojibake++;
-            _p1fLog('scan_mojibake', { contract: contract.contract_key, reason: mojibake.reason, ratio: mojibake.ratio });
+            var impact = mojibake.impact || 'medium';
+            if (impact === 'low') _p1fScanState.mojibakeLow++;
+            else if (impact === 'medium') _p1fScanState.mojibakeMedium++;
+            else _p1fScanState.mojibakeHigh++;
+            _p1fLog('scan_mojibake', { contract: contract.contract_key, reason: mojibake.reason, ratio: mojibake.ratio, impact: impact });
+            var impactLabels = { low: 'Low Impact Mojibake', medium: 'Medium Impact Mojibake', high: 'High Impact — Unreadable' };
+            var signalType = impact === 'high' ? 'OCR_UNREADABLE' : 'OCR_MOJIBAKE';
+            var severity = impact === 'high' ? 'blocker' : (impact === 'medium' ? 'review' : 'warning');
             var mockRec = {
               contract_key: contract.contract_key,
               contract_id: contract.contract_key,
               file_url: contract.file_url,
               file_name: contract.file_name
             };
-            _p1fRouteToPreFlight(mockRec, contract.sheet_name, 'OCR_UNREADABLE',
-              'PDF text contains encoding artifacts (mojibake): ' + mojibake.reason);
-            _p1fScanState.results[contract.contract_key] = 'mojibake';
+            _p1fRouteToPreFlight(mockRec, contract.sheet_name, signalType,
+              (impactLabels[impact] || 'Mojibake') + ': ' + mojibake.reason + ' (' + Math.round(mojibake.ratio * 100) + '%)',
+              severity, impact);
+            _p1fScanState.results[contract.contract_key] = 'mojibake_' + impact;
             callback('mojibake');
             return;
           }
@@ -17398,7 +17427,7 @@
         });
     }
 
-    function _p1fRouteToPreFlight(record, sheetName, condition, reason) {
+    function _p1fRouteToPreFlight(record, sheetName, condition, reason, overrideSeverity, impact) {
       var contractKey = record.contract_key || record.contract_id || '';
       var item = {
         request_id: 'p1f_' + condition.toLowerCase() + '_' + contractKey + '_' + Date.now(),
@@ -17423,12 +17452,12 @@
         file_url: record.file_url || '',
         _batch_scan: true
       };
-      var isDup = analystTriageState.manualItems.some(function(m) {
+      var isDup = _p1fBatchScanItems.some(function(m) {
         return m.signal_type === condition && m.contract_key === contractKey && m.field_name === 'file_url';
       });
       if (!isDup) {
-        analystTriageState.manualItems.push(item);
-        _p1fLog('preflight_routed', { condition: condition, contract: contractKey });
+        _p1fBatchScanItems.push(item);
+        _p1fLog('preflight_routed', { condition: condition, contract: contractKey, impact: impact || '' });
       } else {
         _p1fLog('preflight_dedup_skipped', { condition: condition, contract: contractKey });
       }
@@ -17457,12 +17486,16 @@
       }
 
       analystTriageState.manualItems = [];
+      _p1fBatchScanItems = [];
 
       _p1fScanState.running = false;
       _p1fScanState.total = 0;
       _p1fScanState.scanned = 0;
       _p1fScanState.clean = 0;
       _p1fScanState.mojibake = 0;
+      _p1fScanState.mojibakeLow = 0;
+      _p1fScanState.mojibakeMedium = 0;
+      _p1fScanState.mojibakeHigh = 0;
       _p1fScanState.nonSearchable = 0;
       _p1fScanState.errors = 0;
       _p1fScanState.skipped = 0;
@@ -17529,6 +17562,9 @@
       _p1fScanState.scanned = 0;
       _p1fScanState.clean = 0;
       _p1fScanState.mojibake = 0;
+      _p1fScanState.mojibakeLow = 0;
+      _p1fScanState.mojibakeMedium = 0;
+      _p1fScanState.mojibakeHigh = 0;
       _p1fScanState.nonSearchable = 0;
       _p1fScanState.errors = 0;
       _p1fScanState.skipped = 0;
@@ -24372,7 +24408,7 @@
         (analystTriageState.manualItems || []).forEach(function(item) {
           var bt = (item.blocker_type || item.signal_type || '').toUpperCase();
           if (bt === 'UNKNOWN_COLUMN') cache.lanes.preflight.unknown_columns++;
-          else if (bt === 'OCR_UNREADABLE') cache.lanes.preflight.ocr_unreadable++;
+          else if (bt === 'OCR_UNREADABLE' || bt === 'OCR_MOJIBAKE') cache.lanes.preflight.ocr_unreadable++;
           else if (bt === 'LOW_CONFIDENCE') cache.lanes.preflight.low_confidence++;
           else if (bt === 'DOCUMENT_TYPE_MISSING') { cache.lanes.preflight.document_type++; }
           else if (bt === 'DOCUMENT_TYPE_MISSING') cache.lanes.preflight.document_type = (cache.lanes.preflight.document_type || 0) + 1;
@@ -25308,6 +25344,7 @@
     
     var _preflightBlockerTypes = {
         UNKNOWN_COLUMN: { label: 'Unknown Column', badge: 'fail', icon: '\u2753', desc: 'Column not found in field_meta.json. Threshold: columns with >0 non-empty values are flagged.' },
+        OCR_MOJIBAKE: { label: 'Mojibake (Encoding)', badge: 'warn', icon: '\u26a0', desc: 'PDF contains encoding artifacts at low or medium impact level.' },
         OCR_UNREADABLE: { label: 'OCR Unreadable', badge: 'fail', icon: '\ud83d\udeab', desc: 'OCR extraction returned unreadable or garbled text. Manual review required.' },
         LOW_CONFIDENCE: { label: 'Low Confidence', badge: 'warn', icon: '\u26a0', desc: 'Extraction confidence below 60%. Values may be unreliable.' },
         DOCUMENT_TYPE_MISSING: { label: 'Document Type Missing', badge: 'warn', icon: '\ud83d\udcc4', desc: 'Document type not assigned or not recognized. Assign a valid document type before proceeding.' },
@@ -25361,14 +25398,13 @@
       
       // Manual Review: OCR_UNREADABLE (encoding artifacts / mojibake)
       analystTriageState.manualItems = signalItems.filter(function(item) {
-        return item.signal_type === 'OCR_UNREADABLE';
+        return item.signal_type === 'OCR_UNREADABLE' || item.signal_type === 'OCR_MOJIBAKE';
       });
-      // P0.4: Ensure OCR_UNREADABLE signals appear in preflight lane
       analystTriageState.manualItems.forEach(function(item) {
-        if (item.signal_type === 'OCR_UNREADABLE' && !item._preflightRouted) {
+        if ((item.signal_type === 'OCR_UNREADABLE' || item.signal_type === 'OCR_MOJIBAKE') && !item._preflightRouted) {
           item._preflightRouted = true;
-          item.blocker_type = 'OCR_UNREADABLE';
-          item.reason_summary = 'Encoding artifacts detected (mojibake)';
+          item.blocker_type = item.signal_type;
+          item.reason_summary = item.signal_type === 'OCR_UNREADABLE' ? 'High Impact — Unreadable' : 'Encoding artifacts (mojibake)';
         }
       });
       
@@ -25541,6 +25577,21 @@
                 });
               }
             });
+          }
+        });
+      }
+
+      // v2.3.5-P1F: Merge batch PDF scan items into manualItems
+      if (typeof _p1fBatchScanItems !== 'undefined' && _p1fBatchScanItems.length > 0) {
+        var _existKeys = {};
+        analystTriageState.manualItems.forEach(function(m) {
+          if (m.contract_key && m.field_name) _existKeys[m.signal_type + ':' + m.contract_key + ':' + m.field_name] = true;
+        });
+        _p1fBatchScanItems.forEach(function(item) {
+          var key = item.signal_type + ':' + item.contract_key + ':' + item.field_name;
+          if (!_existKeys[key]) {
+            analystTriageState.manualItems.push(item);
+            _existKeys[key] = true;
           }
         });
       }
