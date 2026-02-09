@@ -13671,84 +13671,35 @@
       return (bytes / 1024 / 1024).toFixed(1) + ' MB';
     }
 
-    // v1.6.46: Update progress block from actual data (signals + patch requests)
-    // Now filters by current sheet view
     function updateProgressBlock() {
       var todoEl = document.getElementById('progress-todo');
       var reviewEl = document.getElementById('progress-review');
       var doneEl = document.getElementById('progress-done');
       var barFill = document.getElementById('progress-bar-fill');
-      
+
       if (!todoEl || !reviewEl || !doneEl) return;
-      
-      // v1.6.46: Count from grid data to match All-Data-Grid view
-      // v1.6.46: Early return if no data actually loaded
-      if (!workbook || !workbook.order || workbook.order.length === 0) {
-        todoEl.textContent = 0;
-        reviewEl.textContent = 0;
-        doneEl.textContent = 0;
-        if (barFill) barFill.style.width = '0%';
-        console.log('[Progress] No data loaded, showing zeros');
-        return;
-      }
-      var allRecords = [];
-      if (workbook && workbook.sheets) {
-        workbook.order.forEach(function(sheetName) {
-          var sheet = workbook.sheets[sheetName];
-          if (sheet && sheet.rows) {
-            sheet.rows.forEach(function(r) {
-              r.sheet = sheetName;
-              allRecords.push(r);
-            });
-          }
-        });
-      }
-      
-      // Filter by current sheet selection
-      var currentSheet = gridState.sheet || '';
-      var filtered = currentSheet 
-        ? allRecords.filter(function(r) { return r.sheet === currentSheet; })
-        : allRecords;
-      
-      // Count by row status (matches grid stat bar)
-      var todo = 0;      // Needs Review + Blocked
-      var review = 0;    // Currently in review (reserved for future use)
-      var done = 0;      // Ready
-      
-      filtered.forEach(function(r) {
-        var status = (r.status || '').toLowerCase().replace(/\s+/g, '_');
-        if (status === 'ready' || status === 'verified' || status === 'approved' || status === 'completed') {
-          done++;
-        } else if (status === 'submitted' || status === 'pending_review' || status === 'sent_to_admin' || status === 'verifier_approved') {
-          review++;
-        } else if (status === 'needs_review' || status === 'blocked') {
-          review++;
-        } else {
-          todo++;
+
+      var todo = 0, review = 0, done = 0, total = 0;
+
+      if (typeof TriageAnalytics !== 'undefined') {
+        var cache = TriageAnalytics.getCache();
+        if (cache && cache.batch_summary) {
+          var bs = cache.batch_summary;
+          todo = bs.pending || 0;
+          review = bs.needs_review || 0;
+          done = bs.completed || 0;
+          total = bs.contracts_total || 0;
         }
-      });
-      
-      // Also count from patch requests in review status
-      var patchRequests = typeof PATCH_REQUEST_STORE !== 'undefined' ? PATCH_REQUEST_STORE.list() : [];
-      patchRequests.forEach(function(pr) {
-        var prSheet = pr.sheet || (pr.record_id ? pr.record_id.split(':')[0] : '');
-        if (currentSheet && prSheet !== currentSheet) return;
-        
-        var prStatus = pr.status || '';
-        if (['Submitted', 'Pending_Review', 'Sent_to_Admin', 'Verifier_Approved'].includes(prStatus)) {
-          review++;
-        }
-      });
-      
-      var total = todo + review + done;
+      }
+
       var progressPct = total > 0 ? Math.round((done / total) * 100) : 0;
-      
+
       todoEl.textContent = todo;
       reviewEl.textContent = review;
       doneEl.textContent = done;
       if (barFill) barFill.style.width = progressPct + '%';
-      
-      console.log('[Progress] Updated: To Do=' + todo + ', Review=' + review + ', Done=' + done + ' (' + progressPct + '%)');
+
+      console.log('[Progress] Updated from batch_summary: To Do=' + todo + ', Review=' + review + ', Done=' + done + ', Total=' + total + ' (' + progressPct + '%)');
     }
 
     function updateActiveDataSourceBar(filename) {
@@ -24660,6 +24611,8 @@
           reconcileWarn.style.display = (cache._reconciliation && !cache._reconciliation.match) ? '' : 'none';
         }
         console.log('[TRIAGE-ANALYTICS][P0.2] header_reorder_applied: batch_summary=true, contract_summary=true, lanes=true, lifecycle=true, schema=true');
+
+        if (typeof updateProgressBlock === 'function') updateProgressBlock();
       },
 
       _renderLifecycle: function(cache) {
