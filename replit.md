@@ -53,5 +53,8 @@ Contract ID derivation enforces priority: extracted path ID → hash(canonical U
 ### P0.3 Fixes (v2.3)
 21 targeted edits via `scripts/p03_fixes.py`: default triage routing, contract-first View fallback, Pre-Flight taxonomy consolidation (MOJIBAKE→OCR/Encoding merge, DOCUMENT_TYPE_MISSING added), Hinge metric removal from lane health, control overlap fixes, lifecycle card condensing with SVG icons, schema snapshot repositioning, role-based Replay Contract hiding. All optional chaining replaced with ES5-safe patterns.
 
+### P0.4 Triage Correctness + UX Cleanup (v2.3)
+9 targeted edits via `scripts/p04_fixes.py`: ContractIndex.build skips meta/reference sheets preventing pseudo-contracts, header-echo row detection, hardened contract selector with isMetaSheet/isReferenceSheet checks, explicit reason_type column in Pre-Flight triage table, mojibake signal routing to preflight lane with blocker_type tag, 8 remaining optional chaining patterns replaced with ES5-safe code. Runtime attestation: P0.2.2 GREEN (13/13), P1 GREEN (10/10), Calibration GREEN (7/7, 4/4 policies).
+
 ## External Dependencies
 A FastAPI server acts as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF. SheetJS (XLSX) is loaded via CDN for Excel import/export functionality.

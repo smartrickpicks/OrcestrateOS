@@ -2076,13 +2076,14 @@
                     <th style="padding: 8px 12px;">Type</th>
                     <th style="padding: 8px 12px;">Record</th>
                     <th style="padding: 8px 12px;">Field</th>
+                    <th style="padding: 8px 12px;">Reason</th>
                     <th style="padding: 8px 12px;">Status</th>
                     <th style="padding: 8px 12px;">Last Updated</th>
                     <th style="padding: 8px 12px;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="manual-queue-list" style="background: #fffef5;">
-                  <tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">No pre-flight items</td></tr>
+                  <tr><td colspan="7" style="padding: 20px; text-align: center; color: #999;">No pre-flight items</td></tr>
                 </tbody>
               </table>
             </div>
@@ -3399,7 +3400,7 @@
         <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Quick Actions</h3>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="toolbar-btn" onclick="document.getElementById('btn-run')?.click()">Run Commands</button>
+            <button class="toolbar-btn" onclick="var _btn = document.getElementById('btn-run'); if (_btn) _btn.click()">Run Commands</button>
             <button class="toolbar-btn" onclick="switchAdminTab('inspector')">Open Inspector</button>
           </div>
         </div>
@@ -5674,6 +5675,8 @@
           workbook.order.forEach(function(sheetName) {
             var sheet = workbook.sheets[sheetName];
             if (!sheet || !sheet.rows) return;
+            if (typeof isMetaSheet === 'function' && isMetaSheet(sheetName)) return;
+            if (typeof isReferenceSheet === 'function' && isReferenceSheet(sheetName)) return;
 
             sheet.rows.forEach(function(row, rowIdx) {
               index.stats.total_rows++;
@@ -5687,6 +5690,15 @@
                 index.orphan_rows.push({ sheet: sheetName, row_index: rowIdx, record_id: recordId, reason: 'missing_url_and_name' });
                 index.stats.orphan_rows++;
                 return;
+              }
+              if (rowIdx === 0 && contractIdSource === 'fallback_sig') {
+                var _keys = Object.keys(row); var _vals = []; for (var _ki = 0; _ki < _keys.length; _ki++) { var _v = row[_keys[_ki]]; if (_v && typeof _v === 'string' && _v.trim().length > 0) _vals.push(_v); }
+                var _headerish = _vals.filter(function(v) { return self._HEADER_LIKE_VALUES.test(v.trim()); });
+                if (_vals.length > 0 && _headerish.length >= _vals.length * 0.6) {
+                  index.orphan_rows.push({ sheet: sheetName, row_index: rowIdx, record_id: recordId, reason: 'header_echo_row' });
+                  index.stats.orphan_rows++;
+                  return;
+                }
               }
               if (!index._g1Logged) {
                 console.log('[V2.3-GATE][G1] PASS contract_id derived via priority chain: source=' + contractIdSource + ' id=' + contractId);
@@ -6536,8 +6548,13 @@
       var allContracts = ContractIndex.listContracts().filter(function(c) {
         var fn = (c.file_name || c.contract_id || '').toLowerCase();
         if (fn.includes('_change_log') || fn === 'rfis & analyst notes' || fn.includes('glossary_reference') || fn.includes('_reference')) {
-          if (c.row_count <= 1) return false;
+          return false;
         }
+        var sheets = c.sheets ? Object.keys(c.sheets) : [];
+        var allMeta = sheets.length > 0 && sheets.every(function(s) {
+          return (typeof isMetaSheet === 'function' && isMetaSheet(s)) || (typeof isReferenceSheet === 'function' && isReferenceSheet(s));
+        });
+        if (allMeta) return false;
         return true;
       });
       var datasetWideCount = allContracts.length;
@@ -8325,7 +8342,7 @@
           activeSheet: workbook.activeSheet
         },
         datasetId: IDENTITY_CONTEXT.dataset_id,
-        filename: document.getElementById('active-data-source-name')?.textContent || 'Cached Dataset',
+        filename: (document.getElementById('active-data-source-name') || {}).textContent || 'Cached Dataset',
         savedAt: new Date().toISOString()
       };
       SessionDB.saveWorkbookCache(cacheData).then(function() {
@@ -8389,7 +8406,7 @@
         savedAt: new Date().toISOString(),
         role: currentMode || 'analyst',
         datasetId: IDENTITY_CONTEXT.dataset_id || 'unknown',
-        filename: document.getElementById('active-data-source-name')?.textContent || 'Dataset',
+        filename: (document.getElementById('active-data-source-name') || {}).textContent || 'Dataset',
         sheetCount: workbook.order.length,
         rowCount: totalRows,
         workbook: {
@@ -8455,7 +8472,7 @@
         showToast('No data loaded to save', 'warning');
         return;
       }
-      var defaultName = (document.getElementById('active-data-source-name')?.textContent || 'Session') + ' - ' + new Date().toLocaleDateString();
+      var defaultName = ((document.getElementById('active-data-source-name') || {}).textContent || 'Session') + ' - ' + new Date().toLocaleDateString();
       var name = prompt('Name this session:', defaultName);
       if (name === null) return;
       name = name.trim() || defaultName;
@@ -10678,7 +10695,7 @@
     
     function approveAsVerifier(requestId) {
       var author = currentMode || 'Verifier';
-      var reviewNotes = document.getElementById('pr-review-notes')?.value || '';
+      var reviewNotes = (document.getElementById('pr-review-notes') || {}).value || '';
 
       // v1.6.57: No self-approval check
       var pr = getPatchRequest(requestId);
@@ -13005,7 +13022,7 @@
       }
       
       // Persist to localStorage if enabled
-      const rememberChecked = document.getElementById('remember-session')?.checked;
+      const rememberChecked = (document.getElementById('remember-session') || {}).checked;
       if (rememberChecked) {
         try {
           localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify({
@@ -13161,7 +13178,7 @@
           if (section) {
             section.querySelectorAll('.loader-panel').forEach(p => p.classList.remove('active'));
           }
-          document.getElementById(panelId)?.classList.add('active');
+          var _panelEl = document.getElementById(panelId); if (_panelEl) _panelEl.classList.add('active');
         });
       });
       
@@ -15587,7 +15604,7 @@
         
         if (fieldMetaRes.ok) {
           rulesBundleCache.fieldMeta = await fieldMetaRes.json();
-          console.log('[RulesBundle] field_meta loaded:', rulesBundleCache.fieldMeta.fields?.length || 0, 'fields');
+          console.log('[RulesBundle] field_meta loaded:', (rulesBundleCache.fieldMeta.fields && rulesBundleCache.fieldMeta.fields.length) || 0, 'fields');
         }
         if (hingeGroupsRes.ok) {
           rulesBundleCache.hingeGroups = await hingeGroupsRes.json();
@@ -22924,9 +22941,17 @@
       // v1.6.0: Populate queues from signalStore
       var signalItems = getSignalTriageItems();
       
-      // Manual Review: MOJIBAKE_DETECTED
+      // Manual Review: MOJIBAKE_DETECTED (also routes to Pre-Flight as OCR/Encoding family)
       analystTriageState.manualItems = signalItems.filter(function(item) {
         return item.signal_type === 'MOJIBAKE_DETECTED';
+      });
+      // P0.4: Ensure mojibake signals also appear in preflight lane count
+      analystTriageState.manualItems.forEach(function(item) {
+        if (item.signal_type === 'MOJIBAKE_DETECTED' && !item._preflightRouted) {
+          item._preflightRouted = true;
+          item.blocker_type = 'MOJIBAKE';
+          item.reason_summary = 'Encoding artifacts detected (mojibake)';
+        }
       });
       
       // Salesforce Logic Flags: QA_FLAG with ERROR or WARNING severity
@@ -23201,7 +23226,7 @@
       if (!container) return;
       
       if (items.length === 0) {
-        container.innerHTML = '<tr><td colspan="6" style="padding: 24px; text-align: center; color: #999;">' + emptyMessage + '</td></tr>';
+        container.innerHTML = '<tr><td colspan="' + (isPreFlight ? '7' : '6') + '" style="padding: 24px; text-align: center; color: #999;">' + emptyMessage + '</td></tr>';
         return;
       }
       
@@ -23248,7 +23273,8 @@
           '<td style="padding: 10px 12px;"><span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + typeBadgeColor + '15; color: ' + typeBadgeColor + ';">' + typeLabel + '</span>' + preflightBadge + '</td>' +
           '<td style="padding: 10px 12px; font-family: monospace; font-size: 0.85em;">' + recordDisplay + '</td>' +
           '<td style="padding: 10px 12px;">' + (item.field_name || '-') + '</td>' +
-          '<td style="padding: 10px 12px;">' + statusBadge + notesIndicator + (isPreFlight && item.blocker_type ? ' <span style="font-size:0.72em; color:#795548; font-style:italic;">(' + (item.blocker_type || '').replace(/_/g, ' ').toLowerCase() + ')</span>' : '') + '</td>' +
+          '<td style="padding: 10px 12px; font-size: 0.82em;">' + (isPreFlight && item.blocker_type ? '<span style="display:inline-block; padding: 2px 7px; border-radius: 3px; background: #fff3e0; color: #e65100; font-size: 0.85em; font-weight: 500;">' + (item.blocker_type || '').replace(/_/g, ' ') + '</span>' : (item.reason_summary || item.signal_type || '-')) + '</td>' +
+          '<td style="padding: 10px 12px;">' + statusBadge + notesIndicator + '</td>' +
           '<td style="padding: 10px 12px; color: #666; font-size: 0.85em;">' + timestamp + '</td>' +
           '<td style="padding: 10px 12px;"><button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75em;" onclick="event.stopPropagation(); ' + viewHandler + '">View</button>' + patchFromBlockerBtn + '</td>' +
           '</tr>';
