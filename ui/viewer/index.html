@@ -27783,16 +27783,27 @@
                   var rowIdx = rows[ri];
                   var rowData = (sh && sh.rows && sh.rows[rowIdx]) ? sh.rows[rowIdx] : null;
                   var contractLabel = '';
-                  if (rowData && typeof ContractIndex !== 'undefined' && typeof ContractIndex.deriveContractId === 'function') {
-                    var cid = ContractIndex.deriveContractId(rowData);
-                    if (cid) contractLabel = cid;
+                  if (rowData) {
+                    var rawName = rowData.file_name || rowData.contract_key || '';
+                    if (rawName && typeof ContractIndex !== 'undefined' && typeof ContractIndex._isHeaderLike === 'function' && !ContractIndex._isHeaderLike(rawName)) {
+                      contractLabel = rawName;
+                      if (contractLabel.length > 40) contractLabel = contractLabel.substring(0, 37) + '...';
+                    }
+                  }
+                  var rowLabel = 'Row ' + (rowIdx + 1);
+                  if (rowData && typeof _srrGetAccountName === 'function') {
+                    var acctName = _srrGetAccountName(rowData);
+                    if (acctName && acctName !== 'Unknown') {
+                      rowLabel = acctName;
+                      if (rowLabel.length > 30) rowLabel = rowLabel.substring(0, 27) + '...';
+                    }
                   }
                   var cellVal = rowData ? rowData[item.header] : '';
                   var displayVal = (cellVal === null || cellVal === undefined || String(cellVal).trim() === '') ? '(empty)' : String(cellVal);
                   if (displayVal.length > 40) displayVal = displayVal.substring(0, 37) + '...';
                   var escapedSection = item.section.replace(/\x27/g, '\\\x27');
                   html += '<div style="display:flex;align-items:center;padding:3px 0;border-bottom:1px solid #f0f0f0;font-size:0.82em;" class="mv-record-row">';
-                  html += '<span style="cursor:pointer;color:#1565c0;text-decoration:underline;flex:0 0 auto;margin-right:8px;" onclick="event.stopPropagation();var _m=document.getElementById(\x27schema-detail-modal\x27);if(_m)_m.remove();openRowReviewDrawer(\x27' + escapedSection + '\x27,' + rowIdx + ')">Row ' + (rowIdx + 1) + '</span>';
+                  html += '<span style="cursor:pointer;color:#1565c0;text-decoration:underline;flex:0 0 auto;margin-right:8px;" onclick="event.stopPropagation();var _m=document.getElementById(\x27schema-detail-modal\x27);if(_m)_m.remove();openRowReviewDrawer(\x27' + escapedSection + '\x27,' + rowIdx + ')">' + escapeHtml(rowLabel) + '</span>';
                   if (contractLabel) html += '<span style="color:#555;margin-right:8px;flex:0 0 auto;">' + escapeHtml(contractLabel) + '</span>';
                   html += '<span style="color:#999;font-family:monospace;font-size:0.9em;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(displayVal) + '</span>';
                   html += '</div>';
