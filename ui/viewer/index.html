@@ -129,6 +129,13 @@
     .nav-item { display: flex; align-items: center; padding: 10px 20px; color: #aaa; text-decoration: none; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
     .nav-item:hover { background: #2d2d4a; color: white; }
     .nav-item.active { background: #0f3460; color: white; border-left-color: #1565c0; }
+    .nav-parent { position: relative; }
+    .nav-expand-arrow { margin-left: auto; font-size: 0.7em; transition: transform 0.2s; color: #888; }
+    .nav-parent.expanded .nav-expand-arrow { transform: rotate(90deg); color: #ccc; }
+    .nav-subitems { display: none; overflow: hidden; }
+    .nav-subitems.expanded { display: block; }
+    .nav-subitem { padding-left: 40px !important; font-size: 0.92em; }
+    .nav-subitem .nav-icon { font-size: 0.85em; }
     .nav-item.queue-item { padding: 8px 20px; }
     .nav-icon { width: 18px; margin-right: 10px; text-align: center; font-size: 0.9em; }
     .nav-label { font-size: 0.85em; flex-grow: 1; }
@@ -1684,19 +1691,22 @@
               <option value="all">All Records</option>
             </select>
           </div>
-          <!-- View Mode Buttons: Triage → All Data Grid → Record Inspection -->
-          <a class="nav-item" data-page="triage" href="#/triage">
+          <!-- View Mode: Triage (top-level) with nested sub-items -->
+          <a class="nav-item nav-parent" data-page="triage" href="#/triage">
             <span class="nav-icon">📋</span>
             <span class="nav-label">Triage</span>
+            <span class="nav-expand-arrow" id="triage-expand-arrow">&#9656;</span>
           </a>
-          <a class="nav-item" data-page="grid" href="#/grid">
-            <span class="nav-icon">📊</span>
-            <span class="nav-label">All Data Grid</span>
-          </a>
-          <a class="nav-item" id="nav-record-inspection" href="#" onclick="openRecordInspectionFromNav(); return false;">
-            <span class="nav-icon">🔎</span>
-            <span class="nav-label">Record Inspection</span>
-          </a>
+          <div class="nav-subitems" id="triage-subnav">
+            <a class="nav-item nav-subitem" data-page="grid" href="#/grid">
+              <span class="nav-icon">📊</span>
+              <span class="nav-label">All Data Grid</span>
+            </a>
+            <a class="nav-item nav-subitem" id="nav-record-inspection" href="#" onclick="openRecordInspectionFromNav(); return false;">
+              <span class="nav-icon">🔎</span>
+              <span class="nav-label">Record Inspection</span>
+            </a>
+          </div>
           <a class="nav-item verifier-only" data-page="verifier-review" href="#/verifier-review">
             <span class="nav-icon">✓</span>
             <span class="nav-label">Verifier Review</span>
@@ -14079,10 +14089,20 @@
       saveNavStateToCache(); scheduleAutosave();
     }
 
+    function _expandTriageSubnav() {
+      var sn = document.getElementById('triage-subnav');
+      var tp = document.querySelector('.nav-parent[data-page="triage"]');
+      if (sn) sn.classList.add('expanded');
+      if (tp) { tp.classList.add('expanded'); tp.classList.add('active'); }
+      var ri = document.getElementById('nav-record-inspection');
+      if (ri) ri.classList.add('active');
+    }
+
     function openRecordInspectionFromNav() {
       var firstRow = gridState.filteredData && gridState.filteredData[0];
       if (firstRow && firstRow._row_id) {
         openRowReviewDrawer(firstRow._row_id);
+        _expandTriageSubnav();
       } else if (dataLoaded) {
         showToast('Select a row from the grid to inspect', 'info');
         navigateTo('grid');
@@ -14929,10 +14949,12 @@
           var idx = parseInt(rowId, 10);
           if (!isNaN(idx)) {
             openRowReviewDrawer(srrState.currentSheetName, idx);
+            _expandTriageSubnav();
             return;
           }
         }
         openRowReviewDrawer(rowId);
+        _expandTriageSubnav();
         return;
       }
       if (!pages.includes(page)) page = dataLoaded ? 'grid' : 'triage';
@@ -15020,6 +15042,20 @@
         pageEl.style.display = 'block';
       }
       if (navEl) navEl.classList.add('active');
+
+      var triageSubnav = document.getElementById('triage-subnav');
+      var triageParent = document.querySelector('.nav-parent[data-page="triage"]');
+      var isTriageFamily = (page === 'triage' || page === 'grid');
+      if (triageSubnav && triageParent) {
+        if (isTriageFamily) {
+          triageSubnav.classList.add('expanded');
+          triageParent.classList.add('expanded');
+          if (page === 'grid') triageParent.classList.add('active');
+        } else {
+          triageSubnav.classList.remove('expanded');
+          triageParent.classList.remove('expanded');
+        }
+      }
       
       // Show empty queue message on triage if no data loaded
       var emptyMsg = document.getElementById('empty-queue-message');
