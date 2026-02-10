@@ -526,13 +526,19 @@
     .srr-footer { background: #f5f5f5; border-top: 1px solid #e0e0e0; padding: 8px 16px; text-align: center; }
     .srr-footer-filename { font-size: 0.85em; color: #666; font-weight: 500; }
     .srr-panel { background: white; border: 1px solid #e0e0e0; overflow-y: auto; }
-    .srr-panel-left { flex: 0 0 418px; flex-shrink: 0; border-right: none; order: 3; transition: flex-basis 0.3s ease, opacity 0.3s ease; }
+    .srr-panel-left { flex: 0 0 380px; flex-shrink: 0; border-right: none; order: 3; transition: flex-basis 0.3s ease, opacity 0.3s ease; position: relative; overflow: hidden; }
     .srr-panel-left.collapsed { flex-basis: 0px; min-width: 0; overflow: hidden; opacity: 0; padding: 0; border: none; }
     .srr-panel-center { flex: 1; min-width: 300px; order: 2; }
-    .srr-panel-right { flex: 0 0 320px; flex-shrink: 0; border-left: none; order: 1; transition: flex-basis 0.3s ease, opacity 0.3s ease; }
+    .srr-panel-right { flex: 0 0 0px; flex-shrink: 0; border-left: none; order: 1; display: none; }
     .srr-panel-right.collapsed { flex-basis: 0px; min-width: 0; overflow: hidden; opacity: 0; padding: 0; border: none; }
     .srr-patch-expand-strip { display: none; writing-mode: vertical-rl; text-orientation: mixed; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 4px 0 0 4px; padding: 12px 6px; cursor: pointer; font-size: 0.75em; font-weight: 600; color: #1976d2; position: relative; order: 0; flex-shrink: 0; letter-spacing: 1px; }
     .srr-patch-expand-strip:hover { background: #bbdefb; }
+    .srr-patch-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 10; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow-y: auto; display: flex; flex-direction: column; }
+    .srr-patch-overlay.open { transform: translateX(0); }
+    .srr-patch-overlay-header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0; font-weight: 600; font-size: 0.9em; color: #333; position: sticky; top: 0; z-index: 11; flex-shrink: 0; }
+    .srr-patch-overlay-back { background: none; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 0.8em; padding: 4px 10px; color: #666; display: flex; align-items: center; gap: 4px; }
+    .srr-patch-overlay-back:hover { background: #f0f0f0; border-color: #999; }
+    .srr-patch-overlay-body { padding: 12px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
     .srr-ctx-btn { padding: 2px 10px; border: 1px solid #ccc; background: #f5f5f5; color: #666; border-radius: 12px; cursor: pointer; font-size: 0.8em; font-weight: 500; }
     .srr-ctx-btn.active { background: #e3f2fd; border-color: #1565c0; color: #1565c0; }
     .srr-panel-header { background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #e0e0e0; font-weight: 600; font-size: 0.9em; color: #333; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 5; }
@@ -2674,20 +2680,30 @@
                 <div class="srr-empty-state" style="padding: 10px;">No anchors defined</div>
               </div>
             </div>
+              <!-- Patch Editor Overlay (slides in over field list) -->
+              <div class="srr-patch-overlay" id="srr-patch-overlay">
+                <div class="srr-patch-overlay-header">
+                  <button class="srr-patch-overlay-back" onclick="srrClosePatchOverlay()">
+                    <span style="font-size: 1.1em;">&#8592;</span> Back to Fields
+                  </button>
+                  <span id="srr-overlay-title" style="margin-left: auto;">Patch Editor</span>
+                  <div id="srr-tester-btn-container" style="display: none; margin-left: 8px;">
+                    <button class="srr-panel-tab" data-tab="tester" onclick="srrOpenTesterInOverlay()" style="font-size: 0.75em; padding: 3px 8px;">Patch Tester</button>
+                  </div>
+                </div>
+                <div class="srr-patch-overlay-body" id="srr-patch-overlay-body">
+                </div>
+              </div>
           </div>
 
           <!-- Right Panel: Patch Editor + Evidence Pack + Submit -->
-          <div id="srr-patch-expand-strip" class="srr-patch-expand-strip" onclick="_srrTogglePatchPanel()" title="Open Fields Panel">▶ FIELDS</div>
-          <div class="srr-panel srr-panel-right">
+          <div id="srr-patch-expand-strip" class="srr-patch-expand-strip" style="display:none;">▶ FIELDS</div>
+          <div class="srr-panel srr-panel-right" style="display:none;">
             <div class="srr-panel-header" style="display: flex; align-items: center; gap: 8px;">
               <span id="srr-right-panel-title">Fields</span>
-              <button onclick="_srrTogglePatchPanel()" id="srr-patch-toggle-btn" title="Toggle Fields Panel" style="margin-left: 4px; background: none; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 0.75em; padding: 2px 8px; color: #666;">Collapse</button>
+              <button id="srr-patch-toggle-btn" style="display:none;">Collapse</button>
               <!-- v1.5.1: Verifier-only Patch Tester tab -->
-              <div id="srr-panel-tabs" class="srr-panel-tabs" style="display: flex; margin-left: auto;">
-                <button class="srr-panel-tab active" data-tab="fields" onclick="srrSwitchRightTab('fields')">Fields</button>
-                <button class="srr-panel-tab" data-tab="studio" onclick="srrSwitchRightTab('studio')">Patch Studio</button>
-                <button class="srr-panel-tab" data-tab="tester" onclick="srrSwitchRightTab('tester')">Patch Tester</button>
-              </div>
+              <div id="srr-panel-tabs" class="srr-panel-tabs" style="display: none;"></div>
             </div>
             
             <!-- Fields Content (default, for analysts) -->
@@ -23128,36 +23144,26 @@
       srrState.currentArtifactId = null;
       srrState.isReadOnly = false;
       
-      // Reset UI
-      srrSwitchRightTab('fields');
+      // Reset UI - close overlay and return to field inspector
+      srrClosePatchOverlay();
+      srrBackToFieldsInOverlay();
       
       // Navigate back to triage (verifier remains in review workflow)
       navigateTo('triage');
     }
     
     function _srrExpandPatchPanel() {
-      var _pp = document.querySelector('.srr-panel-right');
-      if (_pp && _pp.classList.contains('collapsed')) {
-        _pp.classList.remove('collapsed');
-      }
-      _srrUpdateToggleBtn();
+      if (!srrIsPatchOverlayOpen()) srrOpenPatchOverlay(srrState.patchType || 'correction');
     }
     function _srrCollapsePatchPanel() {
-      if (currentMode === 'analyst') {
-        var _pp = document.querySelector('.srr-panel-right');
-        if (_pp) _pp.classList.add('collapsed');
-        _srrUpdateToggleBtn();
-      }
+      srrClosePatchOverlay();
     }
     function _srrTogglePatchPanel() {
-      var _pp = document.querySelector('.srr-panel-right');
-      if (!_pp) return;
-      if (_pp.classList.contains('collapsed')) {
-        _pp.classList.remove('collapsed');
+      if (srrIsPatchOverlayOpen()) {
+        srrClosePatchOverlay();
       } else {
-        _pp.classList.add('collapsed');
+        srrOpenPatchOverlay(srrState.patchType || 'correction');
       }
-      _srrUpdateToggleBtn();
     }
     function _srrUpdateToggleBtn() {
       var _pp = document.querySelector('.srr-panel-right');
@@ -23168,7 +23174,97 @@
       if (strip) strip.style.display = isCollapsed ? 'block' : 'none';
     }
 
-    function srrSelectField(fieldKey) {
+    function srrOpenPatchOverlay(actionType) {
+      var overlay = document.getElementById('srr-patch-overlay');
+      var overlayBody = document.getElementById('srr-patch-overlay-body');
+      var fieldsContent = document.getElementById('srr-tab-fields');
+      if (!overlay || !overlayBody || !fieldsContent) return;
+      
+      if (!overlayBody.hasChildNodes() || overlayBody.children.length === 0) {
+        overlayBody.appendChild(fieldsContent);
+        fieldsContent.style.display = 'block';
+      }
+      
+      var titleEl = document.getElementById('srr-overlay-title');
+      if (titleEl) {
+        var titles = { correction: 'Correction', blacklist: 'Blacklist Flag', rfi: 'RFI Request' };
+        titleEl.textContent = titles[actionType] || 'Patch Editor';
+      }
+      
+      srrShowPatchTesterBtnInOverlay();
+      
+      requestAnimationFrame(function() {
+        overlay.classList.add('open');
+      });
+      console.log('[SRR] Patch overlay opened:', actionType);
+    }
+
+    function srrClosePatchOverlay() {
+      var overlay = document.getElementById('srr-patch-overlay');
+      if (!overlay) return;
+      overlay.classList.remove('open');
+      srrBackToFieldsInOverlay();
+      console.log('[SRR] Patch overlay closed');
+    }
+
+    function srrOpenTesterInOverlay() {
+      var overlayBody = document.getElementById('srr-patch-overlay-body');
+      var fieldsContent = document.getElementById('srr-tab-fields');
+      var testerContent = document.getElementById('srr-tab-tester');
+      if (!overlayBody || !testerContent) return;
+      
+      if (fieldsContent && fieldsContent.parentNode === overlayBody) {
+        overlayBody.removeChild(fieldsContent);
+      }
+      overlayBody.appendChild(testerContent);
+      testerContent.style.display = 'block';
+      
+      var titleEl = document.getElementById('srr-overlay-title');
+      if (titleEl) titleEl.textContent = 'Patch Tester';
+      console.log('[SRR] Switched to Patch Tester in overlay');
+    }
+
+    function srrBackToFieldsInOverlay() {
+      var overlayBody = document.getElementById('srr-patch-overlay-body');
+      var fieldsContent = document.getElementById('srr-tab-fields');
+      var testerContent = document.getElementById('srr-tab-tester');
+      if (!overlayBody || !fieldsContent) return;
+      
+      if (testerContent && testerContent.parentNode === overlayBody) {
+        testerContent.style.display = 'none';
+        overlayBody.removeChild(testerContent);
+      }
+      overlayBody.appendChild(fieldsContent);
+      fieldsContent.style.display = 'block';
+      
+      var titleEl = document.getElementById('srr-overlay-title');
+      if (titleEl) titleEl.textContent = 'Patch Editor';
+    }
+
+    function srrShowPatchTesterBtnInOverlay() {
+      var container = document.getElementById('srr-tester-btn-container');
+      if (!container) return;
+      var isVerifierOrAdmin = (currentMode === 'verifier' || currentMode === 'admin');
+      var artifactId = srrState.currentArtifactId;
+      var artifact = artifactId ? getArtifact(artifactId) : null;
+      var show = false;
+      if (isVerifierOrAdmin && artifact && artifactId) {
+        var pt = (artifact.body && artifact.body.patch_type) ? String(artifact.body.patch_type).toLowerCase() : '';
+        var at = artifact.artifact_type ? String(artifact.artifact_type).toLowerCase() : '';
+        if (pt === 'correction' || pt === 'blacklist' || pt === 'blacklist flag' || at === 'blacklist') {
+          show = true;
+        }
+        if (pt === 'rfi' || at === 'rfi') show = false;
+      }
+      container.style.display = show ? '' : 'none';
+    }
+
+    function srrIsPatchOverlayOpen() {
+      var overlay = document.getElementById('srr-patch-overlay');
+      return overlay && overlay.classList.contains('open');
+    }
+
+        function srrSelectField(fieldKey) {
       // Highlight selected field
       document.querySelectorAll('.srr-field-item').forEach(function(el) {
         el.classList.remove('active');
@@ -25058,8 +25154,8 @@
       // Reset state after submission
       resetPatchEditorState();
       
-      // Auto-collapse back to Fields tab
-      srrSwitchRightTab('fields');
+      // Close the patch overlay, returning to field inspector
+      srrClosePatchOverlay();
       if (srrCheckAllFieldsCompleted()) {
         setTimeout(function() { srrAutoAdvance('Patch submitted — all fields addressed'); }, 800);
       }
