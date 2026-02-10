@@ -4446,7 +4446,7 @@
         <div class="admin-only-content" style="border-top: 1px solid #e0e0e0; padding-top: 15px; margin-top: 15px;">
           <div style="font-weight: 600; margin-bottom: 10px; color: #888; font-size: 0.85em;">ADMIN UTILITIES</div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="top-toolbar-btn" onclick="resetDemoState();">Reset Demo State</button>
+            <button class="top-toolbar-btn" id="btn-reset-demo-state-admin" onclick="resetDemoState();">Reset Demo State</button>
             <button class="top-toolbar-btn" onclick="rebuildFieldIndex();">Rebuild Index</button>
           </div>
         </div>
@@ -31419,7 +31419,7 @@
 
     function applyDemoControlsVisibility() {
       var show = isDemoControlsVisible();
-      var ids = ['demo-divider-or-load', 'data-source-demo-section', 'admin-demo-toggle-section', 'btn-reset-demo-state'];
+      var ids = ['demo-divider-or-load', 'data-source-demo-section', 'admin-demo-toggle-section', 'btn-reset-demo-state', 'btn-reset-demo-state-admin'];
       var defaults = { 'demo-divider-or-load': 'flex' };
       for (var i = 0; i < ids.length; i++) {
         var el = document.getElementById(ids[i]);
