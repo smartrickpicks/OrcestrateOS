@@ -3567,7 +3567,7 @@
         </div>
 
         <!-- Demo Dataset Toggle (v1.6.4) -->
-        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div id="admin-demo-toggle-section" class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h3 style="margin: 0; font-size: 1.1em; color: #333;">Demo Dataset <span class="info-icon" title="Toggle between the Original (blank baseline) and Modified (in-progress) demo datasets. The modified dataset contains sample audit log entries.">&#9432;</span></h3>
             <span id="demo-mode-badge" style="display: none; font-size: 0.7em; background: #ff9800; color: white; padding: 3px 8px; border-radius: 4px; font-weight: 600;">Demo: Modified (In-Progress)</span>
@@ -4275,7 +4275,7 @@
           <div id="saved-sessions-list"></div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <div id="demo-divider-or-load" style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
           <div style="flex: 1; height: 1px; background: #e0e0e0;"></div>
           <span style="font-size: 0.75em; color: #999; text-transform: uppercase;">Or load demo data</span>
           <div style="flex: 1; height: 1px; background: #e0e0e0;"></div>
@@ -15596,6 +15596,7 @@
       
       applyModeVisibility(mode);
       localStorage.setItem('viewer_mode_v10', mode);
+      if (typeof applyDemoControlsVisibility === 'function') applyDemoControlsVisibility();
     }
 
     // v1.4.22: Navigate to role-specific default landing page
@@ -31412,6 +31413,20 @@
       localStorage.setItem(DEMO_MODE_KEY, enabled ? 'true' : 'false');
     }
     
+    function isDemoControlsVisible() {
+      return getLoggedInUserRole() === 'admin' && isDemoMode();
+    }
+
+    function applyDemoControlsVisibility() {
+      var show = isDemoControlsVisible();
+      var ids = ['demo-divider-or-load', 'data-source-demo-section', 'admin-demo-toggle-section', 'btn-reset-demo-state'];
+      var defaults = { 'demo-divider-or-load': 'flex' };
+      for (var i = 0; i < ids.length; i++) {
+        var el = document.getElementById(ids[i]);
+        if (el) el.style.display = show ? (defaults[ids[i]] || '') : 'none';
+      }
+    }
+
     // v1.6.24: Environment mode toggle (Playground/Production) - Admin only
     function setEnvMode(mode) {
       // Only admins can toggle playground mode
@@ -31439,6 +31454,7 @@
       applyRoleBasedModeRestrictions(); // v1.6.24: Re-apply to update role switching
       showToast(isPlayground ? 'Sandbox mode enabled - permissionless access, no Admin role' : 'Production mode - strict role gates active', 'info');
       console.log('[EnvMode] Set to:', mode, 'by', loggedInRole);
+      applyDemoControlsVisibility();
     }
     
     function updateEnvModeUI() {
@@ -36393,6 +36409,7 @@ Add any additional notes here.
     loadArtifactRegistry();
     updateDevMasterlineUI();
     updateDemoToggleUI(); // v1.6.4: Initialize demo toggle UI state
+    applyDemoControlsVisibility();
     renderArtifactRegistryTable();
     renderWorkflowMap();
     setupStandardizerDropZone();
