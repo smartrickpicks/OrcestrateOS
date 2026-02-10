@@ -17159,14 +17159,14 @@
     }
 
     // v2.3.5-P1D.1: Resolve account name from workbook data fields for a given contract key
-    function _p1d1ResolveAccountName(contractKey) {
+    function _p1d1ResolveAccountName(contractKey, fileName) {
       var ACCT_FIELDS = [
         'Account_Name_c', 'Account_Name', 'account_name', 'account_name_c',
         'Artist_Name_pka_or_dba_c', 'Artist_Name_c', 'artist_name',
         'Legal_Name_c', 'legal_name',
         'Payee_c', 'Name'
       ];
-      if (!contractKey || typeof workbook === 'undefined' || !workbook.sheets) return '';
+      if (typeof workbook === 'undefined' || !workbook.sheets) return '';
       var sheets = Object.keys(workbook.sheets);
       for (var si = 0; si < sheets.length; si++) {
         var sn = sheets[si];
@@ -17174,15 +17174,18 @@
         var rows = (workbook.sheets[sn] && workbook.sheets[sn].rows) || [];
         for (var ri = 0; ri < rows.length; ri++) {
           var r = rows[ri];
-          var rck = r.contract_key || r.File_Name_c || r.File_Name || '';
-          if (rck !== contractKey) continue;
+          var rck = r.contract_key || '';
+          var rfn = r.File_Name_c || r.File_Name || r.file_name || '';
+          var matched = false;
+          if (contractKey && rck && rck === contractKey) matched = true;
+          if (!matched && fileName && rfn && rfn === fileName) matched = true;
+          if (!matched) continue;
           for (var fi = 0; fi < ACCT_FIELDS.length; fi++) {
             var val = r[ACCT_FIELDS[fi]];
             if (val && typeof val === 'string' && val.trim() && val !== 'N/A' && val !== '-' && val.trim().length > 1) {
               return val.trim();
             }
           }
-          return '';
         }
       }
       return '';
@@ -17206,7 +17209,7 @@
         result.contract_group_id = cid;
         result.confidence = 'high';
         result.source = 'contract_id';
-        result.contract_display_name = _p1d1ResolveAccountName(cid) || cid;
+        result.contract_display_name = _p1d1ResolveAccountName(cid, item.file_name) || cid;
         result.source_url = item.file_url || '';
         result.domain = _p1dExtractDomain(item);
         return result;
@@ -17227,7 +17230,7 @@
                   result.contract_group_id = derivedCid;
                   result.confidence = 'high';
                   result.source = 'row_lookup';
-                  result.contract_display_name = _p1d1ResolveAccountName(derivedCid) || derivedCid;
+                  result.contract_display_name = _p1d1ResolveAccountName(derivedCid, item.file_name) || derivedCid;
                   result.source_url = item.file_url || r.file_url || r.File_URL_c || '';
                   result.domain = _p1dExtractDomain(item);
                   return result;
@@ -17252,7 +17255,7 @@
           }
           result.source_url = fu;
           result.domain = _p1dExtractDomain(item);
-          result.contract_display_name = _p1d1ResolveAccountName(result.contract_group_id) || ck;
+          result.contract_display_name = _p1d1ResolveAccountName(result.contract_group_id, item.file_name) || ck;
           return result;
         }
 
@@ -17324,19 +17327,30 @@
     function _p1dGetDisplayName(groupKey, items) {
       if (groupKey === '_batch_level') return 'Batch-level Issues';
       var batchName = _p1d1GetBatchName();
+      var itemFileName = '';
+      for (var fi = 0; fi < items.length; fi++) {
+        if (items[fi].file_name) { itemFileName = items[fi].file_name; break; }
+      }
       for (var i = 0; i < items.length; i++) {
         if (items[i]._contract_display_name) {
           var dn = items[i]._contract_display_name;
-          return batchName ? dn + ' : ' + batchName : dn;
+          var isRawKey = (dn.indexOf('ctr_') === 0) || (/^ROW_\d+/.test(dn)) || (/^[a-z_]+:ROW_\d+/.test(dn));
+          if (!isRawKey) {
+            return batchName ? dn + ' : ' + batchName : dn;
+          }
         }
       }
-      var contractKey = '';
-      for (var j = 0; j < items.length; j++) {
-        var ck = items[j].contract_key || items[j].contract_id || '';
-        if (ck) { contractKey = ck; break; }
+      var itemContractKey = '';
+      for (var _cki = 0; _cki < items.length; _cki++) {
+        if (items[_cki].contract_key) { itemContractKey = items[_cki].contract_key; break; }
       }
-      var acctName = contractKey ? _p1d1ResolveAccountName(contractKey) : '';
+      var acctName = _p1d1ResolveAccountName(itemContractKey, itemFileName);
       if (acctName) return batchName ? acctName + ' : ' + batchName : acctName;
+      if (itemFileName) {
+        var fnClean = itemFileName.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+        if (fnClean.length > 50) fnClean = fnClean.substring(0, 48) + '\u2026';
+        return batchName ? fnClean + ' : ' + batchName : fnClean;
+      }
       var gkClean = groupKey.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
       if (gkClean && gkClean !== '_batch_level') return batchName ? gkClean + ' : ' + batchName : gkClean;
       return batchName || groupKey;
@@ -17615,11 +17629,21 @@
         var _rawFn = ""; for (var _fni = 0; _fni < gItems.length; _fni++) { if (gItems[_fni].file_name) { _rawFn = gItems[_fni].file_name; break; } } var tooltipText = _rawFn ? _rawFn : gk;
         var compactId = 'batch';
         if (gk !== '_batch_level') {
-          if (gk.indexOf('ctr_') === 0) {
-            compactId = gk.length > 12 ? gk.substring(0, 12) : gk;
+          var _idFn = '';
+          for (var _idi = 0; _idi < gItems.length; _idi++) {
+            if (gItems[_idi].file_name) { _idFn = gItems[_idi].file_name; break; }
+          }
+          if (_idFn) {
+            compactId = _idFn.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+            if (compactId.length > 28) compactId = compactId.substring(0, 26) + '\u2026';
           } else {
             var rawId = gk.indexOf('file:') === 0 ? gk.substring(5) : gk;
-            compactId = rawId.length > 22 ? rawId.substring(0, 20) + '\u2026' : rawId;
+            if (rawId.indexOf('ctr_') === 0) {
+              rawId = rawId.substring(0, 10);
+            } else {
+              rawId = rawId.replace(/_/g, ' ').trim();
+            }
+            compactId = rawId.length > 22 ? rawId.substring(0, 20) + '\u2026' : (rawId || gk);
           }
         }
         var domainHint = _p1dGetDomainHint(gItems);
@@ -17661,7 +17685,7 @@
         console.log('[P1D-DEDUPE][GROUP] contract_group_id=' + gk + ' raw_items=' + gItems.length + ' deduped_items=' + _dedupedIssueCount);
 
         var caretChar = isCollapsed ? '\u25B6' : '\u25BC';
-        var parentClass = 'p1d1-parent-row' + (_dedupedBlockers > 0 ? ' has-blockers' : '');
+        var parentClass = 'p1d1-parent-row';
 
         var _origCk = gk;
         for (var _oki = 0; _oki < gItems.length; _oki++) {
@@ -35851,7 +35875,7 @@ Add any additional notes here.
     .p1d1-health-table thead th { padding: 8px 10px; text-align: left; font-weight: 600; color: #555; background: #f5f5f5; border-bottom: 2px solid #e0e0e0; font-size: 0.88em; white-space: nowrap; }
     .p1d1-parent-row { cursor: pointer; background: #fafafa; border-bottom: 1px solid #e0e0e0; }
     .p1d1-parent-row:hover { background: #f0f4f8; }
-    .p1d1-parent-row.has-blockers { border-left: 3px solid #bf360c; }
+
     .p1d1-parent-row td { padding: 9px 10px; font-weight: 500; vertical-align: middle; }
     .p1d1-caret { width: 30px; text-align: center; color: #666; font-size: 0.75em; user-select: none; }
     .p1d1-contract-name { font-weight: 600; color: #333; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
