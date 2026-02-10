@@ -2495,10 +2495,11 @@
         <!-- Top Bar: Identity, State Badge, Back Button -->
         <div class="srr-top-bar">
           <button class="srr-back-btn" onclick="srrBackToGrid()">← Back to Grid</button>
-          <div class="srr-nav-group">
-            <button class="srr-nav-btn" id="srr-nav-prev" onclick="srrNavigatePrev()" disabled title="Previous record">← Prev</button>
-            <span class="srr-nav-pos" id="srr-nav-pos">—</span>
-            <button class="srr-nav-btn" id="srr-nav-next" onclick="srrNavigateNext()" disabled title="Next record">Next →</button>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 0.75em; color: #aaa;">Doc Type:</span>
+            <select id="srr-doc-type" onchange="srrSetDocumentType(this.value)" style="padding: 4px 8px; border-radius: 5px; border: 1px solid #c5cae9; font-size: 0.82em; background: #e8eaf6; color: #1a237e; font-weight: 600; cursor: pointer;">
+              <option value="Unknown">Unknown</option>
+            </select>
           </div>
           <div style="flex: 1;">
             <span style="font-size: 0.75em; color: #aaa; margin-right: 8px;">Record:</span>
@@ -2509,11 +2510,10 @@
             <span class="srr-state-badge" id="srr-state-badge">—</span>
           </div>
           <button class="srr-back-btn" onclick="showAuditLogForRecord()" title="View audit log for this record">Audit Log</button>
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 0.75em; color: #aaa;">Doc Type:</span>
-            <select id="srr-doc-type" onchange="srrSetDocumentType(this.value)" style="padding: 4px 8px; border-radius: 5px; border: 1px solid #c5cae9; font-size: 0.82em; background: #e8eaf6; color: #1a237e; font-weight: 600; cursor: pointer;">
-              <option value="Unknown">Unknown</option>
-            </select>
+          <div class="srr-nav-group">
+            <button class="srr-nav-btn" id="srr-nav-prev" onclick="srrNavigatePrev()" disabled title="Previous record">← Prev</button>
+            <span class="srr-nav-pos" id="srr-nav-pos">—</span>
+            <button class="srr-nav-btn" id="srr-nav-next" onclick="srrNavigateNext()" disabled title="Next record">Next →</button>
           </div>
           <span id="srr-group-badge" style="display:none;"></span>
         </div>
@@ -21004,7 +21004,9 @@
     
     function renderSingleRowReview(record, rowId) {
       // Update top bar
-      document.getElementById('srr-record-id').textContent = record.contract_key || rowId || '—';
+      var _recName = _srrResolveRecordName(record);
+      document.getElementById('srr-record-id').textContent = _recName || '—';
+      document.getElementById('srr-record-id').title = record.contract_key || rowId || '';
       var stateBadge = document.getElementById('srr-state-badge');
       var status = (record.status || 'unknown').toLowerCase().replace(/\s+/g, '_');
       stateBadge.textContent = record.status || 'Unknown';
@@ -21338,11 +21340,11 @@
         
         var cardHtml = '<div class="' + cardClass + '" data-field="' + key + '">' +
           '<div class="srr-field-card-header" onclick="srrSelectField(\'' + key + '\')">' +
-            '<div>' +
+            '<div style="flex:1;min-width:0;">' +
               '<div class="srr-field-card-label">' + label + labelSuffix + glossaryTooltipHtml + '</div>' +
               '<div class="srr-field-card-api">' + key + '</div>' +
+              (chips || patchIndicatorHtml ? '<div class="srr-field-card-chips" style="margin-top:3px;">' + chips + patchIndicatorHtml + '</div>' : '') +
             '</div>' +
-            '<div class="srr-field-card-chips">' + chips + patchIndicatorHtml + '</div>' +
             actionsHtml +
           '</div>' +
           '<div class="srr-field-card-body">' +
@@ -23103,6 +23105,28 @@
     var SRR_FILE_URL_ALIASES = ['file_url', 'fileurl', 'file url', 'url', 'contract source', 'contract url', 'pdf url', 'source', 'document_url', 'doc_url', 'link', 'file_url_c', 'file_url__c'];
     var SRR_FILE_NAME_ALIASES = ['file_name', 'filename', 'file name', 'contract file', 'contract file name', 'document', 'doc_name', 'file_name_c', 'file_name__c'];
     
+    function _srrResolveRecordName(record) {
+      if (!record) return '';
+      var NAME_FIELDS = [
+        'Account_Name_c', 'Account_Name__c', 'Account_Name', 'account_name',
+        'Artist_Name_pka_or_dba_c', 'Artist_Name__c', 'Artist_Name',
+        'Legal_Name_c', 'Legal_Name__c', 'Legal_Name',
+        'Name', 'name', 'Payee_c', 'Payee__c',
+        'Company_Name_c', 'Company_Name__c', 'Company_Name',
+        'Contact_Name_c', 'Contact_Name__c', 'Contact_Name',
+        'Opportunity_Name_c', 'Opportunity_Name__c', 'Opportunity_Name',
+        'Contract_Name_c', 'Contract_Name__c', 'Contract_Name',
+        'Display_Name_c', 'Display_Name__c', 'Display_Name'
+      ];
+      for (var i = 0; i < NAME_FIELDS.length; i++) {
+        var v = record[NAME_FIELDS[i]];
+        if (v && typeof v === 'string' && v.trim() && v.trim() !== 'N/A' && v.trim() !== '-' && v.trim().length > 1) {
+          return v.trim();
+        }
+      }
+      return record.contract_key || '';
+    }
+
     function srrResolveFieldValue(record, fieldType) {
       if (!record) return '';
       
