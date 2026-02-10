@@ -17802,18 +17802,47 @@
         return;
       }
 
-      var groups = {};
-      var groupOrder = [];
+      var _rawGroups = {};
+      var _rawOrder = [];
       for (var i = 0; i < items.length; i++) {
         var key = _p1dGetGroupKey(items[i]);
-        if (!groups[key]) {
-          groups[key] = { items: [], blockers: 0, warnings: 0 };
-          groupOrder.push(key);
+        if (!_rawGroups[key]) {
+          _rawGroups[key] = { items: [], blockers: 0, warnings: 0 };
+          _rawOrder.push(key);
         }
-        groups[key].items.push(items[i]);
-        if (items[i].severity === 'blocker') groups[key].blockers++;
-        else groups[key].warnings++;
+        _rawGroups[key].items.push(items[i]);
+        if (items[i].severity === 'blocker') _rawGroups[key].blockers++;
+        else _rawGroups[key].warnings++;
       }
+
+      var _acctMap = {};
+      var _acctOrder = [];
+      for (var _ami = 0; _ami < _rawOrder.length; _ami++) {
+        var _amKey = _rawOrder[_ami];
+        var _amDn = _p1dGetDisplayName(_amKey, _rawGroups[_amKey].items);
+        var _amAcct = _amKey === '_batch_level' ? '_batch_level' : (_amDn.indexOf(' : ') >= 0 ? _amDn.split(' : ')[0].trim() : _amDn.trim());
+        if (!_acctMap[_amAcct]) {
+          _acctMap[_amAcct] = { contractKeys: [], items: [], blockers: 0, warnings: 0, displayName: _amDn };
+          _acctOrder.push(_amAcct);
+        }
+        _acctMap[_amAcct].contractKeys.push(_amKey);
+        for (var _aii = 0; _aii < _rawGroups[_amKey].items.length; _aii++) {
+          _acctMap[_amAcct].items.push(_rawGroups[_amKey].items[_aii]);
+        }
+        _acctMap[_amAcct].blockers += _rawGroups[_amKey].blockers;
+        _acctMap[_amAcct].warnings += _rawGroups[_amKey].warnings;
+      }
+
+      var groups = {};
+      var groupOrder = [];
+      for (var _aoi = 0; _aoi < _acctOrder.length; _aoi++) {
+        var _aoAcct = _acctOrder[_aoi];
+        var _aoData = _acctMap[_aoAcct];
+        var _aoMergedKey = _aoData.contractKeys.length === 1 ? _aoData.contractKeys[0] : 'acct_' + simpleHash(_aoAcct);
+        groups[_aoMergedKey] = { items: _aoData.items, blockers: _aoData.blockers, warnings: _aoData.warnings, _acctName: _aoAcct, _contractKeys: _aoData.contractKeys, _displayName: _aoData.displayName };
+        groupOrder.push(_aoMergedKey);
+      }
+      console.log('[P1D-MERGE] account_merge: raw_contracts=' + _rawOrder.length + ' merged_accounts=' + groupOrder.length);
 
       groupOrder.sort(function(a, b) {
         if (a === '_batch_level') return 1;
@@ -17821,8 +17850,8 @@
         var ga = groups[a], gb = groups[b];
         if (gb.blockers !== ga.blockers) return gb.blockers - ga.blockers;
         if (gb.items.length !== ga.items.length) return gb.items.length - ga.items.length;
-        var na = _p1dGetDisplayName(a, ga.items);
-        var nb = _p1dGetDisplayName(b, gb.items);
+        var na = ga._acctName || '';
+        var nb = gb._acctName || '';
         return na < nb ? -1 : (na > nb ? 1 : 0);
       });
 
@@ -17859,46 +17888,14 @@
       html += '</tr></thead><tbody>';
 
       var _preDisplayNames = {};
-      var _preDisplayDupes = {};
       for (var _pdi = 0; _pdi < groupOrder.length; _pdi++) {
         var _pdGk = groupOrder[_pdi];
-        var _pdItems = groups[_pdGk].items;
-        var _pdName = _p1dGetDisplayName(_pdGk, _pdItems);
-        _preDisplayNames[_pdGk] = _pdName;
-        if (!_preDisplayDupes[_pdName]) _preDisplayDupes[_pdName] = [];
-        _preDisplayDupes[_pdName].push(_pdGk);
-      }
-      for (var _ddName in _preDisplayDupes) {
-        if (_preDisplayDupes[_ddName].length < 2) continue;
-        var _ddKeys = _preDisplayDupes[_ddName];
-        for (var _ddi = 0; _ddi < _ddKeys.length; _ddi++) {
-          var _ddGk = _ddKeys[_ddi];
-          var _ddItems = groups[_ddGk].items;
-          var _ddFn = '';
-          for (var _dfi = 0; _dfi < _ddItems.length; _dfi++) {
-            if (_ddItems[_dfi].file_name) { _ddFn = _ddItems[_dfi].file_name; break; }
-          }
-          if (_ddFn) {
-            var _ddClean = _ddFn.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
-            var _ddParts = _ddClean.split(' ');
-            var _ddBase = _preDisplayNames[_ddGk].split(' : ')[0] || '';
-            var _ddBaseLower = _ddBase.toLowerCase();
-            var _ddExtra = [];
-            for (var _dpi = 0; _dpi < _ddParts.length; _dpi++) {
-              if (_ddBaseLower.indexOf(_ddParts[_dpi].toLowerCase()) === -1 && _ddParts[_dpi].length > 1) {
-                _ddExtra.push(_ddParts[_dpi]);
-              }
-            }
-            if (_ddExtra.length > 0) {
-              var _ddSuffix = _ddExtra.slice(0, 4).join(' ');
-              if (_ddSuffix.length > 30) _ddSuffix = _ddSuffix.substring(0, 28) + '…';
-              _preDisplayNames[_ddGk] = _preDisplayNames[_ddGk] + ' (' + _ddSuffix + ')';
-            } else {
-              _preDisplayNames[_ddGk] = _preDisplayNames[_ddGk] + ' (#' + (_ddi + 1) + ')';
-            }
-          } else {
-            _preDisplayNames[_ddGk] = _preDisplayNames[_ddGk] + ' (#' + (_ddi + 1) + ')';
-          }
+        var _pdG = groups[_pdGk];
+        if (_pdG._acctName) {
+          var _batchName = _p1d1GetBatchName();
+          _preDisplayNames[_pdGk] = _batchName ? _pdG._acctName + ' : ' + _batchName : _pdG._acctName;
+        } else {
+          _preDisplayNames[_pdGk] = _pdG._displayName || _p1dGetDisplayName(_pdGk, _pdG.items);
         }
       }
 
@@ -17911,25 +17908,31 @@
         var defaultCollapsed = true;
         var isCollapsed = _p1dGroupState[groupId] !== undefined ? _p1dGroupState[groupId] : defaultCollapsed;
 
-        var displayName = _preDisplayNames[gk] || _p1dGetDisplayName(gk, gItems);
-        var _rawFn = ""; for (var _fni = 0; _fni < gItems.length; _fni++) { if (gItems[_fni].file_name) { _rawFn = gItems[_fni].file_name; break; } } var tooltipText = _rawFn ? _rawFn : gk;
+        var displayName = _preDisplayNames[gk] || (g._acctName ? g._acctName : _p1dGetDisplayName(gk, gItems));
+        var _mergedContractCount = g._contractKeys ? g._contractKeys.length : 1;
+        var _rawFns = []; for (var _fni = 0; _fni < gItems.length; _fni++) { if (gItems[_fni].file_name && _rawFns.indexOf(gItems[_fni].file_name) === -1) _rawFns.push(gItems[_fni].file_name); }
+        var tooltipText = _rawFns.length > 0 ? _rawFns.join(', ') : gk;
         var compactId = 'batch';
         if (gk !== '_batch_level') {
-          var _idFn = '';
-          for (var _idi = 0; _idi < gItems.length; _idi++) {
-            if (gItems[_idi].file_name) { _idFn = gItems[_idi].file_name; break; }
-          }
-          if (_idFn) {
-            compactId = _idFn.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
-            if (compactId.length > 28) compactId = compactId.substring(0, 26) + '\u2026';
+          if (_mergedContractCount > 1) {
+            compactId = _mergedContractCount + ' contracts';
           } else {
-            var rawId = gk.indexOf('file:') === 0 ? gk.substring(5) : gk;
-            if (rawId.indexOf('ctr_') === 0) {
-              rawId = rawId.substring(0, 10);
-            } else {
-              rawId = rawId.replace(/_/g, ' ').trim();
+            var _idFn = '';
+            for (var _idi = 0; _idi < gItems.length; _idi++) {
+              if (gItems[_idi].file_name) { _idFn = gItems[_idi].file_name; break; }
             }
-            compactId = rawId.length > 22 ? rawId.substring(0, 20) + '\u2026' : (rawId || gk);
+            if (_idFn) {
+              compactId = _idFn.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+              if (compactId.length > 28) compactId = compactId.substring(0, 26) + '\u2026';
+            } else {
+              var rawId = gk.indexOf('file:') === 0 ? gk.substring(5) : gk;
+              if (rawId.indexOf('ctr_') === 0) {
+                rawId = rawId.substring(0, 10);
+              } else {
+                rawId = rawId.replace(/_/g, ' ').trim();
+              }
+              compactId = rawId.length > 22 ? rawId.substring(0, 20) + '\u2026' : (rawId || gk);
+            }
           }
         }
         var domainHint = _p1dGetDomainHint(gItems);
@@ -18014,11 +18017,26 @@
         html += '<td class="p1d1-sections">' + sectionChips + '</td>';
         html += '<td>' + viewContractAction + '</td>';
         var healthHtml = '';
-        var _hsKey = ContractHealthScore && ContractHealthScore._scores ? (ContractHealthScore._scores[gk] ? gk : ContractHealthScore._scores[_origCk] ? _origCk : null) : null;
-        if (typeof ContractHealthScore !== 'undefined' && _hsKey && ContractHealthScore._scores[_hsKey]) {
-          var hs = ContractHealthScore._scores[_hsKey];
+        var _hsResult = null;
+        if (typeof ContractHealthScore !== 'undefined' && ContractHealthScore._scores) {
+          if (_mergedContractCount > 1 && g._contractKeys) {
+            var _worstScore = 101;
+            for (var _hki = 0; _hki < g._contractKeys.length; _hki++) {
+              var _hk = g._contractKeys[_hki];
+              if (ContractHealthScore._scores[_hk] && ContractHealthScore._scores[_hk].score < _worstScore) {
+                _worstScore = ContractHealthScore._scores[_hk].score;
+                _hsResult = ContractHealthScore._scores[_hk];
+              }
+            }
+          } else {
+            _hsResult = ContractHealthScore._scores[gk] || ContractHealthScore._scores[_origCk] || null;
+          }
+        }
+        if (_hsResult) {
+          var hs = _hsResult;
           var band = hs.band;
           var tooltipLines = ['Score: ' + hs.score + '/100 (' + band.label + ')'];
+          if (_mergedContractCount > 1) tooltipLines.push('Worst of ' + _mergedContractCount + ' contracts');
           if (hs.penalties.length > 0) {
             tooltipLines.push('---');
             hs.penalties.forEach(function(p) { tooltipLines.push('-' + p.value + ' ' + p.reason + ' (' + p.detail + ')'); });
