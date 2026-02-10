@@ -27059,13 +27059,17 @@
           cache.schema._batch_mapped_items = _batchMappedItems;
           cache.schema._batch_unmapped_items = _batchUnmappedItems;
         }
+        var _snapshotTotal = 0;
+        var _snapshot = (typeof getCurrentUnknownColumnsSnapshot === 'function') ? getCurrentUnknownColumnsSnapshot() : {};
+        Object.keys(_snapshot).forEach(function(k) { _snapshotTotal += (_snapshot[k] || []).length; });
+        cache.schema.unknown_columns = _snapshotTotal;
+        var _ciTotal = 0;
         if (typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable() && ContractIndex._index && ContractIndex._index.unknown_columns) {
-          var _ucTotal = 0;
           Object.keys(ContractIndex._index.unknown_columns).forEach(function(k) {
-            _ucTotal += (ContractIndex._index.unknown_columns[k] || []).length;
+            _ciTotal += (ContractIndex._index.unknown_columns[k] || []).length;
           });
-          cache.schema.unknown_columns = _ucTotal;
         }
+        console.log('[SCHEMA-SNAPSHOT] unknown_snapshot=' + _snapshotTotal + ' unknown_contract_index=' + _ciTotal);
         cache.schema.schema_drift = cache.schema.unknown_columns + cache.schema.schema_missing_required_headers;
         cache.schema._drift_detail = 'Unknown(' + cache.schema.unknown_columns + ') + MissingHeaders(' + cache.schema.schema_missing_required_headers + ')';
         cache.processing.completed = totalContracts;
