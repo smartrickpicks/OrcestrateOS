@@ -512,9 +512,11 @@
     .srr-footer { background: #f5f5f5; border-top: 1px solid #e0e0e0; padding: 8px 16px; text-align: center; }
     .srr-footer-filename { font-size: 0.85em; color: #666; font-weight: 500; }
     .srr-panel { background: white; border: 1px solid #e0e0e0; overflow-y: auto; }
-    .srr-panel-left { flex: 0 0 380px; flex-shrink: 0; border-right: none; }
-    .srr-panel-center { flex: 1; min-width: 300px; }
-    .srr-panel-right { flex: 0 0 320px; flex-shrink: 0; border-left: none; }
+    .srr-panel-left { flex: 0 0 380px; flex-shrink: 0; border-right: none; order: 3; transition: flex-basis 0.3s ease, opacity 0.3s ease; }
+    .srr-panel-left.collapsed { flex-basis: 0px; min-width: 0; overflow: hidden; opacity: 0; padding: 0; border: none; }
+    .srr-panel-center { flex: 1; min-width: 300px; order: 2; }
+    .srr-panel-right { flex: 0 0 320px; flex-shrink: 0; border-left: none; order: 1; transition: flex-basis 0.3s ease, opacity 0.3s ease; }
+    .srr-panel-right.collapsed { flex-basis: 0px; min-width: 0; overflow: hidden; opacity: 0; padding: 0; border: none; }
     .srr-panel-header { background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #e0e0e0; font-weight: 600; font-size: 0.9em; color: #333; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 5; }
     .srr-panel-tabs { display: flex; gap: 4px; }
     .srr-panel-tab { padding: 4px 10px; font-size: 0.75em; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; color: #666; }
@@ -2526,13 +2528,12 @@
               </div>
               <span id="srr-field-count" style="font-weight: normal; color: #666; font-size: 0.8em;">0 fields</span>
               <div class="inspector-actions-menu" id="inspector-actions-menu" style="display:none;">
-                <div class="inspector-actions-menu-item" id="action-catalog-items" onclick="toggleCatalogItemsGroup()">
+                <div class="inspector-actions-menu-item" id="action-catalog-items" onclick="toggleCatalogItemsGroup()" style="cursor:pointer;">
                   <span class="action-icon" style="background: #e3f2fd; color: #1565c0;">&#9776;</span>
                   <span class="action-label">
-                    <span class="action-title">Catalog Items Group</span>
-                    <span class="action-desc">Group records and batch-add items</span>
+                    <span class="action-title">Set Catalog Group</span>
+                    <span class="action-desc">Mark as group anchor and add items</span>
                   </span>
-                  <span class="action-status off-status" id="action-catalog-status">Off</span>
                 </div>
               </div>
             </div>
@@ -17331,11 +17332,29 @@
         }
 
         var sevSummary = '';
-        if (g.blockers > 0) sevSummary += '<span class="p1d1-sev-badge blocker">' + g.blockers + ' blocker' + (g.blockers > 1 ? 's' : '') + '</span>';
-        if (g.warnings > 0) sevSummary += '<span class="p1d1-sev-badge warning">' + g.warnings + ' warning' + (g.warnings > 1 ? 's' : '') + '</span>';
+        if (_dedupedBlockers > 0) sevSummary += '<span class="p1d1-sev-badge blocker">' + _dedupedBlockers + ' blocker' + (_dedupedBlockers > 1 ? 's' : '') + '</span>';
+        if (_dedupedWarnings > 0) sevSummary += '<span class="p1d1-sev-badge warning">' + _dedupedWarnings + ' warning' + (_dedupedWarnings > 1 ? 's' : '') + '</span>';
+
+        var _childDedupeMap = {};
+        var _childDedupeOrder = [];
+        var _dedupedBlockers = 0;
+        var _dedupedWarnings = 0;
+        for (var _cdi = 0; _cdi < gItems.length; _cdi++) {
+          var _cdItem = gItems[_cdi];
+          var _cdKey = (_cdItem.contract_id || _cdItem.contract_key || '') + '|' + (_cdItem.sheet_name || '') + '|' + (_cdItem.field_name || _cdItem.field_key || '') + '|' + (_cdItem.blocker_type || _cdItem.signal_type || _cdItem.reason_code || '') + '|' + (_cdItem.severity || '');
+          if (_childDedupeMap[_cdKey]) {
+            _childDedupeMap[_cdKey].count++;
+          } else {
+            _childDedupeMap[_cdKey] = { item: _cdItem, count: 1 };
+            _childDedupeOrder.push(_cdKey);
+            if (_cdItem.severity === 'blocker') _dedupedBlockers++;
+            else _dedupedWarnings++;
+          }
+        }
+        var _dedupedIssueCount = _childDedupeOrder.length;
 
         var caretChar = isCollapsed ? '\u25B6' : '\u25BC';
-        var parentClass = 'p1d1-parent-row' + (g.blockers > 0 ? ' has-blockers' : '');
+        var parentClass = 'p1d1-parent-row' + (_dedupedBlockers > 0 ? ' has-blockers' : '');
 
         var viewContractAction = '';
         if (gk !== '_batch_level') {
@@ -17361,7 +17380,7 @@
         } else {
           html += '<td class="p1d1-domain">' + escapeHtml(_srcLabel) + '</td>';
         }
-        html += '<td class="p1d1-issue-count">' + gItems.length + '</td>';
+        html += '<td class="p1d1-issue-count">' + _dedupedIssueCount + '</td>';
         html += '<td>' + sevSummary + '</td>';
         html += '<td class="p1d1-sections">' + sectionChips + '</td>';
         html += '<td>' + viewContractAction + '</td>';
@@ -17383,8 +17402,10 @@
         html += '</tr>';
 
         var childDisplay = isCollapsed ? 'none' : '';
-        for (var ri = 0; ri < gItems.length; ri++) {
-          var item = gItems[ri];
+        for (var di = 0; di < _childDedupeOrder.length; di++) {
+          var _cdEntry = _childDedupeMap[_childDedupeOrder[di]];
+          var item = _cdEntry.item;
+          var _dupCount = _cdEntry.count;
           var sName = escapeHtml(item.sheet_name || 'Unknown');
           var fName = escapeHtml(_p1xGetReference(item));
 
@@ -17401,6 +17422,9 @@
           var sevColor = item.severity === 'blocker' ? '#c62828' : (item.severity === 'warning' ? '#f57c00' : '#666');
           var sevLabel = item.severity ? item.severity.charAt(0).toUpperCase() + item.severity.slice(1) : '-';
           var sevHtml = '<span style="color:' + sevColor + '; font-weight:500; font-size:0.85em;">' + sevLabel + '</span>';
+          if (_dupCount > 1) {
+            sevHtml += ' <span style="display:inline-block;background:#e0e0e0;color:#333;border-radius:8px;padding:1px 6px;font-size:0.75em;font-weight:600;margin-left:4px;">x' + _dupCount + '</span>';
+          }
 
           var stBadge = '<span class="p1d1-status-badge" style="background:' + (item.status_color || '#9e9e9e') + '15; color:' + (item.status_color || '#9e9e9e') + ';">' + (item.status_label || item.status || 'open') + '</span>';
 
@@ -17928,9 +17952,91 @@
         banner.classList.add('p1f-scan-done');
         label.textContent = 'PDF scan complete: all ' + s.total + ' contracts clean';
       }
-      setTimeout(function() {
-        banner.classList.remove('visible');
-      }, badCount > 0 ? 8000 : 4000);
+      console.log('[PDF-RELIABILITY][P1E-FOLLOWUP] scan_complete: total=' + s.total + ', clean=' + s.clean + ', flagged=' + badCount);
+      try { localStorage.setItem('_p1f_scan_fingerprint', (typeof _p1fComputeFingerprint === 'function') ? _p1fComputeFingerprint() : ''); } catch(e) {}
+      if (typeof showToast === 'function') {
+        showToast('PDF text quality scan complete: ' + s.clean + ' clean, ' + badCount + ' flagged', badCount > 0 ? 'warning' : 'success');
+      }
+      var _bannerHovered = false;
+      var _fadeTimer = null;
+      var _startFade = function() {
+        _fadeTimer = setTimeout(function() {
+          if (!_bannerHovered) {
+            banner.style.transition = 'transform 0.5s ease, opacity 0.5s ease';
+            banner.style.opacity = '0';
+            setTimeout(function() { banner.classList.remove('visible'); banner.style.opacity = ''; banner.style.transition = ''; }, 500);
+          }
+        }, 3000);
+      };
+      banner.addEventListener('mouseenter', function() {
+        _bannerHovered = true;
+        if (_fadeTimer) clearTimeout(_fadeTimer);
+        console.log('[PDF-RELIABILITY][P1E-FOLLOWUP] banner_hover_hold');
+      });
+      banner.addEventListener('mouseleave', function() {
+        _bannerHovered = false;
+        _startFade();
+        console.log('[PDF-RELIABILITY][P1E-FOLLOWUP] banner_hover_release');
+      });
+      _startFade();
+    }
+
+    function _p1fComputeFingerprint() {
+      var parts = [];
+      if (typeof _p1fBatchScanItems !== 'undefined') {
+        for (var i = 0; i < _p1fBatchScanItems.length; i++) {
+          var it = _p1fBatchScanItems[i];
+          parts.push((it.contract_key || it.contract_id || '') + ':' + (it.signal_type || '') + ':' + (it.severity || ''));
+        }
+      }
+      if (typeof analystTriageState !== 'undefined' && analystTriageState.manualItems) {
+        for (var j = 0; j < analystTriageState.manualItems.length; j++) {
+          var mi = analystTriageState.manualItems[j];
+          parts.push((mi.contract_key || mi.contract_id || '') + ':' + (mi.blocker_type || mi.signal_type || '') + ':' + (mi.severity || ''));
+        }
+      }
+      parts.sort();
+      var hash = 0;
+      var str = parts.join('|');
+      for (var k = 0; k < str.length; k++) {
+        var ch = str.charCodeAt(k);
+        hash = ((hash << 5) - hash) + ch;
+        hash = hash & hash;
+      }
+      return 'fp_' + Math.abs(hash) + '_' + parts.length;
+    }
+
+    function _p1fCheckSessionDiff() {
+      var currentFp = _p1fComputeFingerprint();
+      var storedFp = '';
+      try { storedFp = localStorage.getItem('_p1f_scan_fingerprint') || ''; } catch(e) {}
+      if (!storedFp) {
+        try { localStorage.setItem('_p1f_scan_fingerprint', currentFp); } catch(e) {}
+        console.log('[PDF-RELIABILITY][P1E-FOLLOWUP] session_diff_none (first session)');
+        return;
+      }
+      if (storedFp === currentFp) {
+        console.log('[PDF-RELIABILITY][P1E-FOLLOWUP] session_diff_none');
+        return;
+      }
+      var oldParts = storedFp.split('_');
+      var newParts = currentFp.split('_');
+      var oldCount = parseInt(oldParts[2]) || 0;
+      var newCount = parseInt(newParts[2]) || 0;
+      var added = Math.max(0, newCount - oldCount);
+      var removed = Math.max(0, oldCount - newCount);
+      var contractSet = {};
+      if (typeof _p1fBatchScanItems !== 'undefined') {
+        for (var i = 0; i < _p1fBatchScanItems.length; i++) {
+          contractSet[_p1fBatchScanItems[i].contract_key || _p1fBatchScanItems[i].contract_id || ''] = true;
+        }
+      }
+      var contractCount = Object.keys(contractSet).length;
+      console.log('[PDF-RELIABILITY][P1E-FOLLOWUP] session_diff_detected: added=' + added + ', removed=' + removed + ', contracts=' + contractCount);
+      if (typeof showToast === 'function') {
+        showToast('Pre-Flight changed since last session: +' + added + '/-' + removed + ' issues across ' + contractCount + ' contracts', 'info');
+      }
+      try { localStorage.setItem('_p1f_scan_fingerprint', currentFp); } catch(e) {}
     }
 
     function _p1fExtractUniqueContracts() {
@@ -20618,10 +20724,26 @@
         function getSectionGuidance(docRole, docType, sheetName) {
       if (!_sectionGuidanceConfig || !_sectionGuidanceConfig.guidance) return null;
       var g = _sectionGuidanceConfig.guidance;
-      if (sheetName && g[sheetName]) return g[sheetName];
+      if (sheetName && g[sheetName]) {
+        console.log('[P0.9-CLEANUP] guidance_section_resolved:' + sheetName);
+        return g[sheetName];
+      }
+      var sheetNorm = sheetName ? sheetName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') : '';
+      var gKeys = Object.keys(g);
+      for (var gi = 0; gi < gKeys.length; gi++) {
+        var gkNorm = gKeys[gi].toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        if (sheetNorm && gkNorm === sheetNorm) {
+          console.log('[P0.9-CLEANUP] guidance_section_resolved:' + gKeys[gi] + ' (normalized)');
+          return g[gKeys[gi]];
+        }
+      }
       var key1 = (docRole || '') + '::' + (docType || '');
       var key2 = docRole || '';
-      return g[key1] || g[key2] || g['default'] || null;
+      if (g[key1]) { console.log('[P0.9-CLEANUP] guidance_section_resolved:' + key1); return g[key1]; }
+      if (g[key2]) { console.log('[P0.9-CLEANUP] guidance_section_resolved:' + key2); return g[key2]; }
+      if (g['default']) { console.log('[P0.9-CLEANUP] guidance_fallback_used'); return g['default']; }
+      console.log('[P0.9-CLEANUP] guidance_fallback_used (no match)');
+      return null;
     }
 
     function renderSectionGuidanceCard(record, container) {
@@ -20839,6 +20961,11 @@
       srrState.currentSheetName = sheetName;
       srrState.currentRowIndex = rowIndex;
       srrState.currentRecordKey = recordKey;
+
+      if (currentMode === 'analyst') {
+        var _patchPanel = document.querySelector('.srr-panel-right');
+        if (_patchPanel) _patchPanel.classList.add('collapsed');
+      }
 
       updateInspectorActionsState();
       if (typeof updateSrrGroupBadge === 'function') updateSrrGroupBadge();
@@ -22227,7 +22354,21 @@
       navigateTo('triage');
     }
     
+    function _srrExpandPatchPanel() {
+      var _pp = document.querySelector('.srr-panel-right');
+      if (_pp && _pp.classList.contains('collapsed')) {
+        _pp.classList.remove('collapsed');
+      }
+    }
+    function _srrCollapsePatchPanel() {
+      if (currentMode === 'analyst') {
+        var _pp = document.querySelector('.srr-panel-right');
+        if (_pp) _pp.classList.add('collapsed');
+      }
+    }
+
     function srrSelectField(fieldKey) {
+      _srrExpandPatchPanel();
       // Highlight selected field
       document.querySelectorAll('.srr-field-item').forEach(function(el) {
         el.classList.remove('active');
@@ -23799,6 +23940,7 @@
       // Emit audit event (stub)
       console.log('[SRR] PATCH_DRAFTED:', srrState.patchDraft);
       showToast('Draft saved', 'success');
+      _srrCollapsePatchPanel();
     }
     
     function srrCheckEvidenceGate(patchType, draft, changeCount, overrideEnabled) {
@@ -27325,6 +27467,8 @@
 
       // P1F.2: Re-merge clean items to System Pass after store reload
       if (typeof _p1f2MergeCleanToSystemPass === 'function') _p1f2MergeCleanToSystemPass();
+      // P1E-FOLLOWUP: Check session diff on triage render
+      if (typeof _p1fCheckSessionDiff === 'function' && !_p1fCheckSessionDiff._ran) { _p1fCheckSessionDiff._ran = true; _p1fCheckSessionDiff(); }
       // V2.3: Refresh and render analytics header
       if (typeof TriageAnalytics !== 'undefined') {
         try { TriageAnalytics.refresh(); TriageAnalytics.renderHeader(); } catch(e) { console.warn('[V2.3] Analytics render error:', e); }
@@ -31925,6 +32069,7 @@
       
       if (submittedRequest) {
         showToast('Patch request submitted to queue: ' + request.request_id, 'success');
+      _srrCollapsePatchPanel();
         clearPatchStudioForm();
         updatePatchQueueCounts();
         
