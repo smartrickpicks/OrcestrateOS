@@ -17128,50 +17128,153 @@
       return '';
     }
 
+    function resolvePreflightContractKey(item) {
+      var result = { contract_group_id: '_batch_level', contract_display_name: 'Batch-level Issues', source_url: '', domain: '', confidence: 'none', source: 'none' };
+
+      var cid = item.contract_id || '';
+      if (cid && cid.indexOf('ctr_') === 0) {
+        result.contract_group_id = cid;
+        result.confidence = 'high';
+        result.source = 'contract_id';
+        result.contract_display_name = _p1d1ResolveAccountName(cid) || cid;
+        result.source_url = item.file_url || '';
+        result.domain = _p1dExtractDomain(item);
+        return result;
+      }
+
+      var ck = item.contract_key || '';
+      if (ck) {
+        var rid = item.record_id || '';
+        if (rid && typeof workbook !== 'undefined' && workbook.sheets) {
+          var sheets = Object.keys(workbook.sheets);
+          for (var si = 0; si < sheets.length; si++) {
+            var rows = (workbook.sheets[sheets[si]] && workbook.sheets[sheets[si]].rows) || [];
+            for (var ri = 0; ri < rows.length; ri++) {
+              var r = rows[ri];
+              if ((r._identity && r._identity.record_id === rid) || r.record_id === rid) {
+                var derivedCid = (r._identity && r._identity.contract_id) || '';
+                if (derivedCid) {
+                  result.contract_group_id = derivedCid;
+                  result.confidence = 'high';
+                  result.source = 'row_lookup';
+                  result.contract_display_name = _p1d1ResolveAccountName(derivedCid) || derivedCid;
+                  result.source_url = item.file_url || r.file_url || r.File_URL_c || '';
+                  result.domain = _p1dExtractDomain(item);
+                  return result;
+                }
+              }
+            }
+          }
+        }
+
+        var fu = item.file_url || '';
+        if (fu && typeof ContractIndex !== 'undefined') {
+          var canonUrl = ContractIndex._canonicalizeUrl(fu);
+          var fileId = ContractIndex._extractFileIdentifier(canonUrl);
+          if (fileId && !ContractIndex._isHeaderLike(fileId)) {
+            result.contract_group_id = 'ctr_' + simpleHash(fileId);
+            result.confidence = 'medium';
+            result.source = 'url_hash';
+          } else if (canonUrl) {
+            result.contract_group_id = 'ctr_' + simpleHash(canonUrl);
+            result.confidence = 'medium';
+            result.source = 'url_hash';
+          }
+          result.source_url = fu;
+          result.domain = _p1dExtractDomain(item);
+          result.contract_display_name = _p1d1ResolveAccountName(result.contract_group_id) || ck;
+          return result;
+        }
+
+        var fn = item.file_name || ck;
+        if (fn) {
+          result.contract_group_id = 'ctr_' + simpleHash(fn.replace(/\s+/g, '_').trim());
+          result.confidence = 'low';
+          result.source = 'slug_fallback';
+          result.contract_display_name = fn.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+          result.source_url = item.file_url || '';
+          result.domain = _p1dExtractDomain(item);
+          console.log('[P1D-DEDUPE][FALLBACK] item used fallback source=slug_fallback key=' + result.contract_group_id);
+          return result;
+        }
+      }
+
+      if (item.file_url || item.file_name) {
+        var _fu2 = item.file_url || '';
+        var _fn2 = item.file_name || '';
+        if (_fu2 && typeof ContractIndex !== 'undefined') {
+          var _canon = ContractIndex._canonicalizeUrl(_fu2);
+          var _fid = ContractIndex._extractFileIdentifier(_canon);
+          if (_fid && !ContractIndex._isHeaderLike(_fid)) {
+            result.contract_group_id = 'ctr_' + simpleHash(_fid);
+          } else {
+            result.contract_group_id = 'ctr_' + simpleHash(_canon);
+          }
+          result.confidence = 'medium';
+          result.source = 'url_hash_no_ck';
+        } else if (_fn2) {
+          result.contract_group_id = 'ctr_' + simpleHash(_fn2.replace(/\s+/g, '_').trim());
+          result.confidence = 'low';
+          result.source = 'filename_hash';
+        }
+        result.contract_display_name = (_fn2 || _fu2).replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+        result.source_url = _fu2;
+        result.domain = _p1dExtractDomain(item);
+        if (result.confidence === 'low') {
+          console.log('[P1D-DEDUPE][FALLBACK] item used fallback source=' + result.source + ' key=' + result.contract_group_id);
+        }
+        return result;
+      }
+
+      return result;
+    }
+
+    function _p1dExtractDomain(item) {
+      var u = item.file_url || '';
+      if (u) {
+        try { var m = u.match(/^https?:\/\/([^\/]+)/); if (m) return m[1]; } catch(e) {}
+      }
+      return '';
+    }
+
     function _p1dGetGroupKey(item) {
-      var ck = item.contract_key || item.contract_id || '';
-      if (ck) return ck;
-      var fn = (item.file_name || '').replace(/\s+/g, '_').trim();
-      if (fn) return fn;
-      var fu = item.file_url || '';
-      if (fu) return fu;
-      return '_batch_level';
+      if (!item._contract_resolved) {
+        var resolved = resolvePreflightContractKey(item);
+        item._contract_group_id = resolved.contract_group_id;
+        item._contract_display_name = resolved.contract_display_name;
+        item._contract_source_url = resolved.source_url;
+        item._contract_domain = resolved.domain;
+        item._contract_confidence = resolved.confidence;
+        item._contract_source = resolved.source;
+        item._contract_resolved = true;
+      }
+      return item._contract_group_id;
     }
 
     function _p1dGetDisplayName(groupKey, items) {
       if (groupKey === '_batch_level') return 'Batch-level Issues';
-      var contractKey = '';
+      var batchName = _p1d1GetBatchName();
       for (var i = 0; i < items.length; i++) {
-        var ck = items[i].contract_key || items[i].contract_id || '';
+        if (items[i]._contract_display_name) {
+          var dn = items[i]._contract_display_name;
+          return batchName ? dn + ' : ' + batchName : dn;
+        }
+      }
+      var contractKey = '';
+      for (var j = 0; j < items.length; j++) {
+        var ck = items[j].contract_key || items[j].contract_id || '';
         if (ck) { contractKey = ck; break; }
       }
-      var batchName = _p1d1GetBatchName();
       var acctName = contractKey ? _p1d1ResolveAccountName(contractKey) : '';
-      if (acctName && batchName) {
-        return acctName + ' : ' + batchName;
-      }
-      if (acctName) return acctName;
-      var fn = '';
-      for (var j = 0; j < items.length; j++) {
-        fn = items[j].file_name || '';
-        if (fn) break;
-      }
-      if (!fn && contractKey) fn = contractKey;
-      if (fn) {
-        var cleanName = fn.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
-        if (batchName) return cleanName + ' : ' + batchName;
-        return cleanName;
-      }
+      if (acctName) return batchName ? acctName + ' : ' + batchName : acctName;
       var gkClean = groupKey.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
-      if (gkClean && gkClean !== '_batch_level') {
-        if (batchName) return gkClean + ' : ' + batchName;
-        return gkClean;
-      }
+      if (gkClean && gkClean !== '_batch_level') return batchName ? gkClean + ' : ' + batchName : gkClean;
       return batchName || groupKey;
     }
 
     function _p1dGetDomainHint(items) {
       for (var i = 0; i < items.length; i++) {
+        if (items[i]._contract_domain) return items[i]._contract_domain;
         var u = items[i].file_url || '';
         if (u) {
           try {
@@ -17401,26 +17504,20 @@
 
       var _uniqueContracts = {};
       var _uniqueRecords = {};
-      var _seenItemKeys = {};
-      var _dedupedItems = [];
-      var _dupesRemoved = 0;
       for (var ui = 0; ui < items.length; ui++) {
         var itm = items[ui];
-        var ck = itm.contract_key || itm.contract_id || '';
-        var dedupeKey = (itm.signal_type || '') + ':' + ck + ':' + (itm.field_name || '') + ':' + (itm.sheet_name || '');
-        if (_seenItemKeys[dedupeKey]) { _dupesRemoved++; continue; }
-        _seenItemKeys[dedupeKey] = true;
-        _dedupedItems.push(itm);
-        if (ck) _uniqueContracts[ck] = true;
+        _p1dGetGroupKey(itm);
+        var cgid = itm._contract_group_id || itm.contract_key || itm.contract_id || '';
+        if (cgid && cgid !== '_batch_level') _uniqueContracts[cgid] = true;
         var rid = itm.record_id || '';
-        if (rid && ck) _uniqueRecords[rid] = true;
+        if (rid && rid.indexOf('ROW_') !== 0) _uniqueRecords[rid] = true;
+        else if (rid) _uniqueRecords[rid] = true;
       }
-      items = _dedupedItems;
       var totalContracts = (typeof _p1fScanState !== 'undefined' && _p1fScanState.total > 0) ? _p1fScanState.total : Object.keys(_uniqueContracts).length;
       var affectedCount = Math.min(Object.keys(_uniqueContracts).length, totalContracts);
       var impactedCount = Object.keys(_uniqueRecords).length;
-      if (_dupesRemoved > 0) console.log('[TRIAGE-CONTRACT-HEALTH][P1F.2] dedupe_applied | removed=' + _dupesRemoved);
-      console.log('[TRIAGE-CONTRACT-HEALTH][P1D.1] metrics_recomputed: affected_contracts=' + affectedCount + '/' + totalContracts + ', records_impacted=' + impactedCount + ', total_issues=' + items.length + ', duplicate_rows_removed=' + _dupesRemoved);
+      console.log('[P1D-DEDUPE][COUNTS] affected_contracts=' + affectedCount + ' records_impacted=' + impactedCount);
+      console.log('[TRIAGE-CONTRACT-HEALTH][P1D.1] metrics_recomputed: affected_contracts=' + affectedCount + '/' + totalContracts + ', records_impacted=' + impactedCount + ', total_issues=' + items.length);
 
       var html = '<table class="p1d1-health-table">';
       html += '<thead><tr>';
@@ -17446,13 +17543,39 @@
 
         var displayName = _p1dGetDisplayName(gk, gItems);
         var _rawFn = ""; for (var _fni = 0; _fni < gItems.length; _fni++) { if (gItems[_fni].file_name) { _rawFn = gItems[_fni].file_name; break; } } var tooltipText = _rawFn ? _rawFn : gk;
-        var rawId = gk.indexOf('file:') === 0 ? gk.substring(5) : gk;
-        var compactId = gk === '_batch_level' ? 'batch' : (rawId.length > 22 ? rawId.substring(0, 20) + '\u2026' : rawId);
+        var compactId = 'batch';
+        if (gk !== '_batch_level') {
+          if (gk.indexOf('ctr_') === 0) {
+            compactId = gk.length > 12 ? gk.substring(0, 12) : gk;
+          } else {
+            var rawId = gk.indexOf('file:') === 0 ? gk.substring(5) : gk;
+            compactId = rawId.length > 22 ? rawId.substring(0, 20) + '\u2026' : rawId;
+          }
+        }
         var domainHint = _p1dGetDomainHint(gItems);
 
+        var _childDedupeMap = {};
+        var _childDedupeOrder = [];
+        var _dedupedBlockers = 0;
+        var _dedupedWarnings = 0;
+        for (var _cdi = 0; _cdi < gItems.length; _cdi++) {
+          var _cdItem = gItems[_cdi];
+          var _cdKey = (_cdItem._contract_group_id || _cdItem.contract_id || _cdItem.contract_key || '') + '|' + (_cdItem.contract_section_key || _cdItem.sheet_name || '') + '|' + (_cdItem.reason_code || _cdItem.blocker_type || _cdItem.signal_type || '') + '|' + (_cdItem.field_key || _cdItem.field_name || '') + '|' + (_cdItem.severity || '');
+          if (_childDedupeMap[_cdKey]) {
+            _childDedupeMap[_cdKey].count++;
+          } else {
+            _childDedupeMap[_cdKey] = { item: _cdItem, count: 1 };
+            _childDedupeOrder.push(_cdKey);
+            if (_cdItem.severity === 'blocker') _dedupedBlockers++;
+            else _dedupedWarnings++;
+          }
+        }
+        var _dedupedIssueCount = _childDedupeOrder.length;
+
         var sheetCounts = {};
-        for (var si = 0; si < gItems.length; si++) {
-          var sn = gItems[si].contract_section_label || gItems[si].sheet_name || 'Unknown';
+        for (var _sci = 0; _sci < _childDedupeOrder.length; _sci++) {
+          var _scItem = _childDedupeMap[_childDedupeOrder[_sci]].item;
+          var sn = _scItem.contract_section_label || _scItem.sheet_name || 'Unknown';
           sheetCounts[sn] = (sheetCounts[sn] || 0) + 1;
         }
         var sectionChips = '';
@@ -17465,30 +17588,19 @@
         if (_dedupedBlockers > 0) sevSummary += '<span class="p1d1-sev-badge blocker">' + _dedupedBlockers + ' blocker' + (_dedupedBlockers > 1 ? 's' : '') + '</span>';
         if (_dedupedWarnings > 0) sevSummary += '<span class="p1d1-sev-badge warning">' + _dedupedWarnings + ' warning' + (_dedupedWarnings > 1 ? 's' : '') + '</span>';
 
-        var _childDedupeMap = {};
-        var _childDedupeOrder = [];
-        var _dedupedBlockers = 0;
-        var _dedupedWarnings = 0;
-        for (var _cdi = 0; _cdi < gItems.length; _cdi++) {
-          var _cdItem = gItems[_cdi];
-          var _cdKey = (_cdItem.contract_id || _cdItem.contract_key || '') + '|' + (_cdItem.sheet_name || '') + '|' + (_cdItem.field_name || _cdItem.field_key || '') + '|' + (_cdItem.blocker_type || _cdItem.signal_type || _cdItem.reason_code || '') + '|' + (_cdItem.severity || '');
-          if (_childDedupeMap[_cdKey]) {
-            _childDedupeMap[_cdKey].count++;
-          } else {
-            _childDedupeMap[_cdKey] = { item: _cdItem, count: 1 };
-            _childDedupeOrder.push(_cdKey);
-            if (_cdItem.severity === 'blocker') _dedupedBlockers++;
-            else _dedupedWarnings++;
-          }
-        }
-        var _dedupedIssueCount = _childDedupeOrder.length;
+        console.log('[P1D-DEDUPE][GROUP] contract_group_id=' + gk + ' raw_items=' + gItems.length + ' deduped_items=' + _dedupedIssueCount);
 
         var caretChar = isCollapsed ? '\u25B6' : '\u25BC';
         var parentClass = 'p1d1-parent-row' + (_dedupedBlockers > 0 ? ' has-blockers' : '');
 
+        var _origCk = gk;
+        for (var _oki = 0; _oki < gItems.length; _oki++) {
+          if (gItems[_oki].contract_key) { _origCk = gItems[_oki].contract_key; break; }
+          if (gItems[_oki].contract_id) { _origCk = gItems[_oki].contract_id; break; }
+        }
         var viewContractAction = '';
         if (gk !== '_batch_level') {
-          viewContractAction = '<button class="p1d1-view-btn" onclick="event.stopPropagation(); _p1d1ViewContract(\'' + escapeHtml(gk.replace(/'/g, "\\'")) + '\')">View Contract</button>';
+          viewContractAction = '<button class="p1d1-view-btn" onclick="event.stopPropagation(); _p1d1ViewContract(\'' + escapeHtml(_origCk.replace(/'/g, "\\'")) + '\')">View Contract</button>';
         }
 
         html += '<tr class="' + parentClass + '" data-group-id="' + groupId + '" onclick="_p1dToggleGroup(\'' + groupId + '\')">';
@@ -17498,6 +17610,7 @@
         var _srcUrl = '';
         var _srcLabel = '';
         for (var _si = 0; _si < gItems.length; _si++) {
+          if (gItems[_si]._contract_source_url) { _srcUrl = gItems[_si]._contract_source_url; break; }
           if (gItems[_si].file_url) { _srcUrl = gItems[_si].file_url; break; }
         }
         for (var _sli = 0; _sli < gItems.length; _sli++) {
@@ -17515,8 +17628,9 @@
         html += '<td class="p1d1-sections">' + sectionChips + '</td>';
         html += '<td>' + viewContractAction + '</td>';
         var healthHtml = '';
-        if (typeof ContractHealthScore !== 'undefined' && ContractHealthScore._scores[gk]) {
-          var hs = ContractHealthScore._scores[gk];
+        var _hsKey = ContractHealthScore && ContractHealthScore._scores ? (ContractHealthScore._scores[gk] ? gk : ContractHealthScore._scores[_origCk] ? _origCk : null) : null;
+        if (typeof ContractHealthScore !== 'undefined' && _hsKey && ContractHealthScore._scores[_hsKey]) {
+          var hs = ContractHealthScore._scores[_hsKey];
           var band = hs.band;
           var tooltipLines = ['Score: ' + hs.score + '/100 (' + band.label + ')'];
           if (hs.penalties.length > 0) {
