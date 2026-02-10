@@ -517,6 +517,8 @@
     .srr-panel-center { flex: 1; min-width: 300px; order: 2; }
     .srr-panel-right { flex: 0 0 320px; flex-shrink: 0; border-left: none; order: 1; transition: flex-basis 0.3s ease, opacity 0.3s ease; }
     .srr-panel-right.collapsed { flex-basis: 0px; min-width: 0; overflow: hidden; opacity: 0; padding: 0; border: none; }
+    .srr-patch-expand-strip { display: none; writing-mode: vertical-rl; text-orientation: mixed; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 4px 0 0 4px; padding: 12px 6px; cursor: pointer; font-size: 0.75em; font-weight: 600; color: #1976d2; position: relative; order: 0; flex-shrink: 0; letter-spacing: 1px; }
+    .srr-patch-expand-strip:hover { background: #bbdefb; }
     .srr-panel-header { background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #e0e0e0; font-weight: 600; font-size: 0.9em; color: #333; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 5; }
     .srr-panel-tabs { display: flex; gap: 4px; }
     .srr-panel-tab { padding: 4px 10px; font-size: 0.75em; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; color: #666; }
@@ -2640,9 +2642,11 @@
           </div>
 
           <!-- Right Panel: Patch Editor + Evidence Pack + Submit -->
+          <div id="srr-patch-expand-strip" class="srr-patch-expand-strip" onclick="_srrTogglePatchPanel()" title="Open Patch Editor">▶ PATCH EDITOR</div>
           <div class="srr-panel srr-panel-right">
             <div class="srr-panel-header" style="display: flex; align-items: center; gap: 8px;">
               <span id="srr-right-panel-title">Patch Editor</span>
+              <button onclick="_srrTogglePatchPanel()" id="srr-patch-toggle-btn" title="Toggle Patch Editor" style="margin-left: 4px; background: none; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 0.75em; padding: 2px 8px; color: #666;">Collapse</button>
               <!-- v1.5.1: Verifier-only Patch Tester tab -->
               <div id="srr-panel-tabs" class="srr-panel-tabs" style="display: none; margin-left: auto;">
                 <button class="srr-panel-tab active" data-tab="editor" onclick="srrSwitchRightTab('editor')">Editor</button>
@@ -20963,8 +20967,7 @@
       srrState.currentRecordKey = recordKey;
 
       if (currentMode === 'analyst') {
-        var _patchPanel = document.querySelector('.srr-panel-right');
-        if (_patchPanel) _patchPanel.classList.add('collapsed');
+        _srrCollapsePatchPanel();
       }
 
       updateInspectorActionsState();
@@ -22359,12 +22362,32 @@
       if (_pp && _pp.classList.contains('collapsed')) {
         _pp.classList.remove('collapsed');
       }
+      _srrUpdateToggleBtn();
     }
     function _srrCollapsePatchPanel() {
       if (currentMode === 'analyst') {
         var _pp = document.querySelector('.srr-panel-right');
         if (_pp) _pp.classList.add('collapsed');
+        _srrUpdateToggleBtn();
       }
+    }
+    function _srrTogglePatchPanel() {
+      var _pp = document.querySelector('.srr-panel-right');
+      if (!_pp) return;
+      if (_pp.classList.contains('collapsed')) {
+        _pp.classList.remove('collapsed');
+      } else {
+        _pp.classList.add('collapsed');
+      }
+      _srrUpdateToggleBtn();
+    }
+    function _srrUpdateToggleBtn() {
+      var _pp = document.querySelector('.srr-panel-right');
+      var btn = document.getElementById('srr-patch-toggle-btn');
+      var strip = document.getElementById('srr-patch-expand-strip');
+      var isCollapsed = _pp && _pp.classList.contains('collapsed');
+      if (btn) btn.textContent = isCollapsed ? 'Expand' : 'Collapse';
+      if (strip) strip.style.display = isCollapsed ? 'block' : 'none';
     }
 
     function srrSelectField(fieldKey) {
@@ -23815,6 +23838,7 @@
     
     // Handle patch type dropdown change
     function srrOnPatchTypeChange(newType) {
+      _srrExpandPatchPanel();
       // v1.5.2: If a field is selected, apply the action to that field
       if (srrPeSelectedField) {
         var fieldKey = srrPeSelectedField.key;
@@ -28069,6 +28093,7 @@
     }
     
     function showRFICommentThread(payload) {
+      _srrExpandPatchPanel();
       // v1.5.3: For RFI type, show comment thread instead of Patch Tester
       // v1.6.9: Enhanced for legacy RFI imports with summary, details, category
       var editorTab = document.getElementById('srr-tab-editor');
