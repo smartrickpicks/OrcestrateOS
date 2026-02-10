@@ -519,6 +519,8 @@
     .srr-panel-right.collapsed { flex-basis: 0px; min-width: 0; overflow: hidden; opacity: 0; padding: 0; border: none; }
     .srr-patch-expand-strip { display: none; writing-mode: vertical-rl; text-orientation: mixed; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 4px 0 0 4px; padding: 12px 6px; cursor: pointer; font-size: 0.75em; font-weight: 600; color: #1976d2; position: relative; order: 0; flex-shrink: 0; letter-spacing: 1px; }
     .srr-patch-expand-strip:hover { background: #bbdefb; }
+    .srr-ctx-btn { padding: 2px 10px; border: 1px solid #ccc; background: #f5f5f5; color: #666; border-radius: 12px; cursor: pointer; font-size: 0.8em; font-weight: 500; }
+    .srr-ctx-btn.active { background: #e3f2fd; border-color: #1565c0; color: #1565c0; }
     .srr-panel-header { background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #e0e0e0; font-weight: 600; font-size: 0.9em; color: #333; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 5; }
     .srr-panel-tabs { display: flex; gap: 4px; }
     .srr-panel-tab { padding: 4px 10px; font-size: 0.75em; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; color: #666; }
@@ -2528,6 +2530,16 @@
                 <div class="inspector-action-chips" id="inspector-action-chips" style="margin-left: auto;"></div>
                 <button class="inspector-action-trigger" id="inspector-action-trigger" onclick="toggleInspectorActionsMenu(event)" title="Record actions" style="display:none;">+</button>
               </div>
+              <div id="srr-context-bar" style="display:none; width:100%; padding: 4px 0; border-bottom: 1px solid #eee; margin-bottom: 2px;">
+                <div style="display:flex; align-items:center; gap:4px; margin-bottom:3px;">
+                  <button id="srr-ctx-contract" class="srr-ctx-btn active" onclick="srrSetContextMode('contract')">Contract</button>
+                  <button id="srr-ctx-account" class="srr-ctx-btn" onclick="srrSetContextMode('account')">Account</button>
+                  <span id="srr-account-count" style="font-size:0.75em; color:#888; margin-left:auto;"></span>
+                </div>
+                <div id="srr-account-selector-row" style="display:none;">
+                  <select id="srr-account-select" onchange="srrSwitchAccount(this.value)" style="width:100%; font-size:0.85em; padding:3px 6px; border:1px solid #ccc; border-radius:4px;"></select>
+                </div>
+              </div>
               <span id="srr-field-count" style="font-weight: normal; color: #666; font-size: 0.8em;">0 fields</span>
               <div class="inspector-actions-menu" id="inspector-actions-menu" style="display:none;">
                 <div class="inspector-actions-menu-item" id="action-catalog-items" onclick="toggleCatalogItemsGroup()" style="cursor:pointer;">
@@ -2742,14 +2754,14 @@
                   Repro Method
                   <span id="srr-repro-required-marker" class="srr-repro-required">(required)</span>
                 </div>
-                <select class="srr-evidence-select" id="srr-repro-type" onchange="srrSaveEvidenceDraft()">
+                <select class="srr-evidence-select" id="srr-repro-type" onchange="srrSaveEvidenceDraft(); srrUpdateReproFileVisibility();">
                   <option value="">-- Select repro method --</option>
                   <option value="breaks_salesforce_rule">System Pass Violation</option>
                   <option value="breaks_qa_gate">Breaks QA Gate</option>
                   <option value="resolver_mismatch">Resolver Mismatch</option>
                   <option value="doc_evidence_mismatch">Doc Evidence Mismatch (attach file)</option>
                 </select>
-                <div class="srr-evidence-file-input" id="srr-repro-file-section">
+                <div class="srr-evidence-file-input" id="srr-repro-file-section" style="display:none;">
                   <input type="file" id="srr-repro-file" accept=".pdf,.png,.jpg,.jpeg" onchange="srrHandleReproFile(this)">
                   <span id="srr-repro-file-name" style="font-size: 0.8em; color: #666;"></span>
                 </div>
@@ -8693,6 +8705,58 @@
       renderSystemPassResults(SystemPass.getProposals());
     }
 
+
+    var _PATCH_PREFILL_TEMPLATES = {
+      'OCR_MOJIBAKE': { patch_type: 'correction', observation_type: 'data_quality_issue', expected_type: 'corrected_value', repro_type: 'doc_evidence_mismatch', justification: 'Encoding artifacts detected in extracted text (mojibake). Document evidence does not match system values.', metadata: { issue_source: 'OCR_MOJIBAKE' } },
+      'OCR_UNREADABLE': { patch_type: 'correction', observation_type: 'data_quality_issue', expected_type: 'corrected_value', repro_type: 'doc_evidence_mismatch', justification: 'PDF content is unreadable due to OCR extraction failure. Document evidence does not match system values.', metadata: { issue_source: 'OCR_UNREADABLE' } },
+      'MISSING_REQUIRED': { patch_type: 'correction', observation_type: 'missing_value', expected_type: 'populate_field', repro_type: 'breaks_qa_gate', justification: 'Required field is missing a value. Populating from source document.', metadata: { issue_source: 'MISSING_REQUIRED' } },
+      'PICKLIST_INVALID': { patch_type: 'correction', observation_type: 'invalid_value', expected_type: 'corrected_value', repro_type: 'breaks_qa_gate', justification: 'Field contains an invalid picklist value. Correcting to valid option.', metadata: { issue_source: 'PICKLIST_INVALID' } },
+      'RESOLVER_MISMATCH': { patch_type: 'correction', observation_type: 'data_mismatch', expected_type: 'corrected_value', repro_type: 'resolver_mismatch', justification: 'Resolver produced a value that does not match the source document.', metadata: { issue_source: 'RESOLVER_MISMATCH' } },
+      'UNKNOWN_COLUMN': { patch_type: 'correction', observation_type: 'schema_issue', expected_type: 'corrected_value', repro_type: 'breaks_qa_gate', justification: 'Unknown column detected that does not map to any canonical field.', metadata: { issue_source: 'UNKNOWN_COLUMN' } }
+    };
+
+    function srrPrefillPatchTemplate(issueSource) {
+      var template = _PATCH_PREFILL_TEMPLATES[issueSource];
+      if (!template) {
+        console.log('[SRR-PREFILL] no_template_for: ' + issueSource);
+        return false;
+      }
+      srrState.patchType = template.patch_type;
+      srrState.patchDraft.patch_type = template.patch_type;
+      srrState.patchDraft.observation_type = template.observation_type;
+      srrState.patchDraft.expected_type = template.expected_type;
+      srrState.patchDraft.repro_type = template.repro_type;
+      srrState.patchDraft.justification = template.justification;
+      if (template.metadata) {
+        srrState.patchDraft.metadata = srrState.patchDraft.metadata || {};
+        var mkeys = Object.keys(template.metadata);
+        for (var mi = 0; mi < mkeys.length; mi++) {
+          srrState.patchDraft.metadata[mkeys[mi]] = template.metadata[mkeys[mi]];
+        }
+      }
+      var obsEl = document.getElementById('srr-observation-type');
+      if (obsEl) obsEl.value = template.observation_type;
+      var expEl = document.getElementById('srr-expected-type');
+      if (expEl) expEl.value = template.expected_type;
+      var justEl = document.getElementById('srr-justification');
+      if (justEl) justEl.value = template.justification;
+      var reproEl = document.getElementById('srr-repro-type');
+      if (reproEl) reproEl.value = template.repro_type;
+      srrUpdatePatchTypeDisplay();
+      srrUpdatePatchFormSections();
+      srrUpdateReproFileVisibility();
+      console.log('[SRR-PREFILL] template_applied: ' + issueSource + ', patch_type=' + template.patch_type + ', repro=' + template.repro_type);
+      return true;
+    }
+
+    function srrUpdateReproFileVisibility() {
+      var reproType = (document.getElementById('srr-repro-type') || {}).value || '';
+      var fileSection = document.getElementById('srr-repro-file-section');
+      if (fileSection) {
+        fileSection.style.display = reproType === 'doc_evidence_mismatch' ? '' : 'none';
+      }
+    }
+
     function createPatchFromBlocker(blockerId, recordId, fieldName, blockerType) {
       var patchId = 'PR_PF_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6);
       var patchArtifact = {
@@ -8718,6 +8782,7 @@
         dataset_id: IDENTITY_CONTEXT.dataset_id || '',
         metadata: { patch_request_id: patchId, blocker_id: blockerId, blocker_type: blockerType }
       });
+      srrPrefillPatchTemplate(blockerType);
       showToast('Patch created from blocker: ' + patchId, 'success');
       if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
     }
@@ -17350,8 +17415,8 @@
     var _SECTION_CANON = {
       'accounts': 'Accounts',
       'account': 'Accounts',
-      'opportunity': 'Opportunity',
-      'opportunities': 'Opportunity',
+      'opportunity': 'Opportunities',
+      'opportunities': 'Opportunities',
       'financials': 'Financials',
       'financial': 'Financials',
       'catalog': 'Catalog',
@@ -18443,6 +18508,7 @@
         file_url: record.file_url || '',
         _batch_scan: true
       };
+      enrichPreflightItem(item);
       var isDup = _p1fBatchScanItems.some(function(m) {
         return m.signal_type === condition && m.contract_key === contractKey && m.field_name === 'file_url';
       });
@@ -19031,7 +19097,10 @@
         blacklist_subject: '',
         changes: [], 
         status: 'Draft' 
-      }
+      },
+      contextMode: 'contract',
+      accountOptions: [],
+      selectedAccountIdx: null
     };
     
     // v1.5.7: Rules Bundle Cache - loaded on app init
@@ -19045,7 +19114,100 @@
     
     // v1.5.7: Account Name field key aliases (match any of these)
     var ACCOUNT_NAME_ALIASES = ['Account_Name', 'Account_Name_c', 'account_name', 'account_name_c'];
-    
+
+    function _srrGetAccountName(record) {
+      var keys = Object.keys(record);
+      for (var i = 0; i < keys.length; i++) {
+        if (isAccountNameField(keys[i])) {
+          return record[keys[i]] || 'Unknown';
+        }
+      }
+      return 'Unknown';
+    }
+
+    function srrBuildAccountSelector(record) {
+      var bar = document.getElementById('srr-context-bar');
+      if (!bar) return;
+      var contractKey = record.contract_key || '';
+      if (!contractKey || typeof ContractIndex === 'undefined' || !ContractIndex._index || !ContractIndex._index.contracts) {
+        bar.style.display = 'none';
+        return;
+      }
+      var contract = ContractIndex._index.contracts[contractKey];
+      if (!contract || !contract.sheets) {
+        bar.style.display = 'none';
+        return;
+      }
+      var sheetRows = contract.sheets[srrState.currentSheetName];
+      if (!sheetRows || sheetRows.length === 0) {
+        bar.style.display = 'none';
+        return;
+      }
+      var countEl = document.getElementById('srr-account-count');
+      var selectorRow = document.getElementById('srr-account-selector-row');
+      var selectEl = document.getElementById('srr-account-select');
+      if (sheetRows.length === 1) {
+        bar.style.display = 'block';
+        if (selectorRow) selectorRow.style.display = 'none';
+        if (countEl) countEl.textContent = '1 account';
+        srrState.accountOptions = [];
+        srrState.selectedAccountIdx = srrState.currentRowIndex;
+        return;
+      }
+      var options = [];
+      var wb = window.workbook || window._workbook;
+      for (var i = 0; i < sheetRows.length; i++) {
+        var ref = sheetRows[i];
+        var rowIdx = ref.row_index !== undefined ? ref.row_index : ref;
+        var rowRecord = null;
+        if (wb && wb.sheets && wb.sheets[srrState.currentSheetName] && wb.sheets[srrState.currentSheetName].rows) {
+          rowRecord = wb.sheets[srrState.currentSheetName].rows[rowIdx];
+        }
+        var label = rowRecord ? _srrGetAccountName(rowRecord) : ('Row ' + rowIdx);
+        var recId = rowRecord ? (rowRecord.record_id || rowRecord.contract_key || '') : '';
+        options.push({ value: rowIdx, label: label, recordId: recId });
+      }
+      srrState.accountOptions = options;
+      srrState.selectedAccountIdx = srrState.currentRowIndex;
+      if (selectEl) {
+        var html = '';
+        for (var j = 0; j < options.length; j++) {
+          var sel = (options[j].value === srrState.currentRowIndex) ? ' selected' : '';
+          html += '<option value="' + options[j].value + '"' + sel + '>' + options[j].label + '</option>';
+        }
+        selectEl.innerHTML = html;
+      }
+      bar.style.display = 'block';
+      if (countEl) countEl.textContent = options.length + ' accounts';
+      if (srrState.contextMode === 'account' && selectorRow) {
+        selectorRow.style.display = 'block';
+      }
+    }
+
+    function srrSetContextMode(mode) {
+      srrState.contextMode = mode;
+      var btnContract = document.getElementById('srr-ctx-contract');
+      var btnAccount = document.getElementById('srr-ctx-account');
+      var selectorRow = document.getElementById('srr-account-selector-row');
+      if (btnContract) {
+        if (mode === 'contract') { btnContract.className = 'srr-ctx-btn active'; } else { btnContract.className = 'srr-ctx-btn'; }
+      }
+      if (btnAccount) {
+        if (mode === 'account') { btnAccount.className = 'srr-ctx-btn active'; } else { btnAccount.className = 'srr-ctx-btn'; }
+      }
+      if (selectorRow) {
+        selectorRow.style.display = (mode === 'account') ? 'block' : 'none';
+      }
+      console.log('[SRR-CONTEXT] mode_changed: ' + mode);
+    }
+
+    function srrSwitchAccount(value) {
+      var rowIdx = parseInt(value, 10);
+      if (isNaN(rowIdx)) return;
+      console.log('[SRR-CONTEXT] account_switched: rowIndex=' + rowIdx);
+      openRowReviewDrawer(srrState.currentSheetName, rowIdx);
+    }
+
     // v1.5.7: Load rules bundles from /rules/rules_bundle/
     async function loadRulesBundle() {
       if (rulesBundleCache.loaded || rulesBundleCache.loading) return;
@@ -21220,6 +21382,8 @@
       srrState.currentRowIndex = rowIndex;
       srrState.currentRecordKey = recordKey;
 
+      srrBuildAccountSelector(record);
+
       if (currentMode === 'analyst') {
         _srrCollapsePatchPanel();
       }
@@ -22246,12 +22410,74 @@
     // Navigation guard
     // v1.4.20: Back to Grid with guard for unresolved fields
     function srrSetDocumentType(val) {
+      if (val === '__add_new_doc_type__') {
+        srrOpenNewDocTypeModal();
+        var sel = document.getElementById('srr-doc-type');
+        if (sel && srrState.currentRecord) sel.value = srrState.currentRecord._document_type || 'Unknown';
+        return;
+      }
       var record = srrState.currentRecord;
       if (!record) return;
       record._document_type = val;
       console.log('[SRR] Document type set:', val, 'for', srrState.currentRecordKey);
       if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
     }
+    function srrOpenNewDocTypeModal() {
+      var modal = document.getElementById('srr-new-doctype-modal');
+      if (modal) {
+        modal.style.display = 'flex';
+        var nameInput = document.getElementById('srr-new-doctype-name');
+        if (nameInput) { nameInput.value = ''; nameInput.focus(); }
+        var justInput = document.getElementById('srr-new-doctype-justification');
+        if (justInput) justInput.value = '';
+      }
+      console.log('[SRR-DOCTYPE] modal_opened');
+    }
+
+    function srrCloseNewDocTypeModal() {
+      var modal = document.getElementById('srr-new-doctype-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function srrSubmitNewDocType() {
+      var nameInput = document.getElementById('srr-new-doctype-name');
+      var justInput = document.getElementById('srr-new-doctype-justification');
+      var name = (nameInput ? nameInput.value : '').trim();
+      var justification = (justInput ? justInput.value : '').trim();
+      if (!name) { showToast('Please enter a document type name', 'warning'); return; }
+      if (justification.length < 5) { showToast('Please provide a justification (min 5 characters)', 'warning'); return; }
+      var patchId = 'PR_DT_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6);
+      var record = srrState.currentRecord;
+      var patchArtifact = {
+        request_id: patchId,
+        type: 'doc_type_addition',
+        artifact_type: 'doc_type_addition',
+        status: 'Draft',
+        record_id: srrState.currentRecordKey || '',
+        contract_key: record ? (record.contract_key || '') : '',
+        field_name: 'document_type',
+        payload: { new_doc_type: name, justification: justification },
+        intent: { category: 'doc_type_addition', field: 'document_type' },
+        submitted_at_utc: new Date().toISOString(),
+        created_at_utc: new Date().toISOString(),
+        actor_id: (AuditTimeline._resolveActor() || {}).id || 'analyst',
+        actor_role: (AuditTimeline._resolveActor() || {}).role || 'analyst',
+        dataset_id: IDENTITY_CONTEXT.dataset_id || ''
+      };
+      PATCH_REQUEST_STORE.save(patchArtifact);
+      AuditTimeline.emit('doc_type_addition_requested', {
+        record_id: srrState.currentRecordKey || '',
+        field_key: 'document_type',
+        dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+        metadata: { patch_request_id: patchId, new_doc_type: name, justification: justification }
+      });
+      srrCloseNewDocTypeModal();
+      showToast('Doc type "' + name + '" submitted as patch: ' + patchId, 'success');
+      console.log('[SRR-DOCTYPE] patch_submitted: id=' + patchId + ', type=' + name);
+      if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
+    }
+
+
 
     function srrPopulateDocTypeDropdown(record) {
       var sel = document.getElementById('srr-doc-type');
@@ -22274,6 +22500,14 @@
         opt.selected = true;
         sel.appendChild(opt);
       }
+      var addOpt = document.createElement('option');
+      addOpt.value = '__add_new_doc_type__';
+      addOpt.textContent = '+ Add New Doc Type…';
+      addOpt.style.fontStyle = 'italic';
+      addOpt.style.color = '#1565c0';
+      sel.appendChild(addOpt);
+    }
+
     function srrSetDocumentRole(val) {
       var record = srrState.currentRecord;
       if (!record) return;
@@ -24304,6 +24538,32 @@
       return failed;
     }
 
+    function srrCheckContractPreflightGate() {
+      var record = srrState.currentRecord;
+      if (!record) return [];
+      var contractKey = record.contract_key || srrState.currentRecordKey || '';
+      if (!contractKey) return [];
+      var blockers = [];
+      var allItems = (typeof analystTriageState !== 'undefined' && analystTriageState.manualItems) ? analystTriageState.manualItems : [];
+      var batchItems = (typeof _p1fBatchScanItems !== 'undefined') ? _p1fBatchScanItems : [];
+      var combined = allItems.concat(batchItems);
+      for (var i = 0; i < combined.length; i++) {
+        var item = combined[i];
+        var itemContract = item.contract_key || item.contract_id || item.record_id || '';
+        if (itemContract !== contractKey) continue;
+        if (item.status === 'resolved' || item.status === 'dismissed') continue;
+        if (item.severity === 'blocker') {
+          var label = item.reason_label || item.blocker_type || item.signal_type || 'Unknown blocker';
+          var field = item.field_label || item.field_name || '';
+          blockers.push(label + (field ? ' (' + field + ')' : ''));
+        }
+      }
+      if (blockers.length > 0) {
+        console.log('[SRR-PREFLIGHT] contract_gate_blocked: contract=' + contractKey + ', blockers=' + blockers.length);
+      }
+      return blockers;
+    }
+
     function srrSubmitPatchRequest() {
       srrSaveEvidenceDraft();
       
@@ -24325,6 +24585,13 @@
       if (preflightGaps.length > 0) {
         showToast('Preflight gate incomplete: ' + preflightGaps.join(', '), 'warning');
         console.log('[SRR] Submit blocked — preflight gaps:', preflightGaps);
+        return;
+      }
+
+      var contractBlockers = srrCheckContractPreflightGate();
+      if (contractBlockers.length > 0) {
+        showToast('Contract has ' + contractBlockers.length + ' unresolved blocker(s): ' + contractBlockers.slice(0, 3).join('; ') + (contractBlockers.length > 3 ? ' (+' + (contractBlockers.length - 3) + ' more)' : ''), 'warning');
+        console.log('[SRR] Submit blocked — contract preflight blockers:', contractBlockers);
         return;
       }
       
@@ -36369,5 +36636,28 @@ var P022_RuntimeValidation = {
                 </div>
                 <div class="p1e-diag-body"></div>
               </div>
+
+    <!-- V1: Add New Doc Type Modal -->
+    <div id="srr-new-doctype-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:8px; padding:24px; max-width:420px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+          <span style="font-weight:600; font-size:1.05em; color:#1a237e;">Add New Document Type</span>
+          <button onclick="srrCloseNewDocTypeModal()" style="background:none; border:none; font-size:1.2em; cursor:pointer; color:#999;">&times;</button>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:0.85em; font-weight:500; color:#333; display:block; margin-bottom:4px;">Document Type Name</label>
+          <input type="text" id="srr-new-doctype-name" placeholder="e.g. Side Letter" style="width:100%; padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:0.9em; box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:0.85em; font-weight:500; color:#333; display:block; margin-bottom:4px;">Justification</label>
+          <textarea id="srr-new-doctype-justification" placeholder="Why is this doc type needed?" rows="3" style="width:100%; padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:0.9em; box-sizing:border-box; resize:vertical;"></textarea>
+        </div>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button onclick="srrCloseNewDocTypeModal()" style="padding:6px 16px; border:1px solid #ccc; background:#f5f5f5; border-radius:4px; cursor:pointer; font-size:0.85em;">Cancel</button>
+          <button onclick="srrSubmitNewDocType()" style="padding:6px 16px; border:none; background:#1565c0; color:#fff; border-radius:4px; cursor:pointer; font-size:0.85em; font-weight:600;">Submit as Patch</button>
+        </div>
+      </div>
+    </div>
+
 </body>
 </html>
