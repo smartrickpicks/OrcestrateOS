@@ -17629,13 +17629,34 @@
 
     function _p1d1ViewContract(contractKey) {
       console.log('[TRIAGE-CONTRACT-HEALTH][P1D.1] view_contract: ' + contractKey);
-      if (typeof handleContractFilterChange === 'function') {
-        handleContractFilterChange(contractKey);
+      var _openedRecord = false;
+      if (contractKey && typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable() && ContractIndex._index && ContractIndex._index.contracts[contractKey]) {
+        var _ci = ContractIndex._index.contracts[contractKey];
+        if (_ci.sheets) {
+          var _sheetKeys = Object.keys(_ci.sheets);
+          for (var _ski = 0; _ski < _sheetKeys.length; _ski++) {
+            var _sn = _sheetKeys[_ski];
+            var _rows = _ci.sheets[_sn];
+            if (_rows && _rows.length > 0 && typeof workbook !== 'undefined' && workbook.sheets && workbook.sheets[_sn] && workbook.sheets[_sn].rows) {
+              var _ri = _rows[0].row_index !== undefined ? _rows[0].row_index : _rows[0];
+              if (_ri < workbook.sheets[_sn].rows.length) {
+                openRowReviewDrawer(_sn, _ri);
+                _openedRecord = true;
+                break;
+              }
+            }
+          }
+        }
       }
-      var gridSelector = document.getElementById('contract-filter-selector') || document.getElementById('sidebar-sheet-selector');
-      if (gridSelector) gridSelector.value = contractKey;
-      window.location.hash = '#/grid';
-      if (typeof renderGrid === 'function') renderGrid();
+      if (!_openedRecord) {
+        if (typeof handleContractFilterChange === 'function') {
+          handleContractFilterChange(contractKey);
+        }
+        var gridSelector = document.getElementById('contract-filter-selector') || document.getElementById('sidebar-sheet-selector');
+        if (gridSelector) gridSelector.value = contractKey;
+        window.location.hash = '#/grid';
+        if (typeof renderGrid === 'function') renderGrid();
+      }
     }
 
 
@@ -28407,12 +28428,13 @@
         }
       }
 
-      // Step 4: Contract-level fallback - open grid filtered by contract
+      // Step 4: Contract-level fallback - open first record in Record Inspector
       if (itemContractId) {
-        console.log('[P0.8-LINK] route_resolved_contract: fallback grid filter contract=' + itemContractId);
+        console.log('[P0.8-LINK] route_resolved_contract: fallback record_inspector contract=' + itemContractId + ' sheet=' + itemSheetName);
         result.resolved = true;
         result.path = 'contract_grid';
         result.contractId = itemContractId;
+        result.sheetName = itemSheetName;
         return result;
       }
 
@@ -28442,9 +28464,32 @@
 
       if (resolution.resolved) {
         if (resolution.path === 'contract_grid') {
-          _activeContractFilter = resolution.contractId;
-          navigateTo('grid');
-          setTimeout(function() { if (typeof renderGrid === 'function') renderGrid(); }, 100);
+          var _cid = resolution.contractId;
+          var _openedRecord = false;
+          if (_cid && typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable() && ContractIndex._index && ContractIndex._index.contracts[_cid]) {
+            var _ci = ContractIndex._index.contracts[_cid];
+            var _targetSheet = resolution.sheetName || '';
+            if (_ci.sheets) {
+              var _sheetKeys = _targetSheet ? [_targetSheet] : Object.keys(_ci.sheets);
+              for (var _ski = 0; _ski < _sheetKeys.length; _ski++) {
+                var _sn = _sheetKeys[_ski];
+                var _rows = _ci.sheets[_sn];
+                if (_rows && _rows.length > 0 && typeof workbook !== 'undefined' && workbook.sheets && workbook.sheets[_sn] && workbook.sheets[_sn].rows) {
+                  var _ri = _rows[0].row_index !== undefined ? _rows[0].row_index : _rows[0];
+                  if (_ri < workbook.sheets[_sn].rows.length) {
+                    openRowReviewDrawer(_sn, _ri);
+                    _openedRecord = true;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+          if (!_openedRecord) {
+            _activeContractFilter = _cid;
+            navigateTo('grid');
+            setTimeout(function() { if (typeof renderGrid === 'function') renderGrid(); }, 100);
+          }
         } else if (resolution.target) {
           if (resolution.target.sheetName && resolution.target.sheetName !== 'canonical') {
             openRowReviewDrawer(resolution.target.sheetName, resolution.target.rowIndex);
