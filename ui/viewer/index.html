@@ -27751,13 +27751,49 @@
           }
           if (cache.schema._missing_values_items && cache.schema._missing_values_items.length > 0) {
             html += '<h4 style="margin:0 0 8px;font-size:0.9em;color:#ef6c00;">Missing Values (' + cache.schema._missing_values_items.length + ')</h4>';
-            html += '<div style="margin-bottom:6px;font-size:0.75em;color:#888;">Required fields present as headers but with blank/missing values in records.</div>';
-            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;"><thead><tr style="background:#fff3e0;"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Field</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Section</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Header</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Count</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Total</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Reason</th></tr></thead><tbody>';
-            cache.schema._missing_values_items.forEach(function(item) {
+            html += '<div style="margin-bottom:6px;font-size:0.75em;color:#888;">Required fields present as headers but with blank/missing values in records. Click a row to expand and see affected records.</div>';
+            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;" id="mv-expand-table"><thead><tr style="background:#fff3e0;"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;width:20px;"></th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Field</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Section</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Reason</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Errors</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Total</th></tr></thead><tbody>';
+            cache.schema._missing_values_items.forEach(function(item, idx) {
               var pct = item.total_rows > 0 ? Math.round((item.blank_count / item.total_rows) * 100) : 0;
               var reasonLabel = item.reason === 'invalid_picklist' ? 'Invalid picklist' : 'Blank / missing';
               var reasonColor = item.reason === 'invalid_picklist' ? '#6a1b9a' : '#e65100';
-              html += '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;font-family:monospace;font-size:0.9em;">' + item.field_key + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.section + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.header + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;color:#e65100;">' + item.blank_count + ' (' + pct + '%)</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.total_rows + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;color:' + reasonColor + ';font-size:0.85em;">' + reasonLabel + '</td></tr>';
+              var rowId = 'mv-expand-' + idx;
+              html += '<tr style="cursor:pointer;" onclick="(function(){var el=document.getElementById(\x27' + rowId + '\x27);if(el){el.style.display=el.style.display===\x27none\x27?\x27table-row\x27:\x27none\x27;var arrow=document.getElementById(\x27' + rowId + '-arrow\x27);if(arrow)arrow.textContent=el.style.display===\x27none\x27?\x27\u25B6\x27:\x27\u25BC\x27;}})()">';
+              html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;color:#888;font-size:0.85em;" id="' + rowId + '-arrow">\u25B6</td>';
+              html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;font-family:monospace;font-size:0.9em;">' + escapeHtml(item.field_key) + '</td>';
+              html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;">' + escapeHtml(item.section) + '</td>';
+              html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;color:' + reasonColor + ';font-size:0.85em;">' + reasonLabel + '</td>';
+              html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;color:#e65100;font-weight:600;">' + item.blank_count + ' (' + pct + '%)</td>';
+              html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.total_rows + '</td>';
+              html += '</tr>';
+              html += '<tr id="' + rowId + '" style="display:none;"><td colspan="6" style="padding:0;border-bottom:1px solid #ddd;">';
+              html += '<div style="max-height:200px;overflow-y:auto;background:#fafafa;padding:6px 12px 6px 28px;">';
+              var rows = item.affected_rows || [];
+              if (rows.length === 0) {
+                html += '<div style="color:#888;font-size:0.8em;padding:4px 0;">No individual row data available.</div>';
+              } else {
+                var wb = (typeof workbook !== 'undefined') ? workbook : null;
+                var sh = (wb && wb.sheets && wb.sheets[item.section]) ? wb.sheets[item.section] : null;
+                for (var ri = 0; ri < rows.length; ri++) {
+                  var rowIdx = rows[ri];
+                  var rowData = (sh && sh.rows && sh.rows[rowIdx]) ? sh.rows[rowIdx] : null;
+                  var contractLabel = '';
+                  if (rowData && typeof ContractIndex !== 'undefined' && typeof ContractIndex.deriveContractId === 'function') {
+                    var cid = ContractIndex.deriveContractId(rowData);
+                    if (cid) contractLabel = cid;
+                  }
+                  var cellVal = rowData ? rowData[item.header] : '';
+                  var displayVal = (cellVal === null || cellVal === undefined || String(cellVal).trim() === '') ? '(empty)' : String(cellVal);
+                  if (displayVal.length > 40) displayVal = displayVal.substring(0, 37) + '...';
+                  var escapedSection = item.section.replace(/\x27/g, '\\\x27');
+                  html += '<div style="display:flex;align-items:center;padding:3px 0;border-bottom:1px solid #f0f0f0;font-size:0.82em;" class="mv-record-row">';
+                  html += '<span style="cursor:pointer;color:#1565c0;text-decoration:underline;flex:0 0 auto;margin-right:8px;" onclick="event.stopPropagation();var _m=document.getElementById(\x27schema-detail-modal\x27);if(_m)_m.remove();openRowReviewDrawer(\x27' + escapedSection + '\x27,' + rowIdx + ')">Row ' + (rowIdx + 1) + '</span>';
+                  if (contractLabel) html += '<span style="color:#555;margin-right:8px;flex:0 0 auto;">' + escapeHtml(contractLabel) + '</span>';
+                  html += '<span style="color:#999;font-family:monospace;font-size:0.9em;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(displayVal) + '</span>';
+                  html += '</div>';
+                }
+              }
+              html += '</div></td></tr>';
             });
             html += '</tbody></table>';
           } else {
