@@ -26991,12 +26991,24 @@
                 }
                 if (!matchedHeader) return;
                 var blankCount = 0;
+                var invalidPicklistCount = 0;
+                var isPicklist = f.picklist === true && f.options && f.options.length > 0;
+                var optionsLower = [];
+                if (isPicklist) { f.options.forEach(function(o) { optionsLower.push(String(o).toLowerCase().trim()); }); }
                 for (var _ri = 0; _ri < sh.rows.length; _ri++) {
                   var val = sh.rows[_ri] ? sh.rows[_ri][matchedHeader] : undefined;
-                  if (val === null || val === undefined || String(val).trim() === '') blankCount++;
+                  if (typeof isBlankValue === 'function' && isBlankValue(val)) {
+                    blankCount++;
+                  } else if (isPicklist && val !== null && val !== undefined) {
+                    var valLower = String(val).toLowerCase().trim();
+                    if (optionsLower.indexOf(valLower) === -1) invalidPicklistCount++;
+                  }
                 }
                 if (blankCount > 0) {
-                  _missingValueItems.push({ field_key: f.field_key, label: f.field_label || f.field_key, section: sn, header: matchedHeader, blank_count: blankCount, total_rows: sh.rows.length });
+                  _missingValueItems.push({ field_key: f.field_key, label: f.field_label || f.field_key, section: sn, header: matchedHeader, blank_count: blankCount, total_rows: sh.rows.length, reason: 'blank_like' });
+                }
+                if (invalidPicklistCount > 0) {
+                  _missingValueItems.push({ field_key: f.field_key, label: f.field_label || f.field_key, section: sn, header: matchedHeader, blank_count: invalidPicklistCount, total_rows: sh.rows.length, reason: 'invalid_picklist' });
                 }
               });
             }
@@ -27522,10 +27534,12 @@
           if (cache.schema._missing_values_items && cache.schema._missing_values_items.length > 0) {
             html += '<h4 style="margin:0 0 8px;font-size:0.9em;color:#ef6c00;">Missing Values (' + cache.schema._missing_values_items.length + ')</h4>';
             html += '<div style="margin-bottom:6px;font-size:0.75em;color:#888;">Required fields present as headers but with blank/missing values in records.</div>';
-            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;"><thead><tr style="background:#fff3e0;"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Field</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Section</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Header</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Blank</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Total</th></tr></thead><tbody>';
+            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;"><thead><tr style="background:#fff3e0;"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Field</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Section</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Header</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Count</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Total</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Reason</th></tr></thead><tbody>';
             cache.schema._missing_values_items.forEach(function(item) {
               var pct = item.total_rows > 0 ? Math.round((item.blank_count / item.total_rows) * 100) : 0;
-              html += '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;font-family:monospace;font-size:0.9em;">' + item.field_key + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.section + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.header + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;color:#e65100;">' + item.blank_count + ' (' + pct + '%)</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.total_rows + '</td></tr>';
+              var reasonLabel = item.reason === 'invalid_picklist' ? 'Invalid picklist' : 'Blank / missing';
+              var reasonColor = item.reason === 'invalid_picklist' ? '#6a1b9a' : '#e65100';
+              html += '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;font-family:monospace;font-size:0.9em;">' + item.field_key + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.section + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.header + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;color:#e65100;">' + item.blank_count + ' (' + pct + '%)</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.total_rows + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;color:' + reasonColor + ';font-size:0.85em;">' + reasonLabel + '</td></tr>';
             });
             html += '</tbody></table>';
           } else {
