@@ -10077,6 +10077,8 @@
         localStorage.removeItem('orchestrate_idb_sessions_idx');
         localStorage.removeItem('orchestrate_session');
         localStorage.removeItem('orchestrate_canonical_records');
+        localStorage.removeItem('unknown_columns');
+        localStorage.removeItem('unknown_columns_decisions');
         var isDemo = isDemoSession();
         localStorage.removeItem('currentRole');
         localStorage.removeItem('demoUser');
@@ -14692,8 +14694,7 @@
       
       // Detect unknown columns for Admin (uses current dataset with sheet awareness)
       if (typeof detectUnknownColumns === 'function') {
-        var sheetName = sessionState.fileName || sourceType || 'imported_data';
-        detectUnknownColumns(allData.contractResults, sheetName);
+        detectUnknownColumns();
       }
       
       // Persist to localStorage if enabled
@@ -18932,7 +18933,7 @@
       console.log('[RERUN-PREFLIGHT] State cleared, regenerating signals');
       try { generateSignalsForDataset(); } catch(e) { console.warn('[RERUN-PREFLIGHT] Signal generation error:', e); }
 
-      try { if (typeof detectUnknownColumns === 'function') { detectUnknownColumns(allData.contractResults, sessionState.fileName || 'rerun'); } } catch(e) {}
+      try { if (typeof detectUnknownColumns === 'function') { detectUnknownColumns(); } } catch(e) {}
 
       if (typeof _p1fBatchPdfScan === 'function') {
         var origShowComplete = typeof _p1fShowComplete === 'function' ? _p1fShowComplete : function() {};
@@ -30689,51 +30690,88 @@
     // UNKNOWN COLUMNS FUNCTIONS (v1.4.4)
     // ============================================================
     
-    var CANONICAL_FIELDS = ['contract_key', 'file_name', 'file_url', 'status', 'subtype', 'severity', 'sheet', 'notes'];
-    
-    function detectUnknownColumns(records, sheetName) {
-      if (!records || records.length === 0) return [];
-      
-      var unknownCols = [];
-      var seenCols = new Set();
-      
-      records.forEach(function(record) {
-        Object.keys(record).forEach(function(key) {
-          if (seenCols.has(key)) return;
-          seenCols.add(key);
-          var normalized = normalizeColumnName(key);
-          if (!CANONICAL_FIELDS.includes(normalized) && !key.startsWith('_')) {
-            var sampleValues = [];
-            var nonEmptyCount = 0;
-            
-            records.slice(0, 20).forEach(function(r) {
-              var val = r[key];
-              if (val !== null && val !== undefined && val !== '') {
-                nonEmptyCount++;
-                if (sampleValues.length < 3) sampleValues.push(String(val).substring(0, 50));
-              }
-            });
-            
-            unknownCols.push({
-              original_name: key,
-              normalized_name: normalized,
-              sample_values: sampleValues,
-              count_nonempty: nonEmptyCount,
-              suggested_canonical: null,
-              decision: null
-            });
-          }
+    function _buildGlossaryKeySet() {
+      var known = {};
+      var _norm = function(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); };
+      known['contract_key'] = true; known['file_name'] = true; known['file_url'] = true;
+      known['status'] = true; known['sheet'] = true; known['record_id'] = true;
+      known['dataset_id'] = true; known['group_id'] = true; known['document_type'] = true;
+      if (typeof rulesBundleCache !== 'undefined' && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.fields) {
+        rulesBundleCache.fieldMeta.fields.forEach(function(f) {
+          if (f.canonical_key) known[_norm(f.canonical_key)] = true;
+          if (f.label) known[_norm(f.label)] = true;
+          if (f.key) known[_norm(f.key)] = true;
         });
-      });
-      
-      // Store in localStorage
-      var stored = JSON.parse(localStorage.getItem('unknown_columns') || '{}');
-      stored[sheetName || '_default'] = unknownCols;
-      localStorage.setItem('unknown_columns', JSON.stringify(stored));
-      
-      return unknownCols;
+      }
+      if (typeof COLUMN_ALIAS_MAP !== 'undefined') {
+        var aliasKeys = Object.keys(COLUMN_ALIAS_MAP);
+        for (var i = 0; i < aliasKeys.length; i++) {
+          known[aliasKeys[i]] = true;
+          var entries = COLUMN_ALIAS_MAP[aliasKeys[i]];
+          for (var j = 0; j < entries.length; j++) {
+            known[_norm(entries[j].canonical_key)] = true;
+          }
+        }
+      }
+      return known;
     }
-    
+
+    function detectUnknownColumns() {
+      if (!workbook || !workbook.order || workbook.order.length === 0) return;
+      var knownSet = _buildGlossaryKeySet();
+      var _norm = function(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); };
+      var stored = {};
+
+      for (var si = 0; si < workbook.order.length; si++) {
+        var sn = workbook.order[si];
+        if (sn.indexOf('_change_log') !== -1) continue;
+        if (sn === 'RFIs & Analyst Notes') continue;
+        if (typeof isReferenceSheet === 'function' && isReferenceSheet(sn)) continue;
+        if (typeof isMetaSheet === 'function' && isMetaSheet(sn)) continue;
+        var sheet = workbook.sheets[sn];
+        if (!sheet || !sheet.headers) continue;
+
+        var unknownCols = [];
+        for (var hi = 0; hi < sheet.headers.length; hi++) {
+          var hdr = sheet.headers[hi];
+          if (!hdr || hdr.charAt(0) === '_') continue;
+          var norm = _norm(hdr);
+          if (!norm) continue;
+          var resolved = normalizeColumnName(hdr, sn);
+          if (knownSet[norm] || knownSet[resolved]) continue;
+
+          var sampleValues = [];
+          var nonEmptyCount = 0;
+          var rows = sheet.rows || [];
+          var limit = Math.min(rows.length, 20);
+          for (var ri = 0; ri < limit; ri++) {
+            var val = rows[ri] ? rows[ri][hdr] : undefined;
+            if (val !== null && val !== undefined && val !== '') {
+              nonEmptyCount++;
+              if (sampleValues.length < 3) sampleValues.push(String(val).substring(0, 50));
+            }
+          }
+          unknownCols.push({
+            original_name: hdr,
+            normalized_name: norm,
+            sample_values: sampleValues,
+            count_nonempty: nonEmptyCount,
+            suggested_canonical: null,
+            decision: null
+          });
+        }
+        if (unknownCols.length > 0) {
+          stored[sn] = unknownCols;
+        }
+      }
+
+      localStorage.setItem('unknown_columns', JSON.stringify(stored));
+      var totalUnknown = 0;
+      Object.keys(stored).forEach(function(k) { totalUnknown += stored[k].length; });
+      console.log('[UnknownCols] Detected ' + totalUnknown + ' unknown columns across ' + Object.keys(stored).length + ' sheets (glossary+alias scoped)');
+      return stored;
+    }
+
     function normalizeColumnName(name, sheetHint) {
       var normalized = String(name).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
       var entries = COLUMN_ALIAS_MAP[normalized];
