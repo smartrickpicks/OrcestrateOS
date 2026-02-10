@@ -29508,14 +29508,12 @@
       if (typeof _p1f2MergeCleanToSystemPass === 'function') _p1f2MergeCleanToSystemPass();
       // P1E-FOLLOWUP: Check session diff on triage render
       if (typeof _p1fCheckSessionDiff === 'function' && !_p1fCheckSessionDiff._ran) { _p1fCheckSessionDiff._ran = true; _p1fCheckSessionDiff(); }
-      // V2.3: Refresh and render analytics header
-      if (typeof TriageAnalytics !== 'undefined') {
-        try { TriageAnalytics.refresh(); } catch(e) { console.warn('[V2.3] Analytics refresh error:', e); }
-      }
+      // Build and merge missing-value Pre-Flight items before analytics refresh
       if (typeof _buildMissingValuePreflightItems === 'function') _buildMissingValuePreflightItems();
       if (typeof _mergeMissingValuePreflightItems === 'function') _mergeMissingValuePreflightItems();
+      // V2.3: Refresh and render analytics header (after missing-value merge so pfAlerts includes all sources)
       if (typeof TriageAnalytics !== 'undefined') {
-        try { TriageAnalytics.renderHeader(); } catch(e) { console.warn('[V2.3] Analytics render error:', e); }
+        try { TriageAnalytics.refresh(); TriageAnalytics.renderHeader(); } catch(e) { console.warn('[V2.3] Analytics refresh error:', e); }
       }
 
       
