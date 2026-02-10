@@ -9140,6 +9140,9 @@
       if (chipsEl) chipsEl.innerHTML = '';
     }
 
+    function normalizeForDedupe(str) {
+      if (!str || typeof str !== 'string') return '';
+
       return str.trim().toLowerCase().replace(/[\s\-_.,;:!?'"()\[\]{}\/\\]+/g, ' ').replace(/\s+/g, ' ').trim();
     }
 
