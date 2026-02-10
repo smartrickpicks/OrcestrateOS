@@ -18408,12 +18408,13 @@
         for (var ri = 0; ri < sheet.rows.length; ri++) {
           var row = sheet.rows[ri];
           if (!row) continue;
-          var ck = row.contract_key || row.contract_id || row.File_Name_c || row.File_Name || '';
           var url = row.file_url || row.File_URL_c || '';
           var fn = row.file_name || row.File_Name_c || row.File_Name || '';
-          if (!ck || !url) continue;
-          if (contracts[ck]) continue;
-          contracts[ck] = {
+          if (!url || !fn) continue;
+          var groupKey = fn.trim().toLowerCase();
+          if (contracts[groupKey]) continue;
+          var ck = row.contract_key || row.contract_id || fn;
+          contracts[groupKey] = {
             contract_key: ck,
             file_url: url,
             file_name: fn,
@@ -18426,6 +18427,7 @@
       for (var k in contracts) {
         if (contracts.hasOwnProperty(k)) list.push(contracts[k]);
       }
+      console.log('[P1F] _p1fExtractUniqueContracts: ' + list.length + ' unique contracts by file_name');
       return list;
     }
 
