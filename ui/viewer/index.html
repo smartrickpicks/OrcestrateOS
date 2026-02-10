@@ -29236,23 +29236,50 @@
     function _p1aBuildIssueFilters(items) {
       var container = document.getElementById('p1a-preflight-issue-filters');
       if (!container) return;
+      var _getKey = function(it, idx) {
+        return it._contract_group_id || it.contract_key || it.contract_id || it.record_id || ('_item_' + idx);
+      };
+      var sevFilteredItems = items;
+      if (_p1aActiveSeverity !== 'All') {
+        var _sf = [];
+        for (var si = 0; si < items.length; si++) {
+          if ((items[si].severity || '').toLowerCase() === _p1aActiveSeverity) _sf.push(items[si]);
+        }
+        sevFilteredItems = _sf;
+      }
       var typeContractMap = {};
-      var sevContractMap = { blocker: {}, warning: {} };
-      for (var i = 0; i < items.length; i++) {
-        var rc = items[i].reason_code || items[i].blocker_type || items[i].signal_type || 'OTHER';
+      var allContractsForType = {};
+      for (var i = 0; i < sevFilteredItems.length; i++) {
+        var rc = sevFilteredItems[i].reason_code || sevFilteredItems[i].blocker_type || sevFilteredItems[i].signal_type || 'OTHER';
         if (!typeContractMap[rc]) typeContractMap[rc] = {};
-        var _ck = items[i]._contract_group_id || items[i].contract_key || items[i].contract_id || items[i].record_id || ('_item_' + i);
+        var _ck = _getKey(sevFilteredItems[i], i);
         if (_ck && _ck !== '_batch_level') {
           typeContractMap[rc][_ck] = true;
-          var sev = (items[i].severity || '').toLowerCase();
-          if (sev === 'blocker') sevContractMap.blocker[_ck] = true;
-          else sevContractMap.warning[_ck] = true;
+          allContractsForType[_ck] = true;
         }
       }
       var typeCounts = {};
       var _tcKeys = Object.keys(typeContractMap);
       for (var _tci = 0; _tci < _tcKeys.length; _tci++) {
         typeCounts[_tcKeys[_tci]] = Object.keys(typeContractMap[_tcKeys[_tci]]).length;
+      }
+      var typeFilteredItems = items;
+      if (_p1aActiveIssueType !== 'All') {
+        var _tf = [];
+        for (var ti = 0; ti < items.length; ti++) {
+          var _trc = items[ti].reason_code || items[ti].blocker_type || items[ti].signal_type || 'OTHER';
+          if (_trc === _p1aActiveIssueType) _tf.push(items[ti]);
+        }
+        typeFilteredItems = _tf;
+      }
+      var sevContractMap = { blocker: {}, warning: {} };
+      for (var j = 0; j < typeFilteredItems.length; j++) {
+        var _ck2 = _getKey(typeFilteredItems[j], j);
+        if (_ck2 && _ck2 !== '_batch_level') {
+          var sev = (typeFilteredItems[j].severity || '').toLowerCase();
+          if (sev === 'blocker') sevContractMap.blocker[_ck2] = true;
+          else sevContractMap.warning[_ck2] = true;
+        }
       }
       var sevCounts = { blocker: Object.keys(sevContractMap.blocker).length, warning: Object.keys(sevContractMap.warning).length };
       var typeKeys = Object.keys(typeCounts).sort(function(a, b) { return typeCounts[b] - typeCounts[a]; });
@@ -29277,7 +29304,7 @@
       html += '<div onclick="_p1aToggleDropdown(\x27issue\x27)" style="' + chipBase + 'border:1px solid ' + issueColors.border + ';background:' + issueColors.bg + ';color:' + issueColors.text + ';font-weight:500;">' + escapeHtml(activeIssueLabel) + arrow + '</div>';
       html += '<div id="p1a-issue-menu" style="' + menuBase + 'display:none;">';
       var allIssueActive = _p1aActiveIssueType === 'All';
-      html += '<div onclick="_p1aSelectIssueType(\x27All\x27)" style="' + menuItem + (allIssueActive ? 'background:#e3f2fd;font-weight:600;color:#1565c0;' : '') + '" onmouseover="this.style.background=\x27#f0f0f0\x27" onmouseout="this.style.background=\x27' + (allIssueActive ? '#e3f2fd' : '') + '\x27"><span>All Issues</span><span style=\"color:#999;font-size:0.9em;\">' + items.length + '</span></div>';
+      html += '<div onclick="_p1aSelectIssueType(\x27All\x27)" style="' + menuItem + (allIssueActive ? 'background:#e3f2fd;font-weight:600;color:#1565c0;' : '') + '" onmouseover="this.style.background=\x27#f0f0f0\x27" onmouseout="this.style.background=\x27' + (allIssueActive ? '#e3f2fd' : '') + '\x27"><span>All Issues</span><span style=\"color:#999;font-size:0.9em;\">' + Object.keys(allContractsForType).length + '</span></div>';
       for (var t = 0; t < typeKeys.length; t++) {
         var tk = typeKeys[t];
         var tLabel = _ISSUE_TYPE_LABELS[tk] || tk.replace(/_/g, ' ');
