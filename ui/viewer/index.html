@@ -31193,6 +31193,8 @@
       
       // v1.6.38: Clear all cell-level caches BEFORE loading new dataset to prevent stale highlights
       clearAllCellStores();
+      localStorage.removeItem('unknown_columns');
+      localStorage.removeItem('unknown_columns_decisions');
       
       // P0.6: Truth Pack — enforce clean pre-flight from zero
       if (typeof TruthPack !== 'undefined' && TruthPack.isActive()) {
@@ -31287,6 +31289,8 @@
           persistAllRecordsToStore();
           // v1.6.0: Generate signals for dataset
           generateSignalsForDataset();
+
+          if (typeof detectUnknownColumns === 'function') detectUnknownColumns();
 
           // v2.2: Build contract index after signals
           try { ContractIndex.build(); populateContractSelector(); console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on upload path'); } catch(e) { console.error('[ContractIndex] Post-import build failed:', e); }
@@ -35801,19 +35805,7 @@ Add any additional notes here.
               blocked: 0
             }
           };
-          // Detect unknown columns for Admin UI
-          if (unknownColumns.length > 0) {
-            var unknownColsStorage = JSON.parse(localStorage.getItem('unknown_columns') || '{}');
-            unknownColsStorage[sheetName] = unknownColumns.map(function(uc) {
-              return {
-                original: uc.original,
-                normalized: uc.normalized,
-                samples: uc.samples,
-                nonEmptyCount: normalizedRows.filter(function(r) { return r[uc.normalized]; }).length
-              };
-            });
-            localStorage.setItem('unknown_columns', JSON.stringify(unknownColsStorage));
-          }
+
           // v2.3 G6: localStorage blob write removed (storage policy).
           // Workbook persisted via saveWorkbookToCache() -> IndexedDB.
           if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
