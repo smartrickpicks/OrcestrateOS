@@ -2202,18 +2202,22 @@
                   <div id="ta-schema-matched-pct" style="font-size: 1.4em; font-weight: 700; color: #2e7d32;">--</div>
                   <div style="font-size: 0.75em; color: #666;">Fields Matched</div>
                   <div id="ta-schema-matched-count" style="font-size: 0.7em; color: #999;">0 / 0</div>
+                  <div id="ta-schema-matched-scope" style="font-size: 0.65em; color: #aaa;"></div>
                 </div>
                 <div onclick="TriageAnalytics.handleSchemaClick('unknown')" style="text-align: center; padding: 10px; background: #fff3e0; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-unknown" style="font-size: 1.4em; font-weight: 700; color: #e65100;">0</div>
-                  <div style="font-size: 0.75em; color: #666;">Unknown Columns</div>
+                  <div style="font-size: 0.75em; color: #666;">Unknown Cols</div>
+                  <div style="font-size: 0.6em; color: #aaa;">Not in glossary</div>
                 </div>
                 <div onclick="TriageAnalytics.handleSchemaClick('missing')" style="text-align: center; padding: 10px; background: #ffebee; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-missing" style="font-size: 1.4em; font-weight: 700; color: #c62828;">0</div>
                   <div style="font-size: 0.75em; color: #666;">Missing Required</div>
+                  <div style="font-size: 0.6em; color: #aaa;">Expected but absent</div>
                 </div>
                 <div onclick="TriageAnalytics.handleSchemaClick('drift')" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-drift" style="font-size: 1.4em; font-weight: 700; color: #555;">0</div>
-                  <div style="font-size: 0.75em; color: #666;">Schema Drift</div>
+                  <div style="font-size: 0.75em; color: #666;">Total Gaps</div>
+                  <div id="ta-schema-drift-detail" style="font-size: 0.6em; color: #aaa;"></div>
                 </div>
               </div>
               <div id="ta-schema-empty-state" style="display: none; padding: 12px; text-align: center; color: #999; font-size: 0.8em; border-top: 1px solid #eee; margin-top: 12px;">No matching items found for this filter. Try loading a dataset with more columns.</div>
@@ -26854,9 +26858,27 @@
         }
 
         if (typeof rulesBundleCache !== 'undefined' && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.fields) {
-          var allFields = rulesBundleCache.fieldMeta.fields;
-          cache.schema.standard_total = allFields.length;
+          var _allGlossaryFields = rulesBundleCache.fieldMeta.fields;
           var _normKey = function(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); };
+          var _activeSheetsNorm = {};
+          var _activeSectionCount = 0;
+          if (typeof workbook !== 'undefined' && workbook.order) {
+            workbook.order.forEach(function(sn) {
+              var norm = _normKey(sn);
+              if (!_activeSheetsNorm[norm]) {
+                _activeSheetsNorm[norm] = true;
+                _activeSectionCount++;
+              }
+            });
+          }
+          var _hasActiveSheets = _activeSectionCount > 0;
+          var allFields = _hasActiveSheets ? _allGlossaryFields.filter(function(f) {
+            var fs = _normKey(f.sheet || '');
+            return !!_activeSheetsNorm[fs];
+          }) : _allGlossaryFields;
+          cache.schema.standard_total = allFields.length;
+          cache.schema._glossary_total = _allGlossaryFields.length;
+          cache.schema._active_sections = _activeSectionCount;
           var wbCols = {};
           var wbCanonicals = {};
           if (typeof workbook !== 'undefined' && workbook.order) {
@@ -26957,6 +26979,7 @@
           cache.schema.unknown_columns = Object.keys(ContractIndex._index.unknown_columns).length;
         }
         cache.schema.schema_drift = cache.schema.unknown_columns + cache.schema.missing_required;
+        cache.schema._drift_detail = 'Unknown(' + cache.schema.unknown_columns + ') + Missing(' + cache.schema.missing_required + ')';
         cache.processing.completed = totalContracts;
 
         this._cache = cache;
@@ -27222,9 +27245,16 @@
         var pct = cache.schema.standard_total > 0 ? Math.round((cache.schema.standard_matched / cache.schema.standard_total) * 100) : 0;
         if (el('ta-schema-matched-pct')) el('ta-schema-matched-pct').textContent = pct + '%';
         if (el('ta-schema-matched-count')) el('ta-schema-matched-count').textContent = cache.schema.standard_matched + ' / ' + cache.schema.standard_total;
+        if (el('ta-schema-matched-scope')) {
+          var _scopeLabel = cache.schema._active_sections > 0
+            ? cache.schema._active_sections + ' active sections'
+            : 'all sections';
+          el('ta-schema-matched-scope').textContent = _scopeLabel;
+        }
         if (el('ta-schema-unknown')) el('ta-schema-unknown').textContent = cache.schema.unknown_columns;
         if (el('ta-schema-missing')) el('ta-schema-missing').textContent = cache.schema.missing_required;
         if (el('ta-schema-drift')) el('ta-schema-drift').textContent = cache.schema.schema_drift;
+        if (el('ta-schema-drift-detail')) el('ta-schema-drift-detail').textContent = cache.schema._drift_detail || '';
       },
 
       handleLaneClick: function(lane) {
