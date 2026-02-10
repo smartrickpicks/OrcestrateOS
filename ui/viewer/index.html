@@ -901,13 +901,16 @@
     /* v1.6.15: Asterisk markers for required/invalid fields (replaces pills) */
     .srr-required-marker { color: #42a5f5; font-size: 0.75em; margin-left: 3px; opacity: 0.8; }
     .srr-invalid-marker { color: #e65100; font-size: 0.8em; font-weight: 700; margin-left: 2px; }
-    .srr-signal-chip { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 10px; font-size: 0.7em; font-weight: 600; margin-left: 4px; cursor: help; line-height: 1.5; vertical-align: middle; }
-    .srr-signal-chip.sig-error { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
-    .srr-signal-chip.sig-warning { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
-    .srr-signal-chip.sig-info { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
-    .srr-field-legend { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 12px; background: #fafafa; border-bottom: 1px solid #e0e0e0; font-size: 0.72em; align-items: center; }
-    .srr-legend-item { display: inline-flex; align-items: center; gap: 3px; color: #666; }
-    .srr-legend-swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+    .srr-field-card.signal-error { border-left: 3px solid #d32f2f; }
+    .srr-field-card.signal-error .srr-field-card-header { background: #ffebee; }
+    .srr-field-card.signal-warning { border-left: 3px solid #e65100; }
+    .srr-field-card.signal-warning .srr-field-card-header { background: #fff3e0; }
+    .srr-field-card.signal-info { border-left: 3px solid #1976d2; }
+    .srr-field-card.signal-info .srr-field-card-header { background: #e3f2fd; }
+    .srr-signal-chip { display: none; }
+    .srr-field-legend { display: flex; flex-wrap: wrap; gap: 10px; padding: 6px 12px; background: #fafafa; border-bottom: 1px solid #e0e0e0; font-size: 0.72em; align-items: center; }
+    .srr-legend-item { display: inline-flex; align-items: center; gap: 4px; color: #666; }
+    .srr-legend-swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
     /* Legend for asterisk markers */
 
     /* v1.6.10: Dropdown field styling */
@@ -2570,11 +2573,9 @@
             </div>
             <!-- v1.6.15: Asterisk legend -->
             <div class="srr-field-legend" id="srr-field-legend">
-              <span class="srr-legend-item"><span class="srr-legend-swatch" style="background:#e3f2fd;border:1px solid #90caf9;"></span> Options</span>
-              <span class="srr-legend-item"><span class="srr-legend-swatch" style="background:#e3f2fd;border:1px solid #90caf9;"></span> Required</span>
-              <span class="srr-legend-item"><span class="srr-legend-swatch" style="background:#fff3e0;border:1px solid #ffcc80;"></span> Invalid Option</span>
-              <span class="srr-legend-item"><span class="srr-legend-swatch" style="background:#ffebee;border:1px solid #ef9a9a;"></span> Required Missing</span>
-              <span class="srr-legend-item"><span class="srr-legend-swatch" style="background:#fff3e0;border:1px solid #ffcc80;"></span> OCR Issue</span>
+              <span class="srr-legend-item"><span class="srr-legend-swatch" style="background:#ffebee;border-left:3px solid #d32f2f;"></span> Needs attention</span>
+              <span class="srr-legend-item"><span class="srr-legend-swatch" style="background:#fff3e0;border-left:3px solid #e65100;"></span> Review suggested</span>
+              <span class="srr-legend-item"><span class="srr-legend-swatch" style="background:#e8f5e9;border-left:3px solid #4caf50;"></span> Verified</span>
             </div>
 
             <div class="srr-panel-body" id="srr-field-list" style="padding: 0;">
@@ -21720,32 +21721,28 @@
         }
         
         var labelSuffix = '';
-        if (isPicklistField) {
-          labelSuffix += ' <span class="srr-signal-chip sig-info" title="This field has a defined list of valid options">Options</span>';
-        }
+        var fieldSignalLevel = '';
 
         var recordId = srrState.currentRecord ? ((srrState.currentRecord._identity && srrState.currentRecord._identity.record_id) || srrState.currentRecord.record_id || '') : '';
         var fieldSignals = (recordId && typeof signalStore !== 'undefined' && signalStore.signals_by_cell && signalStore.signals_by_cell[recordId] && signalStore.signals_by_cell[recordId][key]) ? signalStore.signals_by_cell[recordId][key] : [];
-        var _shownSignals = {};
+        var fieldSignalTips = [];
         for (var _si = 0; _si < fieldSignals.length; _si++) {
           var sig = fieldSignals[_si];
-          if (_shownSignals[sig.signal_type]) continue;
-          _shownSignals[sig.signal_type] = true;
-          var sigClass = sig.severity === 'error' ? 'sig-error' : (sig.severity === 'warning' ? 'sig-warning' : 'sig-info');
-          var sigLabel = sig.signal_type === 'MISSING_REQUIRED' ? 'Required Missing' : (sig.signal_type === 'PICKLIST_INVALID' ? 'Invalid Option' : (sig.signal_type === 'OCR_UNREADABLE' ? 'OCR Issue' : (sig.signal_type === 'QA_FLAG' ? 'QA Flag' : sig.signal_type.replace(/_/g, ' '))));
-          var sigTip = (sig.message || '').replace(/"/g, '&quot;');
-          if (sig.valid_options && sig.valid_options.length > 0) {
-            sigTip += ' | Valid: ' + sig.valid_options.join(', ');
-          }
-          labelSuffix += ' <span class="srr-signal-chip ' + sigClass + '" title="' + sigTip + '">' + escapeHtml(sigLabel) + '</span>';
+          if (sig.severity === 'error') fieldSignalLevel = 'error';
+          else if (sig.severity === 'warning' && fieldSignalLevel !== 'error') fieldSignalLevel = 'warning';
+          else if (!fieldSignalLevel) fieldSignalLevel = 'info';
+          var sigTip = (sig.message || sig.signal_type.replace(/_/g, ' ')).replace(/"/g, '&quot;');
+          fieldSignalTips.push(sigTip);
         }
         if (fieldSignals.length === 0 && isInvalidPicklistValue) {
-          labelSuffix += ' <span class="srr-signal-chip sig-warning" title="Current value is not in the defined options list for this field">Invalid Option</span>';
+          if (!fieldSignalLevel || fieldSignalLevel === 'info') fieldSignalLevel = 'warning';
+          fieldSignalTips.push('Current value is not in the valid options list');
         }
-        if (fieldMeta && fieldMeta.requiredness === 'required' && fieldState === 'todo') {
-          var hasRequiredSignal = _shownSignals['MISSING_REQUIRED'];
-          if (!hasRequiredSignal) {
-            labelSuffix += ' <span class="srr-signal-chip sig-info" title="This field is required by the schema">Required</span>';
+        if (fieldMeta && fieldMeta.requiredness === 'required' && fieldState === 'todo' && !fieldSignalLevel) {
+          var hasVal = currentVal && String(currentVal).trim() !== '';
+          if (!hasVal) {
+            fieldSignalLevel = 'error';
+            fieldSignalTips.push('Required field is empty');
           }
         }
         
@@ -21760,6 +21757,7 @@
         if (srrState.selectedField === key) cardClass += ' active';
         if (isPicklistField) cardClass += ' is-picklist';
         if (isInvalidPicklistValue) cardClass += ' has-invalid-value';
+        if (fieldSignalLevel && displayState === 'todo') cardClass += ' signal-' + fieldSignalLevel;
         
         // v1.6.6: Check for patch highlight
         var patchInfo = getFieldPatchInfo(srrState.currentRecordKey, key);
@@ -21810,7 +21808,8 @@
         }
         actionsHtml += '</div>';
         
-        var cardHtml = '<div class="' + cardClass + '" data-field="' + key + '">' +
+        var cardTitle = fieldSignalTips.length > 0 ? ' title="' + fieldSignalTips.join('; ').replace(/"/g, '&amp;quot;') + '"' : '';
+        var cardHtml = '<div class="' + cardClass + '"' + cardTitle + ' data-field="' + key + '">' +
           '<div class="srr-field-card-header" onclick="srrSelectField(\'' + key + '\')">' +
             '<div style="flex:1;min-width:0;">' +
               '<div class="srr-field-card-label">' + label + labelSuffix + glossaryTooltipHtml + '</div>' +
