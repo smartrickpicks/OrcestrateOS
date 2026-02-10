@@ -533,12 +533,26 @@
     .srr-panel-right.collapsed { flex-basis: 0px; min-width: 0; overflow: hidden; opacity: 0; padding: 0; border: none; }
     .srr-patch-expand-strip { display: none; writing-mode: vertical-rl; text-orientation: mixed; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 4px 0 0 4px; padding: 12px 6px; cursor: pointer; font-size: 0.75em; font-weight: 600; color: #1976d2; position: relative; order: 0; flex-shrink: 0; letter-spacing: 1px; }
     .srr-patch-expand-strip:hover { background: #bbdefb; }
-    .srr-patch-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 10; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow-y: auto; display: flex; flex-direction: column; }
-    .srr-patch-overlay.open { transform: translateX(0); }
-    .srr-patch-overlay-header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0; font-weight: 600; font-size: 0.9em; color: #333; position: sticky; top: 0; z-index: 11; flex-shrink: 0; }
-    .srr-patch-overlay-back { background: none; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 0.8em; padding: 4px 10px; color: #666; display: flex; align-items: center; gap: 4px; }
-    .srr-patch-overlay-back:hover { background: #f0f0f0; border-color: #999; }
-    .srr-patch-overlay-body { padding: 12px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    .srr-left-tabs { display: flex; gap: 0; border-bottom: 2px solid #e0e0e0; background: #fafafa; flex-shrink: 0; }
+    .srr-left-tab { padding: 8px 14px; font-size: 0.8em; font-weight: 600; color: #888; cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color 0.15s, border-color 0.15s; white-space: nowrap; }
+    .srr-left-tab:hover { color: #555; background: #f0f0f0; }
+    .srr-left-tab.active { color: #1565c0; border-bottom-color: #1565c0; }
+    .srr-left-tab-body { display: none; flex: 1; overflow-y: auto; flex-direction: column; }
+    .srr-left-tab-body.active { display: flex; }
+    .srr-glossary-list { padding: 0; }
+    .srr-glossary-entry { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.1s; }
+    .srr-glossary-entry:hover { background: #f5f8ff; }
+    .srr-glossary-entry.expanded { background: #f5f8ff; }
+    .srr-glossary-field-label { font-weight: 600; font-size: 0.9em; color: #333; margin-bottom: 2px; }
+    .srr-glossary-field-key { font-size: 0.75em; color: #999; font-family: monospace; }
+    .srr-glossary-detail { padding: 8px 0 4px 0; font-size: 0.85em; color: #555; line-height: 1.5; }
+    .srr-glossary-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+    .srr-glossary-tag { font-size: 0.72em; padding: 2px 8px; border-radius: 10px; background: #e3f2fd; color: #1565c0; font-weight: 500; }
+    .srr-glossary-tag.format { background: #f3e5f5; color: #7b1fa2; }
+    .srr-glossary-tag.required { background: #fce4ec; color: #c62828; }
+    .srr-glossary-tag.optional { background: #e8f5e9; color: #2e7d32; }
+    .srr-glossary-search { width: 100%; padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 0.85em; box-sizing: border-box; margin-bottom: 0; }
+    .srr-glossary-empty { padding: 24px 16px; text-align: center; color: #999; font-size: 0.85em; }
     .srr-ctx-btn { padding: 2px 10px; border: 1px solid #ccc; background: #f5f5f5; color: #666; border-radius: 12px; cursor: pointer; font-size: 0.8em; font-weight: 500; }
     .srr-ctx-btn.active { background: #e3f2fd; border-color: #1565c0; color: #1565c0; }
     .srr-panel-header { background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #e0e0e0; font-weight: 600; font-size: 0.9em; color: #333; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 5; }
@@ -2560,12 +2574,19 @@
         <div class="srr-layout">
           <!-- Left Panel: Field Inspector with Search, Filters, Field Cards -->
           <div class="srr-panel srr-panel-left">
-            <div class="srr-panel-header" style="flex-direction: column; align-items: flex-start; gap: 2px; position: relative;">
-              <div style="display: flex; align-items: center; gap: 6px; width: 100%;">
+            <div class="srr-panel-header" style="flex-direction: column; align-items: flex-start; gap: 0; position: relative; padding-bottom: 0;">
+              <div style="display: flex; align-items: center; gap: 6px; width: 100%; padding-bottom: 6px;">
                 <span id="srr-inspector-title" style="font-size: 0.95em;">Field Inspector</span>
                 <div class="inspector-action-chips" id="inspector-action-chips" style="margin-left: auto;"></div>
                 <button class="inspector-action-trigger" id="inspector-action-trigger" onclick="openBatchAddModal()" title="Add Catalog Item" style="display:none;">+</button>
               </div>
+              <div class="srr-left-tabs" id="srr-left-tabs">
+                <button class="srr-left-tab active" data-tab="editor" onclick="srrSwitchLeftTab('editor')">Editor</button>
+                <button class="srr-left-tab" data-tab="patch" onclick="srrSwitchLeftTab('patch')">Patch Studio</button>
+                <button class="srr-left-tab" data-tab="glossary" onclick="srrSwitchLeftTab('glossary')">Glossary</button>
+              </div>
+            </div>
+            <div class="srr-left-tab-body active" id="srr-tab-editor" data-tab="editor">
               <div id="srr-context-bar" style="display:none; width:100%; padding: 4px 0; border-bottom: 1px solid #eee; margin-bottom: 2px;">
                 <div style="display:flex; align-items:center; gap:4px; margin-bottom:3px;">
                   <button id="srr-ctx-contract" class="srr-ctx-btn active" onclick="srrSetContextMode('contract')">Contract</button>
@@ -2578,7 +2599,6 @@
               </div>
               <span id="srr-field-count" style="font-weight: normal; color: #666; font-size: 0.8em;">0 fields</span>
               <div class="inspector-actions-menu" id="inspector-actions-menu" style="display:none;"></div>
-            </div>
             <!-- v1.4.18: Search input -->
             <div class="srr-search-bar">
               <input type="text" class="srr-search-input" id="srr-field-search" placeholder="Search fields..." oninput="srrFilterFields()">
@@ -2599,8 +2619,23 @@
               <span class="srr-legend-item"><span class="srr-legend-swatch" style="background:#e8f5e9;border-left:3px solid #4caf50;"></span> Verified</span>
             </div>
 
-            <div class="srr-panel-body" id="srr-field-list" style="padding: 0;">
+            <div class="srr-panel-body" id="srr-field-list" style="padding: 0; flex: 1;">
               <div class="srr-empty-state">No fields loaded</div>
+            </div>
+            </div>
+            <div class="srr-left-tab-body" id="srr-tab-patch" data-tab="patch">
+              <div id="srr-patch-tab-content" style="padding: 12px; display: flex; flex-direction: column; flex: 1; overflow-y: auto;">
+                <div class="srr-empty-state">Select a field and action to begin a patch.</div>
+              </div>
+            </div>
+            <div class="srr-left-tab-body" id="srr-tab-glossary" data-tab="glossary">
+              <div style="padding: 8px 12px;">
+                <input type="text" class="srr-glossary-search" id="srr-glossary-search" placeholder="Search glossary..." oninput="srrFilterGlossary()">
+              </div>
+              <div id="srr-glossary-sheet-filter" style="padding: 4px 12px 8px; display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid #eee;"></div>
+              <div class="srr-glossary-list" id="srr-glossary-list" style="flex: 1; overflow-y: auto;">
+                <div class="srr-glossary-empty">Loading glossary...</div>
+              </div>
             </div>
           </div>
 
@@ -2680,20 +2715,7 @@
                 <div class="srr-empty-state" style="padding: 10px;">No anchors defined</div>
               </div>
             </div>
-              <!-- Patch Editor Overlay (slides in over field list) -->
-              <div class="srr-patch-overlay" id="srr-patch-overlay">
-                <div class="srr-patch-overlay-header">
-                  <button class="srr-patch-overlay-back" onclick="srrClosePatchOverlay()">
-                    <span style="font-size: 1.1em;">&#8592;</span> Back to Fields
-                  </button>
-                  <span id="srr-overlay-title" style="margin-left: auto;">Patch Editor</span>
-                  <div id="srr-tester-btn-container" style="display: none; margin-left: 8px;">
-                    <button class="srr-panel-tab" data-tab="tester" onclick="srrOpenTesterInOverlay()" style="font-size: 0.75em; padding: 3px 8px;">Patch Tester</button>
-                  </div>
-                </div>
-                <div class="srr-patch-overlay-body" id="srr-patch-overlay-body">
-                </div>
-              </div>
+
           </div>
 
           <!-- Right Panel: Patch Editor + Evidence Pack + Submit -->
@@ -19538,6 +19560,7 @@
         }
         
         rulesBundleCache.loaded = true;
+        if (_srrActiveLeftTab === 'glossary') { srrRenderGlossary(); }
 
         // V2.3b: Pre-load section guidance and knowledge link configs
         try { loadSectionGuidanceConfig(); loadKnowledgeLinksConfig(); } catch(e) { console.warn('[V2.3b] Config load error:', e); }
@@ -23178,94 +23201,199 @@
       if (strip) strip.style.display = isCollapsed ? 'block' : 'none';
     }
 
-    function srrOpenPatchOverlay(actionType) {
-      var overlay = document.getElementById('srr-patch-overlay');
-      var overlayBody = document.getElementById('srr-patch-overlay-body');
+    var _srrActiveLeftTab = 'editor';
+    var _srrGlossaryLoaded = false;
+
+    function srrSwitchLeftTab(tabName) {
+      _srrActiveLeftTab = tabName;
+      var tabs = document.querySelectorAll('.srr-left-tab');
+      var bodies = document.querySelectorAll('.srr-left-tab-body');
+      for (var i = 0; i < tabs.length; i++) {
+        tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === tabName);
+      }
+      for (var i = 0; i < bodies.length; i++) {
+        bodies[i].classList.toggle('active', bodies[i].getAttribute('data-tab') === tabName);
+      }
+      if (tabName === 'patch') {
+        srrMovePatchContentToTab();
+      }
+      if (tabName === 'glossary' && !_srrGlossaryLoaded) {
+        srrRenderGlossary();
+      }
+      console.log('[SRR] Switched left tab to:', tabName);
+    }
+
+    function srrMovePatchContentToTab() {
+      var patchTabContent = document.getElementById('srr-patch-tab-content');
       var fieldsContent = document.getElementById('srr-tab-fields');
-      if (!overlay || !overlayBody || !fieldsContent) return;
-      
-      if (!overlayBody.hasChildNodes() || overlayBody.children.length === 0) {
-        overlayBody.appendChild(fieldsContent);
+      if (!patchTabContent || !fieldsContent) return;
+      if (fieldsContent.parentNode !== patchTabContent) {
+        patchTabContent.innerHTML = '';
+        patchTabContent.appendChild(fieldsContent);
         fieldsContent.style.display = 'block';
       }
-      
-      var titleEl = document.getElementById('srr-overlay-title');
-      if (titleEl) {
-        var titles = { correction: 'Correction', blacklist: 'Blacklist Flag', rfi: 'RFI Request' };
-        titleEl.textContent = titles[actionType] || 'Patch Editor';
-      }
-      
-      srrShowPatchTesterBtnInOverlay();
-      
-      requestAnimationFrame(function() {
-        overlay.classList.add('open');
-      });
-      console.log('[SRR] Patch overlay opened:', actionType);
+    }
+
+    function srrOpenPatchOverlay(actionType) {
+      srrSwitchLeftTab('patch');
+      srrMovePatchContentToTab();
+      console.log('[SRR] Patch Studio tab opened:', actionType);
     }
 
     function srrClosePatchOverlay() {
-      var overlay = document.getElementById('srr-patch-overlay');
-      if (!overlay) return;
-      overlay.classList.remove('open');
-      srrBackToFieldsInOverlay();
-      console.log('[SRR] Patch overlay closed');
+      srrSwitchLeftTab('editor');
+      console.log('[SRR] Returned to Editor tab');
     }
 
     function srrOpenTesterInOverlay() {
-      var overlayBody = document.getElementById('srr-patch-overlay-body');
-      var fieldsContent = document.getElementById('srr-tab-fields');
-      var testerContent = document.getElementById('srr-tab-tester');
-      if (!overlayBody || !testerContent) return;
-      
-      if (fieldsContent && fieldsContent.parentNode === overlayBody) {
-        overlayBody.removeChild(fieldsContent);
-      }
-      overlayBody.appendChild(testerContent);
-      testerContent.style.display = 'block';
-      
-      var titleEl = document.getElementById('srr-overlay-title');
-      if (titleEl) titleEl.textContent = 'Patch Tester';
-      console.log('[SRR] Switched to Patch Tester in overlay');
+      console.log('[SRR] Patch Tester (stub) - not yet in tab mode');
     }
 
     function srrBackToFieldsInOverlay() {
-      var overlayBody = document.getElementById('srr-patch-overlay-body');
-      var fieldsContent = document.getElementById('srr-tab-fields');
-      var testerContent = document.getElementById('srr-tab-tester');
-      if (!overlayBody || !fieldsContent) return;
-      
-      if (testerContent && testerContent.parentNode === overlayBody) {
-        testerContent.style.display = 'none';
-        overlayBody.removeChild(testerContent);
-      }
-      overlayBody.appendChild(fieldsContent);
-      fieldsContent.style.display = 'block';
-      
-      var titleEl = document.getElementById('srr-overlay-title');
-      if (titleEl) titleEl.textContent = 'Patch Editor';
+      srrSwitchLeftTab('editor');
     }
 
     function srrShowPatchTesterBtnInOverlay() {
-      var container = document.getElementById('srr-tester-btn-container');
-      if (!container) return;
-      var isVerifierOrAdmin = (currentMode === 'verifier' || currentMode === 'admin');
-      var artifactId = srrState.currentArtifactId;
-      var artifact = artifactId ? getArtifact(artifactId) : null;
-      var show = false;
-      if (isVerifierOrAdmin && artifact && artifactId) {
-        var pt = (artifact.body && artifact.body.patch_type) ? String(artifact.body.patch_type).toLowerCase() : '';
-        var at = artifact.artifact_type ? String(artifact.artifact_type).toLowerCase() : '';
-        if (pt === 'correction' || pt === 'blacklist' || pt === 'blacklist flag' || at === 'blacklist') {
-          show = true;
-        }
-        if (pt === 'rfi' || at === 'rfi') show = false;
-      }
-      container.style.display = show ? '' : 'none';
     }
 
     function srrIsPatchOverlayOpen() {
-      var overlay = document.getElementById('srr-patch-overlay');
-      return overlay && overlay.classList.contains('open');
+      return _srrActiveLeftTab === 'patch';
+    }
+
+    function srrRenderGlossary() {
+      var listEl = document.getElementById('srr-glossary-list');
+      var filterEl = document.getElementById('srr-glossary-sheet-filter');
+      if (!listEl) return;
+
+      var fields = [];
+      if (rulesBundleCache && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.fields) {
+        fields = rulesBundleCache.fieldMeta.fields;
+      }
+
+      if (fields.length === 0) {
+        _srrGlossaryLoaded = false;
+        listEl.innerHTML = '<div class="srr-glossary-empty">Glossary loading... Switch tabs and come back, or import a workbook.</div>';
+        return;
+      }
+      _srrGlossaryLoaded = true;
+
+      var sheets = {};
+      for (var i = 0; i < fields.length; i++) {
+        var s = fields[i].sheet || 'Other';
+        if (!sheets[s]) sheets[s] = [];
+        sheets[s].push(fields[i]);
+      }
+      var sheetNames = Object.keys(sheets).sort();
+
+      if (filterEl) {
+        var filterHtml = '<span class="srr-filter-chip active" data-gsheet="all" onclick="srrFilterGlossarySheet('all')" style="font-size:0.75em; padding:3px 8px; cursor:pointer; border-radius:12px; background:#e3f2fd; color:#1565c0; border:1px solid #bbdefb;">All</span>';
+        for (var i = 0; i < sheetNames.length; i++) {
+          filterHtml += '<span class="srr-filter-chip" data-gsheet="' + sheetNames[i] + '" onclick="srrFilterGlossarySheet('' + sheetNames[i] + '')" style="font-size:0.75em; padding:3px 8px; cursor:pointer; border-radius:12px; background:#f5f5f5; color:#666; border:1px solid #ddd;">' + sheetNames[i] + ' (' + sheets[sheetNames[i]].length + ')</span>';
+        }
+        filterEl.innerHTML = filterHtml;
+      }
+
+      window._srrGlossaryFields = fields;
+      window._srrGlossarySheetFilter = 'all';
+      srrRenderGlossaryList(fields);
+    }
+
+    function srrRenderGlossaryList(fields) {
+      var listEl = document.getElementById('srr-glossary-list');
+      if (!listEl) return;
+
+      if (fields.length === 0) {
+        listEl.innerHTML = '<div class="srr-glossary-empty">No matching fields found.</div>';
+        return;
+      }
+
+      var html = '';
+      for (var i = 0; i < fields.length; i++) {
+        var f = fields[i];
+        var def = (f.definition || '').trim();
+        var label = f.field_label || f.field_key || '';
+        var key = f.field_key || '';
+        var sheet = f.sheet || '';
+        var format = f.return_format || '';
+        var req = f.requiredness || '';
+        var example = f.example_output || '';
+        var hasDef = def.length > 0;
+
+        html += '<div class="srr-glossary-entry" data-sheet="' + sheet + '" data-key="' + key + '" onclick="srrToggleGlossaryEntry(this)">';
+        html += '<div style="display:flex; justify-content:space-between; align-items:flex-start;">';
+        html += '<div><div class="srr-glossary-field-label">' + _escHtml(label) + '</div>';
+        html += '<div class="srr-glossary-field-key">' + _escHtml(key) + '</div></div>';
+        html += '<span style="font-size:0.7em; color:#aaa; padding:2px 6px; background:#f5f5f5; border-radius:8px;">' + _escHtml(sheet) + '</span>';
+        html += '</div>';
+        html += '<div class="srr-glossary-detail" style="display:none;">';
+        if (hasDef) {
+          html += '<div style="margin-bottom:8px;">' + _escHtml(def) + '</div>';
+        } else {
+          html += '<div style="margin-bottom:8px; color:#bbb; font-style:italic;">No definition available yet.</div>';
+        }
+        if (example) {
+          html += '<div style="margin-bottom:6px; font-size:0.85em;"><strong>Example:</strong> <code style="background:#f5f5f5; padding:2px 6px; border-radius:3px;">' + _escHtml(example) + '</code></div>';
+        }
+        html += '<div class="srr-glossary-meta">';
+        if (format) html += '<span class="srr-glossary-tag format">' + _escHtml(format) + '</span>';
+        if (req === 'required') html += '<span class="srr-glossary-tag required">Required</span>';
+        else if (req === 'optional') html += '<span class="srr-glossary-tag optional">Optional</span>';
+        else if (req === 'not_needed') html += '<span class="srr-glossary-tag" style="background:#f5f5f5; color:#999;">Not Needed</span>';
+        if (f.picklist && f.options && f.options.length > 0) {
+          html += '<span class="srr-glossary-tag" style="background:#fff3e0; color:#e65100;">Picklist (' + f.options.length + ')</span>';
+        }
+        html += '</div>';
+        if (f.picklist && f.options && f.options.length > 0) {
+          html += '<div style="margin-top:8px; font-size:0.8em;"><strong>Options:</strong> ' + f.options.map(function(o) { return '<code style="background:#f9f9f9; padding:1px 4px; border-radius:2px; margin:1px;">' + _escHtml(o) + '</code>'; }).join(', ') + '</div>';
+        }
+        html += '</div>';
+        html += '</div>';
+      }
+      listEl.innerHTML = html;
+    }
+
+    function srrToggleGlossaryEntry(el) {
+      var detail = el.querySelector('.srr-glossary-detail');
+      if (!detail) return;
+      var isOpen = detail.style.display !== 'none';
+      detail.style.display = isOpen ? 'none' : 'block';
+      el.classList.toggle('expanded', !isOpen);
+    }
+
+    function srrFilterGlossary() {
+      var searchEl = document.getElementById('srr-glossary-search');
+      var query = (searchEl && searchEl.value || '').toLowerCase().trim();
+      var fields = window._srrGlossaryFields || [];
+      var sheetFilter = window._srrGlossarySheetFilter || 'all';
+      var filtered = [];
+      for (var i = 0; i < fields.length; i++) {
+        var f = fields[i];
+        if (sheetFilter !== 'all' && f.sheet !== sheetFilter) continue;
+        if (query) {
+          var searchable = ((f.field_label || '') + ' ' + (f.field_key || '') + ' ' + (f.definition || '') + ' ' + (f.sheet || '')).toLowerCase();
+          if (searchable.indexOf(query) === -1) continue;
+        }
+        filtered.push(f);
+      }
+      srrRenderGlossaryList(filtered);
+    }
+
+    function srrFilterGlossarySheet(sheet) {
+      window._srrGlossarySheetFilter = sheet;
+      var chips = document.querySelectorAll('#srr-glossary-sheet-filter .srr-filter-chip');
+      for (var i = 0; i < chips.length; i++) {
+        var isActive = chips[i].getAttribute('data-gsheet') === sheet;
+        chips[i].classList.toggle('active', isActive);
+        chips[i].style.background = isActive ? '#e3f2fd' : '#f5f5f5';
+        chips[i].style.color = isActive ? '#1565c0' : '#666';
+        chips[i].style.borderColor = isActive ? '#bbdefb' : '#ddd';
+      }
+      srrFilterGlossary();
+    }
+
+    function _escHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
         function srrSelectField(fieldKey) {
