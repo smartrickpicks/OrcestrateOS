@@ -8942,7 +8942,7 @@
       }
     };
 
-    // ========== BATCH ADD: GROUP ANCHOR MODEL (v1.6.48) ==========
+    // ========== BATCH ADD: CATALOG ITEM MODEL (v1.6.48) ==========
 
     var BATCH_ADD_STORAGE_KEY = 'orchestrate_batch_add_sheets';
     var GROUP_COLLAPSED_KEY = 'orchestrate_group_collapsed';
@@ -9140,37 +9140,6 @@
       if (chipsEl) chipsEl.innerHTML = '';
     }
 
-        function toggleCatalogItemsGroup() {
-      var sheetName = srrState.currentSheetName;
-      var rowIndex = srrState.currentRowIndex;
-      var record = srrState.currentRecord;
-      if (!sheetName || rowIndex < 0 || !record) return;
-
-      if (record._group && record._group.is_anchor) {
-        var children = getGroupChildren(sheetName, record._group.group_id);
-        if (children.length > 0) {
-          showToast('Cannot unset: ' + children.length + ' child row(s) are attached. Remove children first.', 'warning');
-          return;
-        }
-        delete record._group;
-        if (record._capabilities) delete record._capabilities.catalog_items;
-        showToast('Record removed as Catalog Item Anchor.', 'info');
-      } else {
-        markAsGroupAnchor(sheetName, rowIndex);
-        if (!record._capabilities) record._capabilities = {};
-        record._capabilities.catalog_items = true;
-        showToast('Record set as Catalog Item Anchor.', 'success');
-      }
-
-      var isAnchor = record._group && record._group.is_anchor;
-      updateInspectorActionsState();
-      closeInspectorActionsMenu();
-      if (typeof updateSrrGroupBadge === 'function') updateSrrGroupBadge();
-      if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
-    }
-
-    function normalizeForDedupe(str) {
-      if (!str || typeof str !== 'string') return '';
       return str.trim().toLowerCase().replace(/[\s\-_.,;:!?'"()\[\]{}\/\\]+/g, ' ').replace(/\s+/g, ' ').trim();
     }
 
@@ -36476,7 +36445,7 @@ Add any additional notes here.
 <div id="batch-add-modal" class="batch-add-modal" style="display:none;">
   <div class="batch-add-content">
     <div class="batch-add-header">
-      <h3 id="batch-add-title">Add Missing Items</h3>
+      <h3 id="batch-add-title">Add Catalog Items</h3>
       <button class="batch-add-close" onclick="closeBatchAddModal()">&times;</button>
     </div>
     <div class="batch-add-steps">
@@ -36549,23 +36518,6 @@ Add any additional notes here.
     var anchor = sheet ? sheet.rows[batchAddState.anchorRowIndex] : null;
     var anchorLabel = anchor ? (anchor[sheet.headers[0]] || 'Row ' + (batchAddState.anchorRowIndex + 1)) : 'Unknown';
 
-    if (batchAddState.step === 0) {
-      var recordLabel = anchor ? (anchor[sheet.headers[0]] || 'Row ' + (batchAddState.anchorRowIndex + 1)) : 'Unknown';
-      body.innerHTML =
-        '<div style="text-align: center; padding: 20px 10px;">' +
-          '<div style="font-size: 2em; margin-bottom: 12px;">&#9875;</div>' +
-          '<div style="font-size: 1em; font-weight: 600; color: #333; margin-bottom: 8px;">Set as Catalog Item Anchor?</div>' +
-          '<div style="font-size: 0.85em; color: #666; margin-bottom: 16px;">This record needs to be marked as a Catalog Item Anchor before adding items. This is required to group new items under this record.</div>' +
-          '<div style="background: #e3f2fd; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px;">' +
-            '<div style="font-size: 0.78em; color: #888; margin-bottom: 2px;">Record</div>' +
-            '<div style="font-weight: 600; font-size: 0.95em; color: #1565c0;">' + escapeHtml(recordLabel) + '</div>' +
-          '</div>' +
-          '<button onclick="window._batchAddSetAnchorAndContinue()" style="background: linear-gradient(135deg, #1565c0, #1976d2); color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 0.9em; font-weight: 600; cursor: pointer;">Set as Catalog Item Anchor and Continue</button>' +
-        '</div>';
-      footer.innerHTML =
-        '<button class="batch-add-btn-cancel" onclick="closeBatchAddModal()">Cancel</button>';
-      return;
-    }
 
     if (batchAddState.step === 1) {
       var targetOptions = '';
@@ -36579,7 +36531,7 @@ Add any additional notes here.
       }
       body.innerHTML =
         '<div style="margin-bottom: 12px;">' +
-          '<div style="font-size: 0.85em; color: #666; margin-bottom: 4px;">Catalog Item Anchor</div>' +
+          '<div style="font-size: 0.85em; color: #666; margin-bottom: 4px;">Parent Record</div>' +
           '<div style="background: #e3f2fd; padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 0.9em;">' + escapeHtml(anchorLabel) + '</div>' +
         '</div>' +
         '<div style="margin-bottom: 12px;">' +
@@ -36745,23 +36697,6 @@ Add any additional notes here.
     }
   };
 
-    window._batchAddSetAnchorAndContinue = function() {
-    var sheetName = batchAddState.sheetName;
-    var rowIndex = batchAddState.anchorRowIndex;
-    if (typeof markAsGroupAnchor === 'function') {
-      markAsGroupAnchor(sheetName, rowIndex);
-    }
-    var record = srrState.currentRecord;
-    if (record) {
-      if (!record._capabilities) record._capabilities = {};
-      record._capabilities.catalog_items = true;
-    }
-    if (typeof updateInspectorActionsState === 'function') updateInspectorActionsState();
-    if (typeof updateSrrGroupBadge === 'function') updateSrrGroupBadge();
-    if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
-    batchAddState.step = 1;
-    renderBatchAddStep();
-  };
 
   window._batchAddSetTarget = function(val) {
     batchAddState.targetField = val;
@@ -36823,10 +36758,10 @@ Add any additional notes here.
     if (rec && rec._group) {
       var childCount = getGroupChildren(srrState.currentSheetName, rec._group.group_id).length;
       if (rec._group.is_anchor) {
-        badge.innerHTML = '<span class="group-anchor-badge">&#9875; Anchor &middot; ' + childCount + ' child row' + (childCount !== 1 ? 's' : '') + '</span>';
+        badge.innerHTML = '<span class="group-anchor-badge">&#128218; Catalog Item &middot; ' + childCount + ' item' + (childCount !== 1 ? 's' : '') + '</span>';
         badge.style.display = 'inline-block';
       } else {
-        badge.innerHTML = '<span class="group-anchor-badge" style="background:#e0e0e0;color:#555;">&#9656; Child of group</span>';
+        badge.innerHTML = '<span class="group-anchor-badge" style="background:#e0e0e0;color:#555;">&#9656; Linked catalog item</span>';
         badge.style.display = 'inline-block';
       }
     } else {
