@@ -2677,20 +2677,21 @@
           </div>
 
           <!-- Right Panel: Patch Editor + Evidence Pack + Submit -->
-          <div id="srr-patch-expand-strip" class="srr-patch-expand-strip" onclick="_srrTogglePatchPanel()" title="Open Patch Editor">▶ PATCH EDITOR</div>
+          <div id="srr-patch-expand-strip" class="srr-patch-expand-strip" onclick="_srrTogglePatchPanel()" title="Open Fields Panel">▶ FIELDS</div>
           <div class="srr-panel srr-panel-right">
             <div class="srr-panel-header" style="display: flex; align-items: center; gap: 8px;">
-              <span id="srr-right-panel-title">Patch Editor</span>
-              <button onclick="_srrTogglePatchPanel()" id="srr-patch-toggle-btn" title="Toggle Patch Editor" style="margin-left: 4px; background: none; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 0.75em; padding: 2px 8px; color: #666;">Collapse</button>
+              <span id="srr-right-panel-title">Fields</span>
+              <button onclick="_srrTogglePatchPanel()" id="srr-patch-toggle-btn" title="Toggle Fields Panel" style="margin-left: 4px; background: none; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 0.75em; padding: 2px 8px; color: #666;">Collapse</button>
               <!-- v1.5.1: Verifier-only Patch Tester tab -->
-              <div id="srr-panel-tabs" class="srr-panel-tabs" style="display: none; margin-left: auto;">
-                <button class="srr-panel-tab active" data-tab="editor" onclick="srrSwitchRightTab('editor')">Editor</button>
+              <div id="srr-panel-tabs" class="srr-panel-tabs" style="display: flex; margin-left: auto;">
+                <button class="srr-panel-tab active" data-tab="fields" onclick="srrSwitchRightTab('fields')">Fields</button>
+                <button class="srr-panel-tab" data-tab="studio" onclick="srrSwitchRightTab('studio')">Patch Studio</button>
                 <button class="srr-panel-tab" data-tab="tester" onclick="srrSwitchRightTab('tester')">Patch Tester</button>
               </div>
             </div>
             
-            <!-- Patch Editor Content (default, for analysts) -->
-            <div class="srr-panel-body" id="srr-tab-editor">
+            <!-- Fields Content (default, for analysts) -->
+            <div class="srr-panel-body" id="srr-tab-fields">
               <!-- Patch Type Chips (horizontal scroll) - v1.5.2: Acts on selected field -->
               <div class="srr-patch-type-selector" style="margin-bottom: 16px;">
                 <div class="srr-patch-type-label" style="font-size: 0.75em; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 6px;">Patch Type</div>
@@ -2822,8 +2823,17 @@
                   <button class="srr-btn srr-btn-primary" id="srr-submit-btn" onclick="srrSubmitPatchRequest()">Submit Patch Request</button>
                 </div>
               </div>
-            </div><!-- end srr-tab-editor -->
+            </div><!-- end srr-tab-fields -->
             
+            <!-- Patch Studio Content -->
+            <div class="srr-panel-body" id="srr-tab-studio" style="display: none;">
+              <div style="padding: 16px; color: #888; text-align: center;">
+                <div style="font-size: 1.1em; font-weight: 600; margin-bottom: 8px;">Patch Studio</div>
+                <div style="font-size: 0.85em;">Draft and preview patch requests for this record scope.</div>
+                <div id="srr-studio-content" style="margin-top: 16px; text-align: left;"></div>
+              </div>
+            </div><!-- end srr-tab-studio -->
+
             <!-- v1.5.1: Patch Tester Content (verifier only) -->
             <div class="srr-panel-body" id="srr-tab-tester" style="display: none;">
               <div style="margin-bottom: 16px;">
@@ -21393,7 +21403,7 @@
           if (srrFieldList) renderSectionGuidanceCard(record, srrFieldList);
         }
         if (typeof renderKnowledgeRail === 'function') {
-          var rightPanel = document.querySelector('.srr-panel-right .srr-panel-body') || document.getElementById('srr-tab-editor');
+          var rightPanel = document.querySelector('.srr-panel-right .srr-panel-body') || document.getElementById('srr-tab-fields');
           if (rightPanel) renderKnowledgeRail(rightPanel);
         }
       });
@@ -21769,7 +21779,7 @@
       if (document.getElementById('srr-replay-expected-result')) document.getElementById('srr-replay-expected-result').value = srrState.patchDraft.replay_expected_result || '';
       // RFI target stub - no input to restore (coming soon)
       
-      // v1.4.18: Render Patch Editor
+      // v1.4.18: Render Fields panel
       srrRenderPatchEditor();
       
       // v1.4.19: Update form sections based on patch type
@@ -22348,7 +22358,7 @@
       
       // v1.4.18: Prevent editing locked fields
       if (srrState.lockedFields.hasOwnProperty(fieldKey)) {
-        showToast('Field is locked after change. Use Patch Editor to modify.', 'info');
+        showToast('Field is locked after change. Use Fields panel to modify.', 'info');
         return;
       }
       
@@ -22502,7 +22512,7 @@
       }
       
       renderSrrFields(srrState.currentRecord);
-      srrRenderPatchEditor();  // v1.4.18: Update Patch Editor
+      srrRenderPatchEditor();  // v1.4.18: Update Fields panel
     }
     
     function srrUndoChange(fieldKey) {
@@ -22513,13 +22523,15 @@
       
       srrSyncProposedChanges();
       renderSrrFields(srrState.currentRecord);
-      srrRenderPatchEditor();  // v1.4.18: Update Patch Editor
+      srrRenderPatchEditor();  // v1.4.18: Update Fields panel
+      srrStudioEnsureLoaded((srrState.currentRecord && srrState.currentRecord._identity && srrState.currentRecord._identity.record_id) || srrState.currentRecordKey || '', srrState.currentSheetName || '');
+      srrStudioOnRecordScopeChanged();
       
       showToast('Change reverted: ' + fieldKey, 'info');
       console.log('[SRR] Undo change:', fieldKey);
     }
     
-    // v1.4.18: Patch Editor rendering (AC-02)
+    // v1.4.18: Fields panel rendering (AC-02)
     function srrRenderPatchEditor() {
       var container = document.getElementById('srr-patch-editor-fields');
       var countEl = document.getElementById('srr-change-count');
@@ -22580,7 +22592,7 @@
       container.innerHTML = html;
     }
     
-    // v1.4.18: Update new value from Patch Editor (AC-02)
+    // v1.4.18: Update new value from Fields panel (AC-02)
     function srrUpdatePatchEditorValue(fieldKey, newValue) {
       if (srrState.proposedChanges[fieldKey]) {
         srrState.proposedChanges[fieldKey].to = newValue;
@@ -22951,8 +22963,10 @@
     };
     
     function srrSwitchRightTab(tabName) {
-      // Switch between editor and tester tabs
-      var editorTab = document.getElementById('srr-tab-editor');
+      var validTabs = ['fields', 'studio', 'tester'];
+      if (validTabs.indexOf(tabName) === -1) tabName = 'fields';
+      var fieldsTab = document.getElementById('srr-tab-fields');
+      var studioTab = document.getElementById('srr-tab-studio');
       var testerTab = document.getElementById('srr-tab-tester');
       var tabBtns = document.querySelectorAll('.srr-panel-tab');
       
@@ -22960,52 +22974,40 @@
         btn.classList.toggle('active', btn.dataset.tab === tabName);
       });
       
-      if (editorTab) editorTab.style.display = tabName === 'editor' ? 'block' : 'none';
+      if (fieldsTab) fieldsTab.style.display = tabName === 'fields' ? 'block' : 'none';
+      if (studioTab) studioTab.style.display = tabName === 'studio' ? 'block' : 'none';
       if (testerTab) testerTab.style.display = tabName === 'tester' ? 'block' : 'none';
       
-      // Update panel title
+      var titleMap = { fields: 'Fields', studio: 'Patch Studio', tester: 'Patch Tester' };
       var titleEl = document.getElementById('srr-right-panel-title');
       if (titleEl) {
-        titleEl.textContent = tabName === 'tester' ? 'Patch Tester' : 'Patch Editor';
+        titleEl.textContent = titleMap[tabName] || 'Fields';
       }
     }
     
     function srrShowPatchTesterTabs() {
-      // v1.5.1: Show tabs for verifier (verifier) AND admin roles (not analyst)
-      // Only show for explicit Correction/Blacklist types (not RFI, not unknown)
-      // Note: In codebase, 'verifier' = Verifier role (UI name differs from internal name)
       var tabsEl = document.getElementById('srr-panel-tabs');
       if (!tabsEl) return;
+      tabsEl.style.display = 'flex';
       
       var isVerifierOrAdmin = (currentMode === 'verifier' || currentMode === 'admin');
-      
-      // Check current artifact type from srrState
       var artifactId = srrState.currentArtifactId;
       var artifact = artifactId ? getArtifact(artifactId) : null;
       
-      // Explicitly require Correction or Blacklist patch type
-      // Hidden for: RFI, missing type, unknown type, generic patch_request without explicit type
       var isCorrectionOrBlacklist = false;
       if (artifact) {
-        // Prefer body.patch_type for explicit type, fall back to artifact_type only for blacklist
-        var patchType = artifact.body?.patch_type;
-        var artifactType = artifact.artifact_type;
-        
-        // Normalize to lowercase for comparison
+        var patchType = (artifact.body && artifact.body.patch_type) ? artifact.body.patch_type : '';
+        var artifactType = artifact.artifact_type || '';
         var normalizedPatchType = patchType ? String(patchType).toLowerCase() : '';
         var normalizedArtifactType = artifactType ? String(artifactType).toLowerCase() : '';
         
-        // Check explicit patch_type first
         if (normalizedPatchType === 'correction' || 
             normalizedPatchType === 'blacklist' || 
             normalizedPatchType === 'blacklist flag') {
           isCorrectionOrBlacklist = true;
-        }
-        // Only accept artifact_type='blacklist' as secondary (not generic 'patch_request')
-        else if (normalizedArtifactType === 'blacklist') {
+        } else if (normalizedArtifactType === 'blacklist') {
           isCorrectionOrBlacklist = true;
         }
-        // Reject RFI explicitly
         if (normalizedPatchType === 'rfi' || normalizedArtifactType === 'rfi') {
           isCorrectionOrBlacklist = false;
         }
@@ -23013,19 +23015,29 @@
       
       console.log('[SRR_TABS] Role:', currentMode, 'isCorrectionOrBlacklist:', isCorrectionOrBlacklist, 'isVerifierOrAdmin:', isVerifierOrAdmin);
       
-      // Show tabs only if: (verifier or admin) AND explicit Correction/Blacklist AND artifact exists
-      if (isVerifierOrAdmin && isCorrectionOrBlacklist && artifactId) {
-        tabsEl.style.display = 'flex';
-      } else {
-        tabsEl.style.display = 'none';
-        srrSwitchRightTab('editor');  // Reset to editor tab when hidden
+      var testerBtn = tabsEl.querySelector('[data-tab="tester"]');
+      if (testerBtn) {
+        if (isVerifierOrAdmin && isCorrectionOrBlacklist && artifactId) {
+          testerBtn.style.display = '';
+        } else {
+          testerBtn.style.display = 'none';
+          var activeTab = tabsEl.querySelector('.srr-panel-tab.active');
+          if (activeTab && activeTab.dataset.tab === 'tester') {
+            srrSwitchRightTab('fields');
+          }
+        }
       }
     }
     
     function srrHidePatchTesterTabs() {
       var tabsEl = document.getElementById('srr-panel-tabs');
-      if (tabsEl) tabsEl.style.display = 'none';
-      srrSwitchRightTab('editor');  // Reset to editor tab
+      if (!tabsEl) return;
+      var testerBtn = tabsEl.querySelector('[data-tab="tester"]');
+      if (testerBtn) testerBtn.style.display = 'none';
+      var activeTab = tabsEl.querySelector('.srr-panel-tab.active');
+      if (activeTab && activeTab.dataset.tab === 'tester') {
+        srrSwitchRightTab('fields');
+      }
     }
     
     function srrLoadPatchTesterData(artifactId) {
@@ -23117,7 +23129,7 @@
       srrState.isReadOnly = false;
       
       // Reset UI
-      srrSwitchRightTab('editor');
+      srrSwitchRightTab('fields');
       
       // Navigate back to triage (verifier remains in review workflow)
       navigateTo('triage');
@@ -24851,7 +24863,7 @@
       // v1.6.46: Evidence Pack gate
       var evidenceGaps = srrCheckEvidenceGate(patchType, draft, changeCount, srrState.overrideEnabled);
       if (evidenceGaps.length > 0) {
-        showToast('Evidence Pack incomplete: ' + evidenceGaps.join(', '), 'warning');
+        showToast('Missing requirements: ' + evidenceGaps.join(', '), 'warning');
         console.log('[SRR] Submit blocked — evidence gaps:', evidenceGaps);
         return;
       }
@@ -24859,7 +24871,7 @@
       // v1.6.46: Preflight gate
       var preflightGaps = srrCheckPreflightGate();
       if (preflightGaps.length > 0) {
-        showToast('Preflight gate incomplete: ' + preflightGaps.join(', '), 'warning');
+        showToast('Missing requirements: ' + preflightGaps.join(', '), 'warning');
         console.log('[SRR] Submit blocked — preflight gaps:', preflightGaps);
         return;
       }
@@ -24993,7 +25005,7 @@
       // v1.5.3 Fix: RFI submit should only clear the selected field, preserve other pending RFIs
       if (patchType === 'rfi') {
         // Only change the selected field's state, not all rfi_pending fields
-        var selectedField = srrState.selectedField || srrState.rfiField?.key;
+        var selectedField = srrState.selectedField || (srrState.rfiField && srrState.rfiField.key ? srrState.rfiField.key : null);
         if (selectedField && srrState.fieldStates[selectedField] === 'rfi_pending') {
           srrState.fieldStates[selectedField] = 'rfi';
         }
@@ -25007,7 +25019,7 @@
       // Re-render field list to reflect state changes
       renderSrrFields(srrState.currentRecord);
       
-      // Emit audit events
+      // Emit audit events (both uppercase canonical and lowercase alias)
       console.log('[SRR] PATCH_SUBMITTED (' + patchType + '):', request);
       AuditTimeline.emit('PATCH_SUBMITTED', {
         actor_id: author,
@@ -25017,7 +25029,14 @@
         patch_request_id: request.request_id,
         metadata: { patch_type: patchType, change_count: changeCount, sheet: srrState.currentSheetName }
       });
-      console.log('[SRR] REVIEW_REQUESTED: patch_id=' + request.request_id);
+      AuditTimeline.emit('patch_submitted', {
+        actor_id: author,
+        record_id: recordId || '',
+        dataset_id: datasetId || '',
+        patch_request_id: request.request_id,
+        metadata: { patch_type: patchType, change_count: changeCount }
+      });
+      console.log('[SRR] patch_submitted + REVIEW_REQUESTED: patch_id=' + request.request_id);
       
       // Show appropriate toast based on patch type
       if (patchType === 'rfi') {
@@ -25028,8 +25047,19 @@
         showToast('Patch Request submitted — visible in Patch Console', 'success');
       }
       
-      // v1.5.0: Reset Patch Editor state after submission
+      // Clear scope draft for this record
+      var scopeKey = (recordId || '') + ':' + (srrState.currentSheetName || '');
+      try { sessionStorage.removeItem('srr_studio_draft_' + scopeKey); } catch(e) {}
+      
+      // Persist studio state and rerender
+      if (typeof srrStudioPersist === 'function') srrStudioPersist();
+      if (typeof srrStudioRender === 'function') srrStudioRender();
+      
+      // Reset state after submission
       resetPatchEditorState();
+      
+      // Auto-collapse back to Fields tab
+      srrSwitchRightTab('fields');
       if (srrCheckAllFieldsCompleted()) {
         setTimeout(function() { srrAutoAdvance('Patch submitted — all fields addressed'); }, 800);
       }
@@ -25097,6 +25127,58 @@
       
       console.log('[SRR] Patch Editor state reset');
     }
+
+    function srrStudioEnsureLoaded(recordId, sheetName) {
+      var scopeKey = (recordId || '') + ':' + (sheetName || '');
+      try {
+        var raw = sessionStorage.getItem('srr_studio_draft_' + scopeKey);
+        if (raw) {
+          var draft = JSON.parse(raw);
+          console.log('[SRR_STUDIO] Hydrated draft for scope:', scopeKey, draft);
+          srrState.patchDraft = Object.assign(srrState.patchDraft || {}, draft);
+        }
+      } catch (e) {
+        console.warn('[SRR_STUDIO] Failed to hydrate draft:', e);
+      }
+    }
+
+    function srrStudioOnRecordScopeChanged() {
+      var rec = srrState.currentRecord || {};
+      var recordId = (rec._identity && rec._identity.record_id) || rec.record_id || srrState.currentRecordKey || '';
+      var sheetName = srrState.currentSheetName || '';
+      srrStudioEnsureLoaded(recordId, sheetName);
+      if (typeof srrStudioRender === 'function') srrStudioRender();
+      console.log('[SRR_STUDIO] Record scope changed:', recordId, sheetName);
+    }
+
+    function srrStudioPersist() {
+      var rec = srrState.currentRecord || {};
+      var recordId = (rec._identity && rec._identity.record_id) || rec.record_id || srrState.currentRecordKey || '';
+      var sheetName = srrState.currentSheetName || '';
+      var scopeKey = recordId + ':' + sheetName;
+      try {
+        sessionStorage.setItem('srr_studio_draft_' + scopeKey, JSON.stringify(srrState.patchDraft || {}));
+      } catch (e) {
+        console.warn('[SRR_STUDIO] Failed to persist draft:', e);
+      }
+    }
+
+    function srrStudioRender() {
+      var el = document.getElementById('srr-studio-content');
+      if (!el) return;
+      var draft = srrState.patchDraft || {};
+      var changeCount = Object.keys(srrState.proposedChanges || {}).length;
+      var html = '<div style="font-size: 0.85em; color: #666;">';
+      html += '<div style="margin-bottom: 8px;"><strong>Type:</strong> ' + (draft.patch_type || 'correction') + '</div>';
+      html += '<div style="margin-bottom: 8px;"><strong>Changes:</strong> ' + changeCount + ' field(s)</div>';
+      html += '<div style="margin-bottom: 8px;"><strong>Status:</strong> ' + (draft.status || 'Draft') + '</div>';
+      if (draft.justification) {
+        html += '<div style="margin-bottom: 8px;"><strong>Justification:</strong> ' + escapeHtml(draft.justification).substring(0, 100) + '</div>';
+      }
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
     
     // v1.6.4: Show audit log for current record using meta sheet data
     // v1.6.59: Audit Log — reads from AuditTimeline IndexedDB store
@@ -28941,7 +29023,7 @@
       _srrExpandPatchPanel();
       // v1.5.3: For RFI type, show comment thread instead of Patch Tester
       // v1.6.9: Enhanced for legacy RFI imports with summary, details, category
-      var editorTab = document.getElementById('srr-tab-editor');
+      var editorTab = document.getElementById('srr-tab-fields');
       if (!editorTab) return;
       
       // Determine if this is a legacy RFI import
@@ -29062,7 +29144,7 @@
       var panelTitle = document.getElementById('srr-right-panel-title');
       var panelTabs = document.getElementById('srr-panel-tabs');
       
-      if (panelTitle) panelTitle.textContent = 'Patch Editor';
+      if (panelTitle) panelTitle.textContent = 'Fields';
       if (panelTabs) {
         panelTabs.style.display = 'none';
         var tabBtns = panelTabs.querySelectorAll('.srr-panel-tab');

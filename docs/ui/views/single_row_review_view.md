@@ -31,7 +31,7 @@ Contract: This document defines the record-level inspection surface. It supports
 
 - **Field Inspector State Model**: Updated to 7-state model (todo, verified, modified, submitted, rfi_pending, rfi, blocked)
 - **RFI Workflow**: Fields stay in To Do queue until "Send RFI" clicked (rfi_pending intermediate state)
-- **Patch Editor Reset**: Form automatically clears after payload submission to prevent carry-over
+- **Fields Panel Reset**: Form automatically clears after payload submission to prevent carry-over; auto-collapses to Fields tab
 - **Verifier Payload Wiring**: RFI, Correction, and Blacklist submissions create payloads for Verifier queue
 - **State Badge Colors**: Green (verified), Blue (modified/submitted), Orange (rfi), Red (blocked)
 
@@ -143,7 +143,7 @@ Each field card exposes action buttons based on current state:
 | Modify (edit) | ✏️ (blue) | Enables inline edit, sets state to modified | Correction |
 
 **RFI Request Box (v1.5.0):**
-When RFI action is clicked, the Patch Editor displays:
+When RFI action is clicked, the Fields panel displays:
 - Field name being questioned (read-only)
 - Current field value (read-only)
 - Justification textarea (acts as the RFI question)
@@ -196,7 +196,7 @@ If the rules bundle fails to load:
 **Inline Editing Behavior:**
 - Click Patch action (or value display) to enter edit mode
 - On blur/Enter: Commit edit, lock field, set state to PATCHED
-- Locked fields cannot be edited inline (use Patch Editor to modify)
+- Locked fields cannot be edited inline (use Fields panel to modify)
 
 **Filters:**
 - All: Show all fields
@@ -212,7 +212,14 @@ If the rules bundle fails to load:
   - Fallback: FastAPI on port 8000
 - **Offline Cache**: Successfully fetched PDFs are cached in IndexedDB
 
-### Right Panel: Patch Editor + Evidence Pack (v1.4.19)
+### Right Panel: Fields + Patch Studio + Patch Tester (v2.3)
+
+> **Tab Migration (v2.3):** The right panel now uses three tabs:
+> - **Fields** (default) — field-level editing, evidence pack, patch type selection
+> - **Patch Studio** — draft preview and record-scope patch lifecycle
+> - **Patch Tester** — verifier/admin only, for Correction/Blacklist artifact review
+>
+> Legacy references to "Patch Editor" or `srr-tab-editor` have been replaced with "Fields" / `srr-tab-fields`.
 
 **Patch Type Selector (Chip Row):**
 Patch Type is displayed as a horizontal chip row with auto-selection based on field action:
@@ -336,9 +343,9 @@ Dropdown options:
 - RFI Target: *(V2 — not enforced in V1, no validation rules active)*
 - Field changes: Optional
 
-## Patch Editor Reset Behavior (v1.5.0)
+## Fields Panel Reset Behavior (v1.5.0 / v2.3)
 
-After any successful submission (RFI, Correction, or Blacklist), the Patch Editor automatically resets to prevent data carry-over between records:
+After any successful submission (RFI, Correction, or Blacklist), the Fields panel automatically resets to prevent data carry-over between records. The active tab auto-collapses back to **Fields**.
 
 **Cleared on Submit:**
 - Comment/Justification input
