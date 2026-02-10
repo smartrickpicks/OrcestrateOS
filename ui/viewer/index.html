@@ -2153,7 +2153,7 @@
                   <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="color: #888; font-size: 0.92em;">Records Impacted</span><span id="ta-pf-impacted" style="font-weight: 700; color: #c62828; font-size: 1.05em;">0</span></div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-size: 0.78em;">
-                  <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="color: #999;">Unknown Cols</span><span id="ta-pf-unknown" style="font-weight: 600; color: #555;">0</span></div>
+                  <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="color: #999;">Unknown Columns</span><span id="ta-pf-unknown" style="font-weight: 600; color: #555;">0</span></div>
                   <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="color: #999;">OCR / Mojibake</span><span id="ta-pf-ocr" style="font-weight: 600; color: #555;">0</span></div>
                   <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="color: #999;">Low Confidence</span><span id="ta-pf-lowconf" style="font-weight: 600; color: #555;">0</span></div>
                   <div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="color: #999;">Doc Type</span><span id="ta-pf-doctype" style="font-weight: 600; color: #555;">0</span></div>
@@ -2208,7 +2208,7 @@
                 </div>
                 <div onclick="TriageAnalytics.handleSchemaClick('unknown')" style="text-align: center; padding: 10px; background: #fff3e0; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Columns in this upload that do not match glossary fields or aliases. Review and classify each before promotion." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-unknown" style="font-size: 1.4em; font-weight: 700; color: #e65100;">0</div>
-                  <div style="font-size: 0.75em; color: #666;">Unknown Cols</div>
+                  <div style="font-size: 0.75em; color: #666;">Unknown Columns</div>
                   <div style="font-size: 0.6em; color: #aaa;">Not in glossary</div>
                 </div>
                 <div onclick="TriageAnalytics.handleSchemaClick('missing')" style="text-align: center; padding: 10px; background: #ffebee; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Required glossary fields that are either missing as headers or have blank/invalid values in the data. These need analyst attention." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
@@ -2486,7 +2486,7 @@
           <span id="grid-stat-review"><strong>Needs Review:</strong> <span class="stat-value" style="color: #f57c00;">0</span></span>
           <span id="grid-stat-blocked"><strong>Blocked:</strong> <span class="stat-value" style="color: #c62828;">0</span></span>
           <span class="stat-divider admin-only-content" style="color: #ccc; display: none;">|</span>
-          <span id="grid-stat-unknown" class="admin-only-content" style="display: none; cursor: pointer;" onclick="openLoaderDrawer()" title="Click to load data"><strong>Unknown Cols:</strong> <span class="stat-value" style="color: #7b1fa2;">0</span></span>
+          <span id="grid-stat-unknown" class="admin-only-content" style="display: none; cursor: pointer;" onclick="openLoaderDrawer()" title="Click to load data"><strong>Unknown Columns:</strong> <span class="stat-value" style="color: #7b1fa2;">0</span></span>
           <span class="stat-divider" id="contract-stat-divider" style="color: #ccc; display: none;">|</span>
           <span id="grid-stat-contracts" style="display: none;"><strong>Contracts:</strong> <span class="stat-value" style="color: #1565c0;">0</span></span>
         </div>
@@ -3533,7 +3533,7 @@
           <button class="admin-tab" data-admin-tab="standardizer" onclick="switchAdminTab('standardizer')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Schema</button>
           <button class="admin-tab" data-admin-tab="patch-console" onclick="switchAdminTab('patch-console')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Patch Console</button>
           <button class="admin-tab" data-admin-tab="evidence" onclick="switchAdminTab('evidence')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Evidence</button>
-          <button class="admin-tab" data-admin-tab="unknown-cols" onclick="switchAdminTab('unknown-cols')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Unknown Cols</button>
+          <button class="admin-tab" data-admin-tab="unknown-cols" onclick="switchAdminTab('unknown-cols')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Unknown Columns</button>
           <button class="admin-tab" data-admin-tab="people" onclick="switchAdminTab('people')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">People</button>
           <button class="admin-tab" data-admin-tab="qa-runner" onclick="switchAdminTab('qa-runner')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">QA Runner</button>
         </div>
@@ -27510,7 +27510,7 @@
         if (el('ta-schema-unknown')) el('ta-schema-unknown').textContent = cache.schema.unknown_columns;
         var missingTotal = cache.schema.schema_missing_required_headers + cache.schema.data_missing_required_values;
         if (el('ta-schema-missing')) el('ta-schema-missing').textContent = missingTotal;
-        if (el('ta-schema-missing-split')) el('ta-schema-missing-split').textContent = cache.schema.schema_missing_required_headers + ' hdr / ' + cache.schema.data_missing_required_values + ' val';
+        if (el('ta-schema-missing-split')) el('ta-schema-missing-split').textContent = cache.schema.schema_missing_required_headers + ' missing headers / ' + cache.schema.data_missing_required_values + ' missing values';
         if (el('ta-schema-drift')) el('ta-schema-drift').textContent = cache.schema.schema_drift;
         if (el('ta-schema-drift-detail')) el('ta-schema-drift-detail').textContent = cache.schema._drift_detail || '';
       },
@@ -27613,7 +27613,7 @@
 
         if (type === 'matched') {
           var bPct = cache.schema.batch_headers_total > 0 ? Math.round((cache.schema.batch_headers_mapped / cache.schema.batch_headers_total) * 100) : 0;
-          title = 'Batch Coverage: ' + bPct + '% (' + cache.schema.batch_headers_mapped + ' / ' + cache.schema.batch_headers_total + ' headers)';
+          title = 'Columns Mapped: ' + bPct + '% (' + cache.schema.batch_headers_mapped + ' / ' + cache.schema.batch_headers_total + ' headers)';
           var gPct = cache.schema.standard_total > 0 ? Math.round((cache.schema.standard_matched / cache.schema.standard_total) * 100) : 0;
           html += '<div style="margin-bottom:12px;padding:8px 12px;background:#f0f4f8;border-radius:6px;font-size:0.85em;color:#555;">Glossary coverage: ' + cache.schema.standard_matched + ' / ' + cache.schema.standard_total + ' (' + gPct + '%)</div>';
           if (cache.schema._batch_mapped_items && cache.schema._batch_mapped_items.length > 0) {
@@ -27694,7 +27694,7 @@
           }
         } else if (type === 'drift') {
           title = 'Schema Structure Issues (' + cache.schema.schema_drift + ')';
-          html += '<div style="margin-bottom:12px;padding:10px 14px;background:#f0f4f8;border-radius:6px;font-size:0.85em;color:#555;">Unknown columns (' + cache.schema.unknown_columns + ') + Missing required headers (' + cache.schema.schema_missing_required_headers + '). Missing values are tracked separately.</div>';
+          html += '<div style="margin-bottom:12px;padding:10px 14px;background:#f0f4f8;border-radius:6px;font-size:0.85em;color:#555;">Schema Structure Issues = Unknown Columns (' + cache.schema.unknown_columns + ') + Missing Required Headers (' + cache.schema.schema_missing_required_headers + ') (excludes missing values).</div>';
           if (cache.schema.unknown_columns > 0) {
             html += '<div style="margin-bottom:8px;cursor:pointer;color:#1565c0;font-size:0.85em;text-decoration:underline;" onclick="document.getElementById(\x27schema-detail-modal\x27).remove();TriageAnalytics.handleSchemaClick(\x27unknown\x27);">View ' + cache.schema.unknown_columns + ' unknown column(s)</div>';
           }
