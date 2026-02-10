@@ -17074,8 +17074,13 @@
 
     // ═══ P1D: Contract-Centric Pre-Flight Grouping ═══
     var _p1dGroupState = {};
+    var _p1dAccordionLocked = false;
 
     function _p1dToggleGroup(groupId) {
+      if (_p1dAccordionLocked) {
+        console.log('[PREFLIGHT-LIVE][OCR] accordion_locked_during_scan: ' + groupId);
+        return;
+      }
       console.log('[TRIAGE-CONTRACT-HEALTH][P1D.1] group_toggled: ' + groupId);
       var children = document.querySelectorAll('.p1d1-child-row[data-parent="' + groupId + '"]');
       var caretEl = document.querySelector('[data-caret="' + groupId + '"]');
@@ -17670,7 +17675,7 @@
             reasonHtml = escapeHtml(item.reason_summary || item.signal_type || '-');
           }
 
-          var sevColor = item.severity === 'blocker' ? '#c62828' : (item.severity === 'warning' ? '#f57c00' : '#666');
+          var sevColor = item.severity === 'blocker' ? '#bf360c' : (item.severity === 'warning' ? '#f57c00' : '#666');
           var sevLabel = item.severity ? item.severity.charAt(0).toUpperCase() + item.severity.slice(1) : '-';
           var sevHtml = '<span style="color:' + sevColor + '; font-weight:500; font-size:0.85em;">' + sevLabel + '</span>';
           if (_dupCount > 1) {
@@ -18008,25 +18013,30 @@
     }
 
     function _p1f1RestoreAccordion() {
-      // no-op: leave groups expanded after scan, just re-enable manual toggle
+      _p1dAccordionLocked = false;
+      _p1dGroupState = {};
+      var carets = document.querySelectorAll('[data-caret]');
+      for (var j = 0; j < carets.length; j++) {
+        var gid = carets[j].getAttribute('data-caret');
+        var gi = parseInt((gid || '').replace('p1d1-g-', ''), 10);
+        var shouldCollapse = !isNaN(gi) && gi >= 5;
+        carets[j].textContent = shouldCollapse ? '\u25B6' : '\u25BC';
+        var children = document.querySelectorAll('.p1d1-child-row[data-parent="' + gid + '"]');
+        for (var k = 0; k < children.length; k++) {
+          children[k].style.display = shouldCollapse ? 'none' : '';
+        }
+      }
+      console.log('[PREFLIGHT-LIVE] accordion_restored: default collapse state applied');
     }
 
-    var _p1f1OrigToggle = null;
-
     function _p1f1LockAccordion() {
-      if (!_p1f1OrigToggle) {
-        _p1f1OrigToggle = window._p1dToggleGroup;
-      }
-      window._p1dToggleGroup = function(groupId) {
-        console.log('[PREFLIGHT-LIVE][OCR] accordion_locked_during_scan: ' + groupId);
-      };
+      _p1dAccordionLocked = true;
+      console.log('[PREFLIGHT-LIVE] accordion_locked');
     }
 
     function _p1f1UnlockAccordion() {
-      if (_p1f1OrigToggle) {
-        window._p1dToggleGroup = _p1f1OrigToggle;
-        _p1f1OrigToggle = null;
-      }
+      _p1dAccordionLocked = false;
+      console.log('[PREFLIGHT-LIVE] accordion_unlocked');
     }
 
 
@@ -35577,7 +35587,7 @@ Add any additional notes here.
     .p1d1-health-table thead th { padding: 8px 10px; text-align: left; font-weight: 600; color: #555; background: #f5f5f5; border-bottom: 2px solid #e0e0e0; font-size: 0.88em; white-space: nowrap; }
     .p1d1-parent-row { cursor: pointer; background: #fafafa; border-bottom: 1px solid #e0e0e0; }
     .p1d1-parent-row:hover { background: #f0f4f8; }
-    .p1d1-parent-row.has-blockers { border-left: 3px solid #c62828; }
+    .p1d1-parent-row.has-blockers { border-left: 3px solid #bf360c; }
     .p1d1-parent-row td { padding: 9px 10px; font-weight: 500; vertical-align: middle; }
     .p1d1-caret { width: 30px; text-align: center; color: #666; font-size: 0.75em; user-select: none; }
     .p1d1-contract-name { font-weight: 600; color: #333; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -35587,7 +35597,7 @@ Add any additional notes here.
     .p1d1-sections { display: flex; gap: 3px; flex-wrap: wrap; }
     .p1d1-section-chip { font-size: 0.72em; padding: 1px 6px; border-radius: 10px; font-weight: 500; background: #e3f2fd; color: #1565c0; white-space: nowrap; }
     .p1d1-sev-badge { display: inline-block; font-size: 0.72em; padding: 1px 7px; border-radius: 10px; font-weight: 600; margin-right: 3px; }
-    .p1d1-sev-badge.blocker { background: #ffebee; color: #c62828; }
+    .p1d1-sev-badge.blocker { background: #fbe9e7; color: #bf360c; }
     .p1d1-sev-badge.warning { background: #fff3e0; color: #e65100; }
     .p1d1-child-row { background: #fff; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
     .p1d1-child-row:hover { background: #f8f9fa; }
