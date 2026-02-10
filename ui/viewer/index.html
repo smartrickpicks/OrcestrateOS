@@ -2206,7 +2206,7 @@
                   <div id="ta-schema-matched-scope" style="font-size: 0.65em; color: #aaa;"></div>
                   <div id="ta-schema-glossary-secondary" style="font-size: 0.6em; color: #bbb;"></div>
                 </div>
-                <div onclick="TriageAnalytics.handleSchemaClick('unknown')" style="text-align: center; padding: 10px; background: #fff3e0; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
+                <div onclick="TriageAnalytics.handleSchemaClick('unknown')" style="text-align: center; padding: 10px; background: #fff3e0; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Columns in this upload that do not match glossary fields or aliases. Review and classify each before promotion." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-unknown" style="font-size: 1.4em; font-weight: 700; color: #e65100;">0</div>
                   <div style="font-size: 0.75em; color: #666;">Unknown Cols</div>
                   <div style="font-size: 0.6em; color: #aaa;">Not in glossary</div>
@@ -18428,50 +18428,116 @@
       if (typeof TriageAnalytics === 'undefined' || !TriageAnalytics._cache || !TriageAnalytics._cache.schema) return;
       var items = TriageAnalytics._cache.schema._missing_values_items;
       if (!items || items.length === 0) return;
-      var ciAvail = typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable() && ContractIndex._index && ContractIndex._index.contracts;
+      var ciAvail = typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable() && typeof ContractIndex.deriveContractId === 'function';
+      var wb = (typeof workbook !== 'undefined') ? workbook : null;
       for (var i = 0; i < items.length; i++) {
         var mv = items[i];
-        var contractKey = '';
-        if (ciAvail) {
-          var cids = Object.keys(ContractIndex._index.contracts);
-          for (var ci = 0; ci < cids.length; ci++) {
-            var c = ContractIndex._index.contracts[cids[ci]];
-            if (c && c.sections) {
-              for (var si = 0; si < c.sections.length; si++) {
-                if (c.sections[si].sheet_name === mv.section) { contractKey = cids[ci]; break; }
-              }
-            }
-            if (contractKey) break;
+        var condition = mv.reason === 'invalid_picklist' ? 'PICKLIST_INVALID' : 'MISSING_REQUIRED';
+        var perContract = {};
+        var batchCount = 0;
+        var totalRows = 0;
+        var isPicklist = mv.reason === 'invalid_picklist';
+        var optionsLower = [];
+        if (isPicklist) {
+          var fMeta = (typeof getFieldMeta === 'function') ? getFieldMeta(mv.section, mv.field_key) : null;
+          if (fMeta && fMeta.options && fMeta.options.length > 0) {
+            for (var oi = 0; oi < fMeta.options.length; oi++) { optionsLower.push(String(fMeta.options[oi]).toLowerCase().trim()); }
           }
         }
-        var condition = mv.reason === 'invalid_picklist' ? 'PICKLIST_INVALID' : 'MISSING_REQUIRED';
-        var pct = mv.total_rows > 0 ? Math.round((mv.blank_count / mv.total_rows) * 100) : 0;
-        var msg = mv.reason === 'invalid_picklist'
-          ? mv.blank_count + ' of ' + mv.total_rows + ' rows (' + pct + '%) have invalid picklist values'
-          : mv.blank_count + ' of ' + mv.total_rows + ' rows (' + pct + '%) are blank or missing';
-        var item = {
-          request_id: 'mv_' + condition.toLowerCase() + '_' + mv.section + '_' + mv.field_key + '_' + mv.reason,
-          type: 'preflight_blocker',
-          signal_type: condition,
-          record_id: contractKey || mv.section,
-          contract_id: contractKey,
-          contract_key: contractKey,
-          field_name: mv.field_key,
-          field_key: mv.field_key,
-          sheet_name: mv.section,
-          severity: mv.reason === 'invalid_picklist' ? 'warning' : 'blocker',
-          message: msg,
-          status: 'open',
-          status_label: 'Open',
-          status_color: '#f57c00',
-          updated_at: new Date().toISOString(),
-          source: 'preflight',
-          blocker_type: condition,
-          can_create_patch: false,
-          _missing_value: true
-        };
-        enrichPreflightItem(item);
-        _missingValuePreflightItems.push(item);
+        if (wb && wb.sheets && wb.sheets[mv.section] && wb.sheets[mv.section].rows) {
+          var rows = wb.sheets[mv.section].rows;
+          totalRows = rows.length;
+          for (var ri = 0; ri < rows.length; ri++) {
+            var row = rows[ri];
+            if (!row) continue;
+            var val = row[mv.header];
+            var hit = false;
+            if (!isPicklist) {
+              hit = (typeof isBlankValue === 'function') && isBlankValue(val);
+            } else {
+              var blank = (typeof isBlankValue === 'function') && isBlankValue(val);
+              if (!blank && val !== null && val !== undefined) {
+                hit = optionsLower.indexOf(String(val).toLowerCase().trim()) === -1;
+              }
+            }
+            if (!hit) continue;
+            var cid = '';
+            if (ciAvail) {
+              var derived = ContractIndex.deriveContractId(row);
+              if (derived) cid = derived;
+            }
+            if (cid) {
+              if (!perContract[cid]) perContract[cid] = 0;
+              perContract[cid]++;
+            } else {
+              batchCount++;
+            }
+          }
+        } else {
+          batchCount = mv.blank_count;
+          totalRows = mv.total_rows;
+        }
+        var contractKeys = Object.keys(perContract);
+        for (var ci = 0; ci < contractKeys.length; ci++) {
+          var ck = contractKeys[ci];
+          var cnt = perContract[ck];
+          var pct = totalRows > 0 ? Math.round((cnt / totalRows) * 100) : 0;
+          var msg = isPicklist
+            ? cnt + ' of ' + totalRows + ' rows (' + pct + '%) have invalid picklist values'
+            : cnt + ' of ' + totalRows + ' rows (' + pct + '%) are blank or missing';
+          var item = {
+            request_id: 'mv_' + condition.toLowerCase() + '_' + ck + '_' + mv.section + '_' + mv.field_key + '_' + mv.reason,
+            type: 'preflight_blocker',
+            signal_type: condition,
+            record_id: ck,
+            contract_id: ck,
+            contract_key: ck,
+            field_name: mv.field_key,
+            field_key: mv.field_key,
+            sheet_name: mv.section,
+            severity: isPicklist ? 'warning' : 'blocker',
+            message: msg,
+            status: 'open',
+            status_label: 'Open',
+            status_color: '#f57c00',
+            updated_at: new Date().toISOString(),
+            source: 'preflight',
+            blocker_type: condition,
+            can_create_patch: false,
+            _missing_value: true
+          };
+          enrichPreflightItem(item);
+          _missingValuePreflightItems.push(item);
+        }
+        if (batchCount > 0) {
+          var bPct = totalRows > 0 ? Math.round((batchCount / totalRows) * 100) : 0;
+          var bMsg = isPicklist
+            ? batchCount + ' of ' + totalRows + ' rows (' + bPct + '%) have invalid picklist values'
+            : batchCount + ' of ' + totalRows + ' rows (' + bPct + '%) are blank or missing';
+          var bItem = {
+            request_id: 'mv_' + condition.toLowerCase() + '_batch_' + mv.section + '_' + mv.field_key + '_' + mv.reason,
+            type: 'preflight_blocker',
+            signal_type: condition,
+            record_id: mv.section,
+            contract_id: '',
+            contract_key: '',
+            field_name: mv.field_key,
+            field_key: mv.field_key,
+            sheet_name: mv.section,
+            severity: isPicklist ? 'warning' : 'blocker',
+            message: bMsg,
+            status: 'open',
+            status_label: 'Open',
+            status_color: '#f57c00',
+            updated_at: new Date().toISOString(),
+            source: 'preflight',
+            blocker_type: condition,
+            can_create_patch: false,
+            _missing_value: true
+          };
+          enrichPreflightItem(bItem);
+          _missingValuePreflightItems.push(bItem);
+        }
       }
     }
 
