@@ -28138,7 +28138,8 @@
       if (typeof rulesBundleCache !== 'undefined' && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.meta && rulesBundleCache.fieldMeta.meta.sheet_mapping) {
         var glossarySheets = Object.keys(rulesBundleCache.fieldMeta.meta.sheet_mapping);
         for (var gi = 0; gi < glossarySheets.length; gi++) {
-          sheetCounts[glossarySheets[gi]] = 0;
+          var _csResult = canonicalContractSection(glossarySheets[gi]);
+          sheetCounts[_csResult.contract_section_label] = 0;
         }
       }
       for (var i = 0; i < items.length; i++) {

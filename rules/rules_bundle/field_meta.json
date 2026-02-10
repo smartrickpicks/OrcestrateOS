@@ -7,7 +7,7 @@
     "description": "Canonical glossary \u2014 field definitions for all governed data sheets",
     "sheet_mapping": {
       "Accounts": "Account Fields Definitions",
-      "Opportunity": "Opportunity Fields Definitions",
+      "Opportunities": "Opportunity Fields Definitions",
       "Financials": "Financials Fields Definitions",
       "Catalog": "Catalog Fields Definitions",
       "Schedule": "Schedule Fields Definitions",
@@ -2548,7 +2548,7 @@
       "source_sheet": "Contact Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Number_of_holdback_days__c",
       "field_label": "# of holdback days",
       "definition": "This is the number of days where the artist and label promise not to distribute any new music in. It's an optional section in distribution and exclusive licensing contracts.",
@@ -2560,7 +2560,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Acquired__c",
       "field_label": "% Acquired",
       "definition": "This is the purcentage of an asset (or assets) that the label acquired as part of a CoPub or Asset Purchase agreement. It's usually in the first part of a contract in the middle of a paragraph. If it is 0, keep this field empty",
@@ -2572,7 +2572,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Controlled_of_Composition__c",
       "field_label": "% Controlled of Composition",
       "definition": "",
@@ -2584,7 +2584,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Percent_Uncrossed__c",
       "field_label": "% Uncrossed",
       "definition": "This is an optional way on how to uncross a new contract with an existing contract or track. To be honest, we've only seen it once so far.",
@@ -2596,7 +2596,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Admin_Fee__c",
       "field_label": "Admin Fee",
       "definition": "This is an optional percentage that speficy the Administration fee that the label is charging to service a Publishing Administration contract or a Co-Publishing contract. It's usually in the middle of the contract, in a paragraph after the splits section.",
@@ -2608,7 +2608,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "ADVANCE_DETAILS__c",
       "field_label": "Advance Payment Details",
       "definition": "A paragraph that explains how and when the advance should be paid along with any clause if linked",
@@ -2620,7 +2620,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Advance_Words__c",
       "field_label": "Advance Words",
       "definition": "",
@@ -2632,7 +2632,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Affiliation_Agreement_Date__c",
       "field_label": "Affiliation Agreement Date",
       "definition": "",
@@ -2644,7 +2644,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Anything_uncrossed__c",
       "field_label": "Anything uncrossed?",
       "definition": "This is a dropdown that indicates if the contracts includes anything uncrossed (not cross collaterized). Default is NO. If yes, it depends on what is uncrossed.",
@@ -2663,7 +2663,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "COMPANY_RIGHTS_LIMITATIONS__c",
       "field_label": "Approval Works Limitations",
       "definition": "",
@@ -2675,7 +2675,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Artist_Inducement__c",
       "field_label": "Artist Inducement",
       "definition": "This is a specific page around the end of the contract. It's usually added if the contract is signed with a Label for a specific client. The field in Salesforce is a checkbox. It's checked if the Inducement Paragraph/page are in the contract, unchecked if not.",
@@ -2690,7 +2690,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Audio_File_Link__c",
       "field_label": "Audio File Link",
       "definition": "This is a manually entered field in SF that indicates the location of the audio file that we bought as part of the related record.",
@@ -2702,7 +2702,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Back_Catalog__c",
       "field_label": "Back Catalog",
       "definition": "This is a checkbox that indicates if the contracts includes back catalog (sometimes it's called \"Existing Masters\".",
@@ -2717,7 +2717,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Back_Catalog_Distribution_Fee__c",
       "field_label": "Back Catalog Distribution Fee",
       "definition": "This represents the percentage (commision) the label charges as a fee to re-distribute the back catalog (or existing masters) as a fee on top of the revenue sharing split. it's usually in the middle of the contract around the Revenue sharing paragraph and points.",
@@ -2729,7 +2729,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Back_Catalog_Split__c",
       "field_label": "Back Catalog Split",
       "definition": "This is the percentage of revenue sharing for existing masters (back catalog) mentioned in the contract. It's not frequent to have this value on its own. It indicates the client share from the revenue.",
@@ -2741,7 +2741,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Back_Catalog_Type__c",
       "field_label": "Back Catalog Type",
       "definition": "This dropdown indicates if we're taking over all of the back catalog of the client, or a portion of it. If back catalog is not mentioned in the contract, the value would be NULL",
@@ -2757,7 +2757,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "CMA_INITIAL_TERM__c",
       "field_label": "CMA Initial Term",
       "definition": "This is used ONLY when it's a distribution contract with Content monetization as an add-on, AND CMA has it's own term that is different than the distribution one.",
@@ -2813,7 +2813,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "CMA_Renewal_Term__c",
       "field_label": "CMA Renewal Term",
       "definition": "This is used ONLY when it's a distribution contract with Content monetization as an add-on, AND CMA has it's own renewal term that is different than the distribution one.",
@@ -2869,7 +2869,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "CMA_Restricted_Content__c",
       "field_label": "CMA Restricted Content",
       "definition": "",
@@ -2881,7 +2881,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "CMA_SPLIT__c",
       "field_label": "CMA Split",
       "definition": "This field indicates the split of the Content Monetization revenue. It indicates the client share from the revenue.",
@@ -2893,7 +2893,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "CMA_Term_Period__c",
       "field_label": "CMA Termination Notice Period",
       "definition": "This is used ONLY when it's a distribution contract with Content monetization as an add-on, AND CMA has it's own termination notice that is different than the distribution one.",
@@ -2918,7 +2918,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "CMA_Types__c",
       "field_label": "CMA Types",
       "definition": "This is a required field when the contract includes CMA. It defines what type of content monetization is included in the contract.",
@@ -2935,7 +2935,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Collection_Period__c",
       "field_label": "Collection Period",
       "definition": "A collection period is the time during which the label is allowed to collect revenue from the property or asset after the end of the exploitation period. Sometimes it's referred to as \"Sell Off Period\"",
@@ -2966,7 +2966,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Contact_Email_for_Contract__c",
       "field_label": "Contact Email for Contract",
       "definition": "",
@@ -2978,7 +2978,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Contact_Full_Name__c",
       "field_label": "Contact Full Name",
       "definition": "",
@@ -2990,7 +2990,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Contract_Advance_Cash_Approved__c",
       "field_label": "Contract Advance Cash Approved",
       "definition": "",
@@ -3002,7 +3002,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Contract_Drafting_Days__c",
       "field_label": "Contract Drafting Days",
       "definition": "",
@@ -3014,7 +3014,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Contract_End_Date__c",
       "field_label": "Contract End Date",
       "definition": "",
@@ -3026,7 +3026,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Contract_Option_Album_Language_Part_1__c",
       "field_label": "Contract Option Album Language Part 1",
       "definition": "",
@@ -3038,7 +3038,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Contract_Option_Cash_Approved__c",
       "field_label": "Contract Option Cash Approved",
       "definition": "",
@@ -3050,7 +3050,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Contract_Option_Marketing_Approved__c",
       "field_label": "Contract Option Marketing Approved",
       "definition": "",
@@ -3062,7 +3062,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Contract_Option_Period__c",
       "field_label": "Contract Option Period",
       "definition": "",
@@ -3074,7 +3074,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Contract_Subtype__c",
       "field_label": "Contract Subtype",
       "definition": "This fields indicates the SUB TYPE of row #39. It's dependant on what's entered there.",
@@ -3104,7 +3104,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Contract_Type__c",
       "field_label": "Contract Type",
       "definition": "This field indicates the type of the contract we have. It's DEDUCTED from the contract content.",
@@ -3133,7 +3133,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Cover_Records_Split__c",
       "field_label": "Cover Records Split",
       "definition": "This is the split (or revenue sharing) that is in favor of the client for Cover Records. It's usually available in Publishing Contracts or CoPub. Or distro/licensing contracts that include publishing rights. Most of the times, it's highlighted separately. But sometimes, especially in licensing contracts with publishing rights, it's deducted as part of the \"Net Profits\" split.",
@@ -3145,7 +3145,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "CPA_Initial_Term__c",
       "field_label": "CPA Initial Term",
       "definition": "This is used ONLY when it's a distribution contract with Channel Partnership as an add-on, AND CPA has it's own term that is different than the distribution one.",
@@ -3201,7 +3201,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "CPA_Renewal_Term__c",
       "field_label": "CPA Renewal Term",
       "definition": "This is used ONLY when it's a distribution contract with Channel Partnership as an add-on, AND CPA has it's own renewal term that is different than the distribution one.",
@@ -3257,7 +3257,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "CPA_SPLIT__c",
       "field_label": "CPA Split",
       "definition": "This field indicates the split of the Channel Partnership revenue. It indicates the client share from the revenue. We usually have multiple splits in that section. We only track the first one.",
@@ -3269,7 +3269,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "CPA_Term_Period__c",
       "field_label": "CPA Termination Notice Period",
       "definition": "This is used ONLY when it's a distribution contract with Channel Partnership as an add-on, AND CPA has it's own termination notice that is different than the distribution one.",
@@ -3294,7 +3294,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "CPA_Types__c",
       "field_label": "CPA Types",
       "definition": "",
@@ -3306,7 +3306,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Current_Distributor_s__c",
       "field_label": "Current Distributor(s)",
       "definition": "",
@@ -3318,7 +3318,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Date_Signed__c",
       "field_label": "Date Signed",
       "definition": "This is the most recent date when the contract was signed by either parties. It's usually next to the signatures, or at the end of the document in the signing log.",
@@ -3330,7 +3330,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Deal_Summary__c",
       "field_label": "Deal Summary",
       "definition": "",
@@ -3342,7 +3342,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "JV_Distribution_Fee__c",
       "field_label": "Distribution Fee",
       "definition": "This is a percentage available in distribution and profit participation contracts. It represents the fee charged for the services of Distribution. It's taken off the top BEFORE the distribution split or profit sharing percentages",
@@ -3354,7 +3354,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Division2__c",
       "field_label": "Division",
       "definition": "This is the name of the label that the contract is with. It's usually at the top of the contract. Either in the title of the first paragraph.",
@@ -3366,7 +3366,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Profit_Share__c",
       "field_label": "Division Profit Share",
       "definition": "This is a percentage available in distribution and profit participation contracts. It represents the division of revenue of the label share of an agreement (the other share is called artist share) between the label and another entity. It's usually available in contracts between a company (CMG or one of its subsidiaries) and a company (record label, management company, etc).",
@@ -3378,7 +3378,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Effective_Date__c",
       "field_label": "Effective Date",
       "definition": "This is the date when the contract becomes effective. It's usually on top of the first page in most contracts. If an effective date is not clearly stated, the value gets derived from the most recent signing date.",
@@ -3390,7 +3390,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Email_for_Contract__c",
       "field_label": "Email for Contract",
       "definition": "",
@@ -3402,7 +3402,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Excluded_Territories__c",
       "field_label": "Excluded Territories",
       "definition": "This field is applicable when \"Territories\" (See below) is set to \"World Excluding Multiples\". That value is used as OTHER when the other options don't apply. However, \"Excluded Territories\" is a text area that should list all the territories exlcuded from the contract when the other options don't apply.",
@@ -3414,7 +3414,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Exclusivity__c",
       "field_label": "Exclusivity",
       "definition": "This field's value depends on the commitment from the client. If they're committing to EXCLUSIVELY deliver to us during the term, that's TIME. Otherwise, it's MASTERS",
@@ -3429,7 +3429,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Existing_Master_Recordings__c",
       "field_label": "Existing Master Recordings",
       "definition": "This is part of a distribution or licensing contract. It represents the total number of existing tracks, or assets (back catalog) brought to the label as part of the contract. The full list (or Schedule) is usually availabe around the end after the signature block in a table or list format as a \"Schedule\"",
@@ -3441,7 +3441,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Exploitation_Period__c",
       "field_label": "Exploitation Period",
       "definition": "An exploitation period is the time during which the label is still allowed to use the property or asset for its intended purpose. It usually starts after the initial term, and before the collection period.",
@@ -3472,7 +3472,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Front_Catalog_Split__c",
       "field_label": "Front Catalog Split",
       "definition": "This is the split (or revenue sharing) that is in favor of the client for the distribution of front catalog music, or new masters. It's usually available in Distribution Contracts, or licensing contracts. Most of the times, it's highlighted separately as \"Digital Phono Record Delivery (i.e., electronic downloads)\". But sometimes, especially in licensing contracts, it's deducted as part of the \"Net Profits\" split.",
@@ -3484,7 +3484,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Holdback_Amount__c",
       "field_label": "Holdback Amount",
       "definition": "This is a money amount usually available in purchase agreements or label ventures. It represents the amount of money we're comitting to give away, but we're holding off on doing so until the client does something.",
@@ -3496,7 +3496,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "In_Approval_Process__c",
       "field_label": "In Approval Process",
       "definition": "",
@@ -3508,7 +3508,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Include_CMA__c",
       "field_label": "Include CMA?",
       "definition": "",
@@ -3520,7 +3520,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Include_Collection__c",
       "field_label": "Include Collection",
       "definition": "",
@@ -3532,7 +3532,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Include_CPA__c",
       "field_label": "Include CPA?",
       "definition": "This is a checkbox field that indicates if the contract includes CPA (Channel Partnership) or not.",
@@ -3547,7 +3547,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Includes_Publishing_Royalty_Share__c",
       "field_label": "Includes Publishing Royalty Share?",
       "definition": "",
@@ -3559,7 +3559,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Initial_Term_Length__c",
       "field_label": "Initial Term Length",
       "definition": "This field indicates the initial term of the contract.\nIt should be available in every single contract regardless of the type or format.",
@@ -3615,7 +3615,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "JV_Recoup_Against__c",
       "field_label": "JV - Recoup Against?",
       "definition": "This field was created for M&A when we initially onboarded them to Sf in 2023. They had this as a column.",
@@ -3627,7 +3627,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "JV_Operating_Budget__c",
       "field_label": "JV Operating Budget",
       "definition": "This field was created for M&A when we initially onboarded them to Sf in 2023. They had this as a column.",
@@ -3639,7 +3639,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Licensing_Rights__c",
       "field_label": "Licensing Rights",
       "definition": "Available only for Contract Type = Licensing Agreement.\n\nThis field will indicate if the licensing is exclusive to us, or non exclusive.",
@@ -3654,7 +3654,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "MasterNumber_Calculate__c",
       "field_label": "MasterNumber Calculate",
       "definition": "",
@@ -3666,7 +3666,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Matching__c",
       "field_label": "Matching Rights/Right of First Refusal",
       "definition": "This field indicates if CMG has the rights of first refusal during the term of the agreement or not. We only need to check if there's a paragraph for that in the agreement and return TRUE. Otherwise, return FALSE.",
@@ -3681,7 +3681,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Mechanical_Split__c",
       "field_label": "Mechanical Split",
       "definition": "This is the split (or revenue sharing) that is in favor of the client for Mechanical licensing revenue. It's usually available in Publishing Contracts or CoPub. Or distro/licensing contracts that include publishing rights. Most of the times, it's highlighted separately. But sometimes, especially in licensing contracts with publishing rights, it's deducted as part of the \"Net Profits\" split.",
@@ -3693,7 +3693,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Merch_Rights__c",
       "field_label": "Merch Rights",
       "definition": "This field indicates if the contract includes a merchandising paragraph. And if it does, are the rights are exclusive to CMG or non-exclusive?\nthis is usually available in distribution contracts as well as recording and licensing agreements.",
@@ -3709,7 +3709,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "MERCH_SPLIT__c",
       "field_label": "Merchandise Split",
       "definition": "This field indicates the split of the merchandizing revenue. It indicates the client share from the revenue.",
@@ -3721,7 +3721,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Neighboring_Rights_included__c",
       "field_label": "Neighboring Rights included?",
       "definition": "This fields indicates the status of neighboring rights income in the contracts when it comes to the label share. It is required with 3 different options.",
@@ -3737,7 +3737,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "No_of_Social_Posts__c",
       "field_label": "No. of Social Posts",
       "definition": "This is mainly used in Licensing agreements. It represents the number of social media posts the client is commited to do to promote the catalog mentioned in the contact. It's usually explicitely defined in the middle of the contracts",
@@ -3749,7 +3749,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Notary_State__c",
       "field_label": "Notary State",
       "definition": "This is applicable for Publishing Administration and CoPublishing contracts. It represents the STATE where the contract was notirized by the client. It can be set to NULL if the contract was never notarized.",
@@ -3766,7 +3766,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "MasterNumber__c",
       "field_label": "Number of New Masters",
       "definition": "This indicates the total number of masters committed in a contract. It's usualy a total of tracks available in schedules for distribution and licensing contracts.",
@@ -3778,7 +3778,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Number_of_Options__c",
       "field_label": "Number of Options",
       "definition": "This field represents the number of \"options\" in a contract. The standard is 1 or 2 options.",
@@ -3801,7 +3801,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Number_of_Singles__c",
       "field_label": "Number of Singles",
       "definition": "This is a weird field. It's a number that represents, our of the \"Number of New Masters\", how many will be distributed as singles?",
@@ -3813,7 +3813,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "OP_Publisher_IPI__c",
       "field_label": "OP Publisher IPI",
       "definition": "",
@@ -3825,7 +3825,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "OP_Publisher_Name__c",
       "field_label": "OP Publisher Name",
       "definition": "",
@@ -3837,7 +3837,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "OP_Publisher_PRO__c",
       "field_label": "OP Publisher PRO",
       "definition": "",
@@ -3849,7 +3849,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Option_Master_Number__c",
       "field_label": "Option Master Number",
       "definition": "When a contract includes an option, the option is usually tied to new delivrable by the client. This number represents the total number of masters included in the available options",
@@ -3861,7 +3861,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Option_Period__c",
       "field_label": "Option Period",
       "definition": "use this for when there is a additional album in the option ,EP, etc like for regular distro!",
@@ -3873,7 +3873,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Option_Release_Details__c",
       "field_label": "Option Release Details",
       "definition": "",
@@ -3885,7 +3885,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Option_Type__c",
       "field_label": "Option Type",
       "definition": "This field represents the existance, or lack, of in a distribution or Licensing Contract. It's very rare to find an option in publishing contracts. The option can be a new commitment from the client, or just a buyout.",
@@ -3908,7 +3908,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Other_Income_Split__c",
       "field_label": "Other Income Split",
       "definition": "This is the split (or revenue sharing) that is in favor of the client for OTHER revenue. It's usually available in Publishing Contracts or CoPub. Or distro/licensing contracts that include publishing rights. Most of the times, it's highlighted separately. But sometimes, especially in licensing contracts with publishing rights, it's deducted as part of the \"Net Profits\" split.",
@@ -3920,7 +3920,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Paying_Third_Party_Collaborators__c",
       "field_label": "Paying Third Party/Collaborators?",
       "definition": "This is a dropdown that indicates if the label is commiting to paying collaborators or not. It's usually a paragraph around the revenue sharing and splits section. In the case of YES, we have 3 versions.",
@@ -3937,7 +3937,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Frequency__c",
       "field_label": "Payment Frequency",
       "definition": "This field represents the frequency in which the label is comitting to pay the client in the contract. It's usually in the Accounting section of a contract, explicitly defined.",
@@ -3954,7 +3954,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Payment_Interval__c",
       "field_label": "Payment Interval",
       "definition": "This is a number field that represents HOW many days the label has to pay after the end of the cycle. It's explicitly mentioned in most contracts, but some just don't have it.",
@@ -3966,7 +3966,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Payment_Schedule__c",
       "field_label": "Payment Schedule",
       "definition": "",
@@ -3978,7 +3978,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Payment_Threshold__c",
       "field_label": "Payment Threshold",
       "definition": "This field indicates the minimum amount of money the client should have in his balance, to be paid every payment cycle. It should be in every contract, but it isn't in a decent amount.",
@@ -3990,7 +3990,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Performance_Split__c",
       "field_label": "Performance Split",
       "definition": "This is the split (or revenue sharing) that is in favor of the client for Performance Rights revenue. It's usually available in Publishing Contracts or CoPub. Or distro/licensing contracts that include publishing rights. Most of the times, it's highlighted separately. But sometimes, especially in licensing contracts with publishing rights, it's deducted as part of the \"Net Profits\" split.",
@@ -4002,7 +4002,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Procurement_Split__c",
       "field_label": "Pitching Procurement Split",
       "definition": "This is the split (or revenue sharing) percentage in favor of the client when a distribution or licensing contract includes a pitching rights and procurement clause. It's not always there.",
@@ -4014,7 +4014,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Procurement_Status__c",
       "field_label": "Pitching Procurement Type",
       "definition": "When a distribution or licensing contract includes a pitching procurement clause, the rights are either Exclusive, or not. This field defines that exclusivity",
@@ -4030,7 +4030,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Affiliation__c",
       "field_label": "PRO",
       "definition": "This is applicable to every contract that includes publishing rights (pub admin or copub). Those rights might be on their own, or part of a distribution or licending contract. Every publishing client, or writer, should be registered with a PRO.",
@@ -4157,7 +4157,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Pronoun__c",
       "field_label": "Pronoun",
       "definition": "This field is used in contract drafting usually to formulate the sentences with the correct gender. In exctraction, it will need to be deducted from reading the contract.",
@@ -4173,7 +4173,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Publisher_Residence_Address__c",
       "field_label": "Publisher Residence Address",
       "definition": "",
@@ -4185,7 +4185,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Publishing_Rights__c",
       "field_label": "Publishing Rights",
       "definition": "This is required in distribution and licensing contracts. It indicates if the contract has any publishing in it, and what type.",
@@ -4201,7 +4201,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Recording_Exclusivity__c",
       "field_label": "Recording Exclusivity",
       "definition": "",
@@ -4213,7 +4213,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Release_Commitment_Window__c",
       "field_label": "Release Commitment Window",
       "definition": "This field represents the number of days in which the label is committing to release an album once all sides agree to it. It's mainly for distribution and licensing contracts",
@@ -4225,7 +4225,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Remix_Split__c",
       "field_label": "Remix Split",
       "definition": "This split exists ONLY in Distribution remix agreements. IT represent the split between the remixer and the artist, on the client side, for a remix.",
@@ -4237,7 +4237,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Renewal_Term_Length__c",
       "field_label": "Renewal Term Length",
       "definition": "This field exists in all contract type where we have a renewal. When exlcusivity = Masters, it renews the initial term. When exclusivity=Time, it often renews the exploitation period. \n\nRenewal means \u201chow long does the term extend automatically after the end of the term?\u201c",
@@ -4293,7 +4293,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Restrictions__c",
       "field_label": "Restrictions",
       "definition": "This field is available for Pub Admin, CoPub and sync representation contracts. It's also sometimes included in Licensing contracts. It defines any restrictions we might have on high level. None, Sync Licensing, Sample Licensing or both. We have other fields with options that define the exact restrictions for each category.",
@@ -4310,7 +4310,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Retention_Period__c",
       "field_label": "Retention Period",
       "definition": "Retention period is usually the equivalent for Exploitation Period, but for Publishing side of the business. It's an essential part of a publishing admin, coPub or a Distro or Licensing agreement with a publishing component in it. It's usually clearler stated either in the terms section, or in the licensing section.",
@@ -4338,7 +4338,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Sample_Licensing_Restrictions__c",
       "field_label": "Sample Licensing Restrictions",
       "definition": "When a contract has sample licensing restrictions, this field is required to define them.",
@@ -4353,7 +4353,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Schedule__c",
       "field_label": "Schedule",
       "definition": "This is a merge field with the schedule list (Separate table)",
@@ -4365,7 +4365,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Schedule_Type__c",
       "field_label": "Schedule Type",
       "definition": "",
@@ -4377,7 +4377,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "SubType__c",
       "field_label": "SubType",
       "definition": "This field is exclusively used in termination documents. It define if it's a termination amendment (client needs to sign) or a termination report (just an FYI)",
@@ -4392,7 +4392,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Sync_Approval_Required__c",
       "field_label": "Sync Approval Required",
       "definition": "",
@@ -4404,7 +4404,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Sync_Licensing_Restrictions__c",
       "field_label": "Sync Licensing Restrictions",
       "definition": "When a contract has sync licensing restrictions, this field is required to define them.",
@@ -4420,7 +4420,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Sync_Rights__c",
       "field_label": "Sync Rights",
       "definition": "This is available for every single contract where we have synchronization licensing rights. It defines if those rights are exclusive or non exclusive.",
@@ -4436,7 +4436,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Sync_Split__c",
       "field_label": "Sync Split",
       "definition": "This is the split (or revenue sharing) percentage in favor of the client when a contract includes a synchronization licensing rights and. It's there for the vast majority of the contracts. Usually explicitely listed. But in some licensing contracts, it needs to be deduced from the \"Net Profits\" split.",
@@ -4448,7 +4448,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Term__c",
       "field_label": "Term",
       "definition": "",
@@ -4460,7 +4460,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Recoup_Term__c",
       "field_label": "Term Options",
       "definition": "This is one of the most important fields, and it's required in all of them. It defines WHEN we start counting the initial term of an agreement. If the contract doens't have a renewal term, it's usually X Number of years or post recoup only. If the contract has renewal, it's any of the 3. It's deduced from HOW the term is written.",
@@ -4476,7 +4476,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Termination_Date__c",
       "field_label": "Termination Date",
       "definition": "This is the date when a contract was terminated. It's not available in the contract itself, but in the paperwork for its termination.",
@@ -4488,7 +4488,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Termination_Notice_Date__c",
       "field_label": "Termination Notice Date",
       "definition": "This is the date when the client notified us that they'd like to terminate a contract.  It's not available in the contract itself, but in the paperwork for its termination.",
@@ -4500,7 +4500,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Termination_Period__c",
       "field_label": "Termination Notice Period",
       "definition": "This is the period before the end of the term (initial or renewal)  usually defined in the terms where the client can give us notice that they're like to terminate. It's basically a minimum notice period for terminating a contract.",
@@ -4525,7 +4525,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Termination_Type__c",
       "field_label": "Termination Type",
       "definition": "This field is exclusively used in termination documents. It define if it's we're terminating contracts by Effective Date (1 offboarding date per contract) or by catalog release date (multiple offboard dates per contract). It' tricky to find it in older termination documents. Usually deduced from the termination language.",
@@ -4540,7 +4540,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Territories__c",
       "field_label": "Territories",
       "definition": "This is a dropdown field that explains where the contract is applicable. It's usually referenced as \"Territory\" or \"Territories\" in the contract, or implied in a section in the first half. However, it won't be spelled exactly as the options in Salesforce. We'll need some sort of mapping.",
@@ -4566,7 +4566,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Type_of_Share__c",
       "field_label": "Type of Share",
       "definition": "This is usually in Purchase Agreements. It defines the type of share we're buying. Is it the label share (or revenue) or the client side (Artist)?",
@@ -4581,7 +4581,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Use_Holdback_Language__c",
       "field_label": "Use Holdback Language?",
       "definition": "This is a checkbox that defines if the contract (usually distribution or Licensing) includes a clause for holding back releases or not.",
@@ -4596,7 +4596,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "What_are_we_amending__c",
       "field_label": "What are we amending?",
       "definition": "This is a multiselect field that defines the changes in an amendment. They're deduced from the contract content that defines what changed in this paperwork, compared ot the one(s) it's referencing.",
@@ -4613,7 +4613,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "What_are_we_terminating__c",
       "field_label": "What are we terminating?",
       "definition": "This field defines if the termination document is terminating a full contract(s), parts of a contract.",
@@ -4628,7 +4628,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Writer_has_recording_career__c",
       "field_label": "Writer has recording career",
       "definition": "",
@@ -4640,7 +4640,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Writer_IPI_Number__c",
       "field_label": "Writer IPI Number",
       "definition": "",
@@ -4652,7 +4652,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Writer_Print_Split__c",
       "field_label": "Writer Print Split",
       "definition": "This is the split (or revenue sharing) that is in favor of the client for Writer Print revenue. It's usually available in Publishing Contracts or CoPub. Or distro/licensing contracts that include publishing rights. Most of the times, it's not highlighted separately. And sometimes, especially in licensing contracts with publishing rights, it's deducted as part of the \"Net Profits\" split.",
@@ -4664,7 +4664,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "YouTube_Channel_Link__c",
       "field_label": "YouTube Channel Link",
       "definition": "This is the link for the YouTube channel that is included in the contract. It's usually available when the contract includes CPA (Channel Partnership)",
@@ -4676,7 +4676,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Physical_Distribution__c",
       "field_label": "Physical Distribution?",
       "definition": "This field indicates whether the contract includes physical distribution (CDs, DVDs, Vinyls, etc). It's a required field.",
@@ -4691,7 +4691,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Physical_Split__c",
       "field_label": "Physical Split",
       "definition": "This field indicates the split for physical distribution between the client and the label.\nThe field is required if the \u201cPhysical Distribution?\u201c is set to YES.\nThis field is available for any contract combination that includes distribution.",
@@ -4703,7 +4703,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Physical_Split_Ex_USA__c",
       "field_label": "Physical Split (Ex-USA)",
       "definition": "This field indicates the split for physical distribution between the client and the label when the split outside the USA is different that inside USA.\n\nThe field is displaued if the \u201cPhysical Distribution?\u201c is set to YES.\n\nThis field is available for any contract combination that includes distribution.",
@@ -4715,7 +4715,7 @@
       "source_sheet": "Opportunity Fields Definitions"
     },
     {
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "field_key": "Sell_Off_Period__c",
       "field_label": "Sell Off Period",
       "definition": "A selloff period A sell\u2011off period is a defined period after termination or expiration of a distribution agreement during which the distributor may continue selling existing stock (e.g., manufactured CDs/vinyl). No new units can be manufactured unless expressly permitted. the purpose is to allow an orderly wind\u2011down and avoid waste or financial loss.",

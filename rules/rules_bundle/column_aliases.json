@@ -1720,7 +1720,7 @@
     },
     {
       "canonical_key": "Number_of_holdback_days__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "# of holdback days",
         "Number Of Holdback Days "
@@ -1729,7 +1729,7 @@
     },
     {
       "canonical_key": "Acquired__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "% Acquired"
       ],
@@ -1737,7 +1737,7 @@
     },
     {
       "canonical_key": "Controlled_of_Composition__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "% Controlled of Composition"
       ],
@@ -1745,7 +1745,7 @@
     },
     {
       "canonical_key": "Percent_Uncrossed__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "% Uncrossed",
         "Percent Uncrossed "
@@ -1754,7 +1754,7 @@
     },
     {
       "canonical_key": "Admin_Fee__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Admin Fee"
       ],
@@ -1762,7 +1762,7 @@
     },
     {
       "canonical_key": "ADVANCE_DETAILS__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Advance Payment Details",
         "Advance Details "
@@ -1771,7 +1771,7 @@
     },
     {
       "canonical_key": "Advance_Words__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Advance Words"
       ],
@@ -1779,7 +1779,7 @@
     },
     {
       "canonical_key": "Affiliation_Agreement_Date__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Affiliation Agreement Date"
       ],
@@ -1787,7 +1787,7 @@
     },
     {
       "canonical_key": "Anything_uncrossed__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Anything uncrossed?"
       ],
@@ -1795,7 +1795,7 @@
     },
     {
       "canonical_key": "COMPANY_RIGHTS_LIMITATIONS__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Approval Works Limitations",
         "Company Rights Limitations "
@@ -1804,7 +1804,7 @@
     },
     {
       "canonical_key": "Artist_Inducement__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Artist Inducement"
       ],
@@ -1812,7 +1812,7 @@
     },
     {
       "canonical_key": "Audio_File_Link__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Audio File Link"
       ],
@@ -1820,7 +1820,7 @@
     },
     {
       "canonical_key": "Back_Catalog__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Back Catalog"
       ],
@@ -1828,7 +1828,7 @@
     },
     {
       "canonical_key": "Back_Catalog_Distribution_Fee__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Back Catalog Distribution Fee"
       ],
@@ -1836,7 +1836,7 @@
     },
     {
       "canonical_key": "Back_Catalog_Split__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Back Catalog Split"
       ],
@@ -1844,7 +1844,7 @@
     },
     {
       "canonical_key": "Back_Catalog_Type__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Back Catalog Type"
       ],
@@ -1852,7 +1852,7 @@
     },
     {
       "canonical_key": "CMA_INITIAL_TERM__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "CMA Initial Term"
       ],
@@ -1860,7 +1860,7 @@
     },
     {
       "canonical_key": "CMA_Renewal_Term__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "CMA Renewal Term"
       ],
@@ -1868,7 +1868,7 @@
     },
     {
       "canonical_key": "CMA_Restricted_Content__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "CMA Restricted Content"
       ],
@@ -1876,7 +1876,7 @@
     },
     {
       "canonical_key": "CMA_SPLIT__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "CMA Split"
       ],
@@ -1884,7 +1884,7 @@
     },
     {
       "canonical_key": "CMA_Term_Period__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "CMA Termination Notice Period",
         "Cma Term Period "
@@ -1893,7 +1893,7 @@
     },
     {
       "canonical_key": "CMA_Types__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "CMA Types"
       ],
@@ -1901,7 +1901,7 @@
     },
     {
       "canonical_key": "Collection_Period__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Collection Period"
       ],
@@ -1909,7 +1909,7 @@
     },
     {
       "canonical_key": "Contact_Email_for_Contract__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Contact Email for Contract"
       ],
@@ -1917,7 +1917,7 @@
     },
     {
       "canonical_key": "Contact_Full_Name__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Contact Full Name"
       ],
@@ -1925,7 +1925,7 @@
     },
     {
       "canonical_key": "Contract_Advance_Cash_Approved__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Contract Advance Cash Approved"
       ],
@@ -1933,7 +1933,7 @@
     },
     {
       "canonical_key": "Contract_Drafting_Days__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Contract Drafting Days"
       ],
@@ -1941,7 +1941,7 @@
     },
     {
       "canonical_key": "Contract_End_Date__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Contract End Date"
       ],
@@ -1949,7 +1949,7 @@
     },
     {
       "canonical_key": "Contract_Option_Album_Language_Part_1__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Contract Option Album Language Part 1"
       ],
@@ -1957,7 +1957,7 @@
     },
     {
       "canonical_key": "Contract_Option_Cash_Approved__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Contract Option Cash Approved"
       ],
@@ -1965,7 +1965,7 @@
     },
     {
       "canonical_key": "Contract_Option_Marketing_Approved__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Contract Option Marketing Approved"
       ],
@@ -1973,7 +1973,7 @@
     },
     {
       "canonical_key": "Contract_Option_Period__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Contract Option Period"
       ],
@@ -1981,7 +1981,7 @@
     },
     {
       "canonical_key": "Contract_Subtype__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Contract Subtype"
       ],
@@ -1989,7 +1989,7 @@
     },
     {
       "canonical_key": "Contract_Type__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Contract Type"
       ],
@@ -1997,7 +1997,7 @@
     },
     {
       "canonical_key": "Cover_Records_Split__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Cover Records Split"
       ],
@@ -2005,7 +2005,7 @@
     },
     {
       "canonical_key": "CPA_Initial_Term__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "CPA Initial Term"
       ],
@@ -2013,7 +2013,7 @@
     },
     {
       "canonical_key": "CPA_Renewal_Term__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "CPA Renewal Term"
       ],
@@ -2021,7 +2021,7 @@
     },
     {
       "canonical_key": "CPA_SPLIT__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "CPA Split"
       ],
@@ -2029,7 +2029,7 @@
     },
     {
       "canonical_key": "CPA_Term_Period__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "CPA Termination Notice Period",
         "Cpa Term Period "
@@ -2038,7 +2038,7 @@
     },
     {
       "canonical_key": "CPA_Types__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "CPA Types"
       ],
@@ -2046,7 +2046,7 @@
     },
     {
       "canonical_key": "Current_Distributor_s__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Current Distributor(s)"
       ],
@@ -2054,7 +2054,7 @@
     },
     {
       "canonical_key": "Date_Signed__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Date Signed"
       ],
@@ -2062,7 +2062,7 @@
     },
     {
       "canonical_key": "Deal_Summary__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Deal Summary"
       ],
@@ -2070,7 +2070,7 @@
     },
     {
       "canonical_key": "JV_Distribution_Fee__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Distribution Fee",
         "Jv Distribution Fee "
@@ -2079,7 +2079,7 @@
     },
     {
       "canonical_key": "Division2__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Division"
       ],
@@ -2087,7 +2087,7 @@
     },
     {
       "canonical_key": "Profit_Share__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Division Profit Share",
         "Profit Share "
@@ -2096,7 +2096,7 @@
     },
     {
       "canonical_key": "Effective_Date__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Effective Date"
       ],
@@ -2104,7 +2104,7 @@
     },
     {
       "canonical_key": "Email_for_Contract__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Email for Contract"
       ],
@@ -2112,7 +2112,7 @@
     },
     {
       "canonical_key": "Excluded_Territories__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Excluded Territories"
       ],
@@ -2120,7 +2120,7 @@
     },
     {
       "canonical_key": "Exclusivity__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Exclusivity"
       ],
@@ -2128,7 +2128,7 @@
     },
     {
       "canonical_key": "Existing_Master_Recordings__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Existing Master Recordings"
       ],
@@ -2136,7 +2136,7 @@
     },
     {
       "canonical_key": "Exploitation_Period__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Exploitation Period"
       ],
@@ -2144,7 +2144,7 @@
     },
     {
       "canonical_key": "Front_Catalog_Split__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Front Catalog Split"
       ],
@@ -2152,7 +2152,7 @@
     },
     {
       "canonical_key": "Holdback_Amount__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Holdback Amount"
       ],
@@ -2160,7 +2160,7 @@
     },
     {
       "canonical_key": "In_Approval_Process__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "In Approval Process"
       ],
@@ -2168,7 +2168,7 @@
     },
     {
       "canonical_key": "Include_CMA__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Include CMA?"
       ],
@@ -2176,7 +2176,7 @@
     },
     {
       "canonical_key": "Include_Collection__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Include Collection"
       ],
@@ -2184,7 +2184,7 @@
     },
     {
       "canonical_key": "Include_CPA__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Include CPA?"
       ],
@@ -2192,7 +2192,7 @@
     },
     {
       "canonical_key": "Includes_Publishing_Royalty_Share__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Includes Publishing Royalty Share?"
       ],
@@ -2200,7 +2200,7 @@
     },
     {
       "canonical_key": "Initial_Term_Length__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Initial Term Length"
       ],
@@ -2208,7 +2208,7 @@
     },
     {
       "canonical_key": "JV_Recoup_Against__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "JV - Recoup Against?"
       ],
@@ -2216,7 +2216,7 @@
     },
     {
       "canonical_key": "JV_Operating_Budget__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "JV Operating Budget"
       ],
@@ -2224,7 +2224,7 @@
     },
     {
       "canonical_key": "Licensing_Rights__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Licensing Rights"
       ],
@@ -2232,7 +2232,7 @@
     },
     {
       "canonical_key": "MasterNumber_Calculate__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "MasterNumber Calculate"
       ],
@@ -2240,7 +2240,7 @@
     },
     {
       "canonical_key": "Matching__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Matching Rights/Right of First Refusal",
         "Matching "
@@ -2249,7 +2249,7 @@
     },
     {
       "canonical_key": "Mechanical_Split__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Mechanical Split"
       ],
@@ -2257,7 +2257,7 @@
     },
     {
       "canonical_key": "Merch_Rights__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Merch Rights"
       ],
@@ -2265,7 +2265,7 @@
     },
     {
       "canonical_key": "MERCH_SPLIT__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Merchandise Split",
         "Merch Split "
@@ -2274,7 +2274,7 @@
     },
     {
       "canonical_key": "Neighboring_Rights_included__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Neighboring Rights included?"
       ],
@@ -2282,7 +2282,7 @@
     },
     {
       "canonical_key": "No_of_Social_Posts__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "No. of Social Posts"
       ],
@@ -2290,7 +2290,7 @@
     },
     {
       "canonical_key": "Notary_State__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Notary State"
       ],
@@ -2298,7 +2298,7 @@
     },
     {
       "canonical_key": "MasterNumber__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Number of New Masters",
         "Masternumber "
@@ -2307,7 +2307,7 @@
     },
     {
       "canonical_key": "Number_of_Options__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Number of Options"
       ],
@@ -2315,7 +2315,7 @@
     },
     {
       "canonical_key": "Number_of_Singles__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Number of Singles"
       ],
@@ -2323,7 +2323,7 @@
     },
     {
       "canonical_key": "OP_Publisher_IPI__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "OP Publisher IPI"
       ],
@@ -2331,7 +2331,7 @@
     },
     {
       "canonical_key": "OP_Publisher_Name__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "OP Publisher Name"
       ],
@@ -2339,7 +2339,7 @@
     },
     {
       "canonical_key": "OP_Publisher_PRO__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "OP Publisher PRO"
       ],
@@ -2347,7 +2347,7 @@
     },
     {
       "canonical_key": "Option_Master_Number__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Option Master Number"
       ],
@@ -2355,7 +2355,7 @@
     },
     {
       "canonical_key": "Option_Period__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Option Period"
       ],
@@ -2363,7 +2363,7 @@
     },
     {
       "canonical_key": "Option_Release_Details__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Option Release Details"
       ],
@@ -2371,7 +2371,7 @@
     },
     {
       "canonical_key": "Option_Type__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Option Type"
       ],
@@ -2379,7 +2379,7 @@
     },
     {
       "canonical_key": "Other_Income_Split__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Other Income Split"
       ],
@@ -2387,7 +2387,7 @@
     },
     {
       "canonical_key": "Paying_Third_Party_Collaborators__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Paying Third Party/Collaborators?"
       ],
@@ -2395,7 +2395,7 @@
     },
     {
       "canonical_key": "Frequency__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Payment Frequency",
         "Frequency "
@@ -2404,7 +2404,7 @@
     },
     {
       "canonical_key": "Payment_Interval__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Payment Interval"
       ],
@@ -2412,7 +2412,7 @@
     },
     {
       "canonical_key": "Payment_Schedule__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Payment Schedule"
       ],
@@ -2420,7 +2420,7 @@
     },
     {
       "canonical_key": "Payment_Threshold__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Payment Threshold"
       ],
@@ -2428,7 +2428,7 @@
     },
     {
       "canonical_key": "Performance_Split__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Performance Split"
       ],
@@ -2436,7 +2436,7 @@
     },
     {
       "canonical_key": "Procurement_Split__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Pitching Procurement Split",
         "Procurement Split "
@@ -2445,7 +2445,7 @@
     },
     {
       "canonical_key": "Procurement_Status__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Pitching Procurement Type",
         "Procurement Status "
@@ -2454,7 +2454,7 @@
     },
     {
       "canonical_key": "Affiliation__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "PRO",
         "Affiliation "
@@ -2463,7 +2463,7 @@
     },
     {
       "canonical_key": "Pronoun__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Pronoun"
       ],
@@ -2471,7 +2471,7 @@
     },
     {
       "canonical_key": "Publisher_Residence_Address__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Publisher Residence Address"
       ],
@@ -2479,7 +2479,7 @@
     },
     {
       "canonical_key": "Publishing_Rights__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Publishing Rights"
       ],
@@ -2487,7 +2487,7 @@
     },
     {
       "canonical_key": "Recording_Exclusivity__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Recording Exclusivity"
       ],
@@ -2495,7 +2495,7 @@
     },
     {
       "canonical_key": "Release_Commitment_Window__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Release Commitment Window"
       ],
@@ -2503,7 +2503,7 @@
     },
     {
       "canonical_key": "Remix_Split__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Remix Split"
       ],
@@ -2511,7 +2511,7 @@
     },
     {
       "canonical_key": "Renewal_Term_Length__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Renewal Term Length"
       ],
@@ -2519,7 +2519,7 @@
     },
     {
       "canonical_key": "Restrictions__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Restrictions"
       ],
@@ -2527,7 +2527,7 @@
     },
     {
       "canonical_key": "Retention_Period__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Retention Period"
       ],
@@ -2535,7 +2535,7 @@
     },
     {
       "canonical_key": "Sample_Licensing_Restrictions__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Sample Licensing Restrictions"
       ],
@@ -2543,7 +2543,7 @@
     },
     {
       "canonical_key": "Schedule__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Schedule"
       ],
@@ -2551,7 +2551,7 @@
     },
     {
       "canonical_key": "Schedule_Type__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Schedule Type"
       ],
@@ -2559,7 +2559,7 @@
     },
     {
       "canonical_key": "SubType__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "SubType"
       ],
@@ -2567,7 +2567,7 @@
     },
     {
       "canonical_key": "Sync_Approval_Required__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Sync Approval Required"
       ],
@@ -2575,7 +2575,7 @@
     },
     {
       "canonical_key": "Sync_Licensing_Restrictions__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Sync Licensing Restrictions"
       ],
@@ -2583,7 +2583,7 @@
     },
     {
       "canonical_key": "Sync_Rights__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Sync Rights"
       ],
@@ -2591,7 +2591,7 @@
     },
     {
       "canonical_key": "Sync_Split__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Sync Split"
       ],
@@ -2599,7 +2599,7 @@
     },
     {
       "canonical_key": "Term__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Term"
       ],
@@ -2607,7 +2607,7 @@
     },
     {
       "canonical_key": "Recoup_Term__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Term Options",
         "Recoup Term "
@@ -2616,7 +2616,7 @@
     },
     {
       "canonical_key": "Termination_Date__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Termination Date"
       ],
@@ -2624,7 +2624,7 @@
     },
     {
       "canonical_key": "Termination_Notice_Date__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Termination Notice Date"
       ],
@@ -2632,7 +2632,7 @@
     },
     {
       "canonical_key": "Termination_Period__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Termination Notice Period",
         "Termination Period "
@@ -2641,7 +2641,7 @@
     },
     {
       "canonical_key": "Termination_Type__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Termination Type"
       ],
@@ -2649,7 +2649,7 @@
     },
     {
       "canonical_key": "Territories__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Territories"
       ],
@@ -2657,7 +2657,7 @@
     },
     {
       "canonical_key": "Type_of_Share__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Type of Share"
       ],
@@ -2665,7 +2665,7 @@
     },
     {
       "canonical_key": "Use_Holdback_Language__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Use Holdback Language?"
       ],
@@ -2673,7 +2673,7 @@
     },
     {
       "canonical_key": "What_are_we_amending__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "What are we amending?"
       ],
@@ -2681,7 +2681,7 @@
     },
     {
       "canonical_key": "What_are_we_terminating__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "What are we terminating?"
       ],
@@ -2689,7 +2689,7 @@
     },
     {
       "canonical_key": "Writer_has_recording_career__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Writer has recording career"
       ],
@@ -2697,7 +2697,7 @@
     },
     {
       "canonical_key": "Writer_IPI_Number__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Writer IPI Number"
       ],
@@ -2705,7 +2705,7 @@
     },
     {
       "canonical_key": "Writer_Print_Split__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Writer Print Split"
       ],
@@ -2713,7 +2713,7 @@
     },
     {
       "canonical_key": "YouTube_Channel_Link__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "YouTube Channel Link"
       ],
@@ -2721,7 +2721,7 @@
     },
     {
       "canonical_key": "Physical_Distribution__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Physical Distribution?"
       ],
@@ -2729,7 +2729,7 @@
     },
     {
       "canonical_key": "Physical_Split__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Physical Split"
       ],
@@ -2737,7 +2737,7 @@
     },
     {
       "canonical_key": "Physical_Split_Ex_USA__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Physical Split (Ex-USA)"
       ],
@@ -2745,7 +2745,7 @@
     },
     {
       "canonical_key": "Sell_Off_Period__c",
-      "sheet": "Opportunity",
+      "sheet": "Opportunities",
       "aliases": [
         "Sell Off Period"
       ],
