@@ -547,8 +547,8 @@
     .srr-panel-tab:hover { background: #f0f0f0; }
     .srr-panel-tab.active { background: #1565c0; color: white; border-color: #1565c0; }
     .srr-panel-body { padding: 12px; }
-    .srr-top-bar { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 12px 16px; background: #1a1a2e; border-radius: 8px; color: white; }
-    .srr-identity { font-family: 'Courier New', monospace; font-size: 0.85em; background: #0f3460; padding: 6px 12px; border-radius: 4px; }
+    .srr-top-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 8px 12px; background: #1a1a2e; border-radius: 8px; color: white; flex-wrap: wrap; }
+    .srr-identity { font-family: 'Courier New', monospace; font-size: 0.85em; background: #0f3460; padding: 6px 12px; border-radius: 4px; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; }
     .srr-state-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; }
     .srr-state-badge.ready { background: #c8e6c9; color: #2e7d32; }
     .srr-state-badge.needs_review { background: #ffe0b2; color: #e65100; }
@@ -2525,8 +2525,8 @@
       <div class="page" id="page-row">
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <h2 id="srr-page-title">Record Inspection<span id="srr-title-filename" class="srr-page-title-filename"></span></h2>
-<p class="page-desc" id="srr-page-subtitle" style="margin: 0; font-size: 0.8em; color: #64748b;">Per-record inspection with Evidence Pack authoring and Patch Request creation.</p>
+            <h2 id="srr-page-title" style="font-size: 1.1em; margin: 0;">Record Inspection<span id="srr-title-record-name" style="font-weight: 400; color: #94a3b8; margin-left: 8px; font-size: 0.85em;"></span></h2>
+
           </div>
         </div>
 
@@ -21714,18 +21714,20 @@
       stateBadge.textContent = record.status || 'Unknown';
       stateBadge.className = 'srr-state-badge ' + status;
       
-      // v1.6.54: Update page title with file name
+      // Resolve file info for action bar
       var fileName = srrResolveFieldValue(record, 'file_name');
       var fileUrl = srrResolveFieldValue(record, 'file_url');
-      var titleFileEl = document.getElementById('srr-title-filename');
-      if (titleFileEl) {
-        if (fileName) {
-          var formattedName = fileName.replace(/_/g, ' ').replace(/\.pdf$/i, '').trim();
-          titleFileEl.textContent = ' — ' + formattedName;
-          titleFileEl.title = fileName;
+      
+      // v1.6.55: Show record name in page title
+      var titleRecordNameEl = document.getElementById('srr-title-record-name');
+      if (titleRecordNameEl) {
+        if (_recName && _recName.length > 0) {
+          var displayName = _recName.length > 60 ? _recName.substring(0, 57) + '...' : _recName;
+          titleRecordNameEl.textContent = ' — ' + displayName;
+          titleRecordNameEl.title = _recName;
         } else {
-          titleFileEl.textContent = '';
-          titleFileEl.title = '';
+          titleRecordNameEl.textContent = '';
+          titleRecordNameEl.title = '';
         }
       }
       
@@ -22277,6 +22279,7 @@
       srrUpdatePatchFormSections();
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditor();
+      _srrExpandPatchPanel();
     }
     
     // v1.4.20: Field action - RFI (question)
@@ -22309,6 +22312,7 @@
       srrUpdatePatchFormSections();
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditor();
+      _srrExpandPatchPanel();
     }
     
     // v1.4.20: Reset field state to TODO
@@ -24734,6 +24738,9 @@
     
     // Handle patch type dropdown change
     function srrOnPatchTypeChange(newType) {
+      // v1.6.55: Set type first, then open overlay so title is correct
+      srrState.patchType = newType;
+      srrState.patchDraft.patch_type = newType;
       _srrExpandPatchPanel();
       // v1.5.2: If a field is selected, apply the action to that field
       if (srrPeSelectedField) {
