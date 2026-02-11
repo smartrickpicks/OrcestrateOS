@@ -18803,7 +18803,7 @@
               var cellClass = isStatusCol ? statusClass : '';
               // v1.6.2: Apply signal-based cell coloring (v1.6.18: pass record)
               var cellStyle = getGridCellStyle(recordId, col, r);
-              var changeInfo = getCellChangeInfo(recordId, col, r); var titlePrefix = changeInfo && CHANGE_TYPE_STYLES[changeInfo.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo.type].label + '] ' : ''; return '<td class="' + cellClass + ' truncated" data-gfield="' + col + '" style="' + cellStyle + '" title="' + titlePrefix + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+              var changeInfo = getCellChangeInfo(recordId, col, r); var titlePrefix = changeInfo && CHANGE_TYPE_STYLES[changeInfo.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo.type].label + '] ' : ''; if (!titlePrefix && typeof _getAddrCorrectionTooltip === 'function') { var _acTipP1c = _getAddrCorrectionTooltip(recordId, col); if (_acTipP1c) titlePrefix = _acTipP1c; } return '<td class="' + cellClass + ' truncated" data-gfield="' + col + '" style="' + cellStyle + '" title="' + titlePrefix + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
             }).join('') +
             '</tr>';
         }).join('');
@@ -20374,11 +20374,11 @@
     }
 
     var _ADDRESS_FIELD_GROUPS = [
-      { prefix: 'billing', fields: { street: 'billing_street_c', city: 'billing_city_c', state: 'billing_state_c', postal: 'billing_postal_code_c', country: 'billing_country_c' }, labels: { street: 'Billing Street', city: 'Billing City', state: 'Billing State/Province', postal: 'Billing Zip/Postal Code', country: 'Billing Country' }, sheet: 'Accounts' },
-      { prefix: 'shipping', fields: { street: 'shipping_street_c', city: 'shipping_city_c', state: 'shipping_state_c', postal: 'shipping_postal_code_c', country: 'shipping_country_c' }, labels: { street: 'Shipping Street', city: 'Shipping City', state: 'Shipping State/Province', postal: 'Shipping Zip/Postal Code', country: 'Shipping Country' }, sheet: 'Accounts' },
-      { prefix: 'mailing', fields: { street: 'MailingStreet', city: 'MailingCity', state: 'MailingState', postal: 'MailingPostalCode', country: 'MailingCountry' }, labels: { street: 'Mailing Street', city: 'Mailing City', state: 'Mailing State/Province', postal: 'Mailing Zip/Postal Code', country: 'Mailing Country' }, sheet: 'Contacts' },
-      { prefix: 'other', fields: { street: 'OtherStreet', city: 'OtherCity', state: 'OtherState', postal: 'OtherPostalCode', country: 'OtherCountry' }, labels: { street: 'Other Street', city: 'Other City', state: 'Other State/Province', postal: 'Other Zip/Postal Code', country: 'Other Country' }, sheet: 'Contacts' },
-      { prefix: 'contact', fields: { street: 'Contact_Street__c', city: 'Contact_City__c', state: 'Contact_State__c', postal: 'Contact_ZIP__c', country: 'Contact_Country__c' }, labels: { street: 'Contact Street', city: 'Contact City', state: 'Contact State', postal: 'Contact ZIP', country: 'Contact Country' }, sheet: 'Contacts' }
+      { prefix: 'billing', composite: 'Billing_Address_c', compositeLabel: 'Billing Address', fields: { street: 'billing_street_c', city: 'billing_city_c', state: 'billing_state_c', postal: 'billing_postal_code_c', country: 'billing_country_c' }, labels: { street: 'Billing Street', city: 'Billing City', state: 'Billing State/Province', postal: 'Billing Zip/Postal Code', country: 'Billing Country' }, sheet: 'Accounts' },
+      { prefix: 'shipping', composite: 'Shipping_Address_c', compositeLabel: 'Shipping Address', fields: { street: 'shipping_street_c', city: 'shipping_city_c', state: 'shipping_state_c', postal: 'shipping_postal_code_c', country: 'shipping_country_c' }, labels: { street: 'Shipping Street', city: 'Shipping City', state: 'Shipping State/Province', postal: 'Shipping Zip/Postal Code', country: 'Shipping Country' }, sheet: 'Accounts' },
+      { prefix: 'mailing', composite: 'MailingAddress', compositeLabel: 'Mailing Address', fields: { street: 'MailingStreet', city: 'MailingCity', state: 'MailingState', postal: 'MailingPostalCode', country: 'MailingCountry' }, labels: { street: 'Mailing Street', city: 'Mailing City', state: 'Mailing State/Province', postal: 'Mailing Zip/Postal Code', country: 'Mailing Country' }, sheet: 'Contacts' },
+      { prefix: 'other', composite: 'OtherAddress', compositeLabel: 'Other Address', fields: { street: 'OtherStreet', city: 'OtherCity', state: 'OtherState', postal: 'OtherPostalCode', country: 'OtherCountry' }, labels: { street: 'Other Street', city: 'Other City', state: 'Other State/Province', postal: 'Other Zip/Postal Code', country: 'Other Country' }, sheet: 'Contacts' },
+      { prefix: 'contact', composite: 'Contact_Address__c', compositeLabel: 'Contact Address', fields: { street: 'Contact_Street__c', city: 'Contact_City__c', state: 'Contact_State__c', postal: 'Contact_ZIP__c', country: 'Contact_Country__c' }, labels: { street: 'Contact Street', city: 'Contact City', state: 'Contact State', postal: 'Contact ZIP', country: 'Contact Country' }, sheet: 'Contacts' }
     ];
 
     function _addrNormalize(val) {
@@ -20392,6 +20392,64 @@
 
     function _addrNormKey(s) {
       return String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function _addrResolveCompositeField(row, compositeKey, compositeLabel) {
+      if (!compositeKey) return '';
+      var resolved = _addrResolveField(row, compositeKey, compositeLabel || '');
+      return resolved.val || '';
+    }
+
+    function _addrExtractPostalFromComposite(compositeVal) {
+      if (!compositeVal) return '';
+      var patterns = [
+        /\b(\d{5}[-\s]?\d{4})\b/,
+        /\b(\d{4,6})\b/,
+        /\b([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})\b/i
+      ];
+      for (var pi = 0; pi < patterns.length; pi++) {
+        var m = compositeVal.match(patterns[pi]);
+        if (m) return m[1];
+      }
+      return '';
+    }
+
+    function _addrExtractStreetFromComposite(compositeVal, knownCity) {
+      if (!compositeVal) return '';
+      var segments = compositeVal.split(/[,;]+/);
+      if (segments.length === 0) return '';
+      var street = String(segments[0]).trim();
+      if (street && knownCity) {
+        var cityNorm = _addrNormalize(knownCity);
+        if (_addrNormalize(street) === cityNorm) return '';
+      }
+      return street;
+    }
+
+    function _addrExtractStateFromComposite(compositeVal, knownCity, knownCountry) {
+      if (!compositeVal) return '';
+      var segments = compositeVal.split(/[,;]+/);
+      for (var si = 0; si < segments.length; si++) {
+        segments[si] = String(segments[si]).trim();
+      }
+      var filtered = [];
+      for (var fi = 0; fi < segments.length; fi++) {
+        var seg = segments[fi];
+        if (!seg) continue;
+        if (knownCity && _addrNormalize(seg) === _addrNormalize(knownCity)) continue;
+        if (knownCountry && _addrNormalize(seg) === _addrNormalize(knownCountry)) continue;
+        if (/^\d{4,6}$/.test(seg.trim())) continue;
+        var postalInSeg = _addrExtractPostalFromComposite(seg);
+        if (postalInSeg) {
+          seg = seg.replace(postalInSeg, '').trim();
+          if (!seg) continue;
+        }
+        if (fi === 0) continue;
+        filtered.push(seg);
+      }
+      if (filtered.length === 1) return filtered[0];
+      if (filtered.length > 1) return filtered[filtered.length - 1];
+      return '';
     }
 
     function _addrResolveField(row, fieldKey, fieldLabel) {
@@ -20521,6 +20579,26 @@
               resolvedKeys[comp] = resolved.resolvedKey;
               if (parts[comp]) { filled++; } else { missing.push(comp); }
             }
+            if (missing.length > 0 && grp.composite) {
+              var compositeVal = _addrResolveCompositeField(row, grp.composite, grp.compositeLabel || '');
+              if (compositeVal) {
+                var cityVal = parts.city ? parts.city : '';
+                var countryVal = parts.country ? parts.country : '';
+                for (var mxi = missing.length - 1; mxi >= 0; mxi--) {
+                  var mc = missing[mxi];
+                  var extracted = '';
+                  if (mc === 'postal') { extracted = _addrExtractPostalFromComposite(compositeVal); }
+                  else if (mc === 'street') { extracted = _addrExtractStreetFromComposite(compositeVal, cityVal); }
+                  else if (mc === 'state') { extracted = _addrExtractStateFromComposite(compositeVal, cityVal, countryVal); }
+                  if (extracted) {
+                    parts[mc] = _addrNormalize(extracted);
+                    resolvedKeys[mc] = grp.composite;
+                    filled++;
+                    missing.splice(mxi, 1);
+                  }
+                }
+              }
+            }
             if (filled === 0 || filled === 5) continue;
             if (missing.length > 2) continue;
             allRecords.push({
@@ -20571,19 +20649,66 @@
           var _compositeCheck = _addrDecisionKey({ record_id: rec.recordId, field_name: rec.resolvedKeys[missingComp] || rec.group.fields[missingComp], existing_parts: rec.parts });
           if (_addressCandidateDecisions[_compositeCheck]) continue;
 
-          var severity = 'blocker';
-          var blockerType = 'ADDRESS_INCOMPLETE_AMBIGUOUS';
-          var candidateValue = '';
-          if (candidates.length === 1) {
-            severity = 'warning';
-            blockerType = 'ADDRESS_INCOMPLETE_CANDIDATE';
-            var candKey = candidates[0].resolvedKeys[missingComp] || candidates[0].group.fields[missingComp];
-            candidateValue = candidates[0].row[candKey] || candidates[0].parts[missingComp] || '';
-          }
-
           var fieldLabel2 = missingComp.charAt(0).toUpperCase() + missingComp.slice(1);
           if (missingComp === 'postal') fieldLabel2 = 'Zip/Postal Code';
           if (missingComp === 'state') fieldLabel2 = 'State/Province';
+
+          if (candidates.length === 1) {
+            var candKey = candidates[0].resolvedKeys[missingComp] || candidates[0].group.fields[missingComp];
+            var candidateValue = candidates[0].row[candKey] || candidates[0].parts[missingComp] || '';
+            if (candidateValue) {
+              var corrFieldName = rec.resolvedKeys[missingComp] || rec.group.fields[missingComp];
+              var oldVal = rec.row[corrFieldName] || '';
+              rec.row[corrFieldName] = candidateValue;
+              console.log('[ADDR-AUTOCORRECT] ' + rec.recordId + ' ' + corrFieldName + ': "" -> "' + candidateValue + '"');
+              var corrRecId = rec.recordId;
+              var corrNormKey = typeof normalizeFieldKey === 'function' ? normalizeFieldKey(corrFieldName) : corrFieldName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+              if (typeof _markSystemCorrected === 'function') _markSystemCorrected(corrRecId, corrNormKey);
+              if (typeof signalStore !== 'undefined' && signalStore && signalStore.signals_by_cell) {
+                if (!signalStore.signals_by_cell[corrRecId]) signalStore.signals_by_cell[corrRecId] = {};
+                if (!signalStore.signals_by_cell[corrRecId][corrNormKey]) signalStore.signals_by_cell[corrRecId][corrNormKey] = [];
+                signalStore.signals_by_cell[corrRecId][corrNormKey].push({
+                  signal_type: 'ADDRESS_SYSTEM_CORRECTED',
+                  severity: 'info',
+                  message: 'Auto-corrected: ' + rec.group.prefix + ' ' + fieldLabel2.toLowerCase() + ' filled from matching record',
+                  field_key: corrNormKey,
+                  record_id: corrRecId,
+                  old_value: oldVal,
+                  new_value: candidateValue,
+                  source_record: candidates[0].recordId,
+                  correction_source: 'address_candidate_engine'
+                });
+              }
+              if (!window._addrAutoCorrections) window._addrAutoCorrections = [];
+              window._addrAutoCorrections.push({
+                record_id: corrRecId,
+                field_name: corrFieldName,
+                field_key: corrNormKey,
+                field_label: rec.group.prefix.charAt(0).toUpperCase() + rec.group.prefix.slice(1) + ' ' + fieldLabel2,
+                old_value: oldVal,
+                new_value: candidateValue,
+                source_record: candidates[0].recordId,
+                sheet_name: rec.sheetName,
+                timestamp: new Date().toISOString()
+              });
+              if (typeof AuditTimeline !== 'undefined' && AuditTimeline.emit) {
+                AuditTimeline.emit('ADDRESS_SYSTEM_CORRECTED', {
+                  record_id: corrRecId,
+                  file_id: rec.sheetName,
+                  metadata: { field: corrFieldName, component: missingComp, old_value: oldVal, new_value: candidateValue, source: 'address_candidate_match', source_record: candidates[0].recordId }
+                });
+              }
+              _saveAddressCandidateDecision(itemId, 'auto_corrected', { record_id: corrRecId, field_name: corrFieldName, existing_parts: rec.parts });
+              continue;
+            }
+          }
+
+          var severity = 'blocker';
+          var blockerType = 'ADDRESS_INCOMPLETE_AMBIGUOUS';
+          var candidateValue2 = '';
+          if (candidates.length > 1) {
+            candidateValue2 = candidates.length + ' ambiguous matches found';
+          }
           var item = {
             request_id: itemId,
             signal_type: blockerType,
@@ -20594,11 +20719,11 @@
             contract_key: rec.contractKey,
             field_name: rec.resolvedKeys[missingComp] || rec.group.fields[missingComp],
             field_label: rec.group.prefix.charAt(0).toUpperCase() + rec.group.prefix.slice(1) + ' ' + fieldLabel2,
-            message: 'Missing ' + rec.group.prefix + ' ' + fieldLabel2.toLowerCase() + (candidates.length === 1 ? '. Candidate: ' + candidateValue : candidates.length > 1 ? '. ' + candidates.length + ' ambiguous matches found' : '. No matches found in batch'),
+            message: 'Missing ' + rec.group.prefix + ' ' + fieldLabel2.toLowerCase() + (candidates.length > 1 ? '. ' + candidates.length + ' ambiguous matches found' : '. No matches found in batch'),
             reason_code: blockerType,
             source: 'address_candidate_engine',
             candidate_count: candidates.length,
-            candidate_value: candidateValue,
+            candidate_value: candidateValue2,
             missing_component: missingComp,
             address_group: rec.group.prefix,
             existing_parts: rec.parts,
@@ -20607,7 +20732,9 @@
           _addressCandidateItems.push(enrichPreflightItem(item));
         }
       }
-      if (_addressCandidateItems.length > 0) console.log('[PREFLIGHT-ADDR] built ' + _addressCandidateItems.length + ' address candidate items');
+      var _acCount = window._addrAutoCorrections ? window._addrAutoCorrections.length : 0;
+      if (_acCount > 0) console.log('[ADDR-AUTOCORRECT] auto-corrected ' + _acCount + ' address fields');
+      if (_addressCandidateItems.length > 0) console.log('[PREFLIGHT-ADDR] built ' + _addressCandidateItems.length + ' address candidate items (ambiguous/unresolved)');
     }
 
     function _mergeAddressCandidateItems() {
@@ -22843,6 +22970,10 @@
             var cStyle = typeof getGridCellStyle === 'function' ? getGridCellStyle(recordId, col2, r) : '';
             var changeInfo = typeof getCellChangeInfo === 'function' ? getCellChangeInfo(recordId, col2, r) : null;
             var titlePfx = changeInfo && typeof CHANGE_TYPE_STYLES !== 'undefined' && CHANGE_TYPE_STYLES[changeInfo.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo.type].label + '] ' : '';
+            if (!titlePfx && typeof _getAddrCorrectionTooltip === 'function') {
+              var _acTip = _getAddrCorrectionTooltip(recordId, col2);
+              if (_acTip) titlePfx = _acTip;
+            }
             var editAttrs = '';
             if (_gridViewMode === 'grid') {
               editAttrs = ' style="' + cStyle + '"';
@@ -23291,6 +23422,7 @@
       MISSING_REQUIRED: { severity: 'error', source: 'field_meta' },
       PICKLIST_INVALID: { severity: 'warning', source: 'field_meta' },
       ADDRESS_INCOMPLETE_CANDIDATE: { severity: 'warning', source: 'address_engine' },
+      ADDRESS_SYSTEM_CORRECTED: { severity: 'info', source: 'address_engine' },
       ADDRESS_INCOMPLETE_AMBIGUOUS: { severity: 'error', source: 'address_engine' },
       QA_FLAG: { severity: 'info', source: 'qa_flags' },
       OCR_UNREADABLE: { severity: 'warning', source: 'encoding_check' }
@@ -24773,7 +24905,7 @@
         }
       }
 
-      if (_isSystemCorrectedCell(recordId, normKey)) return 'background: #f5f5f5; border-left: 3px solid #bdbdbd;';
+      if (_isSystemCorrectedCell(recordId, normKey)) return 'background: #e8f5e9; border-left: 3px solid #43a047;';
 
       var style = getCellHighestPriorityStyle(recordId, normKey);
       if (!style || style.priority >= 5 || !style.bg) return '';
@@ -24805,6 +24937,22 @@
     }
     function _isSystemCorrectedCell(recordId, fieldKey) {
       return _systemCorrectedCells[recordId] && _systemCorrectedCells[recordId][fieldKey];
+    }
+
+    function _getAddrCorrectionTooltip(recordId, fieldKey) {
+      if (!window._addrAutoCorrections) return '';
+      var normRid = String(recordId);
+      var normFk = fieldKey ? fieldKey.toLowerCase().replace(/[^a-z0-9]/g, '_') : '';
+      for (var i = 0; i < window._addrAutoCorrections.length; i++) {
+        var ac = window._addrAutoCorrections[i];
+        if (String(ac.record_id) === normRid && ac.field_key === normFk) {
+          return '[System Corrected] Was: ' + (ac.old_value || '(empty)') + ' | Auto-filled from matching record';
+        }
+      }
+      if (_systemCorrectedCells[recordId] && _systemCorrectedCells[recordId][normFk]) {
+        return '[System Corrected] ';
+      }
+      return '';
     }
     
     // ========================================================================
@@ -32306,6 +32454,7 @@
         MISSING_REQUIRED: { label: 'Missing Required', badge: 'fail', icon: '\u2757', desc: 'A required field is missing or empty in this record.' },
         PICKLIST_INVALID: { label: 'Invalid Picklist', badge: 'warn', icon: '\ud83d\udcdd', desc: 'Field value does not match any allowed option in the picklist.' },
         ADDRESS_INCOMPLETE_CANDIDATE: { label: 'Incomplete Address', badge: 'warn', icon: '\ud83c\udfe0', desc: 'This address is missing one or more parts. A possible match was found in another record in the same batch.' },
+        ADDRESS_SYSTEM_CORRECTED: { label: 'Auto-Corrected', badge: 'pass', icon: '\u2705', desc: 'This address field was automatically filled from a matching record in the same batch.' },
         ADDRESS_INCOMPLETE_AMBIGUOUS: { label: 'Ambiguous Address', badge: 'fail', icon: '\ud83c\udfe0', desc: 'Address has missing components and multiple or no candidate matches exist. Manual review required.' }
     };
 
@@ -33297,6 +33446,7 @@
       'UNKNOWN_COLUMN': { border: '#1565c0', bg: '#e3f2fd', text: '#1565c0' },
       'PDF_VERIFIED_CLEAN': { border: '#2e7d32', bg: '#e8f5e9', text: '#2e7d32' },
       'ADDRESS_INCOMPLETE_CANDIDATE': { border: '#f57c00', bg: '#fff3e0', text: '#f57c00' },
+      'ADDRESS_SYSTEM_CORRECTED': { border: '#43a047', bg: '#e8f5e9', text: '#2e7d32' },
       'ADDRESS_INCOMPLETE_AMBIGUOUS': { border: '#d84315', bg: '#fbe9e7', text: '#d84315' }
     };
 
