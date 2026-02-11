@@ -18803,7 +18803,7 @@
     function _acctCheckBuildSchemaTree(accountName, contractKeys) {
       var html = '';
       if (!contractKeys || contractKeys.length === 0) {
-        html += '<div style="color:#999; font-size:0.85em; padding:8px;">No contracts found</div>';
+        html += '<div style="color:#94a3b8; font-size:0.85em; padding:16px; text-align:center;">No contracts found</div>';
         return html;
       }
       for (var ci = 0; ci < contractKeys.length; ci++) {
@@ -18813,10 +18813,11 @@
         var fname = contract.file_name || ck;
         var sheetNames = Object.keys(contract.sheets || {});
         var totalRows = contract.row_count || 0;
-        html += '<div style="margin-bottom:10px;">';
-        html += '<div style="font-weight:600; font-size:0.9em; color:#333; padding:4px 0; border-bottom:1px solid #e0e0e0;">';
-        html += '<span style="color:#1565c0;">&#128196;</span> ' + _escHtml(fname);
-        html += ' <span style="color:#999; font-size:0.8em;">(' + totalRows + ' rows)</span>';
+        html += '<div style="margin-bottom:12px;">';
+        html += '<div style="display:flex; align-items:center; gap:6px; padding:6px 0; margin-bottom:4px; border-bottom:1px solid #f1f5f9;">';
+        html += '<span style="font-size:0.9em;">&#128196;</span>';
+        html += '<span style="font-weight:600; font-size:0.85em; color:#334155; word-break:break-word;">' + _escHtml(fname) + '</span>';
+        html += '<span style="background:#e2e8f0; color:#64748b; font-size:0.7em; padding:2px 7px; border-radius:10px; font-weight:600; white-space:nowrap; margin-left:auto;">' + totalRows + ' rows</span>';
         html += '</div>';
         for (var si = 0; si < sheetNames.length; si++) {
           var sn = sheetNames[si];
@@ -18837,11 +18838,12 @@
               }
             }
           }
-          html += '<div style="padding:3px 0 3px 20px; font-size:0.85em; color:#555;">';
-          html += '<span style="color:#888;">&#9656;</span> ' + _escHtml(sn);
-          html += ' <span style="color:#999;">(' + rowCount + ' rows';
-          if (fieldCount > 0) html += ', ~' + fieldCount + ' fields';
-          html += ')</span>';
+          html += '<div style="display:flex; align-items:center; gap:6px; padding:5px 8px 5px 12px; font-size:0.82em; color:#475569; border-radius:6px; margin-bottom:2px; transition:background 0.15s;" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'transparent\'">';
+          html += '<span style="color:#94a3b8; font-size:0.75em;">&#9656;</span>';
+          html += '<span style="flex:1;">' + _escHtml(sn) + '</span>';
+          html += '<span style="color:#94a3b8; font-size:0.78em; white-space:nowrap;">' + rowCount + 'r';
+          if (fieldCount > 0) html += ' / ~' + fieldCount + 'f';
+          html += '</span>';
           html += '</div>';
         }
         html += '</div>';
@@ -19072,14 +19074,12 @@
         console.log('[ACCT-CHECK] reopen: found ' + _duplicateAccountItems.length + ' items');
         if (_duplicateAccountItems.length === 0) {
           var overlay = document.createElement('div');
-          overlay.className = 'modal-overlay';
           overlay.id = 'acct-check-empty-modal';
-          overlay.style.cssText = 'display:flex;align-items:center;justify-content:center;';
+          overlay.style.cssText = 'display:flex;align-items:center;justify-content:center;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);z-index:10000;';
           overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
           var box = document.createElement('div');
-          box.className = 'modal-content';
-          box.style.cssText = 'max-width:400px;text-align:center;padding:24px;';
-          box.innerHTML = '<h3 style="margin:0 0 12px; color:#4caf50;">&#10003; Account Check</h3><p style="color:#666; font-size:0.9em;">No duplicate account names detected in this batch.</p><button class="toolbar-btn" style="margin-top:12px; background:#1565c0; color:#fff;" onclick="document.getElementById(\'acct-check-empty-modal\').remove()">Close</button>';
+          box.style.cssText = 'background:#fff;border-radius:16px;max-width:400px;width:90%;text-align:center;padding:32px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);';
+          box.innerHTML = '<div style="width:48px;height:48px;background:#dcfce7;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.5em;">&#10003;</div><h3 style="margin:0 0 8px;color:#166534;font-size:1.1em;">All Clear</h3><p style="color:#64748b;font-size:0.9em;margin:0 0 20px;line-height:1.5;">No duplicate account names detected in this batch.</p><button style="padding:10px 28px;border-radius:10px;border:none;background:linear-gradient(135deg,#1e3a5f,#1565c0);color:#fff;font-size:0.88em;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(21,101,192,0.3);" onclick="document.getElementById(\'acct-check-empty-modal\').remove()">Close</button>';
           overlay.appendChild(box);
           document.body.appendChild(overlay);
           return;
@@ -38974,45 +38974,53 @@ var P022_RuntimeValidation = {
     </div>
 
         <!-- Account Check Interstitial Modal -->
-        <div id="account-check-modal" class="modal-overlay" style="display: none;">
-          <div class="modal-content" style="max-width: 900px;">
-            <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center;">
-              <h3 style="margin:0; color:#1565c0;">&#128101; Account Check</h3>
-              <div style="display:flex; align-items:center; gap:12px;">
-                <span id="acct-check-progress" style="font-size:0.85em; color:#888;"></span>
-                <button class="modal-close" onclick="_acctCheckClose()">&times;</button>
-              </div>
-            </div>
-            <div class="modal-body" style="padding:16px;">
-              <p style="font-size:0.9em; color:#666; margin-bottom:16px;">These two account names appear similar. Compare their contract structures to determine if they are the same entity.</p>
-              <div style="display:flex; gap:16px; margin-bottom:16px;">
-                <div style="flex:1; border:1px solid #e0e0e0; border-radius:8px; overflow:hidden;">
-                  <div style="background:#e3f2fd; padding:10px 14px; border-bottom:1px solid #bbdefb;">
-                    <div style="font-weight:700; font-size:1.05em; color:#1565c0;" id="acct-check-name1"></div>
-                  </div>
-                  <div id="acct-check-tree1" style="padding:12px; max-height:300px; overflow-y:auto; background:#fafafa;"></div>
-                </div>
-                <div style="flex:1; border:1px solid #e0e0e0; border-radius:8px; overflow:hidden;">
-                  <div style="background:#fff3e0; padding:10px 14px; border-bottom:1px solid #ffe0b2;">
-                    <div style="font-weight:700; font-size:1.05em; color:#e65100;" id="acct-check-name2"></div>
-                  </div>
-                  <div id="acct-check-tree2" style="padding:12px; max-height:300px; overflow-y:auto; background:#fafafa;"></div>
+        <div id="account-check-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:10000; justify-content:center; align-items:center;">
+          <div style="background:#fff; border-radius:16px; width:94%; max-width:780px; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#1e3a5f 0%,#1565c0 100%); padding:20px 24px; display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:36px; height:36px; background:rgba(255,255,255,0.15); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2em;">&#128101;</div>
+                <div>
+                  <div style="font-weight:700; font-size:1.1em; color:#fff; letter-spacing:-0.01em;">Account Check</div>
+                  <div style="font-size:0.78em; color:rgba(255,255,255,0.7);">Possible duplicate accounts detected</div>
                 </div>
               </div>
-              <div id="acct-check-picker" style="display:none; background:#f5f5f5; padding:12px; border-radius:8px; margin-bottom:12px;">
-                <p style="font-size:0.88em; font-weight:600; margin:0 0 8px;">Keep which name?</p>
-                <label style="display:block; padding:6px 0; cursor:pointer; font-size:0.9em;"><input type="radio" name="acct-check-canonical" id="acct-check-radio1" value="" checked> <span id="acct-check-radio-label1"></span></label>
-                <label style="display:block; padding:6px 0; cursor:pointer; font-size:0.9em;"><input type="radio" name="acct-check-canonical" id="acct-check-radio2" value=""> <span id="acct-check-radio-label2"></span></label>
+              <div style="display:flex; align-items:center; gap:14px;">
+                <span id="acct-check-progress" style="font-size:0.8em; color:rgba(255,255,255,0.8); background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:20px; font-weight:600;"></span>
+                <button onclick="_acctCheckClose()" style="background:rgba(255,255,255,0.15); border:none; color:#fff; width:32px; height:32px; border-radius:8px; cursor:pointer; font-size:1.2em; display:flex; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">&times;</button>
               </div>
             </div>
-            <div class="modal-footer" style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px; flex-wrap:wrap;">
-              <div id="acct-check-initial-actions" style="display:flex; gap:8px;">
-                <button class="toolbar-btn" style="background:#2e7d32; color:#fff; font-weight:600;" onclick="_acctCheckShowPicker()">Same Person &mdash; Merge</button>
-                <button class="toolbar-btn" style="background:#757575; color:#fff;" onclick="_acctCheckConfirmDismiss()">Different People &mdash; Dismiss</button>
+            <div style="padding:20px 24px; overflow-y:auto; flex:1;">
+              <p style="font-size:0.88em; color:#64748b; margin:0 0 20px; line-height:1.5;">These two account names look similar. Compare their contract structures below to decide if they represent the same entity.</p>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                <div style="border:2px solid #dbeafe; border-radius:12px; overflow:hidden; background:#fff;">
+                  <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe); padding:14px 16px; display:flex; align-items:center; gap:8px;">
+                    <div style="width:8px; height:8px; border-radius:50%; background:#3b82f6; flex-shrink:0;"></div>
+                    <div id="acct-check-name1" style="font-weight:700; font-size:0.95em; color:#1e40af; word-break:break-word;"></div>
+                  </div>
+                  <div id="acct-check-tree1" style="padding:12px 16px; max-height:280px; overflow-y:auto;"></div>
+                </div>
+                <div style="border:2px solid #fed7aa; border-radius:12px; overflow:hidden; background:#fff;">
+                  <div style="background:linear-gradient(135deg,#fff7ed,#fed7aa); padding:14px 16px; display:flex; align-items:center; gap:8px;">
+                    <div style="width:8px; height:8px; border-radius:50%; background:#f97316; flex-shrink:0;"></div>
+                    <div id="acct-check-name2" style="font-weight:700; font-size:0.95em; color:#c2410c; word-break:break-word;"></div>
+                  </div>
+                  <div id="acct-check-tree2" style="padding:12px 16px; max-height:280px; overflow-y:auto;"></div>
+                </div>
               </div>
-              <div id="acct-check-merge-actions" style="display:none; gap:8px;">
-                <button class="toolbar-btn" style="background:#2e7d32; color:#fff; font-weight:600;" onclick="_acctCheckConfirmMerge()">Confirm Merge</button>
-                <button class="toolbar-btn" style="background:#757575; color:#fff;" onclick="_acctCheckClose()">Cancel</button>
+              <div id="acct-check-picker" style="display:none; background:linear-gradient(135deg,#f0fdf4,#dcfce7); border:1px solid #bbf7d0; padding:16px 20px; border-radius:12px; margin-bottom:4px;">
+                <p style="font-size:0.88em; font-weight:700; margin:0 0 12px; color:#166534;">Choose the canonical name to keep:</p>
+                <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; font-size:0.9em; border-radius:8px; margin-bottom:6px; background:#fff; border:1px solid #d1d5db; transition:border-color 0.2s, box-shadow 0.2s;" onmouseover="this.style.borderColor='#22c55e';this.style.boxShadow='0 0 0 3px rgba(34,197,94,0.1)'" onmouseout="this.style.borderColor='#d1d5db';this.style.boxShadow='none'"><input type="radio" name="acct-check-canonical" id="acct-check-radio1" value="" checked style="accent-color:#16a34a; width:16px; height:16px;"> <span id="acct-check-radio-label1" style="font-weight:600; color:#1e293b;"></span></label>
+                <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; font-size:0.9em; border-radius:8px; background:#fff; border:1px solid #d1d5db; transition:border-color 0.2s, box-shadow 0.2s;" onmouseover="this.style.borderColor='#22c55e';this.style.boxShadow='0 0 0 3px rgba(34,197,94,0.1)'" onmouseout="this.style.borderColor='#d1d5db';this.style.boxShadow='none'"><input type="radio" name="acct-check-canonical" id="acct-check-radio2" value="" style="accent-color:#16a34a; width:16px; height:16px;"> <span id="acct-check-radio-label2" style="font-weight:600; color:#1e293b;"></span></label>
+              </div>
+            </div>
+            <div style="padding:16px 24px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:10px;">
+              <div id="acct-check-initial-actions" style="display:flex; gap:10px;">
+                <button onclick="_acctCheckConfirmDismiss()" style="padding:10px 22px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; color:#475569; font-size:0.88em; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9';this.style.borderColor='#94a3b8'" onmouseout="this.style.background='#fff';this.style.borderColor='#cbd5e1'">Different People &mdash; Dismiss</button>
+                <button onclick="_acctCheckShowPicker()" style="padding:10px 22px; border-radius:10px; border:none; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; font-size:0.88em; font-weight:600; cursor:pointer; box-shadow:0 1px 3px rgba(22,163,74,0.3); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(22,163,74,0.3)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 1px 3px rgba(22,163,74,0.3)'">Same Person &mdash; Merge</button>
+              </div>
+              <div id="acct-check-merge-actions" style="display:none; gap:10px;">
+                <button onclick="_acctCheckClose()" style="padding:10px 22px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; color:#475569; font-size:0.88em; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#fff'">Cancel</button>
+                <button onclick="_acctCheckConfirmMerge()" style="padding:10px 22px; border-radius:10px; border:none; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; font-size:0.88em; font-weight:600; cursor:pointer; box-shadow:0 1px 3px rgba(22,163,74,0.3); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(22,163,74,0.3)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 1px 3px rgba(22,163,74,0.3)'">Confirm Merge</button>
               </div>
             </div>
           </div>
