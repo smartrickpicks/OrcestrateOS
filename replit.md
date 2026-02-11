@@ -27,6 +27,34 @@ The Triage Analytics module aggregates metrics into a lightweight cache. Triage 
 
 The system routes to triage by default for all roles. Contract-first navigation is implemented in the All Data Grid. Pre-Flight items now include section-specific tabs and human-readable labels for blockers. Grid Mode introduces inline cell editing and pending patch context tracking. A combined interstitial Data Quality Check for duplicate accounts and incomplete addresses fires automatically after workbook load. The `ADDRESS_INCOMPLETE_CANDIDATE` Matching System provides deterministic candidate matching for incomplete addresses, routing warnings and blockers to Pre-Flight.
 
+## Modular Architecture (Phase B + C)
+
+### AppModules Namespace (Phase C)
+- `window.AppModules.Components.*` — extracted UI component modules
+- `window.AppModules.Engines.*` — extracted engine modules (from Phase B)
+- `window.AppModules._registry` — list of registered module paths
+- `window.AppModules._version` — current extraction version (C.1.0)
+
+### Extracted Components
+| Module | Source | Container ID |
+|---|---|---|
+| `Components.MetricStrip` | TriageAnalytics.renderHeader batch summary | `ta-batch-summary` |
+| `Components.LifecycleRail` | TriageAnalytics._renderLifecycle | `ta-lifecycle-stages` |
+| `Components.ContractSummaryTable` | TriageAnalytics._renderContractTable | `ta-contract-tbody` |
+| `Components.PreflightIssueTable` | renderPreflightChecklist + renderPreflightResult | `preflight-checklist` |
+
+### Shared Engines (Phase B)
+| Module | Purpose |
+|---|---|
+| `Engines.ContextResolver` | Normalizes patch context from any source into canonical shape |
+| `Engines.PatchDraft` | Manages current patch draft lifecycle |
+| `Components.PatchPanel` | Canonical patch panel for all three patch flows |
+
+### Deterministic Logs
+- `[APP-MODULES][P1C] registered:` — module registration
+- `[APP-MODULES][P1C] bootstrap_complete` — Phase B engine registration
+- `[PATCH-COMP][P1B]` — patch panel operations (open, submit, cancel, draft)
+
 ## External Dependencies
 A FastAPI server acts as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF. SheetJS (XLSX) is loaded via CDN for Excel import/export functionality. The application integrates modules for:
 - **P1C Contract Composite Grid**: Enhances the All Data Grid with nested, collapsible contract sections.

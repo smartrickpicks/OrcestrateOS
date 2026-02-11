@@ -13434,6 +13434,248 @@
     })();
 
 
+    // ========== PHASE C: MODULAR EXTRACTION — AppModules NAMESPACE ==========
+    // Behavior-preserving extraction of high-reuse UI components into
+    // a stable namespace. Original call sites delegate to these modules.
+    // All existing IDs, classes, events, logs, and audit events are preserved.
+    window.AppModules = window.AppModules || {};
+    window.AppModules.Components = window.AppModules.Components || {};
+    window.AppModules.Engines = window.AppModules.Engines || {};
+    window.AppModules._registry = [];
+    window.AppModules._version = 'C.1.0';
+
+    window.AppModules.register = function(type, name, mod) {
+      window.AppModules[type][name] = mod;
+      window.AppModules._registry.push(type + '.' + name);
+      console.log('[APP-MODULES][P1C] registered: ' + type + '.' + name);
+    };
+
+    // ---------- Component: MetricStrip ----------
+    // Renders the batch summary metric strip (contracts, records, completed, needs review, pending)
+    // Source: TriageAnalytics.renderHeader batch summary block
+    window.AppModules.register('Components', 'MetricStrip', {
+      _containerId: 'ta-batch-summary',
+      render: function(cache) {
+        var el = function(id) { return document.getElementById(id); };
+        var bs = cache.batch_summary || {};
+        if (el('ta-bs-contracts')) el('ta-bs-contracts').textContent = (bs.contracts_total !== undefined && bs.contracts_total !== null) ? bs.contracts_total : (cache.total_contracts || 0);
+        if (el('ta-bs-records')) el('ta-bs-records').textContent = (bs.records_total !== undefined && bs.records_total !== null) ? bs.records_total : 0;
+        if (el('ta-bs-completed')) el('ta-bs-completed').textContent = (bs.completed !== undefined && bs.completed !== null) ? bs.completed : 0;
+        if (el('ta-bs-review')) el('ta-bs-review').textContent = (bs.needs_review !== undefined && bs.needs_review !== null) ? bs.needs_review : 0;
+        if (el('ta-bs-pending')) el('ta-bs-pending').textContent = (bs.pending !== undefined && bs.pending !== null) ? bs.pending : 0;
+        if (el('ta-bs-updated')) el('ta-bs-updated').textContent = bs.updated_at ? new Date(bs.updated_at).toLocaleTimeString() : '--';
+        var unassignedEl = el('ta-bs-unassigned');
+        if (unassignedEl) {
+          if (bs.unassigned_rows > 0) {
+            unassignedEl.style.display = '';
+            if (el('ta-bs-unassigned-count')) el('ta-bs-unassigned-count').textContent = bs.unassigned_rows;
+          } else {
+            unassignedEl.style.display = 'none';
+          }
+        }
+        var reconcileWarn = el('ta-reconcile-warn');
+        if (reconcileWarn) {
+          reconcileWarn.style.display = (cache._reconciliation && !cache._reconciliation.match) ? '' : 'none';
+        }
+        console.log('[APP-MODULES][P1C] MetricStrip.render: contracts=' + (bs.contracts_total || 0) + ', records=' + (bs.records_total || 0));
+      }
+    });
+
+    // ---------- Component: LifecycleRail ----------
+    // Renders the 9-stage lifecycle progression rail
+    // Source: TriageAnalytics._renderLifecycle
+    window.AppModules.register('Components', 'LifecycleRail', {
+      _containerId: 'ta-lifecycle-stages',
+      _stages: [
+        { key: 'loaded', label: 'Loaded', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' },
+        { key: 'preflight_complete', label: 'Pre-Flight', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' },
+        { key: 'system_pass_complete', label: 'System Pass', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' },
+        { key: 'system_changes_reviewed', label: 'Reviewed', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' },
+        { key: 'patch_submitted', label: 'Patch Sub.', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' },
+        { key: 'rfi_submitted', label: 'RFI', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' },
+        { key: 'verifier_complete', label: 'Verifier', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' },
+        { key: 'admin_promoted', label: 'Promoted', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>' },
+        { key: 'applied', label: 'Applied', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>' }
+      ],
+      render: function(cache) {
+        var container = document.getElementById(this._containerId);
+        if (!container) return;
+        var html = '';
+        var stages = this._stages;
+        for (var i = 0; i < stages.length; i++) {
+          var s = stages[i];
+          var data = (cache.lifecycle && cache.lifecycle[s.key]) ? cache.lifecycle[s.key] : { count: 0, pct: 0 };
+          var active = data.count > 0;
+          var bg = active ? '#e3f2fd' : '#f5f5f5';
+          var border = active ? '#1976d2' : '#e0e0e0';
+          var color = active ? '#1565c0' : '#999';
+          html += '<div class="ta-lifecycle-stage" onclick="TriageAnalytics.handleStageClick(\'' + s.key + '\')" style="flex: 1; min-width: 64px; text-align: center; padding: 6px 3px; background: ' + bg + '; border: 1px solid ' + border + '; border-radius: 5px; cursor: pointer; line-height: 1.2;">';
+          html += '<div style="font-size: 0.85em; color: ' + color + '; display:flex; align-items:center; justify-content:center;">' + s.icon + '</div>';
+          html += '<div style="font-size: 0.62em; font-weight: 600; color: ' + color + '; margin: 2px 0 0;">' + s.label + '</div>';
+          html += '<div style="font-size: 0.9em; font-weight: 700; color: ' + (active ? '#1565c0' : '#bbb') + ';">' + data.count + ' <span style="font-size:0.65em; font-weight:400;">(' + data.pct + '%)</span></div>';
+          html += '</div>';
+          if (i < stages.length - 1) html += '<div style="display: flex; align-items: center; color: #ccc; font-size: 0.7em;">\u25B6</div>';
+        }
+        container.innerHTML = html;
+        console.log('[APP-MODULES][P1C] LifecycleRail.render: stages=' + stages.length);
+      }
+    });
+
+    // ---------- Component: ContractSummaryTable ----------
+    // Renders the contract summary collapsible table with health chips
+    // Source: TriageAnalytics._renderContractTable
+    window.AppModules.register('Components', 'ContractSummaryTable', {
+      _tbodyId: 'ta-contract-tbody',
+      renderChips: function(cache) {
+        var el = function(id) { return document.getElementById(id); };
+        var completedC = 0, pendingC = 0, reviewC = 0;
+        var contracts = cache.contracts || [];
+        for (var i = 0; i < contracts.length; i++) {
+          var c = contracts[i];
+          if (c.current_stage === 'applied') completedC++;
+          else if (c.preflight_alerts > 0 || c.semantic_alerts > 0 || c.patch_alerts > 0) reviewC++;
+          else pendingC++;
+        }
+        var chipsEl = el('ta-contract-summary-chips');
+        if (chipsEl) {
+          chipsEl.innerHTML = '<span style="padding:1px 6px; border-radius:8px; background:#e8f5e9; color:#2e7d32; font-weight:600;">' + completedC + ' done</span>' +
+            '<span style="padding:1px 6px; border-radius:8px; background:#fff3e0; color:#e65100; font-weight:600;">' + reviewC + ' review</span>' +
+            '<span style="padding:1px 6px; border-radius:8px; background:#f5f5f5; color:#666; font-weight:600;">' + pendingC + ' pending</span>';
+        }
+        return { completed: completedC, review: reviewC, pending: pendingC };
+      },
+      render: function(cache, stageFilter) {
+        var tbody = document.getElementById(this._tbodyId);
+        if (!tbody) return;
+        var el = function(id) { return document.getElementById(id); };
+        var allContracts = cache.contracts || [];
+        var contracts = allContracts;
+        if (stageFilter) {
+          var filtered = [];
+          for (var i = 0; i < allContracts.length; i++) {
+            if (allContracts[i].current_stage === stageFilter) filtered.push(allContracts[i]);
+          }
+          contracts = filtered;
+        }
+        var countLabel = stageFilter ? contracts.length + ' of ' + allContracts.length + ' contracts' : allContracts.length + ' contract' + (allContracts.length !== 1 ? 's' : '');
+        if (el('ta-contract-count')) el('ta-contract-count').textContent = countLabel;
+        var chipResult = this.renderChips(cache);
+        console.log('[TRIAGE-ANALYTICS][P0.2] contract_summary_recomputed: total=' + allContracts.length + ', completed=' + chipResult.completed + ', review=' + chipResult.review + ', pending=' + chipResult.pending);
+        if (contracts.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="padding: 20px; text-align: center; color: #999;">' + (stageFilter ? 'No contracts at this stage' : 'No contracts indexed') + '</td></tr>';
+          return;
+        }
+        var SL = { loaded: 'Loaded', preflight_complete: 'Pre-Flight Done', system_pass_ready: 'SP Ready', system_pass_complete: 'System Pass', system_changes_reviewed: 'Reviewed', patch_submitted: 'Patch Sub.', rfi_submitted: 'RFI', verifier_complete: 'Verifier Done', admin_promoted: 'Promoted', applied: 'Applied' };
+        var SC = { loaded: '#9e9e9e', preflight_complete: '#4caf50', system_pass_ready: '#66bb6a', system_pass_complete: '#ff9800', system_changes_reviewed: '#2196f3', patch_submitted: '#1976d2', rfi_submitted: '#f57f17', verifier_complete: '#7b1fa2', admin_promoted: '#00897b', applied: '#2e7d32' };
+        if (typeof ContractHealthScore !== 'undefined') {
+          contracts = ContractHealthScore.getFilteredContracts(contracts);
+          contracts = ContractHealthScore.sortByHealth(contracts);
+          console.log('[CONTRACT-HEALTH][P1G] sort_applied | contracts=' + contracts.length + ', filter=' + ContractHealthScore._activeBandFilter);
+        }
+        if (contracts.length === 0 && typeof ContractHealthScore !== 'undefined' && ContractHealthScore._activeBandFilter !== 'all') {
+          tbody.innerHTML = '<tr><td colspan="8" style="padding: 20px; text-align: center; color: #999;">No contracts in this health band</td></tr>';
+          return;
+        }
+        var html = '';
+        for (var j = 0; j < contracts.length; j++) {
+          var c = contracts[j];
+          var sl = SL[c.current_stage] || c.current_stage;
+          var sc = SC[c.current_stage] || '#666';
+          html += '<tr class="ta-contract-row" onclick="TriageAnalytics.handleContractClick(\'' + (c.contract_id || '').replace(/'/g, "\\'") + '\', \'' + (c.current_stage || '') + '\')" style="cursor: pointer; border-bottom: 1px solid #f0f0f0;">';
+          html += '<td style="padding: 8px 12px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="' + ((c.display_name || '').replace(/"/g, '&quot;')) + '">' + (c.display_name || c.contract_id) + '</td>';
+          html += '<td style="padding: 8px 12px; color: #666;">' + (c.doc_role || '-') + '</td>';
+          html += '<td style="padding: 8px 12px; text-align: center;"><span style="padding: 2px 8px; border-radius: 10px; font-size: 0.85em; background: ' + sc + '22; color: ' + sc + '; font-weight: 600;">' + sl + '</span></td>';
+          html += '<td style="padding: 8px 12px; text-align: center; color: ' + (c.preflight_alerts > 0 ? '#c62828' : '#ccc') + '; font-weight: 600;">' + c.preflight_alerts + '</td>';
+          html += '<td style="padding: 8px 12px; text-align: center; color: ' + (c.semantic_alerts > 0 ? '#e65100' : '#ccc') + '; font-weight: 600;">' + c.semantic_alerts + '</td>';
+          html += '<td style="padding: 8px 12px; text-align: center; color: ' + (c.patch_alerts > 0 ? '#1565c0' : '#ccc') + '; font-weight: 600;">' + c.patch_alerts + '</td>';
+          html += '<td style="padding: 8px 12px; text-align: right; color: #666;">' + (c.row_count || 0) + '</td>';
+          html += (typeof ContractHealthScore !== 'undefined') ? ContractHealthScore.renderHealthCell(c) : '<td></td>';
+          html += '</tr>';
+        }
+        tbody.innerHTML = html;
+        console.log('[APP-MODULES][P1C] ContractSummaryTable.render: rows=' + contracts.length);
+      }
+    });
+
+    // ---------- Component: PreflightIssueTable ----------
+    // Renders the Patch Studio preflight checklist and conflict results
+    // Source: renderPreflightChecklist, renderPreflightResult
+    window.AppModules.register('Components', 'PreflightIssueTable', {
+      _checklistId: 'preflight-checklist',
+      renderChecklist: function(steps, getStatus, getDescription) {
+        var container = document.getElementById(this._checklistId);
+        if (!container) return;
+        var html = '';
+        for (var i = 0; i < steps.length; i++) {
+          var step = steps[i];
+          var status = getStatus(step.key);
+          html += '<div class="preflight-step">';
+          html += '<div class="preflight-step-num ' + status + '">' + step.id + '</div>';
+          html += '<div class="preflight-step-info">';
+          html += '<div class="preflight-step-title">' + step.title + '</div>';
+          html += '<div class="preflight-step-status">' + getDescription(step.key) + '</div>';
+          html += '</div>';
+          html += '<span class="preflight-step-chip ' + status + '">' + status + '</span>';
+          html += '</div>';
+        }
+        container.innerHTML = html;
+        console.log('[APP-MODULES][P1C] PreflightIssueTable.renderChecklist: steps=' + steps.length);
+      },
+      renderResult: function(containerId, evidence) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        if (!evidence.parsed && evidence.status === 'pending') {
+          container.style.display = 'none';
+          return;
+        }
+        container.style.display = 'block';
+        container.className = 'preflight-result ' + evidence.status;
+        var html = '';
+        if (evidence.message) {
+          html += '<div style="margin-bottom:6px;"><em>' + evidence.message + '</em></div>';
+        }
+        if (evidence.parsed) {
+          var keys = Object.keys(evidence.parsed);
+          keys.sort();
+          for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            if (key === 'conflicts') continue;
+            var val = evidence.parsed[key];
+            if (val === null) continue;
+            html += '<div class="preflight-result-row"><span class="preflight-result-key">' + key + ':</span><span class="preflight-result-val">' + val + '</span></div>';
+          }
+          if (evidence.parsed.conflicts && evidence.parsed.conflicts.length > 0) {
+            html += '<table class="preflight-conflicts-table"><thead><tr><th>#</th><th>Conflict</th></tr></thead><tbody>';
+            for (var j = 0; j < evidence.parsed.conflicts.length; j++) {
+              html += '<tr><td>' + (j + 1) + '</td><td>' + evidence.parsed.conflicts[j] + '</td></tr>';
+            }
+            html += '</tbody></table>';
+          }
+        }
+        container.innerHTML = html || '<em>Parsed successfully</em>';
+      }
+    });
+
+    // ---------- Bootstrap: register Phase B engines into AppModules ----------
+    // (Phase B engines are defined later; bootstrap runs after DOM load)
+    window.AppModules._bootstrapPhaseB = function() {
+      if (typeof Engines !== 'undefined' && Engines.ContextResolver) {
+        window.AppModules.Engines.ContextResolver = Engines.ContextResolver;
+      }
+      if (typeof Engines !== 'undefined' && Engines.PatchDraft) {
+        window.AppModules.Engines.PatchDraft = Engines.PatchDraft;
+      }
+      if (typeof Components !== 'undefined' && Components.PatchPanel) {
+        window.AppModules.Components.PatchPanel = Components.PatchPanel;
+      }
+      if (typeof Components !== 'undefined' && Components.TriageTable) {
+        window.AppModules.Components.TriageTable = Components.TriageTable;
+      }
+      console.log('[APP-MODULES][P1C] bootstrap_complete: modules=' + window.AppModules._registry.length + ', version=' + window.AppModules._version);
+    };
+
+    // ========== END PHASE C ==========
+
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
     var Components = window.Components || {};
@@ -13549,6 +13791,11 @@
 
     window.Components = Components;
     window.Engines = Engines;
+
+        // Phase C: Register Phase B engines into AppModules namespace
+        if (window.AppModules && typeof window.AppModules._bootstrapPhaseB === 'function') {
+          window.AppModules._bootstrapPhaseB();
+        }
 
         // ========== GRID CONTEXT MENU (P0) ==========
     function _gridCtxFindClosest(el, selector) {
@@ -31797,26 +32044,9 @@
           } catch(e) { console.warn('[P1] Telemetry render error:', e); }
         }
 
-        // P0.2: Render batch summary
-        if (el('ta-bs-contracts')) el('ta-bs-contracts').textContent = cache.batch_summary ? cache.batch_summary.contracts_total : cache.total_contracts;
-        if (el('ta-bs-records')) el('ta-bs-records').textContent = cache.batch_summary ? cache.batch_summary.records_total : 0;
-        if (el('ta-bs-completed')) el('ta-bs-completed').textContent = cache.batch_summary ? cache.batch_summary.completed : 0;
-        if (el('ta-bs-review')) el('ta-bs-review').textContent = cache.batch_summary ? cache.batch_summary.needs_review : 0;
-        if (el('ta-bs-pending')) el('ta-bs-pending').textContent = cache.batch_summary ? cache.batch_summary.pending : 0;
-        if (el('ta-bs-updated')) el('ta-bs-updated').textContent = cache.batch_summary ? new Date(cache.batch_summary.updated_at).toLocaleTimeString() : '--';
-        var unassignedEl = el('ta-bs-unassigned');
-        if (unassignedEl) {
-          if (cache.batch_summary && cache.batch_summary.unassigned_rows > 0) {
-            unassignedEl.style.display = '';
-            if (el('ta-bs-unassigned-count')) el('ta-bs-unassigned-count').textContent = cache.batch_summary.unassigned_rows;
-          } else {
-            unassignedEl.style.display = 'none';
-          }
-        }
-        // P0.2: Reconciliation warning badge
-        var reconcileWarn = el('ta-reconcile-warn');
-        if (reconcileWarn) {
-          reconcileWarn.style.display = (cache._reconciliation && !cache._reconciliation.match) ? '' : 'none';
+        // P0.2: Render batch summary (delegated to AppModules.Components.MetricStrip)
+        if (window.AppModules && window.AppModules.Components.MetricStrip) {
+          window.AppModules.Components.MetricStrip.render(cache);
         }
         console.log('[TRIAGE-ANALYTICS][P0.2] header_reorder_applied: batch_summary=true, contract_summary=true, lanes=true, lifecycle=true, schema=true');
 
@@ -31824,99 +32054,15 @@
       },
 
       _renderLifecycle: function(cache) {
-        var container = document.getElementById('ta-lifecycle-stages');
-        if (!container) return;
-        var stages = [
-          { key: 'loaded', label: 'Loaded', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' },
-          { key: 'preflight_complete', label: 'Pre-Flight', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' },
-          { key: 'system_pass_complete', label: 'System Pass', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' },
-          { key: 'system_changes_reviewed', label: 'Reviewed', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' },
-          { key: 'patch_submitted', label: 'Patch Sub.', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' },
-          { key: 'rfi_submitted', label: 'RFI', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' },
-          { key: 'verifier_complete', label: 'Verifier', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' },
-          { key: 'admin_promoted', label: 'Promoted', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>' },
-          { key: 'applied', label: 'Applied', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>' }
-        ];
-        var html = '';
-        stages.forEach(function(s, i) {
-          var data = cache.lifecycle[s.key] || { count: 0, pct: 0 };
-          var active = data.count > 0;
-          var bg = active ? '#e3f2fd' : '#f5f5f5';
-          var border = active ? '#1976d2' : '#e0e0e0';
-          var color = active ? '#1565c0' : '#999';
-          html += '<div class="ta-lifecycle-stage" onclick="TriageAnalytics.handleStageClick(\'' + s.key + '\')" style="flex: 1; min-width: 64px; text-align: center; padding: 6px 3px; background: ' + bg + '; border: 1px solid ' + border + '; border-radius: 5px; cursor: pointer; line-height: 1.2;">';
-          html += '<div style="font-size: 0.85em; color: ' + color + '; display:flex; align-items:center; justify-content:center;">' + s.icon + '</div>';
-          html += '<div style="font-size: 0.62em; font-weight: 600; color: ' + color + '; margin: 2px 0 0;">' + s.label + '</div>';
-          html += '<div style="font-size: 0.9em; font-weight: 700; color: ' + (active ? '#1565c0' : '#bbb') + ';">' + data.count + ' <span style="font-size:0.65em; font-weight:400;">(' + data.pct + '%)</span></div>';
-          html += '</div>';
-          if (i < stages.length - 1) html += '<div style="display: flex; align-items: center; color: #ccc; font-size: 0.7em;">\u25B6</div>';
-        });
-        container.innerHTML = html;
+        if (window.AppModules && window.AppModules.Components.LifecycleRail) {
+          window.AppModules.Components.LifecycleRail.render(cache);
+        }
       },
 
       _renderContractTable: function(cache, stageFilter) {
-        var tbody = document.getElementById('ta-contract-tbody');
-        if (!tbody) return;
-        var el = function(id) { return document.getElementById(id); };
-
-        var contracts = cache.contracts;
-        if (stageFilter) {
-          contracts = contracts.filter(function(c) { return c.current_stage === stageFilter; });
+        if (window.AppModules && window.AppModules.Components.ContractSummaryTable) {
+          window.AppModules.Components.ContractSummaryTable.render(cache, stageFilter);
         }
-
-        var countLabel = stageFilter ? contracts.length + ' of ' + cache.contracts.length + ' contracts' : cache.contracts.length + ' contract' + (cache.contracts.length !== 1 ? 's' : '');
-        if (el('ta-contract-count')) el('ta-contract-count').textContent = countLabel;
-        var completedC = 0, pendingC = 0, reviewC = 0;
-        (cache.contracts || []).forEach(function(c) {
-          if (c.current_stage === 'applied') completedC++;
-          else if (c.preflight_alerts > 0 || c.semantic_alerts > 0 || c.patch_alerts > 0) reviewC++;
-          else pendingC++;
-        });
-        var chipsEl = el('ta-contract-summary-chips');
-        if (chipsEl) {
-          chipsEl.innerHTML = '<span style="padding:1px 6px; border-radius:8px; background:#e8f5e9; color:#2e7d32; font-weight:600;">' + completedC + ' done</span>' +
-            '<span style="padding:1px 6px; border-radius:8px; background:#fff3e0; color:#e65100; font-weight:600;">' + reviewC + ' review</span>' +
-            '<span style="padding:1px 6px; border-radius:8px; background:#f5f5f5; color:#666; font-weight:600;">' + pendingC + ' pending</span>';
-        }
-        console.log('[TRIAGE-ANALYTICS][P0.2] contract_summary_recomputed: total=' + cache.contracts.length + ', completed=' + completedC + ', review=' + reviewC + ', pending=' + pendingC);
-
-        if (contracts.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" style="padding: 20px; text-align: center; color: #999;">' + (stageFilter ? 'No contracts at this stage' : 'No contracts indexed') + '</td></tr>';
-          return;
-        }
-
-        var SL = { loaded: 'Loaded', preflight_complete: 'Pre-Flight Done', system_pass_ready: 'SP Ready', system_pass_complete: 'System Pass', system_changes_reviewed: 'Reviewed', patch_submitted: 'Patch Sub.', rfi_submitted: 'RFI', verifier_complete: 'Verifier Done', admin_promoted: 'Promoted', applied: 'Applied' };
-        var SC = { loaded: '#9e9e9e', preflight_complete: '#4caf50', system_pass_ready: '#66bb6a', system_pass_complete: '#ff9800', system_changes_reviewed: '#2196f3', patch_submitted: '#1976d2', rfi_submitted: '#f57f17', verifier_complete: '#7b1fa2', admin_promoted: '#00897b', applied: '#2e7d32' };
-
-        // P1G: Apply health band filter
-        if (typeof ContractHealthScore !== 'undefined') {
-          contracts = ContractHealthScore.getFilteredContracts(contracts);
-          contracts = ContractHealthScore.sortByHealth(contracts);
-          console.log('[CONTRACT-HEALTH][P1G] sort_applied | contracts=' + contracts.length + ', filter=' + ContractHealthScore._activeBandFilter);
-        }
-
-        if (contracts.length === 0 && ContractHealthScore._activeBandFilter !== 'all') {
-          tbody.innerHTML = '<tr><td colspan="8" style="padding: 20px; text-align: center; color: #999;">No contracts in this health band</td></tr>';
-          return;
-        }
-
-        var html = '';
-        contracts.forEach(function(c) {
-          var sl = SL[c.current_stage] || c.current_stage;
-          var sc = SC[c.current_stage] || '#666';
-          var dn = (c.display_name || c.contract_id || '').replace(/"/g, '&quot;').replace(/'/g, "\\'");
-          html += '<tr class="ta-contract-row" onclick="TriageAnalytics.handleContractClick(\'' + c.contract_id + '\', \'' + c.current_stage + '\')" style="cursor: pointer; border-bottom: 1px solid #f0f0f0;">';
-          html += '<td style="padding: 8px 12px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="' + (c.display_name || '').replace(/"/g, '&quot;') + '">' + (c.display_name || c.contract_id) + '</td>';
-          html += '<td style="padding: 8px 12px; color: #666;">' + (c.doc_role || '-') + '</td>';
-          html += '<td style="padding: 8px 12px; text-align: center;"><span style="padding: 2px 8px; border-radius: 10px; font-size: 0.85em; background: ' + sc + '22; color: ' + sc + '; font-weight: 600;">' + sl + '</span></td>';
-          html += '<td style="padding: 8px 12px; text-align: center; color: ' + (c.preflight_alerts > 0 ? '#c62828' : '#ccc') + '; font-weight: 600;">' + c.preflight_alerts + '</td>';
-          html += '<td style="padding: 8px 12px; text-align: center; color: ' + (c.semantic_alerts > 0 ? '#e65100' : '#ccc') + '; font-weight: 600;">' + c.semantic_alerts + '</td>';
-          html += '<td style="padding: 8px 12px; text-align: center; color: ' + (c.patch_alerts > 0 ? '#1565c0' : '#ccc') + '; font-weight: 600;">' + c.patch_alerts + '</td>';
-          html += '<td style="padding: 8px 12px; text-align: right; color: #666;">' + (c.row_count || 0) + '</td>';
-          html += (typeof ContractHealthScore !== 'undefined') ? ContractHealthScore.renderHealthCell(c) : '<td></td>';
-          html += '</tr>';
-        });
-        tbody.innerHTML = html;
       },
 
 
@@ -39847,26 +39993,15 @@ Add any additional notes here.
     }
 
     function renderPreflightChecklist() {
-      const steps = [
+      var steps = [
         { id: 1, title: 'Base Version Check', key: 'baseVersion', desc: getStepDescription('baseVersion') },
         { id: 2, title: 'Validation Report', key: 'validation', desc: getStepDescription('validation') },
         { id: 3, title: 'Conflict Check', key: 'conflict', desc: getStepDescription('conflict') },
         { id: 4, title: 'Smoke Evidence', key: 'smoke', desc: getStepDescription('smoke') }
       ];
-      const html = steps.map(step => {
-        const status = getStepStatus(step.key);
-        return `
-          <div class="preflight-step">
-            <div class="preflight-step-num ${status}">${step.id}</div>
-            <div class="preflight-step-info">
-              <div class="preflight-step-title">${step.title}</div>
-              <div class="preflight-step-status">${step.desc}</div>
-            </div>
-            <span class="preflight-step-chip ${status}">${status}</span>
-          </div>
-        `;
-      }).join('');
-      document.getElementById('preflight-checklist').innerHTML = html;
+      if (window.AppModules && window.AppModules.Components.PreflightIssueTable) {
+        window.AppModules.Components.PreflightIssueTable.renderChecklist(steps, getStepStatus, getStepDescription);
+      }
     }
 
     function getStepStatus(key) {
@@ -39916,32 +40051,9 @@ Add any additional notes here.
     }
 
     function renderPreflightResult(containerId, evidence) {
-      const container = document.getElementById(containerId);
-      if (!evidence.parsed && evidence.status === 'pending') {
-        container.style.display = 'none';
-        return;
+      if (window.AppModules && window.AppModules.Components.PreflightIssueTable) {
+        window.AppModules.Components.PreflightIssueTable.renderResult(containerId, evidence);
       }
-      container.style.display = 'block';
-      container.className = `preflight-result ${evidence.status}`;
-      let html = '';
-      if (evidence.message) {
-        html += `<div style="margin-bottom:6px;"><em>${evidence.message}</em></div>`;
-      }
-      if (evidence.parsed) {
-        const entries = Object.entries(evidence.parsed).filter(([k, v]) => v !== null && k !== 'conflicts');
-        entries.sort((a, b) => a[0].localeCompare(b[0]));
-        entries.forEach(([key, val]) => {
-          html += `<div class="preflight-result-row"><span class="preflight-result-key">${key}:</span><span class="preflight-result-val">${val}</span></div>`;
-        });
-        if (evidence.parsed.conflicts && evidence.parsed.conflicts.length > 0) {
-          html += `<table class="preflight-conflicts-table"><thead><tr><th>#</th><th>Conflict</th></tr></thead><tbody>`;
-          evidence.parsed.conflicts.forEach((c, i) => {
-            html += `<tr><td>${i + 1}</td><td>${c}</td></tr>`;
-          });
-          html += `</tbody></table>`;
-        }
-      }
-      container.innerHTML = html || '<em>Parsed successfully</em>';
     }
 
     function handlePreflightParse(type) {
