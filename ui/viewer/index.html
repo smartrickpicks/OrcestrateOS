@@ -16845,19 +16845,10 @@
       var analystContent = document.getElementById('analyst-triage-content');
       var verifierContent = document.getElementById('verifier-triage-content');
       if (analystContent && verifierContent) {
-        if (mode === 'verifier' || mode === 'admin') {
-          analystContent.style.display = 'none';
-          verifierContent.style.display = 'block';
-          // v1.5.3 Fix: Always reload verifier queue from canonical stores (not dependent on analyst SRR state)
-          reloadVerifierQueuesFromStore();
-          initVerifierFilters();
-          renderVerifierTriage();
-        } else {
-          analystContent.style.display = 'block';
-          verifierContent.style.display = 'none';
-          // v1.5.4: Render analyst triage from PatchRequest store
-          renderAnalystTriage();
-        }
+        // v1.7.0: All roles see the same Analyst triage view (unified triage)
+        analystContent.style.display = 'block';
+        verifierContent.style.display = 'none';
+        renderAnalystTriage();
       }
       
       // v1.5.2: Toggle Grid verifier mode
