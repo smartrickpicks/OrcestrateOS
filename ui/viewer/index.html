@@ -2220,7 +2220,7 @@
                     <span id="ta-schema-missing-pl" style="font-size:0.58em;padding:1px 5px;border-radius:3px;background:#f3e5f5;color:#6a1b9a;display:none;"></span>
                   </div>
                 </div>
-                <div id="acct-check-card" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Duplicate account name pairs detected during import. Click to review or revisit dismissed pairs." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
+                <div id="acct-check-card" onclick="_acctCheckReopen()" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Duplicate account name pairs detected during import. Click to review or revisit dismissed pairs." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-acctcheck" style="font-size: 1.4em; font-weight: 700; color: #555;">0</div>
                   <div style="font-size: 0.75em; color: #666;">Account Check</div>
                   <div id="ta-schema-acctcheck-detail" style="font-size: 0.6em; color: #aaa;"></div>
@@ -18904,20 +18904,18 @@
       }
     }
 
-    (function() {
-      var _acctCard = document.getElementById('acct-check-card');
-      if (_acctCard) {
-        _acctCard.addEventListener('click', function(e) {
-          e.stopPropagation();
-          e.preventDefault();
-          console.log('[ACCT-CHECK] card click via addEventListener');
+    document.addEventListener('click', function(e) {
+      var t = e.target;
+      while (t && t !== document.body) {
+        if (t.id === 'acct-check-card') {
+          console.log('[ACCT-CHECK] card click via delegation');
           _acctCheckReopen();
-        });
-        console.log('[ACCT-CHECK] card listener attached');
-      } else {
-        console.warn('[ACCT-CHECK] card element not found for listener');
+          return;
+        }
+        t = t.parentElement;
       }
-    })();
+    });
+    console.log('[ACCT-CHECK] delegated listener registered');
 
     function _acctCheckRun() {
       _buildDuplicateAccountPreflightItems();
