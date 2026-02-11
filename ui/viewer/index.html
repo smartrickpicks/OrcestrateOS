@@ -2557,7 +2557,7 @@
 
         <!-- Top Bar: Identity, State Badge, Back Button -->
         <div class="srr-top-bar">
-          <button class="srr-back-btn" onclick="srrBackToGrid()">← Back to Grid</button>
+          <button class="srr-back-btn" id="srr-back-btn" onclick="srrBackToOrigin()">← Back</button>
           <div style="display: flex; align-items: center; gap: 6px;">
             <span style="font-size: 0.75em; color: #aaa;">Doc Type:</span>
             <select id="srr-doc-type" onchange="srrSetDocumentType(this.value)" style="padding: 4px 8px; border-radius: 5px; border: 1px solid #c5cae9; font-size: 0.82em; background: #e8eaf6; color: #1a237e; font-weight: 600; cursor: pointer;">
@@ -15092,11 +15092,21 @@
       return ['triage', 'patch', 'review'].includes(page);
     }
 
+    var _srrNavOrigin = 'triage';
+    var _srrCurrentPage = 'triage';
     function navigateTo(page, options) {
       options = options || {};
       // Loader is now a drawer, not a page - redirect loader requests to triage
       if (page === 'loader') page = 'triage';
       var pages = ['triage', 'grid', 'patch', 'review', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'row', 'restricted'];
+      var _basePage = page.split('/')[0];
+      if (_basePage === 'row') {
+        if (_srrCurrentPage !== 'row') {
+          _srrNavOrigin = _srrCurrentPage;
+        }
+      } else {
+        _srrCurrentPage = _basePage;
+      }
       
       // v1.5.3: Reset verifier SRR mode when navigating away from row page
       if (!page.startsWith('row') && srrState.verifierMode) {
@@ -22581,6 +22591,7 @@
       
       // Navigate to page and render
       navigateTo('row');
+      _srrUpdateBackButton();
       renderSingleRowReview(record, rowId);
       
       // Update URL without triggering hashchange loop
@@ -23845,12 +23856,23 @@
       }
     }
 
-    function srrBackToGrid() {
+    function srrBackToOrigin() {
+      var dest = _srrNavOrigin || 'grid';
       if (srrHasUnresolvedFields()) {
         srrShowGuardModal();
       } else {
-        navigateTo('grid');
+        navigateTo(dest);
       }
+    }
+    function srrBackToGrid() { srrBackToOrigin(); }
+    function _srrUpdateBackButton() {
+      var btn = document.getElementById('srr-back-btn');
+      if (!btn) return;
+      var origin = _srrNavOrigin || 'triage';
+      if (origin === 'row') origin = 'triage';
+      var labels = { 'triage': 'Triage', 'grid': 'Grid', 'review': 'Review', 'verifier-review': 'Review', 'admin': 'Admin', 'patch': 'Patch Studio' };
+      var label = labels[origin] || 'Triage';
+      btn.textContent = '\u2190 Back to ' + label;
     }
     
     function srrGuardCancel() {
@@ -23871,7 +23893,7 @@
       }
       srrState.patchDraft.changes = [];
       srrHideGuardModal();
-      navigateTo('grid');
+      navigateTo(_srrNavOrigin || 'grid');
     }
     
     // ========== v1.5.1: PATCH TESTER TAB (Verifier SSR) ==========
