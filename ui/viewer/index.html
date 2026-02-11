@@ -623,53 +623,65 @@
     /* ── P1F Batch PDF Scan ── */
     .p1f-scan-banner {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
+      bottom: 24px;
+      right: 24px;
       z-index: 10001;
-      background: #1a237e;
+      background: #1e293b;
       color: #fff;
-      padding: 10px 20px;
+      padding: 16px 20px;
       display: flex;
-      align-items: center;
-      gap: 16px;
-      font-size: 14px;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 13px;
       font-family: 'Inter', sans-serif;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      transform: translateY(-100%);
-      transition: transform 0.3s ease;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.06);
+      border-radius: 12px;
+      width: 340px;
+      max-width: calc(100vw - 48px);
+      transform: translateY(120%);
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease;
+      opacity: 0;
     }
     .p1f-scan-banner.visible {
       transform: translateY(0);
+      opacity: 1;
     }
+    .p1f-scan-banner .p1f-scan-header {
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .p1f-scan-banner .p1f-scan-dismiss {
+      background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer;
+      font-size: 18px; line-height: 1; padding: 0 0 0 8px; transition: color 0.15s;
+    }
+    .p1f-scan-banner .p1f-scan-dismiss:hover { color: #fff; }
     .p1f-scan-progress {
-      flex: 1;
-      height: 6px;
-      background: rgba(255,255,255,0.2);
-      border-radius: 3px;
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 2px;
       overflow: hidden;
     }
     .p1f-scan-progress-bar {
       height: 100%;
-      background: #4fc3f7;
-      border-radius: 3px;
+      background: #60a5fa;
+      border-radius: 2px;
       transition: width 0.3s ease;
       width: 0%;
     }
     .p1f-scan-stats {
       display: flex;
-      gap: 12px;
-      font-size: 12px;
-      opacity: 0.9;
+      gap: 10px;
+      font-size: 11px;
+      opacity: 0.8;
     }
-    .p1f-scan-stat-bad { color: #ff8a80; font-weight: 600; }
-    .p1f-scan-stat-ok { color: #b9f6ca; }
-    .p1f-scan-stat-skip { color: #fff9c4; }
+    .p1f-scan-stat-bad { color: #fca5a5; font-weight: 600; }
+    .p1f-scan-stat-ok { color: #86efac; }
+    .p1f-scan-stat-skip { color: #fde68a; }
     .p1f-scan-done {
-      background: #1b5e20;
+      background: #14532d;
     }
     .p1f-scan-done.has-issues {
-      background: #b71c1c;
+      background: #7f1d1d;
     }
 
     .p1e-diag-panel { position: fixed; bottom: 10px; right: 10px; width: 380px; max-height: 320px; background: #fff; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); z-index: 99999; font-size: 0.82em; display: none; overflow: auto; }
@@ -20783,7 +20795,10 @@
       var banner = document.createElement('div');
       banner.id = 'p1f-scan-banner';
       banner.className = 'p1f-scan-banner';
-      banner.innerHTML = '<span id="p1f-scan-label">Scanning PDFs...</span>'
+      banner.innerHTML = '<div class="p1f-scan-header">'
+        + '<span id="p1f-scan-label" style="font-weight:600;">Scanning PDFs...</span>'
+        + '<button class="p1f-scan-dismiss" onclick="var b=document.getElementById('p1f-scan-banner');if(b){b.classList.remove('visible');}" title="Dismiss">&times;</button>'
+        + '</div>'
         + '<div class="p1f-scan-progress"><div class="p1f-scan-progress-bar" id="p1f-progress-bar"></div></div>'
         + '<div class="p1f-scan-stats">'
         + '<span id="p1f-stat-count">0/0</span>'
@@ -20854,9 +20869,7 @@
       var _startFade = function() {
         _fadeTimer = setTimeout(function() {
           if (!_bannerHovered) {
-            banner.style.transition = 'transform 0.5s ease, opacity 0.5s ease';
-            banner.style.opacity = '0';
-            setTimeout(function() { banner.classList.remove('visible'); banner.style.opacity = ''; banner.style.transition = ''; }, 500);
+            banner.classList.remove('visible');
           }
         }, 3000);
       };
