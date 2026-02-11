@@ -376,7 +376,7 @@
     .active-data-source-change { background: transparent; border: 1px solid #555; color: #aaa; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; cursor: pointer; transition: all 0.2s; flex-shrink: 0; margin-left: 12px; }
     .active-data-source-change:hover { background: #333; border-color: #777; color: white; }
 
-    /* Sheet Selector */
+    /* Contract Section Selector */
     .sheet-selector { width: 100%; padding: 8px 10px; background: #2d2d4a; border: 1px solid #444; border-radius: 6px; color: #ddd; font-size: 0.85em; cursor: pointer; }
     .sheet-selector:focus { outline: none; border-color: #1565c0; }
 
@@ -2588,7 +2588,7 @@
           <div id="grid-column-checkboxes"></div>
         </div>
 
-        <!-- Per-Sheet Mini Stats -->
+        <!-- Per-Contract-Section Mini Stats -->
         <div id="grid-sheet-stats" style="display: flex; gap: 16px; align-items: center; margin-bottom: 12px; padding: 10px 16px; background: #f8f9fa; border-radius: 6px; font-size: 0.85em; color: #555;">
           <span id="grid-stat-rows"><strong>Rows:</strong> <span class="stat-value">0</span></span>
           <span class="stat-divider" style="color: #ccc;">|</span>
@@ -4278,12 +4278,12 @@
           <h3 style="margin: 0 0 16px 0; color: #1a237e;">QA Runner</h3>
           <p style="color: #666; font-size: 0.9em; margin: 0 0 16px 0;">Run in-browser validation suites to verify all governance features are working correctly. Each suite targets a specific area of the system. Hover over any button for a quick summary, or expand the Suite Reference below for full details.</p>
           <div id="p1b-run-controls" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
-            <button onclick="QARunner.runSuite('p022')" class="p1b-run-btn" title="Core Data Pipeline: Validates data loading, CSV/XLSX parsing, signal generation, triage queue population, grid rendering, and sheet exclusion rules. This is the foundational suite — run it first." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P0.2.2</button>
+            <button onclick="QARunner.runSuite('p022')" class="p1b-run-btn" title="Core Data Pipeline: Validates data loading, CSV/XLSX parsing, signal generation, triage queue population, grid rendering, and section exclusion rules. This is the foundational suite — run it first." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P0.2.2</button>
             <button onclick="QARunner.runSuite('p1')" class="p1b-run-btn" title="Triage Telemetry: Validates triage analytics, processing status banners, lifecycle stage tracking, stage deltas, contract state chips, and performance guardrails (debouncing). Ensures pipeline observability works." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P1</button>
             <button onclick="QARunner.runSuite('calibration')" class="p1b-run-btn" title="Pre-Flight Calibration: Validates blocker detectors (Mojibake, Missing Document Type, Missing Required Fields, OCR failures), threshold application, and routing to the Pre-Flight queue. Ensures data quality gates catch issues before analysis." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run Calibration</button>
             <button onclick="QARunner.runSuite('p08')" class="p1b-run-btn" title="Record-Link Integrity: Validates the triage-to-record resolver, fallback matching, unresolved diagnostics modal, dataset mismatch purging, and audit event emission. Ensures triage items always link to real records." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P0.8</button>
             <button onclick="QARunner.runSuite('p09')" class="p1b-run-btn" title="Runtime Cleanup and ES5: Validates ES5 compatibility (no arrow functions, template literals, etc.), default triage navigation, contract-first selectors, legacy annotation sanitization, toast positioning, and role-based UI hiding." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P0.9</button>
-            <button onclick="QARunner.runSuite('p1a')" class="p1b-run-btn" title="Triage Clarity and Sheet Grouping: Validates human-readable triage labels, sheet-scoped tab rendering with counts, sheet-based filtering, pre-flight contract grouping, column display rules, and blocker type routing." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P1A</button>
+            <button onclick="QARunner.runSuite('p1a')" class="p1b-run-btn" title="Triage Clarity and Contract Section Grouping: Validates human-readable triage labels, contract-section-scoped tab rendering with counts, section-based filtering, pre-flight contract grouping, column display rules, and blocker type routing." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P1A</button>
             <button onclick="QARunner.runAll()" title="Runs all 6 suites in sequence (P0.2.2, P1, Calibration, P0.8, P0.9, P1A) and reports combined results. Use this for a full regression check before releases." style="padding: 6px 14px; font-size: 0.85em; background: #388e3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Run All</button>
             <button onclick="QARunner.exportReport()" title="Exports the most recent run results as a downloadable JSON file for archival, external review, or CI integration." style="padding: 6px 14px; font-size: 0.85em; background: #f57c00; color: white; border: none; border-radius: 4px; cursor: pointer;">Export QA Report JSON</button>
           </div>
@@ -4303,7 +4303,7 @@
                   <tr style="border-bottom: 1px solid #eee;">
                     <td style="padding: 8px 10px; font-weight: 600; color: #1976d2;">P0.2.2</td>
                     <td style="padding: 8px 10px;">Core Data Pipeline</td>
-                    <td style="padding: 8px 10px;">Data loading and parsing (CSV/XLSX), signal generation from semantic rules, triage queue population, grid rendering, meta/reference sheet exclusion, header-echo row sanitization, and contract derivation from file URLs.</td>
+                    <td style="padding: 8px 10px;">Data loading and parsing (CSV/XLSX), signal generation from semantic rules, triage queue population, grid rendering, meta/reference section exclusion, header-echo row sanitization, and contract derivation from file URLs.</td>
                     <td style="padding: 8px 10px; font-style: italic; color: #666;">After any data loading, parsing, or signal generation changes. Run first as the baseline.</td>
                   </tr>
                   <tr style="background: #f5f5f5; border-bottom: 1px solid #eee;">
@@ -4332,15 +4332,15 @@
                   </tr>
                   <tr style="background: #f5f5f5;">
                     <td style="padding: 8px 10px; font-weight: 600; color: #1976d2;">P1A</td>
-                    <td style="padding: 8px 10px;">Triage Clarity &amp; Sheet Grouping</td>
-                    <td style="padding: 8px 10px;">Human-readable labels for triage types (replacing internal codes), sheet-scoped tab rendering with accurate item counts, filtering triage items by sheet, pre-flight item grouping by contract and sheet, correct column display in pre-flight tables, and blocker type routing rules.</td>
-                    <td style="padding: 8px 10px; font-style: italic; color: #666;">After changes to triage display labels, sheet tab logic, or pre-flight grouping/filtering.</td>
+                    <td style="padding: 8px 10px;">Triage Clarity &amp; Contract Section Grouping</td>
+                    <td style="padding: 8px 10px;">Human-readable labels for triage types (replacing internal codes), contract-section-scoped tab rendering with accurate item counts, filtering triage items by contract section, pre-flight item grouping by contract and section, correct column display in pre-flight tables, and blocker type routing rules.</td>
+                    <td style="padding: 8px 10px; font-style: italic; color: #666;">After changes to triage display labels, contract section tab logic, or pre-flight grouping/filtering.</td>
                   </tr>
                 </tbody>
               </table>
               <div style="margin-top: 12px; padding: 10px 12px; background: #e8f5e9; border-radius: 4px; border-left: 3px solid #43a047;">
                 <strong style="font-size: 0.82em; color: #2e7d32;">Adding a new suite?</strong>
-                <p style="font-size: 0.8em; color: #555; margin: 4px 0 0;">To add a new QA suite: (1) Define your test cases in <code>QARunner._suites</code> in the JavaScript section, (2) Add a button to this control bar with a descriptive <code>title</code> tooltip, (3) Add a row to this reference table, and (4) Create a matching <code>scripts/&lt;name&gt;_runtime_validation.py</code> for Playwright-based CI validation. Each suite should return an array of <code>{name, passed, detail}</code> objects.</p>
+                <p style="font-size: 0.8em; color: #555; margin: 4px 0 0;">To add a new QA suite: (1) Define your test cases in <code>QARunner._suites</code> in the JavaScript section, (2) Add a button to this control bar with a descriptive <code>title</code> tooltip, (3) Add a row to this reference table, and (4) Create a matching <code>scripts/&lt;name&gt;_runtime_validation.py</code> for Playwright-based CI validation. Each suite should return an array of <code>{name, passed, detail}</code> objects. Use canonical terms: "Contract Section" (not sheet), "Record Inspector" (not SRR/Single Row Review).</p>
               </div>
             </div>
           </details>
@@ -5280,6 +5280,43 @@
       }
     };
     
+    // ═══════════════════════════════════════════════════════════
+    // TERMINOLOGY NORMALIZATION: "Contract Section" is canonical.
+    // Legacy aliases: sheet, sheets, worksheet, tab
+    // Internal storage keys (sheet_name, sheets, etc.) are preserved.
+    // ═══════════════════════════════════════════════════════════
+    var _termAliasLogged = {};
+    function normalizeContractSectionTerm(term) {
+      if (!term || typeof term !== 'string') return term;
+      var lower = term.toLowerCase().replace(/[_\-]/g, ' ').trim();
+      var aliases = {
+        'sheet': 'contract_section',
+        'sheets': 'contract_sections',
+        'worksheet': 'contract_section',
+        'worksheets': 'contract_sections',
+        'tab': 'contract_section',
+        'tabs': 'contract_sections',
+        'sheet name': 'contract_section',
+        'sheet_name': 'contract_section'
+      };
+      if (aliases[lower]) {
+        if (!_termAliasLogged[lower]) {
+          console.log('[TERM-ALIAS] normalized ' + lower + ' -> ' + aliases[lower]);
+          _termAliasLogged[lower] = true;
+        }
+        return aliases[lower];
+      }
+      return term;
+    }
+    function normalizeContractSectionLabel(text) {
+      if (!text || typeof text !== 'string') return text;
+      return text
+        .replace(/\bSheets\b/g, 'Contract Sections')
+        .replace(/\bSheet\b/g, 'Contract Section')
+        .replace(/\bsheets\b/g, 'contract sections')
+        .replace(/\bsheet\b/g, 'contract section');
+    }
+
     // Meta sheet patterns - these are audit log sheets, not data sheets
     const META_SHEET_PATTERNS = ['_change_log', 'RFIs & Analyst Notes', '_meta', '_audit'];
     
@@ -8209,7 +8246,7 @@
         return true;
       });
       var datasetWideCount = allContracts.length;
-      console.log('[V2.3-GATE][G7] PASS contract count dataset-wide: ' + datasetWideCount + ' contracts across all sheets');
+      console.log('[V2.3-GATE][G7] PASS contract count dataset-wide: ' + datasetWideCount + ' contracts across all contract sections');
 
       if (datasetWideCount === 0) {
         if (filterGroup) filterGroup.style.display = 'none';
@@ -8248,7 +8285,7 @@
       allContracts.forEach(function(c) {
         var label = (c.file_name || c.contract_id).substring(0, 40);
         if (label.length < (c.file_name || c.contract_id).length) label += '...';
-        var sheetNote = (activeSheet && sheetContractIds[c.contract_id]) ? ' [' + sheetContractIds[c.contract_id] + ' in sheet]' : '';
+        var sheetNote = (activeSheet && sheetContractIds[c.contract_id]) ? ' [' + sheetContractIds[c.contract_id] + ' in section]' : '';
         html += '<option value="' + c.contract_id + '">' + escapeHtml(label) + ' (' + c.row_count + ' rows)' + sheetNote + '</option>';
       });
       selector.innerHTML = html;
@@ -10413,7 +10450,7 @@
     var workbook = {
       sheets: {},       // { sheetName: { headers: [], rows: [], meta: {} } }
       order: [],        // Deterministic sheet ordering
-      activeSheet: null // Currently selected sheet
+      activeSheet: null // Currently selected contract section
     };
     
     function resetWorkbook() {
@@ -10715,7 +10752,7 @@
       if (!workbook.activeSheet) {
         workbook.activeSheet = sheetName;
       }
-      console.log('[Workbook] Added sheet:', sheetName, 'headers:', headers.length, 'rows:', enhancedRows.length, 'dataset:', datasetId);
+      console.log('[Workbook] Added contract section:', sheetName, 'headers:', headers.length, 'rows:', enhancedRows.length, 'dataset:', datasetId);
     }
     
     const STORAGE_KEY_SESSION = 'controlboard_session_v11';
@@ -13766,7 +13803,7 @@
       }
 
       html += '<div style="margin-bottom:8px;">';
-      html += '<div style="font-size:0.72em;color:#999;margin-bottom:2px;">Sheet Name</div>';
+      html += '<div style="font-size:0.72em;color:#999;margin-bottom:2px;">Contract Section</div>';
       html += '<div style="font-size:0.85em;color:#333;font-weight:500;">' + escapeHtml(ctx.sheetName) + '</div>';
       html += '</div>';
 
@@ -15662,8 +15699,12 @@
       }
     }
 
+    function navigateToGridFilteredBySection(filter, contractSection) {
+      navigateToGridFiltered(filter, contractSection);
+    }
+
     function handleSheetSelectorChange(value) {
-      console.log('[Sidebar] Selector changed:', value);
+      console.log('[Sidebar] Contract section selector changed:', value);
       if (typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable()) {
         if (value === 'all') {
           _activeContractFilter = '';
@@ -15690,9 +15731,9 @@
       }
     }
     
-    // v1.6.46: Grid sheet selector change handler - syncs both selectors
+    // v1.6.46: Grid contract section selector change handler - syncs both selectors
     function handleGridSheetSelectorChange(value) {
-      console.log('[Grid] Sheet selector changed:', value);
+      console.log('[Grid] Contract section selector changed:', value);
       if (value === '' || value === 'all') {
         gridState.sheet = null;
       } else {
@@ -16660,7 +16701,7 @@
         }
         // v1.4.16: If SRR already open with same row, skip re-open (prevents hashchange loop failures)
         if (srrState.currentRowId !== null && String(srrState.currentRowId) === String(rowId) && srrState.currentSheetName) {
-          console.log('[Navigate] SRR already open for row:', rowId, 'sheet:', srrState.currentSheetName);
+          console.log('[Navigate] Record Inspector already open for row:', rowId, 'contract_section:', srrState.currentSheetName);
           return;
         }
         // v1.4.16: If srrState has sheetName from prior open, use it for resolution
@@ -16876,6 +16917,20 @@
     
     // Navigate to grid with filter (for Triage alert lens)
     function navigateToGridFiltered(filter, sheet) {
+      if (typeof filter === 'object' && filter !== null) {
+        if (filter.contract_section && !sheet) {
+          sheet = filter.contract_section;
+          normalizeContractSectionTerm('contract_section');
+        }
+        if (filter.sheet_name && !sheet) {
+          sheet = filter.sheet_name;
+          normalizeContractSectionTerm('sheet_name');
+        }
+        if (filter.sheet && !sheet) {
+          sheet = filter.sheet;
+          normalizeContractSectionTerm('sheet');
+        }
+      }
       var params = [];
       if (filter && filter !== 'all') params.push('f=' + encodeURIComponent(filter));
       if (sheet) params.push('sheet=' + encodeURIComponent(sheet));
@@ -18888,7 +18943,7 @@
       if (gridState.search) filterInfo.push('Search: "' + gridState.search + '"');
       document.getElementById('grid-filter-info').textContent = filterInfo.join(' | ');
       
-      // Update per-sheet mini stats
+      // Update per-contract-section mini stats
       updateGridSheetStats(records, filtered);
       perfLog('renderGrid', perfT);
       
@@ -22850,7 +22905,7 @@
       if (_gfcCollapse2) _gfcCollapse2.style.display = '';
       if (_gfcDiv2) _gfcDiv2.style.display = '';
 
-      // Group rows by sheet
+      // Group rows by contract section
       var sheetMap = {};
       var sheetOrder = [];
       for (var i = 0; i < filtered.length; i++) {
@@ -25226,7 +25281,7 @@
 
     // v1.4.15: Get active sheet name from grid state or sidebar
     function getActiveSheetName() {
-      // Priority: gridState.sheet (set by sheet selector) > workbook first sheet
+      // Priority: gridState.sheet (set by contract section selector) > workbook first contract section
       if (typeof gridState !== 'undefined' && gridState.sheet) {
         return gridState.sheet;
       }
@@ -33319,7 +33374,7 @@
           '<div style="margin-top:8px; padding-top:8px; border-top:1px solid #ffe0b2;">' +
           '<strong>Item Dataset:</strong> ' + (debugPayload.item_dataset_id || '-') +
           ' &nbsp;|&nbsp; <strong>Active Dataset:</strong> ' + (debugPayload.active_dataset_id || '-') + '</div>' +
-          '<div><strong>Sheet:</strong> ' + (debugPayload.sheet_name || '-') + ' &nbsp;|&nbsp; <strong>Row:</strong> ' + (debugPayload.row_index >= 0 ? debugPayload.row_index : '-') + '</div>' +
+          '<div><strong>Contract Section:</strong> ' + (debugPayload.sheet_name || '-') + ' &nbsp;|&nbsp; <strong>Row:</strong> ' + (debugPayload.row_index >= 0 ? debugPayload.row_index : '-') + '</div>' +
           '<div><strong>Source:</strong> ' + (debugPayload.source_file || '-') + '</div>';
       }
       if (jsonEl) {
@@ -33752,7 +33807,7 @@
 
     function _p1aSelectSheet(sheetName) {
       _p1aActiveSheet = sheetName;
-      console.log('[P1A] preflight_sheet_filter: sheet=' + sheetName); console.log('[P1D-PREFLIGHT] sheet_filter_applied: ' + sheetName);
+      console.log('[P1A] preflight_section_filter: contract_section=' + sheetName); console.log('[P1D-PREFLIGHT] section_filter_applied: ' + sheetName);
       renderAnalystTriage();
     }
 
