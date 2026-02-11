@@ -3645,7 +3645,6 @@
         <!-- Admin Panel Tabs -->
         <div class="admin-console-tabs" style="display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; padding-bottom: 0;">
           <button class="admin-tab active" data-admin-tab="governance" onclick="switchAdminTab('governance')" style="padding: 10px 20px; background: #1976d2; color: white; border: none; border-radius: 6px 6px 0 0; cursor: pointer; font-weight: 600;">Governance</button>
-          <button class="admin-tab" data-admin-tab="users" onclick="switchAdminTab('users')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Users</button>
           <button class="admin-tab" data-admin-tab="patch-queue" onclick="switchAdminTab('patch-queue')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Patch Queue <span id="patch-queue-count" style="display:none; background:#e91e63; color:white; padding:1px 6px; border-radius:10px; font-size:0.8em; margin-left:4px;">0</span></button>
           <button class="admin-tab" data-admin-tab="config" onclick="switchAdminTab('config')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Config</button>
           <button class="admin-tab" data-admin-tab="inspector" onclick="switchAdminTab('inspector')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Inspector</button>
@@ -3869,7 +3868,8 @@
               
               <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button class="modal-btn modal-btn-secondary" onclick="closeAddUserModal()">Cancel</button>
-                <button class="modal-btn modal-btn-primary" onclick="submitAddUser()" style="background: #4caf50;">Add User</button>
+                <button class="modal-btn modal-btn-primary" onclick="submitAddUser(true)" style="background: #1976d2;">Save &amp; Add Another</button>
+                <button class="modal-btn modal-btn-primary" onclick="submitAddUser(false)" style="background: #4caf50;">Add User</button>
               </div>
             </div>
           </div>
@@ -4212,6 +4212,20 @@
 
         <!-- PEOPLE TAB (P0.7) -->
         <div id="admin-tab-people" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <!-- Environment Mode Toggle (moved from Users tab) -->
+          <div class="admin-section" style="background: white; padding: 16px 20px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h4 style="margin: 0 0 4px 0; font-size: 0.95em; color: #333;">Environment Mode</h4>
+                <p style="margin: 0; font-size: 0.8em; color: #666;">Sandbox mode enables permissionless access with guided Next progression. Production mode uses strict auth and role gates.</p>
+              </div>
+              <div id="env-mode-toggle-people" style="display: flex; border: 1px solid #ddd; border-radius: 6px; overflow: hidden;">
+                <button id="env-mode-prod-people" onclick="setEnvMode('production')" style="padding: 8px 16px; border: none; background: #f5f5f5; color: #666; cursor: pointer; font-size: 0.85em; font-weight: 500;">Production</button>
+                <button id="env-mode-playground-people" onclick="setEnvMode('playground')" style="padding: 8px 16px; border: none; background: #f5f5f5; color: #666; cursor: pointer; font-size: 0.85em; font-weight: 500;">Sandbox</button>
+              </div>
+            </div>
+          </div>
+
           <!-- People Sub-Tabs -->
           <div style="display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid #e0e0e0;">
             <button class="people-sub-tab active" data-people-tab="members" onclick="switchPeopleTab('members')" style="padding: 8px 16px; background: #1976d2; color: white; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 0.85em; font-weight: 600;">Members</button>
@@ -4221,8 +4235,17 @@
 
           <!-- Members Sub-Panel -->
           <div id="people-tab-members" class="people-sub-panel" style="background: white; padding: 16px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h4 style="margin: 0 0 12px; font-size: 0.95em; color: #333;">Members</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h4 style="margin: 0; font-size: 0.95em; color: #333;">Members</h4>
+              <button id="people-add-user-btn" class="toolbar-btn" onclick="openAddUserModal()" style="background: #4caf50; color: white; padding: 8px 14px; font-size: 0.85em; display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 1.1em;">+</span> Add User
+              </button>
+            </div>
+            <p id="people-mode-desc" style="font-size: 0.85em; color: #666; margin-bottom: 12px;"></p>
             <div id="people-members-table"></div>
+            <div style="margin-top: 12px; display: flex; gap: 10px; align-items: center;">
+              <span style="font-size: 0.8em; color: #888;">Last updated: <span id="people-last-updated">—</span></span>
+            </div>
           </div>
 
           <!-- Roles Sub-Panel -->
@@ -6164,30 +6187,93 @@
       var container = document.getElementById('people-members-table');
       if (!container) return;
       var users = getDemoUsers();
+      var isPlayground = isDemoMode();
+      var currentUserEmail = null;
+      try {
+        var demoUser = JSON.parse(localStorage.getItem('demoUser') || '{}');
+        currentUserEmail = demoUser.email;
+      } catch (e) {}
+      var inputStyle = 'padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; width: 100%; box-sizing: border-box;';
       var html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">' +
         '<thead style="background: #f5f5f5;"><tr>' +
-        '<th style="padding: 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Name</th>' +
-        '<th style="padding: 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Email</th>' +
-        '<th style="padding: 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Role</th>' +
-        '<th style="padding: 8px; text-align: center; border-bottom: 1px solid #e0e0e0;">Status</th>' +
-        '<th style="padding: 8px; text-align: center; border-bottom: 1px solid #e0e0e0;">Assign</th>' +
+        '<th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 20%;">User</th>' +
+        '<th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 28%;">Email</th>' +
+        '<th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 16%;">Role</th>' +
+        '<th style="padding: 10px 8px; text-align: center; border-bottom: 1px solid #e0e0e0; width: 12%;">Status</th>' +
+        '<th style="padding: 10px 8px; text-align: center; border-bottom: 1px solid #e0e0e0; width: 24%;">Actions</th>' +
         '</tr></thead><tbody>';
       for (var ui = 0; ui < users.length; ui++) {
         var u = users[ui];
-        html += '<tr style="border-bottom: 1px solid #f0f0f0;">' +
-          '<td style="padding: 6px 8px;">' + (u.name || '—') + '</td>' +
-          '<td style="padding: 6px 8px;">' + (u.email || '—') + '</td>' +
-          '<td style="padding: 6px 8px;">' + getRoleDisplayName(u.role || 'analyst') + '</td>' +
-          '<td style="padding: 6px 8px; text-align: center;"><span style="padding: 2px 6px; border-radius: 8px; font-size: 0.8em; background: ' + (u.status === 'active' ? '#e8f5e9' : '#fff3e0') + ';">' + (u.status || 'active') + '</span></td>' +
-          '<td style="padding: 6px 8px; text-align: center;">' +
-          '<select onchange="assignMemberRole(\'' + u.id + '\', this.value)" style="padding: 3px 6px; font-size: 0.85em; border: 1px solid #ddd; border-radius: 4px;">' +
+        if (!u.name && !u.email) continue;
+        var isCurrentUser = currentUserEmail && u.email && currentUserEmail.toLowerCase() === u.email.toLowerCase();
+        var displayName = u.name || 'User ' + (ui + 1);
+        html += '<tr style="' + (isCurrentUser ? 'background: #fffde7;' : '') + 'border-bottom: 1px solid #f0f0f0;">';
+        html += '<td style="padding: 10px 8px;"><div style="display: flex; align-items: center; gap: 8px;">' +
+          '<div style="width: 32px; height: 32px; border-radius: 50%; background: ' + getUserColor(displayName) + '; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.85em; flex-shrink:0;">' + getInitials(displayName) + '</div>' +
+          '<input type="text" id="pm-name-' + ui + '" value="' + (u.name || '').replace(/"/g, '&quot;') + '" style="' + inputStyle + ' width: 140px;"></div></td>';
+        html += '<td style="padding: 10px 8px;"><input type="email" id="pm-email-' + ui + '" value="' + (u.email || '').replace(/"/g, '&quot;') + '" style="' + inputStyle + '"></td>';
+        html += '<td style="padding: 10px 8px;"><select id="pm-role-' + ui + '" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; cursor: pointer;">' +
           '<option value="analyst"' + (u.role === 'analyst' ? ' selected' : '') + '>Analyst</option>' +
           '<option value="verifier"' + (u.role === 'verifier' ? ' selected' : '') + '>Verifier</option>' +
-          '<option value="admin"' + (u.role === 'admin' ? ' selected' : '') + '>Admin</option>' +
-          '</select></td></tr>';
+          '<option value="admin"' + (u.role === 'admin' ? ' selected' : '') + '>Admin</option></select></td>';
+        html += '<td style="padding: 10px 8px; text-align: center;"><select id="pm-status-' + ui + '" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; cursor: pointer;">' +
+          '<option value="active"' + (u.status === 'active' ? ' selected' : '') + '>Active</option>' +
+          '<option value="pending"' + (u.status === 'pending' ? ' selected' : '') + '>Pending</option>' +
+          '<option value="disabled"' + (u.status === 'disabled' ? ' selected' : '') + '>Disabled</option></select></td>';
+        html += '<td style="padding: 10px 8px; text-align: center;">' +
+          '<button onclick="savePeopleMemberRow(' + ui + ')" class="toolbar-btn" style="padding: 6px 14px; font-size: 0.85em; background: #4caf50; color: white;">Save</button>' +
+          ' <button onclick="deletePeopleMember(' + ui + ')" class="toolbar-btn" style="padding: 6px 10px; font-size: 0.85em; background: #f5f5f5; color: #c62828;" title="Remove user">&#128465;</button></td>';
+        html += '</tr>';
       }
       html += '</tbody></table>';
       container.innerHTML = html;
+      var lastUpdated = localStorage.getItem(DEMO_USERS_KEY + '_updated');
+      var updatedEl = document.getElementById('people-last-updated');
+      if (updatedEl) updatedEl.textContent = lastUpdated ? new Date(lastUpdated).toLocaleString() : 'Never';
+      var descEl = document.getElementById('people-mode-desc');
+      if (descEl) {
+        descEl.textContent = isPlayground ? 'Sandbox mode: User management is fully editable.' : 'Production mode: User management is read-only. Role switching is disabled.';
+      }
+      syncPeopleEnvToggle();
+    }
+
+    function savePeopleMemberRow(idx) {
+      var users = getDemoUsers();
+      if (!users[idx]) return;
+      var nameInput = document.getElementById('pm-name-' + idx);
+      var emailInput = document.getElementById('pm-email-' + idx);
+      var roleSelect = document.getElementById('pm-role-' + idx);
+      var statusSelect = document.getElementById('pm-status-' + idx);
+      users[idx].name = nameInput ? nameInput.value.trim() : users[idx].name;
+      users[idx].email = emailInput ? emailInput.value.trim().toLowerCase() : users[idx].email;
+      users[idx].role = roleSelect ? roleSelect.value : users[idx].role;
+      users[idx].status = statusSelect ? statusSelect.value : users[idx].status;
+      saveDemoUsers(users);
+      renderPeopleMembers();
+      if (typeof renderUsersTable === 'function') renderUsersTable();
+      showToast('User updated', 'success');
+    }
+
+    function deletePeopleMember(idx) {
+      var users = getDemoUsers();
+      if (!users[idx]) return;
+      if (!confirm('Remove ' + (users[idx].name || users[idx].email) + '?')) return;
+      users.splice(idx, 1);
+      saveDemoUsers(users);
+      renderPeopleMembers();
+      if (typeof renderUsersTable === 'function') renderUsersTable();
+      showToast('User removed', 'info');
+    }
+
+    function syncPeopleEnvToggle() {
+      var prodBtn = document.getElementById('env-mode-prod-people');
+      var sandboxBtn = document.getElementById('env-mode-playground-people');
+      if (!prodBtn || !sandboxBtn) return;
+      var isPlayground = isDemoMode();
+      prodBtn.style.background = !isPlayground ? '#1976d2' : '#f5f5f5';
+      prodBtn.style.color = !isPlayground ? 'white' : '#666';
+      sandboxBtn.style.background = isPlayground ? '#1976d2' : '#f5f5f5';
+      sandboxBtn.style.color = isPlayground ? 'white' : '#666';
     }
 
     function assignMemberRole(userId, newRole) {
@@ -16665,10 +16751,6 @@
     }
     
     function openAddUserModal() {
-      if (!isUserEditingAllowed()) {
-        showToast('User management is only available in Demo mode', 'error');
-        return;
-      }
       var modal = document.getElementById('add-user-modal');
       if (modal) {
         modal.classList.add('active');
@@ -16692,7 +16774,7 @@
       return re.test(String(email).toLowerCase());
     }
     
-    function submitAddUser() {
+    function submitAddUser(keepOpen) {
       var name = (document.getElementById('add-user-name').value || '').trim();
       var email = (document.getElementById('add-user-email').value || '').trim();
       var role = document.getElementById('add-user-role').value || 'analyst';
@@ -16747,9 +16829,21 @@
       users.push(newUser);
       saveDemoUsers(users);
       
-      closeAddUserModal();
-      renderUsersTable();
-      showToast('User "' + name + '" added successfully', 'success');
+      if (keepOpen) {
+        document.getElementById('add-user-name').value = '';
+        document.getElementById('add-user-email').value = '';
+        document.getElementById('add-user-role').value = 'analyst';
+        document.getElementById('add-user-status').value = 'active';
+        document.getElementById('add-user-division').value = '';
+        document.getElementById('add-user-error').style.display = 'none';
+        document.getElementById('add-user-name').focus();
+        showToast('User "' + name + '" added — ready for next', 'success');
+      } else {
+        closeAddUserModal();
+        showToast('User "' + name + '" added successfully', 'success');
+      }
+      renderPeopleMembers();
+      if (typeof renderUsersTable === 'function') renderUsersTable();
       console.log('[Users] Added pre-provisioned user:', newUser.email, 'role:', newUser.role);
     }
     
@@ -31631,7 +31725,21 @@
           if (_ckIdx > 0) item.sheet_name = item.contract_key.substring(0, _ckIdx);
         }
       });
-      analystTriageState.manualItems = analystTriageState.manualItems.concat(validationSignals);
+      var _vsExistKeys = {};
+      analystTriageState.manualItems.forEach(function(m) {
+        var k = (m.signal_type || '') + ':' + (m.contract_key || '') + ':' + (m.sheet_name || '') + ':' + (m.field_key || m.field_name || '') + ':' + (m.severity || '');
+        _vsExistKeys[k] = true;
+      });
+      var _vsAdded = 0;
+      validationSignals.forEach(function(vs) {
+        var k = (vs.signal_type || '') + ':' + (vs.contract_key || '') + ':' + (vs.sheet_name || '') + ':' + (vs.field_key || vs.field_name || '') + ':' + (vs.severity || '');
+        if (!_vsExistKeys[k]) {
+          analystTriageState.manualItems.push(vs);
+          _vsExistKeys[k] = true;
+          _vsAdded++;
+        }
+      });
+      if (_vsAdded > 0) console.log('[TRIAGE] deduped validation signals: added=' + _vsAdded + ' skipped=' + (validationSignals.length - _vsAdded));
       
       // v1.6.35: Add Manual Review items from canonical store (seeded from RFI meta sheet)
       if (typeof seedManualReviewFromMetaSheet === 'function') {
@@ -35251,7 +35359,8 @@
         adminOption.textContent = 'Admin';
       }
       updateEnvModeUI();
-      renderUsersTable(); // Re-render to show/hide controls
+      renderUsersTable();
+      renderPeopleMembers();
       applyRoleBasedModeRestrictions(); // v1.6.24: Re-apply to update role switching
       showToast(isPlayground ? 'Sandbox mode enabled - permissionless access, no Admin role' : 'Production mode - strict role gates active', 'info');
       console.log('[EnvMode] Set to:', mode, 'by', loggedInRole);
