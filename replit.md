@@ -9,6 +9,8 @@ Preferred communication style: Simple, everyday language.
 ## Terminology
 - **Contract Section** is the canonical UI term for what was previously called "sheet", "worksheet", or "tab". All visible labels use "Contract Section". Internal storage keys (`sheet_name`, `sheets`, `activeSheet`, `gridState.sheet`) are preserved for backward compatibility. The utility function `normalizeContractSectionTerm(term)` maps legacy aliases to the canonical value and logs a one-time `[TERM-ALIAS]` console message when a legacy alias is used.
 - **Record Inspector** is the canonical UI term for the row-level detail drawer (legacy alias: "Single Row Review" / "SRR"). Internal variable names like `srrState` are preserved.
+- **Contract Line Items** is the canonical UI term for line-item records within a contract (legacy alias: "Catalog Items"). The Contract Line Item Wizard uses this term throughout.
+- **Grid Context Menu** provides quick actions via right-click or double-click on any Grid Mode cell/row. Actions: Open Record Inspector, Create Correction, Create RFI, Create Blacklist, Add Contract Line Items, Open in Glossary. All data-changing actions route through the patch lifecycle. Deterministic logs use `[GRID-CONTEXT][P0]` prefix. Audit events: `grid_context_menu_opened`, `grid_context_action_triggered`.
 
 ## System Architecture
 The core design principle involves capturing semantic decisions as reviewable configuration artifacts. The system employs a canonical join strategy for data handling and a Config Pack Model with strict version matching. It supports an 11-status lifecycle for patch requests, including comment systems and role-based access control (Analyst, Verifier, Admin, Architect).

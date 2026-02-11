@@ -1250,6 +1250,48 @@
     .grid-mode-toggle { display: inline-flex; border: 1px solid #1565c0; border-radius: 8px; overflow: hidden; font-size: 0.82em; }
     .grid-mode-toggle button { border: none; padding: 6px 20px; cursor: pointer; font-weight: 600; background: #fff; color: #1565c0; transition: background 0.15s, color 0.15s; min-width: 70px; text-align: center; font-size: 0.85em; }
     .grid-mode-toggle button.active { background: #1565c0; color: #fff; }
+
+    /* Grid Context Menu */
+    .grid-ctx-menu {
+      position: fixed;
+      z-index: 99999;
+      display: none;
+      min-width: 220px;
+      max-width: 320px;
+      background: #fff;
+      border: 1px solid #d0d5dd;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.08);
+      padding: 4px 0;
+      font-size: 0.85em;
+      font-family: inherit;
+      animation: gridCtxFadeIn 0.12s ease-out;
+    }
+    @keyframes gridCtxFadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+    .grid-ctx-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      cursor: pointer;
+      color: #1e293b;
+      white-space: nowrap;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      font-size: inherit;
+      font-family: inherit;
+      outline: none;
+    }
+    .grid-ctx-menu-item:hover, .grid-ctx-menu-item:focus { background: #e3f2fd; }
+    .grid-ctx-menu-item:active { background: #bbdefb; }
+    .grid-ctx-menu-item[disabled] { color: #aaa; cursor: not-allowed; opacity: 0.55; }
+    .grid-ctx-menu-item[disabled]:hover { background: none; }
+    .grid-ctx-menu-item .ctx-icon { width: 18px; text-align: center; flex-shrink: 0; font-size: 1.05em; }
+    .grid-ctx-menu-sep { height: 1px; background: #e5e7eb; margin: 4px 8px; }
+    .grid-ctx-menu-header { padding: 6px 14px 4px; font-size: 0.72em; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
     /* Inline editing cell */
     .grid-cell-editing { outline: 2px solid #1976d2; outline-offset: -1px; background: #fff !important; min-width: 80px; cursor: text; }
     .grid-cell-editing input { border: none; outline: none; width: 100%; font-size: inherit; font-family: inherit; background: transparent; padding: 0; }
@@ -13292,7 +13334,7 @@
     (function() {
       document.addEventListener('click', function(e) {
         if (_gridViewMode !== 'grid') return;
-        var td = e.target.closest ? e.target.closest('td[data-gfield]') : null;
+        var td = _gridCtxFindClosest(e.target, 'td[data-gfield]');
         if (!td) return;
         var tr = td.parentElement;
         if (!tr) return;
@@ -13309,7 +13351,7 @@
       });
       document.addEventListener('dblclick', function(e) {
         if (_gridViewMode !== 'grid') return;
-        var td = e.target.closest ? e.target.closest('td[data-gfield]') : null;
+        var td = _gridCtxFindClosest(e.target, 'td[data-gfield]');
         if (!td) return;
         var tr = td.parentElement;
         if (!tr) return;
@@ -13318,10 +13360,270 @@
         var rowIdx = parseInt(tr.dataset.recordIndex || '0', 10);
         var fieldKey = td.getAttribute('data-gfield') || '';
         if (td._gridCellClickTimer) { clearTimeout(td._gridCellClickTimer); td._gridCellClickTimer = null; }
-        _gridOpenPatchDrawer(recordId, sheetName, rowIdx, fieldKey);
+        var rect = td.getBoundingClientRect();
+        _gridCtxOpen(rect.left + rect.width / 2, rect.top + rect.height / 2, {
+          recordId: recordId, sheetName: sheetName, rowIdx: rowIdx, fieldKey: fieldKey, td: td
+        });
+      });
+
+      document.addEventListener('contextmenu', function(e) {
+        if (_gridViewMode !== 'grid') return;
+        var td = _gridCtxFindClosest(e.target, 'td[data-gfield]');
+        if (!td) {
+          var tr2 = _gridCtxFindClosest(e.target, 'tr[data-record-id]');
+          if (!tr2) return;
+          _gridCtxOpen(e.clientX, e.clientY, {
+            recordId: tr2.dataset.recordId || '',
+            sheetName: tr2.dataset.sheetName || '',
+            rowIdx: parseInt(tr2.dataset.recordIndex || '0', 10),
+            fieldKey: '',
+            td: null
+          });
+          e.preventDefault();
+          return;
+        }
+        var tr = td.parentElement;
+        if (!tr) return;
+        e.preventDefault();
+        var recordId = tr.dataset.recordId || '';
+        var sheetName = tr.dataset.sheetName || '';
+        var rowIdx = parseInt(tr.dataset.recordIndex || '0', 10);
+        var fieldKey = td.getAttribute('data-gfield') || '';
+        _gridCtxOpen(e.clientX, e.clientY, {
+          recordId: recordId, sheetName: sheetName, rowIdx: rowIdx, fieldKey: fieldKey, td: td
+        });
+      });
+
+      document.addEventListener('keydown', function(e) {
+        if (_gridViewMode !== 'grid') return;
+        if (e.key === 'F10' && e.shiftKey) {
+          e.preventDefault();
+          var sel = document.querySelector('.grid-table.grid-mode-active td[data-gfield].grid-cell-verified, .grid-table.grid-mode-active td[data-gfield]:focus');
+          if (!sel) return;
+          var tr = sel.parentElement;
+          if (!tr) return;
+          var rect = sel.getBoundingClientRect();
+          _gridCtxOpen(rect.left + rect.width / 2, rect.top + rect.height / 2, {
+            recordId: tr.dataset.recordId || '',
+            sheetName: tr.dataset.sheetName || '',
+            rowIdx: parseInt(tr.dataset.recordIndex || '0', 10),
+            fieldKey: sel.getAttribute('data-gfield') || '',
+            td: sel
+          });
+        }
       });
     })();
 
+
+    // ========== GRID CONTEXT MENU (P0) ==========
+    function _gridCtxFindClosest(el, selector) {
+      var cur = el;
+      while (cur && cur !== document) {
+        if (cur.matches) {
+          if (cur.matches(selector)) return cur;
+        } else if (cur.msMatchesSelector) {
+          if (cur.msMatchesSelector(selector)) return cur;
+        } else if (cur.webkitMatchesSelector) {
+          if (cur.webkitMatchesSelector(selector)) return cur;
+        }
+        cur = cur.parentElement || cur.parentNode;
+      }
+      return null;
+    }
+    var _gridCtxState = { open: false, context: null };
+
+    function _gridCtxOpen(x, y, context) {
+      var menu = document.getElementById('grid-ctx-menu');
+      if (!menu) return;
+      _gridCtxState.context = context;
+      _gridCtxState.open = true;
+
+      var record = _gridCtxResolveRecord(context);
+      var fieldKey = context.fieldKey || '';
+      var oldValue = (record && fieldKey) ? String(record[fieldKey] || '') : '';
+      var hasField = !!fieldKey;
+      var hasRecord = !!(context.recordId);
+
+      console.log('[GRID-CONTEXT][P0] menu_open', {
+        record_id: context.recordId, field_key: fieldKey,
+        contract_section: context.sheetName, row_index: context.rowIdx
+      });
+
+      if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
+        AuditTimeline.emit('grid_context_menu_opened', {
+          record_id: context.recordId, field_key: fieldKey,
+          file_id: context.sheetName,
+          metadata: { row_index: context.rowIdx, mode: 'grid' }
+        });
+      }
+
+      var html = '';
+      html += '<div class="grid-ctx-menu-header">Actions</div>';
+
+      html += _gridCtxItem('inspect', '&#128269;', 'Open Record Inspector', hasRecord, hasRecord ? '' : 'No record selected');
+      html += '<div class="grid-ctx-menu-sep"></div>';
+      html += _gridCtxItem('correction', '&#9998;', 'Create Correction', hasRecord && hasField, hasField ? '' : 'Select a field first');
+      html += _gridCtxItem('rfi', '&#128172;', 'Create RFI', hasRecord, hasRecord ? '' : 'No record selected');
+      html += _gridCtxItem('blacklist', '&#128683;', 'Create Blacklist', hasRecord && hasField, hasField ? '' : 'Select a field first');
+      html += '<div class="grid-ctx-menu-sep"></div>';
+      html += _gridCtxItem('line-items', '&#10133;', 'Add Contract Line Items…', hasRecord, hasRecord ? '' : 'No record selected');
+      html += _gridCtxItem('glossary', '&#128214;', 'Open in Glossary', hasField, hasField ? '' : 'Select a field first');
+
+      menu.innerHTML = html;
+      menu.style.display = 'block';
+
+      var mw = menu.offsetWidth;
+      var mh = menu.offsetHeight;
+      var vw = window.innerWidth;
+      var vh = window.innerHeight;
+      var posX = (x + mw > vw) ? Math.max(4, vw - mw - 4) : x;
+      var posY = (y + mh > vh) ? Math.max(4, vh - mh - 4) : y;
+      menu.style.left = posX + 'px';
+      menu.style.top = posY + 'px';
+
+      var firstItem = menu.querySelector('.grid-ctx-menu-item:not([disabled])');
+      if (firstItem) firstItem.focus();
+
+      setTimeout(function() {
+        document.addEventListener('click', _gridCtxClickAway);
+        document.addEventListener('keydown', _gridCtxEscHandler);
+      }, 0);
+    }
+
+    function _gridCtxItem(action, icon, label, enabled, disabledReason) {
+      var attrs = enabled
+        ? 'onclick="_gridCtxAction(\'' + action + '\')" tabindex="0" role="menuitem"'
+        : 'disabled title="' + (disabledReason || 'Not available') + '" role="menuitem"';
+      return '<button class="grid-ctx-menu-item" data-action="' + action + '" ' + attrs + '>' +
+        '<span class="ctx-icon">' + icon + '</span>' +
+        '<span>' + label + '</span>' +
+        '</button>';
+    }
+
+    function _gridCtxClose() {
+      var menu = document.getElementById('grid-ctx-menu');
+      if (menu) menu.style.display = 'none';
+      _gridCtxState.open = false;
+      _gridCtxState.context = null;
+      document.removeEventListener('click', _gridCtxClickAway);
+      document.removeEventListener('keydown', _gridCtxEscHandler);
+    }
+
+    function _gridCtxClickAway(e) {
+      var menu = document.getElementById('grid-ctx-menu');
+      if (menu && !menu.contains(e.target)) _gridCtxClose();
+    }
+
+    function _gridCtxEscHandler(e) {
+      if (e.key === 'Escape') { e.preventDefault(); _gridCtxClose(); }
+    }
+
+    function _gridCtxResolveRecord(ctx) {
+      if (!ctx) return null;
+      var sheet = (window.workbook && window.workbook.sheets) ? window.workbook.sheets[ctx.sheetName] : null;
+      if (sheet && sheet.rows && ctx.rowIdx >= 0 && ctx.rowIdx < sheet.rows.length) return sheet.rows[ctx.rowIdx];
+      var allData = window._workbookData || {};
+      var rows = allData[ctx.sheetName];
+      if (rows && rows[ctx.rowIdx]) return rows[ctx.rowIdx];
+      return null;
+    }
+
+    function _gridCtxAction(action) {
+      var ctx = _gridCtxState.context;
+      if (!ctx) { _gridCtxClose(); return; }
+
+      console.log('[GRID-CONTEXT][P0] action_triggered:' + action, {
+        record_id: ctx.recordId, field_key: ctx.fieldKey, contract_section: ctx.sheetName
+      });
+
+      if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
+        AuditTimeline.emit('grid_context_action_triggered', {
+          action: action, record_id: ctx.recordId, field_key: ctx.fieldKey,
+          file_id: ctx.sheetName,
+          metadata: { row_index: ctx.rowIdx, mode: 'grid' }
+        });
+      }
+
+      var record = _gridCtxResolveRecord(ctx);
+
+      if (action === 'inspect') {
+        _gridCtxClose();
+        if (typeof openRowReviewDrawer === 'function') {
+          openRowReviewDrawer(ctx.sheetName, ctx.rowIdx);
+        } else {
+          showToast('Record Inspector not available', 'warning');
+        }
+        return;
+      }
+
+      if (action === 'correction' || action === 'rfi' || action === 'blacklist') {
+        _gridCtxClose();
+        var oldValue = (record && ctx.fieldKey) ? String(record[ctx.fieldKey] || '') : '';
+        if (!ctx.recordId) { showToast('No record context available', 'warning'); return; }
+
+        _gridOpenPatchDrawer(ctx.recordId, ctx.sheetName, ctx.rowIdx, ctx.fieldKey);
+
+        setTimeout(function() {
+          var drawerCtx = window._gridDrawerContext;
+          if (drawerCtx) {
+            drawerCtx.patchType = action;
+            drawerCtx._patchContext = {
+              record_id: ctx.recordId,
+              field_key: ctx.fieldKey,
+              old_value: oldValue,
+              contract_section: ctx.sheetName,
+              contract_id: (record && (record.contract_key || record.contract_id || record.contractKey)) || ctx.sheetName,
+              row_index: ctx.rowIdx
+            };
+            if (action === 'rfi') {
+              drawerCtx._activeTab = 'patch';
+            } else {
+              drawerCtx._activeTab = 'edit';
+            }
+            if (typeof _gridDrawerRender === 'function') _gridDrawerRender(drawerCtx);
+            console.log('[GRID-CONTEXT][P0] patch_preload_success', {
+              type: action, record_id: ctx.recordId, field_key: ctx.fieldKey, old_value: oldValue,
+              contract_id: drawerCtx._patchContext.contract_id,
+              contract_section: ctx.sheetName
+            });
+          } else {
+            console.log('[GRID-CONTEXT][P0] patch_preload_fail', { reason: 'drawer_context_missing' });
+          }
+        }, 100);
+        return;
+      }
+
+      if (action === 'line-items') {
+        _gridCtxClose();
+        if (typeof openBatchAddModal === 'function') {
+          openBatchAddModal();
+        } else {
+          showToast('Contract Line Items wizard not available', 'warning');
+        }
+        return;
+      }
+
+      if (action === 'glossary') {
+        _gridCtxClose();
+        if (ctx.fieldKey && typeof openGlossaryPicker === 'function') {
+          openGlossaryPicker(ctx.fieldKey);
+        } else if (ctx.fieldKey) {
+          var glossarySearch = document.getElementById('glossary-search');
+          if (glossarySearch) {
+            glossarySearch.value = ctx.fieldKey;
+            var evt = document.createEvent('Event');
+            evt.initEvent('input', true, true);
+            glossarySearch.dispatchEvent(evt);
+          }
+          showToast('Glossary opened for: ' + ctx.fieldKey, 'info');
+        } else {
+          showToast('No field selected for glossary lookup', 'warning');
+        }
+        return;
+      }
+
+      _gridCtxClose();
+    }
 
     var GRID_DRAWER_META_FIELDS = [
       'file_name', 'file name', 'fileName', 'file_url', 'file url', 'fileUrl',
@@ -42707,6 +43009,9 @@ var P022_RuntimeValidation = {
         <div class="qf-footer" id="qf-footer"></div>
       </div>
     </div>
+
+<!-- Grid Context Menu -->
+<div id="grid-ctx-menu" class="grid-ctx-menu" role="menu" aria-label="Grid actions"></div>
 
 </body>
 </html>
