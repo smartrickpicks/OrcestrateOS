@@ -7,7 +7,7 @@ The Semantic Control Board (Orchestrate OS) is a standalone control plane for au
 This system exists to make semantic decisions explicit, stable, and auditable.
 
 ## Integration Posture (V1)
-Orchestrate OS is governance-first and does not directly connect to or mutate external systems. External data may be brought into Oorchestrate OS via mediated labys (e.g., Kiwi) and/or offline exports (e.g., Salesforce Sandbox exports). Any connectivity happens outside the governance plane; no credentials or secrets are stored inside the governance plane.
+Orchestrate OS is governance-first and does not directly connect to or mutate external systems. External data may be brought into Orchestrate OS via mediated layers (e.g., Kiwi) and/or offline exports (e.g., Salesforce Sandbox exports). Any connectivity happens outside the governance plane; no credentials or secrets are stored inside the governance plane.
 
 ## Intended Users
 - Operators: Perform reviews, identify patterns, and author rules.
@@ -30,7 +30,7 @@ Orchestrate OS is governance-first and does not directly connect to or mutate ex
 ## Integration Posture (UP-F1)
 - No direct connectors or mutating actions within the control plane.
 - External data ingestion may occur via mediated layers (e.g., Kiwi) and/or offline exports (e.g., Salesforce Sandbox).
-- The governance plane does not store credentials/secrets; any connectivity occurs outside (therefore mendiated).
+- The governance plane does not store credentials/secrets; any connectivity occurs outside (therefore mediated).
 
 ## Explicit Non-Goals (preserved)
 - No embedded runtime execution within the control plane.

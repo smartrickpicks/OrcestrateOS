@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the conceptual streaming model for continuous data processing in the Kiwi Semantic Control Board. This is a **governance-only** explanation of how a future continuous pipeline would work - no actual runtime execution is implemented.
+This document describes the conceptual streaming model for continuous data processing in Orchestrate OS (formerly Kiwi Semantic Control Board). This is a **governance-only** explanation of how a future continuous pipeline would work - no actual runtime execution is implemented.
 
 ## Never-Stop Flow (Open Faucet Model)
 
@@ -106,13 +106,13 @@ This is a **conceptual model only**:
 
 - No actual streaming or async processing
 - No queues, workers, or APIs
-- No changes to Kiwi harness behavior
+- No changes to harness behavior
 - No runtime execution of any kind
 
 The model exists purely for governance documentation and operator understanding.
 
 ## Related Documents
 
-- [CONTROL_BOARD_ARCHITECTURE.md](./02_CONTROL_BOARD_ARCHITECTURE.md)
-- [RULE_LIFECYCLE.md](./03_RULE_LIFECYCLE.md)
-- [TRUTH_SNAPSHOT.md](./05_TRUTH_SNAPSHOT.md)
+- [CONTROL_BOARD_ARCHITECTURE.md](./CONTROL_BOARD_ARCHITECTURE.md)
+- [RULE_LIFECYCLE.md](./RULE_LIFECYCLE.md)
+- [TRUTH_SNAPSHOT.md](./TRUTH_SNAPSHOT.md)

@@ -1,7 +1,7 @@
 # CONTROL_BOARD_ARCHITECTURE.md
 
 ## Overview
-The Kiwi Semantic Control Board is composed of conceptual components that support deterministic rule authoring and review.
+Orchestrate OS (formerly Kiwi Semantic Control Board) is composed of conceptual components that support deterministic rule authoring and review.
 These components describe behavior, not implementation.
 
 ## Major Components
