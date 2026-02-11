@@ -18724,6 +18724,43 @@
       return false;
     }
 
+    function _acctCheckExtractNameFromKey(contractKey, fileName) {
+      var src = fileName || contractKey || '';
+      src = src.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+      var paren = src.match(/\(([A-Z][a-zA-Z]+(?: [A-Z][a-zA-Z]+)+)\)/);
+      if (paren && paren[1]) {
+        var pn = paren[1].trim();
+        if (pn !== 'FINAL SIGNED' && pn !== 'COUNTERSIGNED' && pn.indexOf('Distribution') < 0 && pn.indexOf('Agreement') < 0 && pn.indexOf('Single') < 0 && pn.indexOf('Signed') < 0) return pn;
+      }
+      src = src.replace(/\(FINAL SIGNED\)/gi, '').replace(/\[FINAL SIGNED\]/gi, '');
+      src = src.replace(/\(COUNTERSIGNED\)/gi, '').replace(/\[COUNTERSIGNED\]/gi, '');
+      src = src.replace(/\(SIGNATURE\)/gi, '').replace(/\(Ostereo Single Release\)/gi, '');
+      src = src.replace(/\(Distribution Agreement\)/gi, '').replace(/\(Signed[^)]*\)/gi, '');
+      src = src.replace(/FINAL.?SIGNED/gi, '').replace(/COUNTERSIGNED/gi, '').replace(/SIGNED/gi, '');
+      src = src.replace(/\s+copy\s*$/i, '').replace(/\(\d+\)\d*$/g, '');
+      src = src.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+      var distMatch = src.match(/Ostereo Distribution Agreement\s*-?\s*(.*)/i);
+      if (distMatch && distMatch[1]) {
+        var dn = distMatch[1].replace(/^[\s\-]+/, '').replace(/[\s\-]+$/, '').trim();
+        if (dn.length >= 3) return dn;
+      }
+      var labelMatch = src.match(/^(.+?)\s+(?:x\s+|X\s+)?(?:Ostereo|Label Services|Distribution|Digital Distribution)/i);
+      if (labelMatch && labelMatch[1]) { var _ln = labelMatch[1].replace(/[\s\-]+$/, '').trim(); if (_ln.length >= 3) return _ln; }
+      var termMatch = src.match(/Termination Notice\s+(.*)/i);
+      if (termMatch && termMatch[1]) {
+        var tn = termMatch[1].replace(/^[\s\-]+/, '').replace(/[\s\-]+$/, '').trim();
+        if (tn.length >= 3) return tn;
+      }
+      var segments = src.split(/\s+-\s+/);
+      if (segments.length >= 2) {
+        for (var si = 0; si < segments.length; si++) {
+          var seg = segments[si].replace(/^[\s\-]+/, '').replace(/[\s\-]+$/, '').trim();
+          if (seg.length >= 3 && !/^(Ostereo|Agreement|Distribution|Producer|Label|Termination|Notice|Exclusive)/i.test(seg)) return seg;
+        }
+      }
+      return '';
+    }
+
     function _buildDuplicateAccountPreflightItems() {
       _duplicateAccountItems = [];
       if (typeof ContractIndex === 'undefined' || !ContractIndex._index || !ContractIndex._index.contracts) return;
@@ -18731,7 +18768,12 @@
       var contractKeys = Object.keys(ContractIndex._index.contracts);
       for (var ci = 0; ci < contractKeys.length; ci++) {
         var ck = contractKeys[ci];
-        var acctName = _p1d1ResolveAccountName(ck, '');
+        var cInfo = ContractIndex._index.contracts[ck];
+        var cFileName = (cInfo && cInfo.file_name) ? cInfo.file_name : '';
+        var acctName = _p1d1ResolveAccountName(ck, cFileName);
+        if (!acctName || acctName.length < 3) {
+          acctName = _acctCheckExtractNameFromKey(ck, cFileName);
+        }
         if (!acctName || acctName.length < 3) continue;
         if (!acctMap[acctName]) acctMap[acctName] = [];
         acctMap[acctName].push(ck);
