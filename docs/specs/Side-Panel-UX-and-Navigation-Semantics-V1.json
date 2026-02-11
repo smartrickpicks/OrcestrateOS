@@ -22,7 +22,7 @@
           "action_label": "Connect (no dataset) | Change (dataset loaded)",
           "action": "opens_data_source_panel"
         },
-        "visible_to": ["Analyst", "Reviewer", "Admin"],
+        "visible_to": ["Analyst", "Verifier", "Admin"],
         "rationale": "Shows current dataset with quick Change action. Replaces standalone button."
       },
       {
@@ -32,7 +32,7 @@
         "position": "below_data_source",
         "interaction": "click_routes_to_triage",
         "route": "#/triage",
-        "visible_to": ["Analyst", "Reviewer", "Admin"],
+        "visible_to": ["Analyst", "Verifier", "Admin"],
         "contains": {
           "stats": ["To Do", "Review", "Done"],
           "progress_bar": true
@@ -49,14 +49,14 @@
             "label": "Sheet Selector",
             "kind": "dropdown",
             "interaction": "filters_grid_by_sheet",
-            "visible_to": ["Analyst", "Reviewer", "Admin"]
+            "visible_to": ["Analyst", "Verifier", "Admin"]
           },
           {
             "id": "triage",
             "label": "Triage",
             "kind": "nav_item",
             "route": "#/triage",
-            "visible_to": ["Analyst", "Reviewer", "Admin"],
+            "visible_to": ["Analyst", "Verifier", "Admin"],
             "rationale": "Alert summary and prioritization lens."
           },
           {
@@ -64,24 +64,24 @@
             "label": "All Data Grid",
             "kind": "nav_item",
             "route": "#/grid",
-            "visible_to": ["Analyst", "Reviewer", "Admin"]
+            "visible_to": ["Analyst", "Verifier", "Admin"]
           },
           {
             "id": "record_inspection",
             "label": "Record Inspection",
-            "canonical_name": "single_row_review",
+            "internal_token": "single_row_review",
             "kind": "nav_item",
             "route": "#/row/:id",
             "interaction": "opens_first_row_or_prompts",
-            "visible_to": ["Analyst", "Reviewer", "Admin"],
-            "rationale": "UI alias for Single Row Review. Opens drawer for selected/first row."
+            "visible_to": ["Analyst", "Verifier", "Admin"],
+            "rationale": "Record Inspection is the canonical UI label. `single_row_review` (legacy/internal token) is retained for routes, specs, and audit logs."
           },
           {
             "id": "verifier_review",
             "label": "Verifier Review",
             "kind": "nav_item",
             "route": "#/verifier-review",
-            "visible_to": ["Reviewer", "Admin"],
+            "visible_to": ["Verifier", "Admin"],
             "rationale": "Verifier gate actions. Role-gated."
           }
         ]
@@ -95,19 +95,19 @@
             "id": "patch_studio",
             "label": "Patch Studio",
             "route": "#/patch",
-            "visible_to": ["Analyst", "Reviewer", "Admin"]
+            "visible_to": ["Analyst", "Verifier", "Admin"]
           },
           {
             "id": "evidence_status",
             "label": "Evidence Status",
             "interaction": "opens_status_modal",
-            "visible_to": ["Analyst", "Reviewer", "Admin"]
+            "visible_to": ["Analyst", "Verifier", "Admin"]
           },
           {
             "id": "config_inspector",
             "label": "Config Inspector",
             "route": "#/review",
-            "visible_to": ["Reviewer", "Admin"]
+            "visible_to": ["Verifier", "Admin"]
           },
           {
             "id": "admin_approval",
@@ -138,7 +138,7 @@
           "storage_used": "stub",
           "clear_action": "clears_pdf_cache_shows_toast"
         },
-        "visible_to": ["Analyst", "Reviewer", "Admin"],
+        "visible_to": ["Analyst", "Verifier", "Admin"],
         "rationale": "Displays cached PDF attachments. Clear action removes from localStorage."
       },
       {
@@ -147,7 +147,7 @@
         "kind": "action_button",
         "position": "bottom",
         "interaction": "stub_coming_soon_toast",
-        "visible_to": ["Analyst", "Reviewer", "Admin"],
+        "visible_to": ["Analyst", "Verifier", "Admin"],
         "rationale": "Future export functionality. Currently shows coming soon toast."
       }
     ]
@@ -160,8 +160,8 @@
       "never": ["imply_resolution", "auto_fix"]
     },
     "record_inspection": {
-      "canonical_id": "single_row_review",
-      "ui_label": "Record Inspection",
+      "canonical_label": "Record Inspection",
+      "internal_token": "single_row_review",
       "behavior": "opens_row_drawer_for_selected_or_first_row",
       "fallback_if_no_data": "prompts_to_load_or_select"
     },
@@ -173,7 +173,7 @@
   },
   "role_visibility": {
     "Analyst": ["data_source_action", "progress_block", "navigation", "tools.patch_studio", "tools.evidence_status", "cache", "export_save"],
-    "Reviewer": ["data_source_action", "progress_block", "navigation", "tools.*", "cache", "export_save"],
+    "Verifier": ["data_source_action", "progress_block", "navigation", "tools.*", "cache", "export_save"],
     "Admin": ["*"]
   }
 }

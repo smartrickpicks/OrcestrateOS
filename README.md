@@ -12,13 +12,13 @@ Orchestrate OS is an offline‑first, deterministic, config‑driven governance 
 - Smoke Evidence: strict pass/fail logs for baseline (and edge when applicable)
 
 ## Roles
-- Analyst: Loads artifacts, triages queues, drafts rule/patch overlays, prepares patch JSON (copy‑only)
-- Reviewer: Verifies Validation/Smoke evidence, enforces gates, approves PR‑readiness
+- Analyst: Loads artifacts, triages queues, drafts rule/patch overlays, submits Patch Requests for verification
+- Verifier: Verifies Validation/Smoke evidence, enforces gates, approves or requests clarification
 - Admin: Oversees configuration conventions, determinism policy, baselines and version bump policy (no day‑to‑day record fixing unless permitted)
 
 ## No Runtime / No Network (Scope Lock)
 - No runtime execution, no external APIs, no credentials
-- No file writes from browser UI surfaces (copy‑only). Scripts/harness run locally via shell
+- Patch Requests are submitted in-app; deterministic previews and smoke tests run locally via shell
 - Deterministic: severity ordering and join triplet (contract_key → file_url → file_name; nulls last)
 
 ## Legacy Naming (Aliases)
@@ -52,7 +52,7 @@ bash scripts/replit_smoke.sh --edge
 - examples/: synthetic datasets and expected outputs (baseline + edge)
 - local_runner/: offline harness (validate/preview)
 - scripts/: smoke, MCP link generator, repo materializer (offline‑only)
-- ui/: viewer mock (copy‑only; no execution, no writes)
+- ui/: governance viewer (in-app Submit Patch Request; deterministic preview via local harness)
 ## Stakeholder Materials
 
 Executive-facing overviews, deck outlines, and FAQs derived from the core governance doctrine live under `docs/stakeholder/`. These documents are non-normative and reference this README, Flow Doctrine, and Human–Agent workflow as sources of truth.

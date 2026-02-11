@@ -2,11 +2,11 @@
 
 Contract: This document defines the record-level inspection surface. It supports Evidence Pack authoring and Patch Draft creation by Analysts while remaining read-only for Verifier/Admin with respect to gates and Review State transitions.
 
-> **UI Label vs Canonical Name**
-> - **UI Label (user-facing):** Record Inspection
-> - **Canonical Name (specs/audit/routes):** Single Row Review
+> **Canonical Label vs Internal Token**
+> - **Canonical UI Label:** Record Inspection
+> - **Internal Token (routes/audit/specs):** `single_row_review` (legacy/internal token)
 >
-> The user-facing label "Record Inspection" appears in the UI header and navigation. All internal tokens, routes, specs, and audit logs retain the canonical name `single_row_review`.
+> The canonical label "Record Inspection" appears in the UI header and navigation. All internal routes, specs, and audit logs retain the token `single_row_review` (legacy/internal token).
 
 ## Recent Changes (v2.2)
 

@@ -42,7 +42,8 @@
     },
     {
       "id": "single_row_review",
-      "label": "Single Row Review",
+      "label": "Record Inspection",
+      "legacy_label": "Single Row Review",
       "stage": 3,
       "actor": "operator",
       "description": "Per-record inspection; evidence; patch drafting (no state transitions)"
@@ -177,7 +178,7 @@
       { "old": "Reviewer Hub", "new": "Verifier Review" },
       { "old": "Queue", "context": "standalone nav label", "new": "Review State name" },
       { "old": "Load Data", "new": "Data Source" },
-      { "old": "Record Inspection", "new": "Single Row Review" },
+      { "old": "Single Row Review", "new": "Record Inspection", "note": "single_row_review retained as legacy/internal token" },
       { "old": "Submit to Queue", "new": "Submit Patch Request" }
     ]
   },
