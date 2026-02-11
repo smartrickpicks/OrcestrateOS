@@ -2244,11 +2244,11 @@
                     <span id="ta-schema-missing-pl" style="font-size:0.58em;padding:1px 5px;border-radius:3px;background:#f3e5f5;color:#6a1b9a;display:none;"></span>
                   </div>
                 </div>
-                <div id="acct-check-card" onclick="_acctCheckReopen()" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Duplicate account name pairs detected during import. Click to review or revisit dismissed pairs." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
+                <div id="acct-check-card" onclick="_dqCheckReopen()" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Click to review duplicate accounts and incomplete addresses. Use Rerun to re-scan." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-acctcheck" style="font-size: 1.4em; font-weight: 700; color: #555;">0</div>
-                  <div style="font-size: 0.75em; color: #666;">Account Check</div>
+                  <div style="font-size: 0.75em; color: #666;">Data Quality</div>
                   <div id="ta-schema-acctcheck-detail" style="font-size: 0.6em; color: #aaa;"></div>
-                  <div style="font-size: 0.55em; color: #bbb;">Possible duplicate accounts</div>
+                  <div style="font-size: 0.55em; color: #bbb;">Accounts &amp; Addresses</div>
                 </div>
               </div>
             </div>
@@ -9968,7 +9968,7 @@
         // v2.3.5-P1F: Batch PDF scan on saved session load
         if (typeof _p1fBatchPdfScan === 'function') _p1fBatchPdfScan();
         stagedLoader.setStage('indexing');
-        try { ContractIndex.build(); populateContractSelector(); console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on session-load path'); if (typeof _acctCheckDetectOnly === 'function') _acctCheckDetectOnly(); } catch(e) { console.warn('[ContractIndex] Session restore build failed:', e); }
+        try { ContractIndex.build(); populateContractSelector(); console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on session-load path'); if (typeof _dqCheckDetectOnly === 'function') _dqCheckDetectOnly(); } catch(e) { console.warn('[ContractIndex] Session restore build failed:', e); }
         stagedLoader.setStage('changemap');
         saveWorkbookToCache();
         dataLoaded = true;
@@ -10612,7 +10612,7 @@
             ContractIndex.build();
             console.log('[RESTORE] ContractIndex rebuilt from workbook');
             console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on restore path');
-            if (typeof _acctCheckDetectOnly === 'function') _acctCheckDetectOnly();
+            if (typeof _dqCheckDetectOnly === 'function') _dqCheckDetectOnly();
           }
           populateContractSelector();
         } catch(e) { console.warn('[ContractIndex] Rebuild failed:', e); }
@@ -19607,7 +19607,7 @@
       while (t && t !== document.body) {
         if (t.id === 'acct-check-card') {
           console.log('[ACCT-CHECK] card click via delegation');
-          _acctCheckReopen();
+          _dqCheckReopen();
           return;
         }
         t = t.parentElement;
@@ -19848,6 +19848,325 @@
       _resolveDuplicateAccountDifferent(n1, n2);
       _acctCheckIndex++;
       _acctCheckShowCurrent();
+    }
+
+
+    // ═══ COMBINED DATA QUALITY CHECK ═══
+    var _dqCheckState = { activeTab: 'accounts', acctQueue: [], acctIndex: 0, addrQueue: [], addrIndex: 0 };
+
+    function _dqCheckRun() {
+      _buildDuplicateAccountPreflightItems();
+      _buildAddressCandidateItems();
+      _mergeAddressCandidateItems();
+      _dqCheckUpdateCard();
+      var hasAcct = _duplicateAccountItems.length > 0;
+      var hasAddr = _addressCandidateItems.filter(function(i) { return i.blocker_type === 'ADDRESS_INCOMPLETE_CANDIDATE' && !_addrDecisionExists(i); }).length > 0;
+      if (!hasAcct && !hasAddr) return;
+      _dqCheckState.acctQueue = _duplicateAccountItems.slice();
+      _dqCheckState.acctIndex = 0;
+      var pendingAddr = [];
+      for (var i = 0; i < _addressCandidateItems.length; i++) {
+        if (_addressCandidateItems[i].blocker_type === 'ADDRESS_INCOMPLETE_CANDIDATE' && !_addrDecisionExists(_addressCandidateItems[i])) {
+          pendingAddr.push(_addressCandidateItems[i]);
+        }
+      }
+      _dqCheckState.addrQueue = pendingAddr;
+      _dqCheckState.addrIndex = 0;
+      _dqCheckState.activeTab = hasAcct ? 'accounts' : 'addresses';
+      _dqCheckShowModal();
+    }
+
+    function _dqCheckDetectOnly() {
+      _buildDuplicateAccountPreflightItems();
+      _buildAddressCandidateItems();
+      _mergeAddressCandidateItems();
+      _dqCheckUpdateCard();
+    }
+
+    function _dqCheckRerun() {
+      var savedDismissals = {};
+      var dKeys = Object.keys(_dismissedDuplicatePairs || {});
+      for (var di = 0; di < dKeys.length; di++) savedDismissals[dKeys[di]] = true;
+      _dismissedDuplicatePairs = {};
+      _buildDuplicateAccountPreflightItems();
+      _dismissedDuplicatePairs = savedDismissals;
+      _buildAddressCandidateItems();
+      _mergeAddressCandidateItems();
+      _dqCheckState.acctQueue = _duplicateAccountItems.slice();
+      _dqCheckState.acctIndex = 0;
+      var pendingAddr = [];
+      for (var i = 0; i < _addressCandidateItems.length; i++) {
+        if (_addressCandidateItems[i].blocker_type === 'ADDRESS_INCOMPLETE_CANDIDATE' && !_addrDecisionExists(_addressCandidateItems[i])) {
+          pendingAddr.push(_addressCandidateItems[i]);
+        }
+      }
+      _dqCheckState.addrQueue = pendingAddr;
+      _dqCheckState.addrIndex = 0;
+      _dqCheckUpdateTabs();
+      _dqCheckUpdateCard();
+      if (_dqCheckState.acctQueue.length > 0) {
+        _dqCheckState.activeTab = 'accounts';
+      } else if (_dqCheckState.addrQueue.length > 0) {
+        _dqCheckState.activeTab = 'addresses';
+      }
+      _dqCheckShowModal();
+      showToast('Data quality checks re-run', 'info');
+    }
+
+    function _dqCheckShowModal() {
+      var modal = document.getElementById('dq-check-modal');
+      if (!modal) return;
+      var acctBody = document.getElementById('dq-acct-body');
+      var addrBody = document.getElementById('dq-addr-body');
+      if (_dqCheckState.activeTab === 'accounts') {
+        if (acctBody) acctBody.style.display = 'block';
+        if (addrBody) addrBody.style.display = 'none';
+        _dqCheckShowAcctCurrent();
+      } else {
+        if (acctBody) acctBody.style.display = 'none';
+        if (addrBody) addrBody.style.display = 'block';
+        _dqCheckShowAddrCurrent();
+      }
+      _dqCheckUpdateTabs();
+      modal.style.display = 'flex';
+    }
+
+    function _dqCheckSwitchTab(tab) {
+      _dqCheckState.activeTab = tab;
+      _dqCheckUpdateTabs();
+      if (tab === 'accounts') {
+        document.getElementById('dq-acct-body').style.display = 'block';
+        document.getElementById('dq-addr-body').style.display = 'none';
+        _dqCheckShowAcctCurrent();
+      } else {
+        document.getElementById('dq-acct-body').style.display = 'none';
+        document.getElementById('dq-addr-body').style.display = 'block';
+        _dqCheckShowAddrCurrent();
+      }
+    }
+
+    function _dqCheckUpdateTabs() {
+      var acctTab = document.getElementById('dq-tab-accounts');
+      var addrTab = document.getElementById('dq-tab-addresses');
+      var acctCount = _dqCheckState.acctQueue.length;
+      var addrCount = _dqCheckState.addrQueue.length;
+      if (acctTab) {
+        acctTab.innerHTML = 'Duplicate Accounts <span style="background:' + (acctCount > 0 ? '#f57c00' : '#4caf50') + ';color:#fff;padding:1px 7px;border-radius:10px;font-size:0.8em;margin-left:4px;">' + acctCount + '</span>';
+        acctTab.style.borderBottom = _dqCheckState.activeTab === 'accounts' ? '3px solid #1565c0' : '3px solid transparent';
+        acctTab.style.color = _dqCheckState.activeTab === 'accounts' ? '#1565c0' : '#94a3b8';
+        acctTab.style.fontWeight = _dqCheckState.activeTab === 'accounts' ? '700' : '500';
+      }
+      if (addrTab) {
+        addrTab.innerHTML = 'Incomplete Addresses <span style="background:' + (addrCount > 0 ? '#f57c00' : '#4caf50') + ';color:#fff;padding:1px 7px;border-radius:10px;font-size:0.8em;margin-left:4px;">' + addrCount + '</span>';
+        addrTab.style.borderBottom = _dqCheckState.activeTab === 'addresses' ? '3px solid #1565c0' : '3px solid transparent';
+        addrTab.style.color = _dqCheckState.activeTab === 'addresses' ? '#1565c0' : '#94a3b8';
+        addrTab.style.fontWeight = _dqCheckState.activeTab === 'addresses' ? '700' : '500';
+      }
+      var progressEl = document.getElementById('dq-check-progress');
+      if (progressEl) {
+        if (_dqCheckState.activeTab === 'accounts' && acctCount > 0) {
+          progressEl.textContent = 'Pair ' + (_dqCheckState.acctIndex + 1) + ' of ' + acctCount;
+        } else if (_dqCheckState.activeTab === 'addresses' && addrCount > 0) {
+          progressEl.textContent = 'Item ' + (_dqCheckState.addrIndex + 1) + ' of ' + addrCount;
+        } else {
+          progressEl.textContent = '';
+        }
+      }
+    }
+
+    function _dqCheckClose() {
+      var modal = document.getElementById('dq-check-modal');
+      if (modal) modal.style.display = 'none';
+      _dqCheckUpdateCard();
+      if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
+    }
+
+    function _dqCheckShowAcctCurrent() {
+      var body = document.getElementById('dq-acct-body');
+      if (!body) return;
+      if (_dqCheckState.acctIndex >= _dqCheckState.acctQueue.length) {
+        body.innerHTML = '<div style="text-align:center;padding:40px;"><div style="width:48px;height:48px;background:#dcfce7;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:1.5em;">&#10003;</div><p style="color:#4caf50;font-weight:600;">All duplicate account pairs resolved</p></div>';
+        _dqCheckUpdateTabs();
+        return;
+      }
+      var item = _dqCheckState.acctQueue[_dqCheckState.acctIndex];
+      var names = item._duplicate_names || [];
+      var keys = item._duplicate_contract_keys || {};
+      var n1 = names[0] || '';
+      var n2 = names[1] || '';
+      var html = '<p style="font-size:0.88em; color:#64748b; margin:0 0 16px; line-height:1.5;">These two account names look similar. Compare their contract structures below.</p>';
+      html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">';
+      html += '<div style="border:2px solid #dbeafe; border-radius:12px; overflow:hidden;">';
+      html += '<div style="background:linear-gradient(135deg,#eff6ff,#dbeafe); padding:14px 16px; display:flex; align-items:center; gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;"></div><div style="font-weight:700;font-size:0.95em;color:#1e40af;word-break:break-word;">' + _escHtml(n1) + '</div></div>';
+      html += '<div style="padding:12px 16px; max-height:250px; overflow-y:auto;">' + _acctCheckBuildSchemaTree(n1, keys[n1] || []) + '</div></div>';
+      html += '<div style="border:2px solid #fed7aa; border-radius:12px; overflow:hidden;">';
+      html += '<div style="background:linear-gradient(135deg,#fff7ed,#fed7aa); padding:14px 16px; display:flex; align-items:center; gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:#f97316;"></div><div style="font-weight:700;font-size:0.95em;color:#c2410c;word-break:break-word;">' + _escHtml(n2) + '</div></div>';
+      html += '<div style="padding:12px 16px; max-height:250px; overflow-y:auto;">' + _acctCheckBuildSchemaTree(n2, keys[n2] || []) + '</div></div></div>';
+      html += '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:14px 18px;border-radius:12px;margin-bottom:12px;">';
+      html += '<div style="font-weight:700;font-size:0.88em;color:#166534;margin-bottom:10px;">Select canonical account name:</div>';
+      html += '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;"><input type="radio" name="dq-acct-pick" value="' + _escHtml(n1) + '" checked> <span style="font-weight:600;">' + _escHtml(n1) + '</span></label>';
+      html += '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;"><input type="radio" name="dq-acct-pick" value="' + _escHtml(n2) + '"> <span style="font-weight:600;">' + _escHtml(n2) + '</span></label>';
+      html += '</div>';
+      html += '<div style="display:flex;justify-content:flex-end;gap:10px;padding-top:8px;">';
+      html += '<button onclick="_dqAcctDismiss()" style="padding:10px 22px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;color:#475569;font-size:0.88em;font-weight:600;cursor:pointer;">Different People &mdash; Dismiss</button>';
+      html += '<button onclick="_dqAcctMerge()" style="padding:10px 22px;border-radius:10px;border:none;background:linear-gradient(135deg,#1e3a5f,#1565c0);color:#fff;font-size:0.88em;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(21,101,192,0.3);">Same Person &mdash; Merge</button>';
+      html += '</div>';
+      body.innerHTML = html;
+      _dqCheckUpdateTabs();
+    }
+
+    function _dqCheckShowAddrCurrent() {
+      var body = document.getElementById('dq-addr-body');
+      if (!body) return;
+      if (_dqCheckState.addrIndex >= _dqCheckState.addrQueue.length) {
+        body.innerHTML = '<div style="text-align:center;padding:40px;"><div style="width:48px;height:48px;background:#dcfce7;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:1.5em;">&#10003;</div><p style="color:#4caf50;font-weight:600;">All address candidates resolved</p></div>';
+        _dqCheckUpdateTabs();
+        return;
+      }
+      var item = _dqCheckState.addrQueue[_dqCheckState.addrIndex];
+      var missingComp = item.missing_component || '';
+      var groupPrefix = item.address_group || '';
+      var existingParts = item.existing_parts || {};
+      var candidateVal = item.candidate_value || '';
+      var fieldLabel = item.field_label || (groupPrefix + ' ' + missingComp);
+      var compOrder = ['street', 'city', 'state', 'postal', 'country'];
+      var compLabels = { street: 'Street', city: 'City', state: 'State/Province', postal: 'Zip/Postal Code', country: 'Country' };
+      var currentHtml = '';
+      var suggestedHtml = '';
+      for (var c = 0; c < compOrder.length; c++) {
+        var comp = compOrder[c];
+        var label = compLabels[comp] || comp;
+        var val = existingParts[comp] || '';
+        var isMissing = (comp === missingComp);
+        currentHtml += '<div style="display:flex;gap:8px;padding:4px 0;' + (isMissing ? 'background:#fff3e0;margin:0 -8px;padding:4px 8px;border-radius:4px;' : '') + '">';
+        currentHtml += '<span style="font-weight:600;color:#757575;min-width:100px;font-size:0.88em;">' + label + ':</span>';
+        currentHtml += isMissing ? '<span style="color:#e65100;font-style:italic;font-weight:600;">MISSING</span>' : '<span style="color:#333;">' + (val ? _escHtml(val) : '<span style="color:#bbb;">empty</span>') + '</span>';
+        currentHtml += '</div>';
+        suggestedHtml += '<div style="display:flex;gap:8px;padding:4px 0;' + (isMissing ? 'background:#e8f5e9;margin:0 -8px;padding:4px 8px;border-radius:4px;' : '') + '">';
+        suggestedHtml += '<span style="font-weight:600;color:#757575;min-width:100px;font-size:0.88em;">' + label + ':</span>';
+        suggestedHtml += isMissing ? '<span style="color:#2e7d32;font-weight:700;">' + _escHtml(candidateVal) + '</span>' : '<span style="color:#333;">' + (val ? _escHtml(val) : '<span style="color:#bbb;">empty</span>') + '</span>';
+        suggestedHtml += '</div>';
+      }
+      var html = '<p style="font-size:0.88em;color:#64748b;margin:0 0 12px;line-height:1.5;">This address is missing a component. A candidate match was found.</p>';
+      html += '<div style="font-weight:700;font-size:0.92em;color:#37474f;margin-bottom:12px;">' + _escHtml(fieldLabel) + ' &mdash; Missing: ' + missingComp.charAt(0).toUpperCase() + missingComp.slice(1) + '</div>';
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">';
+      html += '<div style="border:2px solid #ffccbc;border-radius:12px;overflow:hidden;"><div style="background:linear-gradient(135deg,#fbe9e7,#ffccbc);padding:12px 16px;font-weight:700;font-size:0.88em;color:#bf360c;">Current (Incomplete)</div><div style="padding:14px 16px;font-size:0.9em;line-height:1.6;">' + currentHtml + '</div></div>';
+      html += '<div style="border:2px solid #c8e6c9;border-radius:12px;overflow:hidden;"><div style="background:linear-gradient(135deg,#e8f5e9,#c8e6c9);padding:12px 16px;font-weight:700;font-size:0.88em;color:#1b5e20;">Suggested (Merged)</div><div style="padding:14px 16px;font-size:0.9em;line-height:1.6;">' + suggestedHtml + '</div></div></div>';
+      html += '<div style="background:#f5f5f5;border-radius:8px;padding:10px 14px;font-size:0.8em;color:#616161;margin-bottom:12px;">Contract: ' + _escHtml(item.contract_key || item.contract_id || 'N/A') + ' | Section: ' + _escHtml(item.sheet_name || 'N/A') + ' | Record: ' + _escHtml(item.record_id || 'N/A') + '</div>';
+      html += '<div style="display:flex;justify-content:flex-end;gap:10px;padding-top:4px;">';
+      html += '<button onclick="_dqAddrReject()" style="padding:10px 22px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;color:#475569;font-size:0.88em;font-weight:600;cursor:pointer;">No &mdash; Keep Original</button>';
+      html += '<button onclick="_dqAddrAccept()" style="padding:10px 22px;border-radius:10px;border:none;background:linear-gradient(135deg,#2e7d32,#1b5e20);color:#fff;font-size:0.88em;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(46,125,50,0.3);">Yes &mdash; Apply Merged</button>';
+      html += '</div>';
+      body.innerHTML = html;
+      _dqCheckUpdateTabs();
+    }
+
+    function _dqAcctDismiss() {
+      var item = _dqCheckState.acctQueue[_dqCheckState.acctIndex];
+      if (!item) return;
+      var names = item._duplicate_names || [];
+      var pairHash = names.slice().sort().join('::');
+      _dismissedDuplicatePairs[pairHash] = true;
+      for (var di = _duplicateAccountItems.length - 1; di >= 0; di--) {
+        var dn = _duplicateAccountItems[di]._duplicate_names || [];
+        if (dn.slice().sort().join('::') === pairHash) _duplicateAccountItems.splice(di, 1);
+      }
+      AuditTimeline.emit('DUPLICATE_ACCOUNT_DISMISSED', { names: names });
+      _dqCheckState.acctQueue.splice(_dqCheckState.acctIndex, 1);
+      if (_dqCheckState.acctIndex >= _dqCheckState.acctQueue.length) _dqCheckState.acctIndex = Math.max(0, _dqCheckState.acctQueue.length - 1);
+      _dqCheckShowAcctCurrent();
+    }
+
+    function _dqAcctMerge() {
+      var item = _dqCheckState.acctQueue[_dqCheckState.acctIndex];
+      if (!item) return;
+      var names = item._duplicate_names || [];
+      var radios = document.querySelectorAll('input[name="dq-acct-pick"]');
+      var canonical = names[0];
+      for (var ri = 0; ri < radios.length; ri++) {
+        if (radios[ri].checked) { canonical = radios[ri].value; break; }
+      }
+      var otherName = (canonical === names[0]) ? names[1] : names[0];
+      if (window._workbookData) {
+        var sheetKeys = Object.keys(window._workbookData);
+        for (var si = 0; si < sheetKeys.length; si++) {
+          var rows = window._workbookData[sheetKeys[si]];
+          if (!Array.isArray(rows)) continue;
+          for (var ri2 = 0; ri2 < rows.length; ri2++) {
+            var row = rows[ri2];
+            var acctFields = ['Account_Name__c', 'account_name', 'Account', 'AccountName'];
+            for (var fi = 0; fi < acctFields.length; fi++) {
+              if (row[acctFields[fi]] && row[acctFields[fi]].toLowerCase().trim() === otherName.toLowerCase().trim()) {
+                row[acctFields[fi]] = canonical;
+              }
+            }
+          }
+        }
+      }
+      var pairHash = names.slice().sort().join('::');
+      _dismissedDuplicatePairs[pairHash] = true;
+      for (var di = _duplicateAccountItems.length - 1; di >= 0; di--) {
+        var dn = _duplicateAccountItems[di]._duplicate_names || [];
+        if (dn.slice().sort().join('::') === pairHash) _duplicateAccountItems.splice(di, 1);
+      }
+      AuditTimeline.emit('DUPLICATE_ACCOUNT_MERGED', { canonical: canonical, merged_from: otherName });
+      showToast('Accounts merged: "' + otherName + '" \u2192 "' + canonical + '"', 'success');
+      _dqCheckState.acctQueue.splice(_dqCheckState.acctIndex, 1);
+      if (_dqCheckState.acctIndex >= _dqCheckState.acctQueue.length) _dqCheckState.acctIndex = Math.max(0, _dqCheckState.acctQueue.length - 1);
+      _dqCheckShowAcctCurrent();
+    }
+
+    function _dqAddrAccept() {
+      var item = _dqCheckState.addrQueue[_dqCheckState.addrIndex];
+      if (!item) return;
+      _resolveAddressCandidate(item.request_id, 'accept', item.candidate_value || '');
+      AuditTimeline.emit('ADDRESS_CANDIDATE_ACCEPTED', { item_id: item.request_id, candidate: item.candidate_value });
+      showToast('Address merged: ' + (item.missing_component || 'field') + ' filled', 'success');
+      _dqCheckState.addrQueue.splice(_dqCheckState.addrIndex, 1);
+      if (_dqCheckState.addrIndex >= _dqCheckState.addrQueue.length) _dqCheckState.addrIndex = Math.max(0, _dqCheckState.addrQueue.length - 1);
+      _dqCheckShowAddrCurrent();
+    }
+
+    function _dqAddrReject() {
+      var item = _dqCheckState.addrQueue[_dqCheckState.addrIndex];
+      if (!item) return;
+      _saveAddressCandidateDecision(item.request_id, 'reject', item);
+      AuditTimeline.emit('ADDRESS_CANDIDATE_REJECTED', { item_id: item.request_id });
+      _dqCheckState.addrQueue.splice(_dqCheckState.addrIndex, 1);
+      if (_dqCheckState.addrIndex >= _dqCheckState.addrQueue.length) _dqCheckState.addrIndex = Math.max(0, _dqCheckState.addrQueue.length - 1);
+      _dqCheckShowAddrCurrent();
+    }
+
+    function _dqCheckUpdateCard() {
+      var acEl = document.getElementById('ta-schema-acctcheck');
+      var acDetail = document.getElementById('ta-schema-acctcheck-detail');
+      var acctPending = _duplicateAccountItems.length;
+      var acctDismissed = Object.keys(_dismissedDuplicatePairs).length;
+      var addrPending = 0;
+      for (var i = 0; i < _addressCandidateItems.length; i++) {
+        if (_addressCandidateItems[i].blocker_type === 'ADDRESS_INCOMPLETE_CANDIDATE' && !_addrDecisionExists(_addressCandidateItems[i])) addrPending++;
+      }
+      var total = acctPending + addrPending + acctDismissed;
+      var pendingTotal = acctPending + addrPending;
+      if (acEl) {
+        acEl.textContent = pendingTotal;
+        acEl.style.color = pendingTotal > 0 ? '#f57c00' : '#4caf50';
+      }
+      if (acDetail) {
+        if (pendingTotal === 0 && acctDismissed === 0) {
+          acDetail.textContent = 'All clear';
+        } else {
+          var parts = [];
+          if (acctPending > 0) parts.push(acctPending + ' acct');
+          if (addrPending > 0) parts.push(addrPending + ' addr');
+          if (acctDismissed > 0) parts.push(acctDismissed + ' dismissed');
+          acDetail.textContent = parts.join(', ');
+        }
+      }
+    }
+
+    function _dqCheckReopen() {
+      _dqCheckRerun();
     }
 
     function _resolveDuplicateAccountSame(canonicalName, otherName) {
@@ -33897,7 +34216,7 @@
           if (typeof detectUnknownColumns === 'function') detectUnknownColumns();
 
           // v2.2: Build contract index after signals
-          try { ContractIndex.build(); populateContractSelector(); console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on upload path'); if (typeof _acctCheckRun === 'function') _acctCheckRun(); } catch(e) { console.error('[ContractIndex] Post-import build failed:', e); }
+          try { ContractIndex.build(); populateContractSelector(); console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on upload path'); if (typeof _dqCheckRun === 'function') _dqCheckRun(); } catch(e) { console.error('[ContractIndex] Post-import build failed:', e); }
 
           // v1.6.33: Seed patch requests from RFI meta sheet (if present in uploaded file)
           seedPatchRequestsFromMetaSheet();
@@ -38293,7 +38612,7 @@ Add any additional notes here.
         try {
           ContractIndex.build();
           populateContractSelector();
-          if (typeof _acctCheckDetectOnly === 'function') _acctCheckDetectOnly();
+          if (typeof _dqCheckDetectOnly === 'function') _dqCheckDetectOnly();
           console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on demo/sandbox path');
         } catch(e) { console.warn('[ContractIndex] Demo/sandbox build failed:', e); }
 
@@ -40301,60 +40620,35 @@ var P022_RuntimeValidation = {
       </div>
     </div>
 
-        <!-- Account Check Interstitial Modal -->
-        <div id="account-check-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:10000; justify-content:center; align-items:center;">
-          <div style="background:#fff; border-radius:16px; width:94%; max-width:780px; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden;">
-            <div style="background:linear-gradient(135deg,#1e3a5f 0%,#1565c0 100%); padding:20px 24px; display:flex; justify-content:space-between; align-items:center;">
+        <!-- Data Quality Check Modal -->
+        <div id="dq-check-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:10000; justify-content:center; align-items:center;">
+          <div style="background:#fff; border-radius:16px; width:94%; max-width:820px; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#1e3a5f 0%,#1565c0 100%); padding:16px 24px; display:flex; justify-content:space-between; align-items:center;">
               <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:36px; height:36px; background:rgba(255,255,255,0.15); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2em;">&#128101;</div>
+                <div style="width:36px; height:36px; background:rgba(255,255,255,0.15); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2em;">&#128270;</div>
                 <div>
-                  <div style="font-weight:700; font-size:1.1em; color:#fff; letter-spacing:-0.01em;">Account Check</div>
-                  <div style="font-size:0.78em; color:rgba(255,255,255,0.7);">Possible duplicate accounts detected</div>
+                  <div style="font-weight:700; font-size:1.1em; color:#fff;">Data Quality Check</div>
+                  <div style="font-size:0.78em; color:rgba(255,255,255,0.7);">Review duplicate accounts &amp; incomplete addresses</div>
                 </div>
               </div>
-              <div style="display:flex; align-items:center; gap:14px;">
-                <span id="acct-check-progress" style="font-size:0.8em; color:rgba(255,255,255,0.8); background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:20px; font-weight:600;"></span>
-                <button onclick="_acctCheckClose()" style="background:rgba(255,255,255,0.15); border:none; color:#fff; width:32px; height:32px; border-radius:8px; cursor:pointer; font-size:1.2em; display:flex; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">&times;</button>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <button onclick="_dqCheckRerun()" style="padding:6px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.3); background:rgba(255,255,255,0.1); color:#fff; font-size:0.8em; font-weight:600; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">&#8635; Rerun</button>
+                <span id="dq-check-progress" style="font-size:0.8em; color:rgba(255,255,255,0.8); background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:20px; font-weight:600;"></span>
+                <button onclick="_dqCheckClose()" style="background:rgba(255,255,255,0.15); border:none; color:#fff; width:32px; height:32px; border-radius:8px; cursor:pointer; font-size:1.2em; display:flex; align-items:center; justify-content:center;">&times;</button>
               </div>
+            </div>
+            <div style="display:flex; gap:0; border-bottom:1px solid #e2e8f0; padding:0 24px; background:#f8fafc;">
+              <button id="dq-tab-accounts" onclick="_dqCheckSwitchTab('accounts')" style="padding:12px 20px; border:none; background:transparent; cursor:pointer; font-size:0.9em; border-bottom:3px solid #1565c0; color:#1565c0; font-weight:700;">Duplicate Accounts</button>
+              <button id="dq-tab-addresses" onclick="_dqCheckSwitchTab('addresses')" style="padding:12px 20px; border:none; background:transparent; cursor:pointer; font-size:0.9em; border-bottom:3px solid transparent; color:#94a3b8; font-weight:500;">Incomplete Addresses</button>
             </div>
             <div style="padding:20px 24px; overflow-y:auto; flex:1;">
-              <p style="font-size:0.88em; color:#64748b; margin:0 0 20px; line-height:1.5;">These two account names look similar. Compare their contract structures below to decide if they represent the same entity.</p>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-                <div style="border:2px solid #dbeafe; border-radius:12px; overflow:hidden; background:#fff;">
-                  <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe); padding:14px 16px; display:flex; align-items:center; gap:8px;">
-                    <div style="width:8px; height:8px; border-radius:50%; background:#3b82f6; flex-shrink:0;"></div>
-                    <div id="acct-check-name1" style="font-weight:700; font-size:0.95em; color:#1e40af; word-break:break-word;"></div>
-                  </div>
-                  <div id="acct-check-tree1" style="padding:12px 16px; max-height:280px; overflow-y:auto;"></div>
-                </div>
-                <div style="border:2px solid #fed7aa; border-radius:12px; overflow:hidden; background:#fff;">
-                  <div style="background:linear-gradient(135deg,#fff7ed,#fed7aa); padding:14px 16px; display:flex; align-items:center; gap:8px;">
-                    <div style="width:8px; height:8px; border-radius:50%; background:#f97316; flex-shrink:0;"></div>
-                    <div id="acct-check-name2" style="font-weight:700; font-size:0.95em; color:#c2410c; word-break:break-word;"></div>
-                  </div>
-                  <div id="acct-check-tree2" style="padding:12px 16px; max-height:280px; overflow-y:auto;"></div>
-                </div>
-              </div>
-              <div id="acct-check-picker" style="display:none; background:linear-gradient(135deg,#f0fdf4,#dcfce7); border:1px solid #bbf7d0; padding:16px 20px; border-radius:12px; margin-bottom:4px;">
-                <p style="font-size:0.88em; font-weight:700; margin:0 0 12px; color:#166534;">Choose the canonical name to keep:</p>
-                <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; font-size:0.9em; border-radius:8px; margin-bottom:6px; background:#fff; border:1px solid #d1d5db; transition:border-color 0.2s, box-shadow 0.2s;" onmouseover="this.style.borderColor='#22c55e';this.style.boxShadow='0 0 0 3px rgba(34,197,94,0.1)'" onmouseout="this.style.borderColor='#d1d5db';this.style.boxShadow='none'"><input type="radio" name="acct-check-canonical" id="acct-check-radio1" value="" checked style="accent-color:#16a34a; width:16px; height:16px;"> <span id="acct-check-radio-label1" style="font-weight:600; color:#1e293b;"></span></label>
-                <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; font-size:0.9em; border-radius:8px; background:#fff; border:1px solid #d1d5db; transition:border-color 0.2s, box-shadow 0.2s;" onmouseover="this.style.borderColor='#22c55e';this.style.boxShadow='0 0 0 3px rgba(34,197,94,0.1)'" onmouseout="this.style.borderColor='#d1d5db';this.style.boxShadow='none'"><input type="radio" name="acct-check-canonical" id="acct-check-radio2" value="" style="accent-color:#16a34a; width:16px; height:16px;"> <span id="acct-check-radio-label2" style="font-weight:600; color:#1e293b;"></span></label>
-              </div>
-            </div>
-            <div style="padding:16px 24px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:10px;">
-              <div id="acct-check-initial-actions" style="display:flex; gap:10px;">
-                <button onclick="_acctCheckConfirmDismiss()" style="padding:10px 22px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; color:#475569; font-size:0.88em; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9';this.style.borderColor='#94a3b8'" onmouseout="this.style.background='#fff';this.style.borderColor='#cbd5e1'">Different People &mdash; Dismiss</button>
-                <button onclick="_acctCheckShowPicker()" style="padding:10px 22px; border-radius:10px; border:none; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; font-size:0.88em; font-weight:600; cursor:pointer; box-shadow:0 1px 3px rgba(22,163,74,0.3); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(22,163,74,0.3)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 1px 3px rgba(22,163,74,0.3)'">Same Person &mdash; Merge</button>
-              </div>
-              <div id="acct-check-merge-actions" style="display:none; gap:10px;">
-                <button onclick="_acctCheckClose()" style="padding:10px 22px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; color:#475569; font-size:0.88em; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#fff'">Cancel</button>
-                <button onclick="_acctCheckConfirmMerge()" style="padding:10px 22px; border-radius:10px; border:none; background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; font-size:0.88em; font-weight:600; cursor:pointer; box-shadow:0 1px 3px rgba(22,163,74,0.3); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(22,163,74,0.3)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 1px 3px rgba(22,163,74,0.3)'">Confirm Merge</button>
-              </div>
+              <div id="dq-acct-body"></div>
+              <div id="dq-addr-body" style="display:none;"></div>
             </div>
           </div>
         </div>
 
-    <!-- ═══ ADDRESS MERGE MODAL ═══ -->
+        <!-- ═══ ADDRESS MERGE MODAL ═══ -->
     <div id="addr-merge-modal" style="display:none; position:fixed; inset:0; z-index:10001; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); align-items:center; justify-content:center;">
       <div style="background:#fff; border-radius:16px; width:620px; max-width:94vw; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.3); overflow:hidden;">
         <div style="background:linear-gradient(135deg,#e65100,#f57c00); padding:18px 24px; display:flex; align-items:center; justify-content:space-between;">
