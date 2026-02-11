@@ -18973,7 +18973,7 @@
         html += '<td class="p1d1-issue-count">' + _dedupedIssueCount + '</td>';
         html += '<td>' + sevSummary + '</td>';
         html += '<td class="p1d1-sections">' + sectionChips + '</td>';
-        html += '<td>' + viewContractAction + '</td>';
+        html += '<td style="text-align:right; white-space:nowrap;">' + viewContractAction + '</td>';
         var healthHtml = '';
         var _hsResult = null;
         if (typeof ContractHealthScore !== 'undefined' && ContractHealthScore._scores) {
@@ -19113,7 +19113,7 @@
             html += '<td>' + sevHtml + '</td>';
             html += '<td>' + stBadge + '</td>';
             html += '<td></td>';
-            html += '<td><button class="p1d1-view-btn small" onclick="event.stopPropagation(); ' + viewHandler + '">View</button>' + qfOpenBtn + patchBtn + '</td>';
+            html += '<td style="text-align:right; white-space:nowrap;"><button class="p1d1-view-btn small" onclick="event.stopPropagation(); ' + viewHandler + '">View</button>' + qfOpenBtn + patchBtn + '</td>';
             html += '<td></td>';
             html += '</tr>';
             childrenRendered++;
