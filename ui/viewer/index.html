@@ -27587,6 +27587,18 @@
                 if (item.contract_id === cid || item.contract_key === cid) hasBlockers = true;
               });
             }
+            if (typeof _missingValuePreflightItems !== 'undefined') {
+              for (var _mvpi = 0; _mvpi < _missingValuePreflightItems.length; _mvpi++) {
+                var _mvItem = _missingValuePreflightItems[_mvpi];
+                if (_mvItem.contract_id === cid || _mvItem.contract_key === cid) { hasBlockers = true; break; }
+              }
+            }
+            if (typeof _duplicateAccountItems !== 'undefined') {
+              for (var _dai = 0; _dai < _duplicateAccountItems.length; _dai++) {
+                var _daItem = _duplicateAccountItems[_dai];
+                if (_daItem.contract_id === cid || _daItem.contract_key === cid) { hasBlockers = true; break; }
+              }
+            }
 
             if (_scanResult) {
               if (_scanResult === 'clean') {
@@ -27601,6 +27613,8 @@
                 stage = 'preflight_complete';
               }
             } else if (_scanHasRun && !hasBlockers) {
+              stage = 'preflight_complete';
+            } else if (hasBlockers) {
               stage = 'preflight_complete';
             }
 
@@ -27639,6 +27653,12 @@
             (analystTriageState.manualItems || []).forEach(function(item) {
               if (item.contract_id === cid || item.contract_key === cid) pfAlerts++;
             });
+            if (typeof _missingValuePreflightItems !== 'undefined') {
+              for (var _mvai = 0; _mvai < _missingValuePreflightItems.length; _mvai++) {
+                var _mvaItem = _missingValuePreflightItems[_mvai];
+                if (_mvaItem.contract_id === cid || _mvaItem.contract_key === cid) pfAlerts++;
+              }
+            }
             (SystemPass._proposals || []).forEach(function(p) {
               if (p.contract_id === cid) semAlerts++;
             });
