@@ -1174,7 +1174,7 @@
     .grid-table.grid-mode-active tbody tr:hover { background: #e3f2fd; }
     /* Mode toggle pill */
     .grid-mode-toggle { display: inline-flex; border: 1px solid #1565c0; border-radius: 8px; overflow: hidden; font-size: 0.82em; }
-    .grid-mode-toggle button { border: none; padding: 5px 16px; cursor: pointer; font-weight: 600; background: #fff; color: #1565c0; transition: background 0.15s, color 0.15s; }
+    .grid-mode-toggle button { border: none; padding: 6px 20px; cursor: pointer; font-weight: 600; background: #fff; color: #1565c0; transition: background 0.15s, color 0.15s; min-width: 70px; text-align: center; font-size: 0.85em; }
     .grid-mode-toggle button.active { background: #1565c0; color: #fff; }
     /* Inline editing cell */
     .grid-cell-editing { outline: 2px solid #1976d2; outline-offset: -1px; background: #fff !important; min-width: 80px; cursor: text; }
@@ -12642,39 +12642,67 @@
     function _gridGetPendingEdits() { return _gridPendingEdits.slice(); }
     function _gridClearPendingEdits() { _gridPendingEdits = []; _gridUpdatePatchBadge(); }
 
-    function _gridVerifyRecord(recordId, sheetName, rowIdx, trEl) {
-      if (!recordId) return;
-      if (!window.localState) window.localState = {};
-      if (!window.localState.recordStatus) window.localState.recordStatus = {};
-      var current = window.localState.recordStatus[recordId];
-      if (current === 'verified') {
-        delete window.localState.recordStatus[recordId];
-        if (trEl) {
-          trEl.style.background = '';
-          trEl.classList.remove('grid-row-verified');
-        }
-        AuditTimeline.emit('RECORD_UNVERIFIED_GRID', {
-          record_id: recordId,
-          file_id: sheetName,
+    if (!window._gridVerifiedCells) window._gridVerifiedCells = {};
+
+    function _gridVerifyCellToggle(recordId, fieldKey, tdEl, sheetName, rowIdx) {
+      if (!recordId || !fieldKey) return;
+      if (!window._gridVerifiedCells[recordId]) window._gridVerifiedCells[recordId] = {};
+      var wasVerified = window._gridVerifiedCells[recordId][fieldKey];
+      if (wasVerified) {
+        delete window._gridVerifiedCells[recordId][fieldKey];
+        if (tdEl) { tdEl.style.background = ''; tdEl.style.borderLeft = ''; }
+        if (typeof _cacheFieldState === 'function') _cacheFieldState(recordId, fieldKey, null);
+        AuditTimeline.emit('FIELD_UNVERIFIED_GRID', {
+          record_id: recordId, field_key: fieldKey, file_id: sheetName,
           metadata: { sheet: sheetName, row_index: rowIdx, mode: 'grid' }
         });
-        showToast('Record un-verified', 'info');
       } else {
-        window.localState.recordStatus[recordId] = 'verified';
-        if (trEl) {
-          trEl.style.background = '#e8f5e9';
-          trEl.classList.add('grid-row-verified');
-        }
-        AuditTimeline.emit('RECORD_VERIFIED_GRID', {
-          record_id: recordId,
-          file_id: sheetName,
+        window._gridVerifiedCells[recordId][fieldKey] = true;
+        if (tdEl) { tdEl.style.background = '#e8f5e9'; tdEl.style.borderLeft = '2px solid #4caf50'; }
+        if (typeof _cacheFieldState === 'function') _cacheFieldState(recordId, fieldKey, 'verified');
+        AuditTimeline.emit('FIELD_VERIFIED_GRID', {
+          record_id: recordId, field_key: fieldKey, file_id: sheetName,
           metadata: { sheet: sheetName, row_index: rowIdx, mode: 'grid' }
         });
-        var label = recordId.length > 30 ? recordId.substring(0, 28) + '..' : recordId;
-        showToast('Record verified: ' + label, 'success');
       }
       if (typeof updateTriageCounts === 'function') updateTriageCounts();
     }
+
+    function _gridVerifyRecord(recordId, sheetName, rowIdx, trEl) {
+      if (!recordId) return;
+    }
+    (function() {
+      document.addEventListener('click', function(e) {
+        if (_gridViewMode !== 'grid') return;
+        var td = e.target.closest ? e.target.closest('td[data-gfield]') : null;
+        if (!td) return;
+        var tr = td.parentElement;
+        if (!tr) return;
+        var recordId = tr.dataset.recordId || '';
+        var sheetName = tr.dataset.sheetName || '';
+        var rowIdx = parseInt(tr.dataset.recordIndex || '0', 10);
+        var fieldKey = td.getAttribute('data-gfield');
+        if (!recordId || !fieldKey) return;
+        if (td._gridCellClickTimer) clearTimeout(td._gridCellClickTimer);
+        td._gridCellClickTimer = setTimeout(function() {
+          td._gridCellClickTimer = null;
+          _gridVerifyCellToggle(recordId, fieldKey, td, sheetName, rowIdx);
+        }, 250);
+      });
+      document.addEventListener('dblclick', function(e) {
+        if (_gridViewMode !== 'grid') return;
+        var td = e.target.closest ? e.target.closest('td[data-gfield]') : null;
+        if (!td) return;
+        var tr = td.parentElement;
+        if (!tr) return;
+        var recordId = tr.dataset.recordId || '';
+        var sheetName = tr.dataset.sheetName || '';
+        var rowIdx = parseInt(tr.dataset.recordIndex || '0', 10);
+        if (td._gridCellClickTimer) { clearTimeout(td._gridCellClickTimer); td._gridCellClickTimer = null; }
+        _gridOpenPatchEditor(recordId, sheetName, rowIdx);
+      });
+    })();
+
 
     function _gridOpenPatchEditor(recordId, sheetName, rowIdx) {
       var allData = window._workbookData || {};
@@ -17663,7 +17691,7 @@
               var cellClass = isStatusCol ? statusClass : '';
               // v1.6.2: Apply signal-based cell coloring (v1.6.18: pass record)
               var cellStyle = getGridCellStyle(recordId, col, r);
-              var changeInfo = getCellChangeInfo(recordId, col, r); var titlePrefix = changeInfo && CHANGE_TYPE_STYLES[changeInfo.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo.type].label + '] ' : ''; return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + titlePrefix + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+              var changeInfo = getCellChangeInfo(recordId, col, r); var titlePrefix = changeInfo && CHANGE_TYPE_STYLES[changeInfo.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo.type].label + '] ' : ''; return '<td class="' + cellClass + ' truncated" data-gfield="' + col + '" style="' + cellStyle + '" title="' + titlePrefix + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
             }).join('') +
             '</tr>';
         }).join('');
@@ -21542,27 +21570,14 @@
 
           var tr = document.createElement('tr');
           tr.className = rowClasses.join(' ');
-          tr.setAttribute('data-sheet-name', rSheetName);
-          tr.setAttribute('data-record-index', '' + sheetRowIdx);
-          tr.setAttribute('data-record-id', escapeHtml(recordId));
-          if (window.localState && window.localState.recordStatus && window.localState.recordStatus[recordId] === 'verified') {
-            tr.style.background = '#e8f5e9';
-            tr.classList.add('grid-row-verified');
-          }
+          tr.dataset.sheetName = rSheetName;
+          tr.dataset.recordIndex = '' + sheetRowIdx;
+          tr.dataset.recordId = recordId;
+
           if (_gridViewMode === 'review') {
             tr.onclick = (function(sn, sri) { return function() { openRowReviewDrawer(sn, sri); }; })(r.sheet || sheetName, sheetRowIdx);
             tr.style.cursor = 'pointer';
           } else if (_gridViewMode === 'grid') {
-            (function(rowEl, rid, sn, sri) {
-              rowEl.onclick = function() {
-                if (rowEl._gridClickTimer) clearTimeout(rowEl._gridClickTimer);
-                rowEl._gridClickTimer = setTimeout(function() { rowEl._gridClickTimer = null; _gridVerifyRecord(rid, sn, sri, rowEl); }, 250);
-              };
-              rowEl.ondblclick = function() {
-                if (rowEl._gridClickTimer) { clearTimeout(rowEl._gridClickTimer); rowEl._gridClickTimer = null; }
-                _gridOpenPatchEditor(rid, sn, sri);
-              };
-            })(tr, recordId, r.sheet || sheetName, sheetRowIdx);
             tr.style.cursor = 'pointer';
           }
 
@@ -21602,9 +21617,9 @@
             var editAttrs = '';
             if (_gridViewMode === 'grid') {
               editAttrs = ' style="' + cStyle + '"';
-              rowHtml += '<td class="' + cellCls + ' truncated"' + editAttrs + ' title="' + titlePfx + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+              rowHtml += '<td class="' + cellCls + ' truncated" data-gfield="' + col2 + '"' + editAttrs + ' title="' + titlePfx + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
             } else {
-              rowHtml += '<td class="' + cellCls + ' truncated" style="' + cStyle + '" title="' + titlePfx + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+              rowHtml += '<td class="' + cellCls + ' truncated" data-gfield="' + col2 + '" style="' + cStyle + '" title="' + titlePfx + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
             }
           }
           tr.innerHTML = rowHtml;
@@ -23510,6 +23525,9 @@
     // v1.6.8: Enhanced with change map highlighting for modified dataset
     // v1.6.18: Updated to pass record for key fallback
     function getGridCellStyle(recordId, fieldKey, record) {
+      if (window._gridVerifiedCells && window._gridVerifiedCells[recordId] && window._gridVerifiedCells[recordId][fieldKey]) {
+        return 'background:#e8f5e9;border-left:2px solid #4caf50;';
+      }
       var normKey = normalizeFieldKey(fieldKey);
 
       var fieldState = _getFieldState(recordId, normKey);
@@ -34082,24 +34100,11 @@
         tr.dataset.sheetName = sheetName;
         tr.dataset.recordIndex = sheetRowIdx;
         tr.dataset.recordId = recordId;
-        if (window.localState && window.localState.recordStatus && window.localState.recordStatus[recordId] === 'verified') {
-          tr.style.background = '#e8f5e9';
-          tr.classList.add('grid-row-verified');
-        }
+
         if (_gridViewMode === 'review') {
           tr.onclick = (function(sn, sri) { return function() { openRowReviewDrawer(sn, sri); }; })(sheetName, sheetRowIdx);
           tr.style.cursor = 'pointer';
         } else if (_gridViewMode === 'grid') {
-          (function(rowEl, rid, sn, sri) {
-            rowEl.onclick = function() {
-              if (rowEl._gridClickTimer) clearTimeout(rowEl._gridClickTimer);
-              rowEl._gridClickTimer = setTimeout(function() { rowEl._gridClickTimer = null; _gridVerifyRecord(rid, sn, sri, rowEl); }, 250);
-            };
-            rowEl.ondblclick = function() {
-              if (rowEl._gridClickTimer) { clearTimeout(rowEl._gridClickTimer); rowEl._gridClickTimer = null; }
-              _gridOpenPatchEditor(rid, sn, sri);
-            };
-          })(tr, recordId, sheetName, sheetRowIdx);
           tr.style.cursor = 'pointer';
         }
         
@@ -34167,7 +34172,7 @@
             var changeInfo2 = getCellChangeInfo(recordId, col, r); var titlePrefix2 = changeInfo2 && CHANGE_TYPE_STYLES[changeInfo2.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo2.type].label + '] ' : '';
             if (false) { /* inline edit removed - grid mode uses click-to-verify / dblclick-to-patch */
             }
-            return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + titlePrefix2 + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+            return '<td class="' + cellClass + ' truncated" data-gfield="' + col + '" style="' + cellStyle + '" title="' + titlePrefix2 + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
           }).join('');
         
         fragment.appendChild(tr);
