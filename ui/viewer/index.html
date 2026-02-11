@@ -8828,7 +8828,8 @@
       'MISSING_REQUIRED': { patch_type: 'correction', observation_type: 'missing_value', expected_type: 'populate_field', repro_type: 'breaks_qa_gate', justification: 'Required field is missing a value. Populating from source document.', metadata: { issue_source: 'MISSING_REQUIRED' } },
       'PICKLIST_INVALID': { patch_type: 'correction', observation_type: 'invalid_value', expected_type: 'corrected_value', repro_type: 'breaks_qa_gate', justification: 'Field contains an invalid picklist value. Correcting to valid option.', metadata: { issue_source: 'PICKLIST_INVALID' } },
       'RESOLVER_MISMATCH': { patch_type: 'correction', observation_type: 'data_mismatch', expected_type: 'corrected_value', repro_type: 'resolver_mismatch', justification: 'Resolver produced a value that does not match the source document.', metadata: { issue_source: 'RESOLVER_MISMATCH' } },
-      'UNKNOWN_COLUMN': { patch_type: 'correction', observation_type: 'schema_issue', expected_type: 'corrected_value', repro_type: 'breaks_qa_gate', justification: 'Unknown column detected that does not map to any canonical field.', metadata: { issue_source: 'UNKNOWN_COLUMN' } }
+      'UNKNOWN_COLUMN': { patch_type: 'correction', observation_type: 'schema_issue', expected_type: 'corrected_value', repro_type: 'breaks_qa_gate', justification: 'Unknown column detected that does not map to any canonical field.', metadata: { issue_source: 'UNKNOWN_COLUMN' } },
+      'PICKLIST_EXPAND': { patch_type: 'schema_change', observation_type: 'picklist_expansion', expected_type: 'add_option', repro_type: 'breaks_qa_gate', justification: 'Current value is valid per source document but not in the canonical picklist. Requesting addition of this value as a valid option.', metadata: { issue_source: 'PICKLIST_EXPAND' } }
     };
 
     function srrPrefillPatchTemplate(issueSource) {
@@ -19017,6 +19018,82 @@
       }
     }
 
+    function _srrPicklistExpandFlow(fieldKey, currentVal, fieldMeta) {
+      var fieldLabel = fieldKey.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+      var validOptions = (fieldMeta.options || []).join(', ');
+      var overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.id = 'picklist-expand-confirm';
+      overlay.style.cssText = 'display:flex;align-items:center;justify-content:center;z-index:99999;';
+      overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+      var box = document.createElement('div');
+      box.className = 'modal-content';
+      box.style.cssText = 'max-width:520px;padding:24px;text-align:left;';
+      var h = '<h3 style="margin:0 0 12px; color:#1565c0;">Picklist Expansion</h3>';
+      h += '<p style="color:#333; font-size:0.92em; margin:0 0 10px;"><strong>' + escapeHtml(fieldLabel) + '</strong> contains a value not in the valid options list:</p>';
+      h += '<div style="background:#fff3e0;border:1px solid #ffe082;border-radius:6px;padding:10px 14px;margin:0 0 12px;">';
+      h += '<div style="font-size:0.8em;color:#e65100;font-weight:600;margin-bottom:2px;">Current Value</div>';
+      h += '<div style="font-size:1.05em;font-weight:700;color:#bf360c;">' + escapeHtml(String(currentVal)) + '</div>';
+      h += '</div>';
+      h += '<div style="background:#f5f5f5;border-radius:6px;padding:10px 14px;margin:0 0 16px;">';
+      h += '<div style="font-size:0.8em;color:#666;font-weight:600;margin-bottom:2px;">Valid Options</div>';
+      h += '<div style="font-size:0.85em;color:#555;">' + escapeHtml(validOptions) + '</div>';
+      h += '</div>';
+      h += '<p style="color:#555; font-size:0.88em; margin:0 0 16px;">If this value is correct per the source document, click <strong>Submit Patch</strong> to propose adding it as a valid picklist option. This will be reviewed and promoted through the normal patch lifecycle.</p>';
+      h += '<div style="display:flex;gap:10px;justify-content:flex-end;">';
+      h += '<button id="plx-cancel" style="padding:8px 18px;border-radius:6px;border:1px solid #ccc;background:#fff;color:#666;cursor:pointer;font-size:0.9em;">Cancel</button>';
+      h += '<button id="plx-correct" style="padding:8px 18px;border-radius:6px;border:1px solid #ffe082;background:#fff3e0;color:#e65100;cursor:pointer;font-size:0.9em;">Not Correct — Edit Value</button>';
+      h += '<button id="plx-patch" style="padding:8px 18px;border-radius:6px;border:none;background:#1565c0;color:#fff;cursor:pointer;font-size:0.9em;font-weight:600;">Submit Patch</button>';
+      h += '</div>';
+      box.innerHTML = h;
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+      document.getElementById('plx-cancel').onclick = function() { overlay.remove(); };
+      document.getElementById('plx-correct').onclick = function() {
+        overlay.remove();
+        srrStartEdit(fieldKey);
+      };
+      document.getElementById('plx-patch').onclick = function() {
+        overlay.remove();
+        srrState.fieldStates[fieldKey] = 'patched';
+        srrPeSelectField(fieldKey, fieldLabel);
+        srrPrefillPatchTemplate('PICKLIST_EXPAND');
+        srrState.patchDraft.justification = 'Value "' + String(currentVal) + '" is valid per source document for field "' + fieldLabel + '" but is not in the canonical picklist. Requesting addition as a valid option.';
+        var justEl = document.getElementById('srr-justification');
+        if (justEl) justEl.value = srrState.patchDraft.justification;
+        srrState.patchDraft.metadata = srrState.patchDraft.metadata || {};
+        srrState.patchDraft.metadata.picklist_field = fieldKey;
+        srrState.patchDraft.metadata.proposed_value = String(currentVal);
+        srrState.patchDraft.metadata.current_options = fieldMeta.options || [];
+        if (!srrState.proposedChanges[fieldKey]) {
+          srrState.proposedChanges[fieldKey] = {
+            field: fieldKey,
+            label: fieldLabel,
+            before: '(not in picklist)',
+            after: String(currentVal),
+            category: 'picklist_expansion',
+            sheet: srrState.currentSheetName || ''
+          };
+        }
+        srrSwitchLeftTab('patch');
+        srrSyncProposedChanges();
+        srrRenderPatchEditor();
+        AuditTimeline.emit('PICKLIST_EXPAND_INITIATED', {
+          record_id: srrState.currentRecordKey || '',
+          field_key: fieldKey,
+          file_id: srrState.currentSheetName || '',
+          metadata: { proposed_value: String(currentVal), field_label: fieldLabel }
+        });
+        console.log('[SRR] Picklist expansion patch initiated for:', fieldKey, '=', currentVal);
+        srrUpdateFilterCounts();
+        var card = document.querySelector('.srr-field-card[data-field="' + fieldKey + '"]');
+        if (card) {
+          card.classList.remove('signal-warning');
+          card.classList.add('state-submitted');
+        }
+      };
+    }
+
     function _acctCheckReopen() {
       console.log('[ACCT-CHECK] _acctCheckReopen called');
       try {
@@ -22077,7 +22154,8 @@
         'correction': 'Correction',
         'rfi': 'RFI',
         'blacklist': 'Blacklist',
-        'system_change': 'System Change'
+        'system_change': 'System Change',
+        'schema_change': 'Schema Change'
       };
       return labels[kind] || kind;
     }
@@ -22088,7 +22166,8 @@
         'correction': 'patch-chip-correction',
         'rfi': 'patch-chip-rfi',
         'blacklist': 'patch-chip-blacklist',
-        'system_change': 'patch-chip-system'
+        'system_change': 'patch-chip-system',
+        'schema_change': 'patch-chip-system'
       };
       return classes[kind] || 'patch-chip-correction';
     }
@@ -23003,6 +23082,20 @@
     
     // v1.4.20: Field action - Verify (mark as correct)
     function srrVerifyField(fieldKey) {
+      var _vfMeta = null;
+      if (typeof _glossaryIndex !== 'undefined' && _glossaryIndex[fieldKey]) _vfMeta = _glossaryIndex[fieldKey];
+      var _vfIsPicklist = _vfMeta && _vfMeta.picklist === true && _vfMeta.options && _vfMeta.options.length > 0;
+      var _vfCurrentVal = srrState.editedValues.hasOwnProperty(fieldKey) ? srrState.editedValues[fieldKey] : (srrState.originalValues[fieldKey] || '');
+      var _vfIsInvalid = false;
+      if (_vfIsPicklist && _vfCurrentVal) {
+        var _vfNorm = String(_vfCurrentVal).trim().toLowerCase();
+        _vfIsInvalid = !_vfMeta.options.some(function(opt) { return String(opt).trim().toLowerCase() === _vfNorm; });
+      }
+      if (_vfIsInvalid) {
+        console.log('[SRR] Field has invalid picklist value, routing to Patch Studio:', fieldKey, _vfCurrentVal);
+        _srrPicklistExpandFlow(fieldKey, _vfCurrentVal, _vfMeta);
+        return;
+      }
       srrState.fieldStates[fieldKey] = 'verified';
       console.log('[SRR] Field VERIFIED:', fieldKey);
       AuditTimeline.emit('FIELD_VERIFIED', {
