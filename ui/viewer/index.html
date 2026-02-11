@@ -18148,7 +18148,7 @@
 
             var _q = String.fromCharCode(39);
             var _esc = function(v) { return (v || '').replace(/'/g, String.fromCharCode(92) + String.fromCharCode(39)); };
-            var viewHandler = 'openPreflightItem(' + _q + _esc(item.request_id) + _q + ', ' + _q + _esc(item.record_id) + _q + ', ' + _q + _esc(item.contract_id || item.contract_key) + _q + ', ' + _q + _esc(item.field_name || item.field_key) + _q + ')';
+            var viewHandler = 'openPreflightItem(' + _q + _esc(item.request_id) + _q + ', ' + _q + _esc(item.record_id) + _q + ', ' + _q + _esc(item.contract_id || item.contract_key) + _q + ', ' + _q + _esc(item.field_name || item.field_key) + _q + ', ' + _q + _esc(item.sheet_name || item.sheet || '') + _q + ', ' + _q + (item.row_index !== undefined && item.row_index >= 0 ? item.row_index : '') + _q + ')';
             var patchBtn = '';
             if (item.can_create_patch && item.status === 'open') {
               patchBtn = ' <button class="p1d1-patch-btn" onclick="event.stopPropagation(); createPatchFromBlocker(' + _q + _esc(item.request_id) + _q + ', ' + _q + _esc(item.record_id) + _q + ', ' + _q + _esc(item.field_name) + _q + ', ' + _q + _esc(item.blocker_type) + _q + ')">Patch</button>';
@@ -29894,7 +29894,7 @@
         
         var viewHandler;
         if (isPreFlight) {
-          viewHandler = 'openPreflightItem(\'' + (item.request_id || '') + '\', \'' + (item.record_id || '') + '\', \'' + (item.contract_id || item.contract_key || '') + '\', \'' + (item.field_name || item.field_key || '') + '\')';
+          viewHandler = 'openPreflightItem(\'' + (item.request_id || '') + '\', \'' + (item.record_id || '') + '\', \'' + (item.contract_id || item.contract_key || '') + '\', \'' + (item.field_name || item.field_key || '') + '\', \'' + (item.sheet_name || item.sheet || '') + '\', \'' + (item.row_index !== undefined && item.row_index >= 0 ? item.row_index : '') + '\')';
         } else if (item.source === 'signal') {
           viewHandler = 'openSignalTriageItem(\'' + item.record_id + '\', \'' + item.field_key + '\')';
         } else {
@@ -30031,16 +30031,72 @@
         }
       }
 
+      // Step 2b: sheet_name + contract_id - find the first matching record in the correct section
+      if (itemSheetName && itemContractId && workbook && workbook.sheets && workbook.sheets[itemSheetName] && workbook.sheets[itemSheetName].rows) {
+        var _s2bRows = workbook.sheets[itemSheetName].rows;
+        var _s2bFieldKey = itemFieldKey;
+        var _s2bFoundIdx = -1;
+        for (var _s2bi = 0; _s2bi < _s2bRows.length; _s2bi++) {
+          var _s2bRow = _s2bRows[_s2bi];
+          if (!_s2bRow) continue;
+          var _s2bCid = '';
+          if (typeof ContractIndex !== 'undefined' && typeof ContractIndex.deriveContractId === 'function') {
+            _s2bCid = ContractIndex.deriveContractId(_s2bRow) || '';
+          }
+          if (_s2bCid !== itemContractId) continue;
+          if (_s2bFieldKey && _s2bRow.hasOwnProperty(_s2bFieldKey)) {
+            var _s2bVal = _s2bRow[_s2bFieldKey];
+            var _s2bBlank = (_s2bVal === null || _s2bVal === undefined || String(_s2bVal).trim() === '');
+            if (_s2bBlank) {
+              _s2bFoundIdx = _s2bi;
+              break;
+            }
+            if (typeof getFieldMeta === 'function') {
+              var _s2bMeta = getFieldMeta(itemSheetName, _s2bFieldKey);
+              if (_s2bMeta && _s2bMeta.options && _s2bMeta.options.length > 0) {
+                var _s2bLower = String(_s2bVal).toLowerCase().trim();
+                var _s2bMatch = false;
+                for (var _opi = 0; _opi < _s2bMeta.options.length; _opi++) {
+                  if (String(_s2bMeta.options[_opi]).toLowerCase().trim() === _s2bLower) { _s2bMatch = true; break; }
+                }
+                if (!_s2bMatch) { _s2bFoundIdx = _s2bi; break; }
+              }
+            }
+          }
+          if (_s2bFoundIdx === -1) _s2bFoundIdx = _s2bi;
+        }
+        if (_s2bFoundIdx === -1) {
+          for (var _s2bj = 0; _s2bj < _s2bRows.length; _s2bj++) {
+            var _s2bRow2 = _s2bRows[_s2bj];
+            if (!_s2bRow2) continue;
+            var _s2bCid2 = '';
+            if (typeof ContractIndex !== 'undefined' && typeof ContractIndex.deriveContractId === 'function') {
+              _s2bCid2 = ContractIndex.deriveContractId(_s2bRow2) || '';
+            }
+            if (_s2bCid2 === itemContractId) { _s2bFoundIdx = _s2bj; break; }
+          }
+        }
+        if (_s2bFoundIdx >= 0) {
+          console.log('[P0.8-LINK] route_resolved_section_record: contract=' + itemContractId + ' sheet=' + itemSheetName + ' row=' + _s2bFoundIdx + ' field=' + itemFieldKey);
+          result.resolved = true;
+          result.path = 'exact_record';
+          result.target = { row: _s2bRows[_s2bFoundIdx], rowIndex: _s2bFoundIdx, sheetName: itemSheetName };
+          result.fieldKey = itemFieldKey;
+          return result;
+        }
+      }
+
       // Step 3: contract_id + field_key - find any record in active dataset matching contract
       if (itemContractId && workbook && workbook.sheets && typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable()) {
         var contractInfo = ContractIndex._index && ContractIndex._index.contracts ? ContractIndex._index.contracts[itemContractId] : null;
         if (contractInfo && contractInfo.sheets) {
-          var sheetKeys = Object.keys(contractInfo.sheets);
-          for (var si = 0; si < sheetKeys.length; si++) {
-            var sn = sheetKeys[si];
+          var _s3SheetKeys = itemSheetName ? [itemSheetName] : Object.keys(contractInfo.sheets);
+          for (var si = 0; si < _s3SheetKeys.length; si++) {
+            var sn = _s3SheetKeys[si];
+            if (!contractInfo.sheets[sn]) continue;
             var rowIndices = contractInfo.sheets[sn];
             if (rowIndices && rowIndices.length > 0 && workbook.sheets[sn] && workbook.sheets[sn].rows) {
-              var ri = rowIndices[0];
+              var ri = rowIndices[0].row_index !== undefined ? rowIndices[0].row_index : rowIndices[0];
               if (ri < workbook.sheets[sn].rows.length) {
                 console.log('[P0.8-LINK] route_resolved_contract: contract=' + itemContractId + ' sheet=' + sn + ' row=' + ri);
                 result.resolved = true;
@@ -30048,6 +30104,24 @@
                 result.target = { row: workbook.sheets[sn].rows[ri], rowIndex: ri, sheetName: sn };
                 result.fieldKey = itemFieldKey;
                 return result;
+              }
+            }
+          }
+          if (itemSheetName) {
+            var _fallbackKeys = Object.keys(contractInfo.sheets);
+            for (var _fsi = 0; _fsi < _fallbackKeys.length; _fsi++) {
+              var _fsn = _fallbackKeys[_fsi];
+              var _fri = contractInfo.sheets[_fsn];
+              if (_fri && _fri.length > 0 && workbook.sheets[_fsn] && workbook.sheets[_fsn].rows) {
+                var _frIdx = _fri[0].row_index !== undefined ? _fri[0].row_index : _fri[0];
+                if (_frIdx < workbook.sheets[_fsn].rows.length) {
+                  console.log('[P0.8-LINK] route_resolved_contract_fallback: contract=' + itemContractId + ' sheet=' + _fsn + ' row=' + _frIdx);
+                  result.resolved = true;
+                  result.path = 'contract_field';
+                  result.target = { row: workbook.sheets[_fsn].rows[_frIdx], rowIndex: _frIdx, sheetName: _fsn };
+                  result.fieldKey = itemFieldKey;
+                  return result;
+                }
               }
             }
           }
@@ -30061,6 +30135,7 @@
         result.path = 'contract_grid';
         result.contractId = itemContractId;
         result.sheetName = itemSheetName;
+        result.fieldKey = itemFieldKey;
         return result;
       }
 
@@ -30105,6 +30180,11 @@
                   if (_ri < workbook.sheets[_sn].rows.length) {
                     openRowReviewDrawer(_sn, _ri);
                     _openedRecord = true;
+                    if (resolution.fieldKey) {
+                      setTimeout(function() {
+                        if (typeof focusFieldInInspector === 'function') focusFieldInInspector(resolution.fieldKey);
+                      }, 300);
+                    }
                     break;
                   }
                 }
@@ -30281,15 +30361,17 @@
       }
     }
     
-    function openPreflightItem(requestId, recordId, contractId, fieldName) {
-      console.log('[TRIAGE-CANONICAL][P1X] route_decision: request_id=' + requestId + ', contract=' + (contractId || 'none'));
-      console.log('[P1D-PREFLIGHT] view_routed: contract=' + contractId + ' record=' + recordId + ' field=' + fieldName);
+    function openPreflightItem(requestId, recordId, contractId, fieldName, sheetName, rowIndex) {
+      console.log('[TRIAGE-CANONICAL][P1X] route_decision: request_id=' + requestId + ', contract=' + (contractId || 'none') + ', sheet=' + (sheetName || 'none'));
+      console.log('[P1D-PREFLIGHT] view_routed: contract=' + contractId + ' record=' + recordId + ' field=' + fieldName + ' sheet=' + sheetName);
       console.log('[TRIAGE-ANALYTICS][P0.2] route_decision_start: requestId=' + requestId + ', recordId=' + recordId + ', contractId=' + contractId);
       var item = {
         request_id: requestId,
         record_id: (recordId && recordId !== 'undefined') ? recordId : '',
         contract_id: (contractId && contractId !== 'undefined') ? contractId : '',
         field_name: (fieldName && fieldName !== 'undefined') ? fieldName : '',
+        sheet_name: (sheetName && sheetName !== 'undefined') ? sheetName : '',
+        row_index: (rowIndex !== undefined && rowIndex !== null && String(rowIndex) !== '' && String(rowIndex) !== 'undefined') ? parseInt(rowIndex, 10) : -1,
         source: 'preflight',
         dataset_id: (typeof IDENTITY_CONTEXT !== 'undefined' ? IDENTITY_CONTEXT.dataset_id : '') || ''
       };
