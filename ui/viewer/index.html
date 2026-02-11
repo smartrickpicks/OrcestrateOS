@@ -9452,11 +9452,21 @@
       var submitBtn = document.getElementById('qf-submit-btn');
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting...'; }
 
+      var qfNormCtx = Engines.ContextResolver.normalizePatchContext({
+        record_id: item.record_id || '',
+        field_key: item.field_name || item.field_key || '',
+        contract_id: item.contract_id || item.contract_key || '',
+        contract_section: _qfState.sheetName || item.sheet_name || item.sheet || '',
+        old_value: _qfState.currentValue || '',
+        row_index: _qfState.rowIndex,
+        source: 'quick_fix'
+      });
+      Components.PatchPanel.openWithContext(qfNormCtx, 'correction', 'quick_fix');
       var blockerType = item.blocker_type || item.signal_type || '';
-      var fieldKey = item.field_name || item.field_key || '';
-      var contractId = item.contract_id || item.contract_key || '';
-      var recordId = item.record_id || '';
-      var sheetName = _qfState.sheetName || item.sheet_name || item.sheet || '';
+      var fieldKey = qfNormCtx.field_key;
+      var contractId = qfNormCtx.contract_id;
+      var recordId = qfNormCtx.record_id;
+      var sheetName = qfNormCtx.contract_section;
 
       var template = _PATCH_PREFILL_TEMPLATES[blockerType] || _PATCH_PREFILL_TEMPLATES['MISSING_REQUIRED'];
       var author = (typeof AuditTimeline !== 'undefined' && AuditTimeline._resolveActor) ? (AuditTimeline._resolveActor() || {}).id || 'analyst' : 'analyst';
@@ -9503,6 +9513,7 @@
           new_value: newValue
         });
 
+        Components.PatchPanel.submit('quick_fix');
         if (typeof showToast === 'function') showToast('Quick fix submitted: ' + (fMeta.field_label || fieldKey), 'success');
 
         if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
@@ -13423,7 +13434,123 @@
     })();
 
 
-    // ========== GRID CONTEXT MENU (P0) ==========
+    // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
+
+    var Components = window.Components || {};
+    var Engines = window.Engines || {};
+
+    Engines.ContextResolver = {
+      normalizePatchContext: function(raw) {
+        var ctx = raw || {};
+        var record = null;
+        if (ctx.record) {
+          record = ctx.record;
+        } else if (ctx.sheetName && typeof _gridCtxResolveRecord === 'function') {
+          record = _gridCtxResolveRecord(ctx);
+        }
+        var contractId = '';
+        if (ctx.contract_id) {
+          contractId = ctx.contract_id;
+        } else if (record) {
+          contractId = record.contract_key || record.contract_id || record.contractKey || '';
+        }
+        var rawOldVal = (ctx.old_value !== undefined && ctx.old_value !== null)
+          ? ctx.old_value
+          : (record && ctx.field_key ? record[ctx.field_key] : undefined);
+        var oldValue = (rawOldVal !== undefined && rawOldVal !== null) ? String(rawOldVal) : '';
+        var normalized = {
+          record_id: ctx.record_id || ctx.recordId || (record && (record.record_id || record._identity && record._identity.record_id)) || '',
+          contract_id: contractId || ctx.contract_section || '',
+          contract_section: ctx.contract_section || ctx.sheetName || '',
+          field_key: ctx.field_key || ctx.fieldKey || '',
+          old_value: oldValue,
+          row_index: (ctx.row_index !== undefined) ? ctx.row_index : (ctx.rowIdx !== undefined ? ctx.rowIdx : -1),
+          source: ctx.source || 'unknown'
+        };
+        console.log('[PATCH-COMP][P1B] context_normalized', {
+          source: normalized.source, record_id: normalized.record_id,
+          field_key: normalized.field_key, contract_section: normalized.contract_section,
+          has_old_value: oldValue !== ''
+        });
+        return normalized;
+      }
+    };
+
+    Engines.PatchDraft = {
+      _current: null,
+      create: function(patchType, normalizedCtx) {
+        var draft = {
+          patch_type: patchType || 'correction',
+          context: normalizedCtx,
+          observation_type: '',
+          expected_type: '',
+          repro_type: '',
+          justification: '',
+          metadata: {},
+          created_at: new Date().toISOString()
+        };
+        Engines.PatchDraft._current = draft;
+        console.log('[PATCH-COMP][P1B] draft_created', { type: draft.patch_type, record_id: normalizedCtx.record_id });
+        return draft;
+      },
+      getCurrent: function() { return Engines.PatchDraft._current; },
+      clear: function() { Engines.PatchDraft._current = null; }
+    };
+
+    Components.PatchPanel = {
+      _lastCtx: null,
+
+      openWithContext: function(rawCtx, patchType, target) {
+        var ctx = Engines.ContextResolver.normalizePatchContext(rawCtx);
+        Components.PatchPanel._lastCtx = ctx;
+        var draft = Engines.PatchDraft.create(patchType, ctx);
+        console.log('[PATCH-COMP][P1B] open_with_context', {
+          target: target || 'unknown', type: patchType,
+          record_id: ctx.record_id, field_key: ctx.field_key
+        });
+        if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
+          AuditTimeline.emit('patch_panel_opened', {
+            target: target || 'unknown', patch_type: patchType,
+            record_id: ctx.record_id, field_key: ctx.field_key,
+            contract_section: ctx.contract_section, source: ctx.source
+          });
+        }
+        return { context: ctx, draft: draft };
+      },
+
+      setDraftField: function(fieldKey, value) {
+        var draft = Engines.PatchDraft.getCurrent();
+        if (draft) {
+          draft[fieldKey] = value;
+          console.log('[PATCH-COMP][P1B] draft_set', { field: fieldKey });
+        }
+      },
+
+      submit: function(source) {
+        console.log('[PATCH-COMP][P1B] submit', { source: source || 'unknown' });
+      },
+
+      cancel: function(source) {
+        console.log('[PATCH-COMP][P1B] cancel', { source: source || 'unknown' });
+        Engines.PatchDraft.clear();
+        Components.PatchPanel._lastCtx = null;
+      },
+
+      collapse: function(source) {
+        console.log('[PATCH-COMP][P1B] collapse', { source: source || 'unknown' });
+      },
+
+      getLastContext: function() {
+        return Components.PatchPanel._lastCtx;
+      }
+    };
+
+    Components.TriageTable = {};
+
+    window.Components = Components;
+    window.Engines = Engines;
+
+        // ========== GRID CONTEXT MENU (P0) ==========
     function _gridCtxFindClosest(el, selector) {
       var cur = el;
       while (cur && cur !== document) {
@@ -13674,9 +13801,12 @@
 
       if (action === 'correction' || action === 'rfi' || action === 'blacklist') {
         _gridCtxClose();
-        var rawOldVal = (record && ctx.fieldKey) ? record[ctx.fieldKey] : undefined;
-        var oldValue = (rawOldVal !== undefined && rawOldVal !== null) ? String(rawOldVal) : '';
         if (!ctx.recordId) { showToast('No record context available', 'warning'); return; }
+
+        var panelResult = Components.PatchPanel.openWithContext({
+          recordId: ctx.recordId, sheetName: ctx.sheetName, rowIdx: ctx.rowIdx,
+          fieldKey: ctx.fieldKey, record: record, source: 'grid_context_menu'
+        }, action, 'grid_drawer');
 
         _gridOpenPatchDrawer(ctx.recordId, ctx.sheetName, ctx.rowIdx, ctx.fieldKey);
 
@@ -13685,12 +13815,12 @@
           if (drawerCtx) {
             drawerCtx.patchType = action;
             drawerCtx._patchContext = {
-              record_id: ctx.recordId,
-              field_key: ctx.fieldKey,
-              old_value: oldValue,
-              contract_section: ctx.sheetName,
-              contract_id: (record && (record.contract_key || record.contract_id || record.contractKey)) || ctx.sheetName,
-              row_index: ctx.rowIdx
+              record_id: panelResult.context.record_id,
+              field_key: panelResult.context.field_key,
+              old_value: panelResult.context.old_value,
+              contract_section: panelResult.context.contract_section,
+              contract_id: panelResult.context.contract_id,
+              row_index: panelResult.context.row_index
             };
             if (action === 'rfi') {
               drawerCtx._activeTab = 'patch';
@@ -13699,9 +13829,10 @@
             }
             if (typeof _gridDrawerRender === 'function') _gridDrawerRender(drawerCtx);
             console.log('[GRID-CONTEXT][P0] patch_preload_success', {
-              type: action, record_id: ctx.recordId, field_key: ctx.fieldKey, old_value: oldValue,
-              contract_id: drawerCtx._patchContext.contract_id,
-              contract_section: ctx.sheetName
+              type: action, record_id: panelResult.context.record_id,
+              field_key: panelResult.context.field_key, old_value: panelResult.context.old_value,
+              contract_id: panelResult.context.contract_id,
+              contract_section: panelResult.context.contract_section
             });
           } else {
             console.log('[GRID-CONTEXT][P0] patch_preload_fail', { reason: 'drawer_context_missing' });
@@ -14399,6 +14530,9 @@
       var ov = document.getElementById('grid-patch-drawer-overlay');
       if (drawer) drawer.style.right = '-480px';
       if (ov) { setTimeout(function() { ov.style.display = 'none'; }, 250); }
+      if (Components.PatchPanel._lastCtx && Components.PatchPanel._lastCtx.source === 'grid_context_menu') {
+        Components.PatchPanel.cancel('grid_drawer');
+      }
       window._gridDrawerContext = null;
     }
 
@@ -14406,6 +14540,7 @@
       var ctx = window._gridDrawerContext;
       if (!ctx) return;
       _gridDrawerSaveEvidence();
+      Components.PatchPanel.submit('grid_drawer');
       var patchType = ctx.patchType || 'correction';
       var evDraft = ctx._evidenceDraft || {};
       var justification = (document.getElementById('grid-drawer-justification') || {}).value || '';
@@ -29503,6 +29638,15 @@
       var recordId = (record._identity && record._identity.record_id) || record.record_id || record.contract_key || srrState.currentRecordKey;
       var datasetId = (record._identity && record._identity.dataset_id) || IDENTITY_CONTEXT.dataset_id || sessionState.fileName || 'default';
       
+      Components.PatchPanel.openWithContext({
+        record_id: recordId,
+        contract_section: srrState.currentSheetName,
+        field_key: changes.length === 1 ? changes[0].field : '',
+        old_value: changes.length > 0 ? changes[0].from : '',
+        row_index: srrState.currentRowIndex,
+        source: 'record_inspector'
+      }, patchType, 'record_inspector');
+
       var request = createPatchRequest({
         author: author,
         author_role: currentMode || 'Analyst',
@@ -39001,6 +39145,7 @@
       var submittedRequest = submitPatchRequest(request.request_id, author, currentMode || 'Analyst');
       
       if (submittedRequest) {
+        Components.PatchPanel.submit('record_inspector');
         showToast('Patch request submitted to queue: ' + request.request_id, 'success');
       _srrCollapsePatchPanel();
         clearPatchStudioForm();
