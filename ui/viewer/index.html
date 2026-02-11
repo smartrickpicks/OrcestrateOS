@@ -2217,11 +2217,11 @@
                   <div id="ta-schema-missing-split" style="font-size: 0.6em; color: #aaa;"></div>
                   <div style="font-size: 0.55em; color: #bbb;">Fields needing analyst completion</div>
                 </div>
-                <div onclick="TriageAnalytics.handleSchemaClick('drift')" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Structural schema issues only: columns not in the glossary plus required headers missing entirely. Missing values are tracked separately." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
-                  <div id="ta-schema-drift" style="font-size: 1.4em; font-weight: 700; color: #555;">0</div>
-                  <div style="font-size: 0.75em; color: #666;">Schema Structure Issues</div>
-                  <div id="ta-schema-drift-detail" style="font-size: 0.6em; color: #aaa;"></div>
-                  <div style="font-size: 0.55em; color: #bbb;">Unknown columns not in the glossary</div>
+                <div onclick="_acctCheckReopen()" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Duplicate account name pairs detected during import. Click to review or revisit dismissed pairs." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
+                  <div id="ta-schema-acctcheck" style="font-size: 1.4em; font-weight: 700; color: #555;">0</div>
+                  <div style="font-size: 0.75em; color: #666;">Account Check</div>
+                  <div id="ta-schema-acctcheck-detail" style="font-size: 0.6em; color: #aaa;"></div>
+                  <div style="font-size: 0.55em; color: #bbb;">Possible duplicate accounts</div>
                 </div>
               </div>
             </div>
@@ -18887,6 +18887,32 @@
       if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
     }
 
+    function _acctCheckReopen() {
+      var savedDismissals = {};
+      var dKeys = Object.keys(_dismissedDuplicatePairs);
+      for (var di = 0; di < dKeys.length; di++) savedDismissals[dKeys[di]] = true;
+      _dismissedDuplicatePairs = {};
+      _buildDuplicateAccountPreflightItems();
+      _dismissedDuplicatePairs = savedDismissals;
+      if (_duplicateAccountItems.length === 0) {
+        var overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.id = 'acct-check-empty-modal';
+        overlay.style.cssText = 'display:flex;align-items:center;justify-content:center;';
+        overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+        var box = document.createElement('div');
+        box.className = 'modal-content';
+        box.style.cssText = 'max-width:400px;text-align:center;padding:24px;';
+        box.innerHTML = '<h3 style="margin:0 0 12px; color:#4caf50;">&#10003; Account Check</h3><p style="color:#666; font-size:0.9em;">No duplicate account names detected in this batch.</p><button class="toolbar-btn" style="margin-top:12px; background:#1565c0; color:#fff;" onclick="document.getElementById(\'acct-check-empty-modal\').remove()">Close</button>';
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+        return;
+      }
+      _acctCheckQueue = _duplicateAccountItems.slice();
+      _acctCheckIndex = 0;
+      _acctCheckShowCurrent();
+    }
+
     function _acctCheckShowPicker() {
       document.getElementById('acct-check-picker').style.display = 'block';
       document.getElementById('acct-check-merge-actions').style.display = 'flex';
@@ -28014,8 +28040,27 @@
         var missingTotal = cache.schema.data_missing_required_values;
         if (el('ta-schema-missing')) el('ta-schema-missing').textContent = missingTotal;
         if (el('ta-schema-missing-split')) el('ta-schema-missing-split').textContent = missingTotal + ' errors across ' + (cache.schema._data_missing_values_field_count || 0) + ' fields';
-        if (el('ta-schema-drift')) el('ta-schema-drift').textContent = cache.schema.schema_drift;
-        if (el('ta-schema-drift-detail')) el('ta-schema-drift-detail').textContent = cache.schema._drift_detail || '';
+        if (el('ta-schema-acctcheck')) {
+          var _acPending = 0;
+          if (typeof _duplicateAccountItems !== 'undefined') _acPending += _duplicateAccountItems.length;
+          var _acDismissed = 0;
+          if (typeof _dismissedDuplicatePairs !== 'undefined') _acDismissed = Object.keys(_dismissedDuplicatePairs).length;
+          var _acTotal = _acPending + _acDismissed;
+          el('ta-schema-acctcheck').textContent = _acTotal;
+          el('ta-schema-acctcheck').style.color = _acTotal > 0 ? '#f57c00' : '#4caf50';
+        }
+        if (el('ta-schema-acctcheck-detail')) {
+          var _acPendingD = (typeof _duplicateAccountItems !== 'undefined') ? _duplicateAccountItems.length : 0;
+          var _acDismissedD = (typeof _dismissedDuplicatePairs !== 'undefined') ? Object.keys(_dismissedDuplicatePairs).length : 0;
+          if (_acPendingD + _acDismissedD === 0) {
+            el('ta-schema-acctcheck-detail').textContent = 'No duplicates found';
+          } else {
+            var parts = [];
+            if (_acPendingD > 0) parts.push(_acPendingD + ' pending');
+            if (_acDismissedD > 0) parts.push(_acDismissedD + ' dismissed');
+            el('ta-schema-acctcheck-detail').textContent = parts.join(', ');
+          }
+        }
       },
 
       handleLaneClick: function(lane) {
@@ -28261,16 +28306,6 @@
             html += '</table>';
           } else {
             html += '<div style="padding:8px;color:#4caf50;font-size:0.85em;">No blank required values detected.</div>';
-          }
-        } else if (type === 'drift') {
-          title = 'Schema Structure Issues (' + cache.schema.schema_drift + ')';
-          html += '<div style="margin-bottom:12px;padding:10px 14px;background:#f0f4f8;border-radius:6px;font-size:0.85em;color:#555;">Schema Structure Issues = Unknown Columns (' + cache.schema.unknown_columns + '). Headers not present in this dataset are expected and not counted as issues.</div>';
-          if (cache.schema.unknown_columns > 0) {
-            html += '<div style="margin-bottom:8px;cursor:pointer;color:#1565c0;font-size:0.85em;text-decoration:underline;" onclick="document.getElementById(\x27schema-detail-modal\x27).remove();TriageAnalytics.handleSchemaClick(\x27unknown\x27);">View ' + cache.schema.unknown_columns + ' unknown column(s)</div>';
-          }
-
-          if (cache.schema.schema_drift === 0) {
-            html += '<div style="padding:16px;text-align:center;color:#4caf50;">No schema drift detected.</div>';
           }
         }
 
