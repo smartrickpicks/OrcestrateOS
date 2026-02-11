@@ -4276,17 +4276,74 @@
         <div id="admin-tab-qa-runner" class="admin-tab-panel" data-admin-section="true" style="display: none;">
           <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Run and review quality assurance validation checks.</span></div>
           <h3 style="margin: 0 0 16px 0; color: #1a237e;">QA Runner</h3>
-          <p style="color: #666; font-size: 0.9em; margin: 0 0 16px 0;">Run in-browser validation suites to verify all governance features are working correctly.</p>
+          <p style="color: #666; font-size: 0.9em; margin: 0 0 16px 0;">Run in-browser validation suites to verify all governance features are working correctly. Each suite targets a specific area of the system. Hover over any button for a quick summary, or expand the Suite Reference below for full details.</p>
           <div id="p1b-run-controls" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
-            <button onclick="QARunner.runSuite('p022')" class="p1b-run-btn" style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P0.2.2</button>
-            <button onclick="QARunner.runSuite('p1')" class="p1b-run-btn" style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P1</button>
-            <button onclick="QARunner.runSuite('calibration')" class="p1b-run-btn" style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run Calibration</button>
-            <button onclick="QARunner.runSuite('p08')" class="p1b-run-btn" style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P0.8</button>
-            <button onclick="QARunner.runSuite('p09')" class="p1b-run-btn" style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P0.9</button>
-            <button onclick="QARunner.runSuite('p1a')" class="p1b-run-btn" style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P1A</button>
-            <button onclick="QARunner.runAll()" style="padding: 6px 14px; font-size: 0.85em; background: #388e3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Run All</button>
-            <button onclick="QARunner.exportReport()" style="padding: 6px 14px; font-size: 0.85em; background: #f57c00; color: white; border: none; border-radius: 4px; cursor: pointer;">Export QA Report JSON</button>
+            <button onclick="QARunner.runSuite('p022')" class="p1b-run-btn" title="Core Data Pipeline: Validates data loading, CSV/XLSX parsing, signal generation, triage queue population, grid rendering, and sheet exclusion rules. This is the foundational suite — run it first." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P0.2.2</button>
+            <button onclick="QARunner.runSuite('p1')" class="p1b-run-btn" title="Triage Telemetry: Validates triage analytics, processing status banners, lifecycle stage tracking, stage deltas, contract state chips, and performance guardrails (debouncing). Ensures pipeline observability works." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P1</button>
+            <button onclick="QARunner.runSuite('calibration')" class="p1b-run-btn" title="Pre-Flight Calibration: Validates blocker detectors (Mojibake, Missing Document Type, Missing Required Fields, OCR failures), threshold application, and routing to the Pre-Flight queue. Ensures data quality gates catch issues before analysis." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run Calibration</button>
+            <button onclick="QARunner.runSuite('p08')" class="p1b-run-btn" title="Record-Link Integrity: Validates the triage-to-record resolver, fallback matching, unresolved diagnostics modal, dataset mismatch purging, and audit event emission. Ensures triage items always link to real records." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P0.8</button>
+            <button onclick="QARunner.runSuite('p09')" class="p1b-run-btn" title="Runtime Cleanup and ES5: Validates ES5 compatibility (no arrow functions, template literals, etc.), default triage navigation, contract-first selectors, legacy annotation sanitization, toast positioning, and role-based UI hiding." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P0.9</button>
+            <button onclick="QARunner.runSuite('p1a')" class="p1b-run-btn" title="Triage Clarity and Sheet Grouping: Validates human-readable triage labels, sheet-scoped tab rendering with counts, sheet-based filtering, pre-flight contract grouping, column display rules, and blocker type routing." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P1A</button>
+            <button onclick="QARunner.runAll()" title="Runs all 6 suites in sequence (P0.2.2, P1, Calibration, P0.8, P0.9, P1A) and reports combined results. Use this for a full regression check before releases." style="padding: 6px 14px; font-size: 0.85em; background: #388e3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Run All</button>
+            <button onclick="QARunner.exportReport()" title="Exports the most recent run results as a downloadable JSON file for archival, external review, or CI integration." style="padding: 6px 14px; font-size: 0.85em; background: #f57c00; color: white; border: none; border-radius: 4px; cursor: pointer;">Export QA Report JSON</button>
           </div>
+          <details id="qa-suite-reference" style="margin-bottom: 16px; border: 1px solid #e0e0e0; border-radius: 6px; background: #fafafa;">
+            <summary style="padding: 10px 14px; cursor: pointer; font-weight: 600; font-size: 0.9em; color: #37474f; user-select: none;">Suite Reference Guide (click to expand)</summary>
+            <div style="padding: 12px 16px;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">
+                <thead>
+                  <tr style="background: #e8eaf6; text-align: left;">
+                    <th style="padding: 8px 10px; border-bottom: 2px solid #c5cae9; width: 110px;">Suite</th>
+                    <th style="padding: 8px 10px; border-bottom: 2px solid #c5cae9; width: 180px;">Area</th>
+                    <th style="padding: 8px 10px; border-bottom: 2px solid #c5cae9;">What It Validates</th>
+                    <th style="padding: 8px 10px; border-bottom: 2px solid #c5cae9; width: 200px;">When to Run</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px 10px; font-weight: 600; color: #1976d2;">P0.2.2</td>
+                    <td style="padding: 8px 10px;">Core Data Pipeline</td>
+                    <td style="padding: 8px 10px;">Data loading and parsing (CSV/XLSX), signal generation from semantic rules, triage queue population, grid rendering, meta/reference sheet exclusion, header-echo row sanitization, and contract derivation from file URLs.</td>
+                    <td style="padding: 8px 10px; font-style: italic; color: #666;">After any data loading, parsing, or signal generation changes. Run first as the baseline.</td>
+                  </tr>
+                  <tr style="background: #f5f5f5; border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px 10px; font-weight: 600; color: #1976d2;">P1</td>
+                    <td style="padding: 8px 10px;">Triage Telemetry &amp; Observability</td>
+                    <td style="padding: 8px 10px;">Telemetry module loading, processing status banners, lifecycle stage counts and deltas between refreshes, contract state chips in the UI, lane drill-down navigation, and performance guardrails like debounce timers.</td>
+                    <td style="padding: 8px 10px; font-style: italic; color: #666;">After changes to triage analytics, lifecycle tracking, or status display components.</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px 10px; font-weight: 600; color: #1976d2;">Calibration</td>
+                    <td style="padding: 8px 10px;">Pre-Flight Detector Accuracy</td>
+                    <td style="padding: 8px 10px;">Blocker type definitions (Mojibake, Document Type Missing, Missing Required Fields, OCR failures), detection threshold application, routing to the Pre-Flight queue, and the <code>_preflightBlockerTypes</code> mapping integrity.</td>
+                    <td style="padding: 8px 10px; font-style: italic; color: #666;">After modifying pre-flight detectors, blocker types, or the data quality gating logic.</td>
+                  </tr>
+                  <tr style="background: #f5f5f5; border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px 10px; font-weight: 600; color: #1976d2;">P0.8</td>
+                    <td style="padding: 8px 10px;">Record-Link Integrity</td>
+                    <td style="padding: 8px 10px;">Triage-to-record resolver logic with fallback matching, unresolved diagnostics modal display, dataset mismatch purging of stale items, contract count consistency, audit event emission (<code>triage_record_unresolved</code>), and <code>[P0.8-LINK]</code> console log presence.</td>
+                    <td style="padding: 8px 10px; font-style: italic; color: #666;">After changes to record matching, triage item routing, or the resolver/modal system.</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px 10px; font-weight: 600; color: #1976d2;">P0.9</td>
+                    <td style="padding: 8px 10px;">Runtime Cleanup &amp; ES5 Compliance</td>
+                    <td style="padding: 8px 10px;">ES5 compatibility enforcement (no arrow functions, template literals, let/const, .includes(), etc.), default-to-triage navigation, contract-first selector priority, legacy double-slash annotation sanitization, toast non-overlap positioning, and role-based control hiding for Analysts.</td>
+                    <td style="padding: 8px 10px; font-style: italic; color: #666;">After any code changes to ensure ES5 compliance is maintained. Also after UI layout or navigation changes.</td>
+                  </tr>
+                  <tr style="background: #f5f5f5;">
+                    <td style="padding: 8px 10px; font-weight: 600; color: #1976d2;">P1A</td>
+                    <td style="padding: 8px 10px;">Triage Clarity &amp; Sheet Grouping</td>
+                    <td style="padding: 8px 10px;">Human-readable labels for triage types (replacing internal codes), sheet-scoped tab rendering with accurate item counts, filtering triage items by sheet, pre-flight item grouping by contract and sheet, correct column display in pre-flight tables, and blocker type routing rules.</td>
+                    <td style="padding: 8px 10px; font-style: italic; color: #666;">After changes to triage display labels, sheet tab logic, or pre-flight grouping/filtering.</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div style="margin-top: 12px; padding: 10px 12px; background: #e8f5e9; border-radius: 4px; border-left: 3px solid #43a047;">
+                <strong style="font-size: 0.82em; color: #2e7d32;">Adding a new suite?</strong>
+                <p style="font-size: 0.8em; color: #555; margin: 4px 0 0;">To add a new QA suite: (1) Define your test cases in <code>QARunner._suites</code> in the JavaScript section, (2) Add a button to this control bar with a descriptive <code>title</code> tooltip, (3) Add a row to this reference table, and (4) Create a matching <code>scripts/&lt;name&gt;_runtime_validation.py</code> for Playwright-based CI validation. Each suite should return an array of <code>{name, passed, detail}</code> objects.</p>
+              </div>
+            </div>
+          </details>
           <div id="p1b-quality-lock" style="display: none; margin-bottom: 12px; padding: 8px 12px; background: #fff3e0; border-radius: 6px; border: 1px solid #ffe0b2;">
             <label style="font-size: 0.85em; color: #e65100; cursor: pointer;">
               <input type="checkbox" id="p1b-lock-toggle" onchange="QARunner.toggleQualityLock(this.checked)" style="margin-right: 6px;">
