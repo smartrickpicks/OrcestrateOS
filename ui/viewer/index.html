@@ -13720,6 +13720,11 @@
             record_id: ctx.recordId || '',
             row_index: ctx.rowIdx
           };
+          if (typeof srrState !== 'undefined') {
+            srrState.currentSheetName = ctx.sheetName;
+            srrState.currentRowIndex = ctx.rowIdx;
+            srrState.currentRecord = record || {};
+          }
           console.log('[GRID-CONTEXT][P1] line_items_launch:success', window._gridCtxLineItemScope);
           openBatchAddModal();
         } else {
