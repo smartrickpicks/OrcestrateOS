@@ -2941,7 +2941,7 @@
                 <div id="srr-rfi-section" class="srr-rfi-target srr-section-hidden">
                   <div class="srr-rfi-stub" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: #f5f5f5; border-radius: 6px; color: #888;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    <span style="font-size: 0.85em;">Assign user (coming soon)</span>
+                    <span style="font-size: 0.85em;">Assign user (future release)</span>
                   </div>
                 </div>
               </div>
@@ -3281,7 +3281,7 @@
                     <div style="flex: 1;">
                       <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
                         <span style="font-weight: 600; font-size: 0.85em;">Analyst</span>
-                        <span style="font-size: 0.75em; color: #999;">(coming soon)</span>
+                        <span style="font-size: 0.75em; color: #999;">(future release)</span>
                       </div>
                       <div style="background: #f5f5f5; padding: 10px 14px; border-radius: 12px; font-size: 0.9em; color: #666;">Thread messages will appear here...</div>
                     </div>
@@ -3291,7 +3291,7 @@
                     <div style="flex: 1;">
                       <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
                         <span style="font-weight: 600; font-size: 0.85em;">Verifier</span>
-                        <span style="font-size: 0.75em; color: #999;">(coming soon)</span>
+                        <span style="font-size: 0.75em; color: #999;">(future release)</span>
                       </div>
                       <div style="background: #fff3e0; padding: 10px 14px; border-radius: 12px; font-size: 0.9em; color: #666;">Verifier responses will appear here...</div>
                     </div>
@@ -13566,10 +13566,12 @@
 
       var mw = menu.offsetWidth;
       var mh = menu.offsetHeight;
-      var vw = window.innerWidth;
-      var vh = window.innerHeight;
-      var posX = (x + mw > vw) ? Math.max(4, vw - mw - 4) : x;
-      var posY = (y + mh > vh) ? Math.max(4, vh - mh - 4) : y;
+      var vw = window.innerWidth || document.documentElement.clientWidth || 320;
+      var vh = window.innerHeight || document.documentElement.clientHeight || 240;
+      if (mw > vw - 8) { menu.style.maxWidth = (vw - 8) + 'px'; mw = vw - 8; }
+      if (mh > vh - 8) { menu.style.maxHeight = (vh - 8) + 'px'; menu.style.overflowY = 'auto'; mh = vh - 8; }
+      var posX = (x + mw > vw) ? Math.max(4, vw - mw - 4) : Math.max(4, x);
+      var posY = (y + mh > vh) ? Math.max(4, vh - mh - 4) : Math.max(4, y);
       menu.style.left = posX + 'px';
       menu.style.top = posY + 'px';
 
