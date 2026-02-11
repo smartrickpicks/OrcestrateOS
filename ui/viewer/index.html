@@ -17780,7 +17780,9 @@
       'PDF_VERIFIED_CLEAN': 'PDF Verified Clean',
       'MANUAL_REVIEW': 'Manual Review Required',
       'QA_FLAG': 'QA Validation Flag',
-      'SYSTEM_CHANGE': 'System Change Applied'
+      'SYSTEM_CHANGE': 'System Change Applied',
+      'ADDRESS_INCOMPLETE_CANDIDATE': 'Incomplete Address (Candidate Found)',
+      'ADDRESS_INCOMPLETE_AMBIGUOUS': 'Incomplete Address (Ambiguous)'
     };
 
     var _pfTermStats = { exact: 0, global: 0, humanized: 0, unknown: 0 };
@@ -18790,6 +18792,214 @@
         }
       }
       if (_duplicateAccountItems.length > 0) console.log('[PREFLIGHT-DUP] built ' + _duplicateAccountItems.length + ' duplicate account items');
+    }
+
+    var _addressCandidateItems = [];
+    var _addressCandidateDecisions = {};
+
+    (function _loadAddressCandidateDecisions() {
+      try {
+        var raw = localStorage.getItem('address_candidate_decisions');
+        if (raw) _addressCandidateDecisions = JSON.parse(raw);
+      } catch(e) { _addressCandidateDecisions = {}; }
+    })();
+
+    function _saveAddressCandidateDecision(itemId, action) {
+      _addressCandidateDecisions[itemId] = { action: action, ts: Date.now() };
+      try { localStorage.setItem('address_candidate_decisions', JSON.stringify(_addressCandidateDecisions)); } catch(e) {}
+    }
+
+    var _ADDRESS_FIELD_GROUPS = [
+      { prefix: 'billing', fields: { street: 'billing_street_c', city: 'billing_city_c', state: 'billing_state_c', postal: 'billing_postal_code_c', country: 'billing_country_c' }, sheet: 'Accounts' },
+      { prefix: 'shipping', fields: { street: 'shipping_street_c', city: 'shipping_city_c', state: 'shipping_state_c', postal: 'shipping_postal_code_c', country: 'shipping_country_c' }, sheet: 'Accounts' },
+      { prefix: 'mailing', fields: { street: 'MailingStreet', city: 'MailingCity', state: 'MailingState', postal: 'MailingPostalCode', country: 'MailingCountry' }, sheet: 'Contacts' }
+    ];
+
+    function _addrNormalize(val) {
+      if (!val) return '';
+      return String(val).toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function _addrFingerprint(parts) {
+      return [parts.country, parts.street, parts.city, parts.state, parts.postal].join('|');
+    }
+
+    function _buildAddressCandidateItems() {
+      _addressCandidateItems = [];
+      if (!window._workbookData) return;
+      var sheets = window._workbookData;
+      var allRecords = [];
+
+      for (var g = 0; g < _ADDRESS_FIELD_GROUPS.length; g++) {
+        var grp = _ADDRESS_FIELD_GROUPS[g];
+        var sheetData = null;
+        var sheetName = '';
+        for (var sn in sheets) {
+          if (!sheets.hasOwnProperty(sn)) continue;
+          var snLower = sn.toLowerCase().replace(/[^a-z]/g, '');
+          var grpLower = grp.sheet.toLowerCase().replace(/[^a-z]/g, '');
+          if (snLower === grpLower || snLower.indexOf(grpLower) >= 0) {
+            sheetData = sheets[sn];
+            sheetName = sn;
+            break;
+          }
+        }
+        if (!sheetData || !Array.isArray(sheetData) || sheetData.length === 0) continue;
+
+        for (var r = 0; r < sheetData.length; r++) {
+          var row = sheetData[r];
+          var parts = {};
+          var filled = 0;
+          var missing = [];
+          var components = ['street', 'city', 'state', 'postal', 'country'];
+          for (var ci = 0; ci < components.length; ci++) {
+            var comp = components[ci];
+            var fieldKey = grp.fields[comp];
+            var val = '';
+            if (row[fieldKey]) {
+              val = String(row[fieldKey]).trim();
+            } else {
+              for (var rk in row) {
+                if (rk.toLowerCase().replace(/[^a-z_]/g, '') === fieldKey.toLowerCase().replace(/[^a-z_]/g, '')) {
+                  val = String(row[rk]).trim();
+                  break;
+                }
+              }
+            }
+            parts[comp] = _addrNormalize(val);
+            if (parts[comp]) { filled++; } else { missing.push(comp); }
+          }
+          if (filled === 0 || filled === 5) continue;
+          if (missing.length > 1) continue;
+          allRecords.push({
+            group: grp,
+            sheetName: sheetName,
+            rowIndex: r,
+            row: row,
+            parts: parts,
+            missing: missing,
+            filled: filled,
+            fingerprint: _addrFingerprint(parts),
+            recordId: row.record_id || row.Id || row.id || (sheetName + '_r' + r),
+            contractKey: row._contract_key || row.contract_key || ''
+          });
+        }
+      }
+
+      if (allRecords.length === 0) return;
+
+      for (var i = 0; i < allRecords.length; i++) {
+        var rec = allRecords[i];
+        if (rec.missing.length === 0) continue;
+        var missingComp = rec.missing[0];
+        if (missingComp === 'country' && !rec.parts.street) continue;
+        var candidates = [];
+        for (var j = 0; j < allRecords.length; j++) {
+          if (i === j) continue;
+          var other = allRecords[j];
+          if (other.group.prefix !== rec.group.prefix) continue;
+          if (rec.parts.country && other.parts.country && rec.parts.country !== other.parts.country) continue;
+          if (!other.parts[missingComp]) continue;
+          var match = true;
+          for (var ci2 = 0; ci2 < 5; ci2++) {
+            var c2 = ['street', 'city', 'state', 'postal', 'country'][ci2];
+            if (c2 === missingComp) continue;
+            if (rec.parts[c2] && other.parts[c2] && rec.parts[c2] !== other.parts[c2]) { match = false; break; }
+          }
+          if (match) candidates.push(other);
+        }
+
+        var itemId = 'addr_' + rec.group.prefix + '_' + rec.sheetName + '_r' + rec.rowIndex + '_' + missingComp;
+        if (_addressCandidateDecisions[itemId]) continue;
+
+        var severity = 'blocker';
+        var blockerType = 'ADDRESS_INCOMPLETE_AMBIGUOUS';
+        var candidateValue = '';
+        if (candidates.length === 1) {
+          severity = 'warning';
+          blockerType = 'ADDRESS_INCOMPLETE_CANDIDATE';
+          candidateValue = candidates[0].row[candidates[0].group.fields[missingComp]] || candidates[0].parts[missingComp] || '';
+        }
+
+        var fieldLabel = missingComp.charAt(0).toUpperCase() + missingComp.slice(1);
+        var item = {
+          request_id: itemId,
+          signal_type: blockerType,
+          blocker_type: blockerType,
+          severity: severity,
+          sheet_name: rec.sheetName,
+          record_id: rec.recordId,
+          contract_key: rec.contractKey,
+          field_name: rec.group.fields[missingComp],
+          field_label: rec.group.prefix.charAt(0).toUpperCase() + rec.group.prefix.slice(1) + ' ' + fieldLabel,
+          message: 'Missing ' + rec.group.prefix + ' ' + missingComp + (candidates.length === 1 ? '. Candidate: ' + candidateValue : candidates.length > 1 ? '. ' + candidates.length + ' ambiguous candidates found' : '. No candidates found'),
+          reason_code: blockerType,
+          source: 'address_candidate_engine',
+          candidate_count: candidates.length,
+          candidate_value: candidateValue,
+          missing_component: missingComp,
+          address_group: rec.group.prefix,
+          existing_parts: rec.parts,
+          created: new Date().toISOString()
+        };
+        _addressCandidateItems.push(enrichPreflightItem(item));
+      }
+      if (_addressCandidateItems.length > 0) console.log('[PREFLIGHT-ADDR] built ' + _addressCandidateItems.length + ' address candidate items');
+    }
+
+    function _mergeAddressCandidateItems() {
+      if (!_addressCandidateItems || _addressCandidateItems.length === 0) return;
+      var _existKeys = {};
+      analystTriageState.manualItems.forEach(function(m) {
+        var k = (m.signal_type || '') + ':' + (m.record_id || '') + ':' + (m.field_name || '');
+        _existKeys[k] = true;
+      });
+      var added = 0;
+      _addressCandidateItems.forEach(function(item) {
+        var k = item.signal_type + ':' + (item.record_id || '') + ':' + (item.field_name || '');
+        if (!_existKeys[k]) {
+          analystTriageState.manualItems.push(item);
+          _existKeys[k] = true;
+          added++;
+        }
+      });
+      if (added > 0) console.log('[PREFLIGHT-ADDR] merged ' + added + ' address candidate items into Pre-Flight');
+    }
+
+    function _resolveAddressCandidate(itemId, action, candidateValue) {
+      _saveAddressCandidateDecision(itemId, action);
+      if (action === 'accept' && candidateValue) {
+        for (var i = 0; i < _addressCandidateItems.length; i++) {
+          var item = _addressCandidateItems[i];
+          if (item.request_id === itemId && item.missing_component && window._workbookData) {
+            var sheets = window._workbookData;
+            var sheetData = sheets[item.sheet_name];
+            if (sheetData && Array.isArray(sheetData)) {
+              var rIdx = parseInt((itemId.match(/_r(\d+)_/) || [])[1], 10);
+              if (!isNaN(rIdx) && sheetData[rIdx]) {
+                sheetData[rIdx][item.field_name] = candidateValue;
+                console.log('[PREFLIGHT-ADDR] applied candidate value for ' + itemId + ': ' + item.field_name + ' = ' + candidateValue);
+              }
+            }
+            break;
+          }
+        }
+      }
+      for (var di = _addressCandidateItems.length - 1; di >= 0; di--) {
+        if (_addressCandidateItems[di].request_id === itemId) {
+          _addressCandidateItems.splice(di, 1);
+          break;
+        }
+      }
+      for (var mi = analystTriageState.manualItems.length - 1; mi >= 0; mi--) {
+        if (analystTriageState.manualItems[mi].request_id === itemId) {
+          analystTriageState.manualItems.splice(mi, 1);
+          break;
+        }
+      }
+      if (typeof window._auditLog === 'function') {
+        window._auditLog('address_candidate_' + action, { item_id: itemId, action: action, candidate_value: candidateValue || null });
+      }
     }
 
     var _acctCheckQueue = [];
@@ -20543,6 +20753,8 @@
     var SIGNAL_TYPES = {
       MISSING_REQUIRED: { severity: 'error', source: 'field_meta' },
       PICKLIST_INVALID: { severity: 'warning', source: 'field_meta' },
+      ADDRESS_INCOMPLETE_CANDIDATE: { severity: 'warning', source: 'address_engine' },
+      ADDRESS_INCOMPLETE_AMBIGUOUS: { severity: 'error', source: 'address_engine' },
       QA_FLAG: { severity: 'info', source: 'qa_flags' },
       OCR_UNREADABLE: { severity: 'warning', source: 'encoding_check' }
     };
@@ -27599,6 +27811,12 @@
                 if (_daItem.contract_id === cid || _daItem.contract_key === cid) { hasBlockers = true; break; }
               }
             }
+            if (typeof _addressCandidateItems !== 'undefined') {
+              for (var _aci = 0; _aci < _addressCandidateItems.length; _aci++) {
+                var _acItem = _addressCandidateItems[_aci];
+                if (_acItem.contract_id === cid || _acItem.contract_key === cid) { hasBlockers = true; break; }
+              }
+            }
 
             if (_scanResult) {
               if (_scanResult === 'clean') {
@@ -29464,7 +29682,9 @@
         LOW_CONFIDENCE: { label: 'Low Confidence', badge: 'warn', icon: '\u26a0', desc: 'Extraction confidence below 60%. Values may be unreliable.' },
         DOCUMENT_TYPE_MISSING: { label: 'Document Type Missing', badge: 'warn', icon: '\ud83d\udcc4', desc: 'Document type not assigned or not recognized. Assign a valid document type before proceeding.' },
         MISSING_REQUIRED: { label: 'Missing Required', badge: 'fail', icon: '\u2757', desc: 'A required field defined in field_meta.json is missing or empty in this record.' },
-        PICKLIST_INVALID: { label: 'Invalid Picklist', badge: 'warn', icon: '\ud83d\udcdd', desc: 'Field value does not match any allowed option in the picklist.' }
+        PICKLIST_INVALID: { label: 'Invalid Picklist', badge: 'warn', icon: '\ud83d\udcdd', desc: 'Field value does not match any allowed option in the picklist.' },
+        ADDRESS_INCOMPLETE_CANDIDATE: { label: 'Incomplete Address', badge: 'warn', icon: '\ud83c\udfe0', desc: 'Address has missing components. A candidate match was found within the batch using normalized fingerprints.' },
+        ADDRESS_INCOMPLETE_AMBIGUOUS: { label: 'Ambiguous Address', badge: 'fail', icon: '\ud83c\udfe0', desc: 'Address has missing components and multiple or no candidate matches exist. Manual review required.' }
     };
 
     function loadAnalystTriageFromStore() {
@@ -30408,7 +30628,9 @@
       'LOW_CONFIDENCE': 'Low Confidence',
       'HEADER_ECHO': 'Header Echo',
       'MANUAL_REVIEW': 'Manual Review',
-      'QA_FLAG': 'QA Flag'
+      'QA_FLAG': 'QA Flag',
+      'ADDRESS_INCOMPLETE_CANDIDATE': 'Incomplete Address',
+      'ADDRESS_INCOMPLETE_AMBIGUOUS': 'Ambiguous Address'
     };
 
     var _ISSUE_TYPE_COLORS = {
@@ -30418,7 +30640,9 @@
       'OCR_MOJIBAKE': { border: '#880e4f', bg: '#fce4ec', text: '#880e4f' },
       'TEXT_NOT_SEARCHABLE': { border: '#4a148c', bg: '#f3e5f5', text: '#4a148c' },
       'UNKNOWN_COLUMN': { border: '#1565c0', bg: '#e3f2fd', text: '#1565c0' },
-      'PDF_VERIFIED_CLEAN': { border: '#2e7d32', bg: '#e8f5e9', text: '#2e7d32' }
+      'PDF_VERIFIED_CLEAN': { border: '#2e7d32', bg: '#e8f5e9', text: '#2e7d32' },
+      'ADDRESS_INCOMPLETE_CANDIDATE': { border: '#f57c00', bg: '#fff3e0', text: '#f57c00' },
+      'ADDRESS_INCOMPLETE_AMBIGUOUS': { border: '#d84315', bg: '#fbe9e7', text: '#d84315' }
     };
 
     function _p1aCountContracts(items) {
@@ -30669,6 +30893,9 @@
       // Build and merge missing-value Pre-Flight items before analytics refresh
       if (typeof _buildMissingValuePreflightItems === 'function') _buildMissingValuePreflightItems();
       if (typeof _mergeMissingValuePreflightItems === 'function') _mergeMissingValuePreflightItems();
+      // Address candidate detection and merge
+      if (typeof _buildAddressCandidateItems === 'function') _buildAddressCandidateItems();
+      if (typeof _mergeAddressCandidateItems === 'function') _mergeAddressCandidateItems();
       // V2.3: Refresh and render analytics header (after missing-value merge so pfAlerts includes all sources)
       if (typeof TriageAnalytics !== 'undefined') {
         try { TriageAnalytics.refresh(); TriageAnalytics.renderHeader(); } catch(e) { console.warn('[V2.3] Analytics refresh error:', e); }
