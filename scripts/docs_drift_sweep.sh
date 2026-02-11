@@ -44,7 +44,7 @@ check_banned_term() {
 
   local results
   if [ "$scope" = "docs" ]; then
-    results=$(grep -rn --include="*.md" -i "$term" docs/ 2>/dev/null || true)
+    results=$(grep -rn --include="*.md" --include="*.json" -i "$term" docs/ 2>/dev/null || true)
   elif [ "$scope" = "ui" ]; then
     results=$(grep -n -i "$term" ui/viewer/index.html 2>/dev/null || true)
   elif [ "$scope" = "config" ]; then
@@ -82,7 +82,7 @@ echo "--- Rule 1: Reviewer → Verifier ---"
 echo ""
 
 check_banned_term "Reviewer" "Verifier" "docs" \
-  "Reviewer Hub|Reviewer_Responded|Reviewer_Approved|ReviewerResponded|reviewer_responded|REVIEWER_APPROVED|legacy alias|forbidden|banned|deprecated.term|NEVER use" || true
+  "Reviewer Hub|Reviewer_Responded|Reviewer_Approved|ReviewerResponded|reviewer_responded|REVIEWER_APPROVED|legacy alias|forbidden|banned|deprecated.term|NEVER use|Reviewer Review|old.*Reviewer" || true
 
 check_banned_term "Reviewer" "Verifier" "ui" \
   "Reviewer_Responded|Reviewer_Approved|ReviewerResponded|reviewer_responded|REVIEWER_APPROVED|role === .Reviewer|normalizeRole" || true
@@ -95,7 +95,7 @@ echo "--- Rule 2: Single Row Review → Record Inspection (user-facing) ---"
 echo ""
 
 check_banned_term "Single Row Review" "Record Inspection" "docs" \
-  "single_row_review|Canonical surface|canonical.*name|internal.*token|internal.*route|gate_view_mapping|HANDOFF.*terminology|single-row-review-view.md" || true
+  "single_row_review|Canonical surface|canonical.*name|internal.*token|internal.*route|gate_view_mapping|HANDOFF.*terminology|single-row-review-view.md|legacy_label|legacy.*token" || true
 
 check_banned_term "Single Row Review" "Record Inspection" "ui" \
   "single_row_review|singleRowReview|page-row|srr-|SRR|srrState" || true
