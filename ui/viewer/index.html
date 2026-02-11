@@ -1172,6 +1172,29 @@
     .grid-table.grid-mode-active tbody tr:nth-child(even) { background: #fafbfc; }
     .grid-table.grid-mode-active tbody tr:nth-child(odd) { background: #fff; }
     .grid-table.grid-mode-active tbody tr:hover { background: #e3f2fd; }
+
+    /* Floating grid controls - top right */
+    .grid-float-controls {
+      position: fixed; top: 72px; right: 24px; z-index: 50;
+      display: flex; gap: 6px; align-items: center;
+      background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
+      padding: 6px 10px; border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.04);
+      transition: opacity 0.3s ease, transform 0.25s ease;
+      opacity: 1; transform: translateY(0);
+    }
+    .grid-float-controls.scrolling {
+      opacity: 0; transform: translateY(-10px); pointer-events: none;
+    }
+    .grid-float-controls .gfc-btn {
+      padding: 5px 14px; font-size: 0.78em; font-weight: 600;
+      border: 1px solid #d0d5dd; border-radius: 6px; background: #f8f9fa;
+      color: #344054; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .grid-float-controls .gfc-btn:hover { background: #e8eaed; border-color: #b0b5bd; }
+    .grid-float-controls .gfc-btn.active { background: #1565c0; color: #fff; border-color: #1565c0; }
+    .grid-float-controls .gfc-divider { width: 1px; height: 20px; background: #e0e0e0; margin: 0 2px; }
     /* Mode toggle pill */
     .grid-mode-toggle { display: inline-flex; border: 1px solid #1565c0; border-radius: 8px; overflow: hidden; font-size: 0.82em; }
     .grid-mode-toggle button { border: none; padding: 6px 20px; cursor: pointer; font-weight: 600; background: #fff; color: #1565c0; transition: background 0.15s, color 0.15s; min-width: 70px; text-align: center; font-size: 0.85em; }
@@ -2525,6 +2548,13 @@
           <span id="grid-stat-unknown" class="admin-only-content" style="display: none; cursor: pointer;" onclick="openLoaderDrawer()" title="Click to load data"><strong>Unknown Columns:</strong> <span class="stat-value" style="color: #7b1fa2;">0</span></span>
           <span class="stat-divider" id="contract-stat-divider" style="color: #ccc; display: none;">|</span>
           <span id="grid-stat-contracts" style="display: none;"><strong>Contracts:</strong> <span class="stat-value" style="color: #1565c0;">0</span></span>
+          <span id="grid-color-legend" style="display:none;margin-left:auto;gap:8px;align-items:center;font-size:0.75em;color:#888;">
+            <span style="display:inline-flex;align-items:center;gap:2px;"><span style="width:8px;height:8px;border-radius:2px;background:#e8f5e9;border-left:2px solid #4caf50;display:inline-block;"></span> Verified</span>
+            <span style="display:inline-flex;align-items:center;gap:2px;"><span style="width:8px;height:8px;border-radius:2px;background:#fff8e1;border-left:2px solid #f57f17;display:inline-block;"></span> RFI</span>
+            <span style="display:inline-flex;align-items:center;gap:2px;"><span style="width:8px;height:8px;border-radius:2px;background:#e3f2fd;border-left:2px solid #1565c0;display:inline-block;"></span> Modified</span>
+            <span style="display:inline-flex;align-items:center;gap:2px;"><span style="width:8px;height:8px;border-radius:2px;background:#ffebee;border-left:2px solid #c62828;display:inline-block;"></span> Blocker</span>
+            <span style="display:inline-flex;align-items:center;gap:2px;"><span style="width:8px;height:8px;border-radius:2px;background:#f5f5f5;border-left:2px solid #bdbdbd;display:inline-block;"></span> System</span>
+          </span>
         </div>
         
         <!-- v1.6.11: Change Map Legend (shown only for modified dataset) -->
@@ -2554,23 +2584,13 @@
 
         <!-- Dense Grid Table -->
         
-          <!-- P1C: Composite Grid Controls -->
-          <div id="grid-view-controls" style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; position: sticky; top: 0; z-index: 20; background: #fff; border-bottom: 1px solid #e0e0e0; border-radius: 8px 8px 0 0;">
-            <div class="grid-mode-toggle" id="grid-mode-toggle">
-              <button id="grid-mode-review-btn" class="active" onclick="setGridViewMode('review')">Review</button>
-              <button id="grid-mode-grid-btn" onclick="setGridViewMode('grid')">Grid</button>
-            </div>
-            <div id="p1c-composite-controls" class="p1c-composite-controls" style="display: none;">
-              <button onclick="_p1cExpandAll()" style="padding:5px 14px;font-size:0.82em;border:1px solid #ccc;border-radius:6px;background:#f8f9fa;cursor:pointer;font-weight:500;">Expand All</button>
-              <button onclick="_p1cCollapseAll()" style="padding:5px 14px;font-size:0.82em;border:1px solid #ccc;border-radius:6px;background:#f8f9fa;cursor:pointer;font-weight:500;">Collapse All</button>
-            </div>
-            <div id="grid-color-legend" style="display:none;margin-left:auto;gap:10px;align-items:center;font-size:0.75em;">
-              <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#e8f5e9;border-left:2px solid #4caf50;display:inline-block;"></span> Verified</span>
-              <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#fff8e1;border-left:2px solid #f57f17;display:inline-block;"></span> RFI</span>
-              <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#e3f2fd;border-left:2px solid #1565c0;display:inline-block;"></span> Modified</span>
-              <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#ffebee;border-left:2px solid #c62828;display:inline-block;"></span> Blocker</span>
-              <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#f5f5f5;border-left:2px solid #bdbdbd;display:inline-block;"></span> System</span>
-            </div>
+          <!-- Floating Grid Controls (top-right, scroll-aware) -->
+          <div id="grid-float-controls" class="grid-float-controls" style="display:none;">
+            <button id="grid-mode-review-btn" class="gfc-btn active" onclick="setGridViewMode('review')">Review</button>
+            <button id="grid-mode-grid-btn" class="gfc-btn" onclick="setGridViewMode('grid')">Grid</button>
+            <div class="gfc-divider" id="gfc-composite-divider" style="display:none;"></div>
+            <button id="gfc-expand-btn" class="gfc-btn" onclick="_p1cExpandAll()" style="display:none;">Expand All</button>
+            <button id="gfc-collapse-btn" class="gfc-btn" onclick="_p1cCollapseAll()" style="display:none;">Collapse All</button>
           </div>
 
         <div class="grid-table-container" style="overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px;">
@@ -12466,8 +12486,8 @@
       var reviewBtn = document.getElementById('grid-mode-review-btn');
       var gridBtn = document.getElementById('grid-mode-grid-btn');
       if (reviewBtn && gridBtn) {
-        reviewBtn.className = mode === 'review' ? 'active' : '';
-        gridBtn.className = mode === 'grid' ? 'active' : '';
+        reviewBtn.className = 'gfc-btn' + (mode === 'review' ? ' active' : '');
+        gridBtn.className = 'gfc-btn' + (mode === 'grid' ? ' active' : '');
       }
       var allTables = document.querySelectorAll('.grid-table');
       for (var ti = 0; ti < allTables.length; ti++) {
@@ -12671,6 +12691,23 @@
     function _gridVerifyRecord(recordId, sheetName, rowIdx, trEl) {
       if (!recordId) return;
     }
+
+    (function() {
+      var _scrollTimer = null;
+      var _gridPage = document.getElementById('page-grid');
+      var _mainContent = document.querySelector('.main-content');
+      if (_mainContent) {
+        _mainContent.addEventListener('scroll', function() {
+          var fc = document.getElementById('grid-float-controls');
+          if (!fc || fc.style.display === 'none') return;
+          fc.classList.add('scrolling');
+          if (_scrollTimer) clearTimeout(_scrollTimer);
+          _scrollTimer = setTimeout(function() {
+            fc.classList.remove('scrolling');
+          }, 400);
+        });
+      }
+    })();
     (function() {
       document.addEventListener('click', function(e) {
         if (_gridViewMode !== 'grid') return;
@@ -15603,13 +15640,16 @@
           triageParent.classList.remove('expanded');
         }
       }
+      var _floatCtrl = document.getElementById('grid-float-controls');
       if (page === 'grid') {
+        if (_floatCtrl) _floatCtrl.style.display = 'flex';
         _populateGridSections();
         _expandGridSections();
         if (!gridState.sheet) {
           document.querySelectorAll('#grid-sections-nav .nav-section-link').forEach(function(el) { el.classList.remove('active'); });
         }
       } else {
+        if (_floatCtrl) _floatCtrl.style.display = 'none';
         _collapseGridSections();
       }
       
@@ -17566,8 +17606,12 @@
       // P1C cleanup: remove composite view when not in composite mode
       var _p1cOldRoot = document.getElementById('p1c-composite-root');
       if (_p1cOldRoot) { _p1cOldRoot.parentNode.removeChild(_p1cOldRoot); console.log('[GRID-COMPOSITE][P1C] mode_disabled'); }
-      var _p1cCtrl = document.getElementById('p1c-composite-controls');
-      if (_p1cCtrl) _p1cCtrl.style.display = 'none';
+      var _gfcExpand = document.getElementById('gfc-expand-btn');
+      var _gfcCollapse = document.getElementById('gfc-collapse-btn');
+      var _gfcDiv = document.getElementById('gfc-composite-divider');
+      if (_gfcExpand) _gfcExpand.style.display = 'none';
+      if (_gfcCollapse) _gfcCollapse.style.display = 'none';
+      if (_gfcDiv) _gfcDiv.style.display = 'none';
       var _p1cOrigTable = document.getElementById('grid-table');
       if (_p1cOrigTable) _p1cOrigTable.style.display = '';
 
@@ -21422,8 +21466,12 @@
       var STATUS_KEYS = ['status', 'Status', 'sf_contract_status', 'review_state', 'Review_State'];
 
       // Show controls
-      var ctrl = document.getElementById('p1c-composite-controls');
-      if (ctrl) ctrl.style.display = 'flex';
+      var _gfcExpand2 = document.getElementById('gfc-expand-btn');
+      var _gfcCollapse2 = document.getElementById('gfc-collapse-btn');
+      var _gfcDiv2 = document.getElementById('gfc-composite-divider');
+      if (_gfcExpand2) _gfcExpand2.style.display = '';
+      if (_gfcCollapse2) _gfcCollapse2.style.display = '';
+      if (_gfcDiv2) _gfcDiv2.style.display = '';
 
       // Group rows by sheet
       var sheetMap = {};
@@ -40206,9 +40254,7 @@ Add any additional notes here.
 
     
     /* ── P1C: Contract Composite Grid ── */
-    .p1c-composite-controls { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
-    .p1c-composite-controls button { padding: 4px 12px; font-size: 0.8em; border: 1px solid #ccc; border-radius: 4px; background: #f5f5f5; cursor: pointer; }
-    .p1c-composite-controls button:hover { background: #e8e8e8; }
+
     .p1c-section { margin-bottom: 16px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
     .p1c-section-header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #f5f5f5; cursor: pointer; user-select: none; border-bottom: 1px solid #e0e0e0; }
     .p1c-section-header:hover { background: #eef2f7; }
