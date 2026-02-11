@@ -13304,7 +13304,8 @@
         _editCommitted: false,
         _pendingEdits: {},
         _searchQuery: '',
-        _activeTab: 'edit'
+        _activeTab: 'edit',
+        _evidenceDraft: {}
       };
 
       var drawer = document.getElementById('grid-patch-drawer');
@@ -13344,7 +13345,10 @@
       html += '<div style="font-weight:700;font-size:1.05em;color:#1e3a5f;">Field Inspector</div>';
       html += '<div style="font-size:0.78em;color:#64748b;margin-top:2px;">' + escapeHtml(sheetName) + ' \u2014 Row ' + (rowIdx + 1) + '</div>';
       html += '</div>';
+      html += '<div style="display:flex;align-items:center;gap:6px;">';
+      html += '<button onclick="if(typeof openBatchAddModal===\'function\')openBatchAddModal()" style="background:none;border:1px solid #cbd5e1;border-radius:6px;font-size:1.1em;color:#1565c0;cursor:pointer;padding:2px 8px;line-height:1;" title="Add Contract Line Item">+</button>';
       html += '<button onclick="_gridCloseDrawer()" style="background:none;border:none;font-size:1.3em;color:#888;cursor:pointer;padding:4px 8px;line-height:1;" title="Close">&times;</button>';
+      html += '</div>';
       html += '</div>';
 
       html += '<div style="display:flex;flex:1;overflow:hidden;">';
@@ -13519,6 +13523,7 @@
       var editCount = editKeys.length;
       var patchType = ctx.patchType || 'correction';
       var oldVals = window._gridDrawerOldValues || {};
+      var evDraft = ctx._evidenceDraft || {};
       var html = '';
 
       html += '<div style="flex:1;overflow-y:auto;padding:14px;">';
@@ -13532,25 +13537,25 @@
         return html;
       }
 
-      html += '<div style="margin-bottom:16px;">';
-      html += '<div style="font-size:0.7em;font-weight:700;color:#888;letter-spacing:0.05em;margin-bottom:8px;text-transform:uppercase;">Patch Type</div>';
+      html += '<div class="srr-patch-type-selector" style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #e0e0e0;">';
+      html += '<div class="srr-patch-type-label">Patch Type</div>';
       html += '<div class="srr-patch-type-chips" style="display:flex;gap:6px;">';
       html += '<div class="srr-patch-type-chip correction' + (patchType === 'correction' ? ' active' : '') + '" data-type="correction" onclick="_gridDrawerSetType(\'correction\')" style="cursor:pointer;">Correction</div>';
       html += '<div class="srr-patch-type-chip blacklist' + (patchType === 'blacklist' ? ' active' : '') + '" data-type="blacklist" onclick="_gridDrawerSetType(\'blacklist\')" style="cursor:pointer;">Blacklist</div>';
       html += '<div class="srr-patch-type-chip rfi' + (patchType === 'rfi' ? ' active' : '') + '" data-type="rfi" onclick="_gridDrawerSetType(\'rfi\')" style="cursor:pointer;">RFI</div>';
       html += '</div>';
+      if (ctx.focusField && pendingEdits.hasOwnProperty(ctx.focusField)) {
+        html += '<div class="srr-patch-type-selected-field" style="margin-top:6px;">Selected: ' + escapeHtml(ctx.focusField) + '</div>';
+      } else {
+        html += '<div class="srr-patch-type-selected-field" style="margin-top:6px;">Select a field to apply action</div>';
+      }
       html += '</div>';
 
-      if (ctx.focusField && pendingEdits.hasOwnProperty(ctx.focusField)) {
-        html += '<div style="margin-bottom:14px;padding:8px 10px;background:#f8f9fa;border-radius:6px;border-left:3px solid #1565c0;">';
-        html += '<div style="font-size:0.7em;font-weight:700;color:#888;margin-bottom:4px;">SELECTED FIELD</div>';
-        html += '<div style="font-size:0.85em;color:#333;font-weight:600;">' + escapeHtml(ctx.focusField) + '</div>';
-        html += '<div style="font-size:0.8em;color:#1565c0;margin-top:2px;">' + escapeHtml(pendingEdits[ctx.focusField]) + '</div>';
-        html += '</div>';
-      }
-
-      html += '<div style="margin-bottom:16px;">';
-      html += '<div style="font-size:0.7em;font-weight:700;color:#888;letter-spacing:0.05em;margin-bottom:8px;text-transform:uppercase;">Changed Fields (' + editCount + ')</div>';
+      html += '<div class="srr-patch-editor" style="margin-bottom:16px;padding:12px;border:1px solid #e0e0e0;border-radius:8px;">';
+      html += '<div class="srr-patch-editor-title" style="display:flex;align-items:center;margin-bottom:8px;">';
+      html += '<span style="font-weight:700;font-size:0.88em;color:#333;">Changed Fields</span>';
+      html += '<span style="font-weight:normal;color:#666;font-size:0.82em;margin-left:auto;">' + editCount + ' change' + (editCount !== 1 ? 's' : '') + '</span>';
+      html += '</div>';
       for (var ci = 0; ci < editKeys.length; ci++) {
         var cfk = editKeys[ci];
         var cfOld = oldVals[cfk] || '';
@@ -13566,14 +13571,76 @@
       }
       html += '</div>';
 
-      html += '<div style="margin-bottom:16px;padding:8px 10px;background:#f8f9fa;border-radius:6px;font-size:0.8em;color:#999;">';
-      html += '+ Assign user (coming soon)';
+      html += '<div style="font-size:0.85em;font-weight:600;color:#333;margin-bottom:12px;padding-top:12px;border-top:1px solid #e0e0e0;">Evidence Pack</div>';
+
+      if (patchType === 'correction') {
+        html += '<div class="srr-evidence-block">';
+        html += '<div class="srr-evidence-label">Observation <span class="srr-evidence-alias">(WHEN)</span></div>';
+        html += '<select class="srr-evidence-select" id="grid-drawer-observation" onchange="_gridDrawerSaveEvidence()">';
+        html += '<option value="">-- Select observation type --</option>';
+        html += '<option value="incorrect_value"' + (evDraft.observation === 'incorrect_value' ? ' selected' : '') + '>Incorrect Value</option>';
+        html += '<option value="missing_value"' + (evDraft.observation === 'missing_value' ? ' selected' : '') + '>Missing Value</option>';
+        html += '<option value="formatting_issue"' + (evDraft.observation === 'formatting_issue' ? ' selected' : '') + '>Formatting Issue</option>';
+        html += '<option value="duplicate_entry"' + (evDraft.observation === 'duplicate_entry' ? ' selected' : '') + '>Duplicate Entry</option>';
+        html += '<option value="inconsistent_data"' + (evDraft.observation === 'inconsistent_data' ? ' selected' : '') + '>Inconsistent Data</option>';
+        html += '<option value="override_needed"' + (evDraft.observation === 'override_needed' ? ' selected' : '') + '>Override Needed</option>';
+        html += '</select>';
+        html += '</div>';
+
+        html += '<div class="srr-evidence-block">';
+        html += '<div class="srr-evidence-label">Expected <span class="srr-evidence-alias">(THEN)</span></div>';
+        html += '<select class="srr-evidence-select" id="grid-drawer-expected" onchange="_gridDrawerSaveEvidence()">';
+        html += '<option value="">-- Select expected behavior --</option>';
+        html += '<option value="correct_value"' + (evDraft.expected === 'correct_value' ? ' selected' : '') + '>Use Correct Value</option>';
+        html += '<option value="populate_field"' + (evDraft.expected === 'populate_field' ? ' selected' : '') + '>Populate Empty Field</option>';
+        html += '<option value="standardize_format"' + (evDraft.expected === 'standardize_format' ? ' selected' : '') + '>Standardize Format</option>';
+        html += '<option value="remove_duplicate"' + (evDraft.expected === 'remove_duplicate' ? ' selected' : '') + '>Remove Duplicate</option>';
+        html += '<option value="align_with_source"' + (evDraft.expected === 'align_with_source' ? ' selected' : '') + '>Align with Source Document</option>';
+        html += '<option value="allow_override"' + (evDraft.expected === 'allow_override' ? ' selected' : '') + '>Allow Override</option>';
+        html += '</select>';
+        html += '</div>';
+      }
+
+      html += '<div class="srr-evidence-block">';
+      if (patchType === 'rfi') {
+        html += '<div class="srr-evidence-label">Question <span class="srr-evidence-alias">(ASK)</span></div>';
+        html += '<textarea class="srr-evidence-textarea" id="grid-drawer-justification" placeholder="What information do you need?" oninput="_gridDrawerSaveEvidence()">' + escapeHtml(evDraft.justification || '') + '</textarea>';
+      } else {
+        html += '<div class="srr-evidence-label">Justification <span class="srr-evidence-alias">(BECAUSE)</span></div>';
+        html += '<textarea class="srr-evidence-textarea" id="grid-drawer-justification" placeholder="Explain why this change/flag is necessary..." oninput="_gridDrawerSaveEvidence()">' + escapeHtml(evDraft.justification || '') + '</textarea>';
+      }
       html += '</div>';
 
-      html += '<div style="margin-bottom:16px;">';
-      html += '<div style="font-size:0.7em;font-weight:700;color:#888;letter-spacing:0.05em;margin-bottom:8px;text-transform:uppercase;">Evidence Pack</div>';
-      html += '<label style="font-size:0.78em;color:#555;display:block;margin-bottom:4px;">COMMENT</label>';
-      html += '<textarea id="grid-drawer-justification" placeholder="Add context, justification, or notes..." style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.82em;resize:vertical;min-height:60px;box-sizing:border-box;"></textarea>';
+      if (patchType === 'correction') {
+        html += '<div class="srr-evidence-block">';
+        html += '<div class="srr-evidence-label">Repro Method <span class="srr-repro-required">(required)</span></div>';
+        html += '<select class="srr-evidence-select" id="grid-drawer-repro" onchange="_gridDrawerSaveEvidence(); _gridDrawerToggleReproFile();">';
+        html += '<option value="">-- Select repro method --</option>';
+        html += '<option value="breaks_salesforce_rule"' + (evDraft.repro === 'breaks_salesforce_rule' ? ' selected' : '') + '>System Pass Violation</option>';
+        html += '<option value="breaks_qa_gate"' + (evDraft.repro === 'breaks_qa_gate' ? ' selected' : '') + '>Breaks QA Gate</option>';
+        html += '<option value="resolver_mismatch"' + (evDraft.repro === 'resolver_mismatch' ? ' selected' : '') + '>Resolver Mismatch</option>';
+        html += '<option value="doc_evidence_mismatch"' + (evDraft.repro === 'doc_evidence_mismatch' ? ' selected' : '') + '>Doc Evidence Mismatch (attach file)</option>';
+        html += '</select>';
+        html += '<div id="grid-drawer-repro-file-section" style="margin-top:6px;display:' + (evDraft.repro === 'doc_evidence_mismatch' ? 'block' : 'none') + ';">';
+        html += '<input type="file" id="grid-drawer-repro-file" accept=".pdf,.png,.jpg,.jpeg" style="font-size:0.82em;">';
+        html += '</div>';
+        html += '</div>';
+      }
+
+      if (patchType === 'blacklist') {
+        html += '<div style="margin-bottom:16px;padding:10px;background:#fff3e0;border-radius:6px;border-left:3px solid #e65100;font-size:0.82em;color:#bf360c;">';
+        html += '<strong>Blacklist Subject:</strong> ';
+        if (ctx.focusField && pendingEdits.hasOwnProperty(ctx.focusField)) {
+          html += escapeHtml(ctx.focusField) + ' = ' + escapeHtml(pendingEdits[ctx.focusField]);
+        } else {
+          html += '(derived from selected field/value)';
+        }
+        html += '</div>';
+      }
+
+      html += '<div style="margin-bottom:16px;padding:8px 10px;background:#f8f9fa;border-radius:6px;font-size:0.8em;color:#999;display:flex;align-items:center;gap:8px;">';
+      html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+      html += 'Assign user (coming soon)';
       html += '</div>';
 
       html += '</div>';
@@ -13588,6 +13655,27 @@
       html += '</div>';
 
       return html;
+    }
+
+    function _gridDrawerSaveEvidence() {
+      var ctx = window._gridDrawerContext;
+      if (!ctx) return;
+      if (!ctx._evidenceDraft) ctx._evidenceDraft = {};
+      var obs = document.getElementById('grid-drawer-observation');
+      var exp = document.getElementById('grid-drawer-expected');
+      var just = document.getElementById('grid-drawer-justification');
+      var repro = document.getElementById('grid-drawer-repro');
+      if (obs) ctx._evidenceDraft.observation = obs.value;
+      if (exp) ctx._evidenceDraft.expected = exp.value;
+      if (just) ctx._evidenceDraft.justification = just.value;
+      if (repro) ctx._evidenceDraft.repro = repro.value;
+    }
+
+    function _gridDrawerToggleReproFile() {
+      var repro = document.getElementById('grid-drawer-repro');
+      var fileSection = document.getElementById('grid-drawer-repro-file-section');
+      if (!repro || !fileSection) return;
+      fileSection.style.display = (repro.value === 'doc_evidence_mismatch') ? 'block' : 'none';
     }
 
     function _gridDrawerInfoTabHtml(ctx) {
@@ -13705,6 +13793,18 @@
       } else {
         if (badge && badge.parentNode) badge.parentNode.removeChild(badge);
       }
+
+      if (ctx._pendingEdits.hasOwnProperty(fk) && ctx._activeTab === 'edit') {
+        ctx._autoSwitchField = fk;
+        if (window._gridAutoSwitchTimer) clearTimeout(window._gridAutoSwitchTimer);
+        window._gridAutoSwitchTimer = setTimeout(function() {
+          var cx = window._gridDrawerContext;
+          if (cx && cx._autoSwitchField && Object.keys(cx._pendingEdits).length > 0 && cx._activeTab === 'edit') {
+            _gridDrawerSwitchTab('patch');
+          }
+          delete cx._autoSwitchField;
+        }, 800);
+      }
     }
 
     function _gridDrawerSearchFields() {
@@ -13730,7 +13830,15 @@
     function _gridDrawerSetType(type) {
       var ctx = window._gridDrawerContext;
       if (!ctx) return;
+      var oldType = ctx.patchType;
       ctx.patchType = type;
+      if (ctx._evidenceDraft && oldType !== type) {
+        if (type !== 'correction') {
+          delete ctx._evidenceDraft.observation;
+          delete ctx._evidenceDraft.expected;
+          delete ctx._evidenceDraft.repro;
+        }
+      }
       var chips = document.querySelectorAll('#grid-drawer-tab-patch .srr-patch-type-chip');
       for (var i = 0; i < chips.length; i++) {
         var chipType = chips[i].getAttribute('data-type');
@@ -13757,7 +13865,9 @@
     function _gridDrawerSubmit() {
       var ctx = window._gridDrawerContext;
       if (!ctx) return;
+      _gridDrawerSaveEvidence();
       var patchType = ctx.patchType || 'correction';
+      var evDraft = ctx._evidenceDraft || {};
       var justification = (document.getElementById('grid-drawer-justification') || {}).value || '';
       var pendingEdits = ctx._pendingEdits || {};
       var oldVals = window._gridDrawerOldValues || {};
@@ -13780,8 +13890,9 @@
         changes: changes,
         justification: justification || (patchType === 'rfi' ? 'RFI from Grid Mode' : 'Patch from Grid Mode'),
         summary: (patchType === 'rfi' ? 'RFI' : changes.length + ' field(s) patched') + ' via Grid Mode',
-        when: 'Grid Mode patch',
-        then: changes.length > 0 ? changes.map(function(c) { return c.field + ': ' + c.from + ' -> ' + c.to; }).join('; ') : 'RFI request'
+        when: evDraft.observation || 'Grid Mode patch',
+        then: evDraft.expected || (changes.length > 0 ? changes.map(function(c) { return c.field + ': ' + c.from + ' -> ' + c.to; }).join('; ') : 'RFI request'),
+        repro_method: evDraft.repro || ''
       });
       if (request) {
         var submitted = submitPatchRequest(request.request_id, author, currentMode || 'analyst');
