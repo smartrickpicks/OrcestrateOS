@@ -13265,7 +13265,7 @@
       if (!record) { showToast('Record not found', 'error'); return; }
 
       var allKeys = Object.keys(record).filter(function(k) {
-        return !k.startsWith('_') && k !== 'sheet';
+        return k.substr(0, 1) !== '_' && k !== 'sheet';
       });
       var fieldKeys = allKeys.filter(function(k) {
         if (typeof isHiddenField === 'function' && isHiddenField(k)) return false;
@@ -13303,7 +13303,8 @@
         fileMeta: fileMeta,
         _editCommitted: false,
         _pendingEdits: {},
-        _searchQuery: ''
+        _searchQuery: '',
+        _activeTab: 'edit'
       };
 
       var drawer = document.getElementById('grid-patch-drawer');
@@ -13330,95 +13331,117 @@
     function _gridDrawerRender(drawer) {
       var ctx = window._gridDrawerContext;
       if (!ctx) return;
-      var record = ctx.record;
-      var fieldKeys = ctx.fieldKeys;
       var sheetName = ctx.sheetName;
       var rowIdx = ctx.rowIdx;
-      var fileMeta = ctx.fileMeta || {};
+      var activeTab = ctx._activeTab || 'edit';
+      var pendingEdits = ctx._pendingEdits || {};
+      var editCount = Object.keys(pendingEdits).length;
 
       var html = '';
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;border-bottom:1px solid #e0e0e0;background:#fafbfc;">';
+
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;border-bottom:1px solid #e0e0e0;background:#fafbfc;flex-shrink:0;">';
       html += '<div>';
-      html += '<div style="font-weight:700;font-size:1.05em;color:#1e3a5f;">Patch Editor</div>';
+      html += '<div style="font-weight:700;font-size:1.05em;color:#1e3a5f;">Field Inspector</div>';
       html += '<div style="font-size:0.78em;color:#64748b;margin-top:2px;">' + escapeHtml(sheetName) + ' \u2014 Row ' + (rowIdx + 1) + '</div>';
       html += '</div>';
-      html += '<button onclick="_gridCloseDrawer()" style="background:none;border:none;font-size:1.4em;color:#888;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;" title="Close">&times;</button>';
+      html += '<button onclick="_gridCloseDrawer()" style="background:none;border:none;font-size:1.3em;color:#888;cursor:pointer;padding:4px 8px;line-height:1;" title="Close">&times;</button>';
       html += '</div>';
 
-      if (fileMeta.fileName || fileMeta.fileUrl) {
-        html += '<div style="padding:8px 18px;background:#f8f9fb;border-bottom:1px solid #eee;font-size:0.82em;">';
-        if (fileMeta.fileName) {
-          html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:' + (fileMeta.fileUrl ? '4px' : '0') + ';">';
-          html += '<span style="color:#888;font-size:0.9em;">&#128196;</span>';
-          html += '<span style="color:#333;font-weight:500;">' + escapeHtml(fileMeta.fileName) + '</span>';
-          html += '</div>';
-        }
-        if (fileMeta.fileUrl) {
-          html += '<div style="display:flex;align-items:center;gap:6px;">';
-          html += '<span style="color:#888;font-size:0.9em;">&#128279;</span>';
-          html += '<a href="' + escapeHtml(fileMeta.fileUrl) + '" target="_blank" rel="noopener" style="color:#1565c0;text-decoration:none;font-size:0.92em;word-break:break-all;" title="Open file">' + escapeHtml(fileMeta.fileUrl.length > 50 ? fileMeta.fileUrl.substring(0, 48) + '...' : fileMeta.fileUrl) + '</a>';
-          html += '</div>';
-        }
-        html += '</div>';
-      }
+      html += '<div style="display:flex;flex:1;overflow:hidden;">';
 
-      html += '<div style="display:flex;gap:1px;background:#e0e0e0;flex-shrink:0;">';
-      html += '<button class="grid-drawer-tab' + (ctx._activeTab !== 'glossary' ? ' active' : '') + '" onclick="_gridDrawerSwitchTab(\'field\')" style="flex:1;padding:9px 0;font-size:0.82em;font-weight:600;cursor:pointer;border:none;background:' + (ctx._activeTab !== 'glossary' ? '#fff' : '#f5f5f5') + ';color:' + (ctx._activeTab !== 'glossary' ? '#1e3a5f' : '#888') + ';">Field</button>';
-      html += '<button class="grid-drawer-tab' + (ctx._activeTab === 'glossary' ? ' active' : '') + '" onclick="_gridDrawerSwitchTab(\'glossary\')" style="flex:1;padding:9px 0;font-size:0.82em;font-weight:600;cursor:pointer;border:none;background:' + (ctx._activeTab === 'glossary' ? '#fff' : '#f5f5f5') + ';color:' + (ctx._activeTab === 'glossary' ? '#1e3a5f' : '#888') + ';">Glossary</button>';
+      html += '<div class="srr-left-tab-body' + (activeTab === 'edit' ? ' active' : '') + '" id="grid-drawer-tab-edit" data-tab="edit" style="flex-direction:column;">';
+      html += _gridDrawerEditTabHtml(ctx);
       html += '</div>';
 
-      if (ctx._activeTab === 'glossary') {
-        html += _gridDrawerGlossaryHtml();
-      } else {
-        html += _gridDrawerFieldsHtml(ctx);
+      html += '<div class="srr-left-tab-body' + (activeTab === 'patch' ? ' active' : '') + '" id="grid-drawer-tab-patch" data-tab="patch" style="flex-direction:column;">';
+      html += _gridDrawerPatchTabHtml(ctx);
+      html += '</div>';
+
+      html += '<div class="srr-left-tab-body' + (activeTab === 'info' ? ' active' : '') + '" id="grid-drawer-tab-info" data-tab="info" style="flex-direction:column;">';
+      html += _gridDrawerInfoTabHtml(ctx);
+      html += '</div>';
+
+      html += '<div class="srr-left-tabs" id="grid-drawer-tabs">';
+      html += '<button class="srr-left-tab' + (activeTab === 'edit' ? ' active' : '') + '" data-tab="edit" onclick="_gridDrawerSwitchTab(\'edit\')" title="Edit Fields">Edit</button>';
+      html += '<button class="srr-left-tab' + (activeTab === 'patch' ? ' active' : '') + '" data-tab="patch" onclick="_gridDrawerSwitchTab(\'patch\')" title="Patch Studio" style="position:relative;">Patch';
+      if (editCount > 0) {
+        html += '<span id="grid-drawer-patch-badge" style="position:absolute;top:2px;right:2px;background:#c62828;color:#fff;font-size:0.6em;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1;">' + editCount + '</span>';
       }
+      html += '</button>';
+      html += '<button class="srr-left-tab' + (activeTab === 'info' ? ' active' : '') + '" data-tab="info" onclick="_gridDrawerSwitchTab(\'info\')" title="Info">Info</button>';
+      html += '</div>';
+
+      html += '</div>';
 
       drawer.innerHTML = html;
     }
 
-    function _gridDrawerGlossaryHtml() {
-      var html = '';
-      html += '<div style="flex:1;overflow-y:auto;padding:12px 16px;">';
-      html += '<input type="text" id="grid-glossary-search" placeholder="Search glossary..." oninput="_gridDrawerFilterGlossary()" style="width:100%;padding:8px 12px;border:1px solid #e0e0e0;border-radius:6px;font-size:0.85em;box-sizing:border-box;margin-bottom:10px;">';
-      html += '<div id="grid-glossary-list">';
-      var fields = (rulesBundleCache && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.fields) ? rulesBundleCache.fieldMeta.fields : [];
-      if (fields.length === 0) {
-        html += '<div style="text-align:center;color:#999;padding:24px;font-size:0.85em;">No glossary data loaded</div>';
-      } else {
-        for (var gi = 0; gi < fields.length; gi++) {
-          var gf = fields[gi];
-          var gLabel = gf.label || gf.field_key || '';
-          var gKey = gf.field_key || '';
-          var gDesc = gf.description || '';
-          var gType = gf.type || '';
-          html += '<div class="grid-glossary-entry" data-search="' + escapeHtml((gLabel + ' ' + gKey + ' ' + gDesc).toLowerCase()) + '" style="padding:10px 0;border-bottom:1px solid #f0f0f0;">';
-          html += '<div style="font-weight:600;font-size:0.88em;color:#333;">' + escapeHtml(gLabel) + '</div>';
-          html += '<div style="font-size:0.72em;color:#999;font-family:monospace;">' + escapeHtml(gKey) + '</div>';
-          if (gDesc) html += '<div style="font-size:0.8em;color:#555;margin-top:3px;line-height:1.4;">' + escapeHtml(gDesc) + '</div>';
-          if (gType) html += '<span style="display:inline-block;font-size:0.7em;padding:2px 8px;border-radius:10px;background:#e3f2fd;color:#1565c0;margin-top:4px;">' + escapeHtml(gType) + '</span>';
-          html += '</div>';
+    function _gridDrawerSwitchTab(tabName) {
+      var ctx = window._gridDrawerContext;
+      if (!ctx) return;
+      ctx._activeTab = tabName;
+      var tabs = document.querySelectorAll('#grid-drawer-tabs .srr-left-tab');
+      var bodies = [
+        document.getElementById('grid-drawer-tab-edit'),
+        document.getElementById('grid-drawer-tab-patch'),
+        document.getElementById('grid-drawer-tab-info')
+      ];
+      for (var i = 0; i < tabs.length; i++) {
+        var tabAttr = tabs[i].getAttribute('data-tab');
+        if (tabAttr === tabName) {
+          tabs[i].className = 'srr-left-tab active';
+        } else {
+          tabs[i].className = 'srr-left-tab';
         }
       }
-      html += '</div></div>';
-      return html;
+      for (var j = 0; j < bodies.length; j++) {
+        if (!bodies[j]) continue;
+        var bodyTab = bodies[j].getAttribute('data-tab');
+        if (bodyTab === tabName) {
+          bodies[j].className = 'srr-left-tab-body active';
+        } else {
+          bodies[j].className = 'srr-left-tab-body';
+        }
+      }
+      if (tabName === 'patch') {
+        var patchBody = document.getElementById('grid-drawer-tab-patch');
+        if (patchBody) {
+          patchBody.innerHTML = _gridDrawerPatchTabHtml(ctx);
+        }
+      }
     }
 
-    function _gridDrawerFieldsHtml(ctx) {
+    function _gridDrawerEditTabHtml(ctx) {
       var record = ctx.record;
       var fieldKeys = ctx.fieldKeys;
       var sheetName = ctx.sheetName;
       var pendingEdits = ctx._pendingEdits || {};
       var editCount = Object.keys(pendingEdits).length;
       var searchQuery = (ctx._searchQuery || '').toLowerCase();
+      var filterMode = ctx._filterMode || 'all';
 
       var html = '';
+
       html += '<div style="padding:8px 14px;border-bottom:1px solid #eee;">';
+      html += '<div style="font-size:0.8em;color:#64748b;margin-bottom:6px;">' + fieldKeys.length + ' fields</div>';
       html += '<input type="text" id="grid-drawer-field-search" placeholder="Search fields..." oninput="_gridDrawerSearchFields()" value="' + escapeHtml(ctx._searchQuery || '') + '" style="width:100%;padding:7px 10px;border:1px solid #e0e0e0;border-radius:6px;font-size:0.83em;box-sizing:border-box;">';
+      html += '</div>';
+
+      var todoCount = 0;
+      for (var tc = 0; tc < fieldKeys.length; tc++) {
+        var tcv = record[fieldKeys[tc]];
+        if (tcv === null || tcv === undefined || String(tcv).trim() === '') todoCount++;
+      }
+
+      html += '<div style="padding:6px 14px;display:flex;gap:6px;border-bottom:1px solid #eee;flex-shrink:0;">';
+      html += '<button onclick="window._gridDrawerContext._filterMode=\'all\';var d=document.getElementById(\'grid-patch-drawer\');if(d)_gridDrawerRender(d);" style="padding:3px 10px;border-radius:12px;font-size:0.72em;font-weight:600;cursor:pointer;border:1px solid ' + (filterMode === 'all' ? '#1565c0' : '#ccc') + ';background:' + (filterMode === 'all' ? '#e3f2fd' : '#fff') + ';color:' + (filterMode === 'all' ? '#1565c0' : '#888') + ';">All (' + fieldKeys.length + ')</button>';
+      html += '<button onclick="window._gridDrawerContext._filterMode=\'todo\';var d=document.getElementById(\'grid-patch-drawer\');if(d)_gridDrawerRender(d);" style="padding:3px 10px;border-radius:12px;font-size:0.72em;font-weight:600;cursor:pointer;border:1px solid ' + (filterMode === 'todo' ? '#e65100' : '#ccc') + ';background:' + (filterMode === 'todo' ? '#fff3e0' : '#fff') + ';color:' + (filterMode === 'todo' ? '#e65100' : '#888') + ';">To Do (' + todoCount + ')</button>';
+      html += '<button onclick="window._gridDrawerContext._filterMode=\'modified\';var d=document.getElementById(\'grid-patch-drawer\');if(d)_gridDrawerRender(d);" style="padding:3px 10px;border-radius:12px;font-size:0.72em;font-weight:600;cursor:pointer;border:1px solid ' + (filterMode === 'modified' ? '#1565c0' : '#ccc') + ';background:' + (filterMode === 'modified' ? '#e3f2fd' : '#fff') + ';color:' + (filterMode === 'modified' ? '#1565c0' : '#888') + ';">Modified (' + editCount + ')</button>';
       html += '</div>';
 
       html += '<div id="grid-drawer-fields-list" style="flex:1;overflow-y:auto;padding:6px 10px;">';
 
-      window._gridDrawerOldValues = {};
+      window._gridDrawerOldValues = window._gridDrawerOldValues || {};
       var visibleCount = 0;
       for (var fi = 0; fi < fieldKeys.length; fi++) {
         var fk = fieldKeys[fi];
@@ -13427,13 +13450,18 @@
         if (typeof cv === 'object') cv = JSON.stringify(cv);
         window._gridDrawerOldValues[fk] = String(cv);
 
+        var isEmpty = String(cv).trim() === '';
+        var isEdited = pendingEdits.hasOwnProperty(fk);
+
+        if (filterMode === 'todo' && !isEmpty) continue;
+        if (filterMode === 'modified' && !isEdited) continue;
+
         var label = fk.replace(/_c$/i, '').replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); }).trim();
         var labelLower = (label + ' ' + fk + ' ' + String(cv)).toLowerCase();
         if (searchQuery && labelLower.indexOf(searchQuery) < 0) continue;
         visibleCount++;
 
         var currentVal = pendingEdits.hasOwnProperty(fk) ? pendingEdits[fk] : String(cv);
-        var isEdited = pendingEdits.hasOwnProperty(fk);
         var isFocus = (ctx.focusField === fk);
 
         var fieldMeta = (typeof getFieldMeta === 'function') ? getFieldMeta(sheetName, fk) : null;
@@ -13482,45 +13510,146 @@
       }
       html += '</div>';
 
-      var typeColors = { rfi: '#e65100', correction: '#c62828', blacklist: '#1565c0' };
-      var typeBgs = { rfi: '#fff3e0', correction: '#ffebee', blacklist: '#e3f2fd' };
-      var typeLabels = { rfi: 'RFI', correction: 'Correction', blacklist: 'Blacklist' };
-      var showPatchBar = ctx._editCommitted && editCount > 0;
-      var patchType = ctx.patchType || 'rfi';
+      return html;
+    }
 
-      html += '<div id="grid-drawer-patch-bar" style="border-top:1px solid #e0e0e0;background:#fafbfc;overflow:hidden;transition:max-height 0.3s ease, opacity 0.3s ease;max-height:' + (showPatchBar ? '280px' : '0') + ';opacity:' + (showPatchBar ? '1' : '0') + ';">';
+    function _gridDrawerPatchTabHtml(ctx) {
+      var pendingEdits = ctx._pendingEdits || {};
+      var editKeys = Object.keys(pendingEdits);
+      var editCount = editKeys.length;
+      var patchType = ctx.patchType || 'correction';
+      var oldVals = window._gridDrawerOldValues || {};
+      var html = '';
 
-      html += '<div style="padding:10px 14px 6px;display:flex;align-items:center;gap:6px;">';
-      html += '<span style="font-size:0.78em;font-weight:600;color:#555;">' + editCount + ' change' + (editCount !== 1 ? 's' : '') + '</span>';
-      html += '<span style="margin-left:auto;font-size:0.75em;color:#888;">Type:</span>';
-      html += '</div>';
+      html += '<div style="flex:1;overflow-y:auto;padding:14px;">';
 
-      html += '<div style="padding:0 14px 8px;display:flex;gap:8px;">';
-      var types = ['rfi', 'correction', 'blacklist'];
-      for (var ti = 0; ti < types.length; ti++) {
-        var t = types[ti];
-        var isActive = patchType === t;
-        html += '<button onclick="_gridDrawerSetType(\'' + t + '\')" style="padding:5px 14px;border-radius:16px;font-size:0.78em;font-weight:600;cursor:pointer;border:2px solid ' + typeColors[t] + ';background:' + (isActive ? typeColors[t] : typeBgs[t]) + ';color:' + (isActive ? '#fff' : typeColors[t]) + ';transition:all 0.15s;">' + typeLabels[t] + '</button>';
+      if (editCount === 0) {
+        html += '<div style="text-align:center;padding:40px 20px;color:#999;">';
+        html += '<div style="font-size:2em;margin-bottom:12px;">&#9998;</div>';
+        html += '<div style="font-size:0.88em;line-height:1.5;">Edit a field value, then come here to submit your patch.</div>';
+        html += '</div>';
+        html += '</div>';
+        return html;
       }
+
+      html += '<div style="margin-bottom:16px;">';
+      html += '<div style="font-size:0.7em;font-weight:700;color:#888;letter-spacing:0.05em;margin-bottom:8px;text-transform:uppercase;">Patch Type</div>';
+      html += '<div class="srr-patch-type-chips" style="display:flex;gap:6px;">';
+      html += '<div class="srr-patch-type-chip correction' + (patchType === 'correction' ? ' active' : '') + '" data-type="correction" onclick="_gridDrawerSetType(\'correction\')" style="cursor:pointer;">Correction</div>';
+      html += '<div class="srr-patch-type-chip blacklist' + (patchType === 'blacklist' ? ' active' : '') + '" data-type="blacklist" onclick="_gridDrawerSetType(\'blacklist\')" style="cursor:pointer;">Blacklist</div>';
+      html += '<div class="srr-patch-type-chip rfi' + (patchType === 'rfi' ? ' active' : '') + '" data-type="rfi" onclick="_gridDrawerSetType(\'rfi\')" style="cursor:pointer;">RFI</div>';
+      html += '</div>';
       html += '</div>';
 
-      html += '<div style="padding:0 14px 8px;">';
-      html += '<textarea id="grid-drawer-justification" placeholder="Justification / notes" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.82em;resize:none;height:40px;box-sizing:border-box;"></textarea>';
-      html += '</div>';
-
-      html += '<div style="padding:0 14px 12px;display:flex;justify-content:flex-end;gap:10px;">';
-      html += '<button onclick="_gridDrawerClearEdits()" style="padding:7px 16px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#475569;font-size:0.82em;font-weight:600;cursor:pointer;">Clear</button>';
-      html += '<button onclick="_gridDrawerSubmit()" style="padding:7px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#1e3a5f,#1565c0);color:#fff;font-size:0.82em;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(21,101,192,0.3);">Submit Patch</button>';
-      html += '</div>';
-
-      html += '</div>';
-
-      if (!showPatchBar) {
-        html += '<div style="padding:10px 14px;border-top:1px solid #eee;display:flex;justify-content:flex-end;">';
-        html += '<button onclick="_gridCloseDrawer()" style="padding:7px 16px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#475569;font-size:0.82em;font-weight:600;cursor:pointer;">Close</button>';
+      if (ctx.focusField && pendingEdits.hasOwnProperty(ctx.focusField)) {
+        html += '<div style="margin-bottom:14px;padding:8px 10px;background:#f8f9fa;border-radius:6px;border-left:3px solid #1565c0;">';
+        html += '<div style="font-size:0.7em;font-weight:700;color:#888;margin-bottom:4px;">SELECTED FIELD</div>';
+        html += '<div style="font-size:0.85em;color:#333;font-weight:600;">' + escapeHtml(ctx.focusField) + '</div>';
+        html += '<div style="font-size:0.8em;color:#1565c0;margin-top:2px;">' + escapeHtml(pendingEdits[ctx.focusField]) + '</div>';
         html += '</div>';
       }
 
+      html += '<div style="margin-bottom:16px;">';
+      html += '<div style="font-size:0.7em;font-weight:700;color:#888;letter-spacing:0.05em;margin-bottom:8px;text-transform:uppercase;">Changed Fields (' + editCount + ')</div>';
+      for (var ci = 0; ci < editKeys.length; ci++) {
+        var cfk = editKeys[ci];
+        var cfOld = oldVals[cfk] || '';
+        var cfNew = pendingEdits[cfk];
+        html += '<div style="padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:0.82em;">';
+        html += '<div style="font-weight:600;color:#333;">' + escapeHtml(cfk) + '</div>';
+        html += '<div style="color:#888;margin-top:2px;">';
+        html += '<span style="text-decoration:line-through;color:#c62828;">' + escapeHtml(cfOld || '(empty)') + '</span>';
+        html += ' <span style="color:#888;">\u2192</span> ';
+        html += '<span style="color:#2e7d32;font-weight:500;">' + escapeHtml(cfNew || '(empty)') + '</span>';
+        html += '</div>';
+        html += '</div>';
+      }
+      html += '</div>';
+
+      html += '<div style="margin-bottom:16px;padding:8px 10px;background:#f8f9fa;border-radius:6px;font-size:0.8em;color:#999;">';
+      html += '+ Assign user (coming soon)';
+      html += '</div>';
+
+      html += '<div style="margin-bottom:16px;">';
+      html += '<div style="font-size:0.7em;font-weight:700;color:#888;letter-spacing:0.05em;margin-bottom:8px;text-transform:uppercase;">Evidence Pack</div>';
+      html += '<label style="font-size:0.78em;color:#555;display:block;margin-bottom:4px;">COMMENT</label>';
+      html += '<textarea id="grid-drawer-justification" placeholder="Add context, justification, or notes..." style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.82em;resize:vertical;min-height:60px;box-sizing:border-box;"></textarea>';
+      html += '</div>';
+
+      html += '</div>';
+
+      var submitLabel = 'Submit Correction';
+      if (patchType === 'blacklist') submitLabel = 'Submit Blacklist';
+      if (patchType === 'rfi') submitLabel = 'Send RFI';
+
+      html += '<div style="padding:12px 14px;border-top:1px solid #e0e0e0;display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;background:#fafbfc;">';
+      html += '<button onclick="_gridDrawerClearEdits()" style="padding:7px 16px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#475569;font-size:0.82em;font-weight:600;cursor:pointer;">Save Draft</button>';
+      html += '<button onclick="_gridDrawerSubmit()" style="padding:7px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#1e3a5f,#1565c0);color:#fff;font-size:0.82em;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(21,101,192,0.3);">' + submitLabel + '</button>';
+      html += '</div>';
+
+      return html;
+    }
+
+    function _gridDrawerInfoTabHtml(ctx) {
+      var fileMeta = ctx.fileMeta || {};
+      var html = '';
+
+      html += '<div style="flex:1;overflow-y:auto;padding:14px;">';
+
+      html += '<div style="margin-bottom:16px;">';
+      html += '<div style="font-size:0.7em;font-weight:700;color:#888;letter-spacing:0.05em;margin-bottom:8px;text-transform:uppercase;">File Info</div>';
+
+      if (fileMeta.fileName) {
+        html += '<div style="margin-bottom:8px;">';
+        html += '<div style="font-size:0.72em;color:#999;margin-bottom:2px;">File Name</div>';
+        html += '<div style="font-size:0.85em;color:#333;font-weight:500;">' + escapeHtml(fileMeta.fileName) + '</div>';
+        html += '</div>';
+      }
+      if (fileMeta.fileUrl) {
+        html += '<div style="margin-bottom:8px;">';
+        html += '<div style="font-size:0.72em;color:#999;margin-bottom:2px;">File URL</div>';
+        html += '<a href="' + escapeHtml(fileMeta.fileUrl) + '" target="_blank" rel="noopener" style="font-size:0.82em;color:#1565c0;text-decoration:none;word-break:break-all;">' + escapeHtml(fileMeta.fileUrl.length > 60 ? fileMeta.fileUrl.substring(0, 58) + '...' : fileMeta.fileUrl) + '</a>';
+        html += '</div>';
+      }
+
+      html += '<div style="margin-bottom:8px;">';
+      html += '<div style="font-size:0.72em;color:#999;margin-bottom:2px;">Sheet Name</div>';
+      html += '<div style="font-size:0.85em;color:#333;font-weight:500;">' + escapeHtml(ctx.sheetName) + '</div>';
+      html += '</div>';
+
+      html += '<div style="margin-bottom:8px;">';
+      html += '<div style="font-size:0.72em;color:#999;margin-bottom:2px;">Record ID</div>';
+      html += '<div style="font-size:0.85em;color:#333;font-weight:500;">' + escapeHtml(ctx.recordId || '') + '</div>';
+      html += '</div>';
+
+      html += '<div style="margin-bottom:8px;">';
+      html += '<div style="font-size:0.72em;color:#999;margin-bottom:2px;">Row Index</div>';
+      html += '<div style="font-size:0.85em;color:#333;font-weight:500;">' + (ctx.rowIdx + 1) + '</div>';
+      html += '</div>';
+      html += '</div>';
+
+      if (ctx.focusField) {
+        html += '<div style="margin-bottom:16px;">';
+        html += '<div style="font-size:0.7em;font-weight:700;color:#888;letter-spacing:0.05em;margin-bottom:8px;text-transform:uppercase;">Field Glossary</div>';
+        var fields = (rulesBundleCache && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.fields) ? rulesBundleCache.fieldMeta.fields : [];
+        var glossaryEntry = null;
+        for (var gi = 0; gi < fields.length; gi++) {
+          if (fields[gi].field_key === ctx.focusField) { glossaryEntry = fields[gi]; break; }
+        }
+        if (glossaryEntry) {
+          html += '<div style="padding:10px;background:#f8f9fa;border-radius:6px;">';
+          html += '<div style="font-weight:600;font-size:0.88em;color:#333;">' + escapeHtml(glossaryEntry.label || glossaryEntry.field_key) + '</div>';
+          html += '<div style="font-size:0.72em;color:#999;font-family:monospace;">' + escapeHtml(glossaryEntry.field_key || '') + '</div>';
+          if (glossaryEntry.description) html += '<div style="font-size:0.8em;color:#555;margin-top:6px;line-height:1.4;">' + escapeHtml(glossaryEntry.description) + '</div>';
+          if (glossaryEntry.type) html += '<span style="display:inline-block;font-size:0.7em;padding:2px 8px;border-radius:10px;background:#e3f2fd;color:#1565c0;margin-top:6px;">' + escapeHtml(glossaryEntry.type) + '</span>';
+          html += '</div>';
+        } else {
+          html += '<div style="font-size:0.82em;color:#999;">No glossary entry for ' + escapeHtml(ctx.focusField) + '</div>';
+        }
+        html += '</div>';
+      }
+
+      html += '</div>';
       return html;
     }
 
@@ -13539,39 +13668,42 @@
       }
 
       var editCount = Object.keys(ctx._pendingEdits).length;
-      var stateChanged = false;
 
       if (editCount > 0 && !ctx._editCommitted) {
         ctx._editCommitted = true;
-        ctx.patchType = 'rfi';
-        stateChanged = true;
+        ctx.patchType = ctx.patchType || 'correction';
       } else if (editCount === 0 && ctx._editCommitted) {
         ctx._editCommitted = false;
         ctx.patchType = null;
-        stateChanged = true;
       }
 
-      if (stateChanged) {
-        var drawer = document.getElementById('grid-patch-drawer');
-        if (drawer) _gridDrawerRender(drawer);
+      var node = el.parentElement;
+      while (node && node !== document) {
+        if (node.className && node.className.indexOf('srr-field-card') >= 0) break;
+        node = node.parentElement;
+      }
+      if (node && node.className && node.className.indexOf('srr-field-card') >= 0) {
+        if (ctx._pendingEdits.hasOwnProperty(fk)) {
+          if (node.className.indexOf('state-modified') < 0) node.className += ' state-modified';
+        } else {
+          node.className = node.className.replace(/\s*state-modified/g, '');
+        }
+      }
+
+      var badge = document.getElementById('grid-drawer-patch-badge');
+      var patchTabBtn = document.querySelector('#grid-drawer-tabs .srr-left-tab[data-tab="patch"]');
+      if (editCount > 0) {
+        if (badge) {
+          badge.textContent = String(editCount);
+        } else if (patchTabBtn) {
+          var span = document.createElement('span');
+          span.id = 'grid-drawer-patch-badge';
+          span.style.cssText = 'position:absolute;top:2px;right:2px;background:#c62828;color:#fff;font-size:0.6em;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1;';
+          span.textContent = String(editCount);
+          patchTabBtn.appendChild(span);
+        }
       } else {
-        var node = el.parentElement;
-        while (node && node !== document) {
-          if (node.className && node.className.indexOf('srr-field-card') >= 0) break;
-          node = node.parentElement;
-        }
-        if (node && node.className && node.className.indexOf('srr-field-card') >= 0) {
-          if (ctx._pendingEdits.hasOwnProperty(fk)) {
-            if (node.className.indexOf('state-modified') < 0) node.className += ' state-modified';
-          } else {
-            node.className = node.className.replace(/\s*state-modified/g, '');
-          }
-        }
-        var countEl = document.getElementById('grid-drawer-patch-bar');
-        if (countEl) {
-          var cSpan = countEl.querySelector('span');
-          if (cSpan) cSpan.textContent = editCount + ' change' + (editCount !== 1 ? 's' : '');
-        }
+        if (badge && badge.parentNode) badge.parentNode.removeChild(badge);
       }
     }
 
@@ -13590,46 +13722,27 @@
       ctx._pendingEdits = {};
       ctx._editCommitted = false;
       ctx.patchType = null;
+      ctx._activeTab = 'edit';
       var drawer = document.getElementById('grid-patch-drawer');
       if (drawer) _gridDrawerRender(drawer);
     }
 
     function _gridDrawerSetType(type) {
-      if (window._gridDrawerContext) {
-        window._gridDrawerContext.patchType = type;
-        var types = ['rfi', 'correction', 'blacklist'];
-        var typeColors = { rfi: '#e65100', correction: '#c62828', blacklist: '#1565c0' };
-        var typeBgs = { rfi: '#fff3e0', correction: '#ffebee', blacklist: '#e3f2fd' };
-        var bar = document.getElementById('grid-drawer-patch-bar');
-        if (bar) {
-          var btns = bar.querySelectorAll('button[onclick^="_gridDrawerSetType"]');
-          for (var i = 0; i < btns.length; i++) {
-            var t = types[i];
-            if (!t) continue;
-            var isActive = type === t;
-            btns[i].style.background = isActive ? typeColors[t] : typeBgs[t];
-            btns[i].style.color = isActive ? '#fff' : typeColors[t];
-          }
+      var ctx = window._gridDrawerContext;
+      if (!ctx) return;
+      ctx.patchType = type;
+      var chips = document.querySelectorAll('#grid-drawer-tab-patch .srr-patch-type-chip');
+      for (var i = 0; i < chips.length; i++) {
+        var chipType = chips[i].getAttribute('data-type');
+        if (chipType === type) {
+          chips[i].className = 'srr-patch-type-chip ' + chipType + ' active';
+        } else {
+          chips[i].className = 'srr-patch-type-chip ' + chipType;
         }
       }
-    }
-
-    function _gridDrawerSwitchTab(tab) {
-      if (window._gridDrawerContext) {
-        window._gridDrawerContext._activeTab = (tab === 'glossary') ? 'glossary' : 'field';
-        var drawer = document.getElementById('grid-patch-drawer');
-        if (drawer) _gridDrawerRender(drawer);
-      }
-    }
-
-    function _gridDrawerFilterGlossary() {
-      var input = document.getElementById('grid-glossary-search');
-      if (!input) return;
-      var query = input.value.toLowerCase().trim();
-      var entries = document.querySelectorAll('.grid-glossary-entry');
-      for (var i = 0; i < entries.length; i++) {
-        var searchText = entries[i].getAttribute('data-search') || '';
-        entries[i].style.display = (!query || searchText.indexOf(query) >= 0) ? '' : 'none';
+      var patchBody = document.getElementById('grid-drawer-tab-patch');
+      if (patchBody) {
+        patchBody.innerHTML = _gridDrawerPatchTabHtml(ctx);
       }
     }
 
@@ -13644,7 +13757,7 @@
     function _gridDrawerSubmit() {
       var ctx = window._gridDrawerContext;
       if (!ctx) return;
-      var patchType = ctx.patchType || 'rfi';
+      var patchType = ctx.patchType || 'correction';
       var justification = (document.getElementById('grid-drawer-justification') || {}).value || '';
       var pendingEdits = ctx._pendingEdits || {};
       var oldVals = window._gridDrawerOldValues || {};
