@@ -19103,17 +19103,17 @@
             html += '<tr class="p1d1-child-row" data-parent="' + groupId + '" style="display:' + childDisplay + ';">';
             html += '<td></td>';
             var qfEligible = _QF_ELIGIBLE[item.blocker_type] && item.field_name && (item.record_id || item.contract_id || item.contract_key);
-            var openLink = '';
+            var qfOpenBtn = '';
             if (qfEligible || _QF_NON_ELIGIBLE_GUIDANCE[item.blocker_type]) {
-              openLink = '<a href="#" onclick="event.preventDefault(); event.stopPropagation(); qfOpen(' + _q + _esc(item.request_id) + _q + ')" style="color:#2563eb; font-weight:600; text-decoration:none; font-size:0.85em;">Open</a>';
+              qfOpenBtn = ' <button class="p1d1-view-btn small" style="background:#ef6c00; color:#fff; border:none; padding:3px 10px; border-radius:4px; font-size:0.8em; cursor:pointer; margin-left:4px;" onclick="event.stopPropagation(); qfOpen(' + _q + _esc(item.request_id) + _q + ')">Open</button>';
             }
-            html += '<td class="p1d1-child-ref" style="padding-left:24px;">' + (openLink || fName) + '</td>';
+            html += '<td class="p1d1-child-ref" style="padding-left:24px;">' + fName + '</td>';
             html += '<td>' + reasonHtml + '</td>';
             html += '<td></td>';
             html += '<td>' + sevHtml + '</td>';
             html += '<td>' + stBadge + '</td>';
             html += '<td></td>';
-            html += '<td><button class="p1d1-view-btn small" onclick="event.stopPropagation(); ' + viewHandler + '">View</button>' + patchBtn + '</td>';
+            html += '<td><button class="p1d1-view-btn small" onclick="event.stopPropagation(); ' + viewHandler + '">View</button>' + qfOpenBtn + patchBtn + '</td>';
             html += '<td></td>';
             html += '</tr>';
             childrenRendered++;
