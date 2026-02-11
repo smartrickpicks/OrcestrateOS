@@ -18155,6 +18155,9 @@
             if (item.can_create_patch && item.status === 'open') {
               patchBtn = ' <button class="p1d1-patch-btn" onclick="event.stopPropagation(); createPatchFromBlocker(' + _q + _esc(item.request_id) + _q + ', ' + _q + _esc(item.record_id) + _q + ', ' + _q + _esc(item.field_name) + _q + ', ' + _q + _esc(item.blocker_type) + _q + ')">Patch</button>';
             }
+            if (item.blocker_type === 'ADDRESS_INCOMPLETE_CANDIDATE' && item.candidate_value) {
+              patchBtn += ' <button class="p1d1-patch-btn" style="background:#2e7d32; color:#fff; border:none; padding:3px 10px; border-radius:4px; font-size:0.8em; cursor:pointer;" onclick="event.stopPropagation(); _addrMergeOpenFromPreflight(' + _q + _esc(item.request_id) + _q + ')">Merge</button>';
+            }
 
             html += '<tr class="p1d1-child-row" data-parent="' + groupId + '" style="display:' + childDisplay + ';" onclick="event.stopPropagation(); ' + viewHandler + '">';
             html += '<td></td>';
@@ -18804,9 +18807,28 @@
       } catch(e) { _addressCandidateDecisions = {}; }
     })();
 
-    function _saveAddressCandidateDecision(itemId, action) {
+    function _addrDecisionKey(item) {
+      var rid = (item && item.record_id) || '';
+      var fk = (item && item.field_name) || '';
+      var fp = (item && item.existing_parts) ? _addrFingerprint(item.existing_parts) : '';
+      return rid + '::' + fk + '::' + fp;
+    }
+
+    function _saveAddressCandidateDecision(itemId, action, item) {
       _addressCandidateDecisions[itemId] = { action: action, ts: Date.now() };
+      if (item) {
+        var compositeKey = _addrDecisionKey(item);
+        _addressCandidateDecisions[compositeKey] = { action: action, ts: Date.now(), request_id: itemId };
+      }
       try { localStorage.setItem('address_candidate_decisions', JSON.stringify(_addressCandidateDecisions)); } catch(e) {}
+    }
+
+    function _addrDecisionExists(item) {
+      if (!item) return null;
+      if (_addressCandidateDecisions[item.request_id]) return _addressCandidateDecisions[item.request_id];
+      var compositeKey = _addrDecisionKey(item);
+      if (_addressCandidateDecisions[compositeKey]) return _addressCandidateDecisions[compositeKey];
+      return null;
     }
 
     var _ADDRESS_FIELD_GROUPS = [
@@ -18911,6 +18933,8 @@
 
         var itemId = 'addr_' + rec.group.prefix + '_' + rec.sheetName + '_r' + rec.rowIndex + '_' + missingComp;
         if (_addressCandidateDecisions[itemId]) continue;
+        var _compositeCheck = _addrDecisionKey({ record_id: rec.recordId, field_name: rec.group.fields[missingComp], existing_parts: rec.parts });
+        if (_addressCandidateDecisions[_compositeCheck]) continue;
 
         var severity = 'blocker';
         var blockerType = 'ADDRESS_INCOMPLETE_AMBIGUOUS';
@@ -18967,7 +18991,11 @@
     }
 
     function _resolveAddressCandidate(itemId, action, candidateValue) {
-      _saveAddressCandidateDecision(itemId, action);
+      var _resolveItem = null;
+      for (var _ri = 0; _ri < _addressCandidateItems.length; _ri++) {
+        if (_addressCandidateItems[_ri].request_id === itemId) { _resolveItem = _addressCandidateItems[_ri]; break; }
+      }
+      _saveAddressCandidateDecision(itemId, action, _resolveItem);
       if (action === 'accept' && candidateValue) {
         for (var i = 0; i < _addressCandidateItems.length; i++) {
           var item = _addressCandidateItems[i];
@@ -19002,7 +19030,234 @@
       }
     }
 
-    var _acctCheckQueue = [];
+    var _addrMergeQueue = [];
+    var _addrMergeIndex = 0;
+    var _addrMergeCurrentItem = null;
+
+    function _addrMergeOpen(itemOrId) {
+      var item = null;
+      if (typeof itemOrId === 'string') {
+        for (var i = 0; i < _addressCandidateItems.length; i++) {
+          if (_addressCandidateItems[i].request_id === itemOrId) { item = _addressCandidateItems[i]; break; }
+        }
+        if (!item) {
+          for (var j = 0; j < analystTriageState.manualItems.length; j++) {
+            if (analystTriageState.manualItems[j].request_id === itemOrId) { item = analystTriageState.manualItems[j]; break; }
+          }
+        }
+      } else {
+        item = itemOrId;
+      }
+      if (!item) { console.warn('[ADDR-MERGE] item not found:', itemOrId); return; }
+      _addrMergeCurrentItem = item;
+      var modal = document.getElementById('addr-merge-modal');
+      if (!modal) return;
+
+      var missingComp = item.missing_component || '';
+      var groupPrefix = item.address_group || '';
+      var existingParts = item.existing_parts || {};
+      var candidateVal = item.candidate_value || '';
+      var fieldLabel = item.field_label || (groupPrefix + ' ' + missingComp);
+
+      document.getElementById('addr-merge-field-label').textContent = fieldLabel + ' — Missing: ' + missingComp.charAt(0).toUpperCase() + missingComp.slice(1);
+
+      var compOrder = ['street', 'city', 'state', 'postal', 'country'];
+      var compLabels = { street: 'Street', city: 'City', state: 'State/Province', postal: 'Zip/Postal Code', country: 'Country' };
+
+      var currentHtml = '';
+      var suggestedHtml = '';
+      for (var c = 0; c < compOrder.length; c++) {
+        var comp = compOrder[c];
+        var label = compLabels[comp] || comp;
+        var val = existingParts[comp] || '';
+        var isMissing = (comp === missingComp);
+        currentHtml += '<div style="display:flex; gap:8px; padding:4px 0; ' + (isMissing ? 'background:#fff3e0; margin:0 -8px; padding:4px 8px; border-radius:4px;' : '') + '">';
+        currentHtml += '<span style="font-weight:600; color:#757575; min-width:100px; font-size:0.88em;">' + label + ':</span>';
+        if (isMissing) {
+          currentHtml += '<span style="color:#e65100; font-style:italic; font-weight:600;">MISSING</span>';
+        } else {
+          currentHtml += '<span style="color:#333;">' + (val ? _escHtml(val) : '<span style="color:#bbb;">empty</span>') + '</span>';
+        }
+        currentHtml += '</div>';
+
+        suggestedHtml += '<div style="display:flex; gap:8px; padding:4px 0; ' + (isMissing ? 'background:#e8f5e9; margin:0 -8px; padding:4px 8px; border-radius:4px;' : '') + '">';
+        suggestedHtml += '<span style="font-weight:600; color:#757575; min-width:100px; font-size:0.88em;">' + label + ':</span>';
+        if (isMissing) {
+          suggestedHtml += '<span style="color:#2e7d32; font-weight:700;">' + _escHtml(candidateVal) + '</span>';
+        } else {
+          suggestedHtml += '<span style="color:#333;">' + (val ? _escHtml(val) : '<span style="color:#bbb;">empty</span>') + '</span>';
+        }
+        suggestedHtml += '</div>';
+      }
+
+      document.getElementById('addr-merge-current').innerHTML = currentHtml;
+      document.getElementById('addr-merge-suggested').innerHTML = suggestedHtml;
+
+      var detailText = 'Contract: ' + (item.contract_key || item.contract_id || 'N/A');
+      detailText += ' | Section: ' + (item.sheet_name || 'N/A');
+      detailText += ' | Record: ' + (item.record_id || 'N/A');
+      detailText += ' | Match type: Normalized fingerprint (' + groupPrefix + ' address group)';
+      if (item.candidate_count !== undefined) detailText += ' | Candidates found: ' + item.candidate_count;
+      document.getElementById('addr-merge-detail').textContent = detailText;
+
+      if (_addrMergeQueue.length > 1) {
+        document.getElementById('addr-merge-progress').textContent = 'Item ' + (_addrMergeIndex + 1) + ' of ' + _addrMergeQueue.length;
+      } else {
+        document.getElementById('addr-merge-progress').textContent = '';
+      }
+
+      modal.style.display = 'flex';
+    }
+
+    function _addrMergeClose() {
+      var modal = document.getElementById('addr-merge-modal');
+      if (modal) modal.style.display = 'none';
+      _addrMergeCurrentItem = null;
+      if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
+    }
+
+    function _addrMergeAccept() {
+      if (!_addrMergeCurrentItem) return;
+      var item = _addrMergeCurrentItem;
+      var itemId = item.request_id;
+      var candidateVal = item.candidate_value || '';
+
+      var _existingDecision = _addrDecisionExists(item);
+      if (_existingDecision && _existingDecision.action === 'accept') {
+        console.log('[ADDR-MERGE] idempotent skip: already accepted ' + itemId);
+        _addrMergeAdvance();
+        return;
+      }
+
+      _resolveAddressCandidate(itemId, 'accept', candidateVal);
+
+      if (typeof window._auditLog === 'function') {
+        window._auditLog('address_merged_from_candidate', {
+          item_id: itemId,
+          record_id: item.record_id || '',
+          field_key: item.field_name || '',
+          candidate_fingerprint: (item.existing_parts ? _addrFingerprint(item.existing_parts) : ''),
+          candidate_value: candidateVal,
+          address_group: item.address_group || '',
+          missing_component: item.missing_component || '',
+          contract_key: item.contract_key || item.contract_id || '',
+          sheet_name: item.sheet_name || ''
+        });
+      }
+
+      if (typeof analystTriageState !== 'undefined' && Array.isArray(analystTriageState.manualItems)) {
+        var scItem = {
+          request_id: 'sc_addr_' + (item.record_id || '') + '_' + (item.field_name || '') + '_' + (item.missing_component || ''),
+          signal_type: 'SYSTEM_CHANGE',
+          blocker_type: 'SYSTEM_CHANGE',
+          severity: 'info',
+          sheet_name: item.sheet_name || '',
+          record_id: item.record_id || '',
+          contract_key: item.contract_key || '',
+          field_name: item.field_name || '',
+          field_label: (item.field_label || '') + ' (merged)',
+          message: 'Address merged from candidate: ' + (item.missing_component || '') + ' set to ' + candidateVal,
+          reason_code: 'SYSTEM_CHANGE',
+          source: 'address_candidate_engine',
+          created: new Date().toISOString()
+        };
+        var scExists = false;
+        for (var sci = 0; sci < analystTriageState.manualItems.length; sci++) {
+          if (analystTriageState.manualItems[sci].request_id === scItem.request_id) { scExists = true; break; }
+        }
+        if (!scExists) {
+          if (typeof enrichPreflightItem === 'function') enrichPreflightItem(scItem);
+          analystTriageState.manualItems.push(scItem);
+        }
+      }
+
+      console.log('[ADDR-MERGE] accepted: ' + itemId + ', applied value: ' + candidateVal);
+      _addrMergeAdvance();
+    }
+
+    function _addrMergeReject() {
+      if (!_addrMergeCurrentItem) return;
+      var item = _addrMergeCurrentItem;
+      var itemId = item.request_id;
+
+      var _existingReject = _addrDecisionExists(item);
+      if (_existingReject && _existingReject.action === 'reject') {
+        console.log('[ADDR-MERGE] idempotent skip: already rejected ' + itemId);
+        _addrMergeAdvance();
+        return;
+      }
+
+      _saveAddressCandidateDecision(itemId, 'reject', item);
+
+      for (var _ki = 0; _ki < _addressCandidateItems.length; _ki++) {
+        if (_addressCandidateItems[_ki].request_id === itemId) {
+          _addressCandidateItems[_ki].status = 'rejected_unresolved';
+          _addressCandidateItems[_ki].status_label = 'Rejected';
+          _addressCandidateItems[_ki].status_color = '#c62828';
+          break;
+        }
+      }
+      for (var _mi = 0; _mi < analystTriageState.manualItems.length; _mi++) {
+        if (analystTriageState.manualItems[_mi].request_id === itemId) {
+          analystTriageState.manualItems[_mi].status = 'rejected_unresolved';
+          analystTriageState.manualItems[_mi].status_label = 'Rejected';
+          analystTriageState.manualItems[_mi].status_color = '#c62828';
+          break;
+        }
+      }
+
+      if (typeof window._auditLog === 'function') {
+        window._auditLog('address_candidate_rejected', {
+          item_id: itemId,
+          record_id: item.record_id || '',
+          field_key: item.field_name || '',
+          candidate_fingerprint: (item.existing_parts ? _addrFingerprint(item.existing_parts) : ''),
+          candidate_value: item.candidate_value || '',
+          address_group: item.address_group || '',
+          missing_component: item.missing_component || '',
+          contract_key: item.contract_key || item.contract_id || ''
+        });
+      }
+
+      console.log('[ADDR-MERGE] rejected: ' + itemId + ', keeping original');
+      _addrMergeAdvance();
+    }
+
+    function _addrMergeAdvance() {
+      _addrMergeIndex++;
+      if (_addrMergeIndex < _addrMergeQueue.length) {
+        _addrMergeOpen(_addrMergeQueue[_addrMergeIndex]);
+      } else {
+        _addrMergeClose();
+      }
+    }
+
+    function _addrMergeOpenFromPreflight(requestId) {
+      var candidates = [];
+      for (var i = 0; i < _addressCandidateItems.length; i++) {
+        if (_addressCandidateItems[i].blocker_type === 'ADDRESS_INCOMPLETE_CANDIDATE') {
+          candidates.push(_addressCandidateItems[i]);
+        }
+      }
+      if (candidates.length === 0) {
+        for (var j = 0; j < analystTriageState.manualItems.length; j++) {
+          var mi = analystTriageState.manualItems[j];
+          if (mi.blocker_type === 'ADDRESS_INCOMPLETE_CANDIDATE' || mi.signal_type === 'ADDRESS_INCOMPLETE_CANDIDATE') {
+            candidates.push(mi);
+          }
+        }
+      }
+      _addrMergeQueue = candidates;
+      _addrMergeIndex = 0;
+      for (var k = 0; k < _addrMergeQueue.length; k++) {
+        if (_addrMergeQueue[k].request_id === requestId) { _addrMergeIndex = k; break; }
+      }
+      if (_addrMergeQueue.length > 0) {
+        _addrMergeOpen(_addrMergeQueue[_addrMergeIndex]);
+      }
+    }
+
+        var _acctCheckQueue = [];
     var _acctCheckIndex = 0;
 
     function _escHtml(str) {
@@ -30597,6 +30852,25 @@
     }
     
     function openPreflightItem(requestId, recordId, contractId, fieldName, sheetName, rowIndex) {
+      if (requestId && typeof _addrMergeOpenFromPreflight === 'function') {
+        var _addrItem = null;
+        for (var _ai = 0; _ai < _addressCandidateItems.length; _ai++) {
+          if (_addressCandidateItems[_ai].request_id === requestId) { _addrItem = _addressCandidateItems[_ai]; break; }
+        }
+        if (!_addrItem) {
+          for (var _aj = 0; _aj < analystTriageState.manualItems.length; _aj++) {
+            var _mj = analystTriageState.manualItems[_aj];
+            if (_mj.request_id === requestId && (_mj.blocker_type === 'ADDRESS_INCOMPLETE_CANDIDATE' || _mj.signal_type === 'ADDRESS_INCOMPLETE_CANDIDATE')) {
+              _addrItem = _mj;
+              break;
+            }
+          }
+        }
+        if (_addrItem && (_addrItem.blocker_type === 'ADDRESS_INCOMPLETE_CANDIDATE' || _addrItem.signal_type === 'ADDRESS_INCOMPLETE_CANDIDATE')) {
+          _addrMergeOpenFromPreflight(requestId);
+          return;
+        }
+      }
       console.log('[TRIAGE-CANONICAL][P1X] route_decision: request_id=' + requestId + ', contract=' + (contractId || 'none') + ', sheet=' + (sheetName || 'none'));
       console.log('[P1D-PREFLIGHT] view_routed: contract=' + contractId + ' record=' + recordId + ' field=' + fieldName + ' sheet=' + sheetName);
       console.log('[TRIAGE-ANALYTICS][P0.2] route_decision_start: requestId=' + requestId + ', recordId=' + recordId + ', contractId=' + contractId);
@@ -39722,5 +39996,50 @@ var P022_RuntimeValidation = {
             </div>
           </div>
         </div>
+
+    <!-- ═══ ADDRESS MERGE MODAL ═══ -->
+    <div id="addr-merge-modal" style="display:none; position:fixed; inset:0; z-index:10001; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:16px; width:620px; max-width:94vw; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.3); overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#e65100,#f57c00); padding:18px 24px; display:flex; align-items:center; justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="font-size:1.3em;">&#127968;</div>
+            <div>
+              <div style="font-weight:700; font-size:1.1em; color:#fff; letter-spacing:-0.01em;">Address Merge</div>
+              <div style="font-size:0.78em; color:rgba(255,255,255,0.7);">Review incomplete address candidate</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px;">
+            <span id="addr-merge-progress" style="font-size:0.8em; color:rgba(255,255,255,0.8); background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:20px; font-weight:600;"></span>
+            <button onclick="_addrMergeClose()" style="background:rgba(255,255,255,0.15); border:none; color:#fff; width:32px; height:32px; border-radius:8px; cursor:pointer; font-size:1.2em; display:flex; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">&times;</button>
+          </div>
+        </div>
+        <div style="padding:20px 24px; overflow-y:auto; flex:1;">
+          <p style="font-size:0.88em; color:#64748b; margin:0 0 16px; line-height:1.5;">This address is missing a component. A candidate match was found in the same batch. Compare and decide whether to merge.</p>
+          <div id="addr-merge-field-label" style="font-weight:700; font-size:0.92em; color:#37474f; margin-bottom:12px;"></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+            <div style="border:2px solid #ffccbc; border-radius:12px; overflow:hidden; background:#fff;">
+              <div style="background:linear-gradient(135deg,#fbe9e7,#ffccbc); padding:12px 16px; display:flex; align-items:center; gap:8px;">
+                <div style="width:8px; height:8px; border-radius:50%; background:#e65100; flex-shrink:0;"></div>
+                <div style="font-weight:700; font-size:0.88em; color:#bf360c;">Current Address (Incomplete)</div>
+              </div>
+              <div id="addr-merge-current" style="padding:14px 16px; font-size:0.9em; line-height:1.6;"></div>
+            </div>
+            <div style="border:2px solid #c8e6c9; border-radius:12px; overflow:hidden; background:#fff;">
+              <div style="background:linear-gradient(135deg,#e8f5e9,#c8e6c9); padding:12px 16px; display:flex; align-items:center; gap:8px;">
+                <div style="width:8px; height:8px; border-radius:50%; background:#2e7d32; flex-shrink:0;"></div>
+                <div style="font-weight:700; font-size:0.88em; color:#1b5e20;">Suggested Address (Merged)</div>
+              </div>
+              <div id="addr-merge-suggested" style="padding:14px 16px; font-size:0.9em; line-height:1.6;"></div>
+            </div>
+          </div>
+          <div id="addr-merge-detail" style="background:#f5f5f5; border-radius:8px; padding:12px 16px; font-size:0.82em; color:#616161; margin-bottom:8px;"></div>
+        </div>
+        <div style="padding:16px 24px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:10px;">
+          <button onclick="_addrMergeReject()" style="padding:10px 22px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; color:#475569; font-size:0.88em; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9';this.style.borderColor='#94a3b8'" onmouseout="this.style.background='#fff';this.style.borderColor='#cbd5e1'">No &mdash; Keep Original</button>
+          <button onclick="_addrMergeAccept()" style="padding:10px 22px; border-radius:10px; border:none; background:linear-gradient(135deg,#2e7d32,#1b5e20); color:#fff; font-size:0.88em; font-weight:600; cursor:pointer; box-shadow:0 1px 3px rgba(46,125,50,0.3); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(46,125,50,0.3)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 1px 3px rgba(46,125,50,0.3)'">Yes &mdash; Apply Merged Address</button>
+        </div>
+      </div>
+    </div>
+
 </body>
 </html>
