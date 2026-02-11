@@ -19017,9 +19017,9 @@
             var qfEligible = _QF_ELIGIBLE[item.blocker_type] && item.field_name && (item.record_id || item.contract_id || item.contract_key);
             var openBtn = '';
             if (qfEligible || _QF_NON_ELIGIBLE_GUIDANCE[item.blocker_type]) {
-              openBtn = '<button class="p1d1-view-btn small" style="background:#2563eb; color:#fff; border:none; margin-right:4px;" onclick="event.stopPropagation(); qfOpen(' + _q + _esc(item.request_id) + _q + ')">View</button>';
+              openBtn = '<button class="p1d1-view-btn small" style="background:#2563eb; color:#fff; border:none; margin-right:4px;" onclick="event.stopPropagation(); qfOpen(' + _q + _esc(item.request_id) + _q + ')">Open</button>';
             }
-            html += '<td>' + openBtn + patchBtn + '</td>';
+            html += '<td>' + openBtn + '<button class="p1d1-view-btn small" onclick="event.stopPropagation(); ' + viewHandler + '">View</button>' + patchBtn + '</td>';
             html += '<td></td>';
             html += '</tr>';
             childrenRendered++;
