@@ -14088,6 +14088,157 @@
     })();
     // ========== END PHASE D3 ==========
 
+    // ========== PHASE D4: ADMIN PANEL MODULE EXTRACTION ==========
+    (function() {
+      var _ns = window.AppModules;
+      if (!_ns) return;
+
+      _ns.Engines.AdminTabState = {
+        _id: 'Engines.AdminTabState',
+        _validTabs: ['governance', 'users', 'patch-ops', 'standardizer', 'runtime-config', 'people', 'qa-runner'],
+        _aliasMap: {
+          'patch-queue': 'patch-ops',
+          'patch-console': 'patch-ops',
+          'evidence': 'governance',
+          'gov-controls': 'governance',
+          'config': 'runtime-config',
+          'inspector': 'runtime-config',
+          'unknown-cols': 'standardizer'
+        },
+        getCurrentTab: function() {
+          return (typeof currentAdminTab !== 'undefined') ? currentAdminTab : 'governance';
+        },
+        resolveAlias: function(tabName) {
+          if (this._aliasMap[tabName]) return this._aliasMap[tabName];
+          if (this._validTabs.indexOf(tabName) === -1) return 'governance';
+          return tabName;
+        },
+        isValidTab: function(tabName) {
+          return this._validTabs.indexOf(tabName) !== -1;
+        },
+        getAliasMap: function() {
+          return this._aliasMap;
+        }
+      };
+      _ns._registry.push('Engines.AdminTabState');
+      console.log('[APP-MODULES][P1D4] registered: Engines.AdminTabState');
+
+      _ns.Components.AdminTabsNav = {
+        _id: 'Components.AdminTabsNav',
+        _tabBtnSelector: '.admin-tab',
+        _tabPanelSelector: '.admin-tab-panel',
+        switchTab: function(tabName) {
+          if (typeof switchAdminTab === 'function') switchAdminTab(tabName);
+        },
+        hideAllPanels: function() {
+          var panels = document.querySelectorAll('.admin-tab-panel');
+          for (var i = 0; i < panels.length; i++) {
+            panels[i].style.display = 'none';
+          }
+        },
+        showPanel: function(tabName) {
+          var panel = document.getElementById('admin-tab-' + tabName);
+          if (panel) panel.style.display = 'block';
+        },
+        updateButtonStyles: function(activeTab) {
+          var btns = document.querySelectorAll('.admin-tab');
+          for (var i = 0; i < btns.length; i++) {
+            var btn = btns[i];
+            if (btn.getAttribute('data-admin-tab') === activeTab) {
+              btn.style.background = '#1976d2';
+              btn.style.color = 'white';
+              btn.style.fontWeight = '600';
+            } else {
+              btn.style.background = '#f5f5f5';
+              btn.style.color = '#666';
+              btn.style.fontWeight = 'normal';
+            }
+          }
+        },
+        updateArchitectRail: function() {
+          var archRail = document.getElementById('architect-utility-rail');
+          if (!archRail) return;
+          var mode = (localStorage.getItem('viewer_mode_v10') || '').toLowerCase();
+          archRail.style.display = (mode === 'admin' || mode === 'architect') ? '' : 'none';
+          var toggle = document.getElementById('architect-mode-toggle');
+          if (toggle) toggle.checked = (mode === 'architect' || localStorage.getItem('truth_pack_architect_enabled') === 'true');
+          if (typeof TruthPack !== 'undefined') TruthPack._renderControls();
+        },
+        onUsersActivate: function() {
+          if (typeof renderUsersTable === 'function') renderUsersTable();
+          if (typeof updateEnvModeUI === 'function') updateEnvModeUI();
+        }
+      };
+      _ns._registry.push('Components.AdminTabsNav');
+      console.log('[APP-MODULES][P1D4] registered: Components.AdminTabsNav');
+
+      _ns.Components.AdminTabGovernance = {
+        _id: 'Components.AdminTabGovernance',
+        _panelId: 'admin-tab-governance',
+        onActivate: function() {
+          if (typeof renderBatchAddAdminToggles === 'function') renderBatchAddAdminToggles();
+          if (typeof BatchMerge !== 'undefined') { BatchMerge.refreshSourceList(); BatchMerge.renderMergedBatchPanel(); }
+        }
+      };
+      _ns._registry.push('Components.AdminTabGovernance');
+      console.log('[APP-MODULES][P1D4] registered: Components.AdminTabGovernance');
+
+      _ns.Components.AdminTabSchemaStandards = {
+        _id: 'Components.AdminTabSchemaStandards',
+        _panelId: 'admin-tab-standardizer',
+        onActivate: function() {
+          if (typeof refreshUnknownColumnsTable === 'function') refreshUnknownColumnsTable();
+        }
+      };
+      _ns._registry.push('Components.AdminTabSchemaStandards');
+      console.log('[APP-MODULES][P1D4] registered: Components.AdminTabSchemaStandards');
+
+      _ns.Components.AdminTabPatchOps = {
+        _id: 'Components.AdminTabPatchOps',
+        _panelId: 'admin-tab-patch-ops',
+        onActivate: function() {
+          if (typeof renderAdminQueue === 'function') renderAdminQueue();
+          if (typeof renderPatchConsoleTable === 'function') renderPatchConsoleTable();
+        }
+      };
+      _ns._registry.push('Components.AdminTabPatchOps');
+      console.log('[APP-MODULES][P1D4] registered: Components.AdminTabPatchOps');
+
+      _ns.Components.AdminTabPeopleAccess = {
+        _id: 'Components.AdminTabPeopleAccess',
+        _panelId: 'admin-tab-people',
+        onActivate: function() {
+          var savedTab = localStorage.getItem('people_active_tab') || 'members';
+          if (typeof switchPeopleTab === 'function') switchPeopleTab(savedTab);
+        }
+      };
+      _ns._registry.push('Components.AdminTabPeopleAccess');
+      console.log('[APP-MODULES][P1D4] registered: Components.AdminTabPeopleAccess');
+
+      _ns.Components.AdminTabQARunner = {
+        _id: 'Components.AdminTabQARunner',
+        _panelId: 'admin-tab-qa-runner',
+        onActivate: function() {
+          if (typeof QARunner !== 'undefined' && QARunner._onTabOpen) QARunner._onTabOpen();
+        }
+      };
+      _ns._registry.push('Components.AdminTabQARunner');
+      console.log('[APP-MODULES][P1D4] registered: Components.AdminTabQARunner');
+
+      _ns.Components.AdminTabRuntimeConfig = {
+        _id: 'Components.AdminTabRuntimeConfig',
+        _panelId: 'admin-tab-runtime-config',
+        onActivate: function() {
+          if (typeof renderGlossarySummary === 'function') renderGlossarySummary();
+        }
+      };
+      _ns._registry.push('Components.AdminTabRuntimeConfig');
+      console.log('[APP-MODULES][P1D4] registered: Components.AdminTabRuntimeConfig');
+
+      console.log('[APP-MODULES][P1D4] admin_modules_registered: AdminTabState, AdminTabsNav, AdminTabGovernance, AdminTabSchemaStandards, AdminTabPatchOps, AdminTabPeopleAccess, AdminTabQARunner, AdminTabRuntimeConfig');
+    })();
+    // ========== END PHASE D4 ==========
+
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
     var Components = window.Components || {};
@@ -18806,14 +18957,18 @@
     // Admin Console Tab Switching
     var currentAdminTab = 'governance';
     function switchAdminTab(tabName) {
-      // P0.6: Show architect controls if admin/architect
-      var archRail = document.getElementById('architect-utility-rail');
-      if (archRail) {
-        var _mode = (localStorage.getItem('viewer_mode_v10') || '').toLowerCase();
-        archRail.style.display = (_mode === 'admin' || _mode === 'architect') ? '' : 'none';
-        var _toggle = document.getElementById('architect-mode-toggle');
-        if (_toggle) _toggle.checked = (_mode === 'architect' || localStorage.getItem('truth_pack_architect_enabled') === 'true');
-        if (typeof TruthPack !== 'undefined') TruthPack._renderControls();
+      // Phase D4 delegate: architect rail update
+      if (window.AppModules && window.AppModules.Components.AdminTabsNav) {
+        window.AppModules.Components.AdminTabsNav.updateArchitectRail();
+      } else {
+        var archRail = document.getElementById('architect-utility-rail');
+        if (archRail) {
+          var _mode = (localStorage.getItem('viewer_mode_v10') || '').toLowerCase();
+          archRail.style.display = (_mode === 'admin' || _mode === 'architect') ? '' : 'none';
+          var _toggle = document.getElementById('architect-mode-toggle');
+          if (_toggle) _toggle.checked = (_mode === 'architect' || localStorage.getItem('truth_pack_architect_enabled') === 'true');
+          if (typeof TruthPack !== 'undefined') TruthPack._renderControls();
+        }
       }
       var tabs = ['governance', 'users', 'patch-ops', 'patch-queue', 'runtime-config', 'config', 'inspector', 'standardizer', 'patch-console', 'gov-controls', 'evidence', 'unknown-cols', 'people', 'qa-runner'];
       if (tabName === 'patch-queue' || tabName === 'patch-console') tabName = 'patch-ops';
@@ -18822,14 +18977,23 @@
       if (tabName === 'unknown-cols') tabName = 'standardizer';
       if (tabs.indexOf(tabName) === -1) tabName = 'governance';
       
-      // Render users table and update env mode UI when switching to users tab
+      // Phase D4 delegate: users tab activation
       if (tabName === 'users') {
-        renderUsersTable();
-        updateEnvModeUI();
+        if (window.AppModules && window.AppModules.Components.AdminTabsNav && window.AppModules.Components.AdminTabsNav.onUsersActivate) {
+          window.AppModules.Components.AdminTabsNav.onUsersActivate();
+        } else {
+          renderUsersTable();
+          updateEnvModeUI();
+        }
       }
+      // Phase D4 delegate: people tab activation
       if (tabName === 'people') {
-        var savedPTab = localStorage.getItem('people_active_tab') || 'members';
-        switchPeopleTab(savedPTab);
+        if (window.AppModules && window.AppModules.Components.AdminTabPeopleAccess) {
+          window.AppModules.Components.AdminTabPeopleAccess.onActivate();
+        } else {
+          var savedPTab = localStorage.getItem('people_active_tab') || 'members';
+          switchPeopleTab(savedPTab);
+        }
       }
       if (typeof TruthConfig !== 'undefined') TruthConfig._renderUI();
       currentAdminTab = tabName;
@@ -18860,26 +19024,58 @@
         }
       }
       
-      // Render admin queue when tab is shown
-      if (tabName === 'patch-ops' || tabName === 'patch-queue') {
-        renderAdminQueue();
-        if (typeof renderPatchConsoleTable === 'function') renderPatchConsoleTable();
+      // Phase D4 delegate: tab-specific activation callbacks
+      if (window.AppModules && window.AppModules.Components.AdminTabPatchOps) {
+        if (tabName === 'patch-ops') {
+          window.AppModules.Components.AdminTabPatchOps.onActivate();
+        }
+      } else {
+        if (tabName === 'patch-ops') {
+          renderAdminQueue();
+          if (typeof renderPatchConsoleTable === 'function') renderPatchConsoleTable();
+        }
       }
       
-      // v1.6.48: Render batch add toggles when governance tab is shown
-      if (tabName === 'governance') {
-        if (typeof renderBatchAddAdminToggles === 'function') renderBatchAddAdminToggles();
-        if (typeof BatchMerge !== 'undefined') { BatchMerge.refreshSourceList(); BatchMerge.renderMergedBatchPanel(); }
+      if (window.AppModules && window.AppModules.Components.AdminTabGovernance) {
+        if (tabName === 'governance') {
+          window.AppModules.Components.AdminTabGovernance.onActivate();
+        }
+      } else {
+        if (tabName === 'governance') {
+          if (typeof renderBatchAddAdminToggles === 'function') renderBatchAddAdminToggles();
+          if (typeof BatchMerge !== 'undefined') { BatchMerge.refreshSourceList(); BatchMerge.renderMergedBatchPanel(); }
+        }
       }
       
       console.log('[Admin] Switched to tab:', tabName);
-      if (tabName === 'standardizer') {
-        if (typeof refreshUnknownColumnsTable === 'function') refreshUnknownColumnsTable();
+
+      if (window.AppModules && window.AppModules.Components.AdminTabSchemaStandards) {
+        if (tabName === 'standardizer') {
+          window.AppModules.Components.AdminTabSchemaStandards.onActivate();
+        }
+      } else {
+        if (tabName === 'standardizer') {
+          if (typeof refreshUnknownColumnsTable === 'function') refreshUnknownColumnsTable();
+        }
       }
-      if (tabName === 'qa-runner') {
-        QARunner._onTabOpen();
+
+      if (window.AppModules && window.AppModules.Components.AdminTabQARunner) {
+        if (tabName === 'qa-runner') {
+          window.AppModules.Components.AdminTabQARunner.onActivate();
+        }
+      } else {
+        if (tabName === 'qa-runner') {
+          QARunner._onTabOpen();
+        }
       }
-      if (tabName === 'config' && typeof renderGlossarySummary === 'function') renderGlossarySummary();
+
+      if (window.AppModules && window.AppModules.Components.AdminTabRuntimeConfig) {
+        if (tabName === 'runtime-config') {
+          window.AppModules.Components.AdminTabRuntimeConfig.onActivate();
+        }
+      } else {
+        if (tabName === 'runtime-config' && typeof renderGlossarySummary === 'function') renderGlossarySummary();
+      }
     }
 
     function renderBatchAddAdminToggles() {

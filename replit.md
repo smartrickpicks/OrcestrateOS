@@ -72,6 +72,18 @@ The system routes to triage by default for all roles. Contract-first navigation 
 | `Components.PdfViewerToolbar` | srrPrevPage/srrNextPage/srrZoomIn/srrZoomOut + pdfMatch* | `srr-prev-btn`, `srr-next-btn`, `srr-zoom-in`, `srr-zoom-out`, `srr-zoom-indicator`, `srr-page-indicator` — page/zoom controls and match bar |
 | `Components.PdfViewerFrame` | srrLoadPdfForRecord/srrRenderPdf/srrShowEmptyState + anchor | `srr-doc-frame`, `srr-doc-container`, `srr-pdf-object`, `srr-doc-empty`, `srr-pdf-error`, `srr-pdf-match-bar` — frame rendering, load, error, anchor jump |
 
+### Admin Panel Modules (Phase D4)
+| Module | Source | Delegate Target |
+|---|---|---|
+| `Engines.AdminTabState` | currentAdminTab + alias map | Tab state, alias resolution, valid tab list |
+| `Components.AdminTabsNav` | switchAdminTab panel/button logic | `.admin-tab`, `.admin-tab-panel` — panel show/hide, button styling, architect rail |
+| `Components.AdminTabGovernance` | governance tab activation | `admin-tab-governance` — batch add toggles, batch merge refresh |
+| `Components.AdminTabSchemaStandards` | standardizer tab activation | `admin-tab-standardizer` — unknown columns table refresh |
+| `Components.AdminTabPatchOps` | patch-ops tab activation | `admin-tab-patch-ops` — admin queue, patch console rendering |
+| `Components.AdminTabPeopleAccess` | people tab activation | `admin-tab-people` — people sub-tab restore |
+| `Components.AdminTabQARunner` | qa-runner tab activation | `admin-tab-qa-runner` — QARunner tab open handler |
+| `Components.AdminTabRuntimeConfig` | runtime-config tab activation | `admin-tab-runtime-config` — glossary summary render |
+
 ### Deterministic Logs
 - `[APP-MODULES][P1C] registered:` — module registration
 - `[APP-MODULES][P1C] bootstrap_complete` — Phase B engine registration
@@ -82,6 +94,8 @@ The system routes to triage by default for all roles. Contract-first navigation 
 - `[APP-MODULES][P1D2] RecordInspectorHeader.renderIdentity` — header delegate render
 - `[APP-MODULES][P1D3] registered:` — Phase D3 PDF viewer module registration
 - `[APP-MODULES][P1D3] pdf_viewer_modules_registered` — Phase D3 all 3 PDF viewer modules registered
+- `[APP-MODULES][P1D4] registered:` — Phase D4 admin module registration
+- `[APP-MODULES][P1D4] admin_modules_registered` — Phase D4 all 8 admin modules registered
 - `[PATCH-COMP][P1B]` — patch panel operations (open, submit, cancel, draft)
 
 ## External Dependencies
