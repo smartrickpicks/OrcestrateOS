@@ -14662,6 +14662,122 @@
     })();
     // ========== END PHASE D7 ==========
 
+    // ========== PHASE D8: CONTRACT HEALTH SCORE MODULES ==========
+    (function() {
+      var ns = window.AppModules;
+      if (!ns || !ns._registry) return;
+
+      // --- Engines.ContractHealthState ---
+      ns.Engines = ns.Engines || {};
+      ns.Engines.ContractHealthState = {
+        getScores: function() {
+          if (typeof ContractHealthScore !== 'undefined') return ContractHealthScore._scores;
+          return {};
+        },
+        getPrevScores: function() {
+          if (typeof ContractHealthScore !== 'undefined') return ContractHealthScore._prevScores;
+          return {};
+        },
+        getActiveBandFilter: function() {
+          if (typeof ContractHealthScore !== 'undefined') return ContractHealthScore._activeBandFilter;
+          return 'all';
+        },
+        getPenaltyConfig: function() {
+          if (typeof ContractHealthScore !== 'undefined') return ContractHealthScore.PENALTY;
+          return null;
+        },
+        getBands: function() {
+          if (typeof ContractHealthScore !== 'undefined') return ContractHealthScore.BANDS;
+          return [];
+        },
+        getBand: function(score) {
+          if (typeof ContractHealthScore !== 'undefined') return ContractHealthScore.getBand(score);
+          return { key: 'critical', label: 'Critical', min: 0, max: 34, color: '#c62828', bg: '#ffebee' };
+        },
+        computeScore: function(contractId, contractData, cache) {
+          if (typeof ContractHealthScore !== 'undefined') return ContractHealthScore.computeScore(contractId, contractData, cache);
+          return { contract_id: contractId, score: 100, band: { key: 'healthy', label: 'Healthy', min: 85, max: 100, color: '#2e7d32', bg: '#e8f5e9' }, penalties: [], total_penalty: 0 };
+        },
+        computeAll: function(cache) {
+          if (typeof ContractHealthScore !== 'undefined') {
+            ContractHealthScore.computeAll(cache);
+            console.log('[HEALTH-D8] score_calculated');
+          }
+        },
+        sortByHealth: function(contracts) {
+          if (typeof ContractHealthScore !== 'undefined') return ContractHealthScore.sortByHealth(contracts);
+          return contracts;
+        },
+        getFilteredContracts: function(contracts) {
+          if (typeof ContractHealthScore !== 'undefined') return ContractHealthScore.getFilteredContracts(contracts);
+          return contracts;
+        },
+        getScoreForContract: function(contractKey) {
+          if (typeof ContractHealthScore !== 'undefined' && ContractHealthScore._scores) return ContractHealthScore._scores[contractKey] || null;
+          return null;
+        }
+      };
+      ns._registry.push('Engines.ContractHealthState');
+
+      // --- Components.ContractHealthPanel ---
+      ns.Components = ns.Components || {};
+      ns.Components.ContractHealthPanel = {
+        renderHealthCell: function(c) {
+          if (typeof ContractHealthScore !== 'undefined') {
+            var html = ContractHealthScore.renderHealthCell(c);
+            console.log('[HEALTH-D8] panel_rendered');
+            return html;
+          }
+          return '<td></td>';
+        },
+        filterByBand: function(bandKey) {
+          if (typeof ContractHealthScore !== 'undefined') {
+            ContractHealthScore.filterByBand(bandKey);
+            console.log('[HEALTH-D8] health_refreshed');
+          }
+        },
+        updateFilterChips: function(counts) {
+          if (typeof ContractHealthScore !== 'undefined') ContractHealthScore._updateFilterChips(counts);
+        }
+      };
+      ns._registry.push('Components.ContractHealthPanel');
+
+      // --- Components.ContractHealthBadges ---
+      ns.Components.ContractHealthBadges = {
+        renderInlineBadge: function(contractKey) {
+          if (typeof ContractHealthScore === 'undefined' || !ContractHealthScore._scores) return '';
+          var hs = contractKey ? ContractHealthScore._scores[contractKey] : null;
+          if (!hs) return '';
+          console.log('[HEALTH-D8] badge_rendered');
+          return '<span style="padding:2px 6px;border-radius:10px;font-size:0.85em;background:' + hs.band.bg + ';color:' + hs.band.color + ';font-weight:600;">' + hs.score + '</span>';
+        },
+        renderInlineBadgeWithTooltip: function(contractKey) {
+          if (typeof ContractHealthScore === 'undefined' || !ContractHealthScore._scores) return '-';
+          var hs = contractKey ? ContractHealthScore._scores[contractKey] : null;
+          if (!hs) return '-';
+          console.log('[HEALTH-D8] badge_rendered');
+          return '<span style="padding:2px 6px;border-radius:10px;font-size:0.85em;background:' + hs.band.bg + ';color:' + hs.band.color + ';font-weight:600;cursor:help;" title="Health: ' + hs.score + '/100 (' + hs.band.label + ')">' + hs.score + '</span>';
+        },
+        getWorstScore: function(contractKeys) {
+          if (typeof ContractHealthScore === 'undefined' || !ContractHealthScore._scores) return null;
+          var worstScore = 101;
+          var result = null;
+          for (var i = 0; i < contractKeys.length; i++) {
+            var s = ContractHealthScore._scores[contractKeys[i]];
+            if (s && s.score < worstScore) {
+              worstScore = s.score;
+              result = s;
+            }
+          }
+          return result;
+        }
+      };
+      ns._registry.push('Components.ContractHealthBadges');
+
+      console.log('[APP-MODULES][P1D8] health_modules_registered: ContractHealthState, ContractHealthPanel, ContractHealthBadges');
+    })();
+    // ========== END PHASE D8 ==========
+
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
     var Components = window.Components || {};

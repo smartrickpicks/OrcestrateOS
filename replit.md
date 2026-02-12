@@ -107,6 +107,13 @@ The architecture is modular, with components and engines extracted into namespac
 | `Components.SystemPassPanel` | rerunSystemPass/cancelSystemPassRerun/executeSystemPassRerun + renderSystemPassResults | panel open/close, rerun, render |
 | `Components.SystemPassActions` | acceptSystemPassProposal/rejectSystemPassProposal + bulk accept/reject | Single and bulk proposal actions with delegate wiring |
 
+### Contract Health Score Modules (Phase D8)
+| Module | Source | Delegate Target |
+|---|---|---|
+| `Engines.ContractHealthState` | ContractHealthScore object | Scores, penalties, bands, computeAll, sortByHealth, getFilteredContracts, computeScore |
+| `Components.ContractHealthPanel` | ContractHealthScore.renderHealthCell/filterByBand/_updateFilterChips | Health cell render, filter chip UI, band filter action |
+| `Components.ContractHealthBadges` | Inline health badge HTML across grids | Badge rendering in triage/patch/queue tables |
+
 ### Patch Validation: Future-Only Fields
 - `blacklist_category` and `rfi_target` are defined in the patch draft schema but are future-only features with no current required/optional enforcement. They appear as empty-string placeholders and must not be treated as active validation fields.
 
@@ -125,6 +132,11 @@ The architecture is modular, with components and engines extracted into namespac
 - `[SYSTEMPASS-D7] rerun_started/rerun_finished` system pass rerun lifecycle
 - `[SYSTEMPASS-D7] proposal_action` single proposal accept/reject
 - `[SYSTEMPASS-D7] bulk_action` bulk accept/reject action
+- `[APP-MODULES][P1D8] health_modules_registered` Phase D8 all 3 health modules registered
+- `[HEALTH-D8] score_calculated` health scores computed for all contracts
+- `[HEALTH-D8] panel_rendered` health cell rendered in contract table
+- `[HEALTH-D8] badge_rendered` health badge rendered in grid/queue
+- `[HEALTH-D8] health_refreshed` health filter band changed
 - `[PATCH-COMP][P1B]` patch panel operations (open, submit, cancel, draft)
 
 ## External Dependencies
