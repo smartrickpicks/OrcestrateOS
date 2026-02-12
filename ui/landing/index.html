@@ -662,18 +662,19 @@
         });
       }
 
-      fetch('/api/auth/config')
+      fetch('/api/v2.5/auth/config')
         .then(function(res) {
           if (!res.ok) throw new Error('Config not available');
           return res.json();
         })
-        .then(function(config) {
-          if (!config.googleClientId) {
+        .then(function(result) {
+          var config = result.data || result;
+          if (!config.google_client_id) {
             throw new Error('Google OAuth not configured');
           }
 
           google.accounts.id.initialize({
-            client_id: config.googleClientId,
+            client_id: config.google_client_id,
             callback: handleGoogleSignIn,
             auto_select: false,
             cancel_on_tap_outside: true

@@ -6340,10 +6340,50 @@
       localStorage.setItem('people_active_tab', tabName);
     }
 
+    var _dbMembers = null;
+    var _dbMembersWorkspaceId = 'ws_SEED0100000000000000000000';
+
+    function _getAuthHeaders() {
+      var headers = { 'Content-Type': 'application/json' };
+      var token = localStorage.getItem('orchestrate_auth_token');
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      try {
+        var du = JSON.parse(localStorage.getItem('demoUser') || '{}');
+        if (!token && du.userId) headers['Authorization'] = 'Bearer ' + du.userId;
+      } catch(e) {}
+      return headers;
+    }
+
+    function _fetchDbMembers(callback) {
+      var headers = _getAuthHeaders();
+      fetch('/api/v2.5/workspaces/' + _dbMembersWorkspaceId + '/members', { headers: headers })
+        .then(function(res) { return res.json(); })
+        .then(function(result) {
+          if (result.data && Array.isArray(result.data)) {
+            _dbMembers = result.data;
+            saveDemoUsers(result.data.map(function(m) {
+              return { id: m.id, name: m.display_name, email: m.email, role: m.role, status: m.status };
+            }));
+          }
+          if (callback) callback();
+        })
+        .catch(function(err) {
+          console.warn('[Members] DB fetch failed, falling back to local:', err);
+          if (callback) callback();
+        });
+    }
+
     function renderPeopleMembers() {
       var container = document.getElementById('people-members-table');
       if (!container) return;
-      var users = getDemoUsers();
+
+      _fetchDbMembers(function() {
+        _renderMembersTable(container);
+      });
+    }
+
+    function _renderMembersTable(container) {
+      var users = _dbMembers || getDemoUsers();
       var isPlayground = isDemoMode();
       var currentUserEmail = null;
       try {
@@ -6361,22 +6401,22 @@
         '</tr></thead><tbody>';
       for (var ui = 0; ui < users.length; ui++) {
         var u = users[ui];
-        if (!u.name && !u.email) continue;
-        var isCurrentUser = currentUserEmail && u.email && currentUserEmail.toLowerCase() === u.email.toLowerCase();
-        var displayName = u.name || 'User ' + (ui + 1);
-        html += '<tr style="' + (isCurrentUser ? 'background: #fffde7;' : '') + 'border-bottom: 1px solid #f0f0f0;">';
+        var displayName = u.display_name || u.name || 'User ' + (ui + 1);
+        var userEmail = u.email || '';
+        if (!displayName && !userEmail) continue;
+        var isCurrentUser = currentUserEmail && userEmail && currentUserEmail.toLowerCase() === userEmail.toLowerCase();
+        html += '<tr data-user-id="' + (u.id || '') + '" style="' + (isCurrentUser ? 'background: #fffde7;' : '') + 'border-bottom: 1px solid #f0f0f0;">';
         html += '<td style="padding: 10px 8px;"><div style="display: flex; align-items: center; gap: 8px;">' +
           '<div style="width: 32px; height: 32px; border-radius: 50%; background: ' + getUserColor(displayName) + '; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.85em; flex-shrink:0;">' + getInitials(displayName) + '</div>' +
-          '<input type="text" id="pm-name-' + ui + '" value="' + (u.name || '').replace(/"/g, '&quot;') + '" style="' + inputStyle + ' width: 140px;"></div></td>';
-        html += '<td style="padding: 10px 8px;"><input type="email" id="pm-email-' + ui + '" value="' + (u.email || '').replace(/"/g, '&quot;') + '" style="' + inputStyle + '"></td>';
+          '<input type="text" id="pm-name-' + ui + '" value="' + (displayName).replace(/"/g, '&quot;') + '" style="' + inputStyle + ' width: 140px;"></div></td>';
+        html += '<td style="padding: 10px 8px;"><input type="email" id="pm-email-' + ui + '" value="' + userEmail.replace(/"/g, '&quot;') + '" style="' + inputStyle + '"></td>';
         html += '<td style="padding: 10px 8px;"><select id="pm-role-' + ui + '" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; cursor: pointer;">' +
           '<option value="analyst"' + (u.role === 'analyst' ? ' selected' : '') + '>Analyst</option>' +
           '<option value="verifier"' + (u.role === 'verifier' ? ' selected' : '') + '>Verifier</option>' +
           '<option value="admin"' + (u.role === 'admin' ? ' selected' : '') + '>Admin</option></select></td>';
         html += '<td style="padding: 10px 8px; text-align: center;"><select id="pm-status-' + ui + '" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; cursor: pointer;">' +
           '<option value="active"' + (u.status === 'active' ? ' selected' : '') + '>Active</option>' +
-          '<option value="pending"' + (u.status === 'pending' ? ' selected' : '') + '>Pending</option>' +
-          '<option value="disabled"' + (u.status === 'disabled' ? ' selected' : '') + '>Disabled</option></select></td>';
+          '<option value="inactive"' + (u.status === 'inactive' ? ' selected' : '') + '>Inactive</option></select></td>';
         html += '<td style="padding: 10px 8px; text-align: center;">' +
           '<button onclick="savePeopleMemberRow(' + ui + ')" class="toolbar-btn" style="padding: 6px 14px; font-size: 0.85em; background: #4caf50; color: white;">Save</button>' +
           ' <button onclick="deletePeopleMember(' + ui + ')" class="toolbar-btn" style="padding: 6px 10px; font-size: 0.85em; background: #f5f5f5; color: #c62828;" title="Remove user">&#128465;</button></td>';
@@ -6384,9 +6424,8 @@
       }
       html += '</tbody></table>';
       container.innerHTML = html;
-      var lastUpdated = localStorage.getItem(DEMO_USERS_KEY + '_updated');
       var updatedEl = document.getElementById('people-last-updated');
-      if (updatedEl) updatedEl.textContent = lastUpdated ? new Date(lastUpdated).toLocaleString() : 'Never';
+      if (updatedEl) updatedEl.textContent = new Date().toLocaleString();
       var descEl = document.getElementById('people-mode-desc');
       if (descEl) {
         descEl.textContent = isPlayground ? 'Sandbox mode: User management is fully editable.' : 'Production mode: User management is read-only. Role switching is disabled.';
@@ -6395,31 +6434,86 @@
     }
 
     function savePeopleMemberRow(idx) {
-      var users = getDemoUsers();
+      var users = _dbMembers || getDemoUsers();
       if (!users[idx]) return;
       var nameInput = document.getElementById('pm-name-' + idx);
       var emailInput = document.getElementById('pm-email-' + idx);
       var roleSelect = document.getElementById('pm-role-' + idx);
       var statusSelect = document.getElementById('pm-status-' + idx);
-      users[idx].name = nameInput ? nameInput.value.trim() : users[idx].name;
-      users[idx].email = emailInput ? emailInput.value.trim().toLowerCase() : users[idx].email;
-      users[idx].role = roleSelect ? roleSelect.value : users[idx].role;
-      users[idx].status = statusSelect ? statusSelect.value : users[idx].status;
-      saveDemoUsers(users);
-      renderPeopleMembers();
-      if (typeof renderUsersTable === 'function') renderUsersTable();
-      showToast('User updated', 'success');
+      var newName = nameInput ? nameInput.value.trim() : '';
+      var newEmail = emailInput ? emailInput.value.trim().toLowerCase() : '';
+      var newRole = roleSelect ? roleSelect.value : 'analyst';
+      var newStatus = statusSelect ? statusSelect.value : 'active';
+      var userId = users[idx].id;
+      var headers = _getAuthHeaders();
+
+      if (userId && userId.indexOf('usr_') === 0) {
+        fetch('/api/v2.5/members/' + userId, {
+          method: 'PATCH',
+          headers: headers,
+          body: JSON.stringify({
+            display_name: newName,
+            email: newEmail,
+            role: newRole,
+            status: newStatus,
+            workspace_id: _dbMembersWorkspaceId
+          })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(result) {
+          if (result.data) {
+            showToast('User updated', 'success');
+            renderPeopleMembers();
+          } else {
+            showToast((result.error && result.error.message) || 'Update failed', 'error');
+          }
+        })
+        .catch(function() { showToast('Failed to save changes', 'error'); });
+      } else {
+        users[idx].name = newName;
+        users[idx].display_name = newName;
+        users[idx].email = newEmail;
+        users[idx].role = newRole;
+        users[idx].status = newStatus;
+        saveDemoUsers(users.map(function(m) {
+          return { id: m.id, name: m.display_name || m.name, email: m.email, role: m.role, status: m.status };
+        }));
+        renderPeopleMembers();
+        showToast('User updated', 'success');
+      }
     }
 
     function deletePeopleMember(idx) {
-      var users = getDemoUsers();
+      var users = _dbMembers || getDemoUsers();
       if (!users[idx]) return;
-      if (!confirm('Remove ' + (users[idx].name || users[idx].email) + '?')) return;
-      users.splice(idx, 1);
-      saveDemoUsers(users);
-      renderPeopleMembers();
-      if (typeof renderUsersTable === 'function') renderUsersTable();
-      showToast('User removed', 'info');
+      var displayName = users[idx].display_name || users[idx].name || users[idx].email;
+      if (!confirm('Remove ' + displayName + '?')) return;
+      var userId = users[idx].id;
+      var headers = _getAuthHeaders();
+
+      if (userId && userId.indexOf('usr_') === 0) {
+        fetch('/api/v2.5/members/' + userId + '?workspace_id=' + _dbMembersWorkspaceId, {
+          method: 'DELETE',
+          headers: headers
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(result) {
+          if (result.data) {
+            showToast('User removed', 'info');
+            renderPeopleMembers();
+          } else {
+            showToast((result.error && result.error.message) || 'Remove failed', 'error');
+          }
+        })
+        .catch(function() { showToast('Failed to remove user', 'error'); });
+      } else {
+        users.splice(idx, 1);
+        saveDemoUsers(users.map(function(m) {
+          return { id: m.id, name: m.display_name || m.name, email: m.email, role: m.role, status: m.status };
+        }));
+        renderPeopleMembers();
+        showToast('User removed', 'info');
+      }
     }
 
     function syncPeopleEnvToggle() {
