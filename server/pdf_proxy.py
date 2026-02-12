@@ -42,6 +42,17 @@ from server.api_v25 import router as api_v25_router
 from server.routes.workspaces import router as workspaces_router
 from server.routes.batches import router as batches_router
 from server.routes.patches import router as patches_router
+from server.routes.contracts import router as contracts_router
+from server.routes.documents import router as documents_router
+from server.routes.accounts import router as accounts_router
+from server.routes.annotations import router as annotations_router
+from server.routes.evidence_packs import router as evidence_packs_router
+from server.routes.rfis import router as rfis_router
+from server.routes.triage_items import router as triage_items_router
+from server.routes.signals import router as signals_router
+from server.routes.selection_captures import router as selection_captures_router
+from server.routes.audit_events import router as audit_events_router
+from server.routes.sse_stream import router as sse_router
 import logging as _logging
 
 @app.on_event("startup")
@@ -70,6 +81,17 @@ app.include_router(api_v25_router)
 app.include_router(workspaces_router)
 app.include_router(batches_router)
 app.include_router(patches_router)
+app.include_router(contracts_router)
+app.include_router(documents_router)
+app.include_router(accounts_router)
+app.include_router(annotations_router)
+app.include_router(evidence_packs_router)
+app.include_router(rfis_router)
+app.include_router(triage_items_router)
+app.include_router(signals_router)
+app.include_router(selection_captures_router)
+app.include_router(audit_events_router)
+app.include_router(sse_router)
 
 PROJECT_ROOT = Path(__file__).parent.parent
 

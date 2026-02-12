@@ -197,7 +197,7 @@ CREATE TABLE IF NOT EXISTS rfis (
     patch_id TEXT REFERENCES patches(id),
     author_id TEXT NOT NULL REFERENCES users(id),
     target_record_id TEXT NOT NULL,
-    target_field_key TEXT NOT NULL,
+    target_field_key TEXT,
     question TEXT NOT NULL,
     response TEXT,
     responder_id TEXT REFERENCES users(id),

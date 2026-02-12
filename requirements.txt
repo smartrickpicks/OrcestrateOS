@@ -6,3 +6,4 @@ PyMuPDF
 openpyxl
 playwright
 psycopg2-binary
+sse-starlette

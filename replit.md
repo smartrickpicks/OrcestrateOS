@@ -43,7 +43,9 @@ The system is undergoing a multi-gate upgrade to add Postgres-backed multi-user 
 - **Server modules:** `server/db.py` (connection pool), `server/migrate.py` (migration runner), `server/ulid.py` (ID generator), `server/api_v25.py` (API router + health endpoint), `server/auth.py` (RBAC + auth resolution), `server/audit.py` (audit event emission)
 - **Route modules:** `server/routes/workspaces.py` (Workspace CRUD), `server/routes/batches.py` (Batch CRUD), `server/routes/patches.py` (Patch CRUD + 22-transition matrix + self-approval gate)
 - **Phase 2 critical path COMPLETE:** Workspace CRUD, Batch CRUD, RBAC middleware, optimistic concurrency (409 STALE_VERSION), audit emission, Patch CRUD with 12-status transition matrix, self-approval gate (403 SELF_APPROVAL_BLOCKED)
-- **Phase 2 remaining:** Contract CRUD, Document CRUD, Account CRUD, Annotation CRUD, EvidencePack CRUD, RFI CRUD, TriageItem CRUD, Signal CRUD, SelectionCapture CRUD, AuditEvent read API, SSE event stream
+- **Phase 2 COMPLETE:** All 15 resources implemented — Workspace, Batch, Patch, Contract, Document, Account, Annotation, EvidencePack, RFI, TriageItem, Signal, SelectionCapture, AuditEvent (read-only), SSE stream, Health
+- **DB schema fixes applied:** annotation_type defaults to 'note', evidence_packs status CHECK (incomplete/complete), rfis.target_field_key nullable
+- **Gate 5 smoke results:** 29/30 PASS on comprehensive endpoint test (all 15 resources + concurrency guard + self-approval gate + auth enforcement)
 
 ## External Dependencies
 - **FastAPI server**: Acts as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
