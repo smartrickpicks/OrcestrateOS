@@ -1,6 +1,6 @@
 # AppModules Dependency Map
 
-> Mermaid graph showing Engines and Components and their main call paths, grouped by phase (C through D12).
+> Mermaid graph showing Engines and Components and their main call paths, grouped by phase (C through D13).
 
 ```mermaid
 graph TD
@@ -124,12 +124,27 @@ graph TD
         D12_PSS -->|validateGates| validateSubmissionGates
     end
 
+    subgraph "Phase D13 — Contract Index"
+        D13_CIS[Engines.ContractIndexState]
+        D13_CIQ[Components.ContractIndexQueries]
+        D13_CIR[Components.ContractIndexRollups]
+        D13_CIS -->|build| ContractIndex.build
+        D13_CIS -->|reset| ContractIndex.reset
+        D13_CIQ -->|deriveContractId| ContractIndex.deriveContractId
+        D13_CIQ -->|listContracts| ContractIndex.listContracts
+        D13_CIQ -->|getContractRows| ContractIndex.getContractRows
+        D13_CIR -->|getRollup| ContractIndex.getRollup
+        D13_CIR -->|populateSelector| populateContractSelector
+    end
+
     %% Cross-phase relationships
     D4_ATG -->|onActivate| D10_BMP
     D2_RIPR -->|expand| D12_PSP
     D1_GT -.->|row click| D2_RIS
     D2_RIH -.->|file action| D3_PVF
     D12_PSP -.->|drawer submit| D12_PSE
+    D13_CIR -.->|rollup data| D8_CHS
+    D13_CIS -.->|build triggers| D13_CIR
 ```
 
 ## Reading the Map

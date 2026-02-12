@@ -15145,6 +15145,117 @@
     })();
     // ========== END PHASE D12 ==========
 
+    // ========== PHASE D13: CONTRACT INDEX MODULES ==========
+    (function() {
+      var ns = window.AppModules;
+      if (!ns) return;
+
+      // --- Engines.ContractIndexState ---
+      ns.Engines.ContractIndexState = {
+        build: function() {
+          console.log('[CIDX-D13] build_started');
+          var result = null;
+          if (typeof ContractIndex !== 'undefined' && typeof ContractIndex.build === 'function') {
+            result = ContractIndex.build();
+          }
+          console.log('[CIDX-D13] build_finished', { success: !!result, contracts: (result && result.stats) ? result.stats.contracts : 0 });
+          return result;
+        },
+        reset: function() {
+          if (typeof ContractIndex !== 'undefined' && typeof ContractIndex.reset === 'function') ContractIndex.reset();
+        },
+        isAvailable: function() {
+          if (typeof ContractIndex !== 'undefined' && typeof ContractIndex.isAvailable === 'function') return ContractIndex.isAvailable();
+          return false;
+        },
+        isFailOpen: function() {
+          if (typeof ContractIndex !== 'undefined') return !!ContractIndex._failOpen;
+          return false;
+        },
+        getIndex: function() {
+          if (typeof ContractIndex !== 'undefined') return ContractIndex._index;
+          return null;
+        },
+        getStats: function() {
+          if (typeof ContractIndex !== 'undefined' && ContractIndex._index) return ContractIndex._index.stats;
+          return null;
+        },
+        persistToSession: function() {
+          if (typeof ContractIndex !== 'undefined' && typeof ContractIndex._persistToSession === 'function') ContractIndex._persistToSession();
+        },
+        restoreFromSession: function() {
+          if (typeof ContractIndex !== 'undefined' && typeof ContractIndex._restoreFromSession === 'function') return ContractIndex._restoreFromSession();
+          return Promise.resolve(false);
+        }
+      };
+      ns._registry.push('Engines.ContractIndexState');
+
+      // --- Components.ContractIndexQueries ---
+      ns.Components.ContractIndexQueries = {
+        deriveContractId: function(row, returnMeta) {
+          if (typeof ContractIndex !== 'undefined' && typeof ContractIndex.deriveContractId === 'function') return ContractIndex.deriveContractId(row, returnMeta);
+          return returnMeta ? { contract_id: null, contract_id_source: null } : null;
+        },
+        deriveDocumentId: function(row) {
+          if (typeof ContractIndex !== 'undefined' && typeof ContractIndex.deriveDocumentId === 'function') return ContractIndex.deriveDocumentId(row);
+          return null;
+        },
+        deriveBatchId: function() {
+          if (typeof ContractIndex !== 'undefined' && typeof ContractIndex.deriveBatchId === 'function') return ContractIndex.deriveBatchId();
+          return null;
+        },
+        getContract: function(contractId) {
+          console.log('[CIDX-D13] query_executed', { method: 'getContract', contract_id: contractId });
+          if (typeof ContractIndex !== 'undefined' && typeof ContractIndex.getContract === 'function') return ContractIndex.getContract(contractId);
+          return null;
+        },
+        getContractForRow: function(row) {
+          if (typeof ContractIndex !== 'undefined' && typeof ContractIndex.getContractForRow === 'function') return ContractIndex.getContractForRow(row);
+          return null;
+        },
+        listContracts: function() {
+          console.log('[CIDX-D13] query_executed', { method: 'listContracts' });
+          if (typeof ContractIndex !== 'undefined' && typeof ContractIndex.listContracts === 'function') return ContractIndex.listContracts();
+          return [];
+        },
+        getContractRows: function(contractId) {
+          console.log('[CIDX-D13] query_executed', { method: 'getContractRows', contract_id: contractId });
+          if (typeof ContractIndex !== 'undefined' && typeof ContractIndex.getContractRows === 'function') return ContractIndex.getContractRows(contractId);
+          return [];
+        }
+      };
+      ns._registry.push('Components.ContractIndexQueries');
+
+      // --- Components.ContractIndexRollups ---
+      ns.Components.ContractIndexRollups = {
+        getRollup: function(contractId) {
+          console.log('[CIDX-D13] rollup_rendered', { contract_id: contractId });
+          if (typeof ContractIndex !== 'undefined' && typeof ContractIndex.getRollup === 'function') return ContractIndex.getRollup(contractId);
+          return null;
+        },
+        populateSelector: function() {
+          if (typeof populateContractSelector === 'function') populateContractSelector();
+        },
+        openDetailDrawer: function() {
+          if (typeof openContractDetailDrawer === 'function') openContractDetailDrawer();
+        },
+        handleFilterChange: function(contractId) {
+          if (typeof handleContractFilterChange === 'function') handleContractFilterChange(contractId);
+        },
+        getUnknownColumns: function(contractId) {
+          if (typeof ContractIndex !== 'undefined' && ContractIndex._index && ContractIndex._index.unknown_columns) {
+            if (contractId) return ContractIndex._index.unknown_columns[contractId] || [];
+            return ContractIndex._index.unknown_columns;
+          }
+          return contractId ? [] : {};
+        }
+      };
+      ns._registry.push('Components.ContractIndexRollups');
+
+      console.log('[APP-MODULES][P1D13] contractindex_modules_registered: ContractIndexState, ContractIndexQueries, ContractIndexRollups');
+    })();
+    // ========== END PHASE D13 ==========
+
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
     var Components = window.Components || {};

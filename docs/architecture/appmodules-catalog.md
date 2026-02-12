@@ -1,6 +1,6 @@
 # AppModules Catalog
 
-> Visual module catalog for `window.AppModules` — 47 modules through Phase D12.
+> Visual module catalog for `window.AppModules` — 50 modules through Phase D13.
 > Source: `ui/viewer/index.html`
 
 ## Summary
@@ -20,7 +20,8 @@
 | D10 (Batch Merge) | 3 | `_registry.push` |
 | D11 (Grid Context Menu) | 3 | `_registry.push` |
 | D12 (Patch Studio) | 3 | `_registry.push` |
-| **Total** | **47** | 43 explicit + 4 dynamic |
+| D13 (Contract Index) | 3 | `_registry.push` |
+| **Total** | **50** | 46 explicit + 4 dynamic |
 
 ---
 
@@ -184,3 +185,15 @@
 | `Components.PatchStudioEvidence` | Evidence save, evidence gate check, preflight gate check, drawer evidence save/get | `saveEvidence` → `srrSaveEvidenceDraft()`, `checkEvidenceGate` → `srrCheckEvidenceGate()`, `checkPreflightGate` → `srrCheckPreflightGate()`, `saveDrawerEvidence` → `_gridDrawerSaveEvidence()`, `getDrawerEvidenceDraft` → `window._gridDrawerContext._evidenceDraft` | (evidence logs via original functions) |
 
 **Phase log:** `[APP-MODULES][P1D12] patchstudio_modules_registered`
+
+---
+
+## Phase D13 — Contract Index Modules (3)
+
+| Module Path | Responsibility | Delegate Sites | Deterministic Logs |
+|---|---|---|---|
+| `Engines.ContractIndexState` | Build/reset contract index, availability check, fail-open state, index access, session persist/restore | `build` → `ContractIndex.build()`, `reset` → `ContractIndex.reset()`, `isAvailable` → `ContractIndex.isAvailable()`, `isFailOpen` → `ContractIndex._failOpen`, `getIndex` → `ContractIndex._index`, `getStats` → `ContractIndex._index.stats`, `persistToSession` → `ContractIndex._persistToSession()`, `restoreFromSession` → `ContractIndex._restoreFromSession()` | `[CIDX-D13] build_started`, `[CIDX-D13] build_finished` |
+| `Components.ContractIndexQueries` | Contract ID derivation, document ID derivation, batch ID, contract/row lookups | `deriveContractId` → `ContractIndex.deriveContractId()`, `deriveDocumentId` → `ContractIndex.deriveDocumentId()`, `deriveBatchId` → `ContractIndex.deriveBatchId()`, `getContract` → `ContractIndex.getContract()`, `getContractForRow` → `ContractIndex.getContractForRow()`, `listContracts` → `ContractIndex.listContracts()`, `getContractRows` → `ContractIndex.getContractRows()` | `[CIDX-D13] query_executed` |
+| `Components.ContractIndexRollups` | Rollup computation, selector population, detail drawer, filter change, unknown column access | `getRollup` → `ContractIndex.getRollup()`, `populateSelector` → `populateContractSelector()`, `openDetailDrawer` → `openContractDetailDrawer()`, `handleFilterChange` → `handleContractFilterChange()`, `getUnknownColumns` → `ContractIndex._index.unknown_columns` | `[CIDX-D13] rollup_rendered` |
+
+**Phase log:** `[APP-MODULES][P1D13] contractindex_modules_registered`
