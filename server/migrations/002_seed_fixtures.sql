@@ -70,6 +70,13 @@ INSERT INTO triage_items (id, workspace_id, batch_id, record_id, field_key, issu
     ('tri_SEED0200000000000000000000', 'ws_SEED0100000000000000000000', 'bat_SEED0100000000000000000000', 'rec_004', 'contract_id', 'duplicate_detected', 'blocker', 'preflight', 'open')
 ON CONFLICT DO NOTHING;
 
+-- 1 API key (plaintext value: test_api_key_for_smoke_tests_only)
+INSERT INTO api_keys (key_id, workspace_id, key_hash, key_prefix, scopes, created_by) VALUES
+    ('apk_SEED0100000000000000000000', 'ws_SEED0100000000000000000000',
+     '85753cb8b84efede6fb1419b161a8084e6758b6a6faaaa69ab0bf3e6957bf99a',
+     'test_api', '["read", "write"]'::jsonb, 'usr_SEED0300000000000000000000')
+ON CONFLICT DO NOTHING;
+
 -- 2 signals
 INSERT INTO signals (id, workspace_id, batch_id, record_id, field_key, signal_type, severity, rule_id, message) VALUES
     ('sig_SEED0100000000000000000000', 'ws_SEED0100000000000000000000', 'bat_SEED0100000000000000000000', 'rec_001', 'billing_country', 'format_mismatch', 'warning', 'QA_COUNTRY_ISO', 'Country code does not match ISO 3166-1 alpha-2'),
