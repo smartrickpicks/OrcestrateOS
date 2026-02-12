@@ -13716,7 +13716,8 @@
           return (gs && gs.filteredData) ? gs.filteredData : [];
         }
       };
-      _ns.register('Engines.GridState');
+      _ns._registry.push('Engines.GridState');
+      console.log('[APP-MODULES][P1D1] registered: Engines.GridState');
 
       _ns.Components.GridHeader = {
         _id: 'Components.GridHeader',
@@ -13742,7 +13743,8 @@
           console.log('[APP-MODULES][P1D1] GridHeader.render: cols=' + visibleColumns.length);
         }
       };
-      _ns.register('Components.GridHeader');
+      _ns._registry.push('Components.GridHeader');
+      console.log('[APP-MODULES][P1D1] registered: Components.GridHeader');
 
       _ns.Components.GridTable = {
         _id: 'Components.GridTable',
@@ -13772,7 +13774,8 @@
           if (typeof renderGridBatch === 'function') renderGridBatch(data, startIdx, batchSize, columns, isFirst);
         }
       };
-      _ns.register('Components.GridTable');
+      _ns._registry.push('Components.GridTable');
+      console.log('[APP-MODULES][P1D1] registered: Components.GridTable');
 
       console.log('[APP-MODULES][P1D1] grid_modules_registered: GridState, GridHeader, GridTable');
     })();
@@ -24536,15 +24539,19 @@
     function clearAllCellStores() {
       console.log('[CellStores] Clearing all cell-level caches for new dataset');
       
-      // Clear signal store
-      signalStore.signals_by_cell = {};
-      signalStore.stats = { total: 0, by_type: {} };
-      signalStore._recordToSheet = {};
+      // Clear signal store (guard against early calls before var is initialized)
+      if (typeof signalStore !== 'undefined' && signalStore) {
+        signalStore.signals_by_cell = {};
+        signalStore.stats = { total: 0, by_type: {} };
+        signalStore._recordToSheet = {};
+      }
       
       // Clear change map store
-      changeMapStore.changes_by_cell = {};
-      changeMapStore.stats = { total: 0, by_type: {} };
-      changeMapStore.enabled = false;
+      if (typeof changeMapStore !== 'undefined' && changeMapStore) {
+        changeMapStore.changes_by_cell = {};
+        changeMapStore.stats = { total: 0, by_type: {} };
+        changeMapStore.enabled = false;
+      }
       
       // v1.6.39: Clear cell styles store (grid highlighting)
       if (typeof cellStylesStore !== 'undefined') {
