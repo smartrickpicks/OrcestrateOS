@@ -14376,6 +14376,164 @@
     })();
     // ========== END PHASE D5 ==========
 
+    // ========== PHASE D6: DATASOURCE / IMPORT ENGINE MODULE EXTRACTION ==========
+    (function() {
+      var _ns = window.AppModules;
+      if (!_ns) return;
+
+      // --- Engines.ImportState ---
+      _ns.Engines.ImportState = {
+        _id: 'Engines.ImportState',
+        getSessionState: function() {
+          return (typeof sessionState !== 'undefined') ? sessionState : null;
+        },
+        getStatus: function() {
+          var s = this.getSessionState();
+          return s ? s.status : 'not-loaded';
+        },
+        getSourceType: function() {
+          var s = this.getSessionState();
+          return s ? s.sourceType : null;
+        },
+        getFileName: function() {
+          var s = this.getSessionState();
+          return s ? s.fileName : null;
+        },
+        getDatasetId: function() {
+          return (typeof IDENTITY_CONTEXT !== 'undefined') ? IDENTITY_CONTEXT.dataset_id : null;
+        },
+        isLoaded: function() {
+          return this.getStatus() === 'loaded';
+        },
+        getLoadedAt: function() {
+          var s = this.getSessionState();
+          return s ? s.loadedAt : null;
+        },
+        getErrors: function() {
+          return (typeof _importErrors !== 'undefined') ? _importErrors : [];
+        },
+        parseCSV: function(csvText, delimiter) {
+          return (typeof parseCSV === 'function') ? parseCSV(csvText, delimiter) : { headers: [], rows: [] };
+        },
+        parseWorkbook: function(data, filename) {
+          return (typeof parseWorkbook === 'function') ? parseWorkbook(data, filename) : { sheets: {}, order: [], errors: ['parseWorkbook not available'] };
+        },
+        handleFileImport: function(file) {
+          if (typeof handleFileImport === 'function') handleFileImport(file);
+        },
+        resetSession: function() {
+          if (typeof resetSession === 'function') resetSession();
+        }
+      };
+      _ns._registry.push('Engines.ImportState');
+      console.log('[APP-MODULES][P1D6] registered: Engines.ImportState');
+
+      // --- Engines.WorkbookSessionStore ---
+      _ns.Engines.WorkbookSessionStore = {
+        _id: 'Engines.WorkbookSessionStore',
+        getSessionDB: function() {
+          return (typeof SessionDB !== 'undefined') ? SessionDB : null;
+        },
+        saveWorkbookToCache: function() {
+          if (typeof saveWorkbookToCache === 'function') {
+            console.log('[IMPORT-D6] session_saved');
+            return saveWorkbookToCache();
+          }
+          return false;
+        },
+        loadWorkbookFromCache: function() {
+          if (typeof loadWorkbookFromCache === 'function') {
+            console.log('[IMPORT-D6] session_loaded');
+            return loadWorkbookFromCache();
+          }
+          return Promise.resolve(null);
+        },
+        clearWorkbookCache: function() {
+          if (typeof clearWorkbookCache === 'function') clearWorkbookCache();
+        },
+        getSavedSessions: function() {
+          if (typeof getSavedSessions === 'function') return getSavedSessions();
+          return [];
+        },
+        saveCurrentSession: function(name) {
+          if (typeof saveCurrentSession === 'function') {
+            console.log('[IMPORT-D6] session_saved');
+            return saveCurrentSession(name);
+          }
+          return false;
+        },
+        loadSavedSession: function(sessionId) {
+          if (typeof loadSavedSession === 'function') {
+            console.log('[IMPORT-D6] session_loaded');
+            loadSavedSession(sessionId);
+          }
+        },
+        deleteSavedSession: function(sessionId) {
+          if (typeof deleteSavedSession === 'function') deleteSavedSession(sessionId);
+        },
+        saveNavState: function() {
+          if (typeof saveNavStateToCache === 'function') saveNavStateToCache();
+        },
+        loadNavState: function() {
+          return (typeof loadNavStateFromCache === 'function') ? loadNavStateFromCache() : null;
+        },
+        handleClearAndReload: function() {
+          if (typeof handleClearCacheAndReload === 'function') handleClearCacheAndReload();
+        }
+      };
+      _ns._registry.push('Engines.WorkbookSessionStore');
+      console.log('[APP-MODULES][P1D6] registered: Engines.WorkbookSessionStore');
+
+      // --- Components.DataSourcePanel ---
+      _ns.Components.DataSourcePanel = {
+        _id: 'Components.DataSourcePanel',
+        _drawerId: 'data-source-drawer',
+        _barId: 'active-data-source-bar',
+        _nameId: 'active-data-source-name',
+        _actionId: 'active-data-source-action',
+        _statusId: 'data-source-status',
+        _fileInputId: 'drawer-excel-file-input',
+        _folderSectionId: 'data-source-folder-section',
+        _emptySectionId: 'data-source-empty-section',
+        _activeSectionId: 'data-source-active-section',
+        _uploadSectionId: 'data-source-upload-section',
+        _searchSectionId: 'data-source-search-section',
+        _demoSectionId: 'data-source-demo-section',
+        open: function() {
+          console.log('[IMPORT-D6] source_opened');
+          if (typeof openDataSourcePanel === 'function') openDataSourcePanel();
+        },
+        close: function() {
+          if (typeof closeDataSourceDrawer === 'function') closeDataSourceDrawer();
+        },
+        isOpen: function() {
+          var drawer = document.getElementById(this._drawerId);
+          return drawer && drawer.classList.contains('active');
+        },
+        updateBar: function(filename) {
+          if (typeof updateActiveDataSourceBar === 'function') updateActiveDataSourceBar(filename);
+        },
+        updateDrawerState: function() {
+          if (typeof updateDataSourceDrawerState === 'function') updateDataSourceDrawerState();
+        },
+        renderSessions: function() {
+          if (typeof renderSavedSessionsList === 'function') renderSavedSessionsList();
+        },
+        handleExcelUpload: function(input) {
+          if (typeof handleExcelUpload === 'function') handleExcelUpload(input);
+        },
+        getActiveSourceName: function() {
+          var el = document.getElementById(this._nameId);
+          return el ? el.textContent : '';
+        }
+      };
+      _ns._registry.push('Components.DataSourcePanel');
+      console.log('[APP-MODULES][P1D6] registered: Components.DataSourcePanel');
+
+      console.log('[APP-MODULES][P1D6] datasource_modules_registered: ImportState, WorkbookSessionStore, DataSourcePanel');
+    })();
+    // ========== END PHASE D6 ==========
+
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
     var Components = window.Components || {};
@@ -19429,6 +19587,7 @@
     // Data Source Panel - unified entry point (v1.5.0)
     // Always opens right-side panel (never modal) - per spec
     function openDataSourcePanel() {
+      console.log('[IMPORT-D6] source_opened');
       openDataSourceDrawer();
     }
     
@@ -37613,6 +37772,7 @@
     
     // v1.4.12: Unified file import handler with XLSX support via parseWorkbook
     function handleFileImport(file) {
+      console.log('[IMPORT-D6] parse_started: ' + file.name);
       hideLoaderError();
       hideColumnMappingBanner();
       showUploadLoading('Processing ' + file.name + '...');
@@ -37732,6 +37892,7 @@
             updateProgressBlock();
           }
           console.log('[Loader] Workbook imported:', file.name, 'sheets:', result.order.length, 'total rows:', allRows.length);
+          console.log('[IMPORT-D6] parse_finished: ' + file.name);
           // v1.6.46: Cache workbook for session persistence
           if (workbook.order.length > 0 && typeof saveCurrentSession === 'function') {
             var prevSource = (document.getElementById('active-data-source-name')?.textContent || '').trim();
