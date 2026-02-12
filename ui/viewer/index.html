@@ -8967,6 +8967,7 @@
     };
 
     function rerunSystemPass() {
+      console.log('[SYSTEMPASS-D7] panel_opened');
       var picker = document.getElementById('system-pass-reason-picker');
       if (picker) picker.style.display = 'block';
     }
@@ -8982,7 +8983,9 @@
       var picker = document.getElementById('system-pass-reason-picker');
       if (picker) picker.style.display = 'none';
 
+      console.log('[SYSTEMPASS-D7] rerun_started');
       var proposals = SystemPass.run(reason);
+      console.log('[SYSTEMPASS-D7] rerun_finished');
       showToast('System Pass complete: ' + proposals.length + ' proposals generated', 'info');
       renderSystemPassResults(proposals);
       if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
@@ -9087,6 +9090,7 @@
 
     function acceptSystemPassProposal(proposalId) {
       if (SystemPass.acceptProposal(proposalId)) {
+        console.log('[SYSTEMPASS-D7] proposal_action: accept ' + proposalId);
         showToast('Proposal accepted', 'success');
         renderSystemPassResults(SystemPass.getProposals());
       }
@@ -9094,6 +9098,7 @@
 
     function rejectSystemPassProposal(proposalId) {
       if (SystemPass.rejectProposal(proposalId)) {
+        console.log('[SYSTEMPASS-D7] proposal_action: reject ' + proposalId);
         showToast('Proposal rejected', 'info');
         renderSystemPassResults(SystemPass.getProposals());
       }
@@ -9101,6 +9106,7 @@
 
     function bulkAcceptSystemPass() {
       var count = SystemPass.bulkAccept();
+      console.log('[SYSTEMPASS-D7] bulk_action: accept ' + count);
       showToast(count + ' proposals accepted (hinge fields excluded)', 'success');
       renderSystemPassResults(SystemPass.getProposals());
     }
@@ -9120,6 +9126,7 @@
       var reason = reasonEl ? reasonEl.value.trim() : '';
       if (!reason) { showToast('Please provide a rejection reason', 'warning'); return; }
       var count = SystemPass.bulkReject(reason);
+      console.log('[SYSTEMPASS-D7] bulk_action: reject ' + count + ' reason=' + reason);
       showToast(count + ' proposals rejected: ' + reason, 'info');
       cancelBulkRejectSystemPass();
       renderSystemPassResults(SystemPass.getProposals());
@@ -14533,6 +14540,127 @@
       console.log('[APP-MODULES][P1D6] datasource_modules_registered: ImportState, WorkbookSessionStore, DataSourcePanel');
     })();
     // ========== END PHASE D6 ==========
+
+    // ========== PHASE D7: SYSTEM PASS MODULE EXTRACTION ==========
+    (function() {
+      var _ns = window.AppModules;
+      if (!_ns || !_ns.Engines || !_ns.Components) return;
+
+      _ns.Engines.SystemPassState = {
+        getProposals: function(filter) {
+          if (typeof SystemPass !== 'undefined') return SystemPass.getProposals(filter);
+          return [];
+        },
+        getSortedProposals: function(sortBy) {
+          if (typeof SystemPass !== 'undefined') return SystemPass.getSortedProposals(sortBy);
+          return [];
+        },
+        run: function(reason) {
+          if (typeof SystemPass !== 'undefined') {
+            console.log('[SYSTEMPASS-D7] rerun_started');
+            var result = SystemPass.run(reason);
+            console.log('[SYSTEMPASS-D7] rerun_finished');
+            return result;
+          }
+          return [];
+        },
+        acceptProposal: function(proposalId) {
+          if (typeof SystemPass !== 'undefined') {
+            var ok = SystemPass.acceptProposal(proposalId);
+            if (ok) console.log('[SYSTEMPASS-D7] proposal_action: accept ' + proposalId);
+            return ok;
+          }
+          return false;
+        },
+        rejectProposal: function(proposalId) {
+          if (typeof SystemPass !== 'undefined') {
+            var ok = SystemPass.rejectProposal(proposalId);
+            if (ok) console.log('[SYSTEMPASS-D7] proposal_action: reject ' + proposalId);
+            return ok;
+          }
+          return false;
+        },
+        bulkAccept: function() {
+          if (typeof SystemPass !== 'undefined') {
+            var count = SystemPass.bulkAccept();
+            console.log('[SYSTEMPASS-D7] bulk_action: accept ' + count);
+            return count;
+          }
+          return 0;
+        },
+        bulkReject: function(reason) {
+          if (typeof SystemPass !== 'undefined') {
+            var count = SystemPass.bulkReject(reason);
+            console.log('[SYSTEMPASS-D7] bulk_action: reject ' + count + ' reason=' + reason);
+            return count;
+          }
+          return 0;
+        },
+        reset: function() {
+          if (typeof SystemPass !== 'undefined') SystemPass.reset();
+        },
+        isHingeField: function(fieldKey, sheetName) {
+          if (typeof SystemPass !== 'undefined') return SystemPass._isHingeField(fieldKey, sheetName);
+          return false;
+        },
+        getLastRunTimestamp: function() {
+          if (typeof SystemPass !== 'undefined') return SystemPass._lastRunTimestamp;
+          return null;
+        }
+      };
+      _ns._registry.push('Engines.SystemPassState');
+      console.log('[APP-MODULES][P1D7] registered: Engines.SystemPassState');
+
+      _ns.Components.SystemPassPanel = {
+        open: function() {
+          console.log('[SYSTEMPASS-D7] panel_opened');
+          if (typeof rerunSystemPass === 'function') rerunSystemPass();
+        },
+        close: function() {
+          if (typeof cancelSystemPassRerun === 'function') cancelSystemPassRerun();
+        },
+        executeRerun: function() {
+          if (typeof executeSystemPassRerun === 'function') executeSystemPassRerun();
+        },
+        renderResults: function(proposals) {
+          if (typeof renderSystemPassResults === 'function') renderSystemPassResults(proposals);
+        },
+        changeSort: function(val) {
+          if (typeof changeSystemPassSort === 'function') changeSystemPassSort(val);
+        },
+        changeFilter: function(val) {
+          if (typeof changeSystemPassFilter === 'function') changeSystemPassFilter(val);
+        }
+      };
+      _ns._registry.push('Components.SystemPassPanel');
+      console.log('[APP-MODULES][P1D7] registered: Components.SystemPassPanel');
+
+      _ns.Components.SystemPassActions = {
+        acceptProposal: function(proposalId) {
+          if (typeof acceptSystemPassProposal === 'function') acceptSystemPassProposal(proposalId);
+        },
+        rejectProposal: function(proposalId) {
+          if (typeof rejectSystemPassProposal === 'function') rejectSystemPassProposal(proposalId);
+        },
+        bulkAccept: function() {
+          if (typeof bulkAcceptSystemPass === 'function') bulkAcceptSystemPass();
+        },
+        promptBulkReject: function() {
+          if (typeof promptBulkRejectSystemPass === 'function') promptBulkRejectSystemPass();
+        },
+        cancelBulkReject: function() {
+          if (typeof cancelBulkRejectSystemPass === 'function') cancelBulkRejectSystemPass();
+        },
+        executeBulkReject: function() {
+          if (typeof executeBulkRejectSystemPass === 'function') executeBulkRejectSystemPass();
+        }
+      };
+      _ns._registry.push('Components.SystemPassActions');
+      console.log('[APP-MODULES][P1D7] registered: Components.SystemPassActions');
+
+      console.log('[APP-MODULES][P1D7] systempass_modules_registered: SystemPassState, SystemPassPanel, SystemPassActions');
+    })();
+    // ========== END PHASE D7 ==========
 
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
