@@ -29,18 +29,19 @@ The system routes to triage by default for all roles. Contract-first navigation 
 
 The architecture is modular, with components and engines extracted into namespaces like `window.AppModules.Components.*` and `window.AppModules.Engines.*`. The extraction is through Phase D15 (Rollback/Undo) with 55 total modules (51 explicit + 4 dynamic Phase C).
 
-## API v2.5 Initiative (Gate 3 — Alignment Complete)
+## API v2.5 Initiative (Gate 4 — Phase 1 Complete)
 The system is undergoing a multi-gate upgrade to add Postgres-backed multi-user persistence:
 - **Gate 1 (Docs):** COMPLETE — Readiness report, DB decision lock, canonical API spec, OpenAPI 3.1, AsyncAPI 2.6, dependency-aware task list
 - **Gate 2 (Clarity):** COMPLETE — Q1 locked (Google OAuth + scoped API keys), Q2 locked (single DB with workspace_id scoping), 11 decisions frozen
-- **Gate 3 (Alignment):** COMPLETE — Final task plan frozen (30 tasks, 4 phases), contract lock summary
-- **Gate 4 (Code):** Pending — Implementation (18 tables, 14 resources, RBAC, SSE, audit)
+- **Gate 3 (Alignment):** COMPLETE — Final task plan frozen (30 tasks, 4 phases), contract lock summary, alignment packet
+- **Gate 4 (Code):** IN PROGRESS — Phase 1 (Persistence Foundation) COMPLETE: DB provisioned, 18 tables created, migration framework, ULID generator, health endpoint live
 - **Gate 5 (Audit):** Pending — Compliance audit and smoke tests
-- **Key docs:** `docs/api/API_SPEC_V2_5_CANONICAL.md`, `docs/api/openapi.yaml`, `docs/api/asyncapi.yaml`, `docs/decisions/DECISION_V25_DB.md`, `docs/handoff/V25_READINESS_REPORT.md`, `docs/handoff/V25_TASK_LIST.md`, `docs/handoff/V25_CLARITY_MATRIX.md`, `docs/handoff/V25_LOCKED_DECISIONS.md`, `docs/handoff/V25_FINAL_TASK_PLAN.md`, `docs/handoff/V25_CONTRACT_LOCK.md`
+- **Key docs:** `docs/api/API_SPEC_V2_5_CANONICAL.md`, `docs/api/openapi.yaml`, `docs/api/asyncapi.yaml`, `docs/decisions/DECISION_V25_DB.md`, `docs/handoff/V25_READINESS_REPORT.md`, `docs/handoff/V25_TASK_LIST.md`, `docs/handoff/V25_CLARITY_MATRIX.md`, `docs/handoff/V25_LOCKED_DECISIONS.md`, `docs/handoff/V25_FINAL_TASK_PLAN.md`, `docs/handoff/V25_CONTRACT_LOCK.md`, `docs/handoff/V25_GATE3_ALIGNMENT_PACKET.md`, `docs/handoff/V25_GATE4_LOCK_CHECKS.md`
 - **Non-negotiables:** Resource-based routes, PATCH for transitions, ULID primaries, optimistic concurrency (409 STALE_VERSION), no-self-approval server-enforced, append-only audit_events, Postgres canonical
 - **Auth policy:** Google OAuth (OIDC) for human users, scoped API keys for service ingestion, dual-accept on reads
 - **Workspace isolation:** Single DB, strict workspace_id FK scoping, composite indexes, optional RLS
-- **Gate 4 ready upon approval**
+- **Server modules:** `server/db.py` (connection pool), `server/migrate.py` (migration runner), `server/ulid.py` (ID generator), `server/api_v25.py` (API router + health endpoint)
+- **Phase 2 next:** Workspace CRUD, Batch CRUD, Patch CRUD + transition matrix, RBAC middleware
 
 ## External Dependencies
 - **FastAPI server**: Acts as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.

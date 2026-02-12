@@ -36,6 +36,35 @@ app = FastAPI(
     version="1.1.0"
 )
 
+from server.db import init_pool, close_pool, check_health
+from server.migrate import run_migrations
+from server.api_v25 import router as api_v25_router
+import logging as _logging
+
+@app.on_event("startup")
+def _startup_v25():
+    _log = _logging.getLogger("server.startup")
+    _logging.basicConfig(level=_logging.INFO, format="%(levelname)s: %(message)s")
+    try:
+        run_migrations()
+    except Exception as e:
+        _log.warning("Migration failed (DB may not be ready): %s", e)
+    try:
+        init_pool()
+    except Exception as e:
+        _log.warning("DB pool init failed: %s", e)
+        return
+    if check_health():
+        _log.info("DB connection verified (SELECT 1 OK)")
+    else:
+        _log.error("DB connection verification FAILED (SELECT 1)")
+
+@app.on_event("shutdown")
+def _shutdown_v25():
+    close_pool()
+
+app.include_router(api_v25_router)
+
 PROJECT_ROOT = Path(__file__).parent.parent
 
 DEFAULT_ALLOWED_HOSTS = [

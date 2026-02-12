@@ -1,11 +1,11 @@
-modules = ["bash", "nodejs-22", "python-3.11"]
+modules = ["bash", "nodejs-22", "python-3.11", "postgresql-16"]
 [replit]
 language = "python3"
 run = "python3 local_runner/validate_config.py --base config/config_pack.base.json --patch config/config_pack.example.patch.json && python3 local_runner/run_local.py --base config/config_pack.base.json --patch config/config_pack.example.patch.json --standardized examples/standardized_dataset.example.json --out out/sf_packet.preview.json"
 
 [nix]
 channel = "stable-25_05"
-packages = ["freetype", "gitFull", "gumbo", "harfbuzz", "jbig2dec", "libjpeg_turbo", "mupdf", "nano", "openjpeg", "playwright-driver", "swig", "xcbuild", "nspr", "nss", "at-spi2-atk", "cups", "libdrm", "mesa", "xorg.libX11", "xorg.libXcomposite", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXrandr", "xorg.libxcb", "xorg.libxshmfence", "glib", "pango", "cairo", "alsa-lib", "dbus", "expat", "chromium"]
+packages = ["alsa-lib", "at-spi2-atk", "cairo", "chromium", "cups", "dbus", "expat", "freetype", "gitFull", "glib", "gumbo", "harfbuzz", "jbig2dec", "libdrm", "libjpeg_turbo", "mesa", "mupdf", "nano", "nspr", "nss", "openjpeg", "pango", "playwright-driver", "swig", "xcbuild", "xorg.libX11", "xorg.libXcomposite", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXrandr", "xorg.libxcb", "xorg.libxshmfence"]
 
 [agent]
 expertMode = true
@@ -46,7 +46,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd server && python -m uvicorn pdf_proxy:app --host 0.0.0.0 --port 5000"
+args = "python -m uvicorn server.pdf_proxy:app --host 0.0.0.0 --port 5000"
 waitForPort = 5000
 
 [deployment]
