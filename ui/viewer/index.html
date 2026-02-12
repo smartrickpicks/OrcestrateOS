@@ -5835,7 +5835,12 @@
         });
 
         console.log('[AuditTimeline]', eventType, event.record_id || '', event.patch_request_id || '');
-        if (typeof refreshAuditHeaderDropdown === 'function') { try { var b = document.getElementById('audit-header-badge'); if (b) b.textContent = this._memCache.length; refreshAuditHeaderDropdown(); if (document.getElementById('audit-full-panel') && document.getElementById('audit-full-panel').style.display !== 'none') refreshFullAuditPanel(); } catch(e){} }
+        // Phase D5 delegate: post-emit badge + panel refresh
+        if (window.AppModules && window.AppModules.Components.AuditTimelinePanel) {
+          try { window.AppModules.Components.AuditTimelinePanel.updateBadge(); window.AppModules.Components.AuditTimelinePanel.refreshDropdown(); if (window.AppModules.Components.AuditTimelinePanel.isOpen()) window.AppModules.Components.AuditTimelinePanel.refresh(); } catch(e) {}
+        } else {
+          if (typeof refreshAuditHeaderDropdown === 'function') { try { var b = document.getElementById('audit-header-badge'); if (b) b.textContent = this._memCache.length; refreshAuditHeaderDropdown(); if (document.getElementById('audit-full-panel') && document.getElementById('audit-full-panel').style.display !== 'none') refreshFullAuditPanel(); } catch(e){} }
+        }
         return event;
       },
 
@@ -14238,6 +14243,138 @@
       console.log('[APP-MODULES][P1D4] admin_modules_registered: AdminTabState, AdminTabsNav, AdminTabGovernance, AdminTabSchemaStandards, AdminTabPatchOps, AdminTabPeopleAccess, AdminTabQARunner, AdminTabRuntimeConfig');
     })();
     // ========== END PHASE D4 ==========
+
+    // ========== PHASE D5: AUDIT TIMELINE MODULE EXTRACTION ==========
+    (function() {
+      var _ns = window.AppModules;
+      if (!_ns) return;
+
+      _ns.Engines.AuditTimelineState = {
+        _id: 'Engines.AuditTimelineState',
+        getStore: function() {
+          return (typeof AuditTimeline !== 'undefined') ? AuditTimeline : null;
+        },
+        getMemCache: function() {
+          var store = this.getStore();
+          return store ? store._memCache : [];
+        },
+        getCount: function() {
+          return this.getMemCache().length;
+        },
+        query: function(filters) {
+          var store = this.getStore();
+          if (!store) return Promise.resolve([]);
+          return store.query(filters);
+        },
+        getForRecord: function(recordId) {
+          var store = this.getStore();
+          if (!store) return Promise.resolve([]);
+          return store.getForRecord(recordId);
+        },
+        getForDataset: function(datasetId) {
+          var store = this.getStore();
+          if (!store) return Promise.resolve([]);
+          return store.getForDataset(datasetId);
+        },
+        resolveActor: function() {
+          var store = this.getStore();
+          if (!store) return { id: 'unknown', role: 'analyst' };
+          return store._resolveActor();
+        },
+        canonicalEventName: function(evType) {
+          return (typeof _canonicalAuditEventName === 'function') ? _canonicalAuditEventName(evType) : evType;
+        },
+        inferScope: function(ev) {
+          return (typeof _inferAuditScope === 'function') ? _inferAuditScope(ev) : 'batch';
+        }
+      };
+      _ns._registry.push('Engines.AuditTimelineState');
+      console.log('[APP-MODULES][P1D5] registered: Engines.AuditTimelineState');
+
+      _ns.Components.AuditTimelinePanel = {
+        _id: 'Components.AuditTimelinePanel',
+        _panelId: 'audit-full-panel',
+        _tableBodyId: 'audit-full-table-body',
+        _countId: 'audit-full-count',
+        _badgeId: 'audit-header-badge',
+        _dropdownId: 'audit-header-dropdown',
+        _dropdownListId: 'audit-header-list',
+        open: function() {
+          if (typeof openFullAuditPanel === 'function') openFullAuditPanel();
+        },
+        close: function() {
+          if (typeof closeFullAuditPanel === 'function') closeFullAuditPanel();
+        },
+        refresh: function() {
+          if (typeof refreshFullAuditPanel === 'function') refreshFullAuditPanel();
+        },
+        refreshDropdown: function() {
+          if (typeof refreshAuditHeaderDropdown === 'function') refreshAuditHeaderDropdown();
+        },
+        exportLog: function() {
+          if (typeof exportAuditLogOnly === 'function') exportAuditLogOnly();
+        },
+        showForRecord: function() {
+          if (typeof showAuditLogForRecord === 'function') showAuditLogForRecord();
+        },
+        isOpen: function() {
+          var panel = document.getElementById(this._panelId);
+          return panel && panel.style.display !== 'none';
+        },
+        updateBadge: function() {
+          var badge = document.getElementById(this._badgeId);
+          if (badge) {
+            var state = _ns.Engines.AuditTimelineState;
+            badge.textContent = state ? state.getCount() : 0;
+          }
+        }
+      };
+      _ns._registry.push('Components.AuditTimelinePanel');
+      console.log('[APP-MODULES][P1D5] registered: Components.AuditTimelinePanel');
+
+      _ns.Components.AuditTimelineFilters = {
+        _id: 'Components.AuditTimelineFilters',
+        _scopeId: 'audit-full-filter-scope',
+        _typeId: 'audit-full-filter-type',
+        _roleId: 'audit-full-filter-role',
+        _searchId: 'audit-full-search',
+        _presetsContainerId: 'audit-filter-presets',
+        getFilters: function() {
+          return {
+            scope: (document.getElementById(this._scopeId) || {}).value || '',
+            type: (document.getElementById(this._typeId) || {}).value || '',
+            role: (document.getElementById(this._roleId) || {}).value || '',
+            search: (document.getElementById(this._searchId) || {}).value || ''
+          };
+        },
+        setFilters: function(filters) {
+          var f = filters || {};
+          var s = document.getElementById(this._scopeId); if (s && f.scope !== undefined) s.value = f.scope;
+          var t = document.getElementById(this._typeId); if (t && f.type !== undefined) t.value = f.type;
+          var r = document.getElementById(this._roleId); if (r && f.role !== undefined) r.value = f.role;
+          var q = document.getElementById(this._searchId); if (q && f.search !== undefined) q.value = f.search;
+        },
+        applyQuickChip: function(category) {
+          if (typeof applyAuditQuickChip === 'function') applyAuditQuickChip(category);
+        },
+        savePreset: function() {
+          if (typeof saveCurrentAuditFilter === 'function') saveCurrentAuditFilter();
+        },
+        renderPresets: function() {
+          if (typeof renderAuditFilterPresets === 'function') renderAuditFilterPresets();
+        },
+        resetAll: function() {
+          this.setFilters({ scope: '', type: '', role: '', search: '' });
+          var panel = _ns.Components.AuditTimelinePanel;
+          if (panel) panel.refresh();
+        }
+      };
+      _ns._registry.push('Components.AuditTimelineFilters');
+      console.log('[APP-MODULES][P1D5] registered: Components.AuditTimelineFilters');
+
+      console.log('[APP-MODULES][P1D5] audit_timeline_modules_registered: AuditTimelineState, AuditTimelinePanel, AuditTimelineFilters');
+    })();
+    // ========== END PHASE D5 ==========
 
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
@@ -24595,8 +24732,8 @@
         expected_type: '',
         justification: '',
         repro_type: '', repro_file: null,
-        rfi_target: '',
-        blacklist_category: '',
+        rfi_target: '',           // future feature — no current enforcement
+        blacklist_category: '',   // future feature — no current enforcement
         blacklist_subject: '',
         changes: [], 
         status: 'Draft' 
@@ -27159,7 +27296,7 @@
       if (document.getElementById('srr-replay-type')) document.getElementById('srr-replay-type').value = srrState.patchDraft.replay_type || '';
       if (document.getElementById('srr-replay-steps')) document.getElementById('srr-replay-steps').value = srrState.patchDraft.replay_steps || '';
       if (document.getElementById('srr-replay-expected-result')) document.getElementById('srr-replay-expected-result').value = srrState.patchDraft.replay_expected_result || '';
-      // RFI target stub - no input to restore (coming soon)
+      // RFI target: future feature — field not yet rendered (no current enforcement)
       
       // Phase D2 delegate: patch editor render
       if (window.AppModules && window.AppModules.Components.RecordInspectorPatchRail) {
@@ -30354,7 +30491,7 @@
       srrState.patchDraft.replay_type = document.getElementById('srr-replay-type') ? document.getElementById('srr-replay-type').value : '';
       srrState.patchDraft.replay_steps = document.getElementById('srr-replay-steps') ? document.getElementById('srr-replay-steps').value : '';
       srrState.patchDraft.replay_expected_result = document.getElementById('srr-replay-expected-result') ? document.getElementById('srr-replay-expected-result').value : '';
-      // RFI target stub - no input field yet (coming soon)
+      // RFI target: future feature — field not yet rendered (no current enforcement)
       srrState.patchDraft.rfi_target = '';
       srrState.patchDraft.override_enabled = srrState.overrideEnabled;
     }
@@ -30698,8 +30835,8 @@
         justification: '',
         repro_type: '',
         repro_file: null,
-        rfi_target: '',
-        blacklist_category: '',
+        rfi_target: '',           // future feature — no current enforcement
+        blacklist_category: '',   // future feature — no current enforcement
         blacklist_subject: '',
         changes: [],
         status: 'Draft'
@@ -31088,9 +31225,11 @@
 
     function showAuditLogForRecord() {
       var recordKey = srrState.currentRecordKey || (srrState.currentSheet + ':' + srrState.currentRowIndex);
-      console.log('[SRR] Opening audit log for record:', recordKey);
+      console.log('[RECORD-INSPECTOR] Opening audit log for record:', recordKey);
 
-      AuditTimeline.query({ record_id: recordKey }).then(function(events) {
+      // Phase D5 delegate: query via AuditTimelineState if available
+      var queryFn = (window.AppModules && window.AppModules.Engines.AuditTimelineState) ? window.AppModules.Engines.AuditTimelineState.query.bind(window.AppModules.Engines.AuditTimelineState) : function(f) { return AuditTimeline.query(f); };
+      queryFn({ record_id: recordKey }).then(function(events) {
         if (!events || events.length === 0) {
           showToast('No audit log entries for this record', 'info');
           return;

@@ -84,6 +84,13 @@ The system routes to triage by default for all roles. Contract-first navigation 
 | `Components.AdminTabQARunner` | qa-runner tab activation | `admin-tab-qa-runner` — QARunner tab open handler |
 | `Components.AdminTabRuntimeConfig` | runtime-config tab activation | `admin-tab-runtime-config` — glossary summary render |
 
+### Audit Timeline Modules (Phase D5)
+| Module | Source | Delegate Target |
+|---|---|---|
+| `Engines.AuditTimelineState` | AuditTimeline store + query/filter | memCache access, query, actor resolution, canonical event names, scope inference |
+| `Components.AuditTimelinePanel` | openFullAuditPanel/close/refresh/export | `audit-full-panel`, `audit-full-table-body`, `audit-header-badge`, `audit-header-dropdown` — panel open/close, badge, dropdown, export |
+| `Components.AuditTimelineFilters` | filter selects + quick chips + presets | `audit-full-filter-scope`, `audit-full-filter-type`, `audit-full-filter-role`, `audit-full-search` — filter get/set, quick chips, presets |
+
 ### Deterministic Logs
 - `[APP-MODULES][P1C] registered:` — module registration
 - `[APP-MODULES][P1C] bootstrap_complete` — Phase B engine registration
@@ -96,6 +103,8 @@ The system routes to triage by default for all roles. Contract-first navigation 
 - `[APP-MODULES][P1D3] pdf_viewer_modules_registered` — Phase D3 all 3 PDF viewer modules registered
 - `[APP-MODULES][P1D4] registered:` — Phase D4 admin module registration
 - `[APP-MODULES][P1D4] admin_modules_registered` — Phase D4 all 8 admin modules registered
+- `[APP-MODULES][P1D5] registered:` — Phase D5 audit timeline module registration
+- `[APP-MODULES][P1D5] audit_timeline_modules_registered` — Phase D5 all 3 audit timeline modules registered
 - `[PATCH-COMP][P1B]` — patch panel operations (open, submit, cancel, draft)
 
 ## External Dependencies
