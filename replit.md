@@ -65,6 +65,13 @@ The system routes to triage by default for all roles. Contract-first navigation 
 | `Components.RecordInspectorFieldList` | renderSrrFields + filters | `srr-field-list`, `srr-field-count` — field rendering and filtering |
 | `Components.RecordInspectorPatchRail` | patch panel expand/collapse/editor | Patch overlay open/close, editor render, patch list |
 
+### PDF Viewer Modules (Phase D3)
+| Module | Source | Delegate Target |
+|---|---|---|
+| `Engines.PdfViewerState` | srrState PDF fields + pdfMatchState | PDF URL, page, zoom, cache status, match state, persisted state |
+| `Components.PdfViewerToolbar` | srrPrevPage/srrNextPage/srrZoomIn/srrZoomOut + pdfMatch* | `srr-prev-btn`, `srr-next-btn`, `srr-zoom-in`, `srr-zoom-out`, `srr-zoom-indicator`, `srr-page-indicator` — page/zoom controls and match bar |
+| `Components.PdfViewerFrame` | srrLoadPdfForRecord/srrRenderPdf/srrShowEmptyState + anchor | `srr-doc-frame`, `srr-doc-container`, `srr-pdf-object`, `srr-doc-empty`, `srr-pdf-error`, `srr-pdf-match-bar` — frame rendering, load, error, anchor jump |
+
 ### Deterministic Logs
 - `[APP-MODULES][P1C] registered:` — module registration
 - `[APP-MODULES][P1C] bootstrap_complete` — Phase B engine registration
@@ -73,6 +80,8 @@ The system routes to triage by default for all roles. Contract-first navigation 
 - `[APP-MODULES][P1D2] registered:` — Phase D2 inspector module registration
 - `[APP-MODULES][P1D2] inspector_modules_registered` — Phase D2 all 4 inspector modules registered
 - `[APP-MODULES][P1D2] RecordInspectorHeader.renderIdentity` — header delegate render
+- `[APP-MODULES][P1D3] registered:` — Phase D3 PDF viewer module registration
+- `[APP-MODULES][P1D3] pdf_viewer_modules_registered` — Phase D3 all 3 PDF viewer modules registered
 - `[PATCH-COMP][P1B]` — patch panel operations (open, submit, cancel, draft)
 
 ## External Dependencies

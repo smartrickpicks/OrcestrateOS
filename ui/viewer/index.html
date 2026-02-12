@@ -13933,6 +13933,161 @@
     })();
     // ========== END PHASE D2 ==========
 
+    // ========== PHASE D3: PDF VIEWER MODULE EXTRACTION ==========
+    (function() {
+      var _ns = window.AppModules;
+      if (!_ns) return;
+
+      _ns.Engines.PdfViewerState = {
+        _id: 'Engines.PdfViewerState',
+        getCurrentPdfUrl: function() {
+          return (typeof srrState !== 'undefined' && srrState) ? srrState.currentPdfUrl : null;
+        },
+        getDocPage: function() {
+          return (typeof srrState !== 'undefined' && srrState) ? srrState.docPage : 1;
+        },
+        getZoom: function() {
+          return (typeof srrState !== 'undefined' && srrState) ? srrState.zoom : 125;
+        },
+        getDocTotalPages: function() {
+          return (typeof srrState !== 'undefined' && srrState) ? srrState.docTotalPages : null;
+        },
+        getUseFragmentZoom: function() {
+          return (typeof srrState !== 'undefined' && srrState) ? srrState.useFragmentZoom : true;
+        },
+        getPdfSourceType: function() {
+          return (typeof srrState !== 'undefined' && srrState) ? srrState.pdfSourceType : null;
+        },
+        getCacheStatus: function() {
+          return (typeof srrState !== 'undefined' && srrState) ? srrState.cacheStatus : null;
+        },
+        getNetworkPdfUrl: function() {
+          return (typeof srrState !== 'undefined' && srrState) ? srrState.networkPdfUrl : null;
+        },
+        getLocalAttachmentFallback: function() {
+          return (typeof srrState !== 'undefined' && srrState) ? srrState.localAttachmentFallback : null;
+        },
+        getMatchState: function() {
+          return (typeof pdfMatchState !== 'undefined') ? pdfMatchState : { matches: [], current: -1, fieldKey: '', loading: false, searchToken: 0, searchQuery: '' };
+        },
+        isValidPdfUrl: function(url) {
+          return (typeof srrIsValidPdfUrl === 'function') ? srrIsValidPdfUrl(url) : false;
+        },
+        buildLogEntry: function(sourceType, cacheStatus, url) {
+          return (typeof srrBuildLogEntry === 'function') ? srrBuildLogEntry(sourceType, cacheStatus, url) : {};
+        },
+        loadPersistedState: function(record) {
+          return (typeof loadSrrPdfState === 'function') ? loadSrrPdfState(record) : { page: 1, zoom: 1 };
+        },
+        savePersistedState: function(record) {
+          if (typeof saveSrrPdfState === 'function') saveSrrPdfState(record);
+        }
+      };
+      _ns._registry.push('Engines.PdfViewerState');
+      console.log('[APP-MODULES][P1D3] registered: Engines.PdfViewerState');
+
+      _ns.Components.PdfViewerToolbar = {
+        _id: 'Components.PdfViewerToolbar',
+        _prevBtnId: 'srr-prev-btn',
+        _nextBtnId: 'srr-next-btn',
+        _zoomInId: 'srr-zoom-in',
+        _zoomOutId: 'srr-zoom-out',
+        _zoomIndicatorId: 'srr-zoom-indicator',
+        _pageIndicatorId: 'srr-page-indicator',
+        _headerPageId: 'srr-doc-page',
+        prevPage: function() {
+          if (typeof srrPrevPage === 'function') srrPrevPage();
+        },
+        nextPage: function() {
+          if (typeof srrNextPage === 'function') srrNextPage();
+        },
+        navigateToPage: function(pageNum) {
+          if (typeof srrNavigateToPage === 'function') srrNavigateToPage(pageNum);
+        },
+        forcePageNav: function(pageNum, searchText) {
+          if (typeof srrForcePageNav === 'function') srrForcePageNav(pageNum, searchText);
+        },
+        zoomIn: function() {
+          if (typeof srrZoomIn === 'function') srrZoomIn();
+        },
+        zoomOut: function() {
+          if (typeof srrZoomOut === 'function') srrZoomOut();
+        },
+        updateZoomDisplay: function() {
+          if (typeof srrUpdateZoomDisplay === 'function') srrUpdateZoomDisplay();
+        },
+        updatePageDisplay: function() {
+          if (typeof srrUpdatePageDisplay === 'function') srrUpdatePageDisplay();
+        },
+        disableFragmentZoom: function() {
+          if (typeof srrDisableFragmentZoom === 'function') srrDisableFragmentZoom();
+        },
+        matchDismiss: function() {
+          if (typeof pdfMatchDismiss === 'function') pdfMatchDismiss();
+        },
+        matchNav: function(dir) {
+          if (typeof pdfMatchNav === 'function') pdfMatchNav(dir);
+        },
+        matchUpdateBar: function() {
+          if (typeof pdfMatchUpdateBar === 'function') pdfMatchUpdateBar();
+        }
+      };
+      _ns._registry.push('Components.PdfViewerToolbar');
+      console.log('[APP-MODULES][P1D3] registered: Components.PdfViewerToolbar');
+
+      _ns.Components.PdfViewerFrame = {
+        _id: 'Components.PdfViewerFrame',
+        _frameId: 'srr-doc-frame',
+        _containerId: 'srr-doc-container',
+        _objectId: 'srr-pdf-object',
+        _emptyId: 'srr-doc-empty',
+        _errorId: 'srr-pdf-error',
+        _sourceId: 'srr-doc-source',
+        _matchBarId: 'srr-pdf-match-bar',
+        loadForRecord: function(record) {
+          if (typeof srrLoadPdfForRecord === 'function') srrLoadPdfForRecord(record);
+        },
+        render: function(record, pdfUrl, sourceType, sourceName, logEntry) {
+          if (typeof srrRenderPdf === 'function') srrRenderPdf(record, pdfUrl, sourceType, sourceName, logEntry);
+        },
+        showEmptyState: function() {
+          if (typeof srrShowEmptyState === 'function') srrShowEmptyState();
+        },
+        showOfflineStub: function(networkUrl) {
+          if (typeof srrShowOfflineStub === 'function') srrShowOfflineStub(networkUrl);
+        },
+        showError: function(title, msg, networkUrl, hasLocalFallback) {
+          if (typeof srrShowPdfError === 'function') srrShowPdfError(title, msg, networkUrl, hasLocalFallback);
+        },
+        hideError: function() {
+          if (typeof srrHidePdfError === 'function') srrHidePdfError();
+        },
+        switchToLocalAttachment: function() {
+          if (typeof srrSwitchToLocalAttachment === 'function') srrSwitchToLocalAttachment();
+        },
+        updateIframeSrc: function() {
+          if (typeof srrUpdateIframeSrc === 'function') srrUpdateIframeSrc();
+        },
+        setupIframeHandlers: function(el) {
+          if (typeof srrSetupIframeHandlers === 'function') srrSetupIframeHandlers(el);
+        },
+        jumpToAnchor: function(fieldKey) {
+          if (typeof srrJumpToAnchor === 'function') srrJumpToAnchor(fieldKey);
+        },
+        updateViewerHighlight: function(fieldKey) {
+          if (typeof srrUpdateViewerHighlight === 'function') srrUpdateViewerHighlight(fieldKey);
+        },
+        clearHighlight: function() {
+          if (typeof srrClearHighlight === 'function') srrClearHighlight();
+        }
+      };
+      _ns._registry.push('Components.PdfViewerFrame');
+      console.log('[APP-MODULES][P1D3] registered: Components.PdfViewerFrame');
+
+      console.log('[APP-MODULES][P1D3] pdf_viewer_modules_registered: PdfViewerState, PdfViewerToolbar, PdfViewerFrame');
+    })();
+    // ========== END PHASE D3 ==========
+
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
     var Components = window.Components || {};
@@ -26820,8 +26975,12 @@
       // v1.4.19: Update form sections based on patch type
       srrUpdatePatchFormSections();
       
-      // Load PDF for this record (v1.4.10)
-      srrLoadPdfForRecord(record);
+      // Phase D3 delegate: load PDF for record
+      if (window.AppModules && window.AppModules.Components.PdfViewerFrame) {
+        window.AppModules.Components.PdfViewerFrame.loadForRecord(record);
+      } else {
+        srrLoadPdfForRecord(record);
+      }
       
       // v1.5.3: Initialize Verifier SRR mode if applicable
       if (srrState.verifierMode) {
@@ -28425,8 +28584,12 @@
       
       srrState.selectedField = fieldKey;
       
-      // Update document viewer highlight placeholder
-      srrUpdateViewerHighlight(fieldKey);
+      // Phase D3 delegate: update document viewer highlight
+      if (window.AppModules && window.AppModules.Components.PdfViewerFrame) {
+        window.AppModules.Components.PdfViewerFrame.updateViewerHighlight(fieldKey);
+      } else {
+        srrUpdateViewerHighlight(fieldKey);
+      }
       
       // Update evidence anchors list
       srrUpdateAnchorList(fieldKey);
@@ -29282,9 +29445,11 @@
       var fileName = srrResolveFieldValue(record, 'file_name');
       srrUpdateFileActionBar(fileName, newUrl);
       
-      // Reload the PDF viewer with the new URL
+      // Phase D3 delegate: reload PDF viewer with new URL
       srrCancelEditLink();
-      if (typeof srrLoadPdfForRecord === 'function') {
+      if (window.AppModules && window.AppModules.Components.PdfViewerFrame) {
+        window.AppModules.Components.PdfViewerFrame.loadForRecord(record);
+      } else if (typeof srrLoadPdfForRecord === 'function') {
         srrLoadPdfForRecord(record);
       }
     }
