@@ -7,7 +7,7 @@ Orchestrate OS is a governance-only semantic control plane designed for defining
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
-The system captures semantic decisions as reviewable configuration artifacts and employs a canonical join strategy for data handling. It utilizes a Config Pack Model with strict version matching, supporting an 11-status lifecycle for patch requests, including comment systems and role-based access control (Analyst, Verifier, Admin, Architect).
+The system captures semantic decisions as reviewable configuration artifacts and employs a canonical join strategy for data handling. It utilizes a Config Pack Model with strict version matching, supporting a 12-status lifecycle for patch requests (10 visible + 2 hidden), including comment systems and role-based access control (Analyst, Verifier, Admin, Architect).
 
 The UI features a dashboard with a queue-centric sidebar, right-side drawers for data sources and record details, and role-based navigation. Admin configurations are organized into six tabs. A Patch Studio facilitates drafting, preflight checks, and evidence packing with live previews and revision tracking. UI elements include color-coded grid highlighting, Excel-style column headers, and a PDF viewer.
 
@@ -29,18 +29,18 @@ The system routes to triage by default for all roles. Contract-first navigation 
 
 The architecture is modular, with components and engines extracted into namespaces like `window.AppModules.Components.*` and `window.AppModules.Engines.*`. The extraction is through Phase D15 (Rollback/Undo) with 55 total modules (51 explicit + 4 dynamic Phase C).
 
-## API v2.5 Initiative (Gate 2 — Clarity Complete)
+## API v2.5 Initiative (Gate 3 — Alignment Complete)
 The system is undergoing a multi-gate upgrade to add Postgres-backed multi-user persistence:
 - **Gate 1 (Docs):** COMPLETE — Readiness report, DB decision lock, canonical API spec, OpenAPI 3.1, AsyncAPI 2.6, dependency-aware task list
 - **Gate 2 (Clarity):** COMPLETE — Q1 locked (Google OAuth + scoped API keys), Q2 locked (single DB with workspace_id scoping), 11 decisions frozen
-- **Gate 3 (Alignment):** Pending — Final task plan lock
-- **Gate 4 (Code):** Pending — Implementation (17+ tables, 14 resources, RBAC, SSE, audit)
+- **Gate 3 (Alignment):** COMPLETE — Final task plan frozen (30 tasks, 4 phases), contract lock summary
+- **Gate 4 (Code):** Pending — Implementation (18 tables, 14 resources, RBAC, SSE, audit)
 - **Gate 5 (Audit):** Pending — Compliance audit and smoke tests
-- **Key docs:** `docs/api/API_SPEC_V2_5_CANONICAL.md`, `docs/api/openapi.yaml`, `docs/api/asyncapi.yaml`, `docs/decisions/DECISION_V25_DB.md`, `docs/handoff/V25_READINESS_REPORT.md`, `docs/handoff/V25_TASK_LIST.md`, `docs/handoff/V25_CLARITY_MATRIX.md`, `docs/handoff/V25_LOCKED_DECISIONS.md`
+- **Key docs:** `docs/api/API_SPEC_V2_5_CANONICAL.md`, `docs/api/openapi.yaml`, `docs/api/asyncapi.yaml`, `docs/decisions/DECISION_V25_DB.md`, `docs/handoff/V25_READINESS_REPORT.md`, `docs/handoff/V25_TASK_LIST.md`, `docs/handoff/V25_CLARITY_MATRIX.md`, `docs/handoff/V25_LOCKED_DECISIONS.md`, `docs/handoff/V25_FINAL_TASK_PLAN.md`, `docs/handoff/V25_CONTRACT_LOCK.md`
 - **Non-negotiables:** Resource-based routes, PATCH for transitions, ULID primaries, optimistic concurrency (409 STALE_VERSION), no-self-approval server-enforced, append-only audit_events, Postgres canonical
 - **Auth policy:** Google OAuth (OIDC) for human users, scoped API keys for service ingestion, dual-accept on reads
 - **Workspace isolation:** Single DB, strict workspace_id FK scoping, composite indexes, optional RLS
-- **NO CODE until Gate 3 approval**
+- **Gate 4 ready upon approval**
 
 ## External Dependencies
 - **FastAPI server**: Acts as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.

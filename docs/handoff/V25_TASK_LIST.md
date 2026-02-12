@@ -1,8 +1,8 @@
 # V2.5 Task List
 
-**Version:** 0.2 (Gate 2 Complete)
+**Version:** 0.3 (Gate 3 Complete)
 **Date:** 2026-02-12
-**Status:** Gate 2 Complete — Pending Gate 3 Alignment
+**Status:** Gate 3 Complete — Ready for Gate 4 (Code)
 
 ---
 
@@ -80,12 +80,12 @@ Gate 1 (Docs)
 
 ---
 
-## Gate 3 Tasks (ALIGNMENT — Pending Gate 2 Approval)
+## Gate 3 Tasks (ALIGNMENT — Complete)
 
 | ID | Priority | Owner | Dependencies | Status | Acceptance Criteria |
 |----|----------|-------|-------------|--------|-------------------|
-| V25-030 | P0 | Docs | Gate 2 approved | Pending | Final task plan with frozen acceptance criteria, sequencing, dependencies |
-| V25-031 | P0 | Docs | V25-030 | Pending | Contract Lock Summary — what is now frozen and cannot change without Change Request |
+| V25-030 | P0 | Docs | Gate 2 approved | **Done** | Final Task Plan at `docs/handoff/V25_FINAL_TASK_PLAN.md` — frozen acceptance criteria, sequencing, dependencies for 30 tasks across 4 phases |
+| V25-031 | P0 | Docs | V25-030 | **Done** | Contract Lock Summary at `docs/handoff/V25_CONTRACT_LOCK.md` — frozen items, flexibility areas, CR process |
 
 ---
 

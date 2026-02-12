@@ -98,7 +98,7 @@
 ## Feature Requests
 - docs/features/STANDARDIZER_SCHEMA_EDITOR.md — Schema Tree Editor for Admin Standardizer tab (V2 proposal)
 
-## API v2.5 (Gate 2 Complete — Pending Alignment)
+## API v2.5 (Gate 3 Complete — Ready for Code)
 - docs/handoff/V25_READINESS_REPORT.md — V2.5 readiness audit: Done/Partial/Missing matrix with file paths, line refs, risk levels
 - docs/decisions/DECISION_V25_DB.md — PostgreSQL canonical DB decision lock
 - docs/api/API_SPEC_V2_5_CANONICAL.md — Human-readable API contract: 14 resource schemas, transition matrix, RBAC, envelopes, concurrency
@@ -107,6 +107,8 @@
 - docs/handoff/V25_TASK_LIST.md — Dependency-aware task list across all 5 gates
 - docs/handoff/V25_CLARITY_MATRIX.md — Gate 2 clarity matrix: resolved Q1 (auth), Q2 (workspace isolation), contradictions
 - docs/handoff/V25_LOCKED_DECISIONS.md — 11 frozen decisions with canonical text and change request process
+- docs/handoff/V25_FINAL_TASK_PLAN.md — Gate 3 frozen task plan: 30 tasks, 4 phases, acceptance criteria, sequencing
+- docs/handoff/V25_CONTRACT_LOCK.md — Contract lock summary: what is frozen, what is flexible, CR process
 
 ## Handoff & Status
 - docs/handoff/srr-handoff-status.md — Record Inspection handoff documentation audit (v1.5.2)

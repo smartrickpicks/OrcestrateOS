@@ -38,7 +38,7 @@ This document tracks all ambiguities, contradictions, and open questions identif
 
 **Contradiction:** Gate 1 readiness report listed 11 statuses, but `PATCH_REQUEST_STATUSES` array at `ui/viewer/index.html:11783-11796` has 10 visible + 2 commented-out hidden statuses (Sent_to_Kiwi, Kiwi_Returned). The canonical spec initially omitted Kiwi_Returned.
 
-**Resolution:** All specs now consistently define 13 statuses: 11 visible + 2 hidden (Sent_to_Kiwi, Kiwi_Returned). Hidden statuses are supported in the API but not surfaced in default UI views. The transition matrix includes all 13 statuses.
+**Resolution:** All specs now consistently define 12 statuses: 10 visible + 2 hidden (Sent_to_Kiwi, Kiwi_Returned). Hidden statuses are supported in the API but not surfaced in default UI views. The transition matrix includes all 12 statuses.
 
 **Files updated:** `docs/api/API_SPEC_V2_5_CANONICAL.md`, `docs/api/openapi.yaml`, `docs/handoff/V25_READINESS_REPORT.md`
 

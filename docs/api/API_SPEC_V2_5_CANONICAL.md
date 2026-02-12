@@ -2,7 +2,7 @@
 
 **Version:** 2.5.0-draft
 **Date:** 2026-02-12
-**Status:** Gate 2 Complete — Pending Gate 3 Alignment
+**Status:** Gate 3 Complete — Ready for Implementation
 
 ---
 
@@ -472,7 +472,7 @@ Dual-mode authentication:
 
 ---
 
-## 7. Patch Status Transition Matrix (11 Visible + 2 Hidden)
+## 7. Patch Status Transition Matrix (10 Visible + 2 Hidden)
 
 Source: `ui/viewer/index.html:11783-11796`, role docs
 

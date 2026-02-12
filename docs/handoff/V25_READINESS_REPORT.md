@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary
 
-Orchestrate OS is a mature frontend-only governance UI (19,241-line monolith in `ui/viewer/index.html`) with well-defined roles, gates, audit events, and a 13-status patch lifecycle (11 visible + 2 hidden) — all running entirely in the browser (localStorage + IndexedDB). API v2.5 introduces Postgres-backed multi-user persistence, server-side audit emission, and canonical resource-style endpoints.
+Orchestrate OS is a mature frontend-only governance UI (19,241-line monolith in `ui/viewer/index.html`) with well-defined roles, gates, audit events, and a 12-status patch lifecycle (10 visible + 2 hidden) — all running entirely in the browser (localStorage + IndexedDB). API v2.5 introduces Postgres-backed multi-user persistence, server-side audit emission, and canonical resource-style endpoints.
 
 This report audits the current repo against v2.5 requirements and identifies what exists, what conflicts, and what is missing.
 

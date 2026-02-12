@@ -68,7 +68,7 @@ PostgreSQL is the single canonical store for all durable collaboration and gover
 
 ---
 
-### D5: Patch Lifecycle — 13 Statuses (11 Visible + 2 Hidden)
+### D5: Patch Lifecycle — 12 Statuses (10 Visible + 2 Hidden)
 
 **Locked at:** Gate 1 (refined Gate 2)
 **Document:** `docs/api/API_SPEC_V2_5_CANONICAL.md` (Section 7)
