@@ -262,12 +262,7 @@ Patch Type is displayed as a horizontal chip row with auto-selection based on fi
 - Blacklist Subject: Read-only, auto-derived from selected field name and value
   - Format: `{field_label}: {current_value}`
   - Example: "Artist Name: John Doe"
-- Blacklist Category: *(V2 — not enforced in V1)* Dropdown selector with options:
-  - Duplicate Entry
-  - Invalid Format
-  - Prohibited Value
-  - Data Quality Issue
-  - Other (with custom reason)
+- Blacklist Category: **Future-only (V2) — not present in V1 UI, no validation, no enforcement.** Planned as a dropdown selector (Duplicate Entry, Invalid Format, Prohibited Value, Data Quality Issue, Other). Appears as an empty-string placeholder in the patch draft schema; do not treat as required or optional in V1.
 - Field change: Optional (flagging does not require value edit)
 
 ### RFI (via RFI action)
@@ -276,7 +271,7 @@ Patch Type is displayed as a horizontal chip row with auto-selection based on fi
 - RFI behavior: The Justification textarea **is** the question
   - Placeholder: "What is your question about this field?"
   - The entered text becomes the RFI question body
-- RFI Target: *(V2 — not enforced in V1)* Optional routing field (Team Lead, Legal, Data Steward, etc.)
+- RFI Target: **Future-only (V2) — not present in V1 UI, no validation, no enforcement.** Planned as an optional routing field (Team Lead, Legal, Data Steward, etc.). Appears as an empty-string placeholder in the patch draft schema; do not treat as required or optional in V1.
 - Field change: Optional (RFI does not require value edit)
 
 ## Evidence Pack (v1.4.19)
@@ -316,7 +311,7 @@ Dropdown options:
 
 ## Patch Type Behavior
 
-> **V1/V2 Boundary**: Blacklist Category and RFI Target are deferred to V2. They appear in the UI as disabled/informational but have no validation rules and no enforcement in V1. Do not treat them as required fields.
+> **V1/V2 Boundary**: Blacklist Category and RFI Target are **future-only (V2)**. They do not appear in the V1 UI, have no validation rules, and no enforcement. They exist only as empty-string placeholders in the patch draft schema. Do not treat them as required or optional fields in V1.
 
 | Type | Required Fields | Optional | Deferred (V2) |
 |------|-----------------|----------|----------------|
@@ -335,12 +330,12 @@ Dropdown options:
 
 ### Blacklist Flag
 - Justification: Required (minimum 10 characters)
-- Blacklist Category: *(V2 — not enforced in V1, no validation rules active)*
+- Blacklist Category: **Future-only (V2) — not present in V1, no validation, no enforcement**
 - Field changes: Optional
 
 ### RFI
 - Justification: Required (minimum 10 characters) — this is the question
-- RFI Target: *(V2 — not enforced in V1, no validation rules active)*
+- RFI Target: **Future-only (V2) — not present in V1, no validation, no enforcement**
 - Field changes: Optional
 
 ## Fields Panel Reset Behavior (v1.5.0 / v2.3)
