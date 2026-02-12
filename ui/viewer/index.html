@@ -15046,6 +15046,105 @@
     })();
     // ========== END PHASE D11 ==========
 
+    // ========== PHASE D12: PATCH STUDIO MODULE EXTRACTION ==========
+    (function() {
+      var _ns = window.AppModules;
+      if (!_ns) return;
+
+      _ns.Engines.PatchStudioState = {
+        _id: 'Engines.PatchStudioState',
+        isPanelOpen: function() {
+          if (typeof srrIsPatchOverlayOpen === 'function') return srrIsPatchOverlayOpen();
+          return false;
+        },
+        getPatchType: function() {
+          if (typeof srrState !== 'undefined' && srrState) return srrState.patchType || 'correction';
+          return 'correction';
+        },
+        getDraft: function() {
+          if (typeof srrState !== 'undefined' && srrState) return srrState.patchDraft || null;
+          return null;
+        },
+        getProposedChanges: function() {
+          if (typeof srrState !== 'undefined' && srrState) return srrState.proposedChanges || {};
+          return {};
+        },
+        isOverrideEnabled: function() {
+          if (typeof srrState !== 'undefined' && srrState) return !!srrState.overrideEnabled;
+          return false;
+        },
+        getDrawerContext: function() {
+          return window._gridDrawerContext || null;
+        },
+        validateGates: function(patchType, draft, changeCount, overrideEnabled) {
+          if (typeof validateSubmissionGates === 'function') return validateSubmissionGates(patchType, draft, changeCount, overrideEnabled);
+          return { pass: true, evidenceGaps: [], preflightGaps: [] };
+        }
+      };
+      _ns._registry.push('Engines.PatchStudioState');
+      console.log('[APP-MODULES][P1D12] registered: Engines.PatchStudioState');
+
+      _ns.Components.PatchStudioPanel = {
+        _id: 'Components.PatchStudioPanel',
+        open: function(actionType) {
+          if (typeof _srrExpandPatchPanel === 'function') _srrExpandPatchPanel();
+        },
+        close: function() {
+          if (typeof _srrCollapsePatchPanel === 'function') _srrCollapsePatchPanel();
+        },
+        toggle: function() {
+          if (typeof _srrTogglePatchPanel === 'function') _srrTogglePatchPanel();
+        },
+        renderEditor: function() {
+          if (typeof srrRenderPatchEditor === 'function') srrRenderPatchEditor();
+        },
+        saveDraft: function() {
+          if (typeof srrSaveDraft === 'function') srrSaveDraft();
+        },
+        submit: function() {
+          if (typeof srrSubmitPatchRequest === 'function') srrSubmitPatchRequest();
+        },
+        openDrawer: function(recordId, sheetName, rowIdx, focusField) {
+          if (typeof _gridOpenPatchDrawer === 'function') _gridOpenPatchDrawer(recordId, sheetName, rowIdx, focusField);
+        },
+        closeDrawer: function() {
+          if (typeof _gridCloseDrawer === 'function') _gridCloseDrawer();
+        },
+        submitDrawer: function() {
+          if (typeof _gridDrawerSubmit === 'function') _gridDrawerSubmit();
+        }
+      };
+      _ns._registry.push('Components.PatchStudioPanel');
+      console.log('[APP-MODULES][P1D12] registered: Components.PatchStudioPanel');
+
+      _ns.Components.PatchStudioEvidence = {
+        _id: 'Components.PatchStudioEvidence',
+        saveEvidence: function() {
+          if (typeof srrSaveEvidenceDraft === 'function') srrSaveEvidenceDraft();
+        },
+        checkEvidenceGate: function(patchType, draft, changeCount, overrideEnabled) {
+          if (typeof srrCheckEvidenceGate === 'function') return srrCheckEvidenceGate(patchType, draft, changeCount, overrideEnabled);
+          return [];
+        },
+        checkPreflightGate: function() {
+          if (typeof srrCheckPreflightGate === 'function') return srrCheckPreflightGate();
+          return [];
+        },
+        saveDrawerEvidence: function() {
+          if (typeof _gridDrawerSaveEvidence === 'function') _gridDrawerSaveEvidence();
+        },
+        getDrawerEvidenceDraft: function() {
+          var ctx = window._gridDrawerContext;
+          return (ctx && ctx._evidenceDraft) ? ctx._evidenceDraft : {};
+        }
+      };
+      _ns._registry.push('Components.PatchStudioEvidence');
+      console.log('[APP-MODULES][P1D12] registered: Components.PatchStudioEvidence');
+
+      console.log('[APP-MODULES][P1D12] patchstudio_modules_registered: PatchStudioState, PatchStudioPanel, PatchStudioEvidence');
+    })();
+    // ========== END PHASE D12 ==========
+
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
     var Components = window.Components || {};
@@ -15554,6 +15653,7 @@
     }
 
     function _gridOpenPatchDrawer(recordId, sheetName, rowIdx, focusField) {
+      console.log('[PATCHSTUDIO-D12] panel_opened', { source: 'grid_drawer', recordId: recordId, sheetName: sheetName, rowIdx: rowIdx });
       var sheet = (window.workbook && window.workbook.sheets) ? window.workbook.sheets[sheetName] : null;
       var record = null;
       if (sheet && sheet.rows && rowIdx >= 0 && rowIdx < sheet.rows.length) {
@@ -16172,6 +16272,7 @@
       if (!ctx) return;
       _gridDrawerSaveEvidence();
       Components.PatchPanel.submit('grid_drawer');
+      console.log('[PATCHSTUDIO-D12] submit_attempted', { source: 'grid_drawer', patchType: ctx.patchType || 'correction' });
       var patchType = ctx.patchType || 'correction';
       var evDraft = ctx._evidenceDraft || {};
       var justification = (document.getElementById('grid-drawer-justification') || {}).value || '';
@@ -16183,7 +16284,7 @@
         var fk = editKeys[i];
         changes.push({ field: fk, from: oldVals[fk] || '', to: pendingEdits[fk] });
       }
-      if (changes.length === 0 && patchType !== 'rfi') { showToast('No changes entered', 'warning'); return; }
+      if (changes.length === 0 && patchType !== 'rfi') { console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'no_changes', source: 'grid_drawer' }); showToast('No changes entered', 'warning'); return; }
       var author = currentMode ? currentMode.charAt(0).toUpperCase() + currentMode.slice(1) : 'Analyst';
       var request = createPatchRequest({
         type: patchType,
@@ -16203,6 +16304,7 @@
       if (request) {
         var submitted = submitPatchRequest(request.request_id, author, currentMode || 'analyst');
         if (submitted) {
+          console.log('[PATCHSTUDIO-D12] submit_succeeded', { source: 'grid_drawer', patchType: patchType, requestId: request.request_id });
           showToast('Patch submitted: ' + request.request_id, 'success');
           if (typeof renderPatchConsoleTable === 'function') renderPatchConsoleTable();
           if (typeof updatePatchQueueCounts === 'function') updatePatchQueueCounts();
@@ -29376,7 +29478,10 @@
     }
     
     function _srrExpandPatchPanel() {
-      if (!srrIsPatchOverlayOpen()) srrOpenPatchOverlay(srrState.patchType || 'correction');
+      if (!srrIsPatchOverlayOpen()) {
+        srrOpenPatchOverlay(srrState.patchType || 'correction');
+        console.log('[PATCHSTUDIO-D12] panel_opened', { source: 'srr_expand', patchType: srrState.patchType || 'correction' });
+      }
     }
     function _srrCollapsePatchPanel() {
       srrClosePatchOverlay();
@@ -31195,6 +31300,7 @@
       
       // Emit audit event (stub)
       console.log('[SRR] PATCH_DRAFTED:', srrState.patchDraft);
+      console.log('[PATCHSTUDIO-D12] draft_updated', { source: 'srr_save', patchType: srrState.patchType || 'correction' });
       showToast('Draft saved', 'success');
       _srrCollapsePatchPanel();
     }
@@ -31287,6 +31393,7 @@
 
     function srrSubmitPatchRequest() {
       srrSaveEvidenceDraft();
+      console.log('[PATCHSTUDIO-D12] submit_attempted', { source: 'record_inspector', patchType: srrState.patchType || 'correction' });
       
       var patchType = srrState.patchType;
       var changeCount = Object.keys(srrState.proposedChanges).length;
@@ -31299,6 +31406,7 @@
         if (evidenceGaps.length > 0) {
           showToast('Missing requirements: ' + evidenceGaps.join(', '), 'warning');
           console.log('[SRR] Submit blocked — evidence gaps:', evidenceGaps);
+          console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'evidence_gaps', gaps: evidenceGaps });
           return;
         }
       }
@@ -31309,6 +31417,7 @@
         if (preflightGaps.length > 0) {
           showToast('Missing requirements: ' + preflightGaps.join(', '), 'warning');
           console.log('[SRR] Submit blocked — preflight gaps:', preflightGaps);
+          console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'preflight_gaps', gaps: preflightGaps });
           return;
         }
       }
@@ -31317,6 +31426,7 @@
       if (contractBlockers.length > 0) {
         showToast('Contract has ' + contractBlockers.length + ' unresolved blocker(s): ' + contractBlockers.slice(0, 3).join('; ') + (contractBlockers.length > 3 ? ' (+' + (contractBlockers.length - 3) + ' more)' : ''), 'warning');
         console.log('[SRR] Submit blocked — contract preflight blockers:', contractBlockers);
+        console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'contract_blockers', count: contractBlockers.length });
         return;
       }
       
@@ -31483,6 +31593,8 @@
         metadata: { patch_type: patchType, change_count: changeCount }
       });
       console.log('[SRR] patch_submitted + REVIEW_REQUESTED: patch_id=' + request.request_id);
+      
+      console.log('[PATCHSTUDIO-D12] submit_succeeded', { source: 'record_inspector', patchType: patchType, recordId: recordId });
       
       // Show appropriate toast based on patch type
       if (patchType === 'rfi') {
@@ -40717,6 +40829,7 @@
         var allGaps = gateResult.evidenceGaps.concat(gateResult.preflightGaps);
         showToast('Submission blocked: ' + allGaps[0], 'warning');
         console.log('[PatchStudio] Submit blocked — gaps:', allGaps);
+        console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'gate_validation', source: 'patch_studio_page', gaps: allGaps });
         return;
       }
       
@@ -40749,6 +40862,7 @@
       
       if (submittedRequest) {
         Components.PatchPanel.submit('record_inspector');
+        console.log('[PATCHSTUDIO-D12] submit_succeeded', { source: 'patch_studio_page', requestId: request.request_id });
         showToast('Patch request submitted to queue: ' + request.request_id, 'success');
       _srrCollapsePatchPanel();
         clearPatchStudioForm();
