@@ -109,6 +109,7 @@
 - docs/handoff/V25_LOCKED_DECISIONS.md — 11 frozen decisions with canonical text and change request process
 - docs/handoff/V25_FINAL_TASK_PLAN.md — Gate 3 frozen task plan: 30 tasks, 4 phases, acceptance criteria, sequencing
 - docs/handoff/V25_CONTRACT_LOCK.md — Contract lock summary: what is frozen, what is flexible, CR process
+- docs/handoff/V25_GATE3_ALIGNMENT_PACKET.md — Consolidated Gate 3 alignment artifact: task plan table, sequencing lock, contract freeze, test plan, risk register, GO request
 
 ## Handoff & Status
 - docs/handoff/srr-handoff-status.md — Record Inspection handoff documentation audit (v1.5.2)
