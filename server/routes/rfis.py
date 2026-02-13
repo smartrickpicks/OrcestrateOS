@@ -15,11 +15,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v2.5")
 
 ALLOWED_STATUSES = ("open", "responded", "closed")
+CUSTODY_STATUSES = ("open", "awaiting_verifier", "returned_to_analyst", "resolved", "dismissed")
 
 RFI_COLUMNS = [
     "id", "workspace_id", "patch_id", "author_id", "target_record_id",
     "target_field_key", "question", "response", "responder_id", "status",
     "created_at", "updated_at", "deleted_at", "version", "metadata",
+    "custody_status",
 ]
 RFI_SELECT = ", ".join(RFI_COLUMNS)
 
@@ -242,6 +244,13 @@ def update_rfi(
                 content=error_envelope("VALIDATION_ERROR", "status must be one of: %s" % ", ".join(ALLOWED_STATUSES)),
             )
         updates["status"] = body["status"]
+    if "custody_status" in body:
+        if body["custody_status"] not in CUSTODY_STATUSES:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "custody_status must be one of: %s" % ", ".join(CUSTODY_STATUSES)),
+            )
+        updates["custody_status"] = body["custody_status"]
     if "patch_id" in body:
         updates["patch_id"] = body["patch_id"]
     if "metadata" in body:
@@ -306,6 +315,9 @@ def update_rfi(
                     content=error_envelope("STALE_VERSION", "Concurrent modification detected"),
                 )
 
+            audit_detail = {"fields": list(updates.keys()), "new_version": version + 1}
+            if "custody_status" in updates:
+                audit_detail["custody_status"] = updates["custody_status"]
             emit_audit_event(
                 cur,
                 workspace_id=workspace_id,
@@ -313,12 +325,73 @@ def update_rfi(
                 actor_id=auth.user_id,
                 resource_type="rfi",
                 resource_id=rfi_id,
-                detail={"fields": list(updates.keys()), "new_version": version + 1},
+                detail=audit_detail,
             )
         conn.commit()
         return envelope(_row_to_dict(updated, RFI_COLUMNS))
     except Exception as e:
         logger.error("update_rfi error: %s", e)
+        conn.rollback()
+        return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
+    finally:
+        put_conn(conn)
+
+
+@router.get("/batches/{bat_id}/rfis")
+def list_batch_rfis(
+    bat_id: str,
+    status: str = Query(None),
+    cursor: str = Query(None),
+    limit: int = Query(50, ge=1, le=200),
+    auth=Depends(require_auth(AuthClass.EITHER)),
+):
+    if isinstance(auth, JSONResponse):
+        return auth
+
+    from server.feature_flags import require_evidence_inspector
+    gate = require_evidence_inspector()
+    if gate:
+        return gate
+
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, workspace_id FROM batches WHERE id = %s AND deleted_at IS NULL", (bat_id,))
+            batch_row = cur.fetchone()
+            if not batch_row:
+                return JSONResponse(
+                    status_code=404,
+                    content=error_envelope("NOT_FOUND", "Batch not found: %s" % bat_id),
+                )
+            workspace_id = batch_row[1]
+
+            conditions = ["workspace_id = %s", "deleted_at IS NULL"]
+            params = [workspace_id]
+
+            if status:
+                conditions.append("(custody_status = %s OR (custody_status IS NULL AND status = %s))")
+                params.extend([status, status])
+            if cursor:
+                conditions.append("id > %s")
+                params.append(cursor)
+
+            where = "WHERE " + " AND ".join(conditions)
+            sql = "SELECT %s FROM rfis %s ORDER BY id ASC LIMIT %%s" % (RFI_SELECT, where)
+            params.append(limit + 1)
+
+            cur.execute(sql, params)
+            rows = cur.fetchall()
+
+        has_more = len(rows) > limit
+        if has_more:
+            rows = rows[:limit]
+
+        items = [_row_to_dict(r, RFI_COLUMNS) for r in rows]
+        next_cursor = items[-1]["id"] if items and has_more else None
+
+        return collection_envelope(items, cursor=next_cursor, has_more=has_more, limit=limit)
+    except Exception as e:
+        logger.error("list_batch_rfis error: %s", e)
         conn.rollback()
         return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
     finally:

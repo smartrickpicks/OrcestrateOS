@@ -57,6 +57,11 @@ from server.routes.auth_google import router as auth_google_router
 from server.routes.members import router as members_router
 from server.routes.drive import router as drive_router
 from server.routes.sessions import router as sessions_router
+from server.routes.reader_nodes import router as reader_nodes_router
+from server.routes.anchors import router as anchors_router
+from server.routes.corrections import router as corrections_router
+from server.routes.batch_health import router as batch_health_router
+from server.routes.ocr_escalations import router as ocr_escalations_router
 import logging as _logging
 
 @app.on_event("startup")
@@ -100,6 +105,11 @@ app.include_router(auth_google_router)
 app.include_router(members_router)
 app.include_router(drive_router)
 app.include_router(sessions_router)
+app.include_router(reader_nodes_router)
+app.include_router(anchors_router)
+app.include_router(corrections_router)
+app.include_router(batch_health_router)
+app.include_router(ocr_escalations_router)
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
