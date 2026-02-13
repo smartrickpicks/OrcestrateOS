@@ -14329,14 +14329,8 @@
     function _evEscalateOcr(btn) {
       btn.disabled = true;
       btn.textContent = 'Submitting...';
-      var docId = null;
       var record = _evState.activeRecordId ? _evFindRecord(_evState.activeSheetName, _evState.activeRowIdx, _evState.activeRecordId) : null;
-      if (record) {
-        var contractKey = record.contract_key || record.Contract_Key || '';
-        if (contractKey && window.workbook && window.workbook.contracts && window.workbook.contracts[contractKey]) {
-          docId = window.workbook.contracts[contractKey].document_id || null;
-        }
-      }
+      var docId = _evResolveDocId(record);
       if (!docId) docId = 'doc_' + (_evState.activeRecordId || 'unknown');
       var affectedPages = [];
       var pageEls = document.querySelectorAll('.ev-reader-page[data-moji="unreadable"]');
@@ -14446,14 +14440,8 @@
           if (idx >= 0) { charStart = idx; charEnd = idx + text.length; }
         }
       }
-      var docId = null;
       var record = _evState.activeRecordId ? _evFindRecord(_evState.activeSheetName, _evState.activeRowIdx, _evState.activeRecordId) : null;
-      if (record) {
-        var contractKey = record.contract_key || record.Contract_Key || '';
-        if (contractKey && window.workbook && window.workbook.contracts && window.workbook.contracts[contractKey]) {
-          docId = window.workbook.contracts[contractKey].document_id || null;
-        }
-      }
+      var docId = _evResolveDocId(record);
       return {
         selected_text: text,
         document_id: docId,
@@ -14886,6 +14874,15 @@
       }
     }
 
+    function _evResolveDocId(record) {
+      if (!record) return null;
+      var contractKey = record.contract_key || record.Contract_Key || '';
+      if (contractKey && window.workbook && window.workbook.contracts && window.workbook.contracts[contractKey]) {
+        return window.workbook.contracts[contractKey].document_id || null;
+      }
+      return null;
+    }
+
     function _evFindRecord(sheetName, rowIdx, recordId) {
       var result = (typeof findRecordById === 'function') ? findRecordById(recordId) : null;
       if (result && result.row) return result.row;
@@ -14998,14 +14995,7 @@
         return;
       }
 
-      var docId = null;
-      var contractKey = '';
-      if (record) {
-        contractKey = record.contract_key || record.Contract_Key || '';
-        if (contractKey && window.workbook && window.workbook.contracts && window.workbook.contracts[contractKey]) {
-          docId = window.workbook.contracts[contractKey].document_id || null;
-        }
-      }
+      var docId = _evResolveDocId(record);
 
       var wsId = (typeof _getWorkspaceId === 'function') ? _getWorkspaceId() : 'ws_SEED0100000000000000000000';
 
@@ -15017,7 +15007,7 @@
             if (anchorsCount) anchorsCount.textContent = anchors.length;
             if (!anchorsBody) return;
             if (anchors.length === 0) {
-              anchorsBody.innerHTML = '<div class="ev-ri-empty">No anchors for this document</div>';
+              anchorsBody.innerHTML = '<div class="ev-ri-empty">No linked fields for this document</div>';
               return;
             }
             anchorsBody.innerHTML = anchors.map(function(a) {
@@ -15027,7 +15017,7 @@
             }).join('');
           })
           .catch(function() {
-            if (anchorsBody) anchorsBody.innerHTML = '<div class="ev-ri-empty">No anchors available</div>';
+            if (anchorsBody) anchorsBody.innerHTML = '<div class="ev-ri-empty">No linked fields available</div>';
             if (anchorsCount) anchorsCount.textContent = '0';
           });
       } else {
@@ -16980,7 +16970,7 @@
       if (count) count.textContent = anchors.length;
 
       if (!anchors.length) {
-        list.innerHTML = '<div class="ei-empty">No anchors for this document</div>';
+        list.innerHTML = '<div class="ei-empty">No linked fields for this document</div>';
         return;
       }
 
