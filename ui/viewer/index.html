@@ -14123,7 +14123,7 @@
       }
       var recordId = firstRow.getAttribute('data-record-id');
       var sheetName = firstRow.getAttribute('data-sheet-name');
-      var rowIdx = parseInt(firstRow.getAttribute('data-row-idx'), 10);
+      var rowIdx = parseInt(firstRow.getAttribute('data-record-index') || '0', 10);
       if (!recordId) {
         console.log('[EV-AUTO] First row has no record-id attribute');
         return;
@@ -14261,13 +14261,9 @@
     function _evLoadPdfForRecord(record, recordId, sheetName) {
       var pdfObj = document.getElementById('ev-pdf-object');
       var emptyEl = document.getElementById('ev-pdf-empty');
-      var labelEl = document.getElementById('ev-pdf-record-label');
       var sourceEl = document.getElementById('ev-pdf-source');
-      var rightLabel = document.getElementById('ev-right-record-label');
       if (!pdfObj) return;
 
-      if (labelEl) labelEl.textContent = recordId || '';
-      if (rightLabel) rightLabel.textContent = recordId || '';
       if (sourceEl) sourceEl.textContent = sheetName || '';
 
       var resolved = _evResolveDocUrl(record, recordId, sheetName);
@@ -14312,6 +14308,68 @@
       }
     }
 
+    function _evFindRecord(sheetName, rowIdx, recordId) {
+      if (!window.workbook || !window.workbook.sheets) return null;
+      var sheet = window.workbook.sheets[sheetName];
+      if (sheet && sheet.rows) {
+        if (rowIdx >= 0 && rowIdx < sheet.rows.length) {
+          var r = sheet.rows[rowIdx];
+          var rid = r.record_id || (r._identity && r._identity.record_id) || r.contract_key || '';
+          if (!rid) rid = sheetName + ':' + rowIdx;
+          if (rid === recordId) return r;
+        }
+        for (var i = 0; i < sheet.rows.length; i++) {
+          var r = sheet.rows[i];
+          var rid = r.record_id || (r._identity && r._identity.record_id) || r.contract_key || '';
+          if (!rid) rid = sheetName + ':' + i;
+          if (rid === recordId) return r;
+        }
+      }
+      var sheets = window.workbook.sheets;
+      for (var sn in sheets) {
+        if (!sheets.hasOwnProperty(sn) || sn === sheetName) continue;
+        var rows = sheets[sn].rows || [];
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i];
+          var rid = r.record_id || (r._identity && r._identity.record_id) || r.contract_key || '';
+          if (!rid) rid = sn + ':' + i;
+          if (rid === recordId) return r;
+        }
+      }
+      return null;
+    }
+
+    function _evBuildContextLabel(record, recordId) {
+      if (!record) return { label: 'Untitled Record', tooltip: recordId || '' };
+      var contractName = '';
+      var contractFields = ['Contract_Name_c', 'Contract_Name__c', 'Contract_Name', 'contract_name'];
+      for (var i = 0; i < contractFields.length; i++) {
+        if (record[contractFields[i]]) { contractName = record[contractFields[i]]; break; }
+      }
+      if (!contractName) {
+        var ck = record.contract_key || '';
+        if (ck) contractName = ck.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+      }
+      var accountName = '';
+      var accountFields = ['Account_Name_c', 'Account_Name__c', 'Account_Name', 'account_name', 'Artist_Name_pka_or_dba_c', 'Artist_Name__c'];
+      for (var i = 0; i < accountFields.length; i++) {
+        if (record[accountFields[i]]) { accountName = record[accountFields[i]]; break; }
+      }
+      var fileName = (typeof srrResolveFieldValue === 'function') ? srrResolveFieldValue(record, 'file_name') : (record.file_name || '');
+      if (fileName) fileName = fileName.replace(/_/g, ' ').replace(/\.pdf$/i, '').trim();
+      var recordName = (typeof _srrResolveRecordName === 'function') ? _srrResolveRecordName(record) : '';
+      var parts = [];
+      if (contractName) parts.push('Contract: ' + contractName);
+      if (accountName) parts.push('Account: ' + accountName);
+      if (fileName && !contractName && !accountName) parts.push(fileName);
+      var label = parts.length > 0 ? parts.join(' \u00b7 ') : (recordName || fileName || 'Untitled Record');
+      var tooltip = (recordId ? 'ID: ' + recordId : '') +
+        (record.contract_key ? '\nContract Key: ' + record.contract_key : '') +
+        (accountName ? '\nAccount: ' + accountName : '') +
+        (fileName ? '\nFile: ' + (record.file_name || fileName) : '');
+      return { label: label, tooltip: tooltip.trim() };
+    }
+
     function _evOpenViewerForRecord(sheetName, rowIdx, recordId) {
       console.log('[EV-OPEN] openEvidenceViewerForRecord called:', { sheetName: sheetName, rowIdx: rowIdx, recordId: recordId });
       _evState.activeRecordId = recordId;
@@ -14320,14 +14378,15 @@
       _evState.clickArmedAfterOpen = true;
       _evShowPdfPane();
 
-      var record = null;
-      if (window.workbook && window.workbook.sheets && window.workbook.sheets[sheetName]) {
-        var sheet = window.workbook.sheets[sheetName];
-        if (sheet.rows && rowIdx >= 0 && rowIdx < sheet.rows.length) {
-          record = sheet.rows[rowIdx];
-        }
-      }
+      var record = _evFindRecord(sheetName, rowIdx, recordId);
       console.log('[EV-OPEN] record resolved:', !!record, record ? Object.keys(record).length + ' fields' : 'null');
+
+      var ctx = _evBuildContextLabel(record, recordId);
+      var labelEl = document.getElementById('ev-pdf-record-label');
+      var rightLabel = document.getElementById('ev-right-record-label');
+      if (labelEl) { labelEl.textContent = ctx.label; labelEl.title = ctx.tooltip; }
+      if (rightLabel) { rightLabel.textContent = ctx.label; rightLabel.title = ctx.tooltip; }
+
       _evLoadPdfForRecord(record, recordId, sheetName);
       _evLoadRightPanelForRecord(record, recordId, sheetName);
 
@@ -14338,7 +14397,7 @@
       var activeRow = document.querySelector('#grid-tbody tr[data-record-id="' + recordId + '"]');
       if (activeRow) activeRow.classList.add('ev-active-row');
 
-      console.log('[EV-STATE] viewer opened (3-col) for record:', recordId, 'sheet:', sheetName);
+      console.log('[EV-STATE] viewer opened for record:', recordId, 'sheet:', sheetName, 'context:', ctx.label);
     }
 
     function openEvidenceViewerForRecord(recordId) {
