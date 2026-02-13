@@ -21,6 +21,9 @@ RFI lifecycle propagation (v2.52) ensures that RFIs created in the Evidence View
 
 Sandbox Session Management (v2.52): Sandbox-created artifacts (RFIs, patches, corrections, queue items) persist indefinitely until explicit admin reset — no TTL expiration. Two reset options are available in admin-only UI sections: (1) "Reset Sandbox" clears all sandbox-created artifacts while preserving uploaded data, and (2) "Reset All Data" performs a full reset including uploaded datasets, returning to the loader screen. The `_evRfiLocalCache` stores sandbox RFIs without time-based expiry; `resetPlayground()` clears the cache along with verifier queue, patch storage, and badge state. `resetDemoState()` gates sandbox clearing to playground environment only, preventing accidental production data loss.
 
+## Migration Notes
+Migration 003 (auth_google_oauth) is self-contained: it creates the production workspace (`ws_SEED0100000000000000000000`) via `INSERT ... ON CONFLICT DO NOTHING` before inserting user workspace roles, so it does not depend on seed data from migration 002. This ensures the migration succeeds in production where `SEED_DATA` is not enabled.
+
 ## External Dependencies
 - **FastAPI server**: Used as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
 - **SheetJS (XLSX)**: Integrated for Excel import/export functionality.

@@ -24,7 +24,12 @@ ON CONFLICT (email) DO UPDATE SET
     display_name = EXCLUDED.display_name,
     status = EXCLUDED.status;
 
--- Assign workspace roles (workspace ws_SEED01... is the demo workspace)
+-- Ensure the production workspace exists (independent of seed data)
+INSERT INTO workspaces (id, name, mode) VALUES
+    ('ws_SEED0100000000000000000000', 'Production', 'production')
+ON CONFLICT (id) DO NOTHING;
+
+-- Assign workspace roles
 INSERT INTO user_workspace_roles (user_id, workspace_id, role) VALUES
     ('usr_01KMCG0100000000000000KYLE', 'ws_SEED0100000000000000000000', 'analyst'),
     ('usr_01KMCG0200000000000000AIVN', 'ws_SEED0100000000000000000000', 'analyst'),
