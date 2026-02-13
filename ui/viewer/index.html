@@ -681,6 +681,20 @@
     /* Document Viewer */
     .srr-doc-viewer { height: 100%; display: flex; flex-direction: column; }
     .srr-doc-controls { display: flex; gap: 8px; padding: 8px 12px; background: #263238; border-bottom: 1px solid #37474f; align-items: center; }
+    .srr-view-toggle { display: flex; gap: 0; padding: 4px 12px; background: #1a2328; border-bottom: 1px solid #37474f; align-items: center; }
+    .srr-view-toggle-btn { padding: 5px 16px; font-size: 0.82em; font-weight: 500; border: 1px solid #37474f; background: transparent; color: #90a4ae; cursor: pointer; transition: all 0.15s; }
+    .srr-view-toggle-btn:first-child { border-radius: 4px 0 0 4px; }
+    .srr-view-toggle-btn:last-child { border-radius: 0 4px 4px 0; border-left: none; }
+    .srr-view-toggle-btn.active { background: #1565c0; color: #fff; border-color: #1565c0; }
+    .srr-view-toggle-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .srr-view-toggle-hint { font-size: 0.75em; color: #78909c; margin-left: 10px; font-style: italic; }
+    .srr-reader-container { width: 100%; height: 100%; overflow: auto; padding: 16px 20px; background: #fafafa; font-family: 'Inter', system-ui, sans-serif; font-size: 0.92em; line-height: 1.65; color: #263238; }
+    .srr-reader-container .reader-node { margin-bottom: 6px; }
+    .srr-reader-container .reader-node[data-quality="suspect"] { background: #fff8e1; border-left: 3px solid #ff9800; padding-left: 8px; }
+    .srr-reader-container .reader-highlight { background: #bbdefb; border-radius: 2px; padding: 0 2px; }
+    .srr-reader-container .reader-empty { text-align: center; padding: 40px; color: #999; }
+    .srr-anchor-scroll-hint { display: none; padding: 6px 12px; background: #e3f2fd; color: #1565c0; font-size: 0.8em; border-bottom: 1px solid #bbdefb; text-align: center; }
+    .srr-anchor-scroll-hint.visible { display: block; }
     .srr-doc-btn { background: #37474f; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8em; }
     .srr-doc-btn:hover { background: #455a64; }
     .srr-doc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -2919,6 +2933,12 @@
               <button class="file-action-btn cancel" onclick="srrCancelEditLink()">Cancel</button>
             </div>
             <div class="srr-doc-viewer">
+              <div class="srr-view-toggle" id="srr-view-toggle" style="display: none;">
+                <button class="srr-view-toggle-btn active" id="srr-toggle-reader" onclick="srrViewToggle('reader')">Reader</button>
+                <button class="srr-view-toggle-btn" id="srr-toggle-pdf" onclick="srrViewToggle('pdf')">PDF</button>
+                <span class="srr-view-toggle-hint" id="srr-view-toggle-hint"></span>
+              </div>
+              <div id="srr-anchor-scroll-hint" class="srr-anchor-scroll-hint"></div>
               <div class="srr-doc-controls" style="display: none;">
                 <button class="srr-doc-btn" id="srr-prev-btn" onclick="srrPrevPage()" title="Previous page">← Prev</button>
                 <span class="srr-page-indicator" id="srr-page-indicator" style="display:none;">Page 1</span>
@@ -2971,6 +2991,10 @@
                       </div>
                     </div>
                   </div>
+                </div>
+                <div class="srr-reader-container" id="srr-reader-container" style="display: none;">
+                  <div class="reader-empty" id="srr-reader-empty">Reader content will appear here when document text is loaded.</div>
+                  <div id="srr-reader-content"></div>
                 </div>
                 <div class="srr-doc-container" id="srr-doc-container" style="display: none;">
                   <object id="srr-pdf-object" class="srr-pdf-object" type="application/pdf" data="about:blank">
@@ -15236,6 +15260,179 @@
       });
     }
     // ========== END MOJIBAKE GATE UI ==========
+
+    // ========== READER/PDF TOGGLE (Evidence Inspector v2.51 Phase 5 - EVIDENCE-23) ==========
+    var _srrViewState = {
+      mode: 'reader',
+      qualityFlag: null,
+      documentId: null,
+      readerNodes: null,
+      readerDisabled: false
+    };
+
+    var READER_DISABLED_FLAGS = { unreadable: true, missing_text_layer: true };
+
+    function srrViewToggleInit(qualityFlag, documentId) {
+      _srrViewState.qualityFlag = qualityFlag;
+      _srrViewState.documentId = documentId;
+      _srrViewState.readerDisabled = !!READER_DISABLED_FLAGS[qualityFlag];
+
+      var toggle = document.getElementById('srr-view-toggle');
+      var readerBtn = document.getElementById('srr-toggle-reader');
+      var pdfBtn = document.getElementById('srr-toggle-pdf');
+      var hint = document.getElementById('srr-view-toggle-hint');
+
+      if (!toggle) return;
+      toggle.style.display = 'flex';
+
+      if (_srrViewState.readerDisabled) {
+        readerBtn.disabled = true;
+        readerBtn.title = 'Reader unavailable: ' + (qualityFlag || 'no text');
+        hint.textContent = 'Reader disabled — text quality insufficient';
+        srrViewToggle('pdf');
+      } else {
+        readerBtn.disabled = false;
+        readerBtn.title = '';
+        hint.textContent = qualityFlag === 'suspect_mojibake' ? 'Reader may contain encoding artifacts' : '';
+        var saved = _srrViewStateLoad(documentId);
+        srrViewToggle(saved || 'reader');
+      }
+    }
+
+    function srrViewToggle(mode) {
+      if (mode === 'reader' && _srrViewState.readerDisabled) mode = 'pdf';
+      _srrViewState.mode = mode;
+
+      var readerBtn = document.getElementById('srr-toggle-reader');
+      var pdfBtn = document.getElementById('srr-toggle-pdf');
+      var readerContainer = document.getElementById('srr-reader-container');
+      var pdfContainer = document.getElementById('srr-doc-container');
+      var docControls = document.querySelector('.srr-doc-controls');
+
+      if (readerBtn) { readerBtn.classList.toggle('active', mode === 'reader'); }
+      if (pdfBtn) { pdfBtn.classList.toggle('active', mode === 'pdf'); }
+
+      if (mode === 'reader') {
+        if (readerContainer) readerContainer.style.display = '';
+        if (pdfContainer) pdfContainer.style.display = 'none';
+        if (docControls) docControls.style.display = 'none';
+        srrReaderRender();
+      } else {
+        if (readerContainer) readerContainer.style.display = 'none';
+        if (pdfContainer) pdfContainer.style.display = '';
+        if (docControls) docControls.style.display = '';
+      }
+
+      if (_srrViewState.documentId) {
+        _srrViewStateSave(_srrViewState.documentId, mode);
+      }
+      console.log('[SRR-TOGGLE] mode=' + mode + ', quality=' + _srrViewState.qualityFlag);
+    }
+
+    function srrReaderRender() {
+      var content = document.getElementById('srr-reader-content');
+      var empty = document.getElementById('srr-reader-empty');
+      if (!content) return;
+
+      var nodes = _srrViewState.readerNodes;
+      if (!nodes || nodes.length === 0) {
+        if (empty) empty.style.display = '';
+        content.innerHTML = '';
+        return;
+      }
+      if (empty) empty.style.display = 'none';
+
+      var html = '';
+      for (var i = 0; i < nodes.length; i++) {
+        var node = nodes[i];
+        var quality = node.quality || '';
+        var text = (node.text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        html += '<div class="reader-node" data-node-id="' + (node.node_id || '') + '" data-page="' + (node.page || '') + '"' + (quality === 'suspect' ? ' data-quality="suspect"' : '') + '>' + text + '</div>';
+      }
+      content.innerHTML = html;
+    }
+
+    function srrReaderSetNodes(nodes) {
+      _srrViewState.readerNodes = nodes;
+      if (_srrViewState.mode === 'reader') srrReaderRender();
+    }
+
+    function _srrViewStateSave(docId, mode) {
+      try { sessionStorage.setItem('srr_view_' + docId, mode); } catch(e) {}
+    }
+    function _srrViewStateLoad(docId) {
+      try { return sessionStorage.getItem('srr_view_' + docId); } catch(e) { return null; }
+    }
+
+    function srrViewToggleHide() {
+      var toggle = document.getElementById('srr-view-toggle');
+      if (toggle) toggle.style.display = 'none';
+      _srrViewState.mode = 'reader';
+      _srrViewState.readerNodes = null;
+    }
+    // ========== END READER/PDF TOGGLE ==========
+
+    // ========== ANCHOR SCROLL MAPPING (Evidence Inspector v2.51 Phase 5 - EVIDENCE-24) ==========
+    function srrScrollToAnchor(anchor) {
+      if (!anchor) return;
+      var hint = document.getElementById('srr-anchor-scroll-hint');
+
+      if (_srrViewState.mode === 'reader') {
+        var nodeEl = document.querySelector('[data-node-id="' + (anchor.node_id || '') + '"]');
+        if (nodeEl) {
+          nodeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          nodeEl.style.outline = '2px solid #1565c0';
+          setTimeout(function() { nodeEl.style.outline = ''; }, 2500);
+          if (hint) { hint.classList.remove('visible'); }
+          console.log('[ANCHOR-SCROLL] reader node scrolled: ' + anchor.node_id);
+          return;
+        }
+      }
+
+      if (anchor.page_number && typeof srrNavigateToPage === 'function') {
+        srrNavigateToPage(anchor.page_number);
+        if (hint) {
+          hint.textContent = 'Scrolled to page ' + anchor.page_number + ' — anchor: "' + (anchor.selected_text || '').substring(0, 40) + '"';
+          hint.classList.add('visible');
+          setTimeout(function() { hint.classList.remove('visible'); }, 4000);
+        }
+        console.log('[ANCHOR-SCROLL] pdf page jump: page=' + anchor.page_number);
+        return;
+      }
+
+      if (hint) {
+        hint.textContent = 'Anchor location data not available — browse the document to find: "' + (anchor.selected_text || '').substring(0, 50) + '"';
+        hint.classList.add('visible');
+        setTimeout(function() { hint.classList.remove('visible'); }, 6000);
+      }
+      console.log('[ANCHOR-SCROLL] fallback: no page_number or node_id for anchor');
+    }
+
+    function srrScrollToAnchorByField(fieldKey) {
+      if (!fieldKey || !_srrViewState.documentId) return;
+      var apiBase = window.API_BASE || '/api/v2.5';
+      fetch(apiBase + '/documents/' + _srrViewState.documentId + '/anchors?field_key=' + encodeURIComponent(fieldKey) + '&limit=1', {
+        headers: { 'Authorization': 'Bearer ' + (window._authToken || '') }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var items = data.data || data.items || data;
+        if (Array.isArray(items) && items.length > 0) {
+          srrScrollToAnchor(items[0]);
+        } else {
+          var hint = document.getElementById('srr-anchor-scroll-hint');
+          if (hint) {
+            hint.textContent = 'No anchor found for field: ' + fieldKey;
+            hint.classList.add('visible');
+            setTimeout(function() { hint.classList.remove('visible'); }, 4000);
+          }
+        }
+      })
+      .catch(function(err) {
+        console.log('[ANCHOR-SCROLL] fetch error: ' + err.message);
+      });
+    }
+    // ========== END ANCHOR SCROLL MAPPING ==========
 
     // ========== PHASE D6: DATASOURCE / IMPORT ENGINE MODULE EXTRACTION ==========
     (function() {
