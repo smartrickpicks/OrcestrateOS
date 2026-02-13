@@ -25,6 +25,14 @@ An Evidence Viewer (v2.51) is fully implemented with document-level text anchori
   - JS functions prefixed `ei*`, CSS classes prefixed `.ei-`, state in `_eiState` global
 All behind `EVIDENCE_INSPECTOR_V251` feature flag. 37/37 smoke tests pass.
 
+## Mode Unification (Evidence Viewer Mode)
+The "Grid" mode has been renamed to "Evidence Viewer" mode with unified click behavior:
+- **Review mode**: Unchanged — click a row to open Record Inspector in full review layout.
+- **Evidence Viewer mode**: First single-click on any cell opens the Evidence Viewer panel for that record (no validation). Subsequent single-clicks on the same record validate cells (toggle green). Clicking a different record switches context. Double-click opens context menu.
+- **Context menu**: Includes "Open in Review Mode" action that switches to Review mode and navigates to the current record.
+- **State machine**: `_evState` object tracks `mode` (review/evidence_viewer), `viewerOpen`, `activeRecordId`, `activeSheetName`, `activeRowIdx`, `clickArmedAfterOpen`.
+- Transitions: T1 (mode toggle), T2 (first click opens viewer), T3 (subsequent clicks validate), T4 (double-click context menu), T5 (Open in Review Mode), T6 (toggle back to review preserves record).
+
 ## External Dependencies
 - **FastAPI server**: Used as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
 - **SheetJS (XLSX)**: Integrated via CDN for Excel import/export functionality.

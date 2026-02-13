@@ -2790,7 +2790,7 @@
           <!-- Floating Grid Controls (top-right, scroll-aware) -->
           <div id="grid-float-controls" class="grid-float-controls" style="display:none;">
             <button id="grid-mode-review-btn" class="gfc-btn active" onclick="setGridViewMode('review')">Review</button>
-            <button id="grid-mode-grid-btn" class="gfc-btn" onclick="setGridViewMode('grid')">Grid</button>
+            <button id="grid-mode-grid-btn" class="gfc-btn" onclick="setGridViewMode('grid')">Evidence Viewer</button>
             <div class="gfc-divider" id="gfc-composite-divider" style="display:none;"></div>
             <button id="gfc-expand-btn" class="gfc-btn" onclick="_p1cExpandAll()" style="display:none;">Expand All</button>
             <button id="gfc-collapse-btn" class="gfc-btn" onclick="_p1cCollapseAll()" style="display:none;">Collapse All</button>
@@ -13940,11 +13940,57 @@
     
     // Initialize patch console when admin view loads
 
-    // ========== GRID VIEW MODE (Review / Grid) ==========
+    // ========== GRID VIEW MODE (Review / Evidence Viewer) ==========
     var _gridViewMode = 'review';
     function getGridViewMode() { return _gridViewMode; }
+
+    var _evState = {
+      mode: 'review',
+      viewerOpen: false,
+      activeRecordId: null,
+      activeSheetName: null,
+      activeRowIdx: null,
+      clickArmedAfterOpen: false
+    };
+
+    function _evResetViewerState() {
+      _evState.viewerOpen = false;
+      _evState.activeRecordId = null;
+      _evState.activeSheetName = null;
+      _evState.activeRowIdx = null;
+      _evState.clickArmedAfterOpen = false;
+    }
+
+    function _evOpenViewerForRecord(sheetName, rowIdx, recordId) {
+      _evState.viewerOpen = true;
+      _evState.activeRecordId = recordId;
+      _evState.activeSheetName = sheetName;
+      _evState.activeRowIdx = rowIdx;
+      _evState.clickArmedAfterOpen = true;
+      console.log('[EV-STATE] viewer opened for record:', recordId, 'sheet:', sheetName, 'row:', rowIdx);
+      if (typeof openRowReviewDrawer === 'function') {
+        openRowReviewDrawer(sheetName, rowIdx);
+      }
+    }
+
+    function _evSwitchToReviewWithRecord() {
+      var sn = _evState.activeSheetName;
+      var ri = _evState.activeRowIdx;
+      setGridViewMode('review');
+      if (sn !== null && ri !== null && typeof openRowReviewDrawer === 'function') {
+        setTimeout(function() { openRowReviewDrawer(sn, ri); }, 50);
+      }
+    }
+
     function setGridViewMode(mode) {
+      var prevMode = _gridViewMode;
       _gridViewMode = mode;
+      _evState.mode = mode === 'grid' ? 'evidence_viewer' : 'review';
+
+      if (mode === 'grid' && prevMode !== 'grid') {
+        _evResetViewerState();
+      }
+
       var reviewBtn = document.getElementById('grid-mode-review-btn');
       var gridBtn = document.getElementById('grid-mode-grid-btn');
       if (reviewBtn && gridBtn) {
@@ -13959,7 +14005,7 @@
           allTables[ti].classList.remove('grid-mode-active');
         }
       }
-      console.log('[GRID-MODE] switched to:', mode);
+      console.log('[GRID-MODE] switched to:', mode, '| ev_state:', _evState.mode);
       renderGrid();
       var legendEl = document.getElementById('grid-color-legend');
       if (legendEl) legendEl.style.display = mode === 'grid' ? 'flex' : 'none';
@@ -14189,6 +14235,26 @@
         var rowIdx = parseInt(tr.dataset.recordIndex || '0', 10);
         var fieldKey = td.getAttribute('data-gfield');
         if (!recordId || !fieldKey) return;
+
+        if (!_evState.viewerOpen) {
+          _evOpenViewerForRecord(sheetName, rowIdx, recordId);
+          return;
+        }
+
+        if (_evState.clickArmedAfterOpen) {
+          _evState.clickArmedAfterOpen = false;
+        }
+
+        if (_evState.activeRecordId !== recordId) {
+          _evState.activeRecordId = recordId;
+          _evState.activeSheetName = sheetName;
+          _evState.activeRowIdx = rowIdx;
+          if (typeof openRowReviewDrawer === 'function') {
+            openRowReviewDrawer(sheetName, rowIdx);
+          }
+          return;
+        }
+
         if (td._gridCellClickTimer) clearTimeout(td._gridCellClickTimer);
         td._gridCellClickTimer = setTimeout(function() {
           td._gridCellClickTimer = null;
@@ -17354,12 +17420,13 @@
     var _gridCtxState = { open: false, context: null };
 
     var _GRID_CTX_ROLE_MATRIX = {
-      inspect:      { analyst: true,  verifier: true,  admin: true, architect: true },
-      correction:   { analyst: true,  verifier: false, admin: true, architect: true },
-      rfi:          { analyst: true,  verifier: true,  admin: true, architect: true },
-      blacklist:    { analyst: false, verifier: false, admin: true, architect: true },
-      'line-items': { analyst: true,  verifier: false, admin: true, architect: true },
-      glossary:     { analyst: true,  verifier: true,  admin: true, architect: true }
+      inspect:       { analyst: true,  verifier: true,  admin: true, architect: true },
+      'open-review': { analyst: true,  verifier: true,  admin: true, architect: true },
+      correction:    { analyst: true,  verifier: false, admin: true, architect: true },
+      rfi:           { analyst: true,  verifier: true,  admin: true, architect: true },
+      blacklist:     { analyst: false, verifier: false, admin: true, architect: true },
+      'line-items':  { analyst: true,  verifier: false, admin: true, architect: true },
+      glossary:      { analyst: true,  verifier: true,  admin: true, architect: true }
     };
 
     function _gridCtxGetCurrentRole() {
@@ -17396,6 +17463,11 @@
       }
 
       if (action === 'inspect') {
+        if (!hasRecord) return { enabled: false, reason: 'No record selected' };
+        return { enabled: true, reason: '' };
+      }
+
+      if (action === 'open-review') {
         if (!hasRecord) return { enabled: false, reason: 'No record selected' };
         return { enabled: true, reason: '' };
       }
@@ -17460,6 +17532,7 @@
       var sections = [
         { header: 'Navigation' },
         { id: 'inspect',    icon: '&#128269;', label: 'Open Record Inspector' },
+        { id: 'open-review', icon: '&#128196;', label: 'Open in Review Mode' },
         { header: 'Patch Actions' },
         { id: 'correction', icon: '&#9998;',   label: 'Create Correction' },
         { id: 'rfi',        icon: '&#128172;', label: 'Create RFI' },
@@ -17596,6 +17669,15 @@
         } else {
           showToast('Record Inspector not available', 'warning');
         }
+        return;
+      }
+
+      if (action === 'open-review') {
+        _gridCtxClose();
+        _evState.activeSheetName = ctx.sheetName;
+        _evState.activeRowIdx = ctx.rowIdx;
+        _evState.activeRecordId = ctx.recordId;
+        _evSwitchToReviewWithRecord();
         return;
       }
 
@@ -30404,6 +30486,12 @@
       }
 
       if (_gridViewMode === 'grid' && typeof eiShowTab === 'function') {
+        _evState.viewerOpen = true;
+        if (srrState.currentRecordKey) {
+          _evState.activeRecordId = srrState.currentRecordKey;
+          _evState.activeSheetName = srrState.currentSheetName;
+          _evState.activeRowIdx = srrState.currentRowId;
+        }
         setTimeout(function() {
           var rightPanel = document.querySelector('.srr-panel-right');
           if (rightPanel) rightPanel.style.display = '';
