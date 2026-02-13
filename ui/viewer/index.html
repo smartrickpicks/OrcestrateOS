@@ -13963,6 +13963,13 @@
       renderGrid();
       var legendEl = document.getElementById('grid-color-legend');
       if (legendEl) legendEl.style.display = mode === 'grid' ? 'flex' : 'none';
+      if (mode === 'grid') {
+        var centerPanel = document.querySelector('.srr-panel-center');
+        if (centerPanel) centerPanel.classList.add('ev-grid-mode');
+      } else {
+        var centerPanel = document.querySelector('.srr-panel-center');
+        if (centerPanel) centerPanel.classList.remove('ev-grid-mode');
+      }
     }
 
 
@@ -21296,7 +21303,7 @@
       var triageSubnav = document.getElementById('triage-subnav');
       var triageParent = document.querySelector('.nav-parent[data-page="triage"]');
       if (triageSubnav && triageParent) {
-        if (page === 'grid' || page === 'triage') {
+        if (page === 'grid' || page === 'triage' || page === 'row') {
           triageSubnav.classList.add('expanded');
           triageParent.classList.add('expanded');
           triageParent.classList.add('active');
@@ -21306,8 +21313,8 @@
         }
       }
       var _floatCtrl = document.getElementById('grid-float-controls');
-      if (page === 'grid') {
-        if (_floatCtrl) _floatCtrl.style.display = 'flex';
+      if (page === 'grid' || page === 'triage') {
+        if (_floatCtrl) _floatCtrl.style.display = (page === 'grid') ? 'flex' : 'none';
         _populateGridSections();
         _expandGridSections();
         if (!gridState.sheet) {
@@ -30394,6 +30401,14 @@
       // v1.5.3: Initialize Verifier SRR mode if applicable
       if (srrState.verifierMode) {
         initVerifierSRRMode();
+      }
+
+      if (_gridViewMode === 'grid' && typeof eiShowTab === 'function') {
+        setTimeout(function() {
+          var rightPanel = document.querySelector('.srr-panel-right');
+          if (rightPanel) rightPanel.style.display = '';
+          eiShowTab();
+        }, 150);
       }
     }
     
