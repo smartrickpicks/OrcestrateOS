@@ -62,6 +62,7 @@ from server.routes.anchors import router as anchors_router
 from server.routes.corrections import router as corrections_router
 from server.routes.batch_health import router as batch_health_router
 from server.routes.ocr_escalations import router as ocr_escalations_router
+from server.feature_flags import is_enabled, EVIDENCE_INSPECTOR
 import logging as _logging
 
 @app.on_event("startup")
@@ -85,6 +86,14 @@ def _startup_v25():
 @app.on_event("shutdown")
 def _shutdown_v25():
     close_pool()
+
+@app.get("/api/v2.5/feature-flags")
+def get_feature_flags():
+    return {
+        "data": {
+            "EVIDENCE_INSPECTOR_V251": is_enabled(EVIDENCE_INSPECTOR),
+        }
+    }
 
 app.include_router(api_v25_router)
 app.include_router(workspaces_router)

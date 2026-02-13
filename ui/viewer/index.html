@@ -3026,6 +3026,48 @@
               <div id="srr-panel-tabs" class="srr-panel-tabs" style="display: none;"></div>
             </div>
             
+            <!-- Evidence Inspector Tab (v2.51) -->
+            <div class="srr-panel-body ei-panel" id="ei-tab-panel" style="display: none;">
+              <div class="ei-section" id="ei-anchors-section">
+                <div class="ei-section-header" onclick="eiToggleSection('anchors')">
+                  <span>Anchors</span>
+                  <span class="ei-section-count" id="ei-anchors-count">0</span>
+                  <span class="ei-section-arrow" id="ei-anchors-arrow">▼</span>
+                </div>
+                <div class="ei-section-body" id="ei-anchors-body">
+                  <div class="ei-hint">Select text in the Reader view, then click "Create Anchor" to pin evidence.</div>
+                  <button class="ei-action-btn primary" id="ei-create-anchor-btn" onclick="eiCreateAnchor()" disabled>Create Anchor from Selection</button>
+                  <div class="ei-list" id="ei-anchors-list">
+                    <div class="ei-empty">No anchors for this document</div>
+                  </div>
+                </div>
+              </div>
+              <div class="ei-section" id="ei-corrections-section">
+                <div class="ei-section-header" onclick="eiToggleSection('corrections')">
+                  <span>Corrections</span>
+                  <span class="ei-section-count" id="ei-corrections-count">0</span>
+                  <span class="ei-section-arrow" id="ei-corrections-arrow">▼</span>
+                </div>
+                <div class="ei-section-body" id="ei-corrections-body">
+                  <div class="ei-list" id="ei-corrections-list">
+                    <div class="ei-empty">No corrections for this document</div>
+                  </div>
+                </div>
+              </div>
+              <div class="ei-section" id="ei-rfis-section">
+                <div class="ei-section-header" onclick="eiToggleSection('rfis')">
+                  <span>RFI Custody</span>
+                  <span class="ei-section-count" id="ei-rfis-count">0</span>
+                  <span class="ei-section-arrow" id="ei-rfis-arrow">▼</span>
+                </div>
+                <div class="ei-section-body" id="ei-rfis-body">
+                  <div class="ei-list" id="ei-rfis-list">
+                    <div class="ei-empty">No RFIs for this document</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Fields Content (default, for analysts) -->
             <div class="srr-panel-body" id="srr-tab-fields">
               <!-- Patch Type Chips (horizontal scroll) - v1.5.2: Acts on selected field -->
@@ -15276,6 +15318,7 @@
       _srrViewState.qualityFlag = qualityFlag;
       _srrViewState.documentId = documentId;
       _srrViewState.readerDisabled = !!READER_DISABLED_FLAGS[qualityFlag];
+      if (_eiState && _eiState.enabled && documentId) { eiLoadDocument(documentId); }
 
       var toggle = document.getElementById('srr-view-toggle');
       var readerBtn = document.getElementById('srr-toggle-reader');
@@ -15433,6 +15476,634 @@
       });
     }
     // ========== END ANCHOR SCROLL MAPPING ==========
+
+    // ========== EVIDENCE INSPECTOR v2.51 UI ==========
+    var _eiState = {
+      enabled: false,
+      documentId: null,
+      anchors: [],
+      corrections: [],
+      rfis: [],
+      userRole: null,
+      sections: { anchors: true, corrections: true, rfis: true },
+      selection: null
+    };
+
+    var _eiApiBase = window.API_BASE || '/api/v2.5';
+
+    function _eiAuthHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (window._authToken || '')
+      };
+    }
+
+    function _eiGetWorkspaceId() {
+      if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) return IDENTITY_CONTEXT.workspace_id;
+      try {
+        var s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}');
+        return s.workspace_id || 'ws_SEED0100000000000000000000';
+      } catch(e) {
+        return 'ws_SEED0100000000000000000000';
+      }
+    }
+
+    function _eiGetUserRole() {
+      if (_eiState.userRole) return _eiState.userRole;
+      if (typeof currentMode !== 'undefined') return currentMode;
+      return 'analyst';
+    }
+
+    function _eiHandleError(resp) {
+      return resp.json().then(function(body) {
+        var code = (body.error && body.error.code) || '';
+        var msg = (body.error && body.error.message) || 'An error occurred';
+        if (resp.status === 403 && code === 'ROLE_NOT_ALLOWED') {
+          showToast("You don't have permission for this action", 'error');
+        } else if (resp.status === 404 && code === 'FEATURE_DISABLED') {
+          _eiState.enabled = false;
+          _eiRemoveTab();
+        } else if (resp.status === 409) {
+          showToast('This item was modified by someone else. Please refresh.', 'error');
+        } else if (resp.status === 422 || resp.status === 400) {
+          showToast(msg, 'error');
+        } else {
+          showToast(msg, 'error');
+        }
+        return null;
+      }).catch(function() {
+        showToast('Unexpected error', 'error');
+        return null;
+      });
+    }
+
+    function _eiRemoveTab() {
+      var tab = document.getElementById('ei-tab-btn');
+      if (tab) tab.style.display = 'none';
+      var panel = document.getElementById('ei-tab-panel');
+      if (panel) panel.style.display = 'none';
+      var fieldsTab = document.getElementById('srr-tab-fields');
+      if (fieldsTab) fieldsTab.style.display = 'block';
+    }
+
+    function eiInit() {
+      fetch(_eiApiBase + '/feature-flags', {
+        headers: _eiAuthHeaders()
+      }).then(function(resp) {
+        if (!resp.ok) {
+          console.log('[EI] Feature flags endpoint returned ' + resp.status + ', checking flag via env');
+          _eiState.enabled = false;
+          return;
+        }
+        return resp.json().then(function(body) {
+          var flags = body.data || body || {};
+          if (flags.EVIDENCE_INSPECTOR_V251 === true || flags.EVIDENCE_INSPECTOR_V251 === 'true') {
+            _eiState.enabled = true;
+            console.log('[EI] Feature flag EVIDENCE_INSPECTOR_V251 is ON');
+            _eiSetupTab();
+            _eiSetupSelectionListener();
+          } else {
+            _eiState.enabled = false;
+            console.log('[EI] Feature flag EVIDENCE_INSPECTOR_V251 is OFF');
+          }
+        });
+      }).catch(function(err) {
+        console.log('[EI] Feature probe failed: ' + err.message);
+        _eiState.enabled = false;
+      });
+    }
+
+    function _eiSetupTab() {
+      var tabsEl = document.getElementById('srr-panel-tabs');
+      if (!tabsEl) return;
+
+      var existingEiBtn = document.getElementById('ei-tab-btn');
+      if (existingEiBtn) return;
+
+      tabsEl.style.display = 'flex';
+
+      var hasFieldsTab = tabsEl.querySelector('[data-tab="fields"]');
+      if (!hasFieldsTab) {
+        var fieldsBtn = document.createElement('div');
+        fieldsBtn.className = 'srr-panel-tab active';
+        fieldsBtn.dataset.tab = 'fields';
+        fieldsBtn.textContent = 'Fields';
+        fieldsBtn.onclick = function() { eiHideTab(); srrSwitchRightTab('fields'); };
+        tabsEl.insertBefore(fieldsBtn, tabsEl.firstChild);
+      }
+
+      var eiBtn = document.createElement('div');
+      eiBtn.className = 'srr-panel-tab';
+      eiBtn.id = 'ei-tab-btn';
+      eiBtn.dataset.tab = 'evidence';
+      eiBtn.textContent = 'Evidence';
+      eiBtn.onclick = function() { eiShowTab(); };
+      tabsEl.appendChild(eiBtn);
+    }
+
+    function eiShowTab() {
+      var tabsEl = document.getElementById('srr-panel-tabs');
+      if (tabsEl) {
+        var btns = tabsEl.querySelectorAll('.srr-panel-tab');
+        btns.forEach(function(b) { b.classList.remove('active'); });
+        var eiBtn = document.getElementById('ei-tab-btn');
+        if (eiBtn) eiBtn.classList.add('active');
+      }
+
+      var fieldsTab = document.getElementById('srr-tab-fields');
+      var studioTab = document.getElementById('srr-tab-studio');
+      var testerTab = document.getElementById('srr-tab-tester');
+      var eiPanel = document.getElementById('ei-tab-panel');
+
+      if (fieldsTab) fieldsTab.style.display = 'none';
+      if (studioTab) studioTab.style.display = 'none';
+      if (testerTab) testerTab.style.display = 'none';
+      if (eiPanel) eiPanel.style.display = 'block';
+
+      var titleEl = document.getElementById('srr-right-panel-title');
+      if (titleEl) titleEl.textContent = 'Evidence Inspector';
+
+      var docId = (typeof _srrViewState !== 'undefined' && _srrViewState.documentId) ? _srrViewState.documentId : null;
+      if (docId && docId !== _eiState.documentId) {
+        eiLoadDocument(docId);
+      }
+    }
+
+    function eiHideTab() {
+      var eiPanel = document.getElementById('ei-tab-panel');
+      if (eiPanel) eiPanel.style.display = 'none';
+
+      var fieldsTab = document.getElementById('srr-tab-fields');
+      if (fieldsTab) fieldsTab.style.display = 'block';
+
+      var tabsEl = document.getElementById('srr-panel-tabs');
+      if (tabsEl) {
+        var btns = tabsEl.querySelectorAll('.srr-panel-tab');
+        btns.forEach(function(b) {
+          b.classList.toggle('active', b.dataset.tab === 'fields');
+        });
+      }
+
+      var titleEl = document.getElementById('srr-right-panel-title');
+      if (titleEl) titleEl.textContent = 'Fields';
+    }
+
+    function eiToggleSection(section) {
+      _eiState.sections[section] = !_eiState.sections[section];
+      var body = document.getElementById('ei-' + section + '-body');
+      var arrow = document.getElementById('ei-' + section + '-arrow');
+      if (body) {
+        if (_eiState.sections[section]) {
+          body.classList.remove('collapsed');
+        } else {
+          body.classList.add('collapsed');
+        }
+      }
+      if (arrow) {
+        if (_eiState.sections[section]) {
+          arrow.classList.remove('collapsed');
+          arrow.textContent = '▼';
+        } else {
+          arrow.classList.add('collapsed');
+          arrow.textContent = '▶';
+        }
+      }
+    }
+
+    function eiLoadDocument(docId) {
+      if (!_eiState.enabled || !docId) return;
+      _eiState.documentId = docId;
+      _eiState.userRole = _eiGetUserRole();
+
+      var anchorsPromise = fetch(_eiApiBase + '/documents/' + encodeURIComponent(docId) + '/anchors?limit=200', {
+        headers: _eiAuthHeaders()
+      }).then(function(resp) {
+        if (!resp.ok) return _eiHandleError(resp);
+        return resp.json();
+      }).then(function(body) {
+        if (!body) return [];
+        return (body.data && Array.isArray(body.data)) ? body.data : [];
+      }).catch(function(err) {
+        console.log('[EI] anchors fetch error: ' + err.message);
+        return [];
+      });
+
+      var correctionsPromise = fetch(_eiApiBase + '/documents/' + encodeURIComponent(docId) + '/corrections?limit=200', {
+        headers: _eiAuthHeaders()
+      }).then(function(resp) {
+        if (resp.status === 404) {
+          return resp.json().then(function(body) {
+            var code = (body.error && body.error.code) || '';
+            if (code === 'NOT_FOUND') return [];
+            return [];
+          });
+        }
+        if (!resp.ok) return _eiHandleError(resp);
+        return resp.json();
+      }).then(function(body) {
+        if (!body) return [];
+        return (body.data && Array.isArray(body.data)) ? body.data : [];
+      }).catch(function(err) {
+        console.log('[EI] corrections fetch error: ' + err.message);
+        return [];
+      });
+
+      var wsId = _eiGetWorkspaceId();
+      var rfisPromise = fetch(_eiApiBase + '/workspaces/' + encodeURIComponent(wsId) + '/rfis?limit=200', {
+        headers: _eiAuthHeaders()
+      }).then(function(resp) {
+        if (!resp.ok) {
+          if (resp.status === 404) return [];
+          return _eiHandleError(resp);
+        }
+        return resp.json();
+      }).then(function(body) {
+        if (!body) return [];
+        var allRfis = (body.data && Array.isArray(body.data)) ? body.data : [];
+        return allRfis.filter(function(rfi) {
+          if (rfi.document_id && rfi.document_id === docId) return true;
+          if (rfi.record_id && typeof srrState !== 'undefined' && srrState.currentRowId && rfi.record_id === srrState.currentRowId) return true;
+          if (rfi.batch_id && typeof srrState !== 'undefined' && srrState.currentBatchId && rfi.batch_id === srrState.currentBatchId) return true;
+          return false;
+        });
+      }).catch(function(err) {
+        console.log('[EI] rfis fetch error: ' + err.message);
+        return [];
+      });
+
+      Promise.all([anchorsPromise, correctionsPromise, rfisPromise]).then(function(results) {
+        _eiState.anchors = results[0] || [];
+        _eiState.corrections = results[1] || [];
+        _eiState.rfis = results[2] || [];
+
+        eiRenderAnchors(_eiState.anchors);
+        eiRenderCorrections(_eiState.corrections);
+        eiRenderRfis(_eiState.rfis);
+      });
+    }
+
+    function eiCreateAnchor() {
+      if (!_eiState.enabled || !_eiState.documentId) return;
+      var sel = _eiState.selection;
+      if (!sel || !sel.text) {
+        showToast('No text selected. Select text in the Reader view first.', 'error');
+        return;
+      }
+
+      var btn = document.getElementById('ei-create-anchor-btn');
+      if (btn) btn.disabled = true;
+
+      var payload = {
+        node_id: sel.nodeId || 'rn_manual',
+        field_id: sel.fieldId || null,
+        field_key: sel.fieldKey || null,
+        selected_text: sel.text,
+        char_start: sel.charStart || 0,
+        char_end: sel.charEnd || sel.text.length
+      };
+
+      fetch(_eiApiBase + '/documents/' + encodeURIComponent(_eiState.documentId) + '/anchors', {
+        method: 'POST',
+        headers: _eiAuthHeaders(),
+        body: JSON.stringify(payload)
+      }).then(function(resp) {
+        if (!resp.ok) return _eiHandleError(resp);
+        return resp.json();
+      }).then(function(body) {
+        if (!body) return;
+        showToast('Anchor created', 'success');
+        _eiState.selection = null;
+        if (btn) btn.disabled = true;
+        eiLoadDocument(_eiState.documentId);
+      }).catch(function(err) {
+        showToast('Failed to create anchor: ' + err.message, 'error');
+        if (btn) btn.disabled = false;
+      });
+    }
+
+    function _eiFormatTime(isoStr) {
+      if (!isoStr) return '';
+      try {
+        var d = new Date(isoStr);
+        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } catch(e) { return isoStr; }
+    }
+
+    function _eiEscapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function eiRenderAnchors(anchors) {
+      var list = document.getElementById('ei-anchors-list');
+      var count = document.getElementById('ei-anchors-count');
+      if (!list) return;
+
+      if (count) count.textContent = anchors.length;
+
+      if (!anchors.length) {
+        list.innerHTML = '<div class="ei-empty">No anchors for this document</div>';
+        return;
+      }
+
+      var html = '';
+      anchors.forEach(function(a) {
+        var textPreview = _eiEscapeHtml((a.selected_text || '').substring(0, 200));
+        if ((a.selected_text || '').length > 200) textPreview += '...';
+        html += '<div class="ei-item" onclick="eiScrollToAnchor(\'' + _eiEscapeHtml(a.id) + '\')" style="cursor:pointer;" title="Click to scroll to anchor location">';
+        html += '<div class="ei-item-header">';
+        if (a.field_id || a.field_key) {
+          html += '<span class="ei-item-field">' + _eiEscapeHtml(a.field_key || a.field_id) + '</span>';
+        }
+        if (a.page_number) {
+          html += '<span style="font-size:0.75em;color:#999;">p.' + a.page_number + '</span>';
+        }
+        html += '</div>';
+        html += '<div class="ei-item-text preview">' + textPreview + '</div>';
+        html += '<div class="ei-item-meta">';
+        html += '<span>📌 ' + _eiFormatTime(a.created_at) + '</span>';
+        if (a.node_id) html += '<span style="font-family:monospace;font-size:0.7em;">' + _eiEscapeHtml(a.node_id).substring(0, 16) + '</span>';
+        html += '</div>';
+        html += '<div class="ei-item-actions">';
+        html += '<button class="ei-action-btn dismiss" onclick="event.stopPropagation(); eiDeleteAnchor(\'' + _eiEscapeHtml(a.id) + '\')" title="Remove anchor">Remove</button>';
+        html += '</div>';
+        html += '</div>';
+      });
+      list.innerHTML = html;
+    }
+
+    function eiScrollToAnchor(anchorId) {
+      var anchor = null;
+      for (var i = 0; i < _eiState.anchors.length; i++) {
+        if (_eiState.anchors[i].id === anchorId) {
+          anchor = _eiState.anchors[i];
+          break;
+        }
+      }
+      if (!anchor) return;
+
+      var readerContent = document.getElementById('srr-reader-content');
+      if (!readerContent) return;
+
+      var nodeEl = readerContent.querySelector('[data-node-id="' + anchor.node_id + '"]');
+      if (nodeEl) {
+        nodeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        nodeEl.style.outline = '2px solid #1565c0';
+        nodeEl.style.outlineOffset = '2px';
+        setTimeout(function() {
+          nodeEl.style.outline = '';
+          nodeEl.style.outlineOffset = '';
+        }, 3000);
+      } else {
+        showToast('Anchor location not found in current view', 'info');
+      }
+    }
+
+    function eiDeleteAnchor(anchorId) {
+      if (!confirm('Remove this anchor?')) return;
+      fetch(_eiApiBase + '/anchors/' + encodeURIComponent(anchorId), {
+        method: 'DELETE',
+        headers: _eiAuthHeaders()
+      }).then(function(resp) {
+        if (!resp.ok) return _eiHandleError(resp);
+        return resp.json();
+      }).then(function(body) {
+        if (body) {
+          showToast('Anchor removed', 'success');
+          _eiState.anchors = _eiState.anchors.filter(function(a) { return a.id !== anchorId; });
+          eiRenderAnchors(_eiState.anchors);
+        }
+      }).catch(function(err) {
+        showToast('Failed to remove anchor: ' + err.message, 'error');
+      });
+    }
+
+    function eiRenderCorrections(corrections) {
+      var list = document.getElementById('ei-corrections-list');
+      var count = document.getElementById('ei-corrections-count');
+      if (!list) return;
+
+      if (count) count.textContent = corrections.length;
+
+      if (!corrections.length) {
+        list.innerHTML = '<div class="ei-empty">No corrections for this document</div>';
+        return;
+      }
+
+      var role = _eiGetUserRole();
+      var canDecide = (role === 'verifier' || role === 'admin' || role === 'architect');
+
+      var html = '';
+      corrections.forEach(function(c) {
+        html += '<div class="ei-item">';
+        html += '<div class="ei-item-header">';
+        if (c.field_key || c.field_id) {
+          html += '<span class="ei-item-field">' + _eiEscapeHtml(c.field_key || c.field_id) + '</span>';
+        }
+        html += '<span class="ei-status-chip ' + _eiEscapeHtml(c.status || '') + '">' + _eiEscapeHtml((c.status || '').replace(/_/g, ' ')) + '</span>';
+        if (c.correction_type) {
+          html += '<span style="font-size:0.72em;color:#888;margin-left:auto;">' + _eiEscapeHtml(c.correction_type) + '</span>';
+        }
+        html += '</div>';
+        html += '<div class="ei-item-values">';
+        html += '<span class="ei-val-old">' + _eiEscapeHtml(c.original_value || '(empty)') + '</span>';
+        html += '<span class="ei-val-arrow">→</span>';
+        html += '<span class="ei-val-new">' + _eiEscapeHtml(c.corrected_value || '(empty)') + '</span>';
+        html += '</div>';
+        html += '<div class="ei-item-meta">';
+        html += '<span>✏️ ' + _eiFormatTime(c.created_at) + '</span>';
+        if (c.decided_by) html += '<span>👤 ' + _eiEscapeHtml(c.decided_by) + '</span>';
+        html += '</div>';
+
+        if (canDecide && c.status === 'pending_verifier') {
+          html += '<div class="ei-item-actions">';
+          html += '<button class="ei-action-btn approve" onclick="eiApproveCorrection(\'' + _eiEscapeHtml(c.id) + '\',' + (c.version || 1) + ')">Approve</button>';
+          html += '<button class="ei-action-btn reject" onclick="eiRejectCorrection(\'' + _eiEscapeHtml(c.id) + '\',' + (c.version || 1) + ')">Reject</button>';
+          html += '</div>';
+        }
+        html += '</div>';
+      });
+      list.innerHTML = html;
+    }
+
+    function eiApproveCorrection(correctionId, version) {
+      fetch(_eiApiBase + '/corrections/' + encodeURIComponent(correctionId), {
+        method: 'PATCH',
+        headers: _eiAuthHeaders(),
+        body: JSON.stringify({ status: 'approved', version: version })
+      }).then(function(resp) {
+        if (!resp.ok) return _eiHandleError(resp);
+        return resp.json();
+      }).then(function(body) {
+        if (!body) return;
+        showToast('Correction approved', 'success');
+        eiLoadDocument(_eiState.documentId);
+      }).catch(function(err) {
+        showToast('Failed to approve: ' + err.message, 'error');
+      });
+    }
+
+    function eiRejectCorrection(correctionId, version) {
+      fetch(_eiApiBase + '/corrections/' + encodeURIComponent(correctionId), {
+        method: 'PATCH',
+        headers: _eiAuthHeaders(),
+        body: JSON.stringify({ status: 'rejected', version: version })
+      }).then(function(resp) {
+        if (!resp.ok) return _eiHandleError(resp);
+        return resp.json();
+      }).then(function(body) {
+        if (!body) return;
+        showToast('Correction rejected', 'success');
+        eiLoadDocument(_eiState.documentId);
+      }).catch(function(err) {
+        showToast('Failed to reject: ' + err.message, 'error');
+      });
+    }
+
+    function eiRenderRfis(rfis) {
+      var list = document.getElementById('ei-rfis-list');
+      var count = document.getElementById('ei-rfis-count');
+      if (!list) return;
+
+      if (count) count.textContent = rfis.length;
+
+      if (!rfis.length) {
+        list.innerHTML = '<div class="ei-empty">No RFIs for this document</div>';
+        return;
+      }
+
+      var role = _eiGetUserRole();
+      var isAnalyst = (role === 'analyst' || role === 'admin' || role === 'architect');
+      var isVerifier = (role === 'verifier' || role === 'admin' || role === 'architect');
+
+      var html = '';
+      rfis.forEach(function(r) {
+        var custody = r.custody_status || 'open';
+        html += '<div class="ei-item">';
+        html += '<div class="ei-item-header">';
+        html += '<span class="ei-custody-badge ' + _eiEscapeHtml(custody) + '">' + _eiEscapeHtml(custody.replace(/_/g, ' ')) + '</span>';
+        if (r.custody_owner_role) {
+          html += '<span style="font-size:0.72em;color:#888;margin-left:4px;">(' + _eiEscapeHtml(r.custody_owner_role) + ')</span>';
+        }
+        if (r.target_field_key) {
+          html += '<span class="ei-item-field" style="margin-left:auto;">' + _eiEscapeHtml(r.target_field_key) + '</span>';
+        }
+        html += '</div>';
+        html += '<div class="ei-rfi-question">' + _eiEscapeHtml(r.question || '(no question)') + '</div>';
+        if (r.response) {
+          html += '<div style="font-size:0.83em;color:#2e7d32;margin-top:4px;"><strong>Response:</strong> ' + _eiEscapeHtml(r.response) + '</div>';
+        }
+        html += '<div class="ei-item-meta">';
+        html += '<span>📋 ' + _eiFormatTime(r.created_at) + '</span>';
+        if (r.target_record_id) html += '<span>ID: ' + _eiEscapeHtml(r.target_record_id).substring(0, 12) + '</span>';
+        html += '</div>';
+
+        var actions = [];
+        if (custody === 'open' && isAnalyst) {
+          actions.push('<button class="ei-action-btn send" onclick="eiUpdateRfiCustody(\'' + _eiEscapeHtml(r.id) + '\',\'awaiting_verifier\',' + (r.version || 1) + ')">Send to Verifier</button>');
+        }
+        if (custody === 'returned_to_analyst' && isAnalyst) {
+          actions.push('<button class="ei-action-btn send" onclick="eiUpdateRfiCustody(\'' + _eiEscapeHtml(r.id) + '\',\'awaiting_verifier\',' + (r.version || 1) + ')">Re-send to Verifier</button>');
+        }
+        if (custody === 'awaiting_verifier' && isVerifier) {
+          actions.push('<button class="ei-action-btn return" onclick="eiUpdateRfiCustody(\'' + _eiEscapeHtml(r.id) + '\',\'returned_to_analyst\',' + (r.version || 1) + ')">Return</button>');
+          actions.push('<button class="ei-action-btn resolve" onclick="eiUpdateRfiCustody(\'' + _eiEscapeHtml(r.id) + '\',\'resolved\',' + (r.version || 1) + ')">Resolve</button>');
+          actions.push('<button class="ei-action-btn dismiss" onclick="eiUpdateRfiCustody(\'' + _eiEscapeHtml(r.id) + '\',\'dismissed\',' + (r.version || 1) + ')">Dismiss</button>');
+        }
+
+        if (actions.length) {
+          html += '<div class="ei-item-actions">' + actions.join('') + '</div>';
+        }
+        html += '</div>';
+      });
+      list.innerHTML = html;
+    }
+
+    function eiUpdateRfiCustody(rfiId, newStatus, version) {
+      fetch(_eiApiBase + '/rfis/' + encodeURIComponent(rfiId), {
+        method: 'PATCH',
+        headers: _eiAuthHeaders(),
+        body: JSON.stringify({ custody_status: newStatus, version: version })
+      }).then(function(resp) {
+        if (!resp.ok) return _eiHandleError(resp);
+        return resp.json();
+      }).then(function(body) {
+        if (!body) return;
+        var label = newStatus.replace(/_/g, ' ');
+        showToast('RFI custody updated to ' + label, 'success');
+        eiLoadDocument(_eiState.documentId);
+      }).catch(function(err) {
+        showToast('Failed to update RFI: ' + err.message, 'error');
+      });
+    }
+
+    function _eiSetupSelectionListener() {
+      var readerContent = document.getElementById('srr-reader-content');
+      if (!readerContent) {
+        setTimeout(_eiSetupSelectionListener, 2000);
+        return;
+      }
+
+      readerContent.addEventListener('mouseup', function() {
+        setTimeout(function() {
+          eiOnTextSelection();
+        }, 50);
+      });
+    }
+
+    function eiOnTextSelection() {
+      var sel = window.getSelection();
+      var btn = document.getElementById('ei-create-anchor-btn');
+      if (!sel || sel.isCollapsed || !sel.toString().trim()) {
+        _eiState.selection = null;
+        if (btn) btn.disabled = true;
+        return;
+      }
+
+      var text = sel.toString().trim();
+      if (!text) {
+        _eiState.selection = null;
+        if (btn) btn.disabled = true;
+        return;
+      }
+
+      var range = sel.getRangeAt(0);
+      var container = range.startContainer;
+      var nodeId = 'rn_manual';
+      var fieldId = null;
+      var fieldKey = null;
+      var el = container.nodeType === 3 ? container.parentElement : container;
+
+      while (el && el.id !== 'srr-reader-content') {
+        if (el.dataset && el.dataset.nodeId) {
+          nodeId = el.dataset.nodeId;
+          break;
+        }
+        el = el.parentElement;
+      }
+
+      var fieldEl = container.nodeType === 3 ? container.parentElement : container;
+      while (fieldEl && fieldEl.id !== 'srr-reader-content') {
+        if (fieldEl.dataset && fieldEl.dataset.fieldId) {
+          fieldId = fieldEl.dataset.fieldId;
+          fieldKey = fieldEl.dataset.fieldKey || null;
+          break;
+        }
+        fieldEl = fieldEl.parentElement;
+      }
+
+      _eiState.selection = {
+        text: text,
+        nodeId: nodeId,
+        fieldId: fieldId,
+        fieldKey: fieldKey,
+        charStart: range.startOffset,
+        charEnd: range.startOffset + text.length
+      };
+
+      if (btn) btn.disabled = false;
+    }
+    // ========== END EVIDENCE INSPECTOR v2.51 UI ==========
 
     // ========== PHASE D6: DATASOURCE / IMPORT ENGINE MODULE EXTRACTION ==========
     (function() {
@@ -30958,11 +31629,18 @@
     };
     
     function srrSwitchRightTab(tabName) {
-      var validTabs = ['fields', 'studio', 'tester'];
+      var validTabs = ['fields', 'studio', 'tester', 'evidence'];
       if (validTabs.indexOf(tabName) === -1) tabName = 'fields';
+
+      if (tabName === 'evidence') {
+        eiShowTab();
+        return;
+      }
+
       var fieldsTab = document.getElementById('srr-tab-fields');
       var studioTab = document.getElementById('srr-tab-studio');
       var testerTab = document.getElementById('srr-tab-tester');
+      var eiPanel = document.getElementById('ei-tab-panel');
       var tabBtns = document.querySelectorAll('.srr-panel-tab');
       
       tabBtns.forEach(function(btn) {
@@ -30972,6 +31650,7 @@
       if (fieldsTab) fieldsTab.style.display = tabName === 'fields' ? 'block' : 'none';
       if (studioTab) studioTab.style.display = tabName === 'studio' ? 'block' : 'none';
       if (testerTab) testerTab.style.display = tabName === 'tester' ? 'block' : 'none';
+      if (eiPanel) eiPanel.style.display = 'none';
       
       var titleMap = { fields: 'Fields', studio: 'Patch Studio', tester: 'Patch Tester' };
       var titleEl = document.getElementById('srr-right-panel-title');
@@ -40982,6 +41661,7 @@
     document.addEventListener('DOMContentLoaded', function() {
       initDebugPanel();
       loadRulesBundle();  // v1.5.7: Load rules bundle for Field Inspector ordering
+      eiInit();  // v2.51: Evidence Inspector initialization
     });
     
 
@@ -45849,6 +46529,74 @@ Add any additional notes here.
     .p1d1-view-btn.small { padding: 2px 7px; font-size: 0.74em; }
     .p1d1-patch-btn { padding: 2px 6px; font-size: 0.72em; background: #e3f2fd; border: 1px solid #bbdefb; border-radius: 4px; color: #1565c0; cursor: pointer; margin-left: 4px; }
     .p1d1-patch-btn:hover { background: #bbdefb; }
+
+    /* ========== EVIDENCE INSPECTOR v2.51 ========== */
+    .ei-panel { padding: 0; }
+    .ei-section { border: 1px solid #e0e0e0; border-radius: 6px; margin-bottom: 10px; overflow: hidden; }
+    .ei-section-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #f5f5f5; cursor: pointer; user-select: none; font-size: 0.88em; font-weight: 600; color: #333; border-bottom: 1px solid #e0e0e0; }
+    .ei-section-header:hover { background: #eee; }
+    .ei-section-count { background: #e0e0e0; color: #666; padding: 1px 7px; border-radius: 10px; font-size: 0.8em; font-weight: 600; min-width: 18px; text-align: center; }
+    .ei-section-arrow { margin-left: auto; font-size: 0.7em; color: #999; transition: transform 0.2s; }
+    .ei-section-arrow.collapsed { transform: rotate(-90deg); }
+    .ei-section-body { padding: 10px 12px; }
+    .ei-section-body.collapsed { display: none; }
+    .ei-hint { font-size: 0.8em; color: #888; margin-bottom: 8px; padding: 6px 8px; background: #f9f9f9; border-radius: 4px; border-left: 3px solid #1565c0; }
+    .ei-list { display: flex; flex-direction: column; gap: 6px; }
+    .ei-empty { text-align: center; color: #aaa; font-size: 0.85em; padding: 16px 8px; }
+    .ei-item { border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px 12px; background: #fff; transition: box-shadow 0.15s; cursor: default; }
+    .ei-item:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .ei-item-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .ei-item-text { font-size: 0.85em; color: #333; line-height: 1.4; word-break: break-word; }
+    .ei-item-text.preview { max-height: 3.6em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; background: #fafafa; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #1565c0; font-family: 'Courier New', monospace; font-size: 0.82em; }
+    .ei-item-meta { font-size: 0.75em; color: #999; margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .ei-item-meta span { display: inline-flex; align-items: center; gap: 3px; }
+    .ei-item-field { font-size: 0.78em; color: #1565c0; background: #e3f2fd; padding: 1px 6px; border-radius: 3px; font-weight: 500; }
+    .ei-item-values { font-size: 0.83em; margin: 4px 0; }
+    .ei-item-values .ei-val-old { color: #c62828; text-decoration: line-through; }
+    .ei-item-values .ei-val-new { color: #2e7d32; font-weight: 500; }
+    .ei-item-values .ei-val-arrow { color: #999; margin: 0 4px; }
+    .ei-item-actions { display: flex; gap: 6px; margin-top: 6px; }
+    .ei-status-chip { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.72em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+    .ei-status-chip.auto_applied { background: #e8f5e9; color: #2e7d32; }
+    .ei-status-chip.pending_verifier { background: #fff8e1; color: #f57f17; }
+    .ei-status-chip.approved { background: #e8f5e9; color: #2e7d32; }
+    .ei-status-chip.rejected { background: #ffebee; color: #c62828; }
+    .ei-status-chip.open { background: #e3f2fd; color: #1565c0; }
+    .ei-status-chip.pending { background: #fff8e1; color: #f57f17; }
+    .ei-status-chip.resolved { background: #e8f5e9; color: #2e7d32; }
+    .ei-status-chip.dismissed { background: #f5f5f5; color: #999; }
+    .ei-action-btn { padding: 5px 12px; border: none; border-radius: 4px; font-size: 0.78em; font-weight: 500; cursor: pointer; transition: background 0.2s, opacity 0.2s; }
+    .ei-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .ei-action-btn.primary { background: #1565c0; color: white; }
+    .ei-action-btn.primary:hover:not(:disabled) { background: #0d47a1; }
+    .ei-action-btn.approve { background: #2e7d32; color: white; }
+    .ei-action-btn.approve:hover { background: #1b5e20; }
+    .ei-action-btn.reject { background: #c62828; color: white; }
+    .ei-action-btn.reject:hover { background: #b71c1c; }
+    .ei-action-btn.send { background: #7b1fa2; color: white; }
+    .ei-action-btn.send:hover { background: #6a1b9a; }
+    .ei-action-btn.return { background: #e65100; color: white; }
+    .ei-action-btn.return:hover { background: #bf360c; }
+    .ei-action-btn.resolve { background: #2e7d32; color: white; }
+    .ei-action-btn.resolve:hover { background: #1b5e20; }
+    .ei-action-btn.dismiss { background: #757575; color: white; }
+    .ei-action-btn.dismiss:hover { background: #616161; }
+    .ei-custody-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.72em; font-weight: 600; text-transform: uppercase; }
+    .ei-custody-badge.open { background: #e3f2fd; color: #1565c0; }
+    .ei-custody-badge.awaiting_verifier { background: #f3e5f5; color: #7b1fa2; }
+    .ei-custody-badge.returned_to_analyst { background: #fff3e0; color: #e65100; }
+    .ei-custody-badge.resolved { background: #e8f5e9; color: #2e7d32; }
+    .ei-custody-badge.dismissed { background: #f5f5f5; color: #999; }
+    .ei-form { background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; margin-bottom: 8px; }
+    .ei-form label { display: block; font-size: 0.8em; font-weight: 600; color: #555; margin-bottom: 4px; }
+    .ei-form input, .ei-form textarea, .ei-form select { width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85em; box-sizing: border-box; }
+    .ei-form textarea { min-height: 60px; resize: vertical; }
+    .ei-form input:focus, .ei-form textarea:focus { border-color: #1565c0; outline: none; }
+    .ei-rfi-question { font-size: 0.85em; color: #333; font-weight: 500; margin-bottom: 4px; }
+    .ei-rfi-owner { font-size: 0.75em; color: #666; }
+    #ei-anchors-section .ei-section-header { border-left: 3px solid #1565c0; }
+    #ei-corrections-section .ei-section-header { border-left: 3px solid #2e7d32; }
+    #ei-rfis-section .ei-section-header { border-left: 3px solid #7b1fa2; }
 
 </style>
 <button class="feedback-fab" onclick="document.querySelector('.feedback-overlay').classList.add('open');document.querySelector('.feedback-panel').classList.add('open');" aria-label="Send Feedback">

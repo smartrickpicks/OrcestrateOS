@@ -230,3 +230,51 @@ def list_anchors(
         return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
     finally:
         put_conn(conn)
+
+
+@router.delete("/anchors/{anchor_id}")
+def delete_anchor(
+    anchor_id: str,
+    auth=Depends(require_auth(AuthClass.BEARER)),
+):
+    if isinstance(auth, JSONResponse):
+        return auth
+    gate = require_evidence_inspector()
+    if gate:
+        return gate
+
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, deleted_at FROM anchors WHERE id = %s",
+                (anchor_id,),
+            )
+            row = cur.fetchone()
+            if not row:
+                return JSONResponse(
+                    status_code=404,
+                    content=error_envelope("NOT_FOUND", "Anchor not found: %s" % anchor_id),
+                )
+            if row[1] is not None:
+                return JSONResponse(
+                    status_code=200,
+                    content=envelope({"id": anchor_id, "deleted": True, "_already_deleted": True}),
+                )
+
+            cur.execute(
+                "UPDATE anchors SET deleted_at = NOW() WHERE id = %s RETURNING id",
+                (anchor_id,),
+            )
+        conn.commit()
+
+        return JSONResponse(
+            status_code=200,
+            content=envelope({"id": anchor_id, "deleted": True}),
+        )
+    except Exception as e:
+        logger.error("delete_anchor error: %s", e)
+        conn.rollback()
+        return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
+    finally:
+        put_conn(conn)
