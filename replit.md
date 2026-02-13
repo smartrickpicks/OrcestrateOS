@@ -52,14 +52,14 @@ The system is undergoing a multi-gate upgrade to add Postgres-backed multi-user 
 - **Seeded users:** 9 Create Music Group employees + 4 demo users in workspace `ws_SEED0100000000000000000000`
 - **Migration 003:** `server/migrations/003_auth_google_oauth.sql` — adds `status` and `google_sub` columns to users table, seeds CMG users
 
-## Google Drive Integration (Gate 1 COMPLETE — Awaiting Approval)
+## Google Drive Integration (Gate 3 COMPLETE — Awaiting GO)
 The system is adding Google Drive as a first-class data source for contract workbook import/export:
 - **Gate 1 (Docs):** COMPLETE — Feature spec, readiness report, task list, scope decisions, OpenAPI additions, canonical API spec updated
 - **Gate 2 (Clarity):** COMPLETE — All 7 decisions locked (OAuth scopes, export target, permission handling, style parity, file size, connection scope, versioned import)
-- **Gate 3 (Alignment):** PENDING — Final task plan freeze
+- **Gate 3 (Alignment):** COMPLETE — Final task plan frozen (52 tasks, 12 layers), session continuity + versioning + top-pane UX added
 - **Gate 4 (Code):** PENDING — 6 phases (OAuth, Browser, Import, Export, Audit, UI)
 - **Gate 5 (Audit):** PENDING — 11 validation criteria
-- **Key docs:** `docs/features/V25_GOOGLE_DRIVE_INTEGRATION.md`, `docs/handoff/V25_DRIVE_READINESS_REPORT.md`, `docs/handoff/V25_DRIVE_TASK_LIST.md`, `docs/decisions/DECISION_V25_DRIVE_SCOPE.md`, `docs/handoff/V25_DRIVE_CLARITY_MATRIX.md`, `docs/handoff/V25_DRIVE_LOCKED_DECISIONS.md`
+- **Key docs:** `docs/features/V25_GOOGLE_DRIVE_INTEGRATION.md`, `docs/handoff/V25_DRIVE_READINESS_REPORT.md`, `docs/handoff/V25_DRIVE_TASK_LIST.md`, `docs/decisions/DECISION_V25_DRIVE_SCOPE.md`, `docs/handoff/V25_DRIVE_CLARITY_MATRIX.md`, `docs/handoff/V25_DRIVE_LOCKED_DECISIONS.md`, `docs/handoff/V25_DRIVE_GATE3_ALIGNMENT_PACKET.md`
 - **Locked decisions:** Two-way (pull + export push), manual refresh only, working copy model, status-based export naming, red-cell acceptance, no patch backfill from external cells
 - **Non-negotiables:** Keep /api/v2.5/ canonical, no RBAC weakening, all Drive actions auditable, secrets in env only, no mixed envelopes
 - **New endpoints:** 8 Drive endpoints under `/workspaces/{ws_id}/drive/` (connect, callback, disconnect, status, browse, import, import-history, export)
