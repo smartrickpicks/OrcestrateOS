@@ -1310,25 +1310,41 @@
       min-width: 50px; max-width: 60px; white-space: nowrap; box-shadow: 2px 0 4px rgba(0,0,0,0.06);
     }
     .grid-table.grid-mode-active thead th.grid-rail { z-index: 12; background: #e3f2fd; }
-    /* v2.53: Frozen first data column (record label) */
-    .grid-table td.grid-col-frozen,
-    .grid-table th.grid-col-frozen {
-      position: sticky !important; left: 0; z-index: 4; background: #fff; border-right: 2px solid #bbdefb;
-      min-width: 260px; max-width: 360px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    /* v2.53: Frozen first data column (record label) — sticky left */
+    td.grid-col-frozen,
+    th.grid-col-frozen {
+      position: -webkit-sticky !important; position: sticky !important;
+      left: 0 !important; z-index: 4 !important;
+      background: #fff !important; border-right: 2px solid #bbdefb !important;
+      min-width: 280px; max-width: 380px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       box-shadow: 3px 0 8px rgba(0,0,0,0.08);
+    }
+    thead th.grid-col-frozen {
+      z-index: 15 !important; background: #e8f0fe !important;
+      font-weight: 600;
     }
     .grid-table.grid-mode-active td.grid-col-frozen,
     .grid-table.grid-mode-active th.grid-col-frozen {
-      left: 60px;
+      left: 60px !important;
     }
-    .grid-table thead th.grid-col-frozen { z-index: 11; background: #e8f0fe; font-weight: 600; }
-    .grid-table.grid-mode-active thead th.grid-col-frozen { z-index: 12; background: #e8f0fe; }
-    .grid-table tr:hover td.grid-col-frozen { background: #f0f4ff; }
-    .p1c-section-body .grid-table td.grid-col-frozen,
-    .p1c-section-body .grid-table th.grid-col-frozen {
-      position: sticky !important; background: #fff; z-index: 4;
+    tr:hover td.grid-col-frozen { background: #f0f4ff !important; }
+    /* v2.53: Frozen table headers — sticky top */
+    .p1c-section-body table thead th {
+      position: -webkit-sticky !important; position: sticky !important;
+      top: 0 !important; z-index: 10 !important;
+      background: #fafafa !important;
     }
-    .p1c-section-body .grid-table thead th.grid-col-frozen { background: #e8f0fe; z-index: 6; }
+    /* Corner cell: both sticky top AND left */
+    .p1c-section-body table thead th.grid-col-frozen {
+      position: -webkit-sticky !important; position: sticky !important;
+      top: 0 !important; left: 0 !important;
+      z-index: 20 !important; background: #e8f0fe !important;
+    }
+    .p1c-section-body.grid-mode-active table thead th.grid-col-frozen,
+    .grid-mode-active .p1c-section-body table thead th.grid-col-frozen {
+      left: 60px !important;
+    }
     .grid-rail-btn { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75em; margin: 0 1px; background: #e3f2fd; color: #1565c0; }
     .grid-rail-btn:hover { background: #bbdefb; }
     .grid-row-verified { background: #e8f5e9 !important; }
@@ -1376,7 +1392,7 @@
     #ev-middle-column.ev-visible { display: flex; }
     #ev-middle-viewer { flex: 1 1 60%; display: flex; flex-direction: column; min-height: 250px; overflow: hidden; }
     #ev-middle-details { flex: 0 0 auto; max-height: 40%; overflow-y: auto; border-top: 2px solid #e0e0e0; background: #fff; padding: 8px; }
-    #ev-right-grid-column { flex: 1 1 auto; min-width: 250px; overflow: auto; }
+    #ev-right-grid-column { flex: 1 1 auto; min-width: 250px; overflow: auto; position: relative; }
     #ev-middle-viewer .ev-pdf-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0; font-size: 0.85em; flex-shrink: 0; }
     #ev-middle-viewer .ev-pdf-header .ev-pdf-title { font-weight: 600; color: #333; }
     #ev-middle-viewer .ev-pdf-header .ev-pdf-source { color: #888; font-size: 0.9em; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
@@ -3109,7 +3125,7 @@
             </div>
           </div>
           <div id="ev-right-grid-column">
-            <div class="grid-table-container" style="overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px;">
+            <div class="grid-table-container" style="overflow: auto; border: 1px solid #e0e0e0; border-radius: 8px;">
               <table class="grid-table" id="grid-table" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
                 <thead id="grid-thead" style="position: sticky; top: 0; background: #f5f5f5; z-index: 10;">
                   <tr id="grid-header-row"></tr>
@@ -25281,9 +25297,9 @@
     function getPreferredColumnOrder(columns) {
       // Priority columns to show first (account/identity fields)
       var priorityFields = [
-        'File_Name_c', 'file_name', 
-        'Account_Name_c', 'account_name',
-        'Artist_Name_pka_or_dba_c', 'artist_name',
+        'File_Name_c', 'File_Name__c', 'file_name', 
+        'Account_Name_c', 'Account_Name__c', 'account_name',
+        'Artist_Name_pka_or_dba_c', 'Artist_Name_pka_or_dba__c', 'artist_name',
         'contract_key'
       ];
       
@@ -25754,9 +25770,9 @@
                 var fileUrl = r.file_url || r.File_URL_c || '';
                 var recordLabel = _gridBuildRecordLabel(r, sheetName);
                 if (isFirstCol && recordLabel) {
-                  var shortLabel = recordLabel.length > 50 ? recordLabel.substring(0, 48) + '..' : recordLabel;
+                  var shortLabel = recordLabel.length > 55 ? recordLabel.substring(0, 53) + '..' : recordLabel;
                   if (fileUrl) {
-                    cellContent = '<a href="' + fileUrl + '" target="_blank" onclick="event.stopPropagation();" style="color: #1976d2; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><span style="font-size: 0.9em;">&#128279;</span>' + escapeHtml(shortLabel) + '</a>';
+                    cellContent = '<a href="' + fileUrl + '" target="_blank" onclick="event.stopPropagation();" title="Download contract" style="text-decoration: none; margin-right: 6px;">&#128279;</a><span style="color: #333;">' + escapeHtml(shortLabel) + '</span>';
                   } else {
                     cellContent = escapeHtml(shortLabel);
                   }
@@ -25923,8 +25939,14 @@
         'Legal_Name__c', 'Legal_Name_c', 'legal_name', 'Payee__c', 'Payee_c', 'Account'
       ];
       var contractRaw = record.File_Name_c || record.file_name || record.File_Name || record.contract_key || '';
-      var contract = contractRaw.replace(/\.(pdf|xlsx|csv|xls)$/i, '').replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
-      if (contract.length > 40) contract = contract.substring(0, 38) + '..';
+      var contract = contractRaw
+        .replace(/\.(pdf|xlsx|csv|xls)$/i, '')
+        .replace(/_/g, ' ')
+        .replace(/\b(FINAL|SIGNED|COPY|DRAFT|V\d+)\b/gi, '')
+        .replace(/\s*-\s*$/, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (contract.length > 32) contract = contract.substring(0, 30) + '..';
       var account = '';
       for (var i = 0; i < ACCT_FIELDS.length; i++) {
         var v = record[ACCT_FIELDS[i]];
@@ -29972,16 +29994,16 @@
               var fileUrl = r.file_url || r.File_URL_c || '';
               var recordLabel = _gridBuildRecordLabel(r, sheetName);
               if (isFirstCol2 && recordLabel) {
-                var shortLabel = recordLabel.length > 50 ? recordLabel.substring(0, 48) + '..' : recordLabel;
+                var shortLabel = recordLabel.length > 55 ? recordLabel.substring(0, 53) + '..' : recordLabel;
                 if (fileUrl) {
-                  cellContent = '<a href="' + fileUrl + '" target="_blank" onclick="event.stopPropagation();" style="color: #1976d2; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><span style="font-size: 0.9em;">&#128279;</span>' + escapeHtml(shortLabel) + '</a>';
+                  cellContent = '<a href="' + fileUrl + '" target="_blank" onclick="event.stopPropagation();" title="Download contract" style="text-decoration: none; margin-right: 6px;">&#128279;</a><span style="color: #333;">' + escapeHtml(shortLabel) + '</span>';
                 } else {
                   cellContent = escapeHtml(shortLabel);
                 }
                 val = recordLabel;
               } else if (isFileNameCol && val && (r.file_url || r.File_URL_c)) {
                 var shortName = val.length > 40 ? val.substring(0, 38) + '...' : val;
-                cellContent = '<a href="' + (r.file_url || r.File_URL_c) + '" target="_blank" onclick="event.stopPropagation();" style="color: #1976d2; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><span style="font-size: 0.9em;">&#128279;</span>' + shortName + '</a>';
+                cellContent = '<a href="' + (r.file_url || r.File_URL_c) + '" target="_blank" onclick="event.stopPropagation();" title="Download contract" style="text-decoration: none; margin-right: 6px;">&#128279;</a><span style="color: #333;">' + shortName + '</span>';
               }
             }
             var isStatusCol = STATUS_KEYS.indexOf(col2) >= 0 || col2.toLowerCase() === 'status';
@@ -42806,7 +42828,7 @@
                 var shortLabel = recordLabel.length > 50 ? recordLabel.substring(0, 48) + '..' : recordLabel;
                 if (fileUrl) {
                   cellContent = '<a href="' + fileUrl + '" target="_blank" onclick="event.stopPropagation();" style="color: #1976d2; text-decoration: none; display: flex; align-items: center; gap: 4px;">' +
-                    '<span style="font-size: 0.9em;">&#128279;</span>' + escapeHtml(shortLabel) + '</a>';
+'&#128279;</a><span style="color: #333;">' + escapeHtml(shortLabel) + '</span>';
                 } else {
                   cellContent = escapeHtml(shortLabel);
                 }
@@ -48857,7 +48879,7 @@ Add any additional notes here.
     
     /* ── P1C: Contract Composite Grid ── */
 
-    .p1c-section { margin-bottom: 16px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: clip; }
+    .p1c-section { margin-bottom: 16px; border: 1px solid #e0e0e0; border-radius: 8px; }
     .p1c-section-header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #f5f5f5; cursor: pointer; user-select: none; border-bottom: 1px solid #e0e0e0; }
     .p1c-section-header:hover { background: #eef2f7; }
     .p1c-section-caret { font-size: 0.8em; transition: transform 0.15s; display: inline-block; }
@@ -48872,12 +48894,12 @@ Add any additional notes here.
     .p1c-section-body { overflow-x: auto; max-height: 600px; overflow-y: auto; }
     .p1c-section-body.collapsed { display: none; }
     .p1c-section-body table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
-    .p1c-section-body table th { padding: 8px 12px; text-align: left; font-weight: 600; color: #333; background: #fafafa; border-bottom: 2px solid #ddd; white-space: nowrap; position: sticky; top: 0; z-index: 5; }
+    .p1c-section-body table th { padding: 8px 12px; text-align: left; font-weight: 600; color: #333; background: #fafafa; border-bottom: 2px solid #ddd; white-space: nowrap; }
     .p1c-section-body table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e0e0e0; white-space: nowrap; }
     .p1c-section-body table tr:hover { background: #f8f9fa; }
     .p1c-section-body table tr.clickable { cursor: pointer; }
     .p1c-section-body table td.truncated { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
-    .p1c-section-body table td.truncated.grid-col-frozen { max-width: 360px; min-width: 260px; }
+    .p1c-section-body table td.truncated.grid-col-frozen { max-width: 380px; min-width: 280px; }
     .p1c-section-body table td.status-ready { color: #2e7d32; }
     .p1c-section-body table td.status-needs_review { color: #f57c00; }
     .p1c-section-body table td.status-blocked { color: #c62828; }
