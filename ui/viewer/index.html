@@ -1371,7 +1371,7 @@
     .ev-reader-page { padding: 16px 20px; border-bottom: 1px solid #e8e8e8; }
     .ev-reader-page:last-child { border-bottom: none; }
     .ev-reader-page-label { font-size: 0.72em; color: #999; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .ev-reader-page-text { white-space: pre-wrap; word-break: break-word; font-family: 'Inter', -apple-system, sans-serif; }
+    .ev-reader-page-text { white-space: normal; word-break: break-word; font-family: 'Georgia', 'Times New Roman', serif; font-size: 0.95em; line-height: 1.75; }
     .ev-reader-error { text-align: center; padding: 30px 20px; color: #999; }
     .ev-reader-error-icon { font-size: 2em; margin-bottom: 8px; }
     .ev-reader-switch-btn { margin-top: 12px; padding: 6px 16px; font-size: 0.85em; background: #1565c0; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
@@ -1384,6 +1384,29 @@
     .ev-sel-menu-item:hover { background: #f0f4ff; }
     .ev-sel-menu-item .ev-sel-icon { font-size: 1em; width: 18px; text-align: center; }
     .ev-sel-menu-sep { height: 1px; background: #eee; margin: 3px 0; }
+    .ev-reader-heading { font-size: 1.15em; font-weight: 700; color: #1a1a1a; margin: 18px 0 8px 0; padding-bottom: 4px; border-bottom: 1px solid #e0e0e0; font-family: 'Inter', -apple-system, sans-serif; }
+    .ev-reader-subheading { font-size: 1.02em; font-weight: 600; color: #333; margin: 12px 0 6px 0; font-family: 'Inter', -apple-system, sans-serif; }
+    .ev-reader-clause { margin: 6px 0; padding-left: 0; }
+    .ev-reader-list-item { margin: 3px 0 3px 20px; padding-left: 6px; border-left: 2px solid #ddd; color: #444; }
+    .ev-reader-paragraph { margin: 8px 0; }
+    .ev-reader-page-break { border-top: 2px dashed #ccc; margin: 20px 0; position: relative; }
+    .ev-reader-page-break::after { content: 'Page Break'; position: absolute; top: -9px; left: 50%; transform: translateX(-50%); background: #fff; padding: 0 8px; font-size: 0.7em; color: #bbb; text-transform: uppercase; letter-spacing: 0.5px; }
+    .ev-reader-raw-toggle { display: inline-block; margin: 8px 0; padding: 3px 10px; font-size: 0.75em; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; color: #888; }
+    .ev-reader-raw-toggle:hover { background: #eee; color: #666; }
+    .ev-reader-raw-block { display: none; white-space: pre-wrap; font-family: monospace; font-size: 0.85em; background: #fafafa; border: 1px solid #eee; padding: 10px; border-radius: 4px; margin-top: 6px; color: #666; }
+    .ev-reader-raw-block.visible { display: block; }
+    .ev-moji-suspect { background: #fff8e1; border-left: 3px solid #ffc107; padding-left: 6px; }
+    .ev-moji-unreadable { background: #ffebee; border-left: 3px solid #f44336; padding-left: 6px; opacity: 0.7; }
+    .ev-moji-unreadable-overlay { position: relative; pointer-events: none; user-select: none; }
+    .ev-moji-unreadable-overlay::after { content: 'Unreadable — annotation disabled'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(244,67,54,0.9); color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 0.8em; font-weight: 600; pointer-events: none; }
+    .ev-moji-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 0.72em; font-weight: 600; margin-left: 8px; }
+    .ev-moji-badge.suspect { background: #fff8e1; color: #f57f17; }
+    .ev-moji-badge.unreadable { background: #ffebee; color: #d32f2f; }
+    .ev-ocr-escalate-bar { padding: 10px 16px; background: #fff3e0; border-bottom: 1px solid #ffe0b2; display: flex; align-items: center; gap: 10px; }
+    .ev-ocr-escalate-bar .ev-ocr-escalate-msg { flex: 1; font-size: 0.85em; color: #e65100; font-weight: 500; }
+    .ev-ocr-escalate-btn { padding: 5px 14px; font-size: 0.82em; background: #e65100; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; }
+    .ev-ocr-escalate-btn:hover { background: #bf360c; }
+    .ev-ocr-escalate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
     #ev-middle-viewer .ev-pdf-body { flex: 1; overflow: auto; position: relative; min-height: 200px; }
     #ev-middle-viewer .ev-pdf-body iframe, #ev-middle-viewer .ev-pdf-body object { width: 100%; height: 100%; border: none; display: block; min-height: 400px; }
     #ev-middle-viewer .ev-pdf-empty { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 200px; color: #999; font-size: 0.95em; text-align: center; padding: 20px; }
@@ -2904,12 +2927,12 @@
               </div>
               <div class="ev-ri-section" id="ev-ri-anchors">
                 <div class="ev-ri-section-header" onclick="evRiToggle('anchors')">
-                  <span style="border-left: 3px solid #1565c0; padding-left: 6px;">Anchors</span>
+                  <span style="border-left: 3px solid #1565c0; padding-left: 6px;">Linked Fields</span>
                   <span class="ev-ri-count" id="ev-ri-anchors-count">0</span>
                   <span class="ev-ri-arrow" id="ev-ri-anchors-arrow">&#9660;</span>
                 </div>
                 <div class="ev-ri-section-body" id="ev-ri-anchors-body">
-                  <div class="ev-ri-empty">No anchors for this record</div>
+                  <div class="ev-ri-empty">No linked fields for this record</div>
                 </div>
               </div>
               <div class="ev-ri-section" id="ev-ri-corrections">
@@ -3153,8 +3176,8 @@
                 </div>
               </div>
               <div class="srr-anchor-list" id="srr-anchor-list">
-                <div style="font-size: 0.8em; font-weight: 600; color: #666; margin-bottom: 8px;">Evidence Anchors</div>
-                <div class="srr-empty-state" style="padding: 10px;">No anchors defined</div>
+                <div style="font-size: 0.8em; font-weight: 600; color: #666; margin-bottom: 8px;">Linked Fields</div>
+                <div class="srr-empty-state" style="padding: 10px;">No linked fields defined</div>
               </div>
             </div>
 
@@ -3174,15 +3197,15 @@
             <div class="srr-panel-body ei-panel" id="ei-tab-panel" style="display: none;">
               <div class="ei-section" id="ei-anchors-section">
                 <div class="ei-section-header" onclick="eiToggleSection('anchors')">
-                  <span>Anchors</span>
+                  <span>Linked Fields</span>
                   <span class="ei-section-count" id="ei-anchors-count">0</span>
                   <span class="ei-section-arrow" id="ei-anchors-arrow">▼</span>
                 </div>
                 <div class="ei-section-body" id="ei-anchors-body">
-                  <div class="ei-hint">Select text in the Reader view, then click "Create Anchor" to pin evidence.</div>
-                  <button class="ei-action-btn primary" id="ei-create-anchor-btn" onclick="eiCreateAnchor()" disabled>Create Anchor from Selection</button>
+                  <div class="ei-hint">Select text in the Reader view, then click "Create Evidence Mark" to pin evidence. <span style="font-size: 0.9em; color: #888; display: block; margin-top: 4px;" title="Evidence Marks are location references in the document used for jumps, RFIs, and corrections.">ℹ Evidence Marks are location references in the document used for jumps, RFIs, and corrections.</span></div>
+                  <button class="ei-action-btn primary" id="ei-create-anchor-btn" onclick="eiCreateAnchor()" disabled>Create Evidence Mark from Selection</button>
                   <div class="ei-list" id="ei-anchors-list">
-                    <div class="ei-empty">No anchors for this document</div>
+                    <div class="ei-empty">No linked fields for this document</div>
                   </div>
                 </div>
               </div>
@@ -14180,21 +14203,180 @@
 
     function _evRenderReaderPages(container, pages) {
       var html = '';
+      var docMojiStats = { suspect: 0, unreadable: 0, total: 0 };
       for (var i = 0; i < pages.length; i++) {
         var p = pages[i];
         var text = (p.text || '').trim();
         if (!text) continue;
-        html += '<div class="ev-reader-page" data-page="' + p.page + '">';
-        html += '<div class="ev-reader-page-label">Page ' + p.page + '</div>';
-        html += '<div class="ev-reader-page-text">' + _evEscapeHtml(text) + '</div>';
+        docMojiStats.total++;
+        var mojiClass = _evClassifyMojibake(text);
+        if (mojiClass === 'suspect_mojibake') docMojiStats.suspect++;
+        else if (mojiClass === 'unreadable') docMojiStats.unreadable++;
+        var blockClass = mojiClass === 'suspect_mojibake' ? ' ev-moji-suspect' : (mojiClass === 'unreadable' ? ' ev-moji-unreadable ev-moji-unreadable-overlay' : '');
+        html += '<div class="ev-reader-page' + blockClass + '" data-page="' + p.page + '" data-moji="' + mojiClass + '">';
+        html += '<div class="ev-reader-page-label">Page ' + p.page;
+        if (mojiClass === 'suspect_mojibake') html += ' <span class="ev-moji-badge suspect">⚠ Suspect Encoding</span>';
+        else if (mojiClass === 'unreadable') html += ' <span class="ev-moji-badge unreadable">✕ Unreadable</span>';
         html += '</div>';
+        html += '<div class="ev-reader-page-text">' + _evFormatReaderText(text) + '</div>';
+        html += '<button class="ev-reader-raw-toggle" onclick="this.nextElementSibling.classList.toggle(\'visible\'); this.textContent = this.nextElementSibling.classList.contains(\'visible\') ? \'Hide raw text\' : \'Show raw text\';">Show raw text</button>';
+        html += '<div class="ev-reader-raw-block">' + _evEscapeHtml(text) + '</div>';
+        html += '</div>';
+        if (i < pages.length - 1) {
+          html += '<div class="ev-reader-page-break"></div>';
+        }
       }
       if (!html) {
         _evRenderReaderError(container, 'Document contains no readable text.');
         return;
       }
-      container.innerHTML = html;
+      var topHtml = '';
+      if (docMojiStats.unreadable > 0) {
+        topHtml += '<div class="ev-ocr-escalate-bar">';
+        topHtml += '<span class="ev-ocr-escalate-msg">⚠ ' + docMojiStats.unreadable + ' page(s) have unreadable text. Annotation is disabled on those pages.</span>';
+        topHtml += '<button class="ev-ocr-escalate-btn" onclick="_evEscalateOcr(this)">Escalate to Higher OCR</button>';
+        topHtml += '</div>';
+      } else if (docMojiStats.suspect > 0) {
+        topHtml += '<div class="ev-ocr-escalate-bar" style="background: #fffde7; border-color: #fff9c4;">';
+        topHtml += '<span class="ev-ocr-escalate-msg" style="color: #f57f17;">⚠ ' + docMojiStats.suspect + ' page(s) may have encoding issues. Review highlighted sections carefully.</span>';
+        topHtml += '</div>';
+      }
+      container.innerHTML = topHtml + html;
+      _evState._mojiStats = docMojiStats;
       _evBindReaderSelection(container);
+    }
+
+    function _evClassifyMojibake(text) {
+      if (!text) return 'ok';
+      var replacementCount = 0;
+      var suspiciousCount = 0;
+      var nonPrintable = 0;
+      var total = text.length;
+      if (total === 0) return 'ok';
+      for (var i = 0; i < total; i++) {
+        var c = text.charCodeAt(i);
+        if (c === 0xFFFD) replacementCount++;
+        if (c < 32 && c !== 9 && c !== 10 && c !== 13) nonPrintable++;
+        if ((c >= 0x0300 && c <= 0x036F) || (c >= 0x0600 && c <= 0x06FF && total < 50)) suspiciousCount++;
+      }
+      var suspiciousPatterns = /[\u00C0-\u00FF]{4,}|[\u2000-\u206F]{3,}|(.)\1{6,}/g;
+      var patternMatches = (text.match(suspiciousPatterns) || []).length;
+      suspiciousCount += patternMatches * 2;
+      var replacementRatio = replacementCount / total;
+      var nonPrintableRatio = nonPrintable / total;
+      if (replacementRatio > 0.15 || nonPrintableRatio > 0.10) return 'unreadable';
+      if (replacementCount > 5 || nonPrintableRatio > 0.03 || suspiciousCount > 3) return 'suspect_mojibake';
+      return 'ok';
+    }
+
+    function _evFormatReaderText(text) {
+      var lines = text.split('\n');
+      var html = '';
+      var headingPatterns = [
+        /^(\d+)\.\s+([A-Z][A-Z\s\-'\/&]{2,})$/,
+        /^(ARTICLE|SECTION|PART|SCHEDULE|EXHIBIT|APPENDIX)\s+/i,
+        /^[IVXLCDM]+\.\s+/,
+        /^[A-Z][A-Z\s\-'\/&]{4,}$/
+      ];
+      var subheadingPatterns = [
+        /^\d+\.\d+[\.\s]/,
+        /^[a-z]\)\s/,
+        /^\([a-z]\)\s/,
+        /^\([ivx]+\)\s/i
+      ];
+      var listPatterns = [
+        /^[\-\u2022\u2013\u2014\u25CF\u25CB\u25AA\u25AB]\s/,
+        /^[a-z]\.\s/,
+        /^\d+\)\s/
+      ];
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        var trimmed = line.trim();
+        if (!trimmed) {
+          html += '<div class="ev-reader-paragraph"></div>';
+          continue;
+        }
+        var escaped = _evEscapeHtml(trimmed);
+        var isHeading = false;
+        for (var h = 0; h < headingPatterns.length; h++) {
+          if (headingPatterns[h].test(trimmed)) { isHeading = true; break; }
+        }
+        if (isHeading) {
+          html += '<div class="ev-reader-heading">' + escaped + '</div>';
+          continue;
+        }
+        var isSubheading = false;
+        for (var s = 0; s < subheadingPatterns.length; s++) {
+          if (subheadingPatterns[s].test(trimmed)) { isSubheading = true; break; }
+        }
+        if (isSubheading) {
+          html += '<div class="ev-reader-subheading ev-reader-clause">' + escaped + '</div>';
+          continue;
+        }
+        var isList = false;
+        for (var l = 0; l < listPatterns.length; l++) {
+          if (listPatterns[l].test(trimmed)) { isList = true; break; }
+        }
+        if (isList) {
+          html += '<div class="ev-reader-list-item">' + escaped + '</div>';
+          continue;
+        }
+        html += '<div class="ev-reader-clause">' + escaped + '</div>';
+      }
+      return html;
+    }
+
+    function _evEscalateOcr(btn) {
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+      var docId = null;
+      var record = _evState.activeRecordId ? _evFindRecord(_evState.activeSheetName, _evState.activeRowIdx, _evState.activeRecordId) : null;
+      if (record) {
+        var contractKey = record.contract_key || record.Contract_Key || '';
+        if (contractKey && window.workbook && window.workbook.contracts && window.workbook.contracts[contractKey]) {
+          docId = window.workbook.contracts[contractKey].document_id || null;
+        }
+      }
+      if (!docId) docId = 'doc_' + (_evState.activeRecordId || 'unknown');
+      var affectedPages = [];
+      var pageEls = document.querySelectorAll('.ev-reader-page[data-moji="unreadable"]');
+      for (var i = 0; i < pageEls.length; i++) {
+        affectedPages.push(parseInt(pageEls[i].getAttribute('data-page') || '0', 10));
+      }
+      var apiBase = window.API_BASE || '/api/v2.5';
+      fetch(apiBase + '/documents/' + encodeURIComponent(docId) + '/ocr-escalations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (window._authToken || '') },
+        body: JSON.stringify({
+          escalation_type: 'ocr_reprocess',
+          quality_flag: 'OCR_UNREADABLE',
+          affected_pages: affectedPages,
+          reason: 'Reader mode detected ' + affectedPages.length + ' unreadable page(s)'
+        })
+      })
+      .then(function(r) { return r.json().then(function(d) { return { status: r.status, data: d }; }); })
+      .then(function(res) {
+        if (res.status === 200) {
+          btn.textContent = 'Already Escalated';
+        } else if (res.status === 201) {
+          btn.textContent = 'Escalated ✓';
+          if (typeof showToast === 'function') showToast('OCR escalation submitted', 'success');
+        } else {
+          btn.textContent = 'Escalation Failed';
+          if (typeof showToast === 'function') showToast('Escalation failed: ' + (res.data.detail || 'Unknown error'), 'error');
+        }
+        if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
+          AuditTimeline.emit('reader_ocr_escalated', {
+            document_id: docId, affected_pages: affectedPages,
+            record_id: _evState.activeRecordId, source: 'ev_reader'
+          });
+        }
+      })
+      .catch(function(err) {
+        btn.disabled = false;
+        btn.textContent = 'Escalate to Higher OCR';
+        if (typeof showToast === 'function') showToast('Escalation error: ' + err.message, 'error');
+      });
     }
 
     function _evBindReaderSelection(container) {
@@ -14291,7 +14473,7 @@
       var items = [
         { id: 'copy', icon: '\uD83D\uDCCB', label: 'Copy' },
         { id: 'sep1', sep: true },
-        { id: 'anchor', icon: '\uD83D\uDCCC', label: 'Create Anchor' },
+        { id: 'anchor', icon: '\uD83D\uDCCC', label: 'Create Evidence Mark' },
         { id: 'rfi', icon: '\uD83D\uDCAC', label: 'Create RFI' },
         { id: 'correction', icon: '\u270E', label: 'Create Correction' }
       ];
@@ -14372,7 +14554,7 @@
           if (typeof eiCreateAnchor === 'function') {
             eiCreateAnchor();
           } else {
-            if (typeof showToast === 'function') showToast('Anchor creation not available', 'warning');
+            if (typeof showToast === 'function') showToast('Evidence Mark creation not available', 'warning');
           }
         } else {
           var wsId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : 'ws_SEED0100000000000000000000';
@@ -14392,15 +14574,15 @@
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
             return resp.json();
           }).then(function() {
-            if (typeof showToast === 'function') showToast('Anchor created', 'success');
+            if (typeof showToast === 'function') showToast('Evidence Mark created', 'success');
             var activeRecord = _evFindRecord(_evState.activeSheetName, _evState.activeRowIdx, payload.record_id);
             _evLoadRightPanelForRecord(activeRecord, payload.record_id, payload.sheet_name);
           }).catch(function(err) {
-            if (typeof showToast === 'function') showToast('Failed to create anchor: ' + err.message, 'error');
+            if (typeof showToast === 'function') showToast('Failed to create Evidence Mark: ' + err.message, 'error');
           });
         }
         if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
-          AuditTimeline.emit('reader_anchor_created', {
+          AuditTimeline.emit('reader_evidence_mark_created', {
             record_id: payload.record_id, document_id: payload.document_id,
             selected_text: payload.selected_text.substring(0, 100),
             page: payload.page, source: 'ev_reader_selection'
@@ -14420,11 +14602,12 @@
           evidence_text: payload.selected_text,
           evidence_page: payload.page,
           evidence_char_start: payload.char_start,
-          evidence_char_end: payload.char_end
+          evidence_char_end: payload.char_end,
+          evidence_anchor_context: true
         };
         if (typeof Components !== 'undefined' && Components.PatchPanel && typeof Components.PatchPanel.openWithContext === 'function') {
           Components.PatchPanel.openWithContext(patchCtx, action, 'ev_reader');
-          if (typeof showToast === 'function') showToast((action === 'rfi' ? 'RFI' : 'Correction') + ' draft started from selected text', 'info');
+          if (typeof showToast === 'function') showToast((action === 'rfi' ? 'RFI linked to selected text' : 'Correction') + ' draft started from selected text', 'info');
         } else {
           if (typeof showToast === 'function') showToast('Patch panel not available', 'warning');
         }
