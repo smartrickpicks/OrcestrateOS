@@ -1366,8 +1366,24 @@
     .ev-view-toggle-btn:first-child { border-right: 1px solid #ccc; }
     .ev-view-toggle-btn:hover { background: #f0f0f0; }
     .ev-view-toggle-btn.active { background: #1565c0; color: #fff; }
-    .ev-reader-pane { width: 100%; height: 100%; overflow-y: auto; padding: 16px 20px; font-size: 0.92em; line-height: 1.6; color: #333; background: #fff; }
+    .ev-reader-pane { width: 100%; height: 100%; overflow-y: auto; padding: 0; font-size: 0.92em; line-height: 1.6; color: #333; background: #fff; }
     .ev-reader-placeholder { color: #aaa; text-align: center; padding: 40px 20px; font-size: 0.9em; }
+    .ev-reader-page { padding: 16px 20px; border-bottom: 1px solid #e8e8e8; }
+    .ev-reader-page:last-child { border-bottom: none; }
+    .ev-reader-page-label { font-size: 0.72em; color: #999; font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .ev-reader-page-text { white-space: pre-wrap; word-break: break-word; font-family: 'Inter', -apple-system, sans-serif; }
+    .ev-reader-error { text-align: center; padding: 30px 20px; color: #999; }
+    .ev-reader-error-icon { font-size: 2em; margin-bottom: 8px; }
+    .ev-reader-switch-btn { margin-top: 12px; padding: 6px 16px; font-size: 0.85em; background: #1565c0; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    .ev-reader-switch-btn:hover { background: #0d47a1; }
+    .ev-reader-loading { text-align: center; padding: 40px 20px; color: #888; }
+    .ev-reader-loading-spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid #ddd; border-top-color: #1565c0; border-radius: 50%; animation: ev-spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
+    @keyframes ev-spin { to { transform: rotate(360deg); } }
+    .ev-sel-menu { position: fixed; z-index: 9999; background: #fff; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); padding: 4px 0; min-width: 180px; display: none; }
+    .ev-sel-menu-item { display: flex; align-items: center; gap: 8px; padding: 7px 14px; font-size: 0.82em; color: #333; cursor: pointer; border: none; background: none; width: 100%; text-align: left; }
+    .ev-sel-menu-item:hover { background: #f0f4ff; }
+    .ev-sel-menu-item .ev-sel-icon { font-size: 1em; width: 18px; text-align: center; }
+    .ev-sel-menu-sep { height: 1px; background: #eee; margin: 3px 0; }
     #ev-middle-viewer .ev-pdf-body { flex: 1; overflow: auto; position: relative; min-height: 200px; }
     #ev-middle-viewer .ev-pdf-body iframe, #ev-middle-viewer .ev-pdf-body object { width: 100%; height: 100%; border: none; display: block; min-height: 400px; }
     #ev-middle-viewer .ev-pdf-empty { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 200px; color: #999; font-size: 0.95em; text-align: center; padding: 20px; }
@@ -14094,16 +14110,344 @@
       var pdfBtn = document.getElementById('ev-toggle-pdf');
       var readerPane = document.getElementById('ev-reader-pane');
       var pdfObj = document.getElementById('ev-pdf-object');
+      var emptyEl = document.getElementById('ev-pdf-empty');
       if (readerBtn) readerBtn.classList.toggle('active', mode === 'reader');
       if (pdfBtn) pdfBtn.classList.toggle('active', mode === 'pdf');
       if (mode === 'reader') {
         if (readerPane) readerPane.style.display = '';
         if (pdfObj) pdfObj.style.display = 'none';
+        if (emptyEl) emptyEl.style.display = 'none';
+        if (_evState._lastPdfUrl && _evState.activeRecordId) {
+          var content = document.getElementById('ev-reader-content');
+          var hasContent = content && content.querySelector('.ev-reader-page');
+          var isLoading = content && content.querySelector('.ev-reader-loading');
+          if (!hasContent && !isLoading) {
+            _evFetchReaderText(_evState._lastPdfUrl, _evState.activeRecordId);
+          }
+        }
       } else {
         if (readerPane) readerPane.style.display = 'none';
-        if (pdfObj && _evState.activeRecordId && pdfObj.getAttribute('data') !== 'about:blank') pdfObj.style.display = '';
+        if (pdfObj && _evState.activeRecordId && pdfObj.getAttribute('data') !== 'about:blank') {
+          pdfObj.style.display = '';
+          if (emptyEl) emptyEl.style.display = 'none';
+        }
       }
       console.log('[EV-VIEW] View mode set to:', mode);
+    }
+
+    function _evFetchReaderText(pdfProxyUrl, recordId) {
+      var content = document.getElementById('ev-reader-content');
+      if (!content) return;
+      if (!pdfProxyUrl) {
+        _evRenderReaderError(content, 'No document URL available for text extraction.');
+        return;
+      }
+      var rawUrl = '';
+      try {
+        var match = pdfProxyUrl.match(/[?&]url=([^&]+)/);
+        if (match) rawUrl = decodeURIComponent(match[1]);
+      } catch (e) { rawUrl = ''; }
+      if (!rawUrl && pdfProxyUrl && (pdfProxyUrl.indexOf('http://') === 0 || pdfProxyUrl.indexOf('https://') === 0)) {
+        rawUrl = pdfProxyUrl;
+      }
+      if (!rawUrl) {
+        _evRenderReaderError(content, 'Could not determine source URL for text extraction.');
+        return;
+      }
+      content.innerHTML = '<div class="ev-reader-loading"><span class="ev-reader-loading-spinner"></span>Extracting text...</div>';
+      _evState._readerRequestId = recordId;
+      fetch('/api/pdf/text?url=' + encodeURIComponent(rawUrl))
+        .then(function(resp) {
+          if (_evState._readerRequestId !== recordId) return null;
+          if (!resp.ok) throw new Error('Text extraction failed (HTTP ' + resp.status + ')');
+          return resp.json();
+        })
+        .then(function(data) {
+          if (!data || _evState._readerRequestId !== recordId) return;
+          if (!data.pages || data.pages.length === 0) {
+            _evRenderReaderError(content, 'No text could be extracted from this document.');
+            return;
+          }
+          _evRenderReaderPages(content, data.pages);
+          console.log('[EV-READER] Rendered', data.pages.length, 'pages for record:', recordId);
+        })
+        .catch(function(err) {
+          if (_evState._readerRequestId !== recordId) return;
+          console.warn('[EV-READER] Text extraction error:', err.message);
+          _evRenderReaderError(content, err.message || 'Text extraction failed.');
+        });
+    }
+
+    function _evRenderReaderPages(container, pages) {
+      var html = '';
+      for (var i = 0; i < pages.length; i++) {
+        var p = pages[i];
+        var text = (p.text || '').trim();
+        if (!text) continue;
+        html += '<div class="ev-reader-page" data-page="' + p.page + '">';
+        html += '<div class="ev-reader-page-label">Page ' + p.page + '</div>';
+        html += '<div class="ev-reader-page-text">' + _evEscapeHtml(text) + '</div>';
+        html += '</div>';
+      }
+      if (!html) {
+        _evRenderReaderError(container, 'Document contains no readable text.');
+        return;
+      }
+      container.innerHTML = html;
+      _evBindReaderSelection(container);
+    }
+
+    function _evBindReaderSelection(container) {
+      var pane = container.closest('.ev-reader-pane') || container;
+      if (pane._evSelBound) return;
+      pane._evSelBound = true;
+      pane.addEventListener('mouseup', function(e) {
+        setTimeout(function() {
+          var payload = _evGetSelectionPayload();
+          if (payload) {
+            _evShowSelMenu(e.clientX + 4, e.clientY + 4, payload);
+          }
+        }, 10);
+      });
+      pane.addEventListener('contextmenu', function(e) {
+        var payload = _evGetSelectionPayload();
+        if (payload) {
+          e.preventDefault();
+          _evShowSelMenu(e.clientX, e.clientY, payload);
+        }
+      });
+    }
+
+    function _evRenderReaderError(container, message) {
+      var div = document.createElement('div');
+      div.className = 'ev-reader-error';
+      var icon = document.createElement('div');
+      icon.className = 'ev-reader-error-icon';
+      icon.textContent = '\uD83D\uDCC4';
+      div.appendChild(icon);
+      var msg = document.createElement('div');
+      msg.textContent = message;
+      div.appendChild(msg);
+      var btn = document.createElement('button');
+      btn.className = 'ev-reader-switch-btn';
+      btn.textContent = 'Switch to PDF View';
+      btn.addEventListener('click', function() { _evSetViewMode('pdf'); });
+      div.appendChild(btn);
+      container.innerHTML = '';
+      container.appendChild(div);
+    }
+
+    function _evEscapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function _evGetSelectionPayload() {
+      var sel = window.getSelection();
+      if (!sel || sel.isCollapsed || !sel.toString().trim()) return null;
+      var text = sel.toString().trim();
+      var anchor = sel.anchorNode;
+      var pageEl = null;
+      var node = anchor;
+      while (node && node !== document.body) {
+        if (node.nodeType === 1 && node.classList && node.classList.contains('ev-reader-page')) { pageEl = node; break; }
+        node = node.parentNode;
+      }
+      var pageNum = pageEl ? parseInt(pageEl.getAttribute('data-page') || '0', 10) : 0;
+      var charStart = 0;
+      var charEnd = text.length;
+      if (pageEl) {
+        var textEl = pageEl.querySelector('.ev-reader-page-text');
+        if (textEl) {
+          var fullText = textEl.textContent || '';
+          var idx = fullText.indexOf(text);
+          if (idx >= 0) { charStart = idx; charEnd = idx + text.length; }
+        }
+      }
+      var docId = null;
+      var record = _evState.activeRecordId ? _evFindRecord(_evState.activeSheetName, _evState.activeRowIdx, _evState.activeRecordId) : null;
+      if (record) {
+        var contractKey = record.contract_key || record.Contract_Key || '';
+        if (contractKey && window.workbook && window.workbook.contracts && window.workbook.contracts[contractKey]) {
+          docId = window.workbook.contracts[contractKey].document_id || null;
+        }
+      }
+      return {
+        selected_text: text,
+        document_id: docId,
+        record_id: _evState.activeRecordId || '',
+        sheet_name: _evState.activeSheetName || '',
+        page: pageNum,
+        node_id: pageEl ? ('page_' + pageNum) : null,
+        char_start: charStart,
+        char_end: charEnd
+      };
+    }
+
+    function _evShowSelMenu(x, y, payload) {
+      var menu = document.getElementById('ev-sel-menu');
+      if (!menu) return;
+      var role = (typeof _eiGetUserRole === 'function') ? _eiGetUserRole() : 'analyst';
+      var items = [
+        { id: 'copy', icon: '\uD83D\uDCCB', label: 'Copy' },
+        { id: 'sep1', sep: true },
+        { id: 'anchor', icon: '\uD83D\uDCCC', label: 'Create Anchor' },
+        { id: 'rfi', icon: '\uD83D\uDCAC', label: 'Create RFI' },
+        { id: 'correction', icon: '\u270E', label: 'Create Correction' }
+      ];
+      var html = '';
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        if (it.sep) { html += '<div class="ev-sel-menu-sep"></div>'; continue; }
+        html += '<button class="ev-sel-menu-item" data-action="' + it.id + '" onclick="_evSelAction(\'' + it.id + '\')">';
+        html += '<span class="ev-sel-icon">' + it.id + '</span>';
+        html += it.label + '</button>';
+      }
+      menu.innerHTML = html;
+      var iconEls = menu.querySelectorAll('.ev-sel-icon');
+      for (var j = 0; j < iconEls.length; j++) {
+        var act = iconEls[j].parentNode.getAttribute('data-action');
+        if (act === 'copy') iconEls[j].innerHTML = '&#128203;';
+        else if (act === 'anchor') iconEls[j].innerHTML = '&#128204;';
+        else if (act === 'rfi') iconEls[j].innerHTML = '&#128172;';
+        else if (act === 'correction') iconEls[j].innerHTML = '&#9998;';
+      }
+      menu.style.display = 'block';
+      var mw = menu.offsetWidth;
+      var mh = menu.offsetHeight;
+      var vw = window.innerWidth || 320;
+      var vh = window.innerHeight || 240;
+      menu.style.left = Math.min(x, vw - mw - 8) + 'px';
+      menu.style.top = Math.min(y, vh - mh - 8) + 'px';
+      _evState._selPayload = payload;
+      setTimeout(function() {
+        document.addEventListener('click', _evSelClickAway);
+        document.addEventListener('keydown', _evSelEscHandler);
+      }, 0);
+    }
+
+    function _evSelClose() {
+      var menu = document.getElementById('ev-sel-menu');
+      if (menu) menu.style.display = 'none';
+      document.removeEventListener('click', _evSelClickAway);
+      document.removeEventListener('keydown', _evSelEscHandler);
+    }
+
+    function _evSelClickAway(e) {
+      var menu = document.getElementById('ev-sel-menu');
+      if (menu && !menu.contains(e.target)) _evSelClose();
+    }
+
+    function _evSelEscHandler(e) {
+      if (e.key === 'Escape' || e.keyCode === 27) _evSelClose();
+    }
+
+    function _evSelAction(action) {
+      var payload = _evState._selPayload;
+      _evSelClose();
+      if (!payload) return;
+      console.log('[EV-SEL] action:', action, 'text:', (payload.selected_text || '').substring(0, 40), 'record:', payload.record_id);
+
+      if (action === 'copy') {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(payload.selected_text).then(function() {
+            if (typeof showToast === 'function') showToast('Copied to clipboard', 'success');
+          }).catch(function() {
+            _evFallbackCopy(payload.selected_text);
+          });
+        } else {
+          _evFallbackCopy(payload.selected_text);
+        }
+        return;
+      }
+
+      if (action === 'anchor') {
+        if (typeof _eiState !== 'undefined' && _eiState.enabled && payload.document_id) {
+          _eiState.selection = {
+            text: payload.selected_text,
+            nodeId: payload.node_id || 'rn_manual',
+            charStart: payload.char_start,
+            charEnd: payload.char_end
+          };
+          if (typeof eiCreateAnchor === 'function') {
+            eiCreateAnchor();
+          } else {
+            if (typeof showToast === 'function') showToast('Anchor creation not available', 'warning');
+          }
+        } else {
+          var wsId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : 'ws_SEED0100000000000000000000';
+          var anchorPayload = {
+            node_id: payload.node_id || 'rn_manual',
+            selected_text: payload.selected_text,
+            char_start: payload.char_start,
+            char_end: payload.char_end
+          };
+          var apiBase = window.API_BASE || '/api/v2.5';
+          var docIdForAnchor = payload.document_id || ('doc_' + (payload.record_id || 'unknown'));
+          fetch(apiBase + '/documents/' + encodeURIComponent(docIdForAnchor) + '/anchors', {
+            method: 'POST',
+            headers: (typeof _eiAuthHeaders === 'function') ? _eiAuthHeaders() : { 'Content-Type': 'application/json' },
+            body: JSON.stringify(anchorPayload)
+          }).then(function(resp) {
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            return resp.json();
+          }).then(function() {
+            if (typeof showToast === 'function') showToast('Anchor created', 'success');
+            var activeRecord = _evFindRecord(_evState.activeSheetName, _evState.activeRowIdx, payload.record_id);
+            _evLoadRightPanelForRecord(activeRecord, payload.record_id, payload.sheet_name);
+          }).catch(function(err) {
+            if (typeof showToast === 'function') showToast('Failed to create anchor: ' + err.message, 'error');
+          });
+        }
+        if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
+          AuditTimeline.emit('reader_anchor_created', {
+            record_id: payload.record_id, document_id: payload.document_id,
+            selected_text: payload.selected_text.substring(0, 100),
+            page: payload.page, source: 'ev_reader_selection'
+          });
+        }
+        return;
+      }
+
+      if (action === 'correction' || action === 'rfi') {
+        var record = _evFindRecord(_evState.activeSheetName, _evState.activeRowIdx, _evState.activeRecordId);
+        var patchCtx = {
+          recordId: payload.record_id,
+          sheetName: payload.sheet_name,
+          rowIdx: _evState.activeRowIdx,
+          record: record,
+          source: 'ev_reader_selection',
+          evidence_text: payload.selected_text,
+          evidence_page: payload.page,
+          evidence_char_start: payload.char_start,
+          evidence_char_end: payload.char_end
+        };
+        if (typeof Components !== 'undefined' && Components.PatchPanel && typeof Components.PatchPanel.openWithContext === 'function') {
+          Components.PatchPanel.openWithContext(patchCtx, action, 'ev_reader');
+          if (typeof showToast === 'function') showToast((action === 'rfi' ? 'RFI' : 'Correction') + ' draft started from selected text', 'info');
+        } else {
+          if (typeof showToast === 'function') showToast('Patch panel not available', 'warning');
+        }
+        if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
+          AuditTimeline.emit('reader_' + action + '_initiated', {
+            record_id: payload.record_id, document_id: payload.document_id,
+            selected_text: payload.selected_text.substring(0, 100),
+            page: payload.page, source: 'ev_reader_selection'
+          });
+        }
+        return;
+      }
+    }
+
+    function _evFallbackCopy(text) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;left:-9999px;';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); if (typeof showToast === 'function') showToast('Copied to clipboard', 'success'); }
+      catch (e) { if (typeof showToast === 'function') showToast('Copy failed', 'error'); }
+      document.body.removeChild(ta);
     }
 
     function _evShowPdfPane() {
@@ -14316,13 +14660,13 @@
           pdfObj.style.display = 'none';
           if (readerPane) {
             readerPane.style.display = '';
-            var content = document.getElementById('ev-reader-content');
-            if (content) content.innerHTML = '<div class="ev-reader-placeholder">Extracting text from document...</div>';
+            _evFetchReaderText(resolved.pdfUrl, recordId);
           }
         } else {
           pdfObj.style.display = 'block';
           if (readerPane) readerPane.style.display = 'none';
         }
+        _evState._lastPdfUrl = resolved.pdfUrl;
         if (sourceEl) sourceEl.textContent = resolved.sourceLabel;
 
         pdfObj.onerror = function() {
@@ -48175,6 +48519,7 @@ var P022_RuntimeValidation = {
 
 <!-- Grid Context Menu -->
 <div id="grid-ctx-menu" class="grid-ctx-menu" role="menu" aria-label="Grid actions"></div>
+<div id="ev-sel-menu" class="ev-sel-menu" role="menu" aria-label="Reader selection actions"></div>
 
 </body>
 </html>

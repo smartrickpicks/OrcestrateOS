@@ -46,6 +46,8 @@ The "Grid" mode has been renamed to "Evidence Viewer" mode with unified click be
 - Record lookup: `_evFindRecord()` delegates to canonical `findRecordById(recordId)` (shared, line 10806) as single source of truth. Falls back to direct sheet[rowIdx] only if canonical lookup returns null.
 - Context labels: `_evBuildContextLabel()` uses shared constants `SRR_CONTRACT_NAME_FIELDS`, `SRR_ACCOUNT_NAME_FIELDS` via `_srrResolveFieldFromList()` — no hardcoded field arrays in EV code.
 - PDF URL resolution: `_evResolveDocUrl()` uses `srrResolveFieldValue(record, 'file_url')` (shared, line 33428) as single source of truth for document URL mapping. Traces record -> file_url field -> contract ref fallback -> attachment fallback, with reason codes: `no_document_link`, `mapping_not_found`, `proxy_fetch_failed`, `unsupported_format`.
+- Reader mode rendering: `_evFetchReaderText(pdfProxyUrl, recordId)` extracts raw URL from proxy path, calls `GET /api/pdf/text?url=`, renders per-page text blocks in `#ev-reader-content`. Error state shows "Switch to PDF View" button. Stale-request guard via `_evState._readerRequestId`.
+- Selection action menu: `_evBindReaderSelection()` attaches mouseup+contextmenu to reader pane. `_evGetSelectionPayload()` captures `{ selected_text, document_id, record_id, page, node_id, char_start, char_end }`. Menu actions: Copy (clipboard API + fallback), Create Anchor (delegates to `eiCreateAnchor()` or direct `POST /documents/{id}/anchors`), Create RFI / Create Correction (delegates to `Components.PatchPanel.openWithContext()`). All actions emit `AuditTimeline` events.
 
 **Shared SRR Name Constants** (line ~33393):
 - `SRR_CONTRACT_NAME_FIELDS`: Contract_Name_c/\_\_c/clean + Opportunity variants
