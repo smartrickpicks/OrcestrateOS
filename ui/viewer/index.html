@@ -460,6 +460,82 @@
     .save-session-btn:hover { background: #e3f2fd; }
     .save-session-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+    /* v2.5 Data Source Panel Redesign */
+    .ds-source-ctas { display: flex; gap: 10px; margin-bottom: 16px; }
+    .ds-cta-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 10px; border-radius: 10px; border: 2px solid #e0e0e0; background: #fafafa; cursor: pointer; transition: all 0.2s; }
+    .ds-cta-btn:hover { border-color: #1565c0; background: #f0f7ff; box-shadow: 0 2px 10px rgba(21,101,192,0.08); }
+    .ds-cta-btn.active { border-color: #1565c0; background: #e3f2fd; }
+    .ds-cta-icon { font-size: 1.6em; }
+    .ds-cta-label { font-size: 0.82em; font-weight: 600; color: #333; text-align: center; }
+    .ds-default-badge { text-align: center; margin-bottom: 14px; }
+    .ds-default-badge span { font-size: 0.72em; background: #e8eaf6; color: #3949ab; padding: 3px 10px; border-radius: 10px; font-weight: 600; letter-spacing: 0.3px; }
+    .ds-resume-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; margin-bottom: 14px; cursor: pointer; transition: all 0.2s; }
+    .ds-resume-bar:hover { background: #c8e6c9; border-color: #66bb6a; }
+    .ds-resume-bar .ds-resume-icon { font-size: 1.2em; }
+    .ds-resume-bar .ds-resume-info { flex: 1; min-width: 0; }
+    .ds-resume-bar .ds-resume-name { font-size: 0.85em; font-weight: 600; color: #2e7d32; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ds-resume-bar .ds-resume-meta { font-size: 0.72em; color: #558b2f; }
+    .ds-resume-bar .ds-resume-action { font-size: 0.8em; font-weight: 600; color: #2e7d32; white-space: nowrap; }
+    .ds-new-session-row { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 10px; }
+    .ds-new-session-btn { padding: 5px 14px; background: transparent; border: 1px solid #bbb; border-radius: 6px; font-size: 0.78em; color: #555; cursor: pointer; transition: all 0.15s; }
+    .ds-new-session-btn:hover { background: #f5f5f5; border-color: #888; color: #222; }
+    .ds-session-tabs { display: flex; gap: 0; margin-bottom: 12px; border-bottom: 2px solid #e0e0e0; }
+    .ds-session-tab { flex: 1; text-align: center; padding: 8px 0; font-size: 0.82em; font-weight: 600; color: #888; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; background: none; border-left: none; border-right: none; border-top: none; }
+    .ds-session-tab.active { color: #1565c0; border-bottom-color: #1565c0; }
+    .ds-session-tab:hover { color: #333; }
+    .ds-session-list { max-height: 340px; overflow-y: auto; }
+    .ds-session-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #fff; border: 1px solid #e8e8e8; border-radius: 8px; margin-bottom: 6px; transition: all 0.15s; }
+    .ds-session-card:hover { border-color: #90caf9; background: #f8fbff; }
+    .ds-session-card .ds-sc-icon { font-size: 1.1em; flex-shrink: 0; }
+    .ds-session-card .ds-sc-body { flex: 1; min-width: 0; }
+    .ds-session-card .ds-sc-name { font-size: 0.85em; font-weight: 600; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ds-session-card .ds-sc-meta { font-size: 0.72em; color: #888; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+    .ds-session-card .ds-sc-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .ds-sc-chip { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 0.78em; font-weight: 600; }
+    .ds-sc-chip.env { background: #e8eaf6; color: #3949ab; }
+    .ds-sc-chip.role { background: #e3f2fd; color: #1565c0; }
+    .ds-sc-chip.source-local { background: #e0f2f1; color: #00695c; }
+    .ds-sc-chip.source-drive { background: #fff3e0; color: #e65100; }
+    .ds-sc-action-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid #e0e0e0; background: #fff; color: #666; font-size: 0.82em; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; }
+    .ds-sc-action-btn:hover { background: #f5f5f5; border-color: #bbb; }
+    .ds-sc-action-btn.resume:hover { background: #e8f5e9; border-color: #66bb6a; color: #2e7d32; }
+    .ds-sc-action-btn.archive:hover { background: #fff3e0; border-color: #ffb74d; color: #e65100; }
+    .ds-sc-action-btn.delete:hover { background: #fce4ec; border-color: #ef9a9a; color: #c62828; }
+    .ds-sc-overflow { position: relative; }
+    .ds-sc-overflow-menu { display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); z-index: 10; min-width: 120px; }
+    .ds-sc-overflow-menu.open { display: block; }
+    .ds-sc-overflow-item { display: block; width: 100%; padding: 8px 14px; background: none; border: none; text-align: left; cursor: pointer; font-size: 0.82em; color: #333; }
+    .ds-sc-overflow-item:hover { background: #f5f5f5; }
+    .ds-sc-overflow-item.danger { color: #c62828; }
+    .ds-sc-overflow-item.danger:hover { background: #fce4ec; }
+    .ds-drive-card { padding: 14px; background: #fff8e1; border: 1px solid #ffe082; border-radius: 10px; margin-bottom: 14px; }
+    .ds-drive-card .ds-drv-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .ds-drive-card .ds-drv-icon { font-size: 1.4em; }
+    .ds-drive-card .ds-drv-info { flex: 1; min-width: 0; }
+    .ds-drive-card .ds-drv-label { font-size: 0.72em; font-weight: 600; color: #f57c00; text-transform: uppercase; letter-spacing: 0.4px; }
+    .ds-drive-card .ds-drv-name { font-size: 0.88em; font-weight: 600; color: #333; }
+    .ds-drive-card .ds-drv-meta { font-size: 0.72em; color: #888; margin-bottom: 10px; }
+    .ds-drive-card .ds-drv-actions { display: flex; gap: 6px; }
+    .ds-drv-btn { padding: 6px 12px; border-radius: 6px; font-size: 0.78em; font-weight: 600; cursor: pointer; border: 1px solid #e0e0e0; background: #fff; color: #333; transition: all 0.15s; }
+    .ds-drv-btn:hover { background: #f5f5f5; }
+    .ds-drv-btn.primary { background: #1565c0; color: white; border-color: #1565c0; }
+    .ds-drv-btn.primary:hover { background: #1976d2; }
+    .ds-drv-btn.danger { color: #c62828; border-color: #ef9a9a; }
+    .ds-drv-btn.danger:hover { background: #fce4ec; }
+    .ds-search-bar { position: relative; margin-bottom: 14px; }
+    .ds-search-bar input { width: 100%; padding: 9px 12px 9px 34px; border: 1px solid #ddd; border-radius: 7px; font-size: 0.85em; box-sizing: border-box; background: #fff; transition: border-color 0.15s; }
+    .ds-search-bar input:focus { border-color: #1565c0; outline: none; box-shadow: 0 0 0 2px rgba(21,101,192,0.1); }
+    .ds-search-bar .ds-search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #bbb; font-size: 0.9em; pointer-events: none; }
+    .ds-demo-divider { display: flex; align-items: center; gap: 12px; margin: 16px 0; }
+    .ds-demo-divider .ds-demo-line { flex: 1; height: 1px; background: #e0e0e0; }
+    .ds-demo-divider .ds-demo-text { font-size: 0.72em; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    .ds-demo-cards { display: flex; gap: 8px; margin-bottom: 14px; }
+    .ds-demo-card { flex: 1; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer; transition: all 0.15s; text-align: center; background: #fafafa; }
+    .ds-demo-card:hover { border-color: #90caf9; background: #f0f7ff; }
+    .ds-demo-card .ds-demo-icon { font-size: 1.2em; margin-bottom: 4px; }
+    .ds-demo-card .ds-demo-name { font-size: 0.8em; font-weight: 600; color: #333; }
+    .ds-demo-card .ds-demo-desc { font-size: 0.68em; color: #888; }
+
     /* Loader Section */
     .loader-section { background: #f9f9f9; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
     .loader-section h4 { margin: 0 0 10px; font-size: 0.95em; color: #1a1a2e; display: flex; align-items: center; gap: 8px; }
@@ -4495,140 +4571,116 @@
         <button class="drawer-close" onclick="closeDataSourceDrawer()">&times;</button>
       </div>
       <div class="drawer-body">
-        <!-- v1.6.39: Upload Excel Button (primary action for demo) -->
-        <div style="margin-bottom: 20px; padding: 16px; background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-radius: 10px; border: 1px solid #bbdefb; text-align: center;">
-          <div style="font-size: 2em; margin-bottom: 8px;">📊</div>
-          <div style="font-weight: 600; color: #1565c0; margin-bottom: 8px;">Import Your Data</div>
-          <p style="font-size: 0.85em; color: #666; margin: 0 0 12px;">Upload an Excel file (.xlsx) to start working</p>
-          <button id="drawer-upload-excel-btn" onclick="document.getElementById('drawer-excel-file-input').click()" 
-                  style="padding: 10px 24px; background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; border: none; border-radius: 8px; font-size: 0.9em; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s ease; font-weight: 500;"
-                  onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';"
-                  onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.15)';">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-            Upload Excel
-          </button>
-          <input type="file" id="drawer-excel-file-input" accept=".xlsx,.xls" style="display: none;" onchange="handleExcelUpload(this); closeDataSourceDrawer();">
-          <!-- v1.6.46: Clear Cache button for fresh start -->
-          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ddd;">
-            <button id="clear-cache-btn" onclick="handleClearCacheAndReload()" 
-                    style="padding: 6px 16px; background: transparent; color: #666; border: 1px solid #ccc; border-radius: 6px; font-size: 0.8em; cursor: pointer; transition: all 0.2s ease;"
-                    onmouseover="this.style.background='#f5f5f5'; this.style.color='#333'"
-                    onmouseout="this.style.background='transparent'; this.style.color='#666'">
-              🔄 Start Fresh (Clear Cache)
-            </button>
-            <p style="font-size: 0.75em; color: #999; margin: 6px 0 0; text-align: center;">Clears saved session data</p>
+        <input type="file" id="drawer-excel-file-input" accept=".xlsx,.xls" style="display: none;" onchange="handleExcelUpload(this); closeDataSourceDrawer();">
+
+        <div class="ds-source-ctas">
+          <div class="ds-cta-btn" id="ds-cta-local" onclick="document.getElementById('drawer-excel-file-input').click()">
+            <span class="ds-cta-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1565c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </span>
+            <span class="ds-cta-label">Upload Local Excel</span>
+          </div>
+          <div class="ds-cta-btn" id="ds-cta-drive" onclick="dsPanel.connectDrive()">
+            <span class="ds-cta-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e65100" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 19.5h20L12 2z"/><path d="M8 19.5l4-7 4 7"/><path d="M16 12.5l6 7"/><path d="M2 19.5l6-7"/></svg>
+            </span>
+            <span class="ds-cta-label">Open from Google Drive</span>
           </div>
         </div>
-        
-        <!-- Saved Sessions Section -->
-        <div class="saved-sessions-section">
-          <div class="saved-sessions-header">
-            <span class="saved-sessions-title">Saved Sessions</span>
-            <button class="save-session-btn" id="save-session-btn" onclick="promptSaveSession()">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              Save Session
-            </button>
+
+        <div class="ds-default-badge" id="ds-default-badge">
+          <span>Default Source: Local</span>
+        </div>
+
+        <div class="ds-resume-bar" id="ds-resume-bar" style="display: none;" onclick="dsPanel.resumeLastSession()">
+          <span class="ds-resume-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#2e7d32" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </span>
+          <div class="ds-resume-info">
+            <div class="ds-resume-name" id="ds-resume-name">—</div>
+            <div class="ds-resume-meta" id="ds-resume-meta">—</div>
           </div>
+          <span class="ds-resume-action">Resume</span>
+        </div>
+
+        <div id="ds-drive-card-section" style="display: none;">
+          <div class="ds-drive-card" id="ds-drive-card">
+            <div class="ds-drv-header">
+              <span class="ds-drv-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f57c00" stroke-width="2"><path d="M12 2L2 19.5h20L12 2z"/><path d="M8 19.5l4-7 4 7"/></svg>
+              </span>
+              <div class="ds-drv-info">
+                <div class="ds-drv-label">Google Drive Connected</div>
+                <div class="ds-drv-name" id="ds-drive-name">—</div>
+              </div>
+              <span class="ds-sc-chip env" id="ds-drive-env-badge">sandbox</span>
+            </div>
+            <div class="ds-drv-meta" id="ds-drive-sync-time">Last sync: —</div>
+            <div class="ds-drv-actions">
+              <button class="ds-drv-btn primary" onclick="dsPanel.browseDrive()">Browse Drive</button>
+              <button class="ds-drv-btn" onclick="dsPanel.refreshDrive()">Refresh</button>
+              <button class="ds-drv-btn danger" onclick="dsPanel.disconnectDrive()">Disconnect</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ds-search-bar">
+          <span class="ds-search-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </span>
+          <input type="text" id="ds-search-input" placeholder="Search sessions and batches..." oninput="dsPanel.filterSessions(this.value)">
+        </div>
+
+        <div class="ds-new-session-row">
+          <button class="save-session-btn" id="save-session-btn" onclick="promptSaveSession()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save Session
+          </button>
+        </div>
+
+        <div class="ds-session-tabs">
+          <button class="ds-session-tab active" id="ds-tab-active" onclick="dsPanel.switchTab('active')">Active</button>
+          <button class="ds-session-tab" id="ds-tab-archived" onclick="dsPanel.switchTab('archived')">Archived</button>
+        </div>
+
+        <div class="ds-session-list" id="ds-session-list">
           <div id="saved-sessions-list"></div>
         </div>
 
-        <div id="demo-divider-or-load" style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-          <div style="flex: 1; height: 1px; background: #e0e0e0;"></div>
-          <span style="font-size: 0.75em; color: #999; text-transform: uppercase;">Or load demo data</span>
-          <div style="flex: 1; height: 1px; background: #e0e0e0;"></div>
+        <div class="ds-demo-divider">
+          <span class="ds-demo-line"></span>
+          <span class="ds-demo-text">Or load demo data</span>
+          <span class="ds-demo-line"></span>
         </div>
-        
-        <!-- Connected Folder Section (v1.4.24 - auto-mapped from email, read-only) -->
-        <div id="data-source-folder-section" style="display: none; margin-bottom: 20px;">
-          <div class="folder-connected-card" style="text-align: center;">
-            <div class="folder-connected-icon">📁</div>
-            <div class="folder-connected-label">Connected Folder</div>
-            <div class="folder-connected-name" id="connected-folder-name" style="text-align: center;">—</div>
-            <div class="folder-sync-time" id="folder-sync-time">Last sync: —</div>
-          </div>
-        </div>
-        
-        <!-- Empty State Section (v1.4.24 - should not appear, folder auto-mapped) -->
-        <div id="data-source-empty-section" style="display: none;">
-          <div style="text-align: center; padding: 24px 20px; color: #888; background: #f5f5f5; border-radius: 8px; border: 2px dashed #ddd; margin-bottom: 20px;">
-            <div style="font-size: 2em; margin-bottom: 10px;">📁</div>
-            <div style="font-weight: 600; color: #333; margin-bottom: 8px;">Folder Not Assigned</div>
-            <p style="margin: 0; font-size: 0.9em;">Please sign out and sign in again to assign your folder.</p>
-          </div>
-        </div>
-        
-        <!-- Active Dataset Section (shown when data loaded) -->
-        <div id="data-source-active-section" style="display: none; margin-bottom: 20px; padding: 16px; background: #e8f5e9; border: 1px solid #81c784; border-radius: 8px; position: relative;">
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-            <span style="font-size: 1.5em;">📊</span>
-            <div style="flex: 1;">
-              <div style="font-weight: 600; font-size: 0.95em; color: #2e7d32;">Active Dataset</div>
-              <div id="active-dataset-name" style="font-size: 0.85em; color: #555; font-family: monospace;">—</div>
-            </div>
-            <div class="active-badge-container" style="position: relative;">
-              <span id="active-badge" class="active-badge-hover" style="background: #4caf50; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; cursor: pointer;" onclick="toggleDisconnectMenu(event)">ACTIVE ▾</span>
-              <div id="disconnect-menu" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 4px; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; min-width: 140px;">
-                <button onclick="disconnectActiveDataset()" style="display: block; width: 100%; padding: 10px 14px; background: none; border: none; text-align: left; cursor: pointer; font-size: 0.85em; color: #c62828;" onmouseover="this.style.background='#ffebee'" onmouseout="this.style.background='none'">
-                  ⏏ Disconnect
-                </button>
-              </div>
-            </div>
-          </div>
-          <div id="active-dataset-meta" style="font-size: 0.8em; color: #666;">
-            <!-- Row count, loaded timestamp -->
-          </div>
-        </div>
-        
-        <!-- Upload Section removed (v1.4.23 - folder-based workflow) -->
-        <div id="data-source-upload-section" style="display: none;"></div>
-        
-        <!-- Search Stub - Coming Soon -->
-        <div id="data-source-search-section" style="margin-bottom: 16px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
-          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-            <span style="font-weight: 600; font-size: 0.85em; color: #999;">Search</span>
-            <span style="font-size: 0.7em; background: #e0e0e0; padding: 1px 5px; border-radius: 3px; font-weight: 600; color: #666;">Coming Soon</span>
-          </div>
-          <input type="text" id="data-source-search-input" placeholder="Search batches and companies..." disabled style="width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 0.9em; box-sizing: border-box; background: #f5f5f5; color: #999; cursor: not-allowed;">
-        </div>
-        
-        <!-- Save Sessions -->
-        <div id="data-source-demo-section" style="margin-bottom: 16px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-            <span style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase;">Save Sessions</span>
-          </div>
-          <!-- v1.6.8: In-Progress Banner (shown when modified dataset is active) -->
-          <div id="demo-modified-banner" style="display: none; margin-bottom: 10px; padding: 8px 12px; background: #fff3e0; border: 1px solid #ffb74d; border-radius: 6px; font-size: 0.8em; color: #e65100;">
-            <span style="margin-right: 6px;">⚠️</span> Demo dataset is in-progress (partial completion).
-          </div>
-          <!-- Original Dataset Card -->
-          <div id="demo-dataset-card-original" class="demo-dataset-card" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f0f7ff; border: 2px solid #90caf9; border-radius: 8px; cursor: pointer; transition: all 0.2s; margin-bottom: 8px;" onclick="loadSampleDataset({ variant: 'original', autoRedirect: true })" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background=this.classList.contains('active') ? '#e3f2fd' : '#f0f7ff'">
-            <span style="font-size: 1.3em;">📋</span>
-            <div style="flex: 1;">
-              <div style="font-weight: 600; font-size: 0.9em; color: #1565c0;">Ostereo (Original)</div>
-              <div style="font-size: 0.75em; color: #666;">Baseline dataset (clean)</div>
-            </div>
-            <span class="demo-card-load-arrow" style="color: #1976d2; font-size: 0.8em; font-weight: 600;">Load →</span>
-          </div>
-          <!-- Modified Dataset Card -->
-          <div id="demo-dataset-card-modified" class="demo-dataset-card" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onclick="loadSampleDataset({ variant: 'modified', autoRedirect: true })" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=this.classList.contains('active') ? '#fff3e0' : '#fafafa'">
-            <span style="font-size: 1.3em;">📝</span>
-            <div style="flex: 1;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-weight: 600; font-size: 0.9em; color: #e65100;">Ostereo (Modified / In-Progress)</span>
-                <span style="font-size: 0.65em; background: #ff9800; color: white; padding: 2px 6px; border-radius: 3px; font-weight: 600;">In-Progress</span>
-              </div>
-              <div style="font-size: 0.75em; color: #666;">Partial completion with sample edits</div>
-            </div>
-            <span class="demo-card-load-arrow" style="color: #e65100; font-size: 0.8em; font-weight: 600;">Load →</span>
-          </div>
-        </div>
-        
 
-        
+        <div class="ds-demo-cards">
+          <div class="ds-demo-card" onclick="loadSampleDataset({ variant: 'original', autoRedirect: true })">
+            <div class="ds-demo-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1565c0" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+            </div>
+            <div class="ds-demo-name">Ostereo (Original)</div>
+            <div class="ds-demo-desc">Baseline dataset</div>
+          </div>
+          <div class="ds-demo-card" onclick="loadSampleDataset({ variant: 'modified', autoRedirect: true })">
+            <div class="ds-demo-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e65100" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </div>
+            <div class="ds-demo-name">Ostereo (Modified)</div>
+            <div class="ds-demo-desc">Sample edits</div>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 4px;">
+          <button onclick="handleClearCacheAndReload()" style="padding: 5px 14px; background: transparent; color: #999; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 0.75em; cursor: pointer;">Clear Cache</button>
+        </div>
+
+        <div id="data-source-folder-section" style="display: none;"></div>
+        <div id="data-source-empty-section" style="display: none;"></div>
+        <div id="data-source-active-section" style="display: none;"></div>
+        <div id="data-source-upload-section" style="display: none;"></div>
+        <div id="data-source-search-section" style="display: none;"></div>
+        <div id="data-source-demo-section" style="display: none;"></div>
+        <div id="demo-divider-or-load" style="display: none;"></div>
         <div class="modal-status" id="data-source-status" style="display: none; margin-top: 15px;"></div>
       </div>
       <div class="drawer-footer">
@@ -10868,7 +10920,436 @@
       }
     }
 
+    var dsPanel = (function() {
+      var API_BASE = '/api/v2.5';
+      var _currentTab = 'active';
+      var _searchQuery = '';
+      var _lastActiveSession = null;
+      var _driveConnected = false;
 
+      function _getWorkspaceId() {
+        if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) return IDENTITY_CONTEXT.workspace_id;
+        try { var s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}'); return s.workspace_id || 'ws_SEED0100000000000000000000'; } catch(e) { return 'ws_SEED0100000000000000000000'; }
+      }
+
+      function _getAuthHeaders() {
+        var headers = { 'Content-Type': 'application/json' };
+        try {
+          var s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}');
+          if (s.token) headers['Authorization'] = 'Bearer ' + s.token;
+        } catch(e) {}
+        return headers;
+      }
+
+      function _getEnvironment() {
+        if (typeof isDemoSession === 'function' && isDemoSession()) return 'sandbox';
+        try { var s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}'); return s.environment || 'sandbox'; } catch(e) { return 'sandbox'; }
+      }
+
+      function _getDefaultSource() {
+        var ws = _getWorkspaceId();
+        try {
+          var userId = '';
+          var s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}');
+          userId = s.user_id || s.email || 'default';
+          return localStorage.getItem('ds_default_source_' + userId + '_' + ws) || 'local';
+        } catch(e) { return 'local'; }
+      }
+
+      function _setDefaultSource(src) {
+        var ws = _getWorkspaceId();
+        try {
+          var s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}');
+          var userId = s.user_id || s.email || 'default';
+          localStorage.setItem('ds_default_source_' + userId + '_' + ws, src);
+        } catch(e) {}
+      }
+
+      function _timeAgo(dateStr) {
+        if (!dateStr) return '';
+        var d = new Date(dateStr);
+        var now = new Date();
+        var diff = Math.floor((now - d) / 1000);
+        if (diff < 60) return 'just now';
+        if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      }
+
+      function _renderSessionCard(s, tab) {
+        var icon = s.source_type === 'drive' ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e65100" stroke-width="2"><path d="M12 2L2 19.5h20L12 2z"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1565c0" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>';
+        var sourceChip = s.source_type === 'drive' ? '<span class="ds-sc-chip source-drive">Drive</span>' : '<span class="ds-sc-chip source-local">Local</span>';
+        var envChip = '<span class="ds-sc-chip env">' + escapeHtml(s.environment || 'sandbox') + '</span>';
+        var time = _timeAgo(s.last_accessed_at || s.created_at || s.savedAt);
+        var name = s.source_ref || s.name || 'Untitled';
+
+        var actions = '';
+        if (tab === 'active') {
+          actions = '<button class="ds-sc-action-btn resume" title="Resume" data-action="resume" data-sid="' + escapeHtml(s.id) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>' +
+            '<div class="ds-sc-overflow">' +
+              '<button class="ds-sc-action-btn" title="More" onclick="dsPanel.toggleOverflow(this)">...</button>' +
+              '<div class="ds-sc-overflow-menu">' +
+                '<button class="ds-sc-overflow-item" data-action="archive" data-sid="' + escapeHtml(s.id) + '">Archive</button>' +
+                '<button class="ds-sc-overflow-item danger" data-action="delete" data-sid="' + escapeHtml(s.id) + '">Delete</button>' +
+              '</div>' +
+            '</div>';
+        } else {
+          actions = '<button class="ds-sc-action-btn resume" title="Restore" data-action="restore" data-sid="' + escapeHtml(s.id) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>' +
+            '<button class="ds-sc-action-btn delete" title="Delete" data-action="delete" data-sid="' + escapeHtml(s.id) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
+        }
+
+        return '<div class="ds-session-card" data-session-id="' + escapeHtml(s.id) + '">' +
+          '<span class="ds-sc-icon">' + icon + '</span>' +
+          '<div class="ds-sc-body">' +
+            '<div class="ds-sc-name">' + escapeHtml(name) + '</div>' +
+            '<div class="ds-sc-meta">' + sourceChip + ' ' + envChip + ' <span style="color:#ccc;">|</span> ' + time + '</div>' +
+          '</div>' +
+          '<div class="ds-sc-actions">' + actions + '</div>' +
+        '</div>';
+      }
+
+      function _bindCardActions(container) {
+        container.querySelectorAll('[data-action]').forEach(function(btn) {
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var action = this.getAttribute('data-action');
+            var sid = this.getAttribute('data-sid');
+            if (action === 'resume' || action === 'restore') {
+              _resumeSession(sid);
+            } else if (action === 'archive') {
+              _archiveSession(sid);
+            } else if (action === 'delete') {
+              if (confirm('Delete this session?')) _deleteSession(sid);
+            }
+            _closeAllOverflows();
+          });
+        });
+      }
+
+      function _closeAllOverflows() {
+        document.querySelectorAll('.ds-sc-overflow-menu.open').forEach(function(m) { m.classList.remove('open'); });
+      }
+
+      function _resumeSession(sessionId) {
+        if (sessionId && sessionId.indexOf('wbs_') === 0) {
+          showToast('Resuming server session...', 'info');
+          closeDataSourceDrawer();
+        }
+        loadSavedSession(sessionId);
+      }
+
+      function _archiveSession(sid) {
+        if (sid && sid.indexOf('wbs_') === 0) {
+          var ws = _getWorkspaceId();
+          fetch(API_BASE + '/workspaces/' + ws + '/sessions/' + sid, {
+            method: 'PATCH',
+            headers: _getAuthHeaders(),
+            body: JSON.stringify({ status: 'archived' })
+          }).then(function() {
+            showToast('Session archived', 'info');
+            renderSessionsList();
+          }).catch(function() { showToast('Failed to archive', 'error'); });
+          return;
+        }
+        deleteSavedSession(sid);
+      }
+
+      function _deleteSession(sid) {
+        if (sid && sid.indexOf('wbs_') === 0) {
+          var ws = _getWorkspaceId();
+          fetch(API_BASE + '/workspaces/' + ws + '/sessions/' + sid, {
+            method: 'DELETE',
+            headers: _getAuthHeaders()
+          }).then(function() {
+            showToast('Session deleted', 'info');
+            renderSessionsList();
+          }).catch(function() { showToast('Failed to delete', 'error'); });
+          return;
+        }
+        deleteSavedSession(sid);
+        renderSessionsList();
+      }
+
+      function renderSessionsList() {
+        var container = document.getElementById('saved-sessions-list');
+        if (!container) return;
+
+        var localSessions = getSavedSessions();
+        var mapped = localSessions.map(function(s) {
+          return {
+            id: s.id,
+            source_type: 'local',
+            source_ref: s.filename || s.name || 'Untitled',
+            environment: 'sandbox',
+            status: 'active',
+            created_at: s.savedAt,
+            last_accessed_at: s.savedAt,
+            session_data: {},
+            name: s.name,
+            sheetCount: s.sheetCount,
+            rowCount: s.rowCount,
+            role: s.role
+          };
+        });
+
+        var filtered = mapped.filter(function(s) {
+          if (_currentTab === 'active' && s.status !== 'active') return false;
+          if (_currentTab === 'archived' && s.status !== 'archived') return false;
+          if (_searchQuery) {
+            var q = _searchQuery.toLowerCase();
+            var name = (s.source_ref || s.name || '').toLowerCase();
+            return name.indexOf(q) >= 0;
+          }
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          var emptyMsg = _currentTab === 'active' ? 'No active sessions. Upload data or connect Google Drive to start.' : 'No archived sessions.';
+          container.innerHTML = '<div style="text-align: center; padding: 20px; color: #999; font-size: 0.85em;">' + emptyMsg + '</div>';
+          return;
+        }
+
+        var html = '';
+        filtered.forEach(function(s) {
+          html += _renderSessionCard(s, _currentTab);
+        });
+        container.innerHTML = html;
+        _bindCardActions(container);
+
+        if (_currentTab === 'active' && filtered.length > 0) {
+          _lastActiveSession = filtered[0];
+          _updateResumeBar(filtered[0]);
+        }
+      }
+
+      function _updateResumeBar(session) {
+        var bar = document.getElementById('ds-resume-bar');
+        var nameEl = document.getElementById('ds-resume-name');
+        var metaEl = document.getElementById('ds-resume-meta');
+        if (!bar || !session) { if (bar) bar.style.display = 'none'; return; }
+        bar.style.display = 'flex';
+        nameEl.textContent = session.source_ref || session.name || 'Last session';
+        var src = session.source_type === 'drive' ? 'Google Drive' : 'Local file';
+        metaEl.textContent = src + ' \u00b7 ' + _timeAgo(session.last_accessed_at || session.created_at);
+        _lastActiveSession = session;
+      }
+
+      function _updateDefaultBadge() {
+        var badge = document.getElementById('ds-default-badge');
+        if (!badge) return;
+        var src = _getDefaultSource();
+        badge.querySelector('span').textContent = 'Default Source: ' + (src === 'drive' ? 'Google Drive' : 'Local');
+      }
+
+      function _checkDriveStatus() {
+        var ws = _getWorkspaceId();
+        fetch(API_BASE + '/workspaces/' + ws + '/drive/status', {
+          method: 'GET',
+          headers: _getAuthHeaders()
+        }).then(function(r) { return r.json(); })
+        .then(function(resp) {
+          var d = resp.data || {};
+          _driveConnected = d.connected === true;
+          var section = document.getElementById('ds-drive-card-section');
+          if (_driveConnected && section) {
+            section.style.display = 'block';
+            var nameEl = document.getElementById('ds-drive-name');
+            var syncEl = document.getElementById('ds-drive-sync-time');
+            var envBadge = document.getElementById('ds-drive-env-badge');
+            if (nameEl) nameEl.textContent = d.account_email || d.drive_email || 'Connected';
+            if (syncEl) syncEl.textContent = 'Last sync: ' + (d.last_sync ? _timeAgo(d.last_sync) : 'Never');
+            if (envBadge) envBadge.textContent = _getEnvironment();
+            var ctaDrive = document.getElementById('ds-cta-drive');
+            if (ctaDrive) {
+              ctaDrive.classList.add('active');
+              ctaDrive.querySelector('.ds-cta-label').textContent = 'Browse Google Drive';
+              ctaDrive.onclick = function() { dsPanel.browseDrive(); };
+            }
+          } else if (section) {
+            section.style.display = 'none';
+          }
+        }).catch(function() { _driveConnected = false; });
+      }
+
+      function _fetchServerSessions() {
+        var ws = _getWorkspaceId();
+        var env = _getEnvironment();
+        var url = API_BASE + '/workspaces/' + ws + '/sessions?environment=' + env + '&status=' + _currentTab;
+        fetch(url, { method: 'GET', headers: _getAuthHeaders() })
+          .then(function(r) { return r.json(); })
+          .then(function(resp) {
+            var serverSessions = (resp.data || []);
+            if (serverSessions.length > 0) {
+              _mergeServerSessions(serverSessions);
+            }
+          }).catch(function(e) { console.log('[dsPanel] Server session fetch skipped:', e.message); });
+      }
+
+      function _mergeServerSessions(serverSessions) {
+        var container = document.getElementById('saved-sessions-list');
+        if (!container) return;
+        var existing = container.innerHTML;
+        var html = '';
+        serverSessions.forEach(function(s) {
+          if (existing.indexOf(s.id) < 0) {
+            html += _renderSessionCard(s, _currentTab);
+          }
+        });
+        if (html) {
+          container.insertAdjacentHTML('beforeend', html);
+          _bindCardActions(container);
+        }
+        if (_currentTab === 'active' && serverSessions.length > 0 && !_lastActiveSession) {
+          _updateResumeBar(serverSessions[0]);
+        }
+      }
+
+      return {
+        init: function() {
+          _updateDefaultBadge();
+          renderSessionsList();
+          _checkDriveStatus();
+          _fetchServerSessions();
+        },
+
+        switchTab: function(tab) {
+          _currentTab = tab;
+          document.getElementById('ds-tab-active').classList.toggle('active', tab === 'active');
+          document.getElementById('ds-tab-archived').classList.toggle('active', tab === 'archived');
+          renderSessionsList();
+          _fetchServerSessions();
+        },
+
+        filterSessions: function(query) {
+          _searchQuery = (query || '').trim();
+          renderSessionsList();
+        },
+
+        resumeLastSession: function() {
+          if (_lastActiveSession) {
+            _resumeSession(_lastActiveSession.id);
+          } else {
+            showToast('No session to resume', 'info');
+          }
+        },
+
+        connectDrive: function() {
+          if (_driveConnected) {
+            this.browseDrive();
+            return;
+          }
+          var ws = _getWorkspaceId();
+          showToast('Connecting to Google Drive...', 'info');
+          fetch(API_BASE + '/workspaces/' + ws + '/drive/connect', {
+            method: 'POST',
+            headers: _getAuthHeaders(),
+            body: JSON.stringify({ return_url: window.location.href })
+          }).then(function(r) { return r.json(); })
+          .then(function(resp) {
+            if (resp.data && resp.data.auth_url) {
+              window.location.href = resp.data.auth_url;
+            } else {
+              showToast('Drive connection initiated', 'info');
+              _checkDriveStatus();
+            }
+          }).catch(function() { showToast('Failed to connect Drive', 'error'); });
+        },
+
+        browseDrive: function() {
+          if (!_driveConnected) {
+            this.connectDrive();
+            return;
+          }
+          var ws = _getWorkspaceId();
+          showToast('Loading Drive files...', 'info');
+          fetch(API_BASE + '/workspaces/' + ws + '/drive/browse', {
+            method: 'GET',
+            headers: _getAuthHeaders()
+          }).then(function(r) { return r.json(); })
+          .then(function(resp) {
+            var files = resp.data || [];
+            if (files.length === 0) {
+              showToast('No files found in Drive', 'info');
+              return;
+            }
+            var html = '<div style="padding: 16px;"><h4 style="margin: 0 0 12px; font-size: 0.95em;">Select a file from Drive</h4>';
+            files.forEach(function(f) {
+              html += '<div class="ds-session-card" style="cursor: pointer;" onclick="dsPanel.importDriveFile(\'' + escapeHtml(f.id || f.file_id) + '\', \'' + escapeHtml(f.name || f.file_name) + '\')">' +
+                '<span class="ds-sc-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1565c0" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></span>' +
+                '<div class="ds-sc-body"><div class="ds-sc-name">' + escapeHtml(f.name || f.file_name) + '</div><div class="ds-sc-meta">' + (f.size ? Math.round(f.size/1024) + ' KB' : '') + '</div></div>' +
+                '<span style="color: #1565c0; font-size: 0.8em; font-weight: 600;">Import</span>' +
+              '</div>';
+            });
+            html += '</div>';
+            var container = document.getElementById('saved-sessions-list');
+            if (container) container.innerHTML = html;
+          }).catch(function() { showToast('Failed to browse Drive', 'error'); });
+        },
+
+        importDriveFile: function(fileId, fileName) {
+          var ws = _getWorkspaceId();
+          showToast('Importing ' + fileName + '...', 'info');
+          fetch(API_BASE + '/workspaces/' + ws + '/drive/import', {
+            method: 'POST',
+            headers: _getAuthHeaders(),
+            body: JSON.stringify({ file_id: fileId, file_name: fileName })
+          }).then(function(r) { return r.json(); })
+          .then(function(resp) {
+            if (resp.data) {
+              showToast('Imported: ' + fileName, 'success');
+              _setDefaultSource('drive');
+              _updateDefaultBadge();
+              renderSessionsList();
+              _fetchServerSessions();
+            } else {
+              showToast('Import failed: ' + (resp.error || 'Unknown error'), 'error');
+            }
+          }).catch(function() { showToast('Import failed', 'error'); });
+        },
+
+        refreshDrive: function() {
+          showToast('Refreshing Drive connection...', 'info');
+          _checkDriveStatus();
+          _fetchServerSessions();
+        },
+
+        disconnectDrive: function() {
+          if (!confirm('Disconnect Google Drive? Your sessions will be kept.')) return;
+          var ws = _getWorkspaceId();
+          fetch(API_BASE + '/workspaces/' + ws + '/drive/disconnect', {
+            method: 'DELETE',
+            headers: _getAuthHeaders()
+          }).then(function() {
+            _driveConnected = false;
+            var section = document.getElementById('ds-drive-card-section');
+            if (section) section.style.display = 'none';
+            var ctaDrive = document.getElementById('ds-cta-drive');
+            if (ctaDrive) {
+              ctaDrive.classList.remove('active');
+              ctaDrive.querySelector('.ds-cta-label').textContent = 'Open from Google Drive';
+              ctaDrive.onclick = function() { dsPanel.connectDrive(); };
+            }
+            showToast('Drive disconnected', 'info');
+          }).catch(function() { showToast('Failed to disconnect', 'error'); });
+        },
+
+        toggleOverflow: function(btn) {
+          var menu = btn.parentElement.querySelector('.ds-sc-overflow-menu');
+          var isOpen = menu.classList.contains('open');
+          _closeAllOverflows();
+          if (!isOpen) menu.classList.add('open');
+        },
+
+        renderSessionsList: renderSessionsList,
+        checkDriveStatus: _checkDriveStatus
+      };
+    })();
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.ds-sc-overflow')) {
+        document.querySelectorAll('.ds-sc-overflow-menu.open').forEach(function(m) { m.classList.remove('open'); });
+      }
+    });
 
 
 
@@ -20751,6 +21232,7 @@
     // Data Sources Drawer functions (now Upload Library)
     function openDataSourceDrawer() {
       document.getElementById('data-source-drawer').classList.add('active');
+      if (typeof dsPanel !== 'undefined' && dsPanel.init) dsPanel.init();
       renderSavedSessionsList();
       updateDataSourceDrawerState();
     }
