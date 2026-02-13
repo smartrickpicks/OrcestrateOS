@@ -55,7 +55,7 @@ def _resolve_bearer(token):
     from server.jwt_utils import verify_jwt
     jwt_payload = verify_jwt(token)
     if jwt_payload:
-        user_id = jwt_payload.get("sub")
+        user_id = jwt_payload.get("sub") or jwt_payload.get("user_id")
         if user_id:
             conn = get_conn()
             try:

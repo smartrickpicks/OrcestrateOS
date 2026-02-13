@@ -31982,6 +31982,48 @@
         artifact_id: artifact.artifact_id
       });
       
+      if (patchType === 'rfi') {
+        var rfiToken = localStorage.getItem('orchestrate_auth_token');
+        if (rfiToken) {
+          var rfiWsId = _dbMembersWorkspaceId || 'ws_SEED0100000000000000000000';
+          var rfiBody = {
+            question: justification || '',
+            target_record_id: recordId || 'unknown',
+            target_field_key: fieldKey || null,
+            patch_id: request.request_id || null,
+            status: 'open',
+            metadata: {
+              sheet: srrState.currentSheetName || '',
+              dataset_id: datasetId || '',
+              artifact_id: artifact ? artifact.artifact_id : null,
+              source: 'record_inspector'
+            }
+          };
+          fetch('/api/v2.5/workspaces/' + rfiWsId + '/rfis', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + rfiToken
+            },
+            body: JSON.stringify(rfiBody)
+          }).then(function(resp) {
+            if (resp.ok) {
+              console.log('[RFI] Persisted to database via API');
+              resp.json().then(function(data) {
+                console.log('[RFI] DB record:', data && data.data ? data.data.id : 'unknown');
+              });
+            } else {
+              console.warn('[RFI] API persist failed:', resp.status);
+              resp.text().then(function(t) { console.warn('[RFI] API error:', t); });
+            }
+          }).catch(function(err) {
+            console.warn('[RFI] API persist error:', err);
+          });
+        } else {
+          console.log('[RFI] No auth token — RFI saved locally only');
+        }
+      }
+
       // Update local state
       srrState.patchDraft.status = 'Submitted';
       

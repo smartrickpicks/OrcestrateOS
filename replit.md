@@ -46,6 +46,7 @@ The system is undergoing a multi-gate upgrade to add Postgres-backed multi-user 
 - **Google OAuth COMPLETE:** Full login flow — Google Sign-In → backend ID token verification → email-based user matching → active status check → workspace role resolution → JWT issuance → frontend Bearer auth
 - **JWT session layer:** HS256 signing with 24-hour expiry, inactive user DB check on every JWT auth request
 - **Members CRUD:** Admin-only member management persists to Postgres via API (GET/POST/PATCH/DELETE)
+- **RFI DB persistence:** Frontend RFI submissions POST to `/api/v2.5/workspaces/{ws_id}/rfis` with JWT auth, persisting to Postgres `rfis` table with audit trail. RFIs bypass preflight gates but require justification (evidence gate).
 - **Auth smoke tests:** 10/10 PASS — config, JWT auth, inactive user JWT denial, unlisted user denial, role scoping, member management, secret safety, validation
 - **Seeded users:** 9 Create Music Group employees + 4 demo users in workspace `ws_SEED0100000000000000000000`
 - **Migration 003:** `server/migrations/003_auth_google_oauth.sql` — adds `status` and `google_sub` columns to users table, seeds CMG users
