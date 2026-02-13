@@ -712,12 +712,18 @@ async def drive_export(ws_id: str, request: Request, auth=Depends(require_auth(A
 
     file_name = body.get("file_name", "").strip()
     folder_id = body.get("folder_id", "").strip()
-    export_status = body.get("status", "IN_PROGRESS")
+    export_status = body.get("status", "IN_PROGRESS_ANALYST")
+    file_content_b64 = body.get("file_content_base64", "")
 
     if not file_name:
         return JSONResponse(
             status_code=400,
             content=error_envelope("VALIDATION_ERROR", "file_name is required"),
+        )
+    if not file_content_b64:
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "file_content_base64 is required"),
         )
 
     conn = get_conn()
@@ -730,12 +736,35 @@ async def drive_export(ws_id: str, request: Request, auth=Depends(require_auth(A
             )
 
         access_token = _refresh_token_if_needed(conn_row, conn)
+        service = _get_drive_service(access_token)
 
-        from datetime import date
-        date_suffix = date.today().strftime("%Y-%m-%d")
-        final_name = "[%s] %s_%s.xlsx" % (export_status, file_name.replace(".xlsx", ""), date_suffix)
+        final_name = file_name if file_name.endswith('.xlsx') else file_name + '.xlsx'
 
-        event_type = "DRIVE_EXPORT_FINALIZED" if export_status in ("VERIFIED", "APPROVED") else "DRIVE_EXPORT_SAVED"
+        file_bytes = base64.b64decode(file_content_b64)
+
+        from googleapiclient.http import MediaInMemoryUpload
+        media = MediaInMemoryUpload(
+            file_bytes,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            resumable=False,
+        )
+
+        file_metadata = {"name": final_name, "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
+        if folder_id:
+            file_metadata["parents"] = [folder_id]
+
+        created = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields="id, name, webViewLink, size",
+            supportsAllDrives=True,
+        ).execute()
+
+        drive_file_id = created.get("id", "")
+        drive_link = created.get("webViewLink", "")
+
+        final_states = ("ADMIN_FINAL", "VERIFIER_DONE", "REJECTED")
+        event_type = "DRIVE_EXPORT_FINALIZED" if export_status in final_states else "DRIVE_EXPORT_SAVED"
 
         with conn.cursor() as cur:
             emit_audit_event(
@@ -746,17 +775,21 @@ async def drive_export(ws_id: str, request: Request, auth=Depends(require_auth(A
                 actor_role=auth.role,
                 detail={
                     "file_name": final_name,
-                    "folder_id": folder_id or "source_folder",
+                    "folder_id": folder_id or "root",
                     "status": export_status,
+                    "drive_file_id": drive_file_id,
+                    "size_bytes": len(file_bytes),
                 },
             )
         conn.commit()
 
         return envelope({
             "file_name": final_name,
-            "folder_id": folder_id or "source_folder",
+            "drive_file_id": drive_file_id,
+            "web_view_link": drive_link,
+            "folder_id": folder_id or "root",
             "status": export_status,
-            "message": "Export prepared. File upload requires Drive write scope.",
+            "size_bytes": len(file_bytes),
         })
     except Exception as e:
         logger.error("drive_export error: %s", e)

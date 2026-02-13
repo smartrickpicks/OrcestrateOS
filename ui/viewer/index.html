@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Orchestrate OS — Semantic Control Board</title>
-  <!-- SheetJS library for XLSX parsing (v1.4.12) -->
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <!-- xlsx-js-style: SheetJS fork with cell style support (fills, fonts, borders) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.full.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; margin: 0; padding: 0; }
@@ -2029,7 +2029,11 @@
         <div class="nav-section" style="padding: 12px 16px;">
           <button class="nav-action-btn export-btn" onclick="handleExportSave()">
             <span class="nav-action-icon">💾</span>
-            <span>Export / Save</span>
+            <span>Export Local</span>
+          </button>
+          <button class="nav-action-btn export-btn" onclick="handleSaveToDrive()" style="margin-top:6px;background:#1a73e8;color:#fff;">
+            <span class="nav-action-icon">☁️</span>
+            <span>Save to Drive</span>
           </button>
         </div>
       </div>
@@ -19232,108 +19236,219 @@
       });
     }
 
-    // ========== EXPORT / SAVE FUNCTIONALITY (v1.6.33) ==========
+    // ========== EXPORT STATUS + CELL STYLE ENGINE (v2.0) ==========
+    var EXPORT_STATUS_ENUM = {
+      IN_PROGRESS_ANALYST: 'IN_PROGRESS_ANALYST',
+      ANALYST_DONE: 'ANALYST_DONE',
+      VERIFIER_DONE: 'VERIFIER_DONE',
+      ADMIN_FINAL: 'ADMIN_FINAL',
+      REJECTED: 'REJECTED'
+    };
+    var EXPORT_FINAL_STATES = ['ADMIN_FINAL', 'VERIFIER_DONE', 'REJECTED'];
+
+    function _resolveExportStatus() {
+      var role = 'analyst';
+      if (typeof getCurrentRole === 'function') {
+        role = getCurrentRole() || 'analyst';
+      } else if (typeof _roleSimulation !== 'undefined' && _roleSimulation.active && _roleSimulation.effectiveRole) {
+        role = _roleSimulation.effectiveRole;
+      } else {
+        var stored = localStorage.getItem('currentRole') || localStorage.getItem('viewer_mode_v10');
+        if (stored) role = stored;
+      }
+      role = role.toLowerCase();
+
+      if (role === 'admin' || role === 'architect') return EXPORT_STATUS_ENUM.ADMIN_FINAL;
+      if (role === 'verifier') return EXPORT_STATUS_ENUM.VERIFIER_DONE;
+      return EXPORT_STATUS_ENUM.IN_PROGRESS_ANALYST;
+    }
+
+    function _buildExportFilename(baseName, status) {
+      var now = new Date();
+      var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
+      var ts = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
+               '_' + pad(now.getHours()) + '-' + pad(now.getMinutes());
+      var wsId = '';
+      if (typeof _getWorkspaceId === 'function') {
+        wsId = _getWorkspaceId();
+      } else if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) {
+        wsId = IDENTITY_CONTEXT.workspace_id;
+      }
+      var cleanBase = (baseName || 'dataset').replace(/\.xlsx$/i, '').replace(/\.xls$/i, '').replace(/\.csv$/i, '');
+      return cleanBase + '__' + status + '__' + ts + '__' + wsId + '.xlsx';
+    }
+
+    var EXPORT_CELL_FILLS = {
+      blacklist: { fgColor: { rgb: 'FFD6D6' } },
+      rfi:       { fgColor: { rgb: 'FFE0B2' } },
+      rfi_pending: { fgColor: { rgb: 'FFE0B2' } },
+      verified:  { fgColor: { rgb: 'C8E6C9' } },
+      patched:   { fgColor: { rgb: 'BBDEFB' } }
+    };
+    var EXPORT_STATE_PRIORITY = { blacklist: 1, rfi: 2, rfi_pending: 2, patched: 3, verified: 4 };
+
+    function _applyCellStylesToSheet(ws, sheetName, headers, rowCount) {
+      for (var ri = 0; ri < rowCount; ri++) {
+        var rowData = workbook.sheets[sheetName] && workbook.sheets[sheetName].rows[ri];
+        var recordId = (rowData && rowData.record_id) || (sheetName + ':' + ri);
+        for (var ci = 0; ci < headers.length; ci++) {
+          var col = headers[ci];
+          var normKey = typeof normalizeFieldKey === 'function' ? normalizeFieldKey(col) : col.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+          var bestState = '';
+          var bestPriority = 99;
+
+          if (window._gridVerifiedCells && window._gridVerifiedCells[recordId] && window._gridVerifiedCells[recordId][col]) {
+            if (EXPORT_STATE_PRIORITY['verified'] < bestPriority) { bestState = 'verified'; bestPriority = EXPORT_STATE_PRIORITY['verified']; }
+          }
+          if (window._gridVerifiedCells && window._gridVerifiedCells[recordId] && window._gridVerifiedCells[recordId][normKey]) {
+            if (EXPORT_STATE_PRIORITY['verified'] < bestPriority) { bestState = 'verified'; bestPriority = EXPORT_STATE_PRIORITY['verified']; }
+          }
+
+          var fieldState = typeof _getFieldState === 'function' ? _getFieldState(recordId, normKey) : '';
+          if (fieldState && EXPORT_STATE_PRIORITY[fieldState] && EXPORT_STATE_PRIORITY[fieldState] < bestPriority) {
+            bestState = fieldState;
+            bestPriority = EXPORT_STATE_PRIORITY[fieldState];
+          }
+
+          if (bestState && EXPORT_CELL_FILLS[bestState]) {
+            var cellRef = XLSX.utils.encode_cell({ r: ri + 1, c: ci });
+            if (ws[cellRef]) {
+              if (!ws[cellRef].s) ws[cellRef].s = {};
+              ws[cellRef].s.fill = EXPORT_CELL_FILLS[bestState];
+            }
+          }
+        }
+      }
+    }
+
+    // ========== EXPORT / SAVE FUNCTIONALITY (v1.6.33 + v2.0 status naming + cell styles) ==========
+    function _buildExportWorkbook() {
+      var wb = XLSX.utils.book_new();
+      var dataSheets = getDataSheets();
+      dataSheets.forEach(function(sheetName) {
+        var sheetData = workbook.sheets[sheetName];
+        if (!sheetData || !sheetData.rows) return;
+        var exportHeaders = sheetData.headers.slice();
+        var extraCols = ['batch_id', 'contract_id', 'document_id', 'document_role', 'document_type', 'capabilities', 'merged_from', 'group_id'];
+        extraCols.forEach(function(c) {
+          if (exportHeaders.indexOf(c) < 0) exportHeaders.push(c);
+        });
+        var sheetArray = [exportHeaders];
+        sheetData.rows.forEach(function(row) {
+          var rowArray = exportHeaders.map(function(h) {
+            if (h === 'batch_id') return row._identity && row._identity.batch_id || IDENTITY_CONTEXT.batch_id || '';
+            if (h === 'contract_id') return row._identity && row._identity.contract_id || row._contract_id || '';
+            if (h === 'document_id') return row._identity && row._identity.document_id || row._document_id || '';
+            if (h === 'document_role') return row._document_role || 'Unknown';
+            if (h === 'document_type') return row._document_type || 'Unknown';
+            if (h === 'capabilities') {
+              var caps = row._capabilities;
+              if (!caps || Object.keys(caps).length === 0) return '';
+              return JSON.stringify(caps);
+            }
+            if (h === 'merged_from') return row._merged_from ? JSON.stringify(row._merged_from) : '';
+            if (h === 'group_id') return (row._group && row._group.group_id) || '';
+            var val = row[h];
+            if (val === null || val === undefined) return '';
+            if (typeof val === 'object') return JSON.stringify(val);
+            return val;
+          });
+          sheetArray.push(rowArray);
+        });
+        var ws = XLSX.utils.aoa_to_sheet(sheetArray);
+        var colWidths = sheetData.headers.map(function(h) {
+          return { wch: Math.min(30, Math.max(10, h.length + 2)) };
+        });
+        ws['!cols'] = colWidths;
+        _applyCellStylesToSheet(ws, sheetName, exportHeaders, sheetData.rows.length);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31));
+      });
+      var changeLogWs = buildChangeLogSheet();
+      if (changeLogWs) XLSX.utils.book_append_sheet(wb, changeLogWs, '_change_log');
+      var rfiWs = buildRFISheet();
+      if (rfiWs) XLSX.utils.book_append_sheet(wb, rfiWs, 'RFIs & Analyst Notes');
+      var signalsWs = buildSignalsSummarySheet();
+      if (signalsWs) XLSX.utils.book_append_sheet(wb, signalsWs, '_signals_summary');
+      var metaWs = buildMetadataSheet();
+      XLSX.utils.book_append_sheet(wb, metaWs, '_orchestrate_meta');
+      var auditWs = buildAuditLogSheet();
+      if (auditWs) XLSX.utils.book_append_sheet(wb, auditWs, 'Audit_Log');
+      return wb;
+    }
+
     function handleExportSave() {
       if (typeof XLSX === 'undefined') {
         showToast('Excel library not loaded. Please refresh and try again.', 'error');
         return;
       }
-      
       if (!workbook || !workbook.order || workbook.order.length === 0) {
         showToast('No data to export. Please load a dataset first.', 'warning');
         return;
       }
-      
       showToast('Preparing export...', 'info');
-      
       try {
-        var wb = XLSX.utils.book_new();
-        
-        // v1.6.33: Export all data sheets with styling metadata
-        var dataSheets = getDataSheets();
-        dataSheets.forEach(function(sheetName) {
-          var sheetData = workbook.sheets[sheetName];
-          if (!sheetData || !sheetData.rows) return;
-          // Build sheet array with headers + orchestrate columns
-          var exportHeaders = sheetData.headers.slice();
-          var extraCols = ['batch_id', 'contract_id', 'document_id', 'document_role', 'document_type', 'capabilities', 'merged_from', 'group_id'];
-          extraCols.forEach(function(c) {
-            if (exportHeaders.indexOf(c) < 0) exportHeaders.push(c);
-          });
-          var sheetArray = [exportHeaders];
-          // Add rows
-          sheetData.rows.forEach(function(row) {
-            var rowArray = exportHeaders.map(function(h) {
-              if (h === 'batch_id') return row._identity && row._identity.batch_id || IDENTITY_CONTEXT.batch_id || '';
-              if (h === 'contract_id') return row._identity && row._identity.contract_id || row._contract_id || '';
-              if (h === 'document_id') return row._identity && row._identity.document_id || row._document_id || '';
-              if (h === 'document_role') return row._document_role || 'Unknown';
-              if (h === 'document_type') return row._document_type || 'Unknown';
-              if (h === 'capabilities') {
-                var caps = row._capabilities;
-                if (!caps || Object.keys(caps).length === 0) return '';
-                return JSON.stringify(caps);
-              }
-              if (h === 'merged_from') return row._merged_from ? JSON.stringify(row._merged_from) : '';
-              if (h === 'group_id') return (row._group && row._group.group_id) || '';
-              var val = row[h];
-              if (val === null || val === undefined) return '';
-              if (typeof val === 'object') return JSON.stringify(val);
-              return val;
-            });
-            sheetArray.push(rowArray);
-          });
-          var ws = XLSX.utils.aoa_to_sheet(sheetArray);
-          // v1.6.33: Apply column widths
-          var colWidths = sheetData.headers.map(function(h) {
-            return { wch: Math.min(30, Math.max(10, h.length + 2)) };
-          });
-          ws['!cols'] = colWidths;
-          XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31));
-        });
-        
-        // v1.6.33: Add _change_log sheet with all changes
-        var changeLogWs = buildChangeLogSheet();
-        if (changeLogWs) {
-          XLSX.utils.book_append_sheet(wb, changeLogWs, '_change_log');
-        }
-        
-        // v1.6.33: Add RFIs & Analyst Notes sheet
-        var rfiWs = buildRFISheet();
-        if (rfiWs) {
-          XLSX.utils.book_append_sheet(wb, rfiWs, 'RFIs & Analyst Notes');
-        }
-        
-        // v1.6.33: Add Signals Summary sheet
-        var signalsWs = buildSignalsSummarySheet();
-        if (signalsWs) {
-          XLSX.utils.book_append_sheet(wb, signalsWs, '_signals_summary');
-        }
-        
-        // v1.6.33: Add Orchestrate OS Metadata sheet
-        var metaWs = buildMetadataSheet();
-        XLSX.utils.book_append_sheet(wb, metaWs, '_orchestrate_meta');
-        
-        // v1.6.59: Add Audit_Log sheet
-        var auditWs = buildAuditLogSheet();
-        if (auditWs) {
-          XLSX.utils.book_append_sheet(wb, auditWs, 'Audit_Log');
-        }
-
-        // Generate filename with timestamp
+        var wb = _buildExportWorkbook();
+        var exportStatus = _resolveExportStatus();
         var datasetName = IDENTITY_CONTEXT.dataset_id || 'dataset';
-        var timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
-        var filename = 'orchestrate_' + datasetName + '_' + timestamp + '.xlsx';
-        
-        // Download file
+        var filename = _buildExportFilename(datasetName, exportStatus);
         XLSX.writeFile(wb, filename);
-        
         showToast('Exported: ' + filename, 'success');
-        console.log('[Export] Generated:', filename, 'sheets:', wb.SheetNames.length);
-        
+        console.log('[Export] Generated:', filename, 'status:', exportStatus, 'sheets:', wb.SheetNames.length);
       } catch (err) {
         console.error('[Export] Error:', err);
         showToast('Export failed: ' + err.message, 'error');
+      }
+    }
+
+    function handleSaveToDrive(folderId) {
+      if (typeof XLSX === 'undefined') {
+        showToast('Excel library not loaded.', 'error');
+        return;
+      }
+      if (!workbook || !workbook.order || workbook.order.length === 0) {
+        showToast('No data to save. Please load a dataset first.', 'warning');
+        return;
+      }
+      showToast('Building workbook for Drive...', 'info');
+      try {
+        var wb = _buildExportWorkbook();
+        var exportStatus = _resolveExportStatus();
+        var datasetName = IDENTITY_CONTEXT.dataset_id || 'dataset';
+        var filename = _buildExportFilename(datasetName, exportStatus);
+
+        var wbOut = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+
+        var ws = typeof _getWorkspaceId === 'function' ? _getWorkspaceId() : '';
+        var targetFolder = folderId || '';
+        var driveRootId = '';
+        try { driveRootId = localStorage.getItem('drive_root_folder_id') || ''; } catch(e) {}
+        if (!targetFolder && driveRootId) targetFolder = driveRootId;
+
+        showToast('Uploading to Google Drive...', 'info');
+        fetch(API_BASE + '/workspaces/' + ws + '/drive/export', {
+          method: 'POST',
+          headers: typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            file_name: filename,
+            folder_id: targetFolder,
+            status: exportStatus,
+            file_content_base64: wbOut
+          })
+        }).then(function(r) { return r.json(); })
+        .then(function(resp) {
+          if (resp.data && resp.data.drive_file_id) {
+            showToast('Saved to Drive: ' + resp.data.file_name, 'success');
+            console.log('[Drive Export] Saved:', resp.data.file_name, 'id:', resp.data.drive_file_id);
+          } else {
+            showToast('Drive save failed: ' + ((resp.error && resp.error.message) || 'Unknown error'), 'error');
+          }
+        }).catch(function(err) {
+          showToast('Drive save failed: ' + err.message, 'error');
+        });
+      } catch (err) {
+        console.error('[Drive Export] Error:', err);
+        showToast('Drive save failed: ' + err.message, 'error');
       }
     }
     
