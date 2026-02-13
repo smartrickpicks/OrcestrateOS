@@ -1051,6 +1051,323 @@ components:
         Required for service ingestion endpoints (POST /signals, POST /triage-items).
         Accepted as alternative auth on read endpoints.
 
+  /workspaces/{workspace_id}/drive/connect:
+    post:
+      operationId: connectDrive
+      summary: Initiate Google Drive OAuth connection
+      tags: [Drive]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                redirect_uri:
+                  type: string
+                  description: OAuth callback URL
+              required: [redirect_uri]
+      responses:
+        '200':
+          description: OAuth authorization URL returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      auth_url:
+                        type: string
+                        description: Google OAuth consent URL to redirect user to
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '403':
+          description: Insufficient permissions (admin/architect only)
+
+  /workspaces/{workspace_id}/drive/callback:
+    post:
+      operationId: driveOAuthCallback
+      summary: Handle Drive OAuth callback and store tokens
+      tags: [Drive]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: OAuth authorization code from Google
+                redirect_uri:
+                  type: string
+              required: [code, redirect_uri]
+      responses:
+        '200':
+          description: Drive connected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      connected:
+                        type: boolean
+                      drive_email:
+                        type: string
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+
+  /workspaces/{workspace_id}/drive/disconnect:
+    delete:
+      operationId: disconnectDrive
+      summary: Disconnect Google Drive and revoke tokens
+      tags: [Drive]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: Drive disconnected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      disconnected:
+                        type: boolean
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '403':
+          description: Insufficient permissions (admin/architect only)
+
+  /workspaces/{workspace_id}/drive/status:
+    get:
+      operationId: getDriveStatus
+      summary: Check Drive connection status
+      tags: [Drive]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: Connection status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      connected:
+                        type: boolean
+                      drive_email:
+                        type: string
+                        nullable: true
+                      connected_at:
+                        type: string
+                        format: date-time
+                        nullable: true
+                      connected_by:
+                        type: string
+                        nullable: true
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+
+  /workspaces/{workspace_id}/drive/browse:
+    get:
+      operationId: browseDrive
+      summary: Browse Drive folders and files
+      tags: [Drive]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: parent_id
+          in: query
+          schema:
+            type: string
+          description: Folder ID to list contents of. Omit for root / shared drives.
+        - name: drive_id
+          in: query
+          schema:
+            type: string
+          description: Shared drive ID (required for shared drive browsing)
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [drives, files]
+            default: files
+          description: "'drives' lists shared drives, 'files' lists folder contents"
+      responses:
+        '200':
+          description: Drive contents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                            mime_type:
+                              type: string
+                            kind:
+                              type: string
+                              enum: [drive, folder, file]
+                            modified_time:
+                              type: string
+                              format: date-time
+                              nullable: true
+                            size:
+                              type: integer
+                              nullable: true
+                      breadcrumb:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+
+  /workspaces/{workspace_id}/drive/import:
+    post:
+      operationId: importFromDrive
+      summary: Import a file from Google Drive as working copy
+      tags: [Drive]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                file_id:
+                  type: string
+                  description: Google Drive file ID
+                drive_id:
+                  type: string
+                  nullable: true
+                  description: Shared drive ID (if applicable)
+              required: [file_id]
+      responses:
+        '200':
+          description: File imported successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      import_id:
+                        type: string
+                        description: Provenance record ID (drv_ prefix)
+                      filename:
+                        type: string
+                      mime_type:
+                        type: string
+                      size_bytes:
+                        type: integer
+                      source_file_id:
+                        type: string
+                      source_drive_id:
+                        type: string
+                        nullable: true
+                      has_external_modifications:
+                        type: boolean
+                      baseline_unknown:
+                        type: boolean
+                      download_url:
+                        type: string
+                        description: Temporary URL to fetch file bytes
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+
+  /workspaces/{workspace_id}/drive/export:
+    post:
+      operationId: exportToDrive
+      summary: Export working copy back to Google Drive
+      tags: [Drive]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The workbook file to upload
+                export_type:
+                  type: string
+                  enum: [in_progress, final]
+                  description: "'in_progress' for Save In Progress, 'final' for Export Final"
+                target_folder_id:
+                  type: string
+                  description: Drive folder to save into (defaults to source folder)
+                source_import_id:
+                  type: string
+                  description: Original import provenance ID for traceability
+                changes_log:
+                  type: string
+                  description: JSON-encoded changes log artifact
+              required: [file, export_type]
+      responses:
+        '200':
+          description: File exported to Drive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      drive_file_id:
+                        type: string
+                        description: ID of the created Drive file
+                      drive_file_name:
+                        type: string
+                        description: Filename with status convention applied
+                      drive_file_url:
+                        type: string
+                        description: Web URL to the file in Drive
+                      export_type:
+                        type: string
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '403':
+          description: Role not authorized for this export type
+
 security:
   - BearerToken: []
   - ScopedApiKey: []

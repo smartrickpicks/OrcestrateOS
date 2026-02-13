@@ -698,10 +698,119 @@ SSE stream uses standard `text/event-stream` format with `event:` and `data:` fi
 
 ---
 
-## 12. Cross-References
+## 12. Google Drive Data Source
+
+### 12.1 Overview
+
+Google Drive is a first-class data source alongside local file upload. Users can connect their Google Drive, browse shared drives/folders, import contract workbooks as working copies, and export governed artifacts back to Drive with status-based naming conventions.
+
+### 12.2 ID Prefix
+
+| Prefix | Resource | Example |
+|--------|----------|---------|
+| `drv_` | Drive Import Provenance | `drv_01HXYZ...` |
+
+### 12.3 Endpoints
+
+All Drive endpoints are workspace-scoped: `/api/v2.5/workspaces/{workspace_id}/drive/...`
+
+| Method | Path | Description | Auth |
+|--------|------|-------------|------|
+| POST | `/drive/connect` | Initiate Drive OAuth flow | Admin/Architect |
+| POST | `/drive/callback` | Handle OAuth callback, store tokens | Admin/Architect |
+| DELETE | `/drive/disconnect` | Revoke Drive access, clear tokens | Admin/Architect |
+| GET | `/drive/status` | Check connection state | Any role |
+| GET | `/drive/browse` | List drives/folders/files | Any role |
+| POST | `/drive/import` | Import file as working copy | Any role |
+| POST | `/drive/export` | Export working copy to Drive | Role-based |
+
+### 12.4 Import Semantics
+
+- Import always creates an **immutable source snapshot** (provenance metadata) and an **editable working copy**
+- Source file on Drive is never modified by import
+- Provenance metadata tracks: `source_file_id`, `source_drive_id`, `source_version`, `imported_at`, `imported_by`, `has_external_modifications`, `baseline_unknown`
+- Working copy enters the same pipeline as local upload (parseUnifiedWorkbook → signals → triage)
+- Files with pre-existing red cells are accepted; `has_external_modifications` is flagged true
+
+### 12.5 Export Semantics
+
+Two export modes:
+- **Save In Progress**: Creates `[IN_PROGRESS-{ROLE}] filename.xlsx` — any role can save
+- **Export Final**: Creates `[{STATUS}] filename.xlsx` — role-based naming:
+  - `[ANALYST_DONE]` — Analyst marks complete
+  - `[VERIFIER_DONE]` — Verifier approved
+  - `[ADMIN_FINAL]` — Admin signed off
+  - `[REJECTED]` — Rejected at any stage
+
+Export never silently overwrites the source file. A new file or versioned name is always created.
+
+### 12.6 Drive Audit Events
+
+| Event Type | Trigger | Key Metadata |
+|------------|---------|--------------|
+| `DRIVE_CONNECTED` | OAuth flow completed | `drive_email`, `scopes_granted` |
+| `DRIVE_DISCONNECTED` | User disconnects | `drive_email` |
+| `DRIVE_FILE_BROWSED` | Folder navigation | `folder_id`, `drive_id` |
+| `DRIVE_FILE_IMPORTED` | File imported | `source_file_id`, `filename`, `has_external_modifications` |
+| `DRIVE_EXPORT_SAVED` | Save In Progress | `drive_file_id`, `export_filename`, `export_type` |
+| `DRIVE_EXPORT_FINALIZED` | Export Final | `drive_file_id`, `export_filename`, `export_type`, `status_label` |
+
+All Drive audit events include `actor_id`, `actor_role`, `effective_role`, `workspace_id`, and sandbox metadata where applicable.
+
+### 12.7 Database Schema (Preview)
+
+**`drive_connections`** — One per workspace, stores OAuth tokens server-side.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `TEXT PK` | `drc_` prefixed ULID |
+| `workspace_id` | `TEXT FK` | References workspaces |
+| `user_id` | `TEXT FK` | Who connected |
+| `drive_email` | `TEXT` | Google account email |
+| `access_token` | `TEXT` | Encrypted |
+| `refresh_token` | `TEXT` | Encrypted |
+| `token_expiry` | `TIMESTAMPTZ` | When access token expires |
+| `scopes` | `TEXT` | Granted scopes |
+| `status` | `TEXT` | `active` / `revoked` |
+| `connected_at` | `TIMESTAMPTZ` | |
+| `disconnected_at` | `TIMESTAMPTZ` | Nullable |
+
+**`drive_import_provenance`** — One per imported file, tracks source lineage.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `TEXT PK` | `drv_` prefixed ULID |
+| `workspace_id` | `TEXT FK` | References workspaces |
+| `batch_id` | `TEXT FK` | Nullable, references batches |
+| `source_file_id` | `TEXT` | Google Drive file ID |
+| `source_drive_id` | `TEXT` | Nullable (shared drive ID) |
+| `source_filename` | `TEXT` | Original filename |
+| `source_mime_type` | `TEXT` | MIME type |
+| `source_version` | `TEXT` | Nullable (Drive file version) |
+| `source_size_bytes` | `INTEGER` | File size |
+| `imported_at` | `TIMESTAMPTZ` | |
+| `imported_by` | `TEXT FK` | References users |
+| `has_external_modifications` | `BOOLEAN` | Pre-existing red cells detected |
+| `baseline_unknown` | `BOOLEAN` | No prior baseline in system |
+
+### 12.8 OAuth Scopes Policy
+
+- **Preferred scope**: `https://www.googleapis.com/auth/drive.file` (least privilege — only files created/opened by app)
+- **Alternative scope**: `https://www.googleapis.com/auth/drive.readonly` (broader read access for shared folder browsing)
+- Drive OAuth is **separate** from login OAuth (different consent flow, different scopes)
+- Tokens stored **server-side only** — never in browser storage
+- Access tokens auto-refreshed via refresh token before expiry
+
+---
+
+## 13. Cross-References
 
 - `docs/handoff/V25_READINESS_REPORT.md` — Gap analysis
 - `docs/decisions/DECISION_V25_DB.md` — PostgreSQL lock
+- `docs/decisions/DECISION_V25_DRIVE_SCOPE.md` — Drive scope decisions
+- `docs/features/V25_GOOGLE_DRIVE_INTEGRATION.md` — Drive feature specification
+- `docs/handoff/V25_DRIVE_READINESS_REPORT.md` — Drive readiness assessment
+- `docs/handoff/V25_DRIVE_TASK_LIST.md` — Drive implementation task list
 - `docs/memos/V23_ID_MODEL.md` — V2.3 ID model (fingerprint source)
 - `docs/memos/V23_GATE_DECISIONS.md` — Gate rules to preserve
 - `docs/AUDIT_LOG.md` — V2.3 audit event schema
