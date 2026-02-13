@@ -15503,13 +15503,22 @@
 
     function _evRfiRoleFilter(rfis, role, userId) {
       if (!role || role === 'admin' || role === 'architect') return rfis;
+      var localIds = {};
+      var now = Date.now();
+      Object.keys(_evRfiLocalCache).forEach(function(k) {
+        (_evRfiLocalCache[k] || []).forEach(function(entry) {
+          if (entry.id && (now - entry._cachedAt) < 300000) localIds[entry.id] = true;
+        });
+      });
       if (role === 'analyst') {
         return rfis.filter(function(r) {
+          if (r.id && localIds[r.id]) return true;
           return r.author_id === userId || r.custody_owner_id === userId;
         });
       }
       if (role === 'verifier') {
         return rfis.filter(function(r) {
+          if (r.id && localIds[r.id]) return true;
           var meta = r.metadata || {};
           if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) { meta = {}; } }
           var assignedTo = meta.assigned_to || r.custody_owner_id || '';
@@ -15594,18 +15603,28 @@
       var url = '/api/v2.5/workspaces/' + encodeURIComponent(wsId) + '/rfis?record_id=' + encodeURIComponent(recordId);
       if (_evRfiDebug) console.log('[EV-RFI-PANEL] Load', { url: url, wsId: wsId, recordId: recordId, role: role, userId: userId });
 
+      if (optimisticItem && optimisticItem.id) {
+        if (!_evRfiLocalCache[recordId]) _evRfiLocalCache[recordId] = [];
+        var alreadyCached = _evRfiLocalCache[recordId].some(function(c) { return c.id === optimisticItem.id; });
+        if (!alreadyCached) _evRfiLocalCache[recordId].push({ id: optimisticItem.id, data: optimisticItem, _cachedAt: Date.now() });
+      }
+      var cachedForRecord = (_evRfiLocalCache[recordId] || []).filter(function(entry) {
+        return (Date.now() - entry._cachedAt) < 300000;
+      });
+      _evRfiLocalCache[recordId] = cachedForRecord;
+
       fetch(url, { headers: headers })
         .then(function(r) { return r.ok ? r.json() : { items: [] }; })
         .then(function(data) {
           var allRfis = Array.isArray(data) ? data : (data.items || []);
-          if (_evRfiDebug) console.log('[EV-RFI-PANEL] Server returned', allRfis.length, 'RFIs');
-          if (optimisticItem && optimisticItem.id) {
-            var optimisticFound = allRfis.some(function(r) { return r.id === optimisticItem.id; });
-            if (!optimisticFound) {
-              allRfis.unshift(optimisticItem);
-              if (_evRfiDebug) console.log('[EV-RFI-PANEL] Preserved optimistic RFI (not yet in server):', optimisticItem.id);
-            }
-          }
+          if (_evRfiDebug) console.log('[EV-RFI-PANEL] Server returned', allRfis.length, 'RFIs, local cache:', cachedForRecord.length);
+          var serverIds = {};
+          allRfis.forEach(function(r) { if (r.id) serverIds[r.id] = true; });
+          var reconciledCache = cachedForRecord.filter(function(entry) { return !serverIds[entry.id]; });
+          _evRfiLocalCache[recordId] = reconciledCache;
+          reconciledCache.forEach(function(entry) {
+            allRfis.unshift(entry.data);
+          });
           var filtered = _evRfiRoleFilter(allRfis, role, userId);
           if (_evRfiDebug) console.log('[EV-RFI-PANEL] After role filter (' + role + '):', filtered.length, 'of', allRfis.length);
           filtered.sort(function(a, b) {
@@ -15623,14 +15642,20 @@
         })
         .catch(function(err) {
           console.error('[EV-RFI-PANEL] Fetch error:', err);
-          if (optimisticItem && rfisBody) {
-            if (_evRfiDebug) console.log('[EV-RFI-PANEL] Fetch failed but preserving optimistic RFI');
+          if (cachedForRecord.length > 0 && rfisBody) {
+            if (_evRfiDebug) console.log('[EV-RFI-PANEL] Fetch failed, showing cached RFIs');
+            var cachedItems = cachedForRecord.map(function(e) { return e.data; });
+            var filtered = _evRfiRoleFilter(cachedItems, role, userId);
+            if (rfisCount) rfisCount.textContent = String(filtered.length);
+            rfisBody.innerHTML = filtered.map(_evRenderRfiItem).join('');
             return;
           }
           if (rfisBody) rfisBody.innerHTML = '<div class="ev-ri-empty">Could not load RFIs</div>';
           if (rfisCount) rfisCount.textContent = '0';
         });
     }
+
+    var _evRfiLocalCache = {};
 
     var _evRfiLastViewedAt = localStorage.getItem('ev_rfi_last_viewed_at') || '';
     var _evRfiUnseenCount = 0;
