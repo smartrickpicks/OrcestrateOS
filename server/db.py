@@ -27,11 +27,36 @@ def get_pool():
 
 
 def get_conn():
-    return get_pool().getconn()
+    p = get_pool()
+    conn = p.getconn()
+    try:
+        conn.isolation_level
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1")
+            cur.fetchone()
+        if conn.status != 1:
+            raise psycopg2.OperationalError("connection not ready")
+    except Exception:
+        try:
+            p.putconn(conn, close=True)
+        except Exception:
+            pass
+        conn = p.getconn()
+        try:
+            conn.reset()
+        except Exception:
+            pass
+    return conn
 
 
-def put_conn(conn):
-    get_pool().putconn(conn)
+def put_conn(conn, close=False):
+    try:
+        if conn.closed:
+            get_pool().putconn(conn, close=True)
+        else:
+            get_pool().putconn(conn, close=close)
+    except Exception:
+        pass
 
 
 def close_pool():
