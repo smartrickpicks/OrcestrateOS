@@ -2301,9 +2301,10 @@
               </div>
               
               <div class="admin-only-content" style="border-top: 1px solid #e0e0e0; margin-top: 15px; padding-top: 15px;">
-                <div style="font-weight: 600; font-size: 0.85em; color: #666; margin-bottom: 10px;">Test Utilities</div>
+                <div style="font-weight: 600; font-size: 0.85em; color: #666; margin-bottom: 10px;">Sandbox Controls</div>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                  <button class="top-toolbar-btn" id="btn-reset-demo-state" style="font-size: 0.85em;">Reset Demo State</button>
+                  <button class="top-toolbar-btn" onclick="resetPlayground();" style="font-size: 0.85em; background: #fff3e0; color: #e65100; border: 1px solid #ffcc80;" title="Clear all sandbox edits, RFIs, and patches — keeps uploaded data">Reset Sandbox</button>
+                  <button class="top-toolbar-btn" id="btn-reset-demo-state" style="font-size: 0.85em;" title="Full reset — clears everything including uploaded data">Reset All Data</button>
                   <button class="top-toolbar-btn" id="btn-rebuild-field-index" style="font-size: 0.85em;">Rebuild Field Index</button>
                 </div>
               </div>
@@ -5061,9 +5062,10 @@
         
         <!-- Admin Utilities (admin-only) -->
         <div class="admin-only-content" style="border-top: 1px solid #e0e0e0; padding-top: 15px; margin-top: 15px;">
-          <div style="font-weight: 600; margin-bottom: 10px; color: #888; font-size: 0.85em;">ADMIN UTILITIES</div>
+          <div style="font-weight: 600; margin-bottom: 10px; color: #888; font-size: 0.85em;">SANDBOX CONTROLS</div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="top-toolbar-btn" id="btn-reset-demo-state-admin" onclick="resetDemoState();">Reset Demo State</button>
+            <button class="top-toolbar-btn" onclick="resetPlayground();" style="background: #fff3e0; color: #e65100; border: 1px solid #ffcc80;" title="Clear all sandbox edits, RFIs, and patches — keeps uploaded data">Reset Sandbox</button>
+            <button class="top-toolbar-btn" id="btn-reset-demo-state-admin" onclick="resetDemoState();" title="Full reset — clears everything including uploaded data">Reset All Data</button>
             <button class="top-toolbar-btn" onclick="rebuildFieldIndex();">Rebuild Index</button>
           </div>
         </div>
@@ -10875,24 +10877,39 @@
       showToast('Environment: ' + env, 'info');
     }
     
-    // Reset playground data (v1.5.1)
+    // Reset playground data (v1.5.1, updated v2.52 — full sandbox session reset)
     function resetPlayground() {
-      if (!confirm('Reset sandbox? This will clear all RFIs, patches, and event logs.')) {
+      if (!confirm('Reset Sandbox?\n\nThis will clear all sandbox-created RFIs, patches, corrections, event logs, and queue items — restoring the original uploaded dataset.\n\nThis cannot be undone.')) {
         return;
       }
       var cleared = ARTIFACT_STORE.resetPlayground();
-      // Also clear legacy verifier queue
-      verifierQueueState.payloads = [];
-      saveVerifierQueue();
+      // Clear legacy verifier queue
+      if (typeof verifierQueueState !== 'undefined') {
+        verifierQueueState.payloads = [];
+        if (typeof saveVerifierQueue === 'function') saveVerifierQueue();
+      }
       // Clear legacy patch storage
       localStorage.removeItem(PATCH_STORAGE_KEY);
-      
-      showToast('Sandbox reset: ' + cleared + ' artifacts cleared', 'success');
-      
-      // Re-render any active views
-      if (typeof renderVerifierTriage === 'function') {
-        renderVerifierTriage();
+      // Clear RFI local cache (sandbox session artifacts)
+      if (typeof _evRfiLocalCache !== 'undefined') {
+        Object.keys(_evRfiLocalCache).forEach(function(k) { delete _evRfiLocalCache[k]; });
       }
+      // Clear RFI unseen badge state
+      if (typeof _evRfiUnseenCount !== 'undefined') _evRfiUnseenCount = 0;
+      localStorage.removeItem('ev_rfi_last_viewed_at');
+      // Clear analyst triage sandbox data
+      localStorage.removeItem('orchestrate.comments.v1');
+      localStorage.removeItem('orchestrate.patch_requests.v1');
+      
+      showToast('Sandbox reset: ' + cleared + ' artifacts cleared. Original upload restored.', 'success');
+      
+      // Re-render all active views
+      if (typeof renderVerifierTriage === 'function') renderVerifierTriage();
+      if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
+      if (typeof updatePatchQueueCounts === 'function') updatePatchQueueCounts();
+      if (typeof renderAllTables === 'function') renderAllTables();
+      // Update sidebar badge counts
+      if (typeof updateSidebarBadges === 'function') updateSidebarBadges();
     }
     
     // ========== QUEUE GENERATION FROM ARTIFACTS ==========
@@ -15507,7 +15524,7 @@
       var now = Date.now();
       Object.keys(_evRfiLocalCache).forEach(function(k) {
         (_evRfiLocalCache[k] || []).forEach(function(entry) {
-          if (entry.id && (now - entry._cachedAt) < 300000) localIds[entry.id] = true;
+          if (entry.id) localIds[entry.id] = true;
         });
       });
       if (role === 'analyst') {
@@ -15608,9 +15625,7 @@
         var alreadyCached = _evRfiLocalCache[recordId].some(function(c) { return c.id === optimisticItem.id; });
         if (!alreadyCached) _evRfiLocalCache[recordId].push({ id: optimisticItem.id, data: optimisticItem, _cachedAt: Date.now() });
       }
-      var cachedForRecord = (_evRfiLocalCache[recordId] || []).filter(function(entry) {
-        return (Date.now() - entry._cachedAt) < 300000;
-      });
+      var cachedForRecord = (_evRfiLocalCache[recordId] || []).slice();
       _evRfiLocalCache[recordId] = cachedForRecord;
 
       fetch(url, { headers: headers })
@@ -47766,6 +47781,9 @@ Add any additional notes here.
     }
     
     function resetDemoState() {
+      if (!confirm('Reset Demo State?\n\nThis will clear all data, sandbox artifacts, RFIs, patches, and queue items — returning to the initial loader screen.\n\nThis cannot be undone.')) {
+        return;
+      }
       var keysToRemove = [
         STORAGE_KEY_DATASET,
         STORAGE_KEY_PDF_ATTACHMENTS,
@@ -47780,6 +47798,24 @@ Add any additional notes here.
         localStorage.removeItem(key);
       });
       
+      // Clear sandbox session artifacts only when in sandbox/playground mode
+      var sandboxCleared = 0;
+      var isSandbox = (typeof ARTIFACT_STORE !== 'undefined' && ARTIFACT_STORE.environment === 'playground');
+      if (isSandbox) {
+        sandboxCleared = ARTIFACT_STORE.resetPlayground();
+        if (typeof verifierQueueState !== 'undefined') {
+          verifierQueueState.payloads = [];
+          if (typeof saveVerifierQueue === 'function') saveVerifierQueue();
+        }
+        localStorage.removeItem(PATCH_STORAGE_KEY);
+        // Clear RFI local cache
+        if (typeof _evRfiLocalCache !== 'undefined') {
+          Object.keys(_evRfiLocalCache).forEach(function(k) { delete _evRfiLocalCache[k]; });
+        }
+        if (typeof _evRfiUnseenCount !== 'undefined') _evRfiUnseenCount = 0;
+        localStorage.removeItem('ev_rfi_last_viewed_at');
+      }
+      
       allData = { contractResults: [], issues: [], fieldActions: [], changeLog: [], summary: {}, sheets: {} };
       dataLoaded = false;
       currentArtifactPath = null;
@@ -47791,10 +47827,11 @@ Add any additional notes here.
       updateLoaderSummary();
       renderPDFAttachmentsList();
       updatePatchQueueCounts();
+      if (typeof updateSidebarBadges === 'function') updateSidebarBadges();
       
       // Navigate to loader after reset
       navigateTo('loader');
-      showToast('Demo state reset', 'success');
+      showToast('Full reset complete: ' + sandboxCleared + ' sandbox artifacts cleared', 'success');
     }
     
     function rebuildFieldIndex() {

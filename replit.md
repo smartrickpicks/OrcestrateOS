@@ -19,6 +19,8 @@ The "Grid" mode has been renamed to "Evidence Viewer" mode with unified click be
 
 RFI lifecycle propagation (v2.52) ensures that RFIs created in the Evidence Viewer are injected into both analyst and verifier queues, with deep-linking capabilities back to the Evidence Viewer. The system displays RFI thread replies in the triage queue table and uses a notification badge system to indicate unseen RFIs. Role-based visibility for RFIs is applied across the Evidence Details panel and triage queues. Shared constants are used for resolving contract, account, and display names. The system accepts various http/https URLs for documents, including Google Drive links, but rejects known non-PDF formats.
 
+Sandbox Session Management (v2.52): Sandbox-created artifacts (RFIs, patches, corrections, queue items) persist indefinitely until explicit admin reset — no TTL expiration. Two reset options are available in admin-only UI sections: (1) "Reset Sandbox" clears all sandbox-created artifacts while preserving uploaded data, and (2) "Reset All Data" performs a full reset including uploaded datasets, returning to the loader screen. The `_evRfiLocalCache` stores sandbox RFIs without time-based expiry; `resetPlayground()` clears the cache along with verifier queue, patch storage, and badge state. `resetDemoState()` gates sandbox clearing to playground environment only, preventing accidental production data loss.
+
 ## External Dependencies
 - **FastAPI server**: Used as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
 - **SheetJS (XLSX)**: Integrated for Excel import/export functionality.
