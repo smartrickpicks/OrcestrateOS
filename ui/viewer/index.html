@@ -1351,38 +1351,37 @@
     .grid-mode-toggle button { border: none; padding: 6px 20px; cursor: pointer; font-weight: 600; background: #fff; color: #1565c0; transition: background 0.15s, color 0.15s; min-width: 70px; text-align: center; font-size: 0.85em; }
     .grid-mode-toggle button.active { background: #1565c0; color: #fff; }
 
-    /* Inline Evidence Viewer — Three-Column Layout (inside page-grid) */
+    /* Evidence Viewer — Layout: middle (viewer+details) | right (grid) */
     .ev-inline-wrapper { display: flex; gap: 0; width: 100%; height: calc(100vh - 280px); min-height: 500px; }
-    .ev-inline-wrapper .ev-grid-column { flex: 1 1 auto; min-width: 250px; overflow: auto; }
-    .ev-inline-wrapper .ev-center-column { flex: 0 0 42%; max-width: 50%; border-left: 2px solid #e0e0e0; display: none; flex-direction: column; background: #fafafa; }
-    .ev-inline-wrapper .ev-center-column.ev-visible { display: flex; }
-    .ev-inline-wrapper .ev-right-column { flex: 0 0 260px; max-width: 300px; border-left: 2px solid #e0e0e0; display: none; flex-direction: column; background: #fff; overflow-y: auto; }
-    .ev-inline-wrapper .ev-right-column.ev-visible { display: flex; }
-    .ev-center-column .ev-pdf-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0; font-size: 0.85em; flex-shrink: 0; }
-    .ev-center-column .ev-pdf-header .ev-pdf-title { font-weight: 600; color: #333; }
-    .ev-center-column .ev-pdf-header .ev-pdf-source { color: #888; font-size: 0.9em; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
-    .ev-center-column .ev-pdf-body { flex: 1; overflow: auto; position: relative; min-height: 400px; }
-    .ev-center-column .ev-pdf-body iframe, .ev-center-column .ev-pdf-body object { width: 100%; height: 100%; border: none; display: block; min-height: 500px; }
-    .ev-center-column .ev-pdf-empty { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 400px; color: #999; font-size: 0.95em; text-align: center; padding: 20px; }
-    .ev-center-column .ev-pdf-record-label { font-size: 0.8em; color: #1565c0; background: #e3f2fd; padding: 2px 8px; border-radius: 4px; }
+    #ev-middle-column { flex: 0 0 48%; max-width: 55%; display: none; flex-direction: column; background: #fafafa; border-right: 2px solid #e0e0e0; overflow: hidden; }
+    #ev-middle-column.ev-visible { display: flex; }
+    #ev-middle-viewer { flex: 1 1 60%; display: flex; flex-direction: column; min-height: 250px; overflow: hidden; }
+    #ev-middle-details { flex: 0 0 auto; max-height: 40%; overflow-y: auto; border-top: 2px solid #e0e0e0; background: #fff; padding: 8px; }
+    #ev-right-grid-column { flex: 1 1 auto; min-width: 250px; overflow: auto; }
+    #ev-middle-viewer .ev-pdf-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0; font-size: 0.85em; flex-shrink: 0; }
+    #ev-middle-viewer .ev-pdf-header .ev-pdf-title { font-weight: 600; color: #333; }
+    #ev-middle-viewer .ev-pdf-header .ev-pdf-source { color: #888; font-size: 0.9em; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+    #ev-middle-viewer .ev-pdf-body { flex: 1; overflow: auto; position: relative; min-height: 200px; }
+    #ev-middle-viewer .ev-pdf-body iframe, #ev-middle-viewer .ev-pdf-body object { width: 100%; height: 100%; border: none; display: block; min-height: 400px; }
+    #ev-middle-viewer .ev-pdf-empty { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 200px; color: #999; font-size: 0.95em; text-align: center; padding: 20px; }
+    #ev-middle-viewer .ev-pdf-record-label { font-size: 0.8em; color: #1565c0; background: #e3f2fd; padding: 2px 8px; border-radius: 4px; }
     .ev-pdf-reason { display: inline-block; margin-top: 6px; padding: 3px 10px; border-radius: 12px; font-size: 0.78em; font-weight: 600; letter-spacing: 0.3px; }
     .ev-pdf-reason.no_document_link { background: #fff3e0; color: #e65100; }
     .ev-pdf-reason.mapping_not_found { background: #fce4ec; color: #c62828; }
     .ev-pdf-reason.proxy_fetch_failed { background: #ffebee; color: #b71c1c; }
     .ev-pdf-reason.unsupported_format { background: #f3e5f5; color: #6a1b9a; }
-    .ev-right-column .ev-right-header { padding: 10px 12px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0; font-weight: 600; font-size: 0.85em; color: #333; flex-shrink: 0; display: flex; align-items: center; gap: 6px; }
-    .ev-right-column .ev-right-body { flex: 1; overflow-y: auto; padding: 8px; }
-    .ev-right-column .ev-ri-section { border: 1px solid #e0e0e0; border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
-    .ev-right-column .ev-ri-section-header { display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: #f5f5f5; cursor: pointer; user-select: none; font-size: 0.82em; font-weight: 600; color: #333; border-bottom: 1px solid #e0e0e0; }
-    .ev-right-column .ev-ri-section-header:hover { background: #eee; }
-    .ev-right-column .ev-ri-count { background: #e0e0e0; color: #666; padding: 1px 6px; border-radius: 10px; font-size: 0.78em; font-weight: 600; min-width: 16px; text-align: center; }
-    .ev-right-column .ev-ri-arrow { margin-left: auto; font-size: 0.65em; color: #999; transition: transform 0.2s; }
-    .ev-right-column .ev-ri-arrow.collapsed { transform: rotate(-90deg); }
-    .ev-right-column .ev-ri-section-body { padding: 8px 10px; font-size: 0.82em; }
-    .ev-right-column .ev-ri-section-body.collapsed { display: none; }
-    .ev-right-column .ev-ri-empty { color: #aaa; font-size: 0.85em; padding: 6px 0; }
-    .ev-right-column .ev-ri-item { padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
-    .ev-right-column .ev-ri-item:last-child { border-bottom: none; }
+    #ev-middle-details .ev-details-header { padding: 8px 10px; font-weight: 600; font-size: 0.82em; color: #333; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #e0e0e0; margin-bottom: 6px; }
+    #ev-middle-details .ev-ri-section { border: 1px solid #e0e0e0; border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
+    #ev-middle-details .ev-ri-section-header { display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: #f5f5f5; cursor: pointer; user-select: none; font-size: 0.82em; font-weight: 600; color: #333; border-bottom: 1px solid #e0e0e0; }
+    #ev-middle-details .ev-ri-section-header:hover { background: #eee; }
+    #ev-middle-details .ev-ri-count { background: #e0e0e0; color: #666; padding: 1px 6px; border-radius: 10px; font-size: 0.78em; font-weight: 600; min-width: 16px; text-align: center; }
+    #ev-middle-details .ev-ri-arrow { margin-left: auto; font-size: 0.65em; color: #999; transition: transform 0.2s; }
+    #ev-middle-details .ev-ri-arrow.collapsed { transform: rotate(-90deg); }
+    #ev-middle-details .ev-ri-section-body { padding: 8px 10px; font-size: 0.82em; }
+    #ev-middle-details .ev-ri-section-body.collapsed { display: none; }
+    #ev-middle-details .ev-ri-empty { color: #aaa; font-size: 0.85em; padding: 6px 0; }
+    #ev-middle-details .ev-ri-item { padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
+    #ev-middle-details .ev-ri-item:last-child { border-bottom: none; }
     .ev-ri-anchor-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; cursor: pointer; background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; margin: 2px 0; }
     .ev-ri-anchor-chip:hover { background: #bbdefb; }
     .ev-ri-status { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 0.72em; font-weight: 600; }
@@ -2839,43 +2838,33 @@
           </div>
 
         <div class="ev-inline-wrapper" id="ev-inline-wrapper">
-          <div class="ev-grid-column" id="ev-grid-column">
-            <div class="grid-table-container" style="overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px;">
-              <table class="grid-table" id="grid-table" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
-                <thead id="grid-thead" style="position: sticky; top: 0; background: #f5f5f5; z-index: 10;">
-                  <tr id="grid-header-row"></tr>
-                </thead>
-                <tbody id="grid-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="ev-center-column" id="ev-center-column">
-            <div class="ev-pdf-header">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="ev-pdf-title">Evidence Viewer</span>
-                <span class="ev-pdf-record-label" id="ev-pdf-record-label"></span>
-              </div>
-              <span class="ev-pdf-source" id="ev-pdf-source"></span>
-            </div>
-            <div class="ev-pdf-body" id="ev-pdf-body">
-              <div class="ev-pdf-empty" id="ev-pdf-empty">
-                <div>
-                  <div style="font-size: 2em; margin-bottom: 8px;">📄</div>
-                  <div>Click a record row to load its document</div>
-                  <div class="ev-pdf-reason-slot" id="ev-pdf-reason-slot"></div>
+          <div id="ev-middle-column">
+            <div id="ev-middle-viewer">
+              <div class="ev-pdf-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="ev-pdf-title">Evidence Viewer</span>
+                  <span class="ev-pdf-record-label" id="ev-pdf-record-label"></span>
                 </div>
+                <span class="ev-pdf-source" id="ev-pdf-source"></span>
               </div>
-              <object id="ev-pdf-object" type="application/pdf" data="about:blank" style="display: none; width: 100%; height: 100%; min-height: 500px; border: none;">
-                <p>PDF viewer not available</p>
-              </object>
+              <div class="ev-pdf-body" id="ev-pdf-body">
+                <div class="ev-pdf-empty" id="ev-pdf-empty">
+                  <div>
+                    <div style="font-size: 2em; margin-bottom: 8px;">📄</div>
+                    <div>Click a record row to load its document</div>
+                    <div class="ev-pdf-reason-slot" id="ev-pdf-reason-slot"></div>
+                  </div>
+                </div>
+                <object id="ev-pdf-object" type="application/pdf" data="about:blank" style="display: none; width: 100%; height: 100%; min-height: 400px; border: none;">
+                  <p>PDF viewer not available</p>
+                </object>
+              </div>
             </div>
-          </div>
-          <div class="ev-right-column" id="ev-right-column">
-            <div class="ev-right-header">
-              <span>Evidence Details</span>
-              <span class="ev-pdf-record-label" id="ev-right-record-label"></span>
-            </div>
-            <div class="ev-right-body" id="ev-right-body">
+            <div id="ev-middle-details">
+              <div class="ev-details-header">
+                <span>Evidence Details</span>
+                <span class="ev-pdf-record-label" id="ev-right-record-label"></span>
+              </div>
               <div class="ev-ri-section" id="ev-ri-anchors">
                 <div class="ev-ri-section-header" onclick="evRiToggle('anchors')">
                   <span style="border-left: 3px solid #1565c0; padding-left: 6px;">Anchors</span>
@@ -2906,6 +2895,16 @@
                   <div class="ev-ri-empty">No RFIs for this record</div>
                 </div>
               </div>
+            </div>
+          </div>
+          <div id="ev-right-grid-column">
+            <div class="grid-table-container" style="overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px;">
+              <table class="grid-table" id="grid-table" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+                <thead id="grid-thead" style="position: sticky; top: 0; background: #f5f5f5; z-index: 10;">
+                  <tr id="grid-header-row"></tr>
+                </thead>
+                <tbody id="grid-tbody"></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -14067,19 +14066,36 @@
     }
 
     function _evShowPdfPane() {
-      var center = document.getElementById('ev-center-column');
-      var right = document.getElementById('ev-right-column');
-      if (center) center.classList.add('ev-visible');
-      if (right) right.classList.add('ev-visible');
+      var mid = document.getElementById('ev-middle-column');
+      if (mid) mid.classList.add('ev-visible');
       _evState.viewerOpen = true;
+      _evAssertLayout();
     }
 
     function _evHidePdfPane() {
-      var center = document.getElementById('ev-center-column');
-      var right = document.getElementById('ev-right-column');
-      if (center) center.classList.remove('ev-visible');
-      if (right) right.classList.remove('ev-visible');
+      var mid = document.getElementById('ev-middle-column');
+      if (mid) mid.classList.remove('ev-visible');
       _evState.viewerOpen = false;
+    }
+
+    function _evAssertLayout() {
+      var details = document.getElementById('ev-middle-details');
+      var grid = document.getElementById('grid-table');
+      if (details) {
+        var dp = details.parentNode ? details.parentNode.id : '(none)';
+        console.log('[EV-ASSERT] Evidence Details parent:', dp);
+        if (dp !== 'ev-middle-column') {
+          console.error('[EV-ASSERT] FAIL: Evidence Details parent is "' + dp + '", expected "ev-middle-column"');
+        }
+      }
+      if (grid) {
+        var gp = grid.closest('#ev-right-grid-column');
+        var gpId = gp ? gp.id : '(none)';
+        console.log('[EV-ASSERT] Grid table ancestor:', gpId);
+        if (!gp) {
+          console.error('[EV-ASSERT] FAIL: Grid table is NOT inside #ev-right-grid-column');
+        }
+      }
     }
 
     function _evSetPdfReason(reasonCode, detail) {

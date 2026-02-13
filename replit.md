@@ -33,12 +33,14 @@ The "Grid" mode has been renamed to "Evidence Viewer" mode with unified click be
 - **State machine**: `_evState` object tracks `mode` (review/evidence_viewer), `viewerOpen`, `activeRecordId`, `activeSheetName`, `activeRowIdx`, `clickArmedAfterOpen`.
 - Transitions: T1 (mode toggle), T2 (first click opens viewer), T3 (subsequent clicks validate), T4 (double-click context menu), T5 (Open in Review Mode), T6 (toggle back to review preserves record).
 
-**Three-Column Layout (no page switch)**: Evidence Viewer mode uses a three-column layout inside `page-grid` via `ev-inline-wrapper` flex container:
-- **Left** (`ev-grid-column`): Grid table, auto-flex, scrollable, unchanged interactions.
-- **Center** (`ev-center-column`): Evidence Viewer document pane with PDF viewer. Shows/hides via `.ev-visible` class. Contains header (title + record label + source), body with `<object>` PDF viewer and empty-state with reason labels.
-- **Right** (`ev-right-column`): Evidence Details panel with collapsible Anchors, Corrections, and RFI sections. Loads data from `/api/v2.5/anchors`, `/api/v2.5/patches`, `/api/v2.5/rfis` endpoints filtered by record_id.
-- Toggling Evidence Viewer mode ON/OFF shows/hides center + right columns (no navigation).
-- Row clicks call `_evOpenViewerForRecord()` which loads PDF inline + populates right panel. Highlights active row with `.ev-active-row`.
+**Two-Column Layout (no page switch)**: Evidence Viewer mode uses a two-column layout inside `page-grid` via `ev-inline-wrapper` flex container:
+- **Middle** (`#ev-middle-column`): Contains two stacked areas:
+  - **Top** (`#ev-middle-viewer`, flex 60%): Document viewer with PDF header, `<object>` PDF viewer, empty-state with reason labels.
+  - **Bottom** (`#ev-middle-details`, max-height 40%): Evidence Details panel — collapsible Anchors, Corrections, and RFI sections. Loads data from document-scoped API endpoints.
+- **Right** (`#ev-right-grid-column`): Grid table only. No Evidence Details markup exists here.
+- Toggling Evidence Viewer mode ON/OFF shows/hides `#ev-middle-column` (no navigation).
+- Row clicks call `_evOpenViewerForRecord()` which loads PDF inline + populates details panel. Highlights active row with `.ev-active-row`.
+- Runtime assertion `_evAssertLayout()` verifies Evidence Details parent == `#ev-middle-column` and grid is inside `#ev-right-grid-column`; logs/errors on mismatch.
 - Rail button (magnifying glass) opens inline viewer. "Open in Review Mode" context menu action switches to review mode and navigates to `page-row`.
 - `openEvidenceViewerForRecord(recordId)` is a deterministic entry point that finds the record across all sheets.
 - PDF URL resolution: `_evResolveDocUrl()` traces record -> file_url field -> contract ref fallback -> attachment fallback, with reason codes: `no_document_link`, `mapping_not_found`, `proxy_fetch_failed`, `unsupported_format`.
