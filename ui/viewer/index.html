@@ -14816,12 +14816,12 @@
             evidence_anchor_context: true
           }, 'rfi', 'ev_reader');
         }
-        if (record) {
-          _evLoadRightPanelForRecord(record, recordId, payload.sheet_name || _evState.activeSheetName);
-        }
+        var createdRfi = result.data || {};
+        var rfiWsId = wsId || ((typeof _getWorkspaceId === 'function') ? _getWorkspaceId() : 'ws_SEED0100000000000000000000');
+        _evLoadRfisForRecord(rfiWsId, recordId, createdRfi);
         if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
           AuditTimeline.emit('reader_rfi_created', {
-            rfi_id: (result.data && result.data.id) || null,
+            rfi_id: createdRfi.id || null,
             record_id: recordId,
             document_id: docId || payload.document_id,
             selected_text: (payload.selected_text || '').substring(0, 100),
@@ -15471,24 +15471,148 @@
           if (correctionsCount) correctionsCount.textContent = '0';
         });
 
-      fetch('/api/v2.5/workspaces/' + encodeURIComponent(wsId) + '/rfis?record_id=' + encodeURIComponent(recordId))
-        .then(function(r) { return r.ok ? r.json() : []; })
+      _evLoadRfisForRecord(wsId, recordId);
+    }
+
+    var _evRfiDebug = false;
+
+    function _evGetCurrentUserId() {
+      try {
+        var s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}');
+        if (s.user_id) return s.user_id;
+        if (s.email) return s.email;
+      } catch(e) {}
+      try {
+        var du = JSON.parse(localStorage.getItem('demoUser') || '{}');
+        if (du.userId) return du.userId;
+        if (du.id) return du.id;
+        if (du.email) return du.email;
+      } catch(e) {}
+      return null;
+    }
+
+    function _evGetEffectiveRole() {
+      if (typeof getEffectiveRole === 'function') return getEffectiveRole();
+      if (typeof _eiGetUserRole === 'function') return _eiGetUserRole();
+      return typeof currentMode !== 'undefined' ? currentMode : 'analyst';
+    }
+
+    function _evRfiRoleFilter(rfis, role, userId) {
+      if (!role || role === 'admin' || role === 'architect') return rfis;
+      if (role === 'analyst') {
+        return rfis.filter(function(r) {
+          return r.author_id === userId || r.custody_owner_id === userId;
+        });
+      }
+      if (role === 'verifier') {
+        return rfis.filter(function(r) {
+          var meta = r.metadata || {};
+          if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) { meta = {}; } }
+          var assignedTo = meta.assigned_to || r.custody_owner_id || '';
+          return assignedTo === userId || r.responder_id === userId ||
+            (r.custody_owner_role === 'verifier' && r.custody_status === 'awaiting_verifier');
+        });
+      }
+      return rfis;
+    }
+
+    function _evRenderRfiItem(r) {
+      var st = r.custody_status || r.status || 'open';
+      var question = r.question || r.subject || r.title || 'RFI';
+      var preview = question.length > 60 ? question.substring(0, 57) + '...' : question;
+      var authorId = r.author_id || '';
+      var authorLabel = authorId ? authorId.replace(/^usr_/, '').substring(0, 12) : '';
+      var meta = r.metadata || {};
+      if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) { meta = {}; } }
+      var assignedTo = meta.assigned_to || '';
+      var assignLabel = assignedTo ? assignedTo.replace(/^usr_/, '').substring(0, 12) : '';
+      var latestMsg = r.response ? (r.response.length > 40 ? r.response.substring(0, 37) + '...' : r.response) : '';
+      var updatedAt = r.updated_at || r.created_at || '';
+      var timeLabel = '';
+      if (updatedAt) {
+        try {
+          var d = new Date(updatedAt);
+          var now = new Date();
+          var diffMs = now - d;
+          var diffMins = Math.floor(diffMs / 60000);
+          if (diffMins < 1) timeLabel = 'just now';
+          else if (diffMins < 60) timeLabel = diffMins + 'm ago';
+          else if (diffMins < 1440) timeLabel = Math.floor(diffMins / 60) + 'h ago';
+          else timeLabel = d.toLocaleDateString();
+        } catch(e) { timeLabel = ''; }
+      }
+      var statusColors = {
+        open: '#1565c0', awaiting_verifier: '#e65100', returned_to_analyst: '#f9a825',
+        resolved: '#2e7d32', dismissed: '#757575', responded: '#6a1b9a', closed: '#757575'
+      };
+      var stColor = statusColors[st] || '#757575';
+      var html = '<div class="ev-ri-item ev-ri-rfi-row" style="display:flex;flex-direction:column;gap:3px;padding:6px 8px;">';
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">';
+      html += '<span class="ev-ri-status" style="background:' + stColor + ';color:#fff;padding:1px 6px;border-radius:3px;font-size:0.72em;font-weight:600;white-space:nowrap;">' + st.replace(/_/g, ' ') + '</span>';
+      if (timeLabel) html += '<span style="font-size:0.7em;color:#999;white-space:nowrap;">' + timeLabel + '</span>';
+      html += '</div>';
+      html += '<div style="font-size:0.82em;color:#333;line-height:1.3;" title="' + question.replace(/"/g, '&quot;').substring(0, 200) + '">' + preview + '</div>';
+      var metaLine = [];
+      if (authorLabel) metaLine.push('By: ' + authorLabel);
+      if (assignLabel) metaLine.push('To: ' + assignLabel);
+      if (metaLine.length > 0) {
+        html += '<div style="font-size:0.7em;color:#888;">' + metaLine.join(' &middot; ') + '</div>';
+      }
+      if (latestMsg) {
+        html += '<div style="font-size:0.72em;color:#666;font-style:italic;border-left:2px solid #e0e0e0;padding-left:6px;margin-top:2px;">' + latestMsg + '</div>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function _evLoadRfisForRecord(wsId, recordId, optimisticItem) {
+      var rfisBody = document.getElementById('ev-ri-rfis-body');
+      var rfisCount = document.getElementById('ev-ri-rfis-count');
+
+      if (!wsId || !recordId) {
+        if (_evRfiDebug) console.log('[EV-RFI-PANEL] Blocked: missing context', { wsId: wsId, recordId: recordId });
+        if (rfisBody) rfisBody.innerHTML = '<div class="ev-ri-empty">' + (!recordId ? 'Select a record' : 'No workspace context') + '</div>';
+        if (rfisCount) rfisCount.textContent = '0';
+        return;
+      }
+
+      if (optimisticItem && rfisBody) {
+        var existingHtml = rfisBody.innerHTML;
+        if (existingHtml.indexOf('ev-ri-empty') >= 0) existingHtml = '';
+        rfisBody.innerHTML = _evRenderRfiItem(optimisticItem) + existingHtml;
+        var currentCount = parseInt((rfisCount ? rfisCount.textContent : '0') || '0', 10);
+        if (rfisCount) rfisCount.textContent = String(currentCount + 1);
+      }
+
+      var role = _evGetEffectiveRole();
+      var userId = _evGetCurrentUserId();
+      var headers = (typeof _getAuthHeaders === 'function') ? _getAuthHeaders() : { 'Content-Type': 'application/json' };
+      var url = '/api/v2.5/workspaces/' + encodeURIComponent(wsId) + '/rfis?record_id=' + encodeURIComponent(recordId);
+      if (_evRfiDebug) console.log('[EV-RFI-PANEL] Load', { url: url, wsId: wsId, recordId: recordId, role: role, userId: userId });
+
+      fetch(url, { headers: headers })
+        .then(function(r) { return r.ok ? r.json() : { items: [] }; })
         .then(function(data) {
-          var rfis = Array.isArray(data) ? data : (data.items || []);
-          if (rfisCount) rfisCount.textContent = rfis.length;
+          var allRfis = Array.isArray(data) ? data : (data.items || []);
+          if (_evRfiDebug) console.log('[EV-RFI-PANEL] Server returned', allRfis.length, 'RFIs');
+          var filtered = _evRfiRoleFilter(allRfis, role, userId);
+          if (_evRfiDebug) console.log('[EV-RFI-PANEL] After role filter (' + role + '):', filtered.length, 'of', allRfis.length);
+          filtered.sort(function(a, b) {
+            var ta = a.updated_at || a.created_at || '';
+            var tb = b.updated_at || b.created_at || '';
+            return tb.localeCompare(ta);
+          });
+          if (rfisCount) rfisCount.textContent = String(filtered.length);
           if (!rfisBody) return;
-          if (rfis.length === 0) {
+          if (filtered.length === 0) {
             rfisBody.innerHTML = '<div class="ev-ri-empty">No RFIs for this record</div>';
             return;
           }
-          rfisBody.innerHTML = rfis.map(function(r) {
-            var st = r.custody_state || r.status || 'open';
-            return '<div class="ev-ri-item"><span class="ev-ri-status ' + st + '">' + st + '</span> ' +
-              '<span style="font-size:0.85em;">' + (r.subject || r.title || 'RFI') + '</span></div>';
-          }).join('');
+          rfisBody.innerHTML = filtered.map(_evRenderRfiItem).join('');
         })
-        .catch(function() {
-          if (rfisBody) rfisBody.innerHTML = '<div class="ev-ri-empty">No RFIs for this record</div>';
+        .catch(function(err) {
+          console.error('[EV-RFI-PANEL] Fetch error:', err);
+          if (rfisBody) rfisBody.innerHTML = '<div class="ev-ri-empty">Could not load RFIs</div>';
           if (rfisCount) rfisCount.textContent = '0';
         });
     }

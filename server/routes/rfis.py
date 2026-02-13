@@ -79,6 +79,7 @@ def list_rfis(
     cursor: str = Query(None),
     limit: int = Query(50, ge=1, le=200),
     include_deleted: bool = Query(False),
+    record_id: str = Query(None),
     auth=Depends(require_auth(AuthClass.EITHER)),
 ):
     if isinstance(auth, JSONResponse):
@@ -99,6 +100,9 @@ def list_rfis(
 
             if not include_deleted:
                 conditions.append("deleted_at IS NULL")
+            if record_id:
+                conditions.append("target_record_id = %s")
+                params.append(record_id)
             if cursor:
                 conditions.append("id > %s")
                 params.append(cursor)
