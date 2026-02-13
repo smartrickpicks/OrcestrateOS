@@ -1412,6 +1412,37 @@
     .ev-rfi-priority-chip.selected { border-color: #1976d2; background: #e8f0fe; color: #1976d2; }
     .ev-rfi-priority-chip[data-priority="high"].selected { border-color: #c62828; background: #fdecea; color: #c62828; }
     .ev-rfi-priority-chip[data-priority="medium"].selected { border-color: #e65100; background: #fff3e0; color: #e65100; }
+    .ev-cor-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); display: none; justify-content: center; align-items: center; z-index: 10000; }
+    .ev-cor-modal-overlay.active { display: flex; }
+    .ev-cor-modal { background: #fff; border-radius: 10px; width: 520px; max-width: 92vw; max-height: 85vh; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.22); display: flex; flex-direction: column; }
+    .ev-cor-modal-header { background: #4a148c; color: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .ev-cor-modal-header h3 { margin: 0; font-size: 1em; font-weight: 600; }
+    .ev-cor-modal-close { background: none; border: none; color: #fff; font-size: 1.3em; cursor: pointer; padding: 0 4px; opacity: 0.7; }
+    .ev-cor-modal-close:hover { opacity: 1; }
+    .ev-cor-modal-body { padding: 18px 20px; overflow-y: auto; flex: 1; }
+    .ev-cor-field { margin-bottom: 14px; }
+    .ev-cor-field label { display: block; font-size: 0.82em; font-weight: 600; color: #444; margin-bottom: 4px; }
+    .ev-cor-old-value { width: 100%; box-sizing: border-box; border: 1px solid #e0e0e0; border-radius: 5px; font-size: 0.85em; padding: 8px 10px; font-family: 'Courier New', monospace; background: #f5f5f5; color: #888; min-height: 56px; white-space: pre-wrap; word-break: break-word; resize: none; }
+    .ev-cor-new-value { width: 100%; box-sizing: border-box; border: 1px solid #d0d0d0; border-radius: 5px; font-size: 0.85em; padding: 8px 10px; font-family: 'Courier New', monospace; min-height: 56px; resize: vertical; }
+    .ev-cor-new-value:focus { outline: none; border-color: #7b1fa2; box-shadow: 0 0 0 2px rgba(123,31,162,0.12); }
+    .ev-cor-lane-preview { margin: 10px 0 4px; padding: 8px 12px; border-radius: 5px; font-size: 0.82em; display: flex; align-items: center; gap: 8px; }
+    .ev-cor-lane-minor { background: #e8f5e9; border: 1px solid #c8e6c9; color: #2e7d32; }
+    .ev-cor-lane-risky { background: #fff3e0; border: 1px solid #ffe0b2; color: #e65100; }
+    .ev-cor-lane-empty { background: #f5f5f5; border: 1px solid #e0e0e0; color: #999; }
+    .ev-cor-lane-icon { font-size: 1.1em; }
+    .ev-cor-moji-hint { font-size: 0.78em; color: #888; margin-top: 2px; }
+    .ev-cor-footer { padding: 12px 20px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #fafafa; }
+    .ev-cor-footer-right { display: flex; gap: 10px; }
+    .ev-cor-btn { padding: 8px 18px; border-radius: 5px; font-size: 0.85em; font-weight: 600; cursor: pointer; border: none; }
+    .ev-cor-btn-cancel { background: #e8e8e8; color: #555; }
+    .ev-cor-btn-cancel:hover { background: #ddd; }
+    .ev-cor-btn-submit { background: #7b1fa2; color: #fff; }
+    .ev-cor-btn-submit:hover { background: #6a1b9a; }
+    .ev-cor-btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .ev-cor-result-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 6px; font-size: 0.82em; font-weight: 600; }
+    .ev-cor-result-badge.auto_applied { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+    .ev-cor-result-badge.pending_verifier { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+    .ev-cor-result-badge.error { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
     .ev-reader-heading { font-size: 1.15em; font-weight: 700; color: #1a1a1a; margin: 18px 0 8px 0; padding-bottom: 4px; border-bottom: 1px solid #e0e0e0; font-family: 'Inter', -apple-system, sans-serif; }
     .ev-reader-subheading { font-size: 1.02em; font-weight: 600; color: #333; margin: 12px 0 6px 0; font-family: 'Inter', -apple-system, sans-serif; }
     .ev-reader-clause { margin: 6px 0; padding-left: 0; }
@@ -14470,6 +14501,10 @@
       }
       var record = _evState.activeRecordId ? _evFindRecord(_evState.activeSheetName, _evState.activeRowIdx, _evState.activeRecordId) : null;
       var docId = _evResolveDocId(record);
+      var mojiClass = 'ok';
+      if (pageEl && pageEl.getAttribute('data-moji')) {
+        mojiClass = pageEl.getAttribute('data-moji');
+      }
       return {
         selected_text: text,
         document_id: docId,
@@ -14478,7 +14513,8 @@
         page: pageNum,
         node_id: pageEl ? ('page_' + pageNum) : null,
         char_start: charStart,
-        char_end: charEnd
+        char_end: charEnd,
+        moji_class: mojiClass
       };
     }
 
@@ -14613,6 +14649,11 @@
       }
 
       if (action === 'correction') {
+        var mojiCtx = payload.moji_class || 'ok';
+        if (mojiCtx === 'suspect_mojibake' || mojiCtx === 'unreadable') {
+          _evCorModalOpen(payload);
+          return;
+        }
         var record = _evFindRecord(_evState.activeSheetName, _evState.activeRowIdx, _evState.activeRecordId);
         var patchCtx = {
           recordId: payload.record_id,
@@ -14635,7 +14676,7 @@
         if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
           AuditTimeline.emit('reader_correction_initiated', {
             record_id: payload.record_id, document_id: payload.document_id,
-            selected_text: payload.selected_text.substring(0, 100),
+            selected_text: (payload.selected_text || '').substring(0, 100),
             page: payload.page, source: 'ev_reader_selection'
           });
         }
@@ -14791,6 +14832,179 @@
         if (typeof showToast === 'function') showToast('Failed to create RFI: ' + err.message, 'error');
       }).finally(function() {
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Send RFI'; }
+      });
+    }
+
+    var _evCorModalPayload = null;
+
+    function _evCorClassify(originalValue, correctedValue) {
+      if (!originalValue || !correctedValue) return 'risky';
+      var lengthDelta = Math.abs(correctedValue.length - originalValue.length);
+      if (lengthDelta > 2) return 'risky';
+      if (/\d/.test(correctedValue) && !/\d/.test(originalValue)) return 'risky';
+      if (/\d/.test(originalValue) && !/\d/.test(correctedValue)) return 'risky';
+      if (/[$€£¥%]/.test(correctedValue) || /[$€£¥%]/.test(originalValue)) return 'risky';
+      return 'minor';
+    }
+
+    function _evCorUpdateLanePreview() {
+      var oldEl = document.getElementById('ev-cor-old-value');
+      var newEl = document.getElementById('ev-cor-new-value');
+      var laneEl = document.getElementById('ev-cor-lane-preview');
+      if (!oldEl || !newEl || !laneEl) return;
+      var oldVal = oldEl.value;
+      var newVal = newEl.value.trim();
+      if (!newVal || newVal === oldVal) {
+        laneEl.className = 'ev-cor-lane-preview ev-cor-lane-empty';
+        laneEl.innerHTML = '<span class="ev-cor-lane-icon">&#8230;</span><span>Edit the corrected text to see the routing preview</span>';
+        return;
+      }
+      var classification = _evCorClassify(oldVal, newVal);
+      if (classification === 'minor') {
+        laneEl.className = 'ev-cor-lane-preview ev-cor-lane-minor';
+        laneEl.innerHTML = '<span class="ev-cor-lane-icon">&#10003;</span><span>Minor encoding fix — will be auto-applied</span>';
+      } else {
+        laneEl.className = 'ev-cor-lane-preview ev-cor-lane-risky';
+        laneEl.innerHTML = '<span class="ev-cor-lane-icon">&#9888;</span><span>Risky edit (numbers, currency, date, or large change) — requires verifier approval</span>';
+      }
+    }
+
+    function _evCorModalOpen(payload) {
+      _evCorModalPayload = payload;
+      var overlay = document.getElementById('ev-cor-modal-overlay');
+      if (!overlay) { console.warn('[EV-COR] Modal overlay not found'); return; }
+      var oldEl = document.getElementById('ev-cor-old-value');
+      if (oldEl) oldEl.value = payload.selected_text || '';
+      var newEl = document.getElementById('ev-cor-new-value');
+      if (newEl) {
+        newEl.value = payload.selected_text || '';
+        newEl.removeEventListener('input', _evCorUpdateLanePreview);
+        newEl.addEventListener('input', _evCorUpdateLanePreview);
+      }
+      var hintEl = document.getElementById('ev-cor-moji-hint');
+      if (hintEl) {
+        var mojiClass = payload.moji_class || 'ok';
+        if (mojiClass === 'suspect_mojibake') {
+          hintEl.textContent = 'This text was flagged as suspect encoding. Common fixes: replace garbled characters (e.g. â€™ → \', Ã© → é).';
+          hintEl.style.display = 'block';
+        } else if (mojiClass === 'unreadable') {
+          hintEl.textContent = 'This text was flagged as unreadable. You may need to retype the content from the original document.';
+          hintEl.style.display = 'block';
+        } else {
+          hintEl.style.display = 'none';
+        }
+      }
+      var resultArea = document.getElementById('ev-cor-result-area');
+      if (resultArea) resultArea.innerHTML = '';
+      var footerStatus = document.getElementById('ev-cor-footer-status');
+      if (footerStatus) footerStatus.innerHTML = '';
+      _evCorUpdateLanePreview();
+      overlay.classList.add('active');
+      if (newEl) setTimeout(function() { newEl.focus(); newEl.select(); }, 80);
+      console.log('[EV-COR] Modal opened for record:', payload.record_id, 'moji:', payload.moji_class);
+    }
+
+    function _evCorModalClose() {
+      var overlay = document.getElementById('ev-cor-modal-overlay');
+      if (overlay) overlay.classList.remove('active');
+      var newEl = document.getElementById('ev-cor-new-value');
+      if (newEl) newEl.removeEventListener('input', _evCorUpdateLanePreview);
+      _evCorModalPayload = null;
+    }
+
+    function _evCorModalSubmit() {
+      var payload = _evCorModalPayload;
+      if (!payload) return;
+      var oldEl = document.getElementById('ev-cor-old-value');
+      var newEl = document.getElementById('ev-cor-new-value');
+      var originalValue = oldEl ? oldEl.value : '';
+      var correctedValue = newEl ? newEl.value.trim() : '';
+      if (!correctedValue) {
+        if (typeof showToast === 'function') showToast('Please enter the corrected text', 'warning');
+        if (newEl) newEl.focus();
+        return;
+      }
+      if (correctedValue === originalValue) {
+        if (typeof showToast === 'function') showToast('Corrected text is the same as the original', 'warning');
+        return;
+      }
+      var submitBtn = document.getElementById('ev-cor-submit-btn');
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting...'; }
+      var record = _evFindRecord(_evState.activeSheetName, _evState.activeRowIdx, payload.record_id || _evState.activeRecordId);
+      var docId = record ? _evResolveDocId(record) : (payload.document_id || null);
+      if (!docId) docId = payload.document_id || ('doc_' + (payload.record_id || 'unknown'));
+      var correctionBody = {
+        original_value: originalValue,
+        corrected_value: correctedValue,
+        field_key: payload.field_key || 'reader_text',
+        metadata: {
+          source: 'ev_reader_encoding_fix',
+          moji_class: payload.moji_class || 'ok',
+          evidence_page: payload.page,
+          evidence_char_start: payload.char_start,
+          evidence_char_end: payload.char_end,
+          record_id: payload.record_id || _evState.activeRecordId || ''
+        }
+      };
+      var apiBase = window.API_BASE || '/api/v2.5';
+      var headers = (typeof _getAuthHeaders === 'function') ? _getAuthHeaders() : { 'Content-Type': 'application/json' };
+      if (!headers['Content-Type']) headers['Content-Type'] = 'application/json';
+      fetch(apiBase + '/documents/' + encodeURIComponent(docId) + '/corrections', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(correctionBody)
+      }).then(function(resp) {
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return resp.json();
+      }).then(function(result) {
+        var corData = result.data || {};
+        var status = corData.status || 'unknown';
+        var corType = corData.correction_type || 'unknown';
+        var resultArea = document.getElementById('ev-cor-result-area');
+        var footerStatus = document.getElementById('ev-cor-footer-status');
+        if (status === 'auto_applied') {
+          if (resultArea) resultArea.innerHTML = '<div class="ev-cor-result-badge auto_applied">&#10003; Auto-applied — minor encoding fix applied immediately</div>';
+          if (footerStatus) footerStatus.innerHTML = '<span style="color:#2e7d32;font-size:0.82em;font-weight:600;">&#10003; Applied</span>';
+          if (typeof showToast === 'function') showToast('Encoding fix auto-applied', 'success');
+        } else if (status === 'pending_verifier') {
+          if (resultArea) resultArea.innerHTML = '<div class="ev-cor-result-badge pending_verifier">&#9888; Pending verifier — this edit requires approval before it takes effect</div>';
+          if (footerStatus) footerStatus.innerHTML = '<span style="color:#e65100;font-size:0.82em;font-weight:600;">&#9888; Awaiting verifier</span>';
+          if (typeof showToast === 'function') showToast('Correction submitted for verifier approval', 'info');
+        }
+        if (typeof Components !== 'undefined' && Components.PatchPanel && typeof Components.PatchPanel.openWithContext === 'function') {
+          Components.PatchPanel.openWithContext({
+            recordId: payload.record_id,
+            sheetName: payload.sheet_name,
+            rowIdx: _evState.activeRowIdx,
+            record: record,
+            source: 'ev_reader_encoding_fix',
+            evidence_text: originalValue,
+            evidence_anchor_context: true
+          }, 'correction', 'ev_reader');
+        }
+        if (record) {
+          _evLoadRightPanelForRecord(record, payload.record_id || _evState.activeRecordId, payload.sheet_name || _evState.activeSheetName);
+        }
+        if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
+          AuditTimeline.emit('reader_encoding_correction_created', {
+            correction_id: corData.id || null,
+            record_id: payload.record_id,
+            document_id: docId,
+            correction_type: corType,
+            status: status,
+            moji_class: payload.moji_class || 'ok',
+            page: payload.page,
+            source: 'ev_reader_encoding_fix'
+          });
+        }
+        if (submitBtn) { submitBtn.textContent = 'Done'; }
+        setTimeout(function() { _evCorModalClose(); }, 1800);
+      }).catch(function(err) {
+        console.error('[EV-COR] Submit failed:', err);
+        var resultArea = document.getElementById('ev-cor-result-area');
+        if (resultArea) resultArea.innerHTML = '<div class="ev-cor-result-badge error">&#10007; Failed: ' + (err.message || 'Unknown error') + '</div>';
+        if (typeof showToast === 'function') showToast('Failed to submit correction: ' + err.message, 'error');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Correction'; }
       });
     }
 
@@ -48898,6 +49112,38 @@ var P022_RuntimeValidation = {
     <div class="ev-rfi-footer">
       <button class="ev-rfi-btn ev-rfi-btn-cancel" onclick="_evRfiModalClose()">Cancel</button>
       <button class="ev-rfi-btn ev-rfi-btn-submit" id="ev-rfi-submit-btn" onclick="_evRfiModalSubmit()">Send RFI</button>
+    </div>
+  </div>
+</div>
+
+<div id="ev-cor-modal-overlay" class="ev-cor-modal-overlay">
+  <div class="ev-cor-modal">
+    <div class="ev-cor-modal-header">
+      <h3>Fix Encoding Issue</h3>
+      <button class="ev-cor-modal-close" onclick="_evCorModalClose()" aria-label="Close">&times;</button>
+    </div>
+    <div class="ev-cor-modal-body">
+      <div class="ev-cor-moji-hint" id="ev-cor-moji-hint"></div>
+      <div class="ev-cor-field">
+        <label>Original text <span style="font-size:0.85em;color:#999;">(read-only)</span></label>
+        <textarea class="ev-cor-old-value" id="ev-cor-old-value" readonly></textarea>
+      </div>
+      <div class="ev-cor-field">
+        <label for="ev-cor-new-value">Corrected text <span style="color:#c62828;">*</span></label>
+        <textarea class="ev-cor-new-value" id="ev-cor-new-value" placeholder="Type the corrected version of this text"></textarea>
+      </div>
+      <div id="ev-cor-lane-preview" class="ev-cor-lane-preview ev-cor-lane-empty">
+        <span class="ev-cor-lane-icon">&#8230;</span>
+        <span>Edit the corrected text to see the routing preview</span>
+      </div>
+      <div id="ev-cor-result-area" style="margin-top:10px;"></div>
+    </div>
+    <div class="ev-cor-footer">
+      <div id="ev-cor-footer-status"></div>
+      <div class="ev-cor-footer-right">
+        <button class="ev-cor-btn ev-cor-btn-cancel" onclick="_evCorModalClose()">Cancel</button>
+        <button class="ev-cor-btn ev-cor-btn-submit" id="ev-cor-submit-btn" onclick="_evCorModalSubmit()">Submit Correction</button>
+      </div>
     </div>
   </div>
 </div>
