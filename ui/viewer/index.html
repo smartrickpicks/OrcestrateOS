@@ -1487,6 +1487,78 @@
     #ev-middle-details .ev-ri-empty { color: #aaa; font-size: 0.85em; padding: 6px 0; }
     #ev-middle-details .ev-ri-item { padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
     #ev-middle-details .ev-ri-item:last-child { border-bottom: none; }
+
+    .ev-rfi-card {
+      display: flex; flex-direction: column; gap: 0;
+      padding: 10px 12px !important; margin: 4px 0;
+      background: #fafafa; border: 1px solid #e8e8e8; border-radius: 8px;
+      transition: background 0.15s;
+    }
+    .ev-rfi-card:hover { background: #f0f4f8; border-color: #d0d7de; }
+    .ev-rfi-card-header {
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .ev-rfi-avatar {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 0.72em; font-weight: 700; letter-spacing: 0.5px;
+      user-select: none;
+    }
+    .ev-rfi-author-info { flex: 1; min-width: 0; }
+    .ev-rfi-author-line {
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .ev-rfi-author-name {
+      font-weight: 600; font-size: 0.85em; color: #1a1a1a;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;
+    }
+    .ev-rfi-role-badge {
+      display: inline-block; padding: 1px 7px; border-radius: 10px;
+      font-size: 0.65em; font-weight: 600; text-transform: capitalize;
+      white-space: nowrap; letter-spacing: 0.3px;
+    }
+    .ev-rfi-role-badge-sm { font-size: 0.6em; padding: 0 5px; }
+    .ev-rfi-time-status {
+      display: flex; align-items: center; gap: 6px; margin-top: 2px;
+    }
+    .ev-rfi-status-pill {
+      display: inline-block; padding: 1px 8px; border-radius: 10px;
+      font-size: 0.65em; font-weight: 600; white-space: nowrap;
+    }
+    .ev-rfi-timestamp {
+      font-size: 0.7em; color: #999; white-space: nowrap;
+    }
+    .ev-rfi-card-body {
+      margin: 6px 0 2px 42px; font-size: 0.82em; color: #2c2c2c;
+      line-height: 1.45; word-break: break-word;
+    }
+    .ev-rfi-assigned {
+      display: flex; align-items: center; gap: 5px;
+      margin: 4px 0 0 42px; font-size: 0.72em; color: #888;
+    }
+    .ev-rfi-assigned-label { color: #aaa; }
+    .ev-rfi-assigned-avatar {
+      width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 0.55em; font-weight: 700;
+    }
+    .ev-rfi-assigned-name { color: #555; font-weight: 500; }
+    .ev-rfi-reply {
+      margin: 6px 0 0 42px; padding: 6px 10px;
+      background: #f5f5f5; border-left: 3px solid #d0d0d0; border-radius: 0 6px 6px 0;
+    }
+    .ev-rfi-reply-header {
+      display: flex; align-items: center; gap: 5px; margin-bottom: 3px;
+    }
+    .ev-rfi-reply-avatar {
+      width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 0.55em; font-weight: 700;
+    }
+    .ev-rfi-reply-name { font-size: 0.75em; font-weight: 600; color: #444; }
+    .ev-rfi-reply-body {
+      font-size: 0.78em; color: #555; line-height: 1.35; word-break: break-word;
+    }
     .ev-ri-anchor-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; cursor: pointer; background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; margin: 2px 0; }
     .ev-ri-anchor-chip:hover { background: #bbdefb; }
     .ev-ri-status { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 0.72em; font-weight: 600; }
@@ -15546,51 +15618,140 @@
       return rfis;
     }
 
+    var _evRoleColors = {
+      analyst: { bg: '#e3f2fd', text: '#1565c0', avatar: '#1976d2' },
+      verifier: { bg: '#fff3e0', text: '#e65100', avatar: '#ef6c00' },
+      admin: { bg: '#f3e5f5', text: '#7b1fa2', avatar: '#8e24aa' },
+      architect: { bg: '#e8f5e9', text: '#2e7d32', avatar: '#388e3c' }
+    };
+
+    function _evResolveUserDisplay(userId, role) {
+      var display = { name: '', initials: '', role: role || '' };
+      var knownEmails = {
+        'analyst@example.com': { name: 'Analyst', role: 'analyst' },
+        'verifier@example.com': { name: 'Verifier', role: 'verifier' },
+        'admin@example.com': { name: 'Admin', role: 'admin' }
+      };
+      if (userId && knownEmails[userId]) {
+        display.name = knownEmails[userId].name;
+        if (!display.role) display.role = knownEmails[userId].role;
+      }
+      if (!display.name) {
+        try {
+          var du = JSON.parse(localStorage.getItem('demoUser') || '{}');
+          if (du.userId === userId || du.id === userId || du.email === userId) {
+            display.name = du.name || '';
+            if (!display.name && du.email) {
+              var prefix = du.email.split('@')[0];
+              display.name = prefix.replace(/[._]/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+            }
+          }
+        } catch(e) {}
+      }
+      if (!display.name && userId) {
+        if (userId.indexOf('@') > -1) {
+          var prefix = userId.split('@')[0];
+          display.name = prefix.replace(/[._]/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+        } else {
+          var clean = userId.replace(/^usr_/, '');
+          if (clean.length > 16) clean = clean.substring(0, 16);
+          display.name = clean;
+        }
+      }
+      if (!display.role) display.role = 'analyst';
+      if (!display.name) display.name = display.role.charAt(0).toUpperCase() + display.role.slice(1);
+      var parts = display.name.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        display.initials = (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+      } else {
+        display.initials = display.name.substring(0, 2).toUpperCase();
+      }
+      return display;
+    }
+
+    function _evFormatRelativeTime(dateStr) {
+      if (!dateStr) return '';
+      try {
+        var d = new Date(dateStr);
+        var now = new Date();
+        var diffMs = now - d;
+        var diffMins = Math.floor(diffMs / 60000);
+        if (diffMins < 1) return 'just now';
+        if (diffMins < 60) return diffMins + 'm ago';
+        if (diffMins < 1440) return Math.floor(diffMins / 60) + 'h ago';
+        if (diffMins < 10080) return Math.floor(diffMins / 1440) + 'd ago';
+        return d.toLocaleDateString();
+      } catch(e) { return ''; }
+    }
+
     function _evRenderRfiItem(r) {
       var st = r.custody_status || r.status || 'open';
       var question = r.question || r.subject || r.title || 'RFI';
-      var preview = question.length > 60 ? question.substring(0, 57) + '...' : question;
       var authorId = r.author_id || '';
-      var authorLabel = authorId ? authorId.replace(/^usr_/, '').substring(0, 12) : '';
+      var authorRole = r.author_role || r.custody_owner_role || '';
+      var author = _evResolveUserDisplay(authorId, authorRole);
       var meta = r.metadata || {};
       if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) { meta = {}; } }
       var assignedTo = meta.assigned_to || '';
-      var assignLabel = assignedTo ? assignedTo.replace(/^usr_/, '').substring(0, 12) : '';
-      var latestMsg = r.response ? (r.response.length > 40 ? r.response.substring(0, 37) + '...' : r.response) : '';
-      var updatedAt = r.updated_at || r.created_at || '';
-      var timeLabel = '';
-      if (updatedAt) {
-        try {
-          var d = new Date(updatedAt);
-          var now = new Date();
-          var diffMs = now - d;
-          var diffMins = Math.floor(diffMs / 60000);
-          if (diffMins < 1) timeLabel = 'just now';
-          else if (diffMins < 60) timeLabel = diffMins + 'm ago';
-          else if (diffMins < 1440) timeLabel = Math.floor(diffMins / 60) + 'h ago';
-          else timeLabel = d.toLocaleDateString();
-        } catch(e) { timeLabel = ''; }
-      }
-      var statusColors = {
-        open: '#1565c0', awaiting_verifier: '#e65100', returned_to_analyst: '#f9a825',
-        resolved: '#2e7d32', dismissed: '#757575', responded: '#6a1b9a', closed: '#757575'
+      var assignDisplay = assignedTo ? _evResolveUserDisplay(assignedTo, '') : null;
+      var latestMsg = r.response || '';
+      var responderId = r.responder_id || r.custody_owner_id || '';
+      var responderRole = r.custody_owner_role || '';
+      var responder = (latestMsg && responderId) ? _evResolveUserDisplay(responderId, responderRole) : null;
+      var timeLabel = _evFormatRelativeTime(r.updated_at || r.created_at || '');
+      var roleColors = _evRoleColors[author.role] || _evRoleColors.analyst;
+      var statusMap = {
+        open: { color: '#1565c0', bg: '#e3f2fd', label: 'Open' },
+        awaiting_verifier: { color: '#e65100', bg: '#fff3e0', label: 'Awaiting Verifier' },
+        returned_to_analyst: { color: '#f9a825', bg: '#fff8e1', label: 'Returned' },
+        resolved: { color: '#2e7d32', bg: '#e8f5e9', label: 'Resolved' },
+        dismissed: { color: '#757575', bg: '#f5f5f5', label: 'Dismissed' },
+        responded: { color: '#6a1b9a', bg: '#f3e5f5', label: 'Responded' },
+        closed: { color: '#757575', bg: '#f5f5f5', label: 'Closed' }
       };
-      var stColor = statusColors[st] || '#757575';
-      var html = '<div class="ev-ri-item ev-ri-rfi-row" style="display:flex;flex-direction:column;gap:3px;padding:6px 8px;">';
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">';
-      html += '<span class="ev-ri-status" style="background:' + stColor + ';color:#fff;padding:1px 6px;border-radius:3px;font-size:0.72em;font-weight:600;white-space:nowrap;">' + st.replace(/_/g, ' ') + '</span>';
-      if (timeLabel) html += '<span style="font-size:0.7em;color:#999;white-space:nowrap;">' + timeLabel + '</span>';
+      var stInfo = statusMap[st] || { color: '#757575', bg: '#f5f5f5', label: st.replace(/_/g, ' ') };
+
+      var html = '<div class="ev-ri-item ev-ri-rfi-row ev-rfi-card">';
+      html += '<div class="ev-rfi-card-header">';
+      html += '<div class="ev-rfi-avatar" style="background:' + roleColors.avatar + ';">' + author.initials + '</div>';
+      html += '<div class="ev-rfi-author-info">';
+      html += '<div class="ev-rfi-author-line">';
+      html += '<span class="ev-rfi-author-name">' + author.name + '</span>';
+      html += '<span class="ev-rfi-role-badge" style="background:' + roleColors.bg + ';color:' + roleColors.text + ';">' + author.role + '</span>';
       html += '</div>';
-      html += '<div style="font-size:0.82em;color:#333;line-height:1.3;" title="' + question.replace(/"/g, '&quot;').substring(0, 200) + '">' + preview + '</div>';
-      var metaLine = [];
-      if (authorLabel) metaLine.push('By: ' + authorLabel);
-      if (assignLabel) metaLine.push('To: ' + assignLabel);
-      if (metaLine.length > 0) {
-        html += '<div style="font-size:0.7em;color:#888;">' + metaLine.join(' &middot; ') + '</div>';
+      html += '<div class="ev-rfi-time-status">';
+      html += '<span class="ev-rfi-status-pill" style="background:' + stInfo.bg + ';color:' + stInfo.color + ';">' + stInfo.label + '</span>';
+      if (timeLabel) html += '<span class="ev-rfi-timestamp">' + timeLabel + '</span>';
+      html += '</div>';
+      html += '</div>';
+      html += '</div>';
+
+      html += '<div class="ev-rfi-card-body">' + question.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>';
+
+      if (assignDisplay) {
+        html += '<div class="ev-rfi-assigned">';
+        html += '<span class="ev-rfi-assigned-label">Assigned to</span>';
+        html += '<span class="ev-rfi-assigned-avatar" style="background:' + (_evRoleColors[assignDisplay.role] || _evRoleColors.analyst).avatar + ';">' + assignDisplay.initials + '</span>';
+        html += '<span class="ev-rfi-assigned-name">' + assignDisplay.name + '</span>';
+        html += '</div>';
       }
+
       if (latestMsg) {
-        html += '<div style="font-size:0.72em;color:#666;font-style:italic;border-left:2px solid #e0e0e0;padding-left:6px;margin-top:2px;">' + latestMsg + '</div>';
+        var respColors = responder ? (_evRoleColors[responder.role] || _evRoleColors.analyst) : _evRoleColors.analyst;
+        html += '<div class="ev-rfi-reply">';
+        html += '<div class="ev-rfi-reply-header">';
+        if (responder) {
+          html += '<span class="ev-rfi-reply-avatar" style="background:' + respColors.avatar + ';">' + responder.initials + '</span>';
+          html += '<span class="ev-rfi-reply-name">' + responder.name + '</span>';
+          if (responder.role) html += '<span class="ev-rfi-role-badge ev-rfi-role-badge-sm" style="background:' + respColors.bg + ';color:' + respColors.text + ';">' + responder.role + '</span>';
+        } else {
+          html += '<span class="ev-rfi-reply-name">Reply</span>';
+        }
+        html += '</div>';
+        html += '<div class="ev-rfi-reply-body">' + latestMsg.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>';
+        html += '</div>';
       }
+
       html += '</div>';
       return html;
     }
