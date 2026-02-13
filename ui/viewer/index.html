@@ -1985,10 +1985,6 @@
               <a class="nav-section-link" data-section="schedule_catalog" href="#" onclick="_selectGridSection('Schedule Catalog'); return false;">Schedule Catalog</a>
               <a class="nav-section-link" data-section="v2_add_ons" href="#" onclick="_selectGridSection('V2 Add Ons'); return false;">V2 Add Ons</a>
             </div>
-            <a class="nav-item nav-subitem" id="nav-record-inspection" href="#" onclick="openRecordInspectionFromNav(); return false;">
-              <span class="nav-icon">🔎</span>
-              <span class="nav-label">Record Inspection</span>
-            </a>
           </div>
           <a class="nav-item verifier-only" data-page="verifier-review" href="#/verifier-review">
             <span class="nav-icon">✓</span>
@@ -20127,8 +20123,6 @@
       var tp = document.querySelector('.nav-parent[data-page="triage"]');
       if (sn) sn.classList.add('expanded');
       if (tp) { tp.classList.add('expanded'); tp.classList.add('active'); }
-      var ri = document.getElementById('nav-record-inspection');
-      if (ri) ri.classList.add('active');
     }
 
     function _toggleTriageSubnav() {
