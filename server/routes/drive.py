@@ -391,6 +391,7 @@ def drive_browse(
         q_parts.append("trashed = false")
         q_parts.append(
             "(mimeType = 'application/vnd.google-apps.folder'"
+            " or mimeType = 'application/vnd.google-apps.spreadsheet'"
             " or mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'"
             " or mimeType = 'application/vnd.ms-excel'"
             " or mimeType = 'text/csv')"
