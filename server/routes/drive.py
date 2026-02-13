@@ -376,15 +376,6 @@ def drive_browse(
         access_token = _refresh_token_if_needed(conn_row, conn)
         service = _get_drive_service(access_token)
 
-        if parent is None and drive_id is None:
-            results = service.drives().list(pageSize=page_size, pageToken=page_token).execute()
-            drives = results.get("drives", [])
-            return envelope({
-                "type": "drives",
-                "items": [{"id": d["id"], "name": d["name"], "kind": "drive"} for d in drives],
-                "next_page_token": results.get("nextPageToken"),
-            })
-
         q_parts = []
         if parent:
             q_parts.append("'%s' in parents" % parent)
