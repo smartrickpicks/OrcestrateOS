@@ -25722,6 +25722,9 @@
               var val = r[col];
               if (val === null || val === undefined) val = '';
               if (typeof val === 'object') val = JSON.stringify(val);
+              var _norm = _gridNormalizeCellValue(val, col);
+              if (_norm.display !== String(val)) val = _norm.display;
+              var _normTooltip = (_norm.tooltip || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
               
               // v1.6.46: Make File_Name a clickable link using file_url
               var isFileNameCol = col.toLowerCase().includes('file_name');
@@ -25739,7 +25742,7 @@
               var cellClass = isStatusCol ? statusClass : '';
               // v1.6.2: Apply signal-based cell coloring (v1.6.18: pass record)
               var cellStyle = getGridCellStyle(recordId, col, r);
-              var changeInfo = getCellChangeInfo(recordId, col, r); var titlePrefix = changeInfo && CHANGE_TYPE_STYLES[changeInfo.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo.type].label + '] ' : ''; if (!titlePrefix && typeof _getAddrCorrectionTooltip === 'function') { var _acTipP1c = _getAddrCorrectionTooltip(recordId, col); if (_acTipP1c) titlePrefix = _acTipP1c; } return '<td class="' + cellClass + ' truncated" data-gfield="' + col + '" style="' + cellStyle + '" title="' + titlePrefix + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+              var changeInfo = getCellChangeInfo(recordId, col, r); var titlePrefix = changeInfo && CHANGE_TYPE_STYLES[changeInfo.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo.type].label + '] ' : ''; if (!titlePrefix && typeof _getAddrCorrectionTooltip === 'function') { var _acTipP1c = _getAddrCorrectionTooltip(recordId, col); if (_acTipP1c) titlePrefix = _acTipP1c; } var _fullTitle = (_normTooltip ? _normTooltip + ' | ' : '') + titlePrefix + String(val).replace(/"/g, '&quot;'); return '<td class="' + cellClass + ' truncated" data-gfield="' + col + '" style="' + cellStyle + '" title="' + _fullTitle + '">' + cellContent + '</td>';
             }).join('') +
             '</tr>';
         }).join('');
@@ -31828,6 +31831,43 @@
     // v1.6.2: Get cell style for grid coloring
     // v1.6.8: Enhanced with change map highlighting for modified dataset
     // v1.6.18: Updated to pass record for key fallback
+
+    function _gridNormalizeCellValue(val, col) {
+      if (val === null || val === undefined || val === '') return { display: '', tooltip: '' };
+      var s = String(val);
+      var pctMatch = s.match(/^(-?\d+(?:\.\d+)?)\s*%$/);
+      if (pctMatch) {
+        var decimal = parseFloat(pctMatch[1]) / 100;
+        var rounded = parseFloat(decimal.toPrecision(10));
+        return { display: String(rounded), tooltip: s };
+      }
+      var colLower = (col || '').toLowerCase();
+      var looksLikeDate = colLower.indexOf('date') >= 0 || colLower.indexOf('expir') >= 0 ||
+        colLower.indexOf('effective') >= 0 || colLower.indexOf('signed') >= 0;
+      if (!looksLikeDate) return { display: s, tooltip: '' };
+      var ymdMatch = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
+      if (ymdMatch) {
+        var y = parseInt(ymdMatch[1],10), m = parseInt(ymdMatch[2],10)-1, d = parseInt(ymdMatch[3],10);
+        var epoch = Date.UTC(1899, 11, 30);
+        var utcMs = Date.UTC(y, m, d);
+        var serial = Math.round((utcMs - epoch) / 86400000);
+        var readable = new Date(utcMs).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+        return { display: String(serial), tooltip: readable };
+      }
+      var mdyMatch = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
+      if (mdyMatch) {
+        var y2 = parseInt(mdyMatch[3],10), m2 = parseInt(mdyMatch[1],10)-1, d2 = parseInt(mdyMatch[2],10);
+        if (m2 >= 0 && m2 <= 11 && d2 >= 1 && d2 <= 31 && y2 > 1900 && y2 < 2200) {
+          var epoch2 = Date.UTC(1899, 11, 30);
+          var utcMs2 = Date.UTC(y2, m2, d2);
+          var serial2 = Math.round((utcMs2 - epoch2) / 86400000);
+          var readable2 = new Date(utcMs2).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+          return { display: String(serial2), tooltip: readable2 };
+        }
+      }
+      return { display: s, tooltip: '' };
+    }
+
     function getGridCellStyle(recordId, fieldKey, record) {
       if (window._gridVerifiedCells && window._gridVerifiedCells[recordId] && window._gridVerifiedCells[recordId][fieldKey]) {
         return 'background:#e8f5e9;border-left:2px solid #4caf50;';
@@ -32717,6 +32757,9 @@
         var currentVal = srrState.editedValues.hasOwnProperty(key) ? srrState.editedValues[key] : originalVal;
         if (currentVal === null || currentVal === undefined) currentVal = '';
         if (typeof currentVal === 'object') currentVal = JSON.stringify(currentVal);
+        var _srrNorm = _gridNormalizeCellValue(currentVal, key);
+        if (_srrNorm.display !== String(currentVal)) currentVal = _srrNorm.display;
+        var _srrNormTooltip = (_srrNorm.tooltip || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
         
         var isEdited = srrState.editedValues.hasOwnProperty(key);
         var isLocked = srrState.lockedFields.hasOwnProperty(key);  // v1.4.18: locked after commit
@@ -32868,7 +32911,7 @@
           '</div>' +
           '<div class="srr-field-card-body">' +
             (isPicklistField ? srrBuildInlineSelect(key, currentVal, picklistOptions, isInvalidPicklistValue, isLocked) :
-            '<div class="srr-field-value-display" onclick="srrStartEdit(\'' + key + '\')" title="Click to edit" data-is-picklist="false">' + 
+            '<div class="srr-field-value-display" onclick="srrStartEdit(\'' + key + '\')" title="' + (_srrNormTooltip ? _srrNormTooltip + ' | ' : '') + 'Click to edit" data-is-picklist="false">' + 
               (String(currentVal) || '<span style="color:#999;font-style:italic;">Empty</span>') + 
             '</div>');
         
@@ -42671,6 +42714,9 @@
             var val = r[col];
             if (val === null || val === undefined) val = '';
             if (typeof val === 'object') val = JSON.stringify(val);
+            var _norm2 = _gridNormalizeCellValue(val, col);
+            if (_norm2.display !== String(val)) val = _norm2.display;
+            var _normTooltip2 = (_norm2.tooltip || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
             
             // v1.6.46: Make File_Name a clickable link using file_url
             var isFileNameCol = col.toLowerCase().includes('file_name');
@@ -42693,7 +42739,7 @@
             var changeInfo2 = getCellChangeInfo(recordId, col, r); var titlePrefix2 = changeInfo2 && CHANGE_TYPE_STYLES[changeInfo2.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo2.type].label + '] ' : '';
             if (false) { /* inline edit removed - grid mode uses click-to-verify / dblclick-to-patch */
             }
-            return '<td class="' + cellClass + ' truncated" data-gfield="' + col + '" style="' + cellStyle + '" title="' + titlePrefix2 + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+            var _fullTitle2 = (_normTooltip2 ? _normTooltip2 + ' | ' : '') + titlePrefix2 + String(val).replace(/"/g, '&quot;'); return '<td class="' + cellClass + ' truncated" data-gfield="' + col + '" style="' + cellStyle + '" title="' + _fullTitle2 + '">' + cellContent + '</td>';
           }).join('');
         
         fragment.appendChild(tr);
