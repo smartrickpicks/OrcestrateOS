@@ -14819,6 +14819,7 @@
         var createdRfi = result.data || {};
         var rfiWsId = wsId || ((typeof _getWorkspaceId === 'function') ? _getWorkspaceId() : 'ws_SEED0100000000000000000000');
         _evLoadRfisForRecord(rfiWsId, recordId, createdRfi);
+        _evRfiPropagateToQueues(createdRfi, recordId, payload.sheet_name || _evState.activeSheetName, assignTo, priority, question);
         if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
           AuditTimeline.emit('reader_rfi_created', {
             rfi_id: createdRfi.id || null,
@@ -15047,12 +15048,15 @@
       if (mid) mid.classList.add('ev-visible');
       _evState.viewerOpen = true;
       _evAssertLayout();
+      _evRfiMarkViewed();
+      _evRfiStartPolling();
     }
 
     function _evHidePdfPane() {
       var mid = document.getElementById('ev-middle-column');
       if (mid) mid.classList.remove('ev-visible');
       _evState.viewerOpen = false;
+      _evRfiStopPolling();
     }
 
     function _evAssertLayout() {
@@ -15615,6 +15619,204 @@
           if (rfisBody) rfisBody.innerHTML = '<div class="ev-ri-empty">Could not load RFIs</div>';
           if (rfisCount) rfisCount.textContent = '0';
         });
+    }
+
+    var _evRfiLastViewedAt = localStorage.getItem('ev_rfi_last_viewed_at') || '';
+    var _evRfiUnseenCount = 0;
+    var _evRfiPollTimer = null;
+
+    function _evRfiPropagateToQueues(rfiData, recordId, sheetName, assignTo, priority, questionText) {
+      var now = new Date().toISOString();
+      var rfiId = (rfiData && rfiData.id) || ('rfi_ev_' + Date.now());
+      var userId = _evGetCurrentUserId();
+      var role = _evGetEffectiveRole();
+
+      var prId = 'pr_rfi_' + rfiId;
+      var patchRequest = {
+        request_id: prId,
+        id: prId,
+        record_id: recordId || '',
+        contract_key: '',
+        field_name: 'RFI',
+        type: 'rfi',
+        artifact_type: 'rfi',
+        status: 'Submitted',
+        created_at_utc: now,
+        updated_at_utc: now,
+        submitted_at_utc: now,
+        actor_id: userId || 'system',
+        actor_role: role || 'analyst',
+        payload: {
+          record_id: recordId,
+          question: questionText || '',
+          priority: priority || 'normal',
+          assigned_to: assignTo || ''
+        },
+        thread: [{
+          actor: userId || 'analyst',
+          role: role || 'analyst',
+          message: questionText || '',
+          timestamp: now
+        }],
+        _ev_rfi_id: rfiId,
+        _ev_source: 'evidence_viewer'
+      };
+
+      if (typeof PATCH_REQUEST_STORE !== 'undefined' && PATCH_REQUEST_STORE.save) {
+        PATCH_REQUEST_STORE.save(patchRequest);
+      }
+
+      if (typeof analystTriageState !== 'undefined' && Array.isArray(analystTriageState.patchItems)) {
+        var statusInfo = (typeof ANALYST_STATUS_MAP !== 'undefined' && ANALYST_STATUS_MAP['Submitted']) || { section: 'pending', label: 'Pending Review', color: '#e65100' };
+        analystTriageState.patchItems.unshift({
+          request_id: prId,
+          type: 'rfi',
+          record_id: recordId || 'Unknown',
+          contract_key: '',
+          field_name: 'RFI',
+          status: 'Submitted',
+          section: statusInfo.section,
+          status_label: statusInfo.label,
+          status_color: statusInfo.color,
+          updated_at: now,
+          notes: questionText ? questionText.substring(0, 80) : '',
+          thread: patchRequest.thread,
+          source: 'patch_request'
+        });
+      }
+
+      if (typeof verifierQueueState !== 'undefined' && Array.isArray(verifierQueueState.payloads)) {
+        var vPayload = {
+          id: rfiId,
+          type: 'rfi',
+          status: 'pending',
+          record_id: recordId || '',
+          field: 'RFI',
+          old_value: '',
+          new_value: questionText ? questionText.substring(0, 120) : '',
+          comment: questionText || '',
+          timestamp: now,
+          division_id: '',
+          patch_request_id: prId,
+          assigned_to: assignTo || '',
+          priority: priority || 'normal',
+          _ev_source: 'evidence_viewer',
+          sheet_name: sheetName || ''
+        };
+        verifierQueueState.payloads.unshift(vPayload);
+        if (typeof saveVerifierQueue === 'function') saveVerifierQueue();
+      }
+
+      if (typeof renderAnalystTriage === 'function') {
+        try { renderAnalystTriage(); } catch (e) { console.warn('[EV-RFI-PROP] renderAnalystTriage error:', e); }
+      }
+      if (typeof renderVerifierTriage === 'function') {
+        try { renderVerifierTriage(); } catch (e) { console.warn('[EV-RFI-PROP] renderVerifierTriage error:', e); }
+      }
+
+      console.log('[EV-RFI-PROP] Propagated RFI to queues:', { prId: prId, rfiId: rfiId, recordId: recordId });
+    }
+
+    function _evRfiOpenFromQueue(recordId, sheetName) {
+      if (typeof navigateTo === 'function') navigateTo('grid');
+      setTimeout(function() {
+        if (typeof setGridViewMode === 'function') setGridViewMode('grid');
+        setTimeout(function() {
+          if (typeof openEvidenceViewerForRecord === 'function') {
+            openEvidenceViewerForRecord(recordId);
+          }
+        }, 200);
+      }, 150);
+    }
+
+    function _evRfiUpdateUnseenBadge() {
+      var lastViewed = _evRfiLastViewedAt;
+      if (!lastViewed) {
+        _evRfiLastViewedAt = new Date().toISOString();
+        localStorage.setItem('ev_rfi_last_viewed_at', _evRfiLastViewedAt);
+        return;
+      }
+      var wsId = (typeof _getWorkspaceId === 'function') ? _getWorkspaceId() : 'ws_SEED0100000000000000000000';
+      var recordId = _evState.activeRecordId;
+      if (!recordId) return;
+      var headers = (typeof _getAuthHeaders === 'function') ? _getAuthHeaders() : { 'Content-Type': 'application/json' };
+      var url = '/api/v2.5/workspaces/' + encodeURIComponent(wsId) + '/rfis?record_id=' + encodeURIComponent(recordId);
+      fetch(url, { headers: headers })
+        .then(function(r) { return r.ok ? r.json() : { items: [] }; })
+        .then(function(data) {
+          var allRfis = Array.isArray(data) ? data : (data.items || []);
+          var unseen = 0;
+          for (var i = 0; i < allRfis.length; i++) {
+            var updatedAt = allRfis[i].updated_at || allRfis[i].created_at || '';
+            if (updatedAt > lastViewed) unseen++;
+          }
+          _evRfiUnseenCount = unseen;
+          _evRfiRenderBadge(unseen);
+        })
+        .catch(function() {});
+    }
+
+    function _evRfiRenderBadge(count) {
+      var badge = document.getElementById('ev-rfi-unseen-badge');
+      if (!badge) {
+        var rfisHeader = document.getElementById('ev-ri-rfis-count');
+        if (rfisHeader && rfisHeader.parentNode) {
+          badge = document.createElement('span');
+          badge.id = 'ev-rfi-unseen-badge';
+          badge.style.cssText = 'display:none;margin-left:6px;background:#e91e63;color:white;padding:1px 6px;border-radius:10px;font-size:0.72em;font-weight:700;';
+          rfisHeader.parentNode.insertBefore(badge, rfisHeader.nextSibling);
+        }
+      }
+      if (badge) {
+        if (count > 0) {
+          badge.textContent = count + ' new';
+          badge.style.display = 'inline';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+      var navBadge = document.getElementById('nav-rfi-unseen-badge');
+      if (!navBadge) {
+        var triageNav = document.querySelector('.nav-parent[data-page="triage"] .nav-label');
+        if (triageNav) {
+          navBadge = document.createElement('span');
+          navBadge.id = 'nav-rfi-unseen-badge';
+          navBadge.style.cssText = 'display:none;margin-left:6px;background:#e91e63;color:white;padding:1px 5px;border-radius:8px;font-size:0.7em;font-weight:700;';
+          triageNav.appendChild(navBadge);
+        }
+      }
+      if (navBadge) {
+        if (count > 0) {
+          navBadge.textContent = String(count);
+          navBadge.style.display = 'inline';
+        } else {
+          navBadge.style.display = 'none';
+        }
+      }
+    }
+
+    function _evRfiMarkViewed() {
+      _evRfiLastViewedAt = new Date().toISOString();
+      localStorage.setItem('ev_rfi_last_viewed_at', _evRfiLastViewedAt);
+      _evRfiUnseenCount = 0;
+      _evRfiRenderBadge(0);
+    }
+
+    function _evRfiStartPolling() {
+      if (_evRfiPollTimer) return;
+      _evRfiPollTimer = setInterval(function() {
+        if (!_evState.viewerOpen || !_evState.activeRecordId) return;
+        var wsId = (typeof _getWorkspaceId === 'function') ? _getWorkspaceId() : 'ws_SEED0100000000000000000000';
+        _evLoadRfisForRecord(wsId, _evState.activeRecordId);
+        _evRfiUpdateUnseenBadge();
+      }, 30000);
+    }
+
+    function _evRfiStopPolling() {
+      if (_evRfiPollTimer) {
+        clearInterval(_evRfiPollTimer);
+        _evRfiPollTimer = null;
+      }
     }
 
     function _evSwitchToReviewWithRecord() {
@@ -39489,7 +39691,14 @@
         var timestamp = item.updated_at ? new Date(item.updated_at).toLocaleString() : 'Unknown';
         var statusBadge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + 
           item.status_color + '15; color: ' + item.status_color + ';">' + item.status_label + '</span>';
-        var notesIndicator = item.notes ? '<span title="Has verifier notes" style="margin-left: 4px; color: #f57f17;">💬</span>' : '';
+        var _threadSnippet = '';
+        if (item.type === 'rfi' && Array.isArray(item.thread) && item.thread.length > 0) {
+          var _lastMsg = item.thread[item.thread.length - 1];
+          var _snippetText = (_lastMsg.message || '').substring(0, 60);
+          if (_snippetText) _threadSnippet = '<div style="font-size:0.72em;color:#666;font-style:italic;margin-top:2px;border-left:2px solid #e0e0e0;padding-left:4px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + (_lastMsg.message || '').replace(/"/g, '&quot;') + '">' + (_lastMsg.role || '') + ': ' + _snippetText + '</div>';
+        }
+        var notesIndicator = item.notes ? '<span title="Has verifier notes" style="margin-left: 4px; color: #f57f17;">&#128172;</span>' : '';
+        if (_threadSnippet && !notesIndicator) notesIndicator = '<span title="Has thread" style="margin-left: 4px; color: #1976d2;">&#128172;</span>';
         
         var recordDisplay = '';
         if (isPreFlight) {
@@ -39541,7 +39750,7 @@
           '<td style="padding: 10px 12px; font-family: monospace; font-size: 0.85em;">' + recordDisplay + '</td>' +
           '<td style="padding: 10px 12px;">' + (item.field_name || '-') + '</td>' +
           '<td style="padding: 10px 12px; font-size: 0.82em;">' + (isPreFlight && item.blocker_type ? (function() { var _bt = _preflightBlockerTypes[item.blocker_type] || {}; var _reasonLabel = _bt.label || (item.blocker_type || '').replace(/_/g, ' '); var _reasonTip = _bt.desc || item.message || ''; return '<span style="display:inline-block; padding: 2px 7px; border-radius: 3px; background: #fff3e0; color: #e65100; font-size: 0.85em; font-weight: 500; cursor: help;" title="' + _reasonTip.replace(/"/g, '&quot;') + '">' + _reasonLabel + '</span>'; })() : (item.reason_summary || item.signal_type || '-')) + '</td>' +
-          '<td style="padding: 10px 12px;">' + statusBadge + notesIndicator + '</td>' +
+          '<td style="padding: 10px 12px;">' + statusBadge + notesIndicator + _threadSnippet + '</td>' +
           '<td style="padding: 10px 12px; color: #666; font-size: 0.85em;">' + timestamp + '</td>' +
           '<td style="padding: 10px 12px;"><button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75em;" onclick="event.stopPropagation(); ' + viewHandler + '">View</button>' + patchFromBlockerBtn + '</td>' +
           (function() { var qHealthHtml = '<td style="padding:10px 12px; text-align:center;">'; if (typeof ContractHealthScore !== 'undefined') { var qCk = item.contract_key || item.contract_id || ''; var qHs = qCk ? ContractHealthScore._scores[qCk] : null; if (qHs) { qHealthHtml += '<span style="padding:2px 6px;border-radius:10px;font-size:0.85em;background:' + qHs.band.bg + ';color:' + qHs.band.color + ';font-weight:600;cursor:help;" title="Health: ' + qHs.score + '/100 (' + qHs.band.label + ')">' + qHs.score + '</span>'; } else { qHealthHtml += '-'; } } else { qHealthHtml += '-'; } qHealthHtml += '</td>'; return qHealthHtml; })() +
@@ -40357,6 +40566,10 @@
         showToast('Could not find patch request', 'error');
         return;
       }
+      if (pr._ev_source === 'evidence_viewer' && pr.artifact_type === 'rfi' && pr.record_id) {
+        _evRfiOpenFromQueue(pr.record_id, '');
+        return;
+      }
       var item = {
         request_id: requestId,
         record_id: pr.record_id || (pr.payload && pr.payload.record_id) || '',
@@ -40524,11 +40737,18 @@
     }
     
     function openRecordFromPayload(payloadId) {
+      // v2.52: Check if this is an EV-sourced RFI — deep-link to Evidence Viewer
+      var _evPayload = verifierQueueState.payloads.find(function(p) { return p.id === payloadId; });
+      if (_evPayload && _evPayload._ev_source === 'evidence_viewer' && _evPayload.type === 'rfi' && _evPayload.record_id) {
+        _evRfiOpenFromQueue(_evPayload.record_id, _evPayload.sheet_name || '');
+        return;
+      }
+
       // v1.5.3: Open record in Verifier SRR mode with PatchRequest-first loading
       
       // Step 1: Get artifact and payload first to find patch_request_id
       var artifact = getArtifact(payloadId);
-      var payload = verifierQueueState.payloads.find(function(p) { return p.id === payloadId; });
+      var payload = _evPayload || verifierQueueState.payloads.find(function(p) { return p.id === payloadId; });
       
       // Step 2: Determine patch_request_id - could be payloadId itself or a linked field
       var patchRequestId = payloadId;
