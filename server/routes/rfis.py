@@ -17,11 +17,35 @@ router = APIRouter(prefix="/api/v2.5")
 ALLOWED_STATUSES = ("open", "responded", "closed")
 CUSTODY_STATUSES = ("open", "awaiting_verifier", "returned_to_analyst", "resolved", "dismissed")
 
+CUSTODY_TRANSITIONS = {
+    "open": {"awaiting_verifier"},
+    "awaiting_verifier": {"returned_to_analyst", "resolved", "dismissed"},
+    "returned_to_analyst": {"awaiting_verifier"},
+    "resolved": set(),
+    "dismissed": set(),
+}
+
+CUSTODY_OWNER_MAP = {
+    "open": "analyst",
+    "awaiting_verifier": "verifier",
+    "returned_to_analyst": "analyst",
+    "resolved": None,
+    "dismissed": None,
+}
+
+CUSTODY_AUDIT_EVENT_MAP = {
+    ("open", "awaiting_verifier"): "RFI_SENT",
+    ("awaiting_verifier", "returned_to_analyst"): "RFI_RETURNED",
+    ("awaiting_verifier", "resolved"): "RFI_RESOLVED",
+    ("awaiting_verifier", "dismissed"): "RFI_RESOLVED",
+    ("returned_to_analyst", "awaiting_verifier"): "RFI_SENT",
+}
+
 RFI_COLUMNS = [
     "id", "workspace_id", "patch_id", "author_id", "target_record_id",
     "target_field_key", "question", "response", "responder_id", "status",
     "created_at", "updated_at", "deleted_at", "version", "metadata",
-    "custody_status",
+    "custody_status", "custody_owner_id", "custody_owner_role",
 ]
 RFI_SELECT = ", ".join(RFI_COLUMNS)
 
@@ -59,7 +83,7 @@ def list_rfis(
                 )
 
             conditions = ["workspace_id = %s"]
-            params = [ws_id]
+            params: list = [ws_id]
 
             if not include_deleted:
                 conditions.append("deleted_at IS NULL")
@@ -145,11 +169,13 @@ def create_rfi(
             cur.execute(
                 """INSERT INTO rfis
                    (id, workspace_id, patch_id, author_id, target_record_id,
-                    target_field_key, question, status, metadata)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    target_field_key, question, status, metadata,
+                    custody_status, custody_owner_id, custody_owner_role)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                    RETURNING """ + RFI_SELECT,
                 (rfi_id, ws_id, db_patch_id, auth.user_id, target_record_id,
-                 target_field_key, question, status, json.dumps(metadata)),
+                 target_field_key, question, status, json.dumps(metadata),
+                 "open", auth.user_id, "analyst"),
             )
             row = cur.fetchone()
 
@@ -166,6 +192,15 @@ def create_rfi(
                 resource_type="rfi",
                 resource_id=rfi_id,
                 detail=audit_detail,
+            )
+            emit_audit_event(
+                cur,
+                workspace_id=ws_id,
+                event_type="RFI_CREATED",
+                actor_id=auth.user_id,
+                resource_type="rfi",
+                resource_id=rfi_id,
+                detail={"custody_status": "open", "custody_owner_role": "analyst"},
             )
         conn.commit()
 
@@ -244,19 +279,22 @@ def update_rfi(
                 content=error_envelope("VALIDATION_ERROR", "status must be one of: %s" % ", ".join(ALLOWED_STATUSES)),
             )
         updates["status"] = body["status"]
-    if "custody_status" in body:
-        if body["custody_status"] not in CUSTODY_STATUSES:
-            return JSONResponse(
-                status_code=400,
-                content=error_envelope("VALIDATION_ERROR", "custody_status must be one of: %s" % ", ".join(CUSTODY_STATUSES)),
-            )
-        updates["custody_status"] = body["custody_status"]
     if "patch_id" in body:
         updates["patch_id"] = body["patch_id"]
     if "metadata" in body:
         updates["metadata"] = body["metadata"]
 
-    if not updates:
+    custody_transition_requested = "custody_status" in body
+    requested_custody = body.get("custody_status")
+
+    if custody_transition_requested:
+        if requested_custody not in CUSTODY_STATUSES:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "custody_status must be one of: %s" % ", ".join(CUSTODY_STATUSES)),
+            )
+
+    if not updates and not custody_transition_requested:
         return JSONResponse(
             status_code=400,
             content=error_envelope("VALIDATION_ERROR", "No updatable fields provided"),
@@ -266,7 +304,7 @@ def update_rfi(
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT version, deleted_at, workspace_id FROM rfis WHERE id = %s",
+                "SELECT version, deleted_at, workspace_id, status, custody_status, custody_owner_id, custody_owner_role FROM rfis WHERE id = %s",
                 (rfi_id,),
             )
             row = cur.fetchone()
@@ -278,6 +316,11 @@ def update_rfi(
 
             current_version = row[0]
             workspace_id = row[2]
+            old_status = row[3]
+            old_custody = row[4] or "open"
+            old_custody_owner_id = row[5]
+            old_custody_owner_role = row[6]
+
             if current_version != version:
                 return JSONResponse(
                     status_code=409,
@@ -288,8 +331,37 @@ def update_rfi(
                     ),
                 )
 
+            if custody_transition_requested:
+                if requested_custody == old_custody:
+                    pass
+                else:
+                    allowed = CUSTODY_TRANSITIONS.get(old_custody, set())
+                    if requested_custody not in allowed:
+                        return JSONResponse(
+                            status_code=400,
+                            content=error_envelope(
+                                "INVALID_TRANSITION",
+                                "Cannot transition custody_status from '%s' to '%s'. Allowed: %s"
+                                % (old_custody, requested_custody, ", ".join(sorted(allowed)) if allowed else "none (terminal)"),
+                            ),
+                        )
+
+                updates["custody_status"] = requested_custody
+                new_owner_role = CUSTODY_OWNER_MAP.get(requested_custody)
+                updates["custody_owner_role"] = new_owner_role
+                if new_owner_role == "analyst":
+                    if old_custody_owner_role == "analyst" and old_custody_owner_id:
+                        updates["custody_owner_id"] = old_custody_owner_id
+                    else:
+                        cur.execute("SELECT author_id FROM rfis WHERE id = %s", (rfi_id,))
+                        updates["custody_owner_id"] = cur.fetchone()[0]
+                elif new_owner_role == "verifier":
+                    updates["custody_owner_id"] = auth.user_id
+                else:
+                    updates["custody_owner_id"] = None
+
             set_clauses = []
-            params = []
+            params: list = []
             for k, v in updates.items():
                 if k == "metadata":
                     set_clauses.append("metadata = %s::jsonb")
@@ -317,7 +389,9 @@ def update_rfi(
 
             audit_detail = {"fields": list(updates.keys()), "new_version": version + 1}
             if "custody_status" in updates:
+                audit_detail["old_custody_status"] = old_custody
                 audit_detail["custody_status"] = updates["custody_status"]
+                audit_detail["custody_owner_role"] = updates.get("custody_owner_role")
             emit_audit_event(
                 cur,
                 workspace_id=workspace_id,
@@ -327,6 +401,24 @@ def update_rfi(
                 resource_id=rfi_id,
                 detail=audit_detail,
             )
+
+            if custody_transition_requested and requested_custody != old_custody:
+                custody_event = CUSTODY_AUDIT_EVENT_MAP.get((old_custody, requested_custody))
+                if custody_event:
+                    emit_audit_event(
+                        cur,
+                        workspace_id=workspace_id,
+                        event_type=custody_event,
+                        actor_id=auth.user_id,
+                        resource_type="rfi",
+                        resource_id=rfi_id,
+                        detail={
+                            "from_custody_status": old_custody,
+                            "to_custody_status": requested_custody,
+                            "custody_owner_role": updates.get("custody_owner_role"),
+                            "custody_owner_id": updates.get("custody_owner_id"),
+                        },
+                    )
         conn.commit()
         return envelope(_row_to_dict(updated, RFI_COLUMNS))
     except Exception as e:
@@ -341,6 +433,7 @@ def update_rfi(
 def list_batch_rfis(
     bat_id: str,
     status: str = Query(None),
+    custody_status: str = Query(None),
     cursor: str = Query(None),
     limit: int = Query(50, ge=1, le=200),
     auth=Depends(require_auth(AuthClass.EITHER)),
@@ -366,11 +459,17 @@ def list_batch_rfis(
             workspace_id = batch_row[1]
 
             conditions = ["workspace_id = %s", "deleted_at IS NULL"]
-            params = [workspace_id]
+            params: list = [workspace_id]
 
-            if status:
+            if custody_status:
+                conditions.append("custody_status = %s")
+                params.append(custody_status)
+            elif status:
                 conditions.append("(custody_status = %s OR (custody_status IS NULL AND status = %s))")
                 params.extend([status, status])
+            else:
+                conditions.append("(custody_status IN ('open', 'awaiting_verifier') OR (custody_status IS NULL AND status IN ('open', 'responded')))")
+
             if cursor:
                 conditions.append("id > %s")
                 params.append(cursor)

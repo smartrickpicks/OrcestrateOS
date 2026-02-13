@@ -1,6 +1,7 @@
 import json
 import logging
-from datetime import datetime
+import re
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
@@ -26,6 +27,13 @@ CORRECTION_SELECT = ", ".join(CORRECTION_COLUMNS)
 ALLOWED_STATUSES = ("pending_verifier", "approved", "rejected", "auto_applied")
 ALLOWED_CORRECTION_TYPES = ("minor", "non_trivial")
 
+STATUS_TRANSITIONS = {
+    "pending_verifier": {"approved", "rejected"},
+    "auto_applied": set(),
+    "approved": set(),
+    "rejected": set(),
+}
+
 
 def _row_to_dict(row, columns):
     d = {}
@@ -44,7 +52,6 @@ def _classify_correction(original_value, corrected_value):
     length_delta = abs(len(corrected_value) - len(original_value))
     if length_delta > 2:
         return "non_trivial"
-    import re
     if re.search(r'\d', corrected_value) and not re.search(r'\d', original_value):
         return "non_trivial"
     if re.search(r'\d', original_value) and not re.search(r'\d', corrected_value):
@@ -146,6 +153,38 @@ def create_correction(
                     "field_id": field_id,
                 },
             )
+
+            if correction_type == "minor":
+                emit_audit_event(
+                    cur,
+                    workspace_id=workspace_id,
+                    event_type="CORRECTION_APPLIED_MINOR",
+                    actor_id=auth.user_id,
+                    resource_type="correction",
+                    resource_id=cor_id,
+                    detail={
+                        "document_id": doc_id,
+                        "original_value": original_value,
+                        "corrected_value": corrected_value,
+                        "field_key": field_key,
+                    },
+                )
+            else:
+                emit_audit_event(
+                    cur,
+                    workspace_id=workspace_id,
+                    event_type="CORRECTION_PROPOSED",
+                    actor_id=auth.user_id,
+                    resource_type="correction",
+                    resource_id=cor_id,
+                    detail={
+                        "document_id": doc_id,
+                        "original_value": original_value,
+                        "corrected_value": corrected_value,
+                        "field_key": field_key,
+                        "correction_type": correction_type,
+                    },
+                )
         conn.commit()
 
         return JSONResponse(
@@ -225,13 +264,25 @@ def update_correction(
                     ),
                 )
 
+            if "status" in updates:
+                new_status = updates["status"]
+                allowed_next = STATUS_TRANSITIONS.get(old_status, set())
+                if new_status != old_status and new_status not in allowed_next:
+                    return JSONResponse(
+                        status_code=400,
+                        content=error_envelope(
+                            "INVALID_TRANSITION",
+                            "Cannot transition correction status from '%s' to '%s'. Allowed: %s"
+                            % (old_status, new_status, ", ".join(sorted(allowed_next)) if allowed_next else "none (terminal)"),
+                        ),
+                    )
+
             if "status" in updates and updates["status"] in ("approved", "rejected"):
                 updates["decided_by"] = auth.user_id
-                from datetime import timezone
                 updates["decided_at"] = datetime.now(timezone.utc)
 
             set_clauses = []
-            params = []
+            params: list = []
             for k, v in updates.items():
                 if k == "metadata":
                     set_clauses.append("metadata = %s::jsonb")
@@ -274,6 +325,29 @@ def update_correction(
                     "new_version": version + 1,
                 },
             )
+
+            if "status" in updates:
+                new_status = updates["status"]
+                if new_status == "approved" and old_status != "approved":
+                    emit_audit_event(
+                        cur,
+                        workspace_id=workspace_id,
+                        event_type="CORRECTION_APPROVED",
+                        actor_id=auth.user_id,
+                        resource_type="correction",
+                        resource_id=cor_id,
+                        detail={"decided_by": auth.user_id},
+                    )
+                elif new_status == "rejected" and old_status != "rejected":
+                    emit_audit_event(
+                        cur,
+                        workspace_id=workspace_id,
+                        event_type="CORRECTION_REJECTED",
+                        actor_id=auth.user_id,
+                        resource_type="correction",
+                        resource_id=cor_id,
+                        detail={"decided_by": auth.user_id},
+                    )
         conn.commit()
         return envelope(_row_to_dict(updated, CORRECTION_COLUMNS))
     except Exception as e:
