@@ -31765,7 +31765,9 @@
     function validateSubmissionGates(patchType, draft, changeCount, overrideEnabled) {
       var result = { pass: true, evidenceGaps: [], preflightGaps: [] };
       result.evidenceGaps = srrCheckEvidenceGate(patchType, draft, changeCount, overrideEnabled);
-      result.preflightGaps = srrCheckPreflightGate();
+      if (patchType !== 'rfi') {
+        result.preflightGaps = srrCheckPreflightGate();
+      }
       result.pass = (result.evidenceGaps.length === 0 && result.preflightGaps.length === 0);
       return result;
     }
@@ -31841,8 +31843,8 @@
         }
       }
 
-      // v1.6.46: Preflight gate (sandbox mode bypasses)
-      if (!isDemoMode()) {
+      // v1.6.46: Preflight gate (sandbox mode bypasses, RFIs bypass)
+      if (!isDemoMode() && patchType !== 'rfi') {
         var preflightGaps = srrCheckPreflightGate();
         if (preflightGaps.length > 0) {
           showToast('Missing requirements: ' + preflightGaps.join(', '), 'warning');
@@ -31852,12 +31854,14 @@
         }
       }
 
-      var contractBlockers = srrCheckContractPreflightGate();
-      if (contractBlockers.length > 0) {
-        showToast('Contract has ' + contractBlockers.length + ' unresolved blocker(s): ' + contractBlockers.slice(0, 3).join('; ') + (contractBlockers.length > 3 ? ' (+' + (contractBlockers.length - 3) + ' more)' : ''), 'warning');
-        console.log('[SRR] Submit blocked — contract preflight blockers:', contractBlockers);
-        console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'contract_blockers', count: contractBlockers.length });
-        return;
+      if (patchType !== 'rfi') {
+        var contractBlockers = srrCheckContractPreflightGate();
+        if (contractBlockers.length > 0) {
+          showToast('Contract has ' + contractBlockers.length + ' unresolved blocker(s): ' + contractBlockers.slice(0, 3).join('; ') + (contractBlockers.length > 3 ? ' (+' + (contractBlockers.length - 3) + ' more)' : ''), 'warning');
+          console.log('[SRR] Submit blocked — contract preflight blockers:', contractBlockers);
+          console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'contract_blockers', count: contractBlockers.length });
+          return;
+        }
       }
       
       // v1.4.19: Build patch request based on type
