@@ -722,6 +722,7 @@ All Drive endpoints are workspace-scoped: `/api/v2.5/workspaces/{workspace_id}/d
 | GET | `/drive/status` | Check connection state | Any role |
 | GET | `/drive/browse` | List drives/folders/files | Any role |
 | POST | `/drive/import` | Import file as working copy | Any role |
+| GET | `/drive/import-history` | List import versions of a file | Any role |
 | POST | `/drive/export` | Export working copy to Drive | Role-based |
 
 ### 12.4 Import Semantics
@@ -731,6 +732,7 @@ All Drive endpoints are workspace-scoped: `/api/v2.5/workspaces/{workspace_id}/d
 - Provenance metadata tracks: `source_file_id`, `source_drive_id`, `source_version`, `imported_at`, `imported_by`, `has_external_modifications`, `baseline_unknown`
 - Working copy enters the same pipeline as local upload (parseUnifiedWorkbook → signals → triage)
 - Files with pre-existing red cells are accepted; `has_external_modifications` is flagged true
+- **Versioned import model (D7):** "Refresh from Drive" creates a new import version (never replaces working copy). Each version has `version_number` (auto-incremented per workspace+source_file_id) and `supersedes_id` (FK to previous version). Import history available via GET `/drive/import-history?source_file_id=...`
 
 ### 12.5 Export Semantics
 
@@ -792,6 +794,8 @@ All Drive audit events include `actor_id`, `actor_role`, `effective_role`, `work
 | `imported_by` | `TEXT FK` | References users |
 | `has_external_modifications` | `BOOLEAN` | Pre-existing red cells detected |
 | `baseline_unknown` | `BOOLEAN` | No prior baseline in system |
+| `version_number` | `INTEGER NOT NULL` | Auto-incremented per workspace+source_file_id |
+| `supersedes_id` | `TEXT NULL` | FK → self; points to previous version |
 
 ### 12.8 OAuth Scopes Policy
 

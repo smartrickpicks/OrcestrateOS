@@ -1303,9 +1303,62 @@ components:
                         type: boolean
                       baseline_unknown:
                         type: boolean
+                      version_number:
+                        type: integer
+                        description: Import version number (1 for first import, incremented on refresh)
+                      supersedes_id:
+                        type: string
+                        nullable: true
+                        description: Previous version's import_id (null for first import)
                       download_url:
                         type: string
                         description: Temporary URL to fetch file bytes
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+
+  /workspaces/{workspace_id}/drive/import-history:
+    get:
+      operationId: getDriveImportHistory
+      summary: List all imported versions of a Drive file
+      tags: [Drive]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: source_file_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Google Drive file ID to list import versions for
+      responses:
+        '200':
+          description: Import version history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      versions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            import_id:
+                              type: string
+                            version_number:
+                              type: integer
+                            imported_at:
+                              type: string
+                              format: date-time
+                            imported_by:
+                              type: string
+                            supersedes_id:
+                              type: string
+                              nullable: true
+                            is_current:
+                              type: boolean
                   meta:
                     $ref: '#/components/schemas/Meta'
 
