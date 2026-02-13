@@ -30,12 +30,12 @@ The "Grid" mode has been renamed to "Evidence Viewer" mode with unified click be
 - **Review mode**: Unchanged — click a row to open Record Inspector in full review layout.
 - **Evidence Viewer mode**: First single-click on any cell opens the Evidence Viewer panel for that record (no validation). Subsequent single-clicks on the same record validate cells (toggle green). Clicking a different record switches context. Double-click opens context menu.
 - **Context menu**: Includes "Open in Review Mode" action that switches to Review mode and navigates to the current record.
-- **State machine**: `_evState` object tracks `mode` (review/evidence_viewer), `viewerOpen`, `activeRecordId`, `activeSheetName`, `activeRowIdx`, `clickArmedAfterOpen`.
+- **State machine**: `_evState` object tracks `mode` (review/evidence_viewer), `viewMode` (reader/pdf), `viewerOpen`, `activeRecordId`, `activeSheetName`, `activeRowIdx`, `clickArmedAfterOpen`.
 - Transitions: T1 (mode toggle), T2 (first click opens viewer), T3 (subsequent clicks validate), T4 (double-click context menu), T5 (Open in Review Mode), T6 (toggle back to review preserves record).
 
 **Two-Column Layout (no page switch)**: Evidence Viewer mode uses a two-column layout inside `page-grid` via `ev-inline-wrapper` flex container:
 - **Middle** (`#ev-middle-column`): Contains two stacked areas:
-  - **Top** (`#ev-middle-viewer`, flex 60%): Document viewer with PDF header, `<object>` PDF viewer, empty-state with reason labels.
+  - **Top** (`#ev-middle-viewer`, flex 60%): Document viewer with Reader/PDF toggle header, `<object>` PDF viewer, `#ev-reader-pane` Reader overlay (shell), empty-state with reason labels. Toggle: `_evSetViewMode('reader'|'pdf')`, default=reader. Reader pane (`#ev-reader-pane`) is structural shell — text extraction not yet wired.
   - **Bottom** (`#ev-middle-details`, max-height 40%): Evidence Details panel — collapsible Anchors, Corrections, and RFI sections. Loads data from document-scoped API endpoints.
 - **Right** (`#ev-right-grid-column`): Grid table only. No Evidence Details markup exists here.
 - Toggling Evidence Viewer mode ON/OFF shows/hides `#ev-middle-column` (no navigation).
@@ -43,7 +43,16 @@ The "Grid" mode has been renamed to "Evidence Viewer" mode with unified click be
 - Runtime assertion `_evAssertLayout()` verifies Evidence Details parent == `#ev-middle-column` and grid is inside `#ev-right-grid-column`; logs/errors on mismatch.
 - Rail button (magnifying glass) opens inline viewer. "Open in Review Mode" context menu action switches to review mode and navigates to `page-row`.
 - `openEvidenceViewerForRecord(recordId)` is a deterministic entry point that finds the record across all sheets.
-- PDF URL resolution: `_evResolveDocUrl()` traces record -> file_url field -> contract ref fallback -> attachment fallback, with reason codes: `no_document_link`, `mapping_not_found`, `proxy_fetch_failed`, `unsupported_format`.
+- Record lookup: `_evFindRecord()` delegates to canonical `findRecordById(recordId)` (shared, line 10806) as single source of truth. Falls back to direct sheet[rowIdx] only if canonical lookup returns null.
+- Context labels: `_evBuildContextLabel()` uses shared constants `SRR_CONTRACT_NAME_FIELDS`, `SRR_ACCOUNT_NAME_FIELDS` via `_srrResolveFieldFromList()` — no hardcoded field arrays in EV code.
+- PDF URL resolution: `_evResolveDocUrl()` uses `srrResolveFieldValue(record, 'file_url')` (shared, line 33428) as single source of truth for document URL mapping. Traces record -> file_url field -> contract ref fallback -> attachment fallback, with reason codes: `no_document_link`, `mapping_not_found`, `proxy_fetch_failed`, `unsupported_format`.
+
+**Shared SRR Name Constants** (line ~33393):
+- `SRR_CONTRACT_NAME_FIELDS`: Contract_Name_c/\_\_c/clean + Opportunity variants
+- `SRR_ACCOUNT_NAME_FIELDS`: Account_Name, Artist_Name, Legal_Name, Company_Name, Payee variants
+- `SRR_DISPLAY_NAME_FIELDS`: Display_Name, Name, Contact_Name variants
+- `SRR_ALL_NAME_FIELDS`: concat of above three (used by `_srrResolveRecordName`)
+- `_srrResolveFieldFromList(record, fieldList)`: shared resolver scanning any field list with trim/guard logic
 - Broader URL acceptance: accepts any `http/https` URL (not just `.pdf` extension). Rejects known non-PDF formats (doc/docx/xls/etc). Accepts Google Drive preview/view URLs.
 
 ## External Dependencies
