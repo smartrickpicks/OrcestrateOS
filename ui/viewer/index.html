@@ -11736,7 +11736,7 @@
           var ws = _getWorkspaceId();
           var qs = '';
           if (parentId) qs += '?parent=' + encodeURIComponent(parentId);
-          if (_browseCurrentDrive && !parentId) qs += (qs ? '&' : '?') + 'drive_id=' + encodeURIComponent(_browseCurrentDrive);
+          if (_browseCurrentDrive) qs += (qs ? '&' : '?') + 'drive_id=' + encodeURIComponent(_browseCurrentDrive);
           var container = document.getElementById('saved-sessions-list');
           if (container) container.innerHTML = '<div style="padding: 24px; text-align: center; color: #78909c;">Loading Drive files...</div>';
           fetch(API_BASE + '/workspaces/' + ws + '/drive/browse' + qs, {
@@ -11763,6 +11763,11 @@
               _browsePath.push({ id: parentId, name: driveName || parentId });
             }
             var html = '<div class="ds-drive-browser">';
+            if (_browsePath.length > 0) {
+              html += '<div style="margin-bottom:8px;">';
+              html += '<button onclick="dsPanel.browseDriveBack()" style="padding:4px 12px;font-size:0.85em;background:#263238;color:#90caf9;border:1px solid #37474f;border-radius:4px;cursor:pointer;">\u2190 Back</button>';
+              html += '</div>';
+            }
             html += '<div class="ds-drive-breadcrumb">';
             html += '<span class="ds-bc-item" onclick="dsPanel.browseDriveRoot()" style="cursor:pointer;color:#4fc3f7;">Contracts</span>';
             for (var i = 0; i < _browsePath.length; i++) {
@@ -11817,6 +11822,16 @@
           var target = _browsePath[level];
           _browsePath = _browsePath.slice(0, level);
           this.browseDrive(target.id, target.name);
+        },
+
+        browseDriveBack: function() {
+          if (_browsePath.length <= 1) {
+            this.browseDriveRoot();
+          } else {
+            var target = _browsePath[_browsePath.length - 2];
+            _browsePath = _browsePath.slice(0, _browsePath.length - 2);
+            this.browseDrive(target.id, target.name);
+          }
         },
 
         importDriveFile: function(fileId, fileName) {
