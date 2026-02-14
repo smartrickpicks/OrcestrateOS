@@ -36,6 +36,8 @@ Section Focus Guidance (v2.53): The `renderSectionGuidanceCard()` function first
 
 Module Registry (v2.53): `Engines.SuggestionsState` and `Components.SuggestionsPanel` registered in AppModules Phase D16. SuggestionsState provides accessors for sync state, document/workspace IDs, and headers. SuggestionsPanel provides toggle, run, accept, decline, and refresh operations. Total registered modules: ~50+ across D1-D16 phases.
 
+UX Fine-Tuning (v2.53): Locked clarity decisions Q1-Q5 all Option A. Collapsible section groups with sessionStorage persistence (key: `srr_collapse_{sheet}_{section_key}`), auto-collapse for "Other" with >15 fields. Canonical field labels from `field_meta.field_label` with `__c`/`_c` stripping fallback. Sticky guidance card with prose rendering, source badge, and collapsed preview. Live contract chip refresh via `orchestrate:role_confirmed` CustomEvent. Bulk verify by section with confirmation dialog and `fields_bulk_verified` audit event. Inline mojibake character highlighting via `_evInlineMojiHighlight()`. Context menu parity: "Open in Evidence Viewer" in grid (role-gated), "Open in Glossary" in EV. Linked fields placeholder with `_resolveLinkedFields()` stub. EV-004 anchor count badge with pill styling. QA-001 `section_meta` suite in QARunner. DOC-001 schema documentation at `docs/handoff/V253_SECTION_METADATA_SCHEMA.md`.
+
 ## External Dependencies
 - **FastAPI server**: Used as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
 - **SheetJS (XLSX)**: Integrated for Excel import/export functionality.

@@ -3,6 +3,26 @@
 ## Version: v2.53
 Date: 2026-02-14
 
+### Added (v2.53 UX Fine-Tuning — Locked Decisions Q1-Q5 Option A)
+
+- RV-001: Sticky section guidance card in Record Inspector (position: sticky, z-index: 5, shadow).
+- UX-001: Collapsible section groups with sessionStorage persistence and auto-collapse for large "Other" groups (>15 fields). Chevron toggle, section-key-based keys.
+- UX-002: Live contract chip refresh on `document_role_confirmed` events via CustomEvent dispatch. Updates role chips, `[data-chip-role]` elements, and doc-type selector.
+- UX-003: Canonical field labels from `field_meta.field_label` with `__c`/`_c` stripping fallback. Applied in Record Inspector field cards and grid header columns.
+- UX-004: Section guidance card readability improvements — prose rendering for section_focus, increased font sizes, source badge ("From schema" / "Default guidance"), collapsed preview text.
+- UX-005: Linked fields placeholder upgrade with contextual messaging and `_resolveLinkedFields()` stub function.
+- UX-006: Context menu parity — "Open in Evidence Viewer" in grid context menu (role-gated), "Open in Glossary" in EV selection menu.
+- UX-007: Bulk verify by section — "Verify N" button in section headers for todo fields, confirmation dialog, `fields_bulk_verified` audit event.
+- EV-001: Inline mojibake character highlighting in Reader — `_evInlineMojiHighlight()` wraps suspect characters in `<mark>` with Unicode code point tooltip.
+- EV-004: Anchor count badge in Evidence Viewer panel with pill-style CSS.
+- QA-001: `section_meta` QA suite in QARunner — validates section_metadata structure, field_section_map coverage, section_focus presence, orphan mappings, fallback behavior.
+- DOC-001: `docs/handoff/V253_SECTION_METADATA_SCHEMA.md` — full schema reference, consumer function docs, QA validation details, example JSON.
+- P0: Internal-field hiding verified — analyst-only via `isHiddenField()` + System Metadata section gated by `currentMode !== 'analyst'`.
+
+### Verified (EV-002/EV-003 No-Op)
+- EV-002: No "Reject" wording in Evidence Viewer selection menu — confirmed compliant.
+- EV-003: PDF page state persistence via `loadSrrPdfState`/`saveSrrPdfState` — confirmed compliant.
+
 ### Added (Suggested Fields — P2 Cleanup + P1 Features)
 
 - SUGGEST-24: Renamed "Sync" tab → "Suggestions" in grid float controls; "Reject" button → "Decline" in suggestion action buttons. Internal API status value remains `rejected`; this is a presentation-layer change only.

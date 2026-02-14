@@ -1557,6 +1557,8 @@
     .ev-moji-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 0.72em; font-weight: 600; margin-left: 8px; }
     .ev-moji-badge.suspect { background: #fff8e1; color: #f57f17; }
     .ev-moji-badge.unreadable { background: #ffebee; color: #d32f2f; }
+    .ev-moji-inline { background: #ffcc80; border-radius: 2px; padding: 0 1px; cursor: help; }
+    .ev-ri-badge { background: #1565c0; color: #fff; border-radius: 10px; padding: 1px 7px; font-size: 0.72em; font-weight: 600; min-width: 18px; text-align: center; }
     .ev-ocr-escalate-bar { padding: 10px 16px; background: #fff3e0; border-bottom: 1px solid #ffe0b2; display: flex; align-items: center; gap: 10px; }
     .ev-ocr-escalate-bar .ev-ocr-escalate-msg { flex: 1; font-size: 0.85em; color: #e65100; font-weight: 500; }
     .ev-ocr-escalate-btn { padding: 5px 14px; font-size: 0.82em; background: #e65100; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; }
@@ -3169,11 +3171,11 @@
               <div class="ev-ri-section" id="ev-ri-anchors">
                 <div class="ev-ri-section-header" onclick="evRiToggle('anchors')">
                   <span style="border-left: 3px solid #1565c0; padding-left: 6px;">Linked Fields</span>
-                  <span class="ev-ri-count" id="ev-ri-anchors-count">0</span>
+                  <span class="ev-ri-count ev-ri-badge" id="ev-ri-anchors-count">0</span>
                   <span class="ev-ri-arrow" id="ev-ri-anchors-arrow">&#9660;</span>
                 </div>
                 <div class="ev-ri-section-body" id="ev-ri-anchors-body">
-                  <div class="ev-ri-empty">No linked fields for this record</div>
+                  <div class="ev-ri-empty">Field linking is available when field relationships are defined in the schema.</div>
                 </div>
               </div>
               <div class="ev-ri-section" id="ev-ri-corrections">
@@ -3418,7 +3420,7 @@
               </div>
               <div class="srr-anchor-list" id="srr-anchor-list">
                 <div style="font-size: 0.8em; font-weight: 600; color: #666; margin-bottom: 8px;">Linked Fields</div>
-                <div class="srr-empty-state" style="padding: 10px;">No linked fields defined</div>
+                <div class="srr-empty-state" style="padding: 10px;">Field linking is available when field relationships are defined in the schema.</div>
               </div>
             </div>
 
@@ -3446,7 +3448,7 @@
                   <div class="ei-hint">Select text in the Reader view, then click "Create Evidence Mark" to pin evidence. <span style="font-size: 0.9em; color: #888; display: block; margin-top: 4px;" title="Evidence Marks are location references in the document used for jumps, RFIs, and corrections.">ℹ Evidence Marks are location references in the document used for jumps, RFIs, and corrections.</span></div>
                   <button class="ei-action-btn primary" id="ei-create-anchor-btn" onclick="eiCreateAnchor()" disabled>Create Evidence Mark from Selection</button>
                   <div class="ei-list" id="ei-anchors-list">
-                    <div class="ei-empty">No linked fields for this document</div>
+                    <div class="ei-empty">Field linking is available when field relationships are defined in the schema.</div>
                   </div>
                 </div>
               </div>
@@ -4909,6 +4911,7 @@
             <button onclick="QARunner.runSuite('p08')" class="p1b-run-btn" title="Record-Link Integrity: Validates the triage-to-record resolver, fallback matching, unresolved diagnostics modal, dataset mismatch purging, and audit event emission. Ensures triage items always link to real records." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P0.8</button>
             <button onclick="QARunner.runSuite('p09')" class="p1b-run-btn" title="Runtime Cleanup and ES5: Validates ES5 compatibility (no arrow functions, template literals, etc.), default triage navigation, contract-first selectors, legacy annotation sanitization, toast positioning, and role-based UI hiding." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P0.9</button>
             <button onclick="QARunner.runSuite('p1a')" class="p1b-run-btn" title="Triage Clarity and Contract Section Grouping: Validates human-readable triage labels, contract-section-scoped tab rendering with counts, section-based filtering, pre-flight contract grouping, column display rules, and blocker type routing." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P1A</button>
+            <button onclick="QARunner.runSuite('section_meta')" class="p1b-run-btn" title="Section Metadata Integrity: Validates section_metadata structure, field_section_map coverage, section_focus presence, and fallback behavior for missing sheets." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run Section Meta</button>
             <button onclick="QARunner.runAll()" title="Runs all 6 suites in sequence (P0.2.2, P1, Calibration, P0.8, P0.9, P1A) and reports combined results. Use this for a full regression check before releases." style="padding: 6px 14px; font-size: 0.85em; background: #388e3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Run All</button>
             <button onclick="QARunner.exportReport()" title="Exports the most recent run results as a downloadable JSON file for archival, external review, or CI integration." style="padding: 6px 14px; font-size: 0.85em; background: #f57c00; color: white; border: none; border-radius: 4px; cursor: pointer;">Export QA Report JSON</button>
           </div>
@@ -10282,6 +10285,7 @@
             document_type: row._document_type || 'unknown'
           }
         });
+        document.dispatchEvent(new CustomEvent('orchestrate:role_confirmed', { detail: { after_value: row._document_role, record_id: row.record_id || '' } }));
         row._document_role_suggestion = null;
         if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
         return true;
@@ -14480,6 +14484,14 @@
         });
     }
 
+    var _MOJI_INLINE_RE = /[\ufffd\u0000-\u001f\uffff]/g;
+    function _evInlineMojiHighlight(html) {
+      return html.replace(_MOJI_INLINE_RE, function(ch) {
+        var hex = ch.charCodeAt(0).toString(16).toUpperCase(); while (hex.length < 4) hex = '0' + hex; var code = 'U+' + hex;
+        return '<mark class="ev-moji-inline" title="Possible encoding issue (' + code + ')" style="background: #ffcc80; border-radius: 2px; padding: 0 1px;">' + ch + '</mark>';
+      });
+    }
+
     function _evRenderReaderPages(container, pages) {
       var html = '';
       var docMojiStats = { suspect: 0, unreadable: 0, total: 0 };
@@ -14497,7 +14509,7 @@
         if (mojiClass === 'suspect_mojibake') html += ' <span class="ev-moji-badge suspect">⚠ Suspect Encoding</span>';
         else if (mojiClass === 'unreadable') html += ' <span class="ev-moji-badge unreadable">✕ Unreadable</span>';
         html += '</div>';
-        html += '<div class="ev-reader-page-text">' + _evFormatReaderText(text) + '</div>';
+        html += '<div class="ev-reader-page-text">' + _evInlineMojiHighlight(_evFormatReaderText(text)) + '</div>';
         html += '<button class="ev-reader-raw-toggle" onclick="this.nextElementSibling.classList.toggle(\'visible\'); this.textContent = this.nextElementSibling.classList.contains(\'visible\') ? \'Hide raw text\' : \'Show raw text\';">Show raw text</button>';
         html += '<div class="ev-reader-raw-block">' + _evEscapeHtml(text) + '</div>';
         html += '</div>';
@@ -14747,7 +14759,9 @@
         { id: 'sep1', sep: true },
         { id: 'anchor', icon: '\uD83D\uDCCC', label: 'Create Evidence Mark' },
         { id: 'rfi', icon: '\uD83D\uDCAC', label: 'Create RFI' },
-        { id: 'correction', icon: '\u270E', label: 'Create Correction' }
+        { id: 'correction', icon: '\u270E', label: 'Create Correction' },
+        { id: 'sep2', sep: true },
+        { id: 'glossary', icon: '\uD83D\uDCD6', label: 'Open in Glossary' }
       ];
       var html = '';
       for (var i = 0; i < items.length; i++) {
@@ -14801,6 +14815,13 @@
       _evSelClose();
       if (!payload) return;
       console.log('[EV-SEL] action:', action, 'text:', (payload.selected_text || '').substring(0, 40), 'record:', payload.record_id);
+
+      if (action === 'glossary') {
+        var fk = payload.fieldKey || '';
+        if (typeof openGlossaryDrawer === 'function') openGlossaryDrawer(fk);
+        _evSelClose();
+        return;
+      }
 
       if (action === 'copy') {
         if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -15655,7 +15676,7 @@
             if (anchorsCount) anchorsCount.textContent = anchors.length;
             if (!anchorsBody) return;
             if (anchors.length === 0) {
-              anchorsBody.innerHTML = '<div class="ev-ri-empty">No linked fields for this document</div>';
+              anchorsBody.innerHTML = '<div class="ev-ri-empty">Field linking is available when field relationships are defined in the schema.</div>';
               return;
             }
             anchorsBody.innerHTML = anchors.map(function(a) {
@@ -15665,7 +15686,7 @@
             }).join('');
           })
           .catch(function() {
-            if (anchorsBody) anchorsBody.innerHTML = '<div class="ev-ri-empty">No linked fields available</div>';
+            if (anchorsBody) anchorsBody.innerHTML = '<div class="ev-ri-empty">Field linking is available when field relationships are defined in the schema.</div>';
             if (anchorsCount) anchorsCount.textContent = '0';
           });
       } else {
@@ -17013,6 +17034,23 @@
         window.AppModules.Components.TriageTable = Components.TriageTable;
       }
       console.log('[APP-MODULES][P1C] bootstrap_complete: modules=' + window.AppModules._registry.length + ', version=' + window.AppModules._version);
+      document.addEventListener('orchestrate:role_confirmed', function(e) {
+        var detail = e.detail || {};
+        if (detail.after_value) {
+          var roleChip = document.querySelector('.srr-doc-role-chip');
+          if (roleChip) roleChip.textContent = detail.after_value;
+          var roleChips = document.querySelectorAll('[data-chip-role]');
+          for (var _rci = 0; _rci < roleChips.length; _rci++) roleChips[_rci].textContent = detail.after_value;
+          var docTypeSelect = document.getElementById('srr-doc-type');
+          if (docTypeSelect) {
+            var opts = docTypeSelect.querySelectorAll('option');
+            for (var _oi = 0; _oi < opts.length; _oi++) {
+              if (opts[_oi].value === detail.after_value) { docTypeSelect.value = detail.after_value; break; }
+            }
+          }
+          console.log('[UX-002] contract_chip_refreshed:', detail.after_value);
+        }
+      });
     };
 
     // ========== END PHASE C ==========
@@ -17071,7 +17109,8 @@
           for (var idx = 0; idx < visibleColumns.length; idx++) {
             var col = visibleColumns[idx];
             var colLetter = _ns.Engines.GridState.getColumnLetter(idx);
-            var displayName = col.replace(/_c$/i, '').replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+            var _ghMeta = (typeof getFieldMeta === 'function') ? getFieldMeta(null, col) : null;
+            var displayName = (_ghMeta && _ghMeta.field_label) ? _ghMeta.field_label : col.replace(/__c$/i, '').replace(/_c$/i, '').replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
             if (displayName.length > 20) displayName = displayName.substring(0, 18) + '...';
             var frozenClass = (idx === 0) ? ' grid-col-frozen' : '';
             var headerDisplayName = (idx === 0) ? 'Record' : displayName;
@@ -18330,7 +18369,7 @@
       if (count) count.textContent = anchors.length;
 
       if (!anchors.length) {
-        list.innerHTML = '<div class="ei-empty">No linked fields for this document</div>';
+        list.innerHTML = '<div class="ei-empty">Field linking is available when field relationships are defined in the schema.</div>';
         return;
       }
 
@@ -19937,6 +19976,7 @@
     var _GRID_CTX_ROLE_MATRIX = {
       inspect:       { analyst: true,  verifier: true,  admin: true, architect: true },
       'open-review': { analyst: true,  verifier: true,  admin: true, architect: true },
+      'open-ev':     { analyst: true,  verifier: true,  admin: true, architect: true },
       correction:    { analyst: true,  verifier: false, admin: true, architect: true },
       rfi:           { analyst: true,  verifier: true,  admin: true, architect: true },
       blacklist:     { analyst: false, verifier: false, admin: true, architect: true },
@@ -19983,6 +20023,11 @@
       }
 
       if (action === 'open-review') {
+        if (!hasRecord) return { enabled: false, reason: 'No record selected' };
+        return { enabled: true, reason: '' };
+      }
+
+      if (action === 'open-ev') {
         if (!hasRecord) return { enabled: false, reason: 'No record selected' };
         return { enabled: true, reason: '' };
       }
@@ -20048,6 +20093,7 @@
         { header: 'Navigation' },
         { id: 'inspect',    icon: '&#128269;', label: 'Open Record Inspector' },
         { id: 'open-review', icon: '&#128196;', label: 'Open in Review Mode' },
+        { id: 'open-ev',    icon: '&#128203;', label: 'Open in Evidence Viewer' },
         { header: 'Patch Actions' },
         { id: 'correction', icon: '&#9998;',   label: 'Create Correction' },
         { id: 'rfi',        icon: '&#128172;', label: 'Create RFI' },
@@ -20195,6 +20241,18 @@
         _evState.activeRowIdx = ctx.rowIdx;
         _evState.activeRecordId = ctx.recordId;
         _evSwitchToReviewWithRecord();
+        return;
+      }
+
+      if (action === 'open-ev') {
+        _gridCtxClose();
+        if (typeof navigateTo === 'function') navigateTo('evidence-viewer');
+        if (typeof _evLoadRecord === 'function') {
+          _evState.activeSheetName = ctx.sheetName;
+          _evState.activeRowIdx = ctx.rowIdx;
+          _evState.activeRecordId = ctx.recordId;
+          _evLoadRecord(ctx.sheetName, ctx.rowIdx);
+        }
         return;
       }
 
@@ -30293,7 +30351,8 @@
         for (var ci = 0; ci < columns.length; ci++) {
           var col = columns[ci];
           var colLetter = getColumnLetter(ci);
-          var displayName = col.replace(/_c$/i, '').replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+          var _ghMeta2 = (typeof getFieldMeta === 'function') ? getFieldMeta(null, col) : null;
+          var displayName = (_ghMeta2 && _ghMeta2.field_label) ? _ghMeta2.field_label : col.replace(/__c$/i, '').replace(/_c$/i, '').replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
           if (displayName.length > 20) displayName = displayName.substring(0, 18) + '...';
           var compFrozenCls = (ci === 0) ? ' class="grid-col-frozen"' : '';
           var compDisplayName = (ci === 0) ? 'Record' : displayName;
@@ -32704,6 +32763,10 @@
       });
     }
 
+    function _resolveLinkedFields(sheetName, fieldKey) {
+      return [];
+    }
+
     // v1.4.15: Get active sheet name from grid state or sidebar
     function getActiveSheetName() {
       // Priority: gridState.sheet (set by contract section selector) > workbook first contract section
@@ -32806,7 +32869,8 @@
       console.log('[SECTION-FOCUS] resolved from section_metadata: sheet=' + sheetName);
       return {
         section_label: sheetName + ' — Section Focus',
-        what_to_look_for: [focusText],
+        what_to_look_for: [],
+        _focus_prose: focusText,
         common_failure_modes: [],
         _source: 'section_metadata'
       };
@@ -32830,7 +32894,7 @@
       }
 
       var expanded = _guidanceCardExpanded;
-      var html = '<div id="section-guidance-card" class="section-guidance-card" style="margin-bottom: 16px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #fafbff;">';
+      var html = '<div id="section-guidance-card" class="section-guidance-card" style="margin-bottom: 16px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #fafbff; position: sticky; top: 0; z-index: 5;">';
       var _sheetLabel = (typeof srrState !== 'undefined' && srrState.currentSheetName) ? srrState.currentSheetName.replace(/_/g, ' ') : '';
       var guidanceTitle = guidance._section_label || guidance.label || (_sheetLabel ? _sheetLabel + ' Guidance' : 'Section Guidance');
       html += '<div class="section-guidance-toggle" onclick="toggleGuidanceCard()" style="padding: 10px 14px; background: #f0f4ff; display: flex; justify-content: space-between; align-items: center; border-bottom: ' + (expanded ? '1px solid #e0e0e0' : 'none') + ';">';
@@ -32850,24 +32914,37 @@
         html += '<span style="padding: 2px 8px; background: ' + confColor + '18; color: ' + confColor + '; border-radius: 10px; font-size: 0.75em;">' + Math.round(confidence * 100) + '% conf</span>';
       }
       html += '</div>';
+      if (guidance._source === 'section_metadata') {
+        html += '<span style="padding: 2px 8px; background: #e8eaf6; color: #283593; border-radius: 10px; font-size: 0.72em; font-weight: 500;">From schema</span>';
+      } else {
+        html += '<span style="padding: 2px 8px; background: #f5f5f5; color: #9e9e9e; border-radius: 10px; font-size: 0.72em; font-weight: 500;">Default guidance</span>';
+      }
+      var _previewText = guidance._focus_prose || (guidance.what_to_look_for && guidance.what_to_look_for.length > 0 ? guidance.what_to_look_for[0] : '');
+      if (_previewText && _previewText.length > 80) _previewText = _previewText.substring(0, 77) + '...';
+      if (_previewText && !expanded) html += '<span style="font-size: 0.78em; color: #888; font-style: italic; margin-left: 8px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle;">' + _previewText + '</span>';
       html += '<span style="font-size: 0.8em; color: #999;" id="guidance-card-chevron">' + (expanded ? '\u25B2' : '\u25BC') + '</span>';
       html += '</div>';
 
       html += '<div id="guidance-card-body" style="' + (expanded ? '' : 'display: none;') + ' padding: 14px;">';
       html += '<div style="font-size: 0.9em; font-weight: 600; color: #333; margin-bottom: 10px;">' + (guidance.section_label || 'General Review') + '</div>';
 
-      if (guidance.what_to_look_for && guidance.what_to_look_for.length > 0) {
+      if (guidance._focus_prose) {
         html += '<div style="margin-bottom: 10px;">';
-        html += '<div style="font-size: 0.78em; font-weight: 600; color: #1565c0; margin-bottom: 4px;">What to look for:</div>';
-        html += '<ul style="margin: 0; padding-left: 18px; font-size: 0.8em; color: #444; line-height: 1.7;">';
+        html += '<div style="font-size: 0.82em; font-weight: 600; color: #1565c0; margin-bottom: 6px;">What to look for:</div>';
+        html += '<div style="font-size: 0.88em; color: #444; line-height: 1.6;">' + guidance._focus_prose + '</div>';
+        html += '</div>';
+      } else if (guidance.what_to_look_for && guidance.what_to_look_for.length > 0) {
+        html += '<div style="margin-bottom: 10px;">';
+        html += '<div style="font-size: 0.82em; font-weight: 600; color: #1565c0; margin-bottom: 6px;">What to look for:</div>';
+        html += '<ul style="margin: 0; padding-left: 18px; font-size: 0.88em; color: #444; line-height: 1.7;">';
         guidance.what_to_look_for.forEach(function(item) { html += '<li>' + item + '</li>'; });
         html += '</ul></div>';
       }
 
       if (guidance.common_failure_modes && guidance.common_failure_modes.length > 0) {
         html += '<div>';
-        html += '<div style="font-size: 0.78em; font-weight: 600; color: #c62828; margin-bottom: 4px;">Common failure modes:</div>';
-        html += '<ul style="margin: 0; padding-left: 18px; font-size: 0.8em; color: #666; line-height: 1.7;">';
+        html += '<div style="font-size: 0.82em; font-weight: 600; color: #c62828; margin-bottom: 6px;">Common failure modes:</div>';
+        html += '<ul style="margin: 0; padding-left: 18px; font-size: 0.88em; color: #666; line-height: 1.7;">';
         guidance.common_failure_modes.forEach(function(item) { html += '<li>' + item + '</li>'; });
         html += '</ul></div>';
       }
@@ -33370,10 +33447,12 @@
 
         
         // v1.6.7: Human-friendly label (convert snake_case to Title Case, remove trailing _c suffix)
-        var label = key
-          .replace(/_c$/i, '')  // Remove trailing _c (Salesforce suffix)
-          .replace(/_/g, ' ')   // Convert underscores to spaces
-          .replace(/\b\w/g, function(l) { return l.toUpperCase(); })  // Title case
+        var _fmLabel = (typeof getFieldMeta === 'function') ? getFieldMeta(srrState.currentSheet || srrState.currentSheetName || 'Accounts', key) : null;
+        var label = (_fmLabel && _fmLabel.field_label) ? _fmLabel.field_label : key
+          .replace(/__c$/i, '')
+          .replace(/_c$/i, '')
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, function(l) { return l.toUpperCase(); })
           .trim();
         
         // v1.6.10: Get picklist metadata for dropdown rendering
@@ -33537,15 +33616,30 @@
         // Add group header if group has a name (Account Name has null name)
         if (group.name) {
           var groupTypeClass = group.type ? ' group-' + group.type : '';
-          html += '<div class="srr-field-group-header' + groupTypeClass + '">' + group.name + ' <span class="srr-group-count">(' + groupFields.length + ')</span>';
+          var _sectionKey = group.section_key || group.name.replace(/[^a-zA-Z0-9]/g, '_');
+          var _collapseKey = 'srr_collapse_' + (srrState.currentSheetName || '') + '_' + _sectionKey;
+          var _isOtherLarge = group.type === 'other' && groupFields.length > 15;
+          var _collapsed = false;
+          try { var _cVal = sessionStorage.getItem(_collapseKey); _collapsed = _cVal === '1' || (_cVal === null && _isOtherLarge); } catch(e) {}
+          html += '<div class="srr-field-group-header' + groupTypeClass + '" data-collapse-key="' + _collapseKey + '" onclick="srrToggleSectionCollapse(this)" style="cursor: pointer; user-select: none;">';
+          html += '<span class="srr-section-chevron" style="margin-right: 6px; font-size: 0.8em;">' + (_collapsed ? '\u25B6' : '\u25BC') + '</span>';
+          var _todoInSection = groupFields.filter(function(k) { var s = srrState.fieldStates[k] || 'todo'; return s === 'todo'; }).length;
+          html += group.name + ' <span class="srr-group-count">(' + groupFields.length + ')</span>';
+          if (_todoInSection > 0 && group.type === 'section') {
+            html += ' <button class="srr-bulk-verify-btn" onclick="event.stopPropagation(); srrBulkVerifySection(\'' + _sectionKey + '\')" style="margin-left: 8px; padding: 2px 8px; font-size: 0.7em; background: #4caf50; color: white; border: none; border-radius: 10px; cursor: pointer; text-transform: none; letter-spacing: 0; font-weight: 500;">Verify ' + _todoInSection + '</button>';
+          }
           if (group.description) html += '<div class="srr-section-desc">' + group.description + '</div>';
           html += '</div>';
+          html += '<div class="srr-section-fields" data-section="' + _sectionKey + '" style="' + (_collapsed ? 'display:none;' : '') + '">';
         }
         
-        // Render field cards in this group
         groupFields.forEach(function(key) {
           html += renderFieldCard(key);
         });
+        
+        if (group.name) {
+          html += '</div>';
+        }
       });
       
       // v1.6.60: System Metadata section for Verifier/Admin (collapsed by default)
@@ -33584,6 +33678,45 @@
     }
     
     // SRR Filter functions
+    function srrToggleSectionCollapse(headerEl) {
+      var key = headerEl.getAttribute('data-collapse-key');
+      var sectionKey = key ? key.split('_').slice(3).join('_') : '';
+      var fieldsDiv = headerEl.nextElementSibling;
+      var chevron = headerEl.querySelector('.srr-section-chevron');
+      if (!fieldsDiv || !fieldsDiv.classList.contains('srr-section-fields')) return;
+      var isCollapsed = fieldsDiv.style.display === 'none';
+      fieldsDiv.style.display = isCollapsed ? '' : 'none';
+      if (chevron) chevron.textContent = isCollapsed ? '\u25BC' : '\u25B6';
+      try { sessionStorage.setItem(key, isCollapsed ? '0' : '1'); } catch(e) {}
+    }
+
+    function srrBulkVerifySection(sectionKey) {
+      var fieldsDiv = document.querySelector('.srr-section-fields[data-section="' + sectionKey + '"]');
+      if (!fieldsDiv) return;
+      var cards = fieldsDiv.querySelectorAll('.srr-field-card[data-field]');
+      var todoFields = [];
+      for (var i = 0; i < cards.length; i++) {
+        var fk = cards[i].getAttribute('data-field');
+        if (!fk) continue;
+        var state = srrState.fieldStates[fk] || 'todo';
+        if (state === 'todo') todoFields.push(fk);
+      }
+      if (todoFields.length === 0) return;
+      if (!confirm('Verify all ' + todoFields.length + ' remaining fields in this section?')) return;
+      for (var j = 0; j < todoFields.length; j++) {
+        srrState.fieldStates[todoFields[j]] = 'verified';
+        _cacheFieldState(srrState.currentRecordId, todoFields[j], 'verified');
+      }
+      AuditTimeline.emit('fields_bulk_verified', {
+        record_id: srrState.currentRecordKey || '',
+        file_id: srrState.currentSheetName || '',
+        metadata: { section: sectionKey, count: todoFields.length, fields: todoFields }
+      });
+      console.log('[UX-007] bulk_verified: section=' + sectionKey + ', count=' + todoFields.length);
+      srrUpdateFilterCounts();
+      renderSrrFields(srrState.currentRecord);
+    }
+
     function srrSetFilter(filter) {
       srrState.activeFilter = filter;
       document.querySelectorAll('.srr-filter-chip').forEach(function(chip) {
@@ -49355,7 +49488,7 @@ Add any additional notes here.
     #ta-contract-section > div:first-child:hover { background: #fafafa; }
     .ta-contract-row:hover { background: #f8f9ff !important; }
     /* V2.3b: Section Guidance */
-    .section-guidance-card { animation: ta-fade-in 0.2s ease; }
+    .section-guidance-card { animation: ta-fade-in 0.2s ease; position: sticky; top: 0; z-index: 5; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
     .section-guidance-toggle { cursor: pointer; user-select: none; }
     .knowledge-rail a:hover { background: #e3f2fd; }
 
@@ -49900,7 +50033,39 @@ var P022_RuntimeValidation = {
         'calibration': { label: 'Calibration', fn: '_runCalibration' },
         'p08':  { label: 'P0.8 Record-Link', fn: '_runP08' },
         'p09':  { label: 'P0.9 Cleanup', fn: '_runP09' },
-        'p1a':  { label: 'P1A Triage Clarity', fn: '_runP1A' }
+        'p1a':  { label: 'P1A Triage Clarity', fn: '_runP1A' },
+        'section_meta': { label: 'Section Metadata Integrity', fn: '_runSectionMeta' }
+      },
+
+      _runSectionMeta: function() {
+        var results = [];
+        var fm = (typeof rulesBundleCache !== 'undefined' && rulesBundleCache.fieldMeta) ? rulesBundleCache.fieldMeta : null;
+        results.push({ name: 'field_meta loaded', passed: !!fm, detail: fm ? 'OK' : 'rulesBundleCache.fieldMeta not available' });
+        if (!fm) return results;
+        var enr = fm.enrichments || {};
+        var sm = enr.section_metadata || {};
+        var sheets = Object.keys(sm);
+        results.push({ name: 'section_metadata sheets present', passed: sheets.length > 0, detail: sheets.length + ' sheets: ' + sheets.join(', ') });
+        for (var si = 0; si < sheets.length; si++) {
+          var sn = sheets[si];
+          var entry = sm[sn];
+          var headers = entry.section_headers || [];
+          var fsm = entry.field_section_map || [];
+          var focus = entry.section_focus || '';
+          results.push({ name: sn + ': section_headers', passed: headers.length > 0, detail: headers.length + ' headers' });
+          results.push({ name: sn + ': field_section_map', passed: fsm.length > 0, detail: fsm.length + ' mappings' });
+          results.push({ name: sn + ': section_focus', passed: typeof focus === 'string' && focus.length > 0, detail: focus.length + ' chars' });
+          var headerKeys = {};
+          for (var hi = 0; hi < headers.length; hi++) headerKeys[headers[hi].section_key] = true;
+          var orphans = 0;
+          for (var fi = 0; fi < fsm.length; fi++) {
+            if (!headerKeys[fsm[fi].section_key]) orphans++;
+          }
+          results.push({ name: sn + ': no orphan mappings', passed: orphans === 0, detail: orphans > 0 ? orphans + ' orphaned field mappings' : 'OK' });
+        }
+        var fallbackTest = (typeof _getSectionMetadata === 'function') ? _getSectionMetadata('NONEXISTENT_SHEET_12345') : 'fn_missing';
+        results.push({ name: 'fallback: missing sheet returns null', passed: fallbackTest === null, detail: fallbackTest === null ? 'OK' : 'returned: ' + typeof fallbackTest });
+        return results;
       },
 
       _onTabOpen: function() {
@@ -49968,7 +50133,7 @@ var P022_RuntimeValidation = {
         this._currentRun = null;
         var tbody = document.getElementById('p1b-results-tbody');
         if (tbody) tbody.innerHTML = '';
-        var keys = ['p022', 'p1', 'calibration', 'p08', 'p09', 'p1a'];
+        var keys = ['p022', 'p1', 'calibration', 'p08', 'p09', 'p1a', 'section_meta'];
         for (var ki = 0; ki < keys.length; ki++) {
           this.runSuite(keys[ki]);
         }
