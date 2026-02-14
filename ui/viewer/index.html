@@ -880,14 +880,14 @@
     .srr-filter-chip.active { background: #1565c0; color: white; }
     
     /* v1.5.7: Field group headers for hinge-based grouping */
-    .srr-field-group-header { font-size: 0.75em; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 12px 6px; margin-top: 8px; border-bottom: 2px solid #e0e0e0; background: #f8f9fa; }
+    .srr-field-group-header { font-size: 0.75em; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 12px; margin-top: 6px; border-bottom: 2px solid #e0e0e0; background: #f8f9fa; display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
     .srr-field-group-header:first-child { margin-top: 0; }
     /* v1.6.7: Color-coded group headers */
     .srr-field-group-header.group-primary { background: #e8f5e9; border-bottom-color: #4caf50; color: #2e7d32; }
     .srr-field-group-header.group-secondary { background: #e3f2fd; border-bottom-color: #1976d2; color: #1565c0; }
     .srr-field-group-header.group-other { background: #fafafa; border-bottom-color: #9e9e9e; color: #616161; }
     .srr-field-group-header.group-section { background: #f3e5f5; border-bottom-color: #7b1fa2; color: #6a1b9a; }
-    .srr-section-desc { font-size: 0.72em; font-weight: 400; color: #888; text-transform: none; letter-spacing: 0; margin-top: 3px; line-height: 1.4; }
+    .srr-section-desc { display: none; }
     .srr-group-count { font-weight: 400; color: #999; }
     
     /* v1.4.18: Field Card enhancements - locked, changed */
@@ -1558,6 +1558,19 @@
     .ev-moji-badge.suspect { background: #fff8e1; color: #f57f17; }
     .ev-moji-badge.unreadable { background: #ffebee; color: #d32f2f; }
     .ev-moji-inline { background: #ffcc80; border-radius: 2px; padding: 0 1px; cursor: help; }
+    .srr-section-info-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); z-index: 10000; display: flex; align-items: center; justify-content: center; animation: ta-fade-in 0.15s ease; }
+    .srr-section-info-modal { background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 480px; width: 90%; max-height: 70vh; overflow-y: auto; padding: 0; }
+    .srr-section-info-modal-header { padding: 16px 20px 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: flex-start; }
+    .srr-section-info-modal-header h3 { margin: 0; font-size: 1em; color: #333; text-transform: uppercase; letter-spacing: 0.3px; }
+    .srr-section-info-modal-close { background: none; border: none; font-size: 1.3em; color: #999; cursor: pointer; padding: 0 4px; line-height: 1; }
+    .srr-section-info-modal-close:hover { color: #333; }
+    .srr-section-info-modal-body { padding: 16px 20px 20px; }
+    .srr-section-info-modal-body .sim-label { font-size: 0.78em; font-weight: 600; color: #1565c0; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .srr-section-info-modal-body .sim-text { font-size: 0.88em; color: #444; line-height: 1.6; margin-bottom: 14px; }
+    .srr-section-info-modal-body .sim-label-warn { font-size: 0.78em; font-weight: 600; color: #c62828; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .srr-section-info-modal-body .sim-list { margin: 0 0 14px; padding-left: 18px; font-size: 0.85em; color: #555; line-height: 1.7; }
+    .srr-section-info-icon { background: none; border: none; font-size: 1em; color: #999; cursor: pointer; padding: 0 2px; line-height: 1; flex-shrink: 0; }
+    .srr-section-info-icon:hover { color: #1565c0; }
     .ev-ri-badge { background: #1565c0; color: #fff; border-radius: 10px; padding: 1px 7px; font-size: 0.72em; font-weight: 600; min-width: 18px; text-align: center; }
     .ev-ocr-escalate-bar { padding: 10px 16px; background: #fff3e0; border-bottom: 1px solid #ffe0b2; display: flex; align-items: center; gap: 10px; }
     .ev-ocr-escalate-bar .ev-ocr-escalate-msg { flex: 1; font-size: 0.85em; color: #e65100; font-weight: 500; }
@@ -30861,12 +30874,15 @@
           }
         }
         if (matchedKeys.length > 0) {
+          var _secFocus = '';
+          if (sectionMeta.section_focus && typeof sectionMeta.section_focus === 'string') _secFocus = sectionMeta.section_focus;
           groups.push({
             name: hdr.section_title || hdr.section_key,
             type: 'section',
             section_key: hdr.section_key,
-            description: hdr.section_description || ''
-          , fields: matchedKeys });
+            description: hdr.section_description || '',
+            focus: _secFocus,
+            fields: matchedKeys });
           orderedKeys = orderedKeys.concat(matchedKeys);
         }
       }
@@ -33617,29 +33633,29 @@
         if (group.name) {
           var groupTypeClass = group.type ? ' group-' + group.type : '';
           var _sectionKey = group.section_key || group.name.replace(/[^a-zA-Z0-9]/g, '_');
-          var _collapseKey = 'srr_collapse_' + (srrState.currentSheetName || '') + '_' + _sectionKey;
-          var _isOtherLarge = group.type === 'other' && groupFields.length > 15;
-          var _collapsed = false;
-          try { var _cVal = sessionStorage.getItem(_collapseKey); _collapsed = _cVal === '1' || (_cVal === null && _isOtherLarge); } catch(e) {}
-          html += '<div class="srr-field-group-header' + groupTypeClass + '" data-collapse-key="' + _collapseKey + '" onclick="srrToggleSectionCollapse(this)" style="cursor: pointer; user-select: none;">';
-          html += '<span class="srr-section-chevron" style="margin-right: 6px; font-size: 0.8em;">' + (_collapsed ? '\u25B6' : '\u25BC') + '</span>';
           var _todoInSection = groupFields.filter(function(k) { var s = srrState.fieldStates[k] || 'todo'; return s === 'todo'; }).length;
-          html += group.name + ' <span class="srr-group-count">(' + groupFields.length + ')</span>';
-          if (_todoInSection > 0 && group.type === 'section') {
-            html += ' <button class="srr-bulk-verify-btn" onclick="event.stopPropagation(); srrBulkVerifySection(\'' + _sectionKey + '\')" style="margin-left: 8px; padding: 2px 8px; font-size: 0.7em; background: #4caf50; color: white; border: none; border-radius: 10px; cursor: pointer; text-transform: none; letter-spacing: 0; font-weight: 500;">Verify ' + _todoInSection + '</button>';
+          html += '<div class="srr-field-group-header' + groupTypeClass + '">';
+          html += '<span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + group.name + '</span>';
+          html += '<span class="srr-group-count">(' + groupFields.length + ')</span>';
+          if (group.description || group.focus) {
+            html += '<button class="srr-section-info-icon" onclick="srrShowSectionInfo(\'' + _sectionKey.replace(/'/g, "\\'") + '\')" title="Section details">&#9432;</button>';
           }
-          if (group.description) html += '<div class="srr-section-desc">' + group.description + '</div>';
+          if (_todoInSection > 0 && group.type === 'section') {
+            html += '<button class="srr-bulk-verify-btn" onclick="srrBulkVerifySection(\'' + _sectionKey + '\')" style="padding: 2px 8px; font-size: 0.7em; background: #4caf50; color: white; border: none; border-radius: 10px; cursor: pointer; text-transform: none; letter-spacing: 0; font-weight: 500; flex-shrink: 0;">Verify ' + _todoInSection + '</button>';
+          }
           html += '</div>';
-          html += '<div class="srr-section-fields" data-section="' + _sectionKey + '" style="' + (_collapsed ? 'display:none;' : '') + '">';
+          if (!window._srrSectionInfoCache) window._srrSectionInfoCache = {};
+          window._srrSectionInfoCache[_sectionKey] = { name: group.name, description: group.description || '', focus: group.focus || '', fields: groupFields.slice(), failures: group.failures || [] };
         }
         
+        var _curSection = (group.name && _sectionKey) ? _sectionKey : '';
         groupFields.forEach(function(key) {
-          html += renderFieldCard(key);
+          var cardHtml = renderFieldCard(key);
+          if (_curSection && cardHtml.indexOf('data-field=') > -1) {
+            cardHtml = cardHtml.replace('data-field="', 'data-section="' + _curSection + '" data-field="');
+          }
+          html += cardHtml;
         });
-        
-        if (group.name) {
-          html += '</div>';
-        }
       });
       
       // v1.6.60: System Metadata section for Verifier/Admin (collapsed by default)
@@ -33678,22 +33694,49 @@
     }
     
     // SRR Filter functions
-    function srrToggleSectionCollapse(headerEl) {
-      var key = headerEl.getAttribute('data-collapse-key');
-      var sectionKey = key ? key.split('_').slice(3).join('_') : '';
-      var fieldsDiv = headerEl.nextElementSibling;
-      var chevron = headerEl.querySelector('.srr-section-chevron');
-      if (!fieldsDiv || !fieldsDiv.classList.contains('srr-section-fields')) return;
-      var isCollapsed = fieldsDiv.style.display === 'none';
-      fieldsDiv.style.display = isCollapsed ? '' : 'none';
-      if (chevron) chevron.textContent = isCollapsed ? '\u25BC' : '\u25B6';
-      try { sessionStorage.setItem(key, isCollapsed ? '0' : '1'); } catch(e) {}
+    function srrShowSectionInfo(sectionKey) {
+      var info = (window._srrSectionInfoCache || {})[sectionKey];
+      if (!info) return;
+      var existing = document.getElementById('srr-section-info-overlay');
+      if (existing) existing.remove();
+      var overlay = document.createElement('div');
+      overlay.id = 'srr-section-info-overlay';
+      overlay.className = 'srr-section-info-modal-overlay';
+      overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+      var html = '<div class="srr-section-info-modal">';
+      html += '<div class="srr-section-info-modal-header">';
+      html += '<h3>' + (info.name || sectionKey) + '</h3>';
+      html += '<button class="srr-section-info-modal-close" onclick="document.getElementById(\'srr-section-info-overlay\').remove()">&times;</button>';
+      html += '</div>';
+      html += '<div class="srr-section-info-modal-body">';
+      if (info.description) {
+        html += '<div class="sim-label">Description</div>';
+        html += '<div class="sim-text">' + info.description + '</div>';
+      }
+      if (info.focus) {
+        html += '<div class="sim-label">What to look for</div>';
+        html += '<div class="sim-text">' + info.focus + '</div>';
+      }
+      if (info.failures && info.failures.length > 0) {
+        html += '<div class="sim-label-warn">Common failure modes</div>';
+        html += '<ul class="sim-list">';
+        for (var fi = 0; fi < info.failures.length; fi++) html += '<li>' + info.failures[fi] + '</li>';
+        html += '</ul>';
+      }
+      if (!info.description && !info.focus) {
+        html += '<div class="sim-text" style="color: #999;">No additional details available for this section.</div>';
+      }
+      html += '</div></div>';
+      overlay.innerHTML = html;
+      document.body.appendChild(overlay);
+      var escHandler = function(e) { if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', escHandler); } };
+      document.addEventListener('keydown', escHandler);
     }
 
     function srrBulkVerifySection(sectionKey) {
-      var fieldsDiv = document.querySelector('.srr-section-fields[data-section="' + sectionKey + '"]');
-      if (!fieldsDiv) return;
-      var cards = fieldsDiv.querySelectorAll('.srr-field-card[data-field]');
+      var container = document.getElementById('srr-field-list');
+      if (!container) return;
+      var cards = container.querySelectorAll('.srr-field-card[data-section="' + sectionKey + '"]');
       var todoFields = [];
       for (var i = 0; i < cards.length; i++) {
         var fk = cards[i].getAttribute('data-field');
