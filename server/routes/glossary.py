@@ -3,7 +3,7 @@ import re
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import JSONResponse
 
 from server.db import get_conn, put_conn
@@ -16,28 +16,31 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v2.5")
 
 
-def _resolve_workspace_id(auth, conn):
-    if auth.workspace_id:
-        return auth.workspace_id
-    with conn.cursor() as cur:
-        cur.execute(
-            "SELECT workspace_id FROM user_workspace_roles WHERE user_id = %s ORDER BY workspace_id LIMIT 1",
-            (auth.user_id,),
+def _require_workspace_id(request: Request, auth, conn, body=None):
+    ws_id = request.headers.get("X-Workspace-Id", "").strip() or None
+    if not ws_id and body and isinstance(body, dict):
+        ws_id = body.get("workspace_id")
+    if not ws_id and auth.workspace_id:
+        ws_id = auth.workspace_id
+    if not ws_id:
+        return None, JSONResponse(
+            status_code=422,
+            content=error_envelope(
+                "MISSING_WORKSPACE",
+                "X-Workspace-Id header or workspace_id field is required",
+            ),
         )
-        row = cur.fetchone()
-        if row:
-            auth.workspace_id = row[0]
-            return row[0]
-    return None
-
-
-def _verify_workspace_access(auth, workspace_id, conn):
     with conn.cursor() as cur:
         cur.execute(
             "SELECT role FROM user_workspace_roles WHERE user_id = %s AND workspace_id = %s",
-            (auth.user_id, workspace_id),
+            (auth.user_id, ws_id),
         )
-        return cur.fetchone() is not None
+        if not cur.fetchone():
+            return None, JSONResponse(
+                status_code=403,
+                content=error_envelope("FORBIDDEN", "No access to workspace %s" % ws_id),
+            )
+    return ws_id, None
 
 TERM_COLUMNS = [
     "id", "workspace_id", "field_key", "display_name", "description",
@@ -72,6 +75,7 @@ def _normalize_alias(alias):
 
 @router.get("/glossary/terms")
 def list_glossary_terms(
+    request: Request,
     query: str = Query(None),
     category: str = Query(None),
     cursor: str = Query(None),
@@ -83,9 +87,9 @@ def list_glossary_terms(
 
     conn = get_conn()
     try:
-        ws_id = _resolve_workspace_id(auth, conn)
-        if not ws_id:
-            return JSONResponse(status_code=403, content=error_envelope("FORBIDDEN", "No workspace access"))
+        ws_id, err = _require_workspace_id(request, auth, conn)
+        if err:
+            return err
 
         with conn.cursor() as cur:
             conditions = ["deleted_at IS NULL", "workspace_id = %s"]
@@ -129,6 +133,7 @@ def list_glossary_terms(
 
 @router.post("/glossary/terms", status_code=201)
 def create_glossary_term(
+    request: Request,
     body: dict,
     auth=Depends(require_auth(AuthClass.BEARER)),
 ):
@@ -152,13 +157,10 @@ def create_glossary_term(
     term_id = generate_id("glt_")
 
     conn = get_conn()
-    workspace_id = _resolve_workspace_id(auth, conn)
-    if not workspace_id:
+    workspace_id, err = _require_workspace_id(request, auth, conn, body)
+    if err:
         put_conn(conn)
-        return JSONResponse(
-            status_code=403,
-            content=error_envelope("FORBIDDEN", "No workspace access"),
-        )
+        return err
     try:
         with conn.cursor() as cur:
             cur.execute(
@@ -207,6 +209,7 @@ def create_glossary_term(
 
 @router.post("/glossary/aliases", status_code=201)
 def create_glossary_alias(
+    request: Request,
     body: dict,
     auth=Depends(require_auth(AuthClass.BEARER)),
 ):
@@ -232,9 +235,9 @@ def create_glossary_alias(
 
     conn = get_conn()
     try:
-        ws_id = _resolve_workspace_id(auth, conn)
-        if not ws_id:
-            return JSONResponse(status_code=403, content=error_envelope("FORBIDDEN", "No workspace access"))
+        ws_id, err = _require_workspace_id(request, auth, conn, body)
+        if err:
+            return err
 
         with conn.cursor() as cur:
             cur.execute(

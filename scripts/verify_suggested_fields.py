@@ -20,6 +20,7 @@ WS_A = "ws_SEED0100000000000000000000"
 WS_B = "ws_01KHA33607ABV49KZZ3HE88A9K"
 USER_A = "usr_SEED0300000000000000000000"
 USER_B = "usr_TEST_ISOLATION_B0000000000"
+USER_MULTI = "usr_TEST_MULTI_WS_00000000000"
 
 PASS = 0
 FAIL = 0
@@ -42,11 +43,13 @@ def section(title):
     print(f"{'='*60}")
 
 
-def api(method, path, token=None, body=None, expect_status=None):
+def api(method, path, token=None, body=None, expect_status=None, workspace_id=None):
     url = BASE + path
     headers = {"Content-Type": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
+    if workspace_id:
+        headers["X-Workspace-Id"] = workspace_id
     if method == "GET":
         r = requests.get(url, headers=headers)
     elif method == "POST":
@@ -78,6 +81,12 @@ def setup_test_data():
         VALUES (%s, 'testuser_b@isolation.test', 'Test User B')
         ON CONFLICT (id) DO NOTHING
     """, (USER_B,))
+
+    cur.execute("""
+        INSERT INTO users (id, email, display_name)
+        VALUES (%s, 'testuser_multi@isolation.test', 'Test User Multi')
+        ON CONFLICT (id) DO NOTHING
+    """, (USER_MULTI,))
 
     cur.execute("""
         INSERT INTO glossary_terms (id, workspace_id, field_key, display_name, category, data_type)
@@ -115,6 +124,12 @@ def setup_test_data():
         ON CONFLICT (user_id, workspace_id) DO NOTHING
     """, (USER_B, WS_B))
 
+    cur.execute("""
+        INSERT INTO user_workspace_roles (user_id, workspace_id, role)
+        VALUES (%s, %s, 'analyst'), (%s, %s, 'analyst')
+        ON CONFLICT (user_id, workspace_id) DO NOTHING
+    """, (USER_MULTI, WS_A, USER_MULTI, WS_B))
+
     conn.commit()
     cur.close()
     conn.close()
@@ -130,8 +145,8 @@ def cleanup_test_data():
     cur.execute("DELETE FROM glossary_aliases WHERE workspace_id IN (%s, %s)", (WS_A, WS_B))
     cur.execute("DELETE FROM glossary_terms WHERE id LIKE 'glt_TEST%'")
     cur.execute("DELETE FROM documents WHERE id IN ('doc_TEST_A1', 'doc_TEST_B1')")
-    cur.execute("DELETE FROM user_workspace_roles WHERE user_id = %s", (USER_B,))
-    cur.execute("DELETE FROM users WHERE id = %s", (USER_B,))
+    cur.execute("DELETE FROM user_workspace_roles WHERE user_id IN (%s, %s)", (USER_B, USER_MULTI))
+    cur.execute("DELETE FROM users WHERE id IN (%s, %s)", (USER_B, USER_MULTI))
     conn.commit()
     cur.close()
     conn.close()
@@ -147,7 +162,7 @@ def check_1_contract():
     check("401 has meta.request_id", "request_id" in body.get("meta", {}))
     check("401 has meta.timestamp", "timestamp" in body.get("meta", {}))
 
-    status, body = api("GET", "/api/v2.5/glossary/terms", token=USER_A)
+    status, body = api("GET", "/api/v2.5/glossary/terms", token=USER_A, workspace_id=WS_A)
     check("Authenticated → 200", status == 200)
     check("200 has data (array)", isinstance(body.get("data"), list))
     check("200 has meta.request_id", "request_id" in body.get("meta", {}))
@@ -155,14 +170,14 @@ def check_1_contract():
     check("200 has meta.pagination", "pagination" in body.get("meta", {}))
     check("Envelope shape: {data, meta}", set(body.keys()) == {"data", "meta"})
 
-    status, body = api("POST", "/api/v2.5/glossary/terms", token=USER_A,
+    status, body = api("POST", "/api/v2.5/glossary/terms", token=USER_A, workspace_id=WS_A,
                        body={"field_key": "Test_Field_Contract_Check", "category": "financial"})
     check("POST 201 has data (object)", isinstance(body.get("data"), dict))
     check("POST 201 has meta", "meta" in body)
     check("POST 201 data.id starts with glt_", body.get("data", {}).get("id", "").startswith("glt_"))
     check("POST 201 data.workspace_id = auth workspace", body.get("data", {}).get("workspace_id") == WS_A)
 
-    status, body = api("POST", "/api/v2.5/glossary/terms", token=USER_A,
+    status, body = api("POST", "/api/v2.5/glossary/terms", token=USER_A, workspace_id=WS_A,
                        body={"field_key": "Test_Field_Contract_Check", "category": "financial"})
     check("Duplicate POST → 409", status == 409)
     check("409 has error.code = DUPLICATE", body.get("error", {}).get("code") == "DUPLICATE")
@@ -202,22 +217,22 @@ def check_2_workspace_isolation():
     check("User B lists A's suggestions → 404 (isolation)", status_list_cross == 404,
           f"got {status_list_cross}")
 
-    status_terms_a, body_terms_a = api("GET", "/api/v2.5/glossary/terms", token=USER_A)
+    status_terms_a, body_terms_a = api("GET", "/api/v2.5/glossary/terms", token=USER_A, workspace_id=WS_A)
     check("User A sees own glossary terms", status_terms_a == 200)
     term_ids_a = [t["id"] for t in body_terms_a.get("data", [])]
     check("User A terms include glt_TEST_A1", "glt_TEST_A1" in term_ids_a,
           f"found: {term_ids_a}")
     check("User A terms do NOT include glt_TEST_B1", "glt_TEST_B1" not in term_ids_a)
 
-    status_terms_b, body_terms_b = api("GET", "/api/v2.5/glossary/terms", token=USER_B)
+    status_terms_b, body_terms_b = api("GET", "/api/v2.5/glossary/terms", token=USER_B, workspace_id=WS_B)
     term_ids_b = [t["id"] for t in body_terms_b.get("data", [])]
     check("User B terms include glt_TEST_B1", "glt_TEST_B1" in term_ids_b,
           f"found: {term_ids_b}")
     check("User B terms do NOT include glt_TEST_A1", "glt_TEST_A1" not in term_ids_b)
 
-    status_alias_cross, _ = api("POST", "/api/v2.5/glossary/aliases", token=USER_B,
+    status_alias_cross, _ = api("POST", "/api/v2.5/glossary/aliases", token=USER_B, workspace_id=WS_A,
                                 body={"term_id": "glt_TEST_A1", "alias": "Cross Workspace Alias"})
-    check("User B creates alias on A's term → 404 (isolation)", status_alias_cross == 404,
+    check("User B creates alias on A's term → 403 (isolation)", status_alias_cross == 403,
           f"got {status_alias_cross}")
 
     sug_a = body_list_a.get("data", [])
@@ -234,13 +249,13 @@ def check_2_workspace_isolation():
 def check_3_alias_uniqueness():
     section("CHECK 3: Alias Uniqueness")
 
-    status1, body1 = api("POST", "/api/v2.5/glossary/aliases", token=USER_A,
+    status1, body1 = api("POST", "/api/v2.5/glossary/aliases", token=USER_A, workspace_id=WS_A,
                          body={"term_id": "glt_TEST_A1", "alias": "  Pmt Freq  "})
     check("Create alias 'Pmt Freq' on term A1 → 201", status1 == 201,
           f"got {status1}")
     alias1_id = body1.get("data", {}).get("id")
 
-    status2, body2 = api("POST", "/api/v2.5/glossary/aliases", token=USER_A,
+    status2, body2 = api("POST", "/api/v2.5/glossary/aliases", token=USER_A, workspace_id=WS_A,
                          body={"term_id": "glt_TEST_A1", "alias": "pmt freq"})
     check("Same normalized alias, same term → 409 (duplicate)", status2 == 409,
           f"got {status2}")
@@ -251,12 +266,12 @@ def check_3_alias_uniqueness():
           body2.get("error", {}).get("details", {}).get("existing_alias_id") == alias1_id,
           f"expected {alias1_id}")
 
-    status3, body3 = api("POST", "/api/v2.5/glossary/aliases", token=USER_A,
+    status3, body3 = api("POST", "/api/v2.5/glossary/aliases", token=USER_A, workspace_id=WS_A,
                          body={"term_id": "glt_TEST_A2", "alias": "Pmt Freq"})
     check("Same normalized alias, different term → 409 (cross-term rejected)", status3 == 409,
           f"got {status3}")
 
-    status4, body4 = api("POST", "/api/v2.5/glossary/aliases", token=USER_A,
+    status4, body4 = api("POST", "/api/v2.5/glossary/aliases", token=USER_A, workspace_id=WS_A,
                          body={"term_id": "glt_TEST_A2", "alias": "Account Name Alias"})
     check("Different alias on term A2 → 201", status4 == 201,
           f"got {status4}")
@@ -379,6 +394,71 @@ def check_5_data_readiness():
     print("    jsonb_set(metadata, '{column_headers}', '<headers_array>') WHERE ...")
 
 
+def check_6_multi_workspace_glossary():
+    section("CHECK 6: Multi-Workspace Glossary Routing")
+
+    status_no_ws, body_no_ws = api("GET", "/api/v2.5/glossary/terms", token=USER_MULTI)
+    check("Missing X-Workspace-Id → 422", status_no_ws == 422,
+          f"got {status_no_ws}")
+    check("422 has MISSING_WORKSPACE code",
+          body_no_ws.get("error", {}).get("code") == "MISSING_WORKSPACE",
+          f"got: {body_no_ws.get('error', {}).get('code')}")
+
+    status_post_no_ws, body_post_no_ws = api("POST", "/api/v2.5/glossary/terms", token=USER_MULTI,
+                                              body={"field_key": "No_WS_Term", "category": "test"})
+    check("POST term without workspace → 422", status_post_no_ws == 422,
+          f"got {status_post_no_ws}")
+
+    status_alias_no_ws, _ = api("POST", "/api/v2.5/glossary/aliases", token=USER_MULTI,
+                                body={"term_id": "glt_TEST_A1", "alias": "no ws alias"})
+    check("POST alias without workspace → 422", status_alias_no_ws == 422,
+          f"got {status_alias_no_ws}")
+
+    status_a, body_a = api("GET", "/api/v2.5/glossary/terms", token=USER_MULTI, workspace_id=WS_A)
+    check("Multi-user reads WS_A terms → 200", status_a == 200,
+          f"got {status_a}")
+    ids_a = [t["id"] for t in body_a.get("data", [])]
+    check("WS_A read returns glt_TEST_A1", "glt_TEST_A1" in ids_a,
+          f"found: {ids_a}")
+    check("WS_A read does NOT return glt_TEST_B1", "glt_TEST_B1" not in ids_a)
+
+    status_b, body_b = api("GET", "/api/v2.5/glossary/terms", token=USER_MULTI, workspace_id=WS_B)
+    check("Multi-user reads WS_B terms → 200", status_b == 200,
+          f"got {status_b}")
+    ids_b = [t["id"] for t in body_b.get("data", [])]
+    check("WS_B read returns glt_TEST_B1", "glt_TEST_B1" in ids_b,
+          f"found: {ids_b}")
+    check("WS_B read does NOT return glt_TEST_A1", "glt_TEST_A1" not in ids_b)
+
+    status_create_a, body_create_a = api("POST", "/api/v2.5/glossary/terms", token=USER_MULTI, workspace_id=WS_A,
+                                          body={"field_key": "Multi_User_Term_A", "category": "test"})
+    check("Multi-user creates term in WS_A → 201", status_create_a == 201,
+          f"got {status_create_a}")
+    check("Created term workspace_id = WS_A",
+          body_create_a.get("data", {}).get("workspace_id") == WS_A)
+
+    status_create_b, body_create_b = api("POST", "/api/v2.5/glossary/terms", token=USER_MULTI, workspace_id=WS_B,
+                                          body={"field_key": "Multi_User_Term_B", "category": "test"})
+    check("Multi-user creates term in WS_B → 201", status_create_b == 201,
+          f"got {status_create_b}")
+    check("Created term workspace_id = WS_B",
+          body_create_b.get("data", {}).get("workspace_id") == WS_B)
+
+    term_a_id = body_create_a.get("data", {}).get("id")
+    if term_a_id:
+        status_alias_a, body_alias_a = api("POST", "/api/v2.5/glossary/aliases", token=USER_MULTI, workspace_id=WS_A,
+                                            body={"term_id": term_a_id, "alias": "Multi WS A Alias"})
+        check("Alias write scoped to WS_A → 201", status_alias_a == 201,
+              f"got {status_alias_a}")
+        check("Alias workspace_id = WS_A",
+              body_alias_a.get("data", {}).get("workspace_id") == WS_A)
+
+    FAKE_WS = "ws_NONEXISTENT_0000000000000"
+    status_fake, body_fake = api("GET", "/api/v2.5/glossary/terms", token=USER_MULTI, workspace_id=FAKE_WS)
+    check("Non-member workspace → 403", status_fake == 403,
+          f"got {status_fake}")
+
+
 def main():
     print("=" * 60)
     print("  v2.51 Suggested Fields — Sign-off Verification")
@@ -393,6 +473,7 @@ def main():
         check_3_alias_uniqueness()
         check_4_suggestion_resolution()
         check_5_data_readiness()
+        check_6_multi_workspace_glossary()
     finally:
         print("\nCleaning up test fixtures...")
         cleanup_test_data()
