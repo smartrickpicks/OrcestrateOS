@@ -2722,6 +2722,18 @@
                 </svg>
                 <span class="btn-label">Upload</span>
               </button>
+              <button id="toolbar-pdf-preflight-btn" onclick="document.getElementById('toolbar-pdf-preflight-input').click()" class="triage-icon-btn"
+                      style="display: none; background: linear-gradient(135deg, #6a1b9a 0%, #4a148c 100%); color: white;"
+                      title="Upload PDF for Preflight">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="12" y1="18" x2="12" y2="12"/>
+                  <polyline points="9 15 12 12 15 15"/>
+                </svg>
+                <span class="btn-label">Preflight</span>
+              </button>
+              <input type="file" id="toolbar-pdf-preflight-input" accept=".pdf,application/pdf" style="display: none;" onchange="toolbarPdfPreflightUpload(this)">
               <div id="audit-header-dropdown-container" style="position: relative; display: inline-flex;">
                 <button onclick="toggleAuditHeaderDropdown()" id="btn-audit-header" class="triage-icon-btn" title="Audit Log"
                         style="background: #f5f5f5; border: 1px solid #e0e0e0; color: #555; max-width: 52px;"
@@ -18254,6 +18266,7 @@
               if (typeof FEATURE_FLAGS !== 'undefined') FEATURE_FLAGS.PREFLIGHT_GATE_SYNC = true;
               console.log('[PREFLIGHT-GATE] Feature flag PREFLIGHT_GATE_SYNC is ON');
               if (typeof pfGateInit === 'function') pfGateInit();
+              if (typeof toolbarPdfPreflightInitVisibility === 'function') toolbarPdfPreflightInitVisibility();
               if (typeof pftlInit === 'function') pftlInit();
             } else {
               console.log('[PREFLIGHT-GATE] Feature flag PREFLIGHT_GATE_SYNC is OFF');
@@ -24615,6 +24628,7 @@
       applyModeVisibility(mode);
       localStorage.setItem('viewer_mode_v10', mode);
       if (typeof applyDemoControlsVisibility === 'function') applyDemoControlsVisibility();
+      if (typeof toolbarPdfPreflightInitVisibility === 'function') toolbarPdfPreflightInitVisibility();
     }
 
     // v1.4.22: Navigate to role-specific default landing page
@@ -51397,6 +51411,122 @@ var P022_RuntimeValidation = {
     if (reason.indexOf('sparse_pages_exceeded') === 0) return 'Most pages have very little text';
     return reason;
   }
+
+  window.toolbarPdfPreflightInitVisibility = function() {
+    var btn = document.getElementById('toolbar-pdf-preflight-btn');
+    if (!btn) return;
+    var role = (typeof _pfGateGetRole === 'function') ? _pfGateGetRole() : 'analyst';
+    if (role === 'admin' || role === 'architect') {
+      btn.style.display = '';
+    } else {
+      btn.style.display = 'none';
+    }
+  };
+
+  window.toolbarPdfPreflightUpload = function(input) {
+    var file = input && input.files && input.files[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf' && file.name.toLowerCase().indexOf('.pdf') === -1) {
+      if (typeof showToast === 'function') showToast('Please select a PDF file', 'error');
+      input.value = '';
+      return;
+    }
+
+    var role = (typeof _pfGateGetRole === 'function') ? _pfGateGetRole() : 'analyst';
+    if (role !== 'admin' && role !== 'architect') {
+      if (typeof showToast === 'function') showToast('Preflight upload is admin-only', 'error');
+      input.value = '';
+      return;
+    }
+
+    if (typeof _pfGateState === 'undefined' || !_pfGateState) {
+      if (typeof showToast === 'function') showToast('Preflight system not loaded yet', 'error');
+      input.value = '';
+      return;
+    }
+
+    if (!_pfGateState.enabled) {
+      _pfGateState.enabled = true;
+      _pfGateState.adminOnly = false;
+      var tabBtn = document.getElementById('pf-gate-tab-btn');
+      if (tabBtn) tabBtn.style.display = '';
+    }
+
+    _pfGateState.running = true;
+    _pfGateState.result = null;
+    _pfGateState.actionTaken = null;
+    if (typeof showToast === 'function') showToast('Running preflight on ' + file.name + '...', 'info');
+
+    var panel = document.getElementById('pf-gate-panel');
+    if (panel && !panel.classList.contains('active')) {
+      panel.classList.add('active');
+    }
+    if (typeof pfGateRenderPanel === 'function') pfGateRenderPanel();
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var arrayBuffer = e.target.result;
+      var bytes = new Uint8Array(arrayBuffer);
+      var binary = '';
+      for (var i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      var base64 = btoa(binary);
+
+      var headers = {};
+      if (typeof _syncHeaders === 'function') {
+        headers = _syncHeaders();
+      } else {
+        headers = { 'Content-Type': 'application/json' };
+        var wsId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : '';
+        if (wsId) headers['X-Workspace-Id'] = wsId;
+        if (typeof _authToken !== 'undefined' && _authToken) headers['Authorization'] = 'Bearer ' + _authToken;
+      }
+      headers['Content-Type'] = 'application/json';
+
+      fetch('/api/preflight/upload', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ pdf_base64: base64, filename: file.name })
+      })
+      .then(function(resp) {
+        if (!resp.ok) {
+          return resp.json().then(function(body) {
+            throw new Error((body.detail || (body.error && body.error.message) || 'Preflight failed'));
+          });
+        }
+        return resp.json();
+      })
+      .then(function(envelope) {
+        var result = (envelope && envelope.data) ? envelope.data : envelope;
+        _pfGateState.running = false;
+        _pfGateState.result = result;
+        _pfGateState.actionTaken = null;
+        if (typeof pfGateRenderPanel === 'function') pfGateRenderPanel();
+        var gateColor = (result.gate_color || 'GREEN').toUpperCase();
+        if (gateColor === 'GREEN') {
+          if (typeof showToast === 'function') showToast('Preflight complete — GREEN (all checks passed)', 'success');
+        } else if (gateColor === 'YELLOW') {
+          if (typeof showToast === 'function') showToast('Preflight complete — YELLOW (review recommended)', 'warning');
+        } else {
+          if (typeof showToast === 'function') showToast('Preflight complete — RED (quality issues detected)', 'error');
+        }
+      })
+      .catch(function(err) {
+        _pfGateState.running = false;
+        if (typeof pfGateRenderPanel === 'function') pfGateRenderPanel();
+        if (typeof showToast === 'function') showToast('Preflight error: ' + err.message, 'error');
+        console.error('[TOOLBAR-PREFLIGHT] upload error:', err);
+      });
+    };
+    reader.onerror = function() {
+      _pfGateState.running = false;
+      if (typeof pfGateRenderPanel === 'function') pfGateRenderPanel();
+      if (typeof showToast === 'function') showToast('Failed to read PDF file', 'error');
+    };
+    reader.readAsArrayBuffer(file);
+    input.value = '';
+  };
 })();
 </script>
 <script>
