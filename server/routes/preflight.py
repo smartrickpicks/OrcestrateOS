@@ -5,6 +5,8 @@ POST /api/preflight/run     - Run preflight analysis on a document (URL)
 POST /api/preflight/upload  - Run preflight on uploaded PDF (base64, internal/Test Lab)
 GET  /api/preflight/{doc_id} - Read cached preflight result
 POST /api/preflight/action  - Accept Risk / Escalate OCR (internal)
+GET  /api/preflight/export  - Export cached preflight state as prep_export_v0 JSON (minimal)
+POST /api/preflight/export  - Export with client-side OGC/evaluation/operator state merged
 
 All require:
   - v2.5 Either auth (Bearer or API key)
@@ -328,6 +330,179 @@ async def preflight_upload(
     )
 
     return JSONResponse(status_code=200, content=envelope(result))
+
+
+def _build_export_payload(cached, ws_id, doc_id, ck, client_state=None):
+    """Build prep_export_v0 payload from cached preflight + optional client state."""
+    pages = cached.get("page_classifications", [])
+    sorted_pages = sorted(pages, key=lambda p: p.get("page", 0))
+
+    metrics = cached.get("metrics", {})
+
+    persistence = {
+        "cache_written": True,
+        "fk_bound_writes_skipped": True,
+        "skip_reason": "v0_sandbox_export",
+    }
+
+    preflight_block = {
+        "doc_mode": cached.get("doc_mode"),
+        "recommended_gate": cached.get("gate_color"),
+        "reason_codes": cached.get("gate_reasons", []),
+        "metrics": metrics,
+        "page_summaries": sorted_pages,
+        "decision_trace": cached.get("decision_trace", []),
+        "corruption_samples": cached.get("corruption_samples", []),
+        "persistence": persistence,
+        "action_taken": cached.get("action_taken"),
+        "action_timestamp": cached.get("action_timestamp"),
+        "action_actor": cached.get("action_actor"),
+        "materialized": cached.get("materialized", False),
+        "timestamp": cached.get("timestamp"),
+    }
+
+    cs = client_state or {}
+
+    ogc_client = cs.get("ogc_preview", {})
+    ogc_anchors = ogc_client.get("anchors", [])
+    ogc_anchors.sort(key=lambda a: (
+        a.get("page_number", 0), a.get("char_start", 0),
+        a.get("char_end", 0), a.get("anchor_id", ""),
+    ))
+    ogc_chunks = ogc_client.get("chunks", [])
+    ogc_chunks.sort(key=lambda c: (c.get("page_number", 0), c.get("chunk_id", "")))
+
+    ogc_block = {
+        "included": ogc_client.get("included", False),
+        "toggled_at": ogc_client.get("toggled_at"),
+        "anchors": ogc_anchors,
+        "chunks": ogc_chunks,
+    }
+
+    op_client = cs.get("operator_decisions", {})
+    operator_block = {
+        "action": op_client.get("action") or cached.get("action_taken"),
+        "timestamp": op_client.get("timestamp") or cached.get("action_timestamp"),
+        "actor": op_client.get("actor") or cached.get("action_actor"),
+        "notes": op_client.get("notes"),
+        "escalation_metadata": op_client.get("escalation_metadata"),
+    }
+
+    ev_client = cs.get("evaluation", {})
+    ev_included = ev_client.get("included", False)
+    targets_labeled = ev_client.get("targets_labeled", 0) if ev_included else 0
+    evaluation_block = {
+        "included": ev_included,
+        "ttt2_started_at": ev_client.get("ttt2_started_at") if ev_included else None,
+        "ttt2_stopped_at": ev_client.get("ttt2_stopped_at") if ev_included else None,
+        "confirmed": ev_client.get("confirmed", False) if ev_included else False,
+        "precision": ev_client.get("precision") if ev_included else None,
+        "coverage": ev_client.get("coverage") if ev_included else None,
+        "valid_for_rollup": targets_labeled >= 5 if ev_included else False,
+        "targets_labeled": targets_labeled,
+    }
+
+    return {
+        "schema_version": "prep_export_v0",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "context": {
+            "workspace_id": ws_id,
+            "doc_id": doc_id,
+            "cache_key": ck,
+            "cached_at": cached.get("timestamp"),
+        },
+        "source": "cache",
+        "preflight": preflight_block,
+        "ogc_preview": ogc_block,
+        "operator_decisions": operator_block,
+        "evaluation": evaluation_block,
+    }
+
+
+@router.get("/export")
+async def preflight_export_get(
+    request: Request,
+    doc_id: str = Query(..., description="Document ID to export prep state for"),
+    auth=Depends(require_auth(AuthClass.EITHER)),
+):
+    """Export cached preflight state as prep_export_v0 JSON (GET, no client state)."""
+    if isinstance(auth, JSONResponse):
+        return auth
+
+    flag_check = require_preflight()
+    if flag_check:
+        return flag_check
+
+    ws_id, ws_err = _resolve_workspace(request, auth)
+    if ws_err:
+        return ws_err
+
+    admin_err = _require_admin_sandbox(auth, ws_id)
+    if admin_err:
+        return admin_err
+
+    ck = _cache_key(ws_id, doc_id)
+    cached = _preflight_cache.get(ck)
+
+    if not cached:
+        return JSONResponse(
+            status_code=404,
+            content=error_envelope("NOT_FOUND", "No preflight result cached for doc_id: %s" % doc_id),
+        )
+
+    export_payload = _build_export_payload(cached, ws_id, doc_id, ck)
+    logger.info("[PREFLIGHT] export(GET): doc=%s ws=%s gate=%s source=cache", doc_id, ws_id, cached.get("gate_color"))
+    return JSONResponse(status_code=200, content=envelope(export_payload))
+
+
+@router.post("/export")
+async def preflight_export_post(
+    request: Request,
+    auth=Depends(require_auth(AuthClass.EITHER)),
+):
+    """Export cached preflight state merged with client-side OGC/evaluation/operator state."""
+    if isinstance(auth, JSONResponse):
+        return auth
+
+    flag_check = require_preflight()
+    if flag_check:
+        return flag_check
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "Invalid JSON body"),
+        )
+
+    ws_id, ws_err = _resolve_workspace(request, auth, body)
+    if ws_err:
+        return ws_err
+
+    admin_err = _require_admin_sandbox(auth, ws_id)
+    if admin_err:
+        return admin_err
+
+    doc_id = body.get("doc_id", "").strip()
+    if not doc_id:
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "doc_id is required"),
+        )
+
+    ck = _cache_key(ws_id, doc_id)
+    cached = _preflight_cache.get(ck)
+
+    if not cached:
+        return JSONResponse(
+            status_code=404,
+            content=error_envelope("NOT_FOUND", "No preflight result cached for doc_id: %s" % doc_id),
+        )
+
+    export_payload = _build_export_payload(cached, ws_id, doc_id, ck, client_state=body)
+    logger.info("[PREFLIGHT] export(POST): doc=%s ws=%s gate=%s source=cache", doc_id, ws_id, cached.get("gate_color"))
+    return JSONResponse(status_code=200, content=envelope(export_payload))
 
 
 @router.get("/{doc_id}")

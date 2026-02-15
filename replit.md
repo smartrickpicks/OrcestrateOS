@@ -33,6 +33,8 @@ Enhanced Contract Line Items allow the batch add modal to capture source row con
 
 Document Mode Preflight provides a deterministic page/document classification and quality gate system for PDF documents, classifying pages as SEARCHABLE, SCANNED, or MIXED, and assigning gate colors (GREEN, YELLOW, RED) based on quality checks. It includes an Admin Sandbox Preflight Test Lab for running preflight on single PDFs, providing detailed reports.
 
+OGC Preparation Simulator (v0) is an admin-only sandbox feature enabling operators to run preflight, review results in a gate-driven modal (CONTINUE/ACCEPT_RISK/ESCALATE_OCR/CANCEL), toggle OGC Preview (show/hide only, no recompute), and export deterministic `prep_export_v0` JSON from cached state. The simulator uses `preflightSyncState` as the canonical client state object, `renderSyncPreflightPanel()` renders the review modal, and `runSyncPreflight()` triggers analysis. Server-side export endpoint at `GET /api/preflight/export?doc_id=X` reads from `_preflight_cache` without recomputing. All gated behind existing `PREFLIGHT_GATE_SYNC` flag. No DB schema changes, no autonomous triggers, no extraction/matching changes. Export contract documented in `docs/preflight/OGC_PREP_EXPORT_CONTRACT.md`. Optional evaluation block supports TTT-2 timing with `valid_for_rollup = targets_labeled >= 5`.
+
 ## External Dependencies
 - **FastAPI server**: Used as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
 - **SheetJS (XLSX)**: Integrated for Excel import/export functionality.

@@ -51840,6 +51840,468 @@ var P022_RuntimeValidation = {
   };
 })();
 </script>
+<style>
+.prep-sim-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.55); z-index:9990; display:none; align-items:center; justify-content:center; }
+.prep-sim-overlay.active { display:flex; }
+.prep-sim-modal { background:#fff; border-radius:10px; width:540px; max-width:95vw; max-height:85vh; overflow-y:auto; box-shadow:0 8px 40px rgba(0,0,0,0.25); font-family:inherit; }
+.prep-sim-modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px 12px; border-bottom:1px solid #e0e0e0; }
+.prep-sim-modal-header h3 { margin:0; font-size:1em; font-weight:600; }
+.prep-sim-modal-close { background:none; border:none; font-size:1.3em; cursor:pointer; color:#666; padding:0 4px; }
+.prep-sim-modal-close:hover { color:#333; }
+.prep-sim-modal-body { padding:16px 20px; }
+.prep-sim-gate-badge { display:inline-block; padding:3px 10px; border-radius:4px; font-size:0.82em; font-weight:600; color:#fff; margin-left:8px; }
+.prep-sim-gate-badge.green { background:#2e7d32; }
+.prep-sim-gate-badge.yellow { background:#f9a825; color:#333; }
+.prep-sim-gate-badge.red { background:#c62828; }
+.prep-sim-mode-label { font-size:0.78em; color:#888; margin-left:6px; }
+.prep-sim-metrics { display:flex; gap:10px; flex-wrap:wrap; margin:10px 0; }
+.prep-sim-metric { text-align:center; min-width:60px; }
+.prep-sim-metric-val { display:block; font-size:1.1em; font-weight:600; }
+.prep-sim-metric-label { display:block; font-size:0.7em; color:#888; }
+.prep-sim-section { margin:10px 0 6px; }
+.prep-sim-section-toggle { cursor:pointer; font-size:0.82em; font-weight:600; color:#555; user-select:none; }
+.prep-sim-section-toggle:hover { color:#333; }
+.prep-sim-section-body { display:none; padding:4px 0 4px 12px; font-size:0.78em; color:#444; max-height:180px; overflow-y:auto; }
+.prep-sim-section-body.open { display:block; }
+.prep-sim-actions { display:flex; gap:8px; padding:14px 20px; border-top:1px solid #e0e0e0; flex-wrap:wrap; }
+.prep-sim-btn { padding:7px 16px; border-radius:5px; border:1px solid #ccc; font-size:0.85em; cursor:pointer; font-weight:500; }
+.prep-sim-btn.continue { background:#2e7d32; color:#fff; border-color:#2e7d32; }
+.prep-sim-btn.accept { background:#f9a825; color:#333; border-color:#f9a825; }
+.prep-sim-btn.escalate { background:#e65100; color:#fff; border-color:#e65100; }
+.prep-sim-btn.cancel { background:#eee; color:#555; }
+.prep-sim-btn.export-btn { background:#1565c0; color:#fff; border-color:#1565c0; margin-left:auto; }
+.prep-sim-btn:hover { opacity:0.85; }
+.prep-sim-admin-note { color:#999; font-size:0.82em; padding:20px; text-align:center; }
+.prep-sim-eval { margin-top:10px; padding:10px; background:#f5f5f5; border-radius:6px; font-size:0.82em; }
+.prep-sim-eval label { display:block; margin:4px 0; font-weight:500; }
+.prep-sim-eval input[type="number"] { width:80px; padding:3px 6px; border:1px solid #ccc; border-radius:3px; }
+.prep-sim-eval .locked { opacity:0.5; pointer-events:none; }
+</style>
+<script>
+(function() {
+  var preflightSyncState = {
+    pipeline: 'preflight_pending',
+    ogcPreview: { enabled: false, toggled_at: null },
+    evaluation: {
+      included: false,
+      ttt2_started_at: null,
+      ttt2_stopped_at: null,
+      confirmed: false,
+      precision: null,
+      coverage: null,
+      valid_for_rollup: false,
+      targets_labeled: 0
+    },
+    activeDocId: null,
+    activeWorkspaceId: null,
+    operatorAction: null,
+    operatorActionTimestamp: null,
+    operatorNotes: null,
+    modalOpen: false
+  };
+  window.preflightSyncState = preflightSyncState;
+
+  function _prepSimIsAdmin() {
+    var role = (typeof _pfGateGetRole === 'function') ? _pfGateGetRole() : 'analyst';
+    return (role === 'admin' || role === 'architect');
+  }
+
+  function _prepSimGetHeaders() {
+    if (typeof _syncHeaders === 'function') return _syncHeaders();
+    var h = { 'Content-Type': 'application/json' };
+    var wsId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : '';
+    if (wsId) h['X-Workspace-Id'] = wsId;
+    if (typeof _authToken !== 'undefined' && _authToken) h['Authorization'] = 'Bearer ' + _authToken;
+    if (typeof window._authToken === 'undefined' || !window._authToken) h['X-Sandbox-Mode'] = 'true';
+    return h;
+  }
+
+  function _prepSimReset() {
+    preflightSyncState.pipeline = 'preflight_pending';
+    preflightSyncState.ogcPreview = { enabled: false, toggled_at: null };
+    preflightSyncState.operatorAction = null;
+    preflightSyncState.operatorActionTimestamp = null;
+    preflightSyncState.operatorNotes = null;
+    preflightSyncState.evaluation = {
+      included: false, ttt2_started_at: null, ttt2_stopped_at: null,
+      confirmed: false, precision: null, coverage: null,
+      valid_for_rollup: false, targets_labeled: 0
+    };
+  }
+
+  window.runSyncPreflight = function(docId) {
+    if (!_prepSimIsAdmin()) {
+      if (typeof showToast === 'function') showToast('Preflight is admin-only sandbox.', 'error');
+      return;
+    }
+    var fileUrl = (typeof _pfGateGetFileUrl === 'function') ? _pfGateGetFileUrl() : '';
+    if (!fileUrl) {
+      if (typeof showToast === 'function') showToast('No document URL available for preflight', 'warning');
+      return;
+    }
+    if (!docId) docId = (typeof _pfGateGetDocId === 'function') ? _pfGateGetDocId() : '';
+
+    _prepSimReset();
+    preflightSyncState.activeDocId = docId;
+    preflightSyncState.activeWorkspaceId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : '';
+
+    if (typeof pfGateRun === 'function') {
+      pfGateRun();
+    }
+  };
+
+  window.openPrepReviewModal = function(result) {
+    if (!result && typeof _pfGateState !== 'undefined') result = _pfGateState.result;
+    if (!result) {
+      if (typeof showToast === 'function') showToast('No preflight result to review.', 'warning');
+      return;
+    }
+    preflightSyncState.modalOpen = true;
+    preflightSyncState.activeDocId = result.doc_id || preflightSyncState.activeDocId;
+    preflightSyncState.activeWorkspaceId = result.workspace_id || preflightSyncState.activeWorkspaceId;
+    if (preflightSyncState.pipeline === 'preflight_pending') {
+      preflightSyncState.pipeline = 'preflight_complete';
+    }
+    renderSyncPreflightPanel(result);
+    var overlay = document.getElementById('prep-sim-overlay');
+    if (overlay) overlay.classList.add('active');
+  };
+
+  window.closePrepReviewModal = function() {
+    preflightSyncState.modalOpen = false;
+    var overlay = document.getElementById('prep-sim-overlay');
+    if (overlay) overlay.classList.remove('active');
+  };
+
+  window.renderSyncPreflightPanel = function(result) {
+    var overlay = document.getElementById('prep-sim-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'prep-sim-overlay';
+      overlay.className = 'prep-sim-overlay';
+      overlay.onclick = function(e) { if (e.target === overlay) closePrepReviewModal(); };
+      document.body.appendChild(overlay);
+    }
+
+    if (!_prepSimIsAdmin()) {
+      overlay.innerHTML = '<div class="prep-sim-modal"><div class="prep-sim-modal-header"><h3>Preflight Review</h3><button class="prep-sim-modal-close" onclick="closePrepReviewModal()">&times;</button></div><div class="prep-sim-admin-note">Admin-only sandbox.</div></div>';
+      return;
+    }
+
+    if (!result) {
+      overlay.innerHTML = '<div class="prep-sim-modal"><div class="prep-sim-modal-header"><h3>Preflight Review</h3><button class="prep-sim-modal-close" onclick="closePrepReviewModal()">&times;</button></div><div class="prep-sim-modal-body"><p style="color:#999;">No preflight result available.</p></div></div>';
+      return;
+    }
+
+    var gate = (result.gate_color || 'GREEN').toUpperCase();
+    var docMode = result.doc_mode || 'UNKNOWN';
+    var m = result.metrics || {};
+    var gateReasons = result.gate_reasons || [];
+    var decisionTrace = result.decision_trace || [];
+    var corruptionSamples = result.corruption_samples || [];
+
+    var html = '<div class="prep-sim-modal">';
+    html += '<div class="prep-sim-modal-header">';
+    html += '<h3>Preflight Review <span class="prep-sim-gate-badge ' + gate.toLowerCase() + '">' + gate + '</span>';
+    html += '<span class="prep-sim-mode-label">' + docMode + '</span></h3>';
+    html += '<button class="prep-sim-modal-close" onclick="closePrepReviewModal()">&times;</button>';
+    html += '</div>';
+
+    html += '<div class="prep-sim-modal-body">';
+
+    html += '<div class="prep-sim-metrics">';
+    html += '<div class="prep-sim-metric"><span class="prep-sim-metric-val">' + (m.total_pages || 0) + '</span><span class="prep-sim-metric-label">Pages</span></div>';
+    html += '<div class="prep-sim-metric"><span class="prep-sim-metric-val">' + (m.searchable_pages || 0) + '</span><span class="prep-sim-metric-label">Searchable</span></div>';
+    html += '<div class="prep-sim-metric"><span class="prep-sim-metric-val">' + (m.scanned_pages || 0) + '</span><span class="prep-sim-metric-label">Scanned</span></div>';
+    html += '<div class="prep-sim-metric"><span class="prep-sim-metric-val">' + (m.mixed_pages || 0) + '</span><span class="prep-sim-metric-label">Mixed</span></div>';
+    html += '<div class="prep-sim-metric"><span class="prep-sim-metric-val">' + Math.round(m.avg_chars_per_page || 0) + '</span><span class="prep-sim-metric-label">Avg Chars/Page</span></div>';
+    html += '<div class="prep-sim-metric"><span class="prep-sim-metric-val">' + ((m.replacement_char_ratio || 0) * 100).toFixed(2) + '%</span><span class="prep-sim-metric-label">Replacement Chars</span></div>';
+    html += '</div>';
+
+    if (gateReasons.length > 0) {
+      html += '<div style="font-size:0.82em;color:#555;margin:6px 0 2px;font-weight:500;">Reasons:</div>';
+      html += '<ul style="margin:0 0 6px 16px;padding:0;font-size:0.78em;color:#666;">';
+      for (var i = 0; i < gateReasons.length; i++) {
+        var humanized = (typeof _pfGateHumanizeReason === 'function') ? _pfGateHumanizeReason(gateReasons[i]) : gateReasons[i];
+        html += '<li>' + humanized + '</li>';
+      }
+      html += '</ul>';
+    }
+
+    if (decisionTrace.length > 0) {
+      html += '<div class="prep-sim-section">';
+      html += '<span class="prep-sim-section-toggle" onclick="this.nextElementSibling.classList.toggle(\'open\')">&#9654; Decision Trace (' + decisionTrace.length + ')</span>';
+      html += '<div class="prep-sim-section-body"><pre style="white-space:pre-wrap;font-size:0.85em;">' + JSON.stringify(decisionTrace, null, 2).replace(/</g, '&lt;') + '</pre></div>';
+      html += '</div>';
+    }
+
+    if (corruptionSamples.length > 0) {
+      html += '<div class="prep-sim-section">';
+      html += '<span class="prep-sim-section-toggle" onclick="this.nextElementSibling.classList.toggle(\'open\')">&#9654; Corruption Samples (' + corruptionSamples.length + ')</span>';
+      html += '<div class="prep-sim-section-body"><pre style="white-space:pre-wrap;font-size:0.85em;">' + JSON.stringify(corruptionSamples, null, 2).replace(/</g, '&lt;') + '</pre></div>';
+      html += '</div>';
+    }
+
+    var evalState = preflightSyncState.evaluation;
+    html += '<div class="prep-sim-eval' + (evalState.confirmed ? ' locked' : '') + '">';
+    html += '<div style="font-weight:600;font-size:0.9em;margin-bottom:6px;">Evaluation (optional)</div>';
+    html += '<label>Precision: <input type="number" id="prep-eval-precision" min="0" max="100" value="' + (evalState.precision !== null ? evalState.precision : '') + '" onchange="window._prepSimUpdateEval()" ' + (evalState.confirmed ? 'disabled' : '') + '></label>';
+    html += '<label>Coverage: <input type="number" id="prep-eval-coverage" min="0" max="100" value="' + (evalState.coverage !== null ? evalState.coverage : '') + '" onchange="window._prepSimUpdateEval()" ' + (evalState.confirmed ? 'disabled' : '') + '></label>';
+    html += '<label>Targets Labeled: <input type="number" id="prep-eval-targets" min="0" value="' + (evalState.targets_labeled || 0) + '" onchange="window._prepSimUpdateEval()" ' + (evalState.confirmed ? 'disabled' : '') + '></label>';
+    html += '<div style="margin-top:4px;font-size:0.78em;color:#888;">valid_for_rollup: ' + (evalState.valid_for_rollup ? 'true' : 'false') + '</div>';
+    if (!evalState.confirmed) {
+      html += '<button class="prep-sim-btn" style="margin-top:6px;font-size:0.78em;" onclick="window._prepSimConfirmEval()">Confirm Evaluation</button>';
+    } else {
+      html += '<div style="margin-top:4px;font-size:0.78em;color:#2e7d32;font-weight:500;">Evaluation confirmed and locked.</div>';
+    }
+    html += '</div>';
+
+    var pipeline = preflightSyncState.pipeline;
+    if (preflightSyncState.operatorAction) {
+      html += '<div style="margin-top:10px;font-size:0.82em;color:#555;">Action taken: <strong>' + preflightSyncState.operatorAction + '</strong> at ' + (preflightSyncState.operatorActionTimestamp || '\u2014') + '</div>';
+    }
+
+    html += '</div>';
+
+    html += '<div class="prep-sim-actions">';
+    if (!preflightSyncState.operatorAction) {
+      if (gate === 'GREEN') {
+        html += '<button class="prep-sim-btn continue" onclick="window._prepSimAction(\'CONTINUE\')">Continue</button>';
+      } else if (gate === 'YELLOW') {
+        html += '<button class="prep-sim-btn accept" onclick="window._prepSimAction(\'ACCEPT_RISK\')">Accept Risk</button>';
+        html += '<button class="prep-sim-btn escalate" onclick="window._prepSimAction(\'ESCALATE_OCR\')">Escalate OCR</button>';
+      } else {
+        html += '<button class="prep-sim-btn escalate" onclick="window._prepSimAction(\'ESCALATE_OCR\')">Escalate OCR</button>';
+        html += '<button class="prep-sim-btn cancel" onclick="window._prepSimAction(\'CANCEL\')">Cancel</button>';
+      }
+    }
+    html += '<button class="prep-sim-btn export-btn" onclick="window._prepSimCopyJSON()" title="Copy Prep JSON to clipboard">Copy JSON</button>';
+    html += '<button class="prep-sim-btn export-btn" onclick="window._prepSimDownloadJSON()" title="Download Prep JSON file" style="background:#0d47a1;">Download JSON</button>';
+    html += '</div>';
+    html += '</div>';
+
+    overlay.innerHTML = html;
+  };
+
+  window._prepSimAction = function(action) {
+    var now = new Date().toISOString();
+    preflightSyncState.operatorAction = action;
+    preflightSyncState.operatorActionTimestamp = now;
+
+    if (action === 'CONTINUE') {
+      preflightSyncState.pipeline = 'preflight_complete';
+    } else if (action === 'ACCEPT_RISK') {
+      preflightSyncState.pipeline = 'preflight_accepted';
+      var docId = preflightSyncState.activeDocId || (typeof _pfGateGetDocId === 'function' ? _pfGateGetDocId() : '');
+      if (docId) {
+        fetch('/api/preflight/action', {
+          method: 'POST',
+          headers: _prepSimGetHeaders(),
+          body: JSON.stringify({ doc_id: docId, action: 'accept_risk' })
+        }).then(function(r) { return r.json(); }).catch(function(e) { console.warn('[PREP-SIM] accept_risk API error:', e); });
+      }
+    } else if (action === 'ESCALATE_OCR') {
+      preflightSyncState.pipeline = 'preflight_escalated';
+      var docId2 = preflightSyncState.activeDocId || (typeof _pfGateGetDocId === 'function' ? _pfGateGetDocId() : '');
+      if (docId2) {
+        fetch('/api/preflight/action', {
+          method: 'POST',
+          headers: _prepSimGetHeaders(),
+          body: JSON.stringify({ doc_id: docId2, action: 'escalate_ocr' })
+        }).then(function(r) { return r.json(); }).catch(function(e) { console.warn('[PREP-SIM] escalate_ocr API error:', e); });
+      }
+    } else if (action === 'CANCEL') {
+      preflightSyncState.pipeline = 'preflight_cancelled';
+    }
+
+    if (typeof showToast === 'function') showToast('Simulator action: ' + action, 'info');
+    console.log('[PREP-SIM] action=' + action + ' pipeline=' + preflightSyncState.pipeline);
+
+    var result = (typeof _pfGateState !== 'undefined' && _pfGateState.result) ? _pfGateState.result : null;
+    renderSyncPreflightPanel(result);
+  };
+
+  window._prepSimUpdateEval = function() {
+    var p = document.getElementById('prep-eval-precision');
+    var c = document.getElementById('prep-eval-coverage');
+    var t = document.getElementById('prep-eval-targets');
+    if (p) preflightSyncState.evaluation.precision = p.value !== '' ? parseInt(p.value, 10) : null;
+    if (c) preflightSyncState.evaluation.coverage = c.value !== '' ? parseInt(c.value, 10) : null;
+    if (t) preflightSyncState.evaluation.targets_labeled = parseInt(t.value, 10) || 0;
+    preflightSyncState.evaluation.valid_for_rollup = preflightSyncState.evaluation.targets_labeled >= 5;
+    preflightSyncState.evaluation.included = true;
+  };
+
+  window._prepSimConfirmEval = function() {
+    window._prepSimUpdateEval();
+    preflightSyncState.evaluation.confirmed = true;
+    preflightSyncState.evaluation.ttt2_stopped_at = new Date().toISOString();
+    var result = (typeof _pfGateState !== 'undefined' && _pfGateState.result) ? _pfGateState.result : null;
+    renderSyncPreflightPanel(result);
+    if (typeof showToast === 'function') showToast('Evaluation confirmed and locked.', 'success');
+  };
+
+  function _prepSimBuildExportPayload() {
+    var result = (typeof _pfGateState !== 'undefined' && _pfGateState.result) ? _pfGateState.result : null;
+    var m = result ? (result.metrics || {}) : {};
+    var pages = result ? (result.page_classifications || []) : [];
+    pages.sort(function(a, b) { return (a.page || 0) - (b.page || 0); });
+
+    var evalState = preflightSyncState.evaluation;
+    var evalBlock = {
+      included: evalState.included || false,
+      ttt2_started_at: evalState.ttt2_started_at,
+      ttt2_stopped_at: evalState.ttt2_stopped_at,
+      confirmed: evalState.confirmed,
+      precision: evalState.precision,
+      coverage: evalState.coverage,
+      valid_for_rollup: evalState.valid_for_rollup,
+      targets_labeled: evalState.targets_labeled
+    };
+
+    return {
+      schema_version: 'prep_export_v0',
+      generated_at: new Date().toISOString(),
+      context: {
+        workspace_id: preflightSyncState.activeWorkspaceId || (typeof _eiGetWorkspaceId === 'function' ? _eiGetWorkspaceId() : ''),
+        doc_id: preflightSyncState.activeDocId || (result ? result.doc_id : ''),
+        cache_key: (preflightSyncState.activeWorkspaceId || '') + '::' + (preflightSyncState.activeDocId || (result ? result.doc_id : '')),
+        cached_at: result ? result.timestamp : null
+      },
+      source: 'cache',
+      preflight: {
+        doc_mode: result ? result.doc_mode : null,
+        recommended_gate: result ? result.gate_color : null,
+        reason_codes: result ? (result.gate_reasons || []) : [],
+        metrics: m,
+        page_summaries: pages,
+        decision_trace: result ? (result.decision_trace || []) : [],
+        corruption_samples: result ? (result.corruption_samples || []) : [],
+        persistence: { cache_written: true, fk_bound_writes_skipped: true, skip_reason: 'v0_sandbox_export' },
+        action_taken: result ? result.action_taken : null,
+        action_timestamp: result ? result.action_timestamp : null,
+        action_actor: result ? result.action_actor : null,
+        materialized: result ? (result.materialized || false) : false,
+        timestamp: result ? result.timestamp : null
+      },
+      ogc_preview: {
+        included: preflightSyncState.ogcPreview.enabled,
+        toggled_at: preflightSyncState.ogcPreview.toggled_at,
+        anchors: [],
+        chunks: []
+      },
+      operator_decisions: {
+        action: preflightSyncState.operatorAction,
+        timestamp: preflightSyncState.operatorActionTimestamp,
+        notes: preflightSyncState.operatorNotes,
+        escalation_metadata: null
+      },
+      evaluation: evalBlock
+    };
+  }
+
+  window._prepSimCopyJSON = function() {
+    var payload = _prepSimBuildExportPayload();
+    var json = JSON.stringify(payload, null, 2);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(json).then(function() {
+        if (typeof showToast === 'function') showToast('Prep JSON copied to clipboard', 'success');
+      }).catch(function() {
+        console.log('[PREP-SIM] Clipboard write failed, payload logged to console');
+        console.log(json);
+        if (typeof showToast === 'function') showToast('Prep JSON logged to console (clipboard unavailable)', 'info');
+      });
+    } else {
+      console.log(json);
+      if (typeof showToast === 'function') showToast('Prep JSON logged to console', 'info');
+    }
+  };
+
+  window._prepSimDownloadJSON = function() {
+    var payload = _prepSimBuildExportPayload();
+    var json = JSON.stringify(payload, null, 2);
+    var docId = payload.context.doc_id || 'unknown';
+    var filename = 'prep_export_' + docId + '_' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
+    var blob = new Blob([json], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+    if (typeof showToast === 'function') showToast('Prep JSON downloaded: ' + filename, 'success');
+    console.log('[PREP-SIM] export downloaded: ' + filename);
+  };
+
+  var _origPfGateRunCallback = null;
+
+  function _hookPreflightCompletion() {
+    if (typeof window.pfGateRun === 'function' && !_origPfGateRunCallback) {
+      var origRun = window.pfGateRun;
+      window.pfGateRun = function() {
+        origRun();
+        var checkInterval = setInterval(function() {
+          if (typeof _pfGateState !== 'undefined' && !_pfGateState.running && _pfGateState.result) {
+            clearInterval(checkInterval);
+            preflightSyncState.activeDocId = _pfGateState.result.doc_id || preflightSyncState.activeDocId;
+            preflightSyncState.activeWorkspaceId = _pfGateState.result.workspace_id || preflightSyncState.activeWorkspaceId;
+            if (preflightSyncState.pipeline === 'preflight_pending') {
+              preflightSyncState.pipeline = 'preflight_complete';
+            }
+            if (_prepSimIsAdmin()) {
+              openPrepReviewModal(_pfGateState.result);
+            }
+          }
+        }, 300);
+        setTimeout(function() { clearInterval(checkInterval); }, 60000);
+      };
+      _origPfGateRunCallback = origRun;
+    }
+  }
+
+  function _hookToolbarUpload() {
+    if (typeof window.toolbarPdfPreflightUpload === 'function') {
+      var origUpload = window.toolbarPdfPreflightUpload;
+      window.toolbarPdfPreflightUpload = function(input) {
+        origUpload(input);
+        var checkInterval = setInterval(function() {
+          if (typeof _pfGateState !== 'undefined' && !_pfGateState.running && _pfGateState.result) {
+            clearInterval(checkInterval);
+            preflightSyncState.activeDocId = _pfGateState.result.doc_id || '';
+            preflightSyncState.activeWorkspaceId = _pfGateState.result.workspace_id || '';
+            if (_prepSimIsAdmin()) {
+              openPrepReviewModal(_pfGateState.result);
+            }
+          }
+        }, 300);
+        setTimeout(function() { clearInterval(checkInterval); }, 60000);
+      };
+    }
+  }
+
+  window._prepSimToggleOgcPreview = function() {
+    var wasEnabled = preflightSyncState.ogcPreview.enabled;
+    preflightSyncState.ogcPreview.enabled = !wasEnabled;
+    preflightSyncState.ogcPreview.toggled_at = new Date().toISOString();
+    if (!wasEnabled && !preflightSyncState.evaluation.ttt2_started_at) {
+      preflightSyncState.evaluation.ttt2_started_at = new Date().toISOString();
+      preflightSyncState.evaluation.included = true;
+      console.log('[PREP-SIM] TTT-2 started: ' + preflightSyncState.evaluation.ttt2_started_at);
+    }
+    console.log('[PREP-SIM] OGC Preview toggled: ' + preflightSyncState.ogcPreview.enabled);
+    if (typeof showToast === 'function') showToast('OGC Preview: ' + (preflightSyncState.ogcPreview.enabled ? 'ON' : 'OFF'), 'info');
+  };
+
+  setTimeout(function() {
+    _hookPreflightCompletion();
+    _hookToolbarUpload();
+  }, 500);
+
+  console.log('[PREP-SIM] OGC Preparation Simulator v0 initialized');
+})();
+</script>
 <script>
 (function() {
   var _pftlState = {
