@@ -217,7 +217,7 @@ async def create_local_suggestion_run(
             body = {}
 
         source_fields = body.get("source_fields", []) if isinstance(body, dict) else []
-        document_id = body.get("document_id", "local_" + generate_id("")) if isinstance(body, dict) else "local_" + generate_id("")
+        document_id = body.get("document_id", "local_" + generate_id("doc_")) if isinstance(body, dict) else "local_" + generate_id("doc_")
 
         workspace_id = _resolve_workspace_id(auth, conn)
         if not workspace_id:
@@ -233,81 +233,53 @@ async def create_local_suggestion_run(
             )
 
         with conn.cursor() as cur:
-            run_id = generate_id("sgr_")
-            cur.execute(
-                """INSERT INTO suggestion_runs
-                   (id, workspace_id, document_id, status, created_by, metadata)
-                   VALUES (%s, %s, %s, 'running', %s, %s::jsonb)""",
-                (run_id, workspace_id, document_id, auth.user_id,
-                 json.dumps({"run_mode": "local_fallback"})),
-            )
-
             try:
                 suggestions, diagnostics = generate_suggestions_local(cur, workspace_id, source_fields)
             except Exception as e:
                 logger.error("[SUGGEST] Local engine error: %s", e)
-                cur.execute(
-                    """UPDATE suggestion_runs SET status = 'failed',
-                       completed_at = NOW(), metadata = %s::jsonb
-                       WHERE id = %s""",
-                    (json.dumps({"error": str(e), "run_mode": "local_fallback"}), run_id),
-                )
-                conn.commit()
                 return JSONResponse(
                     status_code=500,
                     content=error_envelope("SUGGESTION_ENGINE_FAILED", str(e)),
                 )
 
+            now_iso = datetime.now(timezone.utc).isoformat()
+            run_id = generate_id("sgr_")
+
             sug_results = []
             for s in suggestions:
                 sug_id = generate_id("sug_")
                 sug_meta = s.pop("_meta", None)
-                cur.execute(
-                    """INSERT INTO suggestions
-                       (id, workspace_id, run_id, document_id, source_field,
-                        suggested_term_id, match_score, match_method, candidates, metadata)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb)
-                       RETURNING """ + SUGGESTION_SELECT,
-                    (sug_id, workspace_id, run_id, document_id,
-                     s["source_field"], s["suggested_term_id"],
-                     s["match_score"], s["match_method"],
-                     json.dumps(s["candidates"]),
-                     json.dumps(sug_meta) if sug_meta else None),
-                )
-                row = cur.fetchone()
-                if row:
-                    sug_results.append(_row_to_dict(row, SUGGESTION_COLUMNS))
-
-            now_iso = datetime.now(timezone.utc).isoformat()
-            run_metadata = json.dumps(diagnostics) if diagnostics else None
-            cur.execute(
-                """UPDATE suggestion_runs
-                   SET status = 'completed', total_suggestions = %s, completed_at = %s,
-                       metadata = %s::jsonb
-                   WHERE id = %s
-                   RETURNING """ + RUN_SELECT,
-                (len(suggestions), now_iso, run_metadata, run_id),
-            )
-            run_row = cur.fetchone()
-
-            emit_audit_event(
-                cur,
-                workspace_id=workspace_id,
-                event_type="suggestion_run.created",
-                actor_id=auth.user_id,
-                resource_type="suggestion_run",
-                resource_id=run_id,
-                detail={
+                sug_results.append({
+                    "id": sug_id,
+                    "workspace_id": workspace_id,
+                    "run_id": run_id,
                     "document_id": document_id,
-                    "total_suggestions": len(suggestions),
-                    "run_mode": "local_fallback",
-                },
-            )
-        conn.commit()
+                    "source_field": s["source_field"],
+                    "suggested_term_id": s["suggested_term_id"],
+                    "match_score": s["match_score"],
+                    "match_method": s["match_method"],
+                    "status": "pending",
+                    "resolved_by": None,
+                    "resolved_at": None,
+                    "candidates": s["candidates"],
+                    "created_at": now_iso,
+                    "version": 1,
+                    "metadata": sug_meta,
+                })
 
-        result = _row_to_dict(run_row, RUN_COLUMNS)
-        result["diagnostics"] = diagnostics
-        result["suggestions"] = sug_results
+        result = {
+            "id": run_id,
+            "workspace_id": workspace_id,
+            "document_id": document_id,
+            "status": "completed",
+            "total_suggestions": len(suggestions),
+            "created_at": now_iso,
+            "completed_at": now_iso,
+            "created_by": auth.user_id,
+            "metadata": {"run_mode": "local_fallback"},
+            "diagnostics": diagnostics,
+            "suggestions": sug_results,
+        }
 
         return JSONResponse(
             status_code=201,
