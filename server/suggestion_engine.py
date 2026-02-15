@@ -59,18 +59,13 @@ def _load_field_meta():
 
 def _extract_tokens(text):
     if not text:
-        return set()
+        return []
     words = re.findall(r'[a-z]{2,}', text.lower())
-    return {w for w in words if w not in _STOP_WORDS and len(w) > 1}
+    return [w for w in words if w not in _STOP_WORDS and len(w) > 1]
 
 
-def _make_ngrams(tokens, min_n=1, max_n=4):
-    token_list = sorted(tokens)
-    ngrams = set()
-    for n in range(min_n, min(max_n + 1, len(token_list) + 1)):
-        for i in range(len(token_list) - n + 1):
-            ngrams.add(" ".join(token_list[i:i + n]))
-    return ngrams
+def _extract_token_set(text):
+    return set(_extract_tokens(text))
 
 
 def normalize_field_name(name):
@@ -82,14 +77,100 @@ def normalize_field_name(name):
     return s
 
 
-def _levenshtein_ratio(a, b):
+def _char_similarity(a, b):
+    if not a or not b:
+        return 0.0
     return SequenceMatcher(None, a, b).ratio()
 
 
-def _build_field_meta_index(field_meta_fields):
+def _ordered_phrase_score(source_tokens_list, glossary_tokens_list):
+    if not source_tokens_list or not glossary_tokens_list:
+        return 0.0
+    g_ptr = 0
+    matched_in_order = 0
+    for st in source_tokens_list:
+        if g_ptr < len(glossary_tokens_list) and st == glossary_tokens_list[g_ptr]:
+            matched_in_order += 1
+            g_ptr += 1
+    if matched_in_order == 0:
+        return 0.0
+    if matched_in_order == len(glossary_tokens_list):
+        return 1.0
+    return min(matched_in_order / max(len(glossary_tokens_list), 1) * 0.8, 0.5)
+
+
+def _compute_alias_boost(source_norm, alias_map, glossary_entry):
+    entry_id = glossary_entry.get("id") or glossary_entry.get("field_key", "")
+    alias_hit = alias_map.get(source_norm)
+    if alias_hit and alias_hit == entry_id:
+        return 1.0, "alias_exact"
+    alias_norm = normalize_field_name(source_norm)
+    for alias_key, alias_tid in alias_map.items():
+        if alias_tid == entry_id and alias_norm == alias_key:
+            return 0.6, "alias_normalized"
+    return 0.0, None
+
+
+def _generate_reason_labels(source_tokens_set, glossary_tokens_list, source_norm, glossary_norm, char_sim, ordered_score, alias_boost_val):
+    labels = []
+    if alias_boost_val >= 1.0:
+        labels.append("ALIAS_EXACT")
+    elif alias_boost_val >= 0.6:
+        labels.append("ALIAS_NORMALIZED")
+    if glossary_tokens_list and source_tokens_set:
+        if glossary_tokens_list[0] in source_tokens_set:
+            labels.append("FIRST_TOKEN_MATCH")
+    if ordered_score >= 0.8:
+        labels.append("ORDERED_TOKENS")
+    elif ordered_score >= 0.3:
+        labels.append("PARTIAL_ORDER")
+    if char_sim >= 0.85:
+        labels.append("EDIT_DISTANCE_NEAR")
+    elif char_sim >= 0.7:
+        labels.append("EDIT_DISTANCE_MODERATE")
+    g_set = set(glossary_tokens_list) if glossary_tokens_list else set()
+    overlap = source_tokens_set & g_set
+    if len(overlap) >= 3:
+        labels.append("MULTI_TOKEN_OVERLAP")
+    elif len(overlap) >= 1:
+        labels.append("TOKEN_OVERLAP")
+    return labels
+
+
+def _classify_confidence(score):
+    if score >= 0.85:
+        return "HIGH"
+    elif score >= 0.70:
+        return "MEDIUM"
+    elif score >= 0.55:
+        return "LOW"
+    else:
+        return "HIDDEN"
+
+
+def _determine_match_method(alias_boost_val, token_overlap_score, char_sim, ordered_score):
+    if alias_boost_val >= 1.0:
+        return "alias_exact"
+    if alias_boost_val >= 0.6:
+        return "alias_normalized"
+    if ordered_score >= 0.5 and char_sim >= 0.6:
+        return "phrase_fuzzy"
+    if token_overlap_score > 0:
+        return "token_overlap"
+    if char_sim >= 0.5:
+        return "phrase_fuzzy"
+    return "none"
+
+
+def _build_glossary_index(field_meta_fields, glossary_term_list):
     index = []
+    seen_keys = set()
+
     for fm in field_meta_fields:
         fk = fm.get("field_key", "")
+        if not fk or fk in seen_keys:
+            continue
+        seen_keys.add(fk)
         label = fm.get("field_label", "") or fk
         defn = fm.get("definition", "") or ""
         category = fm.get("category", "") or ""
@@ -102,183 +183,185 @@ def _build_field_meta_index(field_meta_fields):
         label_tokens = _extract_tokens(label)
         fk_tokens = _extract_tokens(fk)
         def_tokens = _extract_tokens(defn)
-        top_def_tokens = set(sorted(def_tokens, key=lambda w: len(w), reverse=True)[:15])
-        opt_tokens = set()
+        top_def_tokens = sorted(set(def_tokens), key=lambda w: len(w), reverse=True)[:12]
+        opt_tokens = []
         for opt in opts[:20]:
-            opt_tokens.update(_extract_tokens(str(opt)))
+            opt_tokens.extend(_extract_tokens(str(opt)))
 
-        all_tokens = label_tokens | fk_tokens
-        keyword_tokens = all_tokens | top_def_tokens | opt_tokens
+        all_tokens = list(dict.fromkeys(label_tokens + fk_tokens))
+        keyword_set = set(all_tokens) | set(top_def_tokens) | set(opt_tokens)
 
         cat_kws_set = set()
         for cat_name, cat_words in DOCUMENT_TYPE_KEYWORDS.items():
-            cat_tokens_check = label_tokens | fk_tokens | _extract_tokens(sheet)
-            if any(cw in cat_tokens_check for cw in cat_words):
+            check_set = set(label_tokens) | set(fk_tokens) | _extract_token_set(sheet)
+            if any(cw in check_set for cw in cat_words):
                 cat_kws_set.update(cat_words)
+        keyword_set |= cat_kws_set
 
-        keyword_tokens |= cat_kws_set
-
-        label_ngrams = _make_ngrams(label_tokens, 1, 3)
-        fk_ngrams = _make_ngrams(fk_tokens, 1, 3)
+        glossary_id = None
+        for gt in glossary_term_list:
+            if gt["field_key"] == fk or gt["normalized"] == fk_normalized:
+                glossary_id = gt["id"]
+                break
 
         index.append({
+            "id": glossary_id or fk,
             "field_key": fk,
             "label": label,
             "normalized": normalized,
             "fk_normalized": fk_normalized,
             "definition": defn[:200],
             "category": category,
-            "sheet": sheet,
-            "label_tokens": label_tokens,
-            "keyword_tokens": keyword_tokens,
-            "label_ngrams": label_ngrams | fk_ngrams,
+            "tokens_list": all_tokens,
+            "tokens_set": set(all_tokens),
+            "keyword_set": keyword_set,
             "domain_keywords": cat_kws_set,
         })
+
+    for gt in glossary_term_list:
+        if gt["field_key"] not in seen_keys:
+            seen_keys.add(gt["field_key"])
+            fk = gt["field_key"]
+            label = gt.get("display_name") or fk
+            normalized = normalize_field_name(label)
+            fk_normalized = normalize_field_name(fk)
+            tokens = _extract_tokens(label)
+            fk_toks = _extract_tokens(fk)
+            all_tokens = list(dict.fromkeys(tokens + fk_toks))
+
+            index.append({
+                "id": gt["id"],
+                "field_key": fk,
+                "label": label,
+                "normalized": normalized,
+                "fk_normalized": fk_normalized,
+                "definition": "",
+                "category": gt.get("category", ""),
+                "tokens_list": all_tokens,
+                "tokens_set": set(all_tokens),
+                "keyword_set": set(all_tokens),
+                "domain_keywords": set(),
+            })
+
     return index
 
 
-def _score_candidate(source_text, source_norm, source_tokens, fm_entry, alias_map):
-    candidates = []
+def _score_glossary_candidate(source_norm, source_tokens_list, source_tokens_set, entry, alias_map):
+    g_tokens_list = entry["tokens_list"]
+    g_tokens_set = entry["tokens_set"]
 
-    alias_hit = alias_map.get(source_norm)
-    if alias_hit and alias_hit == fm_entry["field_key"]:
-        return {
-            "field_key": fm_entry["field_key"],
-            "label": fm_entry["label"],
-            "score": 1.0,
-            "method": "alias_exact",
-            "reason": "Exact alias match",
-            "matched_tokens": [],
-        }
-
-    if source_norm == fm_entry["normalized"] or source_norm == fm_entry["fk_normalized"]:
-        return {
-            "field_key": fm_entry["field_key"],
-            "label": fm_entry["label"],
-            "score": 1.0,
-            "method": "exact",
-            "reason": "Exact label match",
-            "matched_tokens": [],
-        }
-
-    fuzzy_label = _levenshtein_ratio(source_norm, fm_entry["normalized"])
-    fuzzy_fk = _levenshtein_ratio(source_norm, fm_entry["fk_normalized"])
-    fuzzy_best = max(fuzzy_label, fuzzy_fk)
-    if fuzzy_best >= 0.7:
-        return {
-            "field_key": fm_entry["field_key"],
-            "label": fm_entry["label"],
-            "score": round(fuzzy_best, 3),
-            "method": "fuzzy",
-            "reason": "Fuzzy match (%.0f%% similar)" % (fuzzy_best * 100),
-            "matched_tokens": [],
-        }
-
-    if not source_tokens:
+    if not g_tokens_set:
         return None
 
-    source_ngrams = _make_ngrams(source_tokens, 1, 3)
-    ngram_overlap = source_ngrams & fm_entry["label_ngrams"]
-    if ngram_overlap:
-        max_ngram_len = max(len(ng.split()) for ng in ngram_overlap)
-        overlap_score = min(0.3 + max_ngram_len * 0.15 + len(ngram_overlap) * 0.05, 0.85)
-        matched = sorted(ngram_overlap, key=lambda x: len(x), reverse=True)[:5]
-        return {
-            "field_key": fm_entry["field_key"],
-            "label": fm_entry["label"],
-            "score": round(overlap_score, 3),
-            "method": "normalized_phrase",
-            "reason": "Phrase overlap: %s" % ", ".join(matched[:3]),
-            "matched_tokens": matched,
-        }
+    matched = source_tokens_set & g_tokens_set
+    token_overlap_score = len(matched) / len(g_tokens_set) if g_tokens_set else 0.0
 
-    kw_overlap = source_tokens & fm_entry["keyword_tokens"]
-    if len(kw_overlap) >= 1:
-        base = len(kw_overlap) * 0.12
-        domain_hit = source_tokens & fm_entry.get("domain_keywords", set())
-        boost = len(domain_hit) * 0.08
-        score = min(base + boost, 0.6)
-        if score >= 0.15:
-            matched = sorted(kw_overlap)
-            return {
-                "field_key": fm_entry["field_key"],
-                "label": fm_entry["label"],
-                "score": round(score, 3),
-                "method": "token_overlap",
-                "reason": "Token overlap: %s" % ", ".join(matched[:5]),
-                "matched_tokens": matched[:5],
-            }
+    char_sim = _char_similarity(source_norm, entry["normalized"])
+    char_sim_fk = _char_similarity(source_norm, entry["fk_normalized"])
+    char_similarity_score = max(char_sim, char_sim_fk)
 
-    return None
+    ordered_score = _ordered_phrase_score(source_tokens_list, g_tokens_list)
+
+    alias_boost_val, alias_type = _compute_alias_boost(source_norm, alias_map, entry)
+
+    final_score = (
+        0.45 * token_overlap_score +
+        0.30 * char_similarity_score +
+        0.15 * ordered_score +
+        0.10 * alias_boost_val
+    )
+    final_score = round(min(final_score, 1.0), 4)
+
+    reason_labels = _generate_reason_labels(
+        source_tokens_set, g_tokens_list, source_norm,
+        entry["normalized"], char_similarity_score, ordered_score, alias_boost_val,
+    )
+
+    match_method = _determine_match_method(alias_boost_val, token_overlap_score, char_similarity_score, ordered_score)
+    confidence_bucket = _classify_confidence(final_score)
+
+    return {
+        "glossary_term_id": entry["id"],
+        "glossary_field_key": entry["field_key"],
+        "label": entry["label"],
+        "confidence_score": final_score,
+        "confidence_pct": int(round(final_score * 100)),
+        "confidence_bucket": confidence_bucket,
+        "match_method": match_method,
+        "reason_labels": reason_labels,
+        "_components": {
+            "token_overlap": round(token_overlap_score, 4),
+            "char_similarity": round(char_similarity_score, 4),
+            "ordered_phrase": round(ordered_score, 4),
+            "alias_boost": round(alias_boost_val, 4),
+        },
+        "matched_tokens": sorted(matched),
+    }
 
 
-def _match_source_against_index(source_field, fm_index, alias_map, glossary_term_list):
+def _match_source_against_glossary(source_field, glossary_index, alias_map):
     source_norm = normalize_field_name(source_field)
-    source_tokens = _extract_tokens(source_field)
+    source_tokens_list = _extract_tokens(source_field)
+    source_tokens_set = set(source_tokens_list)
 
     all_candidates = []
 
-    for fm_entry in fm_index:
-        result = _score_candidate(source_field, source_norm, source_tokens, fm_entry, alias_map)
+    for entry in glossary_index:
+        result = _score_glossary_candidate(
+            source_norm, source_tokens_list, source_tokens_set, entry, alias_map,
+        )
         if result:
             all_candidates.append(result)
 
-    for gt in glossary_term_list:
-        if source_norm == gt["normalized"]:
-            all_candidates.append({
-                "field_key": gt["field_key"],
-                "label": gt.get("display_name", gt["field_key"]),
-                "score": 1.0,
-                "method": "glossary_exact",
-                "reason": "Glossary term exact match",
-                "matched_tokens": [],
-            })
-        else:
-            fuzzy = _levenshtein_ratio(source_norm, gt["normalized"])
-            if fuzzy >= 0.65:
-                all_candidates.append({
-                    "field_key": gt["field_key"],
-                    "label": gt.get("display_name", gt["field_key"]),
-                    "score": round(fuzzy, 3),
-                    "method": "glossary_fuzzy",
-                    "reason": "Glossary fuzzy (%.0f%%)" % (fuzzy * 100),
-                    "matched_tokens": [],
-                })
-
-    all_candidates.sort(key=lambda c: c["score"], reverse=True)
+    all_candidates.sort(key=lambda c: (-c["confidence_score"], c["glossary_field_key"]))
 
     seen_keys = set()
     deduped = []
     for c in all_candidates:
-        if c["field_key"] not in seen_keys:
-            seen_keys.add(c["field_key"])
+        if c["glossary_field_key"] not in seen_keys:
+            seen_keys.add(c["glossary_field_key"])
             deduped.append(c)
 
     top = deduped[:5]
 
     if top:
         best = top[0]
+        method_label = best["match_method"]
+        if best["confidence_bucket"] == "HIDDEN":
+            method_label = "none"
+
         return {
             "source_field": source_field,
-            "suggested_term_id": best["field_key"],
+            "suggested_term_id": best["glossary_term_id"],
             "suggested_label": best["label"],
-            "match_score": best["score"],
-            "match_method": best["method"],
-            "match_reason": best["reason"],
+            "glossary_term_id": best["glossary_term_id"],
+            "glossary_field_key": best["glossary_field_key"],
+            "matched_text": source_field,
+            "confidence_score": best["confidence_score"],
+            "confidence_pct": best["confidence_pct"],
+            "confidence_bucket": best["confidence_bucket"],
+            "match_score": best["confidence_score"],
+            "match_method": method_label,
+            "match_reason": ", ".join(best["reason_labels"]) if best["reason_labels"] else best["match_method"],
+            "reason_labels": best["reason_labels"],
             "candidates": [
                 {
-                    "term_id": c["field_key"],
+                    "term_id": c["glossary_term_id"],
+                    "field_key": c["glossary_field_key"],
                     "label": c["label"],
-                    "score": c["score"],
-                    "method": c["method"],
-                    "reason": c["reason"],
+                    "score": c["confidence_score"],
+                    "confidence_pct": c["confidence_pct"],
+                    "confidence_bucket": c["confidence_bucket"],
+                    "method": c["match_method"],
+                    "reason_labels": c["reason_labels"],
                 }
                 for c in top
             ],
             "_meta": {
                 "source_normalized": source_norm,
                 "matched_keywords": best.get("matched_tokens", []),
-                "reason": best["reason"],
+                "reason": ", ".join(best["reason_labels"]) if best["reason_labels"] else "no reason",
+                "components": best.get("_components"),
             },
         }
 
@@ -286,14 +369,22 @@ def _match_source_against_index(source_field, fm_index, alias_map, glossary_term
         "source_field": source_field,
         "suggested_term_id": None,
         "suggested_label": None,
+        "glossary_term_id": None,
+        "glossary_field_key": None,
+        "matched_text": source_field,
+        "confidence_score": 0.0,
+        "confidence_pct": 0,
+        "confidence_bucket": "HIDDEN",
         "match_score": 0.0,
         "match_method": "none",
         "match_reason": "No matching canonical field found",
+        "reason_labels": [],
         "candidates": [],
         "_meta": {
             "source_normalized": source_norm,
             "matched_keywords": [],
             "reason": "No match",
+            "components": None,
         },
     }
 
@@ -310,127 +401,6 @@ def _build_glossary_term_list(terms_rows):
         }
         term_list.append(entry)
     return term_list
-
-
-def _build_term_keywords(term_entry, field_meta_fields):
-    tokens = set()
-    label = term_entry.get("display_name") or term_entry.get("field_key", "")
-    tokens.update(_extract_tokens(label))
-    tokens.update(_extract_tokens(term_entry.get("field_key", "")))
-    category = term_entry.get("category", "")
-    cat_kws = DOCUMENT_TYPE_KEYWORDS.get(category, [])
-    tokens.update(cat_kws)
-    if field_meta_fields:
-        fk_norm = normalize_field_name(term_entry.get("field_key", ""))
-        for fm in field_meta_fields:
-            fm_norm = normalize_field_name(fm.get("field_key", ""))
-            if fm_norm == fk_norm:
-                tokens.update(_extract_tokens(fm.get("field_label", "")))
-                defn = fm.get("definition", "")
-                if defn:
-                    def_tokens = _extract_tokens(defn)
-                    top_def = sorted(def_tokens, key=lambda w: len(w), reverse=True)[:12]
-                    tokens.update(top_def)
-                opts = fm.get("options") or []
-                for opt in opts[:20]:
-                    tokens.update(_extract_tokens(str(opt)))
-                break
-    return tokens
-
-
-def _build_term_list_with_keywords(terms_rows, field_meta_fields):
-    term_list = []
-    for t in terms_rows:
-        entry = {
-            "id": t[0],
-            "field_key": t[1],
-            "display_name": t[2] or t[1],
-            "category": t[3] or "",
-            "normalized": normalize_field_name(t[1]),
-        }
-        entry["_keywords"] = _build_term_keywords(entry, field_meta_fields)
-        term_list.append(entry)
-    return term_list
-
-
-def _keyword_score_v2(source_norm, term_keywords):
-    if not term_keywords:
-        return 0.0
-    source_words = set(source_norm.split())
-    if not source_words:
-        return 0.0
-    matched = sum(1 for kw in term_keywords if kw in source_words)
-    overlap = len(source_words & term_keywords)
-    base = matched * 0.08
-    boost = overlap * 0.18
-    return min(base + boost, 0.6)
-
-
-def _match_source_field(source_norm, term_list, alias_map):
-    alias_term_id = alias_map.get(source_norm)
-    if alias_term_id:
-        term_match = next((t for t in term_list if t["id"] == alias_term_id), None)
-        if term_match:
-            return {
-                "suggested_term_id": term_match["id"],
-                "match_score": 1.0,
-                "match_method": "exact",
-                "candidates": [{"term_id": term_match["id"], "score": 1.0, "method": "exact"}],
-                "_matched_keywords": [],
-            }
-
-    candidates = []
-    for term in term_list:
-        if source_norm == term["normalized"]:
-            candidates.append({
-                "term_id": term["id"],
-                "score": 1.0,
-                "method": "exact",
-            })
-            continue
-
-        fuzzy_score = _levenshtein_ratio(source_norm, term["normalized"])
-        if fuzzy_score >= 0.6:
-            candidates.append({
-                "term_id": term["id"],
-                "score": round(fuzzy_score, 3),
-                "method": "fuzzy",
-            })
-            continue
-
-        kw_score = _keyword_score_v2(source_norm, term.get("_keywords", set()))
-        if kw_score >= 0.2:
-            source_words = set(source_norm.split())
-            matched_kws = sorted(source_words & term.get("_keywords", set()))
-            candidates.append({
-                "term_id": term["id"],
-                "score": round(kw_score, 3),
-                "method": "keyword",
-                "_matched_keywords": matched_kws,
-            })
-
-    candidates.sort(key=lambda c: c["score"], reverse=True)
-    top3 = candidates[:3]
-
-    if top3:
-        best = top3[0]
-        matched_kws = best.pop("_matched_keywords", [])
-        for c in top3:
-            c.pop("_matched_keywords", None)
-        return {
-            "suggested_term_id": best["term_id"],
-            "match_score": best["score"],
-            "match_method": best["method"],
-            "candidates": top3,
-            "_matched_keywords": matched_kws,
-        }
-    return {
-        "suggested_term_id": None,
-        "match_score": 0.0,
-        "match_method": "none",
-        "candidates": [],
-        "_matched_keywords": [],
-    }
 
 
 def generate_suggestions(cur, workspace_id, document_id):
@@ -463,8 +433,6 @@ def _run_suggestions(cur, workspace_id, source_fields, run_mode="db_backed"):
     field_meta_fields = field_meta.get("fields", []) if field_meta else []
     has_field_meta = len(field_meta_fields) > 0
 
-    fm_index = _build_field_meta_index(field_meta_fields) if has_field_meta else []
-
     cur.execute(
         """SELECT id, field_key, display_name, category
            FROM glossary_terms
@@ -473,6 +441,8 @@ def _run_suggestions(cur, workspace_id, source_fields, run_mode="db_backed"):
     )
     terms = cur.fetchall()
     glossary_term_list = _build_glossary_term_list(terms) if terms else []
+
+    glossary_index = _build_glossary_index(field_meta_fields, glossary_term_list)
 
     cur.execute(
         """SELECT normalized_alias, term_id
@@ -485,51 +455,38 @@ def _run_suggestions(cur, workspace_id, source_fields, run_mode="db_backed"):
         alias_map[row[0]] = row[1]
 
     suggestions = []
-    counts = {"exact": 0, "alias_exact": 0, "fuzzy": 0, "normalized_phrase": 0,
-              "token_overlap": 0, "glossary_exact": 0, "glossary_fuzzy": 0, "none": 0}
+    counts = {
+        "alias_exact": 0, "alias_normalized": 0,
+        "phrase_fuzzy": 0, "token_overlap": 0, "none": 0,
+    }
+    bucket_counts = {"HIGH": 0, "MEDIUM": 0, "LOW": 0, "HIDDEN": 0}
 
     for source_field in source_fields:
-        if fm_index:
-            result = _match_source_against_index(source_field, fm_index, alias_map, glossary_term_list)
-        else:
-            source_norm = normalize_field_name(source_field)
-            old_result = _match_source_field(source_norm, _build_term_list_with_keywords(terms or [], field_meta_fields), alias_map)
-            matched_kws = old_result.pop("_matched_keywords", [])
-            result = {
-                "source_field": source_field,
-                "suggested_term_id": old_result["suggested_term_id"],
-                "suggested_label": None,
-                "match_score": old_result["match_score"],
-                "match_method": old_result["match_method"],
-                "match_reason": old_result["match_method"],
-                "candidates": old_result["candidates"],
-                "_meta": {
-                    "source_normalized": source_norm,
-                    "matched_keywords": matched_kws,
-                    "reason": old_result["match_method"],
-                },
-            }
+        result = _match_source_against_glossary(source_field, glossary_index, alias_map)
 
         method = result.get("match_method", "none")
         counts[method] = counts.get(method, 0) + 1
+        bucket = result.get("confidence_bucket", "HIDDEN")
+        bucket_counts[bucket] = bucket_counts.get(bucket, 0) + 1
         suggestions.append(result)
 
     diagnostics = {
         "run_mode": run_mode,
         "has_field_meta": has_field_meta,
         "field_meta_count": len(field_meta_fields),
-        "fm_index_size": len(fm_index),
+        "glossary_index_size": len(glossary_index),
         "glossary_terms_count": len(glossary_term_list),
         "aliases_count": len(alias_map),
         "total_headers": len(source_fields),
         "counts": counts,
+        "confidence_buckets": bucket_counts,
     }
 
     total_matched = sum(v for k, v in counts.items() if k != "none")
     logger.info(
-        "[SUGGEST] run_complete: mode=%s, fields=%d, matched=%d, unmatched=%d, methods=%s",
+        "[SUGGEST] run_complete: mode=%s, fields=%d, matched=%d, unmatched=%d, buckets=%s",
         run_mode, len(source_fields), total_matched, counts.get("none", 0),
-        {k: v for k, v in counts.items() if v > 0},
+        bucket_counts,
     )
 
     return suggestions, diagnostics

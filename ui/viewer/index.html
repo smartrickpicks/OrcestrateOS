@@ -52655,20 +52655,28 @@ var P022_RuntimeValidation = {
   }
 
   function _pftlRenderSugRow(sug) {
-    var scoreClass = sug.match_score >= 0.8 ? 'high' : sug.match_score >= 0.5 ? 'medium' : sug.match_score > 0 ? 'low' : 'none';
-    var scoreText = sug.match_score > 0 ? Math.round(sug.match_score * 100) + '%' : '--';
-    var targetLabel = sug.suggested_label || sug.suggested_term_id || '(no match)';
-    var targetKey = sug.suggested_term_id || '';
-    var reason = sug.match_reason || sug.match_method || '';
+    var conf = sug.confidence_score != null ? sug.confidence_score : sug.match_score;
+    var confPct = sug.confidence_pct != null ? sug.confidence_pct : (conf > 0 ? Math.round(conf * 100) : 0);
+    var bucket = sug.confidence_bucket || (conf >= 0.85 ? 'HIGH' : conf >= 0.70 ? 'MEDIUM' : conf >= 0.55 ? 'LOW' : 'HIDDEN');
+    var bucketColors = { HIGH: '#2e7d32', MEDIUM: '#e65100', LOW: '#9e9e9e', HIDDEN: '#bbb' };
+    var bucketColor = bucketColors[bucket] || '#bbb';
+    var targetLabel = sug.suggested_label || sug.glossary_field_key || sug.suggested_term_id || '(no match)';
+    var targetKey = sug.glossary_field_key || sug.suggested_term_id || '';
     var html = '<div class="pftl-sug-row">';
     html += '<span class="pftl-sug-source" title="' + _pftlEsc(sug.source_field) + '">' + _pftlEsc(sug.source_field) + '</span>';
     html += '<span class="pftl-sug-arrow">&rarr;</span>';
     html += '<span class="pftl-sug-target" title="' + _pftlEsc(targetKey) + '">' + _pftlEsc(targetLabel) + '</span>';
-    html += '<span class="pftl-sug-score ' + scoreClass + '">' + scoreText + '</span>';
-    if (reason) {
-      html += '<span style="font-size:0.72em;color:#888;margin-left:4px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle;" title="' + _pftlEsc(reason) + '">' + _pftlEsc(reason) + '</span>';
+    html += '<span class="pftl-sug-score" style="background:' + bucketColor + ';color:#fff;padding:1px 7px;border-radius:8px;font-size:0.78em;font-weight:600;margin-left:6px;">' + confPct + '%</span>';
+    html += '<span style="font-size:0.7em;color:' + bucketColor + ';margin-left:4px;font-weight:500;">' + bucket + '</span>';
+    var labels = sug.reason_labels || [];
+    if (labels.length > 0) {
+      html += '<span class="pftl-sug-reason-labels" style="margin-left:6px;">';
+      for (var li = 0; li < labels.length && li < 3; li++) {
+        html += '<span style="display:inline-block;font-size:0.65em;background:#e3f2fd;color:#1565c0;border-radius:3px;padding:1px 5px;margin-right:3px;">' + _pftlEsc(labels[li]) + '</span>';
+      }
+      html += '</span>';
     }
-    if (sug.match_method !== 'none') {
+    if (sug.match_method !== 'none' && sug.id) {
       html += '<button class="pftl-sug-kw-btn" onclick="_pftlSugHighlight(\'' + _pftlEsc(sug.id) + '\')">Show</button>';
     }
     if (sug.status === 'pending') {
@@ -52676,7 +52684,7 @@ var P022_RuntimeValidation = {
       html += '<button class="pftl-sug-accept" onclick="_pftlSugAction(\'' + _pftlEsc(sug.id) + '\',\'accepted\')">Accept</button>';
       html += '<button class="pftl-sug-reject" onclick="_pftlSugAction(\'' + _pftlEsc(sug.id) + '\',\'rejected\')">Decline</button>';
       html += '</div>';
-    } else if (sug.status) {
+    } else if (sug.status && sug.status !== 'pending') {
       var badgeLabel = sug.status === 'rejected' ? 'declined' : sug.status;
       html += '<span class="pftl-sug-badge ' + sug.status + '">' + badgeLabel + '</span>';
     }
@@ -52694,11 +52702,18 @@ var P022_RuntimeValidation = {
     if (_pftlSugState.loading) {
       html += '<span class="pftl-suggestions-status">Analyzing fields...</span>';
     } else if (_pftlSugState.suggestions.length > 0) {
-      var matchedCount = 0;
-      for (var mc = 0; mc < _pftlSugState.suggestions.length; mc++) {
-        if (_pftlSugState.suggestions[mc].match_method !== 'none') matchedCount++;
+      var bkts = { HIGH: 0, MEDIUM: 0, LOW: 0, HIDDEN: 0 };
+      for (var bc = 0; bc < _pftlSugState.suggestions.length; bc++) {
+        var bk = _pftlSugState.suggestions[bc].confidence_bucket || 'HIDDEN';
+        if (_pftlSugState.suggestions[bc].match_method === 'none') bk = 'HIDDEN';
+        bkts[bk] = (bkts[bk] || 0) + 1;
       }
-      html += '<span class="pftl-suggestions-status">' + matchedCount + ' matched, ' + (_pftlSugState.suggestions.length - matchedCount) + ' unmatched</span>';
+      html += '<span class="pftl-suggestions-status" style="font-size:0.78em;">';
+      html += '<span style="color:#2e7d32;font-weight:600;">' + bkts.HIGH + ' HIGH</span> ';
+      html += '<span style="color:#e65100;font-weight:600;">' + bkts.MEDIUM + ' MED</span> ';
+      html += '<span style="color:#9e9e9e;">' + bkts.LOW + ' LOW</span> ';
+      html += '<span style="color:#bbb;">' + bkts.HIDDEN + ' hidden</span>';
+      html += '</span>';
     }
     html += '</div>';
 
@@ -52717,58 +52732,79 @@ var P022_RuntimeValidation = {
     if (_pftlSugState.diagnostics) {
       var diag = _pftlSugState.diagnostics;
       var parts = [];
-      if (diag.fm_index_size) parts.push('Canonical fields: ' + diag.fm_index_size);
-      if (diag.glossary_terms_count) parts.push('Glossary: ' + diag.glossary_terms_count);
-      if (diag.total_headers) parts.push('Headers analyzed: ' + diag.total_headers);
-      if (diag.counts) {
-        var c = diag.counts;
-        var totalMatched = (c.exact || 0) + (c.alias_exact || 0) + (c.fuzzy || 0) + (c.normalized_phrase || 0) + (c.token_overlap || 0) + (c.glossary_exact || 0) + (c.glossary_fuzzy || 0);
-        parts.push('Matched: ' + totalMatched + ' / Unmatched: ' + (c.none || 0));
+      if (diag.glossary_index_size) parts.push('Glossary index: ' + diag.glossary_index_size);
+      else if (diag.fm_index_size) parts.push('Canonical fields: ' + diag.fm_index_size);
+      if (diag.glossary_terms_count) parts.push('Glossary terms: ' + diag.glossary_terms_count);
+      if (diag.aliases_count) parts.push('Aliases: ' + diag.aliases_count);
+      if (diag.total_headers) parts.push('Headers: ' + diag.total_headers);
+      if (diag.confidence_buckets) {
+        var cb = diag.confidence_buckets;
+        parts.push('H:' + (cb.HIGH || 0) + ' M:' + (cb.MEDIUM || 0) + ' L:' + (cb.LOW || 0));
       }
       html += '<div class="pftl-sug-diagnostics"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#e65100;margin-right:4px;vertical-align:middle;"></span>' + _pftlEsc(parts.join(' | ')) + '</div>';
     }
 
     var suggestions = _pftlSugState.suggestions;
     if (suggestions.length > 0) {
-      var matched = [];
-      var unmatched = [];
+      var bucketGroups = { HIGH: [], MEDIUM: [], LOW: [], HIDDEN: [] };
       for (var i = 0; i < suggestions.length; i++) {
         var s = suggestions[i];
-        if (s.match_method === 'none' || s.match_score === 0) {
-          unmatched.push(s);
-        } else {
-          matched.push(s);
-        }
+        var bkt = s.confidence_bucket || 'HIDDEN';
+        if (s.match_method === 'none' || s.confidence_score === 0) bkt = 'HIDDEN';
+        if (!bucketGroups[bkt]) bucketGroups[bkt] = [];
+        bucketGroups[bkt].push(s);
       }
-      matched.sort(function(a, b) { return b.match_score - a.match_score; });
+      var sortFn = function(a, b) {
+        if (b.confidence_score !== a.confidence_score) return b.confidence_score - a.confidence_score;
+        var ak = a.glossary_field_key || a.suggested_term_id || a.source_field || '';
+        var bk = b.glossary_field_key || b.suggested_term_id || b.source_field || '';
+        return ak < bk ? -1 : ak > bk ? 1 : 0;
+      };
+      for (var bkey in bucketGroups) { bucketGroups[bkey].sort(sortFn); }
 
+      var totalVisible = bucketGroups.HIGH.length + bucketGroups.MEDIUM.length + bucketGroups.LOW.length;
       html += '<div class="pftl-sug-stats">';
-      html += '<div class="pftl-sug-stat" style="color:#2e7d32;"><strong>' + matched.length + '</strong> matched</div>';
-      html += '<div class="pftl-sug-stat" style="color:#999;"><strong>' + unmatched.length + '</strong> unmatched</div>';
+      html += '<div class="pftl-sug-stat" style="color:#2e7d32;"><strong>' + bucketGroups.HIGH.length + '</strong> high</div>';
+      html += '<div class="pftl-sug-stat" style="color:#e65100;"><strong>' + bucketGroups.MEDIUM.length + '</strong> medium</div>';
+      html += '<div class="pftl-sug-stat" style="color:#9e9e9e;"><strong>' + bucketGroups.LOW.length + '</strong> low</div>';
+      html += '<div class="pftl-sug-stat" style="color:#bbb;"><strong>' + bucketGroups.HIDDEN.length + '</strong> hidden</div>';
       html += '</div>';
 
-      if (matched.length > 0) {
+      var bucketMeta = [
+        { key: 'HIGH', label: 'High Confidence (auto-suggest)', color: '#2e7d32', collapsed: false },
+        { key: 'MEDIUM', label: 'Medium Confidence (review)', color: '#e65100', collapsed: false },
+        { key: 'LOW', label: 'Low Confidence', color: '#9e9e9e', collapsed: true }
+      ];
+      for (var bi = 0; bi < bucketMeta.length; bi++) {
+        var bm = bucketMeta[bi];
+        var items = bucketGroups[bm.key];
+        if (!items || items.length === 0) continue;
         html += '<div class="pftl-sug-group">';
-        html += '<div class="pftl-sug-group-header" style="color:#2e7d32;">Canonical Field Matches (' + matched.length + ')</div>';
-        for (var si = 0; si < matched.length; si++) {
-          html += _pftlRenderSugRow(matched[si]);
+        html += '<div class="pftl-sug-group-header" style="color:' + bm.color + ';">' + bm.label + ' (' + items.length + ')</div>';
+        for (var si = 0; si < items.length; si++) {
+          html += _pftlRenderSugRow(items[si]);
         }
         html += '</div>';
       }
 
-      if (unmatched.length > 0) {
+      if (bucketGroups.HIDDEN.length > 0) {
         var showLowSignal = _pftlSugState.showLowSignal || false;
         html += '<div class="pftl-sug-group">';
-        html += '<div class="pftl-sug-group-header" style="color:#999;cursor:pointer;" onclick="_pftlToggleLowSignal()">';
-        html += (showLowSignal ? '&#9660;' : '&#9654;') + ' Unmatched Fields (' + unmatched.length + ')';
+        html += '<div class="pftl-sug-group-header" style="color:#bbb;cursor:pointer;" onclick="_pftlToggleLowSignal()">';
+        html += (showLowSignal ? '&#9660;' : '&#9654;') + ' Show Low-Signal (' + bucketGroups.HIDDEN.length + ')';
         html += '</div>';
         if (showLowSignal) {
-          for (var ui = 0; ui < unmatched.length; ui++) {
-            html += '<div class="pftl-sug-row" style="opacity:0.6;">';
-            html += '<span class="pftl-sug-source" title="' + _pftlEsc(unmatched[ui].source_field) + '">' + _pftlEsc(unmatched[ui].source_field) + '</span>';
-            html += '<span class="pftl-sug-arrow" style="color:#ccc;">&rarr;</span>';
-            html += '<span style="color:#999;font-size:0.82em;">(no canonical match)</span>';
-            html += '</div>';
+          for (var hi = 0; hi < bucketGroups.HIDDEN.length; hi++) {
+            var hs = bucketGroups.HIDDEN[hi];
+            if (hs.match_method !== 'none' && hs.confidence_score > 0) {
+              html += _pftlRenderSugRow(hs);
+            } else {
+              html += '<div class="pftl-sug-row" style="opacity:0.5;">';
+              html += '<span class="pftl-sug-source" title="' + _pftlEsc(hs.source_field) + '">' + _pftlEsc(hs.source_field) + '</span>';
+              html += '<span class="pftl-sug-arrow" style="color:#ccc;">&rarr;</span>';
+              html += '<span style="color:#999;font-size:0.82em;">(no canonical match)</span>';
+              html += '</div>';
+            }
           }
         }
         html += '</div>';
