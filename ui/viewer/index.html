@@ -52397,6 +52397,7 @@ var P022_RuntimeValidation = {
     runMode: null,
     error: null,
     showText: false,
+    showLowSignal: false,
     highlightKeywords: []
   };
 
@@ -52648,6 +52649,41 @@ var P022_RuntimeValidation = {
     });
   }
 
+  function _pftlToggleLowSignal() {
+    _pftlSugState.showLowSignal = !_pftlSugState.showLowSignal;
+    _pftlRenderSuggestionsSection();
+  }
+
+  function _pftlRenderSugRow(sug) {
+    var scoreClass = sug.match_score >= 0.8 ? 'high' : sug.match_score >= 0.5 ? 'medium' : sug.match_score > 0 ? 'low' : 'none';
+    var scoreText = sug.match_score > 0 ? Math.round(sug.match_score * 100) + '%' : '--';
+    var targetLabel = sug.suggested_label || sug.suggested_term_id || '(no match)';
+    var targetKey = sug.suggested_term_id || '';
+    var reason = sug.match_reason || sug.match_method || '';
+    var html = '<div class="pftl-sug-row">';
+    html += '<span class="pftl-sug-source" title="' + _pftlEsc(sug.source_field) + '">' + _pftlEsc(sug.source_field) + '</span>';
+    html += '<span class="pftl-sug-arrow">&rarr;</span>';
+    html += '<span class="pftl-sug-target" title="' + _pftlEsc(targetKey) + '">' + _pftlEsc(targetLabel) + '</span>';
+    html += '<span class="pftl-sug-score ' + scoreClass + '">' + scoreText + '</span>';
+    if (reason) {
+      html += '<span style="font-size:0.72em;color:#888;margin-left:4px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle;" title="' + _pftlEsc(reason) + '">' + _pftlEsc(reason) + '</span>';
+    }
+    if (sug.match_method !== 'none') {
+      html += '<button class="pftl-sug-kw-btn" onclick="_pftlSugHighlight(\'' + _pftlEsc(sug.id) + '\')">Show</button>';
+    }
+    if (sug.status === 'pending') {
+      html += '<div class="pftl-sug-actions">';
+      html += '<button class="pftl-sug-accept" onclick="_pftlSugAction(\'' + _pftlEsc(sug.id) + '\',\'accepted\')">Accept</button>';
+      html += '<button class="pftl-sug-reject" onclick="_pftlSugAction(\'' + _pftlEsc(sug.id) + '\',\'rejected\')">Decline</button>';
+      html += '</div>';
+    } else if (sug.status) {
+      var badgeLabel = sug.status === 'rejected' ? 'declined' : sug.status;
+      html += '<span class="pftl-sug-badge ' + sug.status + '">' + badgeLabel + '</span>';
+    }
+    html += '</div>';
+    return html;
+  }
+
   function _pftlRenderSuggestionsSection() {
     var container = document.getElementById('pftl-suggestions-container');
     if (!container) return;
@@ -52658,7 +52694,11 @@ var P022_RuntimeValidation = {
     if (_pftlSugState.loading) {
       html += '<span class="pftl-suggestions-status">Analyzing fields...</span>';
     } else if (_pftlSugState.suggestions.length > 0) {
-      html += '<span class="pftl-suggestions-status">' + _pftlSugState.suggestions.length + ' suggestions</span>';
+      var matchedCount = 0;
+      for (var mc = 0; mc < _pftlSugState.suggestions.length; mc++) {
+        if (_pftlSugState.suggestions[mc].match_method !== 'none') matchedCount++;
+      }
+      html += '<span class="pftl-suggestions-status">' + matchedCount + ' matched, ' + (_pftlSugState.suggestions.length - matchedCount) + ' unmatched</span>';
     }
     html += '</div>';
 
@@ -52677,77 +52717,62 @@ var P022_RuntimeValidation = {
     if (_pftlSugState.diagnostics) {
       var diag = _pftlSugState.diagnostics;
       var parts = [];
-      parts.push('Mode: Local fallback');
-      if (diag.total_headers) parts.push('Headers: ' + diag.total_headers);
+      if (diag.fm_index_size) parts.push('Canonical fields: ' + diag.fm_index_size);
+      if (diag.glossary_terms_count) parts.push('Glossary: ' + diag.glossary_terms_count);
+      if (diag.total_headers) parts.push('Headers analyzed: ' + diag.total_headers);
       if (diag.counts) {
         var c = diag.counts;
-        parts.push('E:' + (c.exact || 0) + ' F:' + (c.fuzzy || 0) + ' K:' + (c.keyword || 0) + ' N:' + (c.none || 0));
+        var totalMatched = (c.exact || 0) + (c.alias_exact || 0) + (c.fuzzy || 0) + (c.normalized_phrase || 0) + (c.token_overlap || 0) + (c.glossary_exact || 0) + (c.glossary_fuzzy || 0);
+        parts.push('Matched: ' + totalMatched + ' / Unmatched: ' + (c.none || 0));
       }
       html += '<div class="pftl-sug-diagnostics"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#e65100;margin-right:4px;vertical-align:middle;"></span>' + _pftlEsc(parts.join(' | ')) + '</div>';
     }
 
     var suggestions = _pftlSugState.suggestions;
     if (suggestions.length > 0) {
-      var groups = { exact: [], fuzzy: [], keyword: [], none: [] };
-      var counts = { total: suggestions.length, pending: 0, accepted: 0, rejected: 0 };
+      var matched = [];
+      var unmatched = [];
       for (var i = 0; i < suggestions.length; i++) {
         var s = suggestions[i];
-        var method = s.match_method || 'none';
-        if (!groups[method]) groups[method] = [];
-        groups[method].push(s);
-        if (s.status === 'pending') counts.pending++;
-        else if (s.status === 'accepted') counts.accepted++;
-        else if (s.status === 'rejected') counts.rejected++;
+        if (s.match_method === 'none' || s.match_score === 0) {
+          unmatched.push(s);
+        } else {
+          matched.push(s);
+        }
       }
+      matched.sort(function(a, b) { return b.match_score - a.match_score; });
 
       html += '<div class="pftl-sug-stats">';
-      html += '<div class="pftl-sug-stat"><strong>' + counts.total + '</strong> total</div>';
-      html += '<div class="pftl-sug-stat"><strong>' + counts.pending + '</strong> pending</div>';
-      html += '<div class="pftl-sug-stat" style="color:#2e7d32;"><strong>' + counts.accepted + '</strong> accepted</div>';
-      html += '<div class="pftl-sug-stat" style="color:#c62828;"><strong>' + counts.rejected + '</strong> declined</div>';
+      html += '<div class="pftl-sug-stat" style="color:#2e7d32;"><strong>' + matched.length + '</strong> matched</div>';
+      html += '<div class="pftl-sug-stat" style="color:#999;"><strong>' + unmatched.length + '</strong> unmatched</div>';
       html += '</div>';
 
-      var groupLabels = { exact: 'Exact Matches', fuzzy: 'Fuzzy Matches', keyword: 'Keyword Matches', none: 'Unmatched Fields' };
-      var order = ['exact', 'fuzzy', 'keyword', 'none'];
-      for (var gi = 0; gi < order.length; gi++) {
-        var gKey = order[gi];
-        var items = groups[gKey];
-        if (!items || items.length === 0) continue;
+      if (matched.length > 0) {
         html += '<div class="pftl-sug-group">';
-        html += '<div class="pftl-sug-group-header">' + groupLabels[gKey] + ' (' + items.length + ')</div>';
-        for (var si = 0; si < items.length; si++) {
-          var sug = items[si];
-          var scoreClass = sug.match_score >= 0.8 ? 'high' : sug.match_score >= 0.5 ? 'medium' : sug.match_score > 0 ? 'low' : 'none';
-          var scoreText = sug.match_score > 0 ? Math.round(sug.match_score * 100) + '%' : '--';
-          var targetText = sug.suggested_term_id || '(no match)';
-          html += '<div class="pftl-sug-row">';
-          html += '<span class="pftl-sug-source" title="' + _pftlEsc(sug.source_field) + '">' + _pftlEsc(sug.source_field) + '</span>';
-          html += '<span class="pftl-sug-arrow">&rarr;</span>';
-          html += '<span class="pftl-sug-target">' + _pftlEsc(targetText) + '</span>';
-          html += '<span class="pftl-sug-score ' + scoreClass + '">' + scoreText + '</span>';
-          if (sug.match_method !== 'none') {
-            html += '<button class="pftl-sug-kw-btn" onclick="_pftlSugHighlight(\'' + _pftlEsc(sug.id) + '\')">Show</button>';
-          }
-          if (sug.status === 'pending') {
-            html += '<div class="pftl-sug-actions">';
-            html += '<button class="pftl-sug-accept" onclick="_pftlSugAction(\'' + _pftlEsc(sug.id) + '\',\'accepted\')">Accept</button>';
-            html += '<button class="pftl-sug-reject" onclick="_pftlSugAction(\'' + _pftlEsc(sug.id) + '\',\'rejected\')">Decline</button>';
-            html += '</div>';
-          } else {
-            var badgeLabel = sug.status === 'rejected' ? 'declined' : sug.status;
-            html += '<span class="pftl-sug-badge ' + sug.status + '">' + badgeLabel + '</span>';
-          }
-          html += '</div>';
+        html += '<div class="pftl-sug-group-header" style="color:#2e7d32;">Canonical Field Matches (' + matched.length + ')</div>';
+        for (var si = 0; si < matched.length; si++) {
+          html += _pftlRenderSugRow(matched[si]);
         }
         html += '</div>';
       }
-    }
 
-    var result = _pftlState.result;
-    var extractedText = result ? (result.extracted_text || '') : '';
-    if (extractedText) {
-      html += '<button class="pftl-text-toggle" onclick="_pftlToggleText()">Show Extracted Text with Keyword Overlay</button>';
-      html += '<div id="pftl-text-preview" class="pftl-text-preview" style="display:none;"></div>';
+      if (unmatched.length > 0) {
+        var showLowSignal = _pftlSugState.showLowSignal || false;
+        html += '<div class="pftl-sug-group">';
+        html += '<div class="pftl-sug-group-header" style="color:#999;cursor:pointer;" onclick="_pftlToggleLowSignal()">';
+        html += (showLowSignal ? '&#9660;' : '&#9654;') + ' Unmatched Fields (' + unmatched.length + ')';
+        html += '</div>';
+        if (showLowSignal) {
+          for (var ui = 0; ui < unmatched.length; ui++) {
+            html += '<div class="pftl-sug-row" style="opacity:0.6;">';
+            html += '<span class="pftl-sug-source" title="' + _pftlEsc(unmatched[ui].source_field) + '">' + _pftlEsc(unmatched[ui].source_field) + '</span>';
+            html += '<span class="pftl-sug-arrow" style="color:#ccc;">&rarr;</span>';
+            html += '<span style="color:#999;font-size:0.82em;">(no canonical match)</span>';
+            html += '</div>';
+          }
+        }
+        html += '</div>';
+      }
     }
 
     container.innerHTML = html;

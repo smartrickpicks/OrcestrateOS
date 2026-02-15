@@ -260,12 +260,32 @@ def derive_cache_identity(workspace_id, file_url):
     return "doc_derived_%s" % h
 
 
-def _extract_candidate_headers(full_text):
-    """Extract potential column header / field name candidates from document text.
+_GARBAGE_RE = re.compile(
+    r'^[\d\.\(\)\-\s]+$'
+    r'|^[ivxlcdm]+[\.\)]\s*$'
+    r'|^§\s*\d'
+    r'|^\d+\.\d+'
+    r'|^https?://'
+    r'|^www\.'
+    r'|@[a-zA-Z0-9]'
+    r'|^\W+$',
+    re.IGNORECASE,
+)
 
-    Looks for short, label-like strings that could be spreadsheet column headers.
-    """
-    candidates = set()
+
+def _is_low_signal(text):
+    if _GARBAGE_RE.search(text):
+        return True
+    alpha = sum(1 for c in text if c.isalpha())
+    if len(text) > 0 and alpha / len(text) < 0.4:
+        return True
+    if len(text) < 3:
+        return True
+    return False
+
+
+def _extract_candidate_headers(full_text):
+    raw_candidates = set()
     lines = full_text.split("\n")
     for line in lines:
         line = line.strip()
@@ -277,14 +297,18 @@ def _extract_candidate_headers(full_text):
         if len(words) <= 5:
             cleaned = re.sub(r'[:\-\s]+$', '', line).strip()
             if cleaned and len(cleaned) >= 3:
-                candidates.add(cleaned)
+                raw_candidates.add(cleaned)
         parts = re.split(r'\t|  {2,}|\|', line)
         for part in parts:
             part = part.strip()
             if 3 <= len(part) <= 60 and len(part.split()) <= 5:
-                candidates.add(part)
-    result = sorted(candidates)
-    return result[:200]
+                raw_candidates.add(part)
+
+    filtered = [c for c in raw_candidates if not _is_low_signal(c)]
+    low_signal = [c for c in raw_candidates if _is_low_signal(c)]
+
+    result = sorted(filtered)[:200]
+    return result, sorted(low_signal)[:50]
 
 
 def run_preflight(pages_data):
@@ -332,7 +356,7 @@ def run_preflight(pages_data):
     corruption_samples = extract_corruption_samples(pages_text)
 
     full_text = "\n".join(pages_text)
-    extracted_headers = _extract_candidate_headers(full_text)
+    extracted_headers, low_signal_headers = _extract_candidate_headers(full_text)
 
     return {
         "doc_mode": doc_mode,
@@ -343,6 +367,7 @@ def run_preflight(pages_data):
         "page_classifications": page_results,
         "extracted_text": full_text[:50000],
         "extracted_headers": extracted_headers,
+        "low_signal_headers": low_signal_headers,
         "metrics": {
             "total_pages": len(pages_data),
             "total_chars": total_chars,
