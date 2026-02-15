@@ -1,131 +1,55 @@
-# OGC Prep JSON Export — API Contract
+# OGC Prep Export Contract (Doc-Only)
 
-## Endpoint
+## Contract
+- Schema: `prep_export_v0`
+- Source of truth: cached preflight state currently used by UI for the selected doc/workspace.
+- Recompute policy: forbidden for export.
 
-```
-GET /api/preflight/export?doc_id={doc_id}
-```
+## Required Top-Level Keys
+- `schema_version`
+- `generated_at`
+- `context`
+- `source`
+- `preflight`
+- `ogc_preview`
+- `operator_decisions`
+- `evaluation`
 
-**Auth**: v2.5 Either (Bearer or API Key)
-**Gate**: `_require_admin_sandbox()` — admin/architect role required
-**Feature flag**: `PREFLIGHT_GATE_SYNC` must be enabled
+## Context Rules
+- `workspace_id` must reflect effective workspace scope.
+- `doc_id` is real doc id or derived id (`doc_derived_<hash>`).
+- Cache metadata must identify the cached snapshot used by UI (`cache_key`, cached timestamp).
 
-## Request
+## Preflight Rules
+- Must mirror cached preflight values shown in UI:
+  - gate fields (`doc_mode`, `recommended_gate`, `reason_codes`)
+  - metrics snapshot
+  - page summaries
+  - persistence block (`cache_written`, `fk_bound_writes_skipped`, `skip_reason`)
+- Must not be re-derived during export.
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `doc_id` | query string | Yes | Document ID to export prep state for |
+## OGC Rules
+- If cached OGC exists, include it verbatim in `ogc_preview`.
+- If absent, include `included=false` and empty/null blocks in stable form.
+- Geometry fields (`coord_space`, `page_w`, `page_h`, `bbox`, `quads`) must be preserved if present.
 
-Workspace resolved via `X-Workspace-Id` header or auth-bound workspace.
+## Operator Decisions Rules
+- Include latest simulator decision:
+  - `CONTINUE | ACCEPT_RISK | ESCALATE_OCR | CANCEL`
+- Include optional notes and escalation metadata if present.
+- This is simulation-only state unless existing flow explicitly persists.
 
-## Response — Success (200)
+## Evaluation Rules (optional block)
+- Include only if evaluation mode/state exists.
+- Must reflect locked metric semantics (TTT-2, E1/E2/E3, precision/coverage integers).
 
-```json
-{
-  "ok": true,
-  "data": {
-    "export_version": "prep_v0",
-    "exported_at": "2026-02-15T12:00:00.000Z",
-    "workspace_id": "ws_abc123",
-    "doc_id": "doc_xyz789",
-    "preflight": {
-      "doc_mode": "SEARCHABLE",
-      "gate_color": "GREEN",
-      "gate_reasons": ["all_checks_passed"],
-      "decision_trace": [ ... ],
-      "corruption_samples": [ ... ],
-      "page_classifications": [
-        { "page": 1, "mode": "SEARCHABLE", "char_count": 1234, "image_coverage_ratio": 0.05 }
-      ],
-      "metrics": {
-        "total_pages": 5,
-        "total_chars": 12340,
-        "avg_chars_per_page": 2468.0,
-        "replacement_char_ratio": 0.0001,
-        "control_char_ratio": 0.0,
-        "mojibake_ratio": 0.0,
-        "searchable_pages": 5,
-        "scanned_pages": 0,
-        "mixed_pages": 0
-      },
-      "action_taken": "accept_risk",
-      "action_timestamp": "2026-02-15T11:58:00.000Z",
-      "action_actor": "user_admin1",
-      "materialized": false,
-      "timestamp": "2026-02-15T11:55:00.000Z"
-    },
-    "ogc_preview": {
-      "enabled": false,
-      "toggled_at": null
-    },
-    "evaluation": {
-      "ttt2_started_at": null,
-      "ttt2_stopped_at": null,
-      "confirmed": false,
-      "precision": null,
-      "coverage": null,
-      "valid_for_rollup": false
-    },
-    "pipeline_state": "preflight_complete",
-    "source": "cache"
-  }
-}
-```
+## Deterministic Ordering
+- `anchors`: order by `(page_number, char_start, char_end, anchor_id)`.
+- `chunks`: order by `(page_number, chunk_id)`.
+- Stable key naming and null handling across runs.
 
-## Response — Cache Miss (404)
-
-```json
-{
-  "ok": false,
-  "error": {
-    "code": "NOT_FOUND",
-    "message": "No preflight result cached for doc_id: doc_xyz789"
-  }
-}
-```
-
-## Response — Not Admin (403)
-
-```json
-{
-  "ok": false,
-  "error": {
-    "code": "FORBIDDEN",
-    "message": "Preflight is in admin sandbox mode."
-  }
-}
-```
-
-## Response — Feature Disabled (404)
-
-```json
-{
-  "ok": false,
-  "error": {
-    "code": "FEATURE_DISABLED",
-    "message": "Preflight Gate Sync is not enabled. Set PREFLIGHT_GATE_SYNC=true to activate."
-  }
-}
-```
-
-## Determinism Guarantees
-
-1. **No recompute** — Export reads directly from `_preflight_cache[workspace_id::doc_id]`. The preflight engine is never re-invoked during export.
-2. **Idempotent** — Multiple calls with the same `doc_id` return the same result until a new `POST /api/preflight/run` replaces the cache entry.
-3. **Cache lifetime** — In-memory; survives until server restart or explicit re-run.
-4. **`source` field** — Always `"cache"` to signal this is a read from cached state, not a fresh computation.
-
-## Pipeline State Values
-
-| Value | Meaning |
-|-------|---------|
-| `preflight_pending` | No preflight run yet |
-| `preflight_complete` | Preflight ran, no action taken |
-| `preflight_accepted` | Accept Risk action taken (YELLOW gate) |
-| `preflight_escalated` | Escalate OCR action taken |
-| `preflight_cancelled` | User cancelled from RED modal |
-
-## Notes
-
-- `ogc_preview` and `evaluation` sections are populated from client-side state only; they are included in the export payload sent by the UI but not independently tracked server-side (no DB writes).
-- The export endpoint may optionally accept a POST body with `ogc_preview` and `evaluation` state from the client if the server does not track these. This is documented as an alternative in the Integration Map.
+## Existing vs Proposed (clarity)
+Existing in repo:
+- cached preflight UI state and preflight run/get endpoints.
+Proposed for implementation phase:
+- wiring export action to generate `prep_export_v0` from that cached state.
