@@ -88,6 +88,10 @@ _TOFU_RANGES = re.compile(
     r'|[\U000f0000-\U000fffff]'
 )
 
+_LATIN_EXT_CLUSTER_RE = re.compile(
+    r'[\u0100-\u024F\u0300-\u036F]{3,}'
+)
+
 
 def compute_text_metrics(pages_text):
     """Compute replacement_char_ratio, control_char_ratio, and mojibake_ratio from extracted text list."""
@@ -104,6 +108,8 @@ def compute_text_metrics(pages_text):
         mojibake_chars += len(tofu_hits)
         for seq in _MOJIBAKE_SEQUENCES:
             mojibake_chars += text.count(seq)
+        for cluster in _LATIN_EXT_CLUSTER_RE.finditer(text):
+            mojibake_chars += len(cluster.group())
         for ch in text:
             code = ord(ch)
             if code < 32 and code not in (9, 10, 13):
