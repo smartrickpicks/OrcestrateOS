@@ -51412,6 +51412,8 @@ var P022_RuntimeValidation = {
     if (reason.indexOf('control_char_ratio') === 0) return 'Too many control characters detected';
     if (reason.indexOf('avg_chars_per_page_low') === 0) return 'Average text per page is very low';
     if (reason.indexOf('sparse_pages_exceeded') === 0) return 'Most pages have very little text';
+    if (reason.indexOf('mojibake_ratio_exceeded') === 0) return 'Severe encoding artifacts (mojibake) detected in text';
+    if (reason.indexOf('mojibake_detected') === 0) return 'Encoding artifacts (mojibake) detected — review recommended';
     return reason;
   }
 
@@ -51517,6 +51519,9 @@ var P022_RuntimeValidation = {
         } else {
           if (typeof showToast === 'function') showToast('Preflight complete — RED (quality issues detected)', 'error');
         }
+        if (typeof pftlOpenWithResult === 'function') {
+          pftlOpenWithResult(result);
+        }
       })
       .catch(function(err) {
         _pfGateState.running = false;
@@ -51558,6 +51563,24 @@ var P022_RuntimeValidation = {
     _pftlState.open = true;
     _pftlState.result = null;
     _pftlState.error = null;
+    _pftlState.elapsed = 0;
+    _pftlState.file = null;
+    _pftlRender();
+    var overlay = document.getElementById('pftl-overlay');
+    if (overlay) overlay.style.display = '';
+  };
+
+  window.pftlOpenWithResult = function(result) {
+    var role = _pftlGetRole();
+    if (role !== 'admin' && role !== 'architect') {
+      _pftlState.forbidden = true;
+    } else {
+      _pftlState.forbidden = false;
+    }
+    _pftlState.open = true;
+    _pftlState.result = result;
+    _pftlState.error = null;
+    _pftlState.running = false;
     _pftlState.elapsed = 0;
     _pftlState.file = null;
     _pftlRender();
@@ -51844,6 +51867,7 @@ var P022_RuntimeValidation = {
     html += _pftlMetricCard(_pftlFmt(m.avg_chars_per_page, 1), 'Avg Chars/Page');
     html += _pftlMetricCard(_pftlFmt(m.replacement_char_ratio, 6), 'Replacement Char Ratio');
     html += _pftlMetricCard(_pftlFmt(m.control_char_ratio, 6), 'Control Char Ratio');
+    html += _pftlMetricCard(_pftlFmt(m.mojibake_ratio, 6), 'Mojibake Ratio');
     html += _pftlMetricCard(m.searchable_pages, 'Searchable Pages');
     html += _pftlMetricCard(m.scanned_pages, 'Scanned Pages');
     html += _pftlMetricCard(m.mixed_pages, 'Mixed Pages');
@@ -51937,6 +51961,8 @@ var P022_RuntimeValidation = {
     if (reason.indexOf('control_char_ratio') === 0) return 'Too many control characters detected';
     if (reason.indexOf('avg_chars_per_page_low') === 0) return 'Average text per page is very low';
     if (reason.indexOf('sparse_pages_exceeded') === 0) return 'Most pages have very little text';
+    if (reason.indexOf('mojibake_ratio_exceeded') === 0) return 'Severe encoding artifacts (mojibake) detected in text';
+    if (reason.indexOf('mojibake_detected') === 0) return 'Encoding artifacts (mojibake) detected — review recommended';
     return reason;
   }
 
