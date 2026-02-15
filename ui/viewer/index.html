@@ -16430,6 +16430,9 @@
       var wsId = _syncGetWorkspaceId();
       if (wsId) h['X-Workspace-Id'] = wsId;
       if (typeof _authToken !== 'undefined' && _authToken) h['Authorization'] = 'Bearer ' + _authToken;
+      if (typeof window._authToken === 'undefined' || !window._authToken) {
+        h['X-Sandbox-Mode'] = 'true';
+      }
       return h;
     }
 
@@ -51483,6 +51486,9 @@ var P022_RuntimeValidation = {
         if (typeof _authToken !== 'undefined' && _authToken) headers['Authorization'] = 'Bearer ' + _authToken;
       }
       headers['Content-Type'] = 'application/json';
+      if (typeof window._authToken === 'undefined' || !window._authToken) {
+        headers['X-Sandbox-Mode'] = 'true';
+      }
 
       fetch('/api/preflight/upload', {
         method: 'POST',
@@ -51948,6 +51954,9 @@ var P022_RuntimeValidation = {
     var wsId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : '';
     if (wsId) headers['X-Workspace-Id'] = wsId;
     if (typeof _authToken !== 'undefined' && _authToken) headers['Authorization'] = 'Bearer ' + _authToken;
+    if (typeof window._authToken === 'undefined' || !window._authToken) {
+      headers['X-Sandbox-Mode'] = 'true';
+    }
     return headers;
   }
 

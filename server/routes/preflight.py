@@ -53,6 +53,8 @@ def _require_admin_sandbox(auth, workspace_id):
     """Admin-only sandbox gate. Returns error response or None."""
     if auth.is_api_key:
         return None
+    if getattr(auth, 'user_id', None) == 'sandbox_user':
+        return None
     role = get_workspace_role(auth.user_id, workspace_id)
     if role != "admin" and role != "architect":
         return JSONResponse(

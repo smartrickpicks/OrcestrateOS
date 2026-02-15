@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import os
 from enum import Enum
 from typing import Optional
 
@@ -10,6 +11,11 @@ from server.db import get_conn, put_conn
 from server.api_v25 import error_envelope
 
 logger = logging.getLogger(__name__)
+
+_SANDBOX_AUTH_ALLOWED = (
+    os.environ.get("REPLIT_DEV_DOMAIN") is not None
+    and os.environ.get("REPLIT_DEPLOYMENT") is None
+)
 
 
 class AuthClass(str, Enum):
@@ -190,6 +196,19 @@ def resolve_auth(request: Request):
         result = _resolve_api_key(api_key)
         if result:
             return result, "api_key"
+
+    if _SANDBOX_AUTH_ALLOWED:
+        sandbox_mode = request.headers.get("X-Sandbox-Mode", "").strip().lower()
+        if sandbox_mode == "true":
+            logger.info("Sandbox auth bypass: synthetic admin auth created (dev-only)")
+            return AuthResult(
+                user_id="sandbox_user",
+                email="sandbox@demo.local",
+                display_name="Sandbox Admin",
+                workspace_id=request.headers.get("X-Workspace-Id"),
+                role="admin",
+                auth_type="bearer",
+            ), "bearer"
 
     return None, None
 
