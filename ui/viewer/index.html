@@ -4428,8 +4428,13 @@
       <!-- ADMIN PAGE (Console) -->
       <div class="page" id="page-admin">
         <div class="page-header">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
             <h2>Admin Panel</h2>
+            <div id="admin-sandbox-toggle-bar" style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: #f5f5f5; border-radius: 6px; border: 1px solid #e0e0e0;">
+              <span style="font-size: 0.82em; color: #666; font-weight: 500;">Environment:</span>
+              <button id="admin-env-prod-btn" onclick="setAdminEnvMode(false)" style="padding: 4px 12px; font-size: 0.78em; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-weight: 500;">Production</button>
+              <button id="admin-env-sandbox-btn" onclick="setAdminEnvMode(true)" style="padding: 4px 12px; font-size: 0.78em; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-weight: 500;">Sandbox</button>
+            </div>
           </div>
           <p class="page-desc">Centralized admin tools for pipeline operations, schema standards, quality gates, patch management, and team access.</p>
         </div>
@@ -4873,12 +4878,12 @@
         <div class="admin-section" id="pftl-entry-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: none;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <h3 style="margin: 0 0 4px; font-size: 1.1em; color: #333;">Preflight Test Lab <span style="font-size: 0.7em; color: #999; font-weight: 400;">Admin Sandbox</span></h3>
+              <h3 style="margin: 0 0 4px; font-size: 1.1em; color: #333;">Preflight Test Lab</h3>
               <p style="margin: 0; font-size: 0.82em; color: #666;">Upload a PDF to run document mode preflight and view a detailed quality report.</p>
             </div>
             <button class="pftl-btn run" id="pftl-open-btn" onclick="pftlOpen()">Open Test Lab</button>
           </div>
-          <div id="pftl-nonadmin-note" style="display: none; margin-top: 8px;" class="pf-admin-note">Admin-only sandbox.</div>
+          <div id="pftl-nonadmin-note" style="display: none; margin-top: 8px;" class="pf-admin-note">Admin-only feature.</div>
         </div>
 
         <!-- Runtime Config & Inspection -->
@@ -44640,8 +44645,31 @@
             : 'Production mode: User management is read-only. Role switching is disabled.';
         }
       }
+      if (typeof syncAdminSandboxToggle === 'function') syncAdminSandboxToggle();
     }
     
+    window.setAdminEnvMode = function(isSandbox) {
+      setEnvMode(isSandbox ? 'playground' : 'production');
+      syncAdminSandboxToggle();
+    };
+
+    function syncAdminSandboxToggle() {
+      var isPlayground = isDemoMode();
+      var prodBtn = document.getElementById('admin-env-prod-btn');
+      var sandboxBtn = document.getElementById('admin-env-sandbox-btn');
+      if (prodBtn) {
+        prodBtn.style.background = !isPlayground ? '#1976d2' : '#f5f5f5';
+        prodBtn.style.color = !isPlayground ? 'white' : '#666';
+        prodBtn.style.borderColor = !isPlayground ? '#1976d2' : '#ccc';
+      }
+      if (sandboxBtn) {
+        sandboxBtn.style.background = isPlayground ? '#4caf50' : '#f5f5f5';
+        sandboxBtn.style.color = isPlayground ? 'white' : '#666';
+        sandboxBtn.style.borderColor = isPlayground ? '#4caf50' : '#ccc';
+      }
+      if (typeof syncPeopleEnvToggle === 'function') syncPeopleEnvToggle();
+    }
+
     // Record Drawer functions
     let currentRecordIndex = -1;
     let filteredContracts = [];
@@ -51520,7 +51548,7 @@ var P022_RuntimeValidation = {
     html += '</div>';
 
     if (!isAdmin) {
-      html += '<div class="pf-admin-note">Admin-only sandbox.</div>';
+      html += '<div class="pf-admin-note">Admin-only feature.</div>';
       panel.innerHTML = html;
       return;
     }
@@ -51931,7 +51959,7 @@ var P022_RuntimeValidation = {
 
   window.runSyncPreflight = function(docId) {
     if (!_prepSimIsAdmin()) {
-      if (typeof showToast === 'function') showToast('Preflight is admin-only sandbox.', 'error');
+      if (typeof showToast === 'function') showToast('Preflight is admin-only.', 'error');
       return;
     }
     var fileUrl = (typeof _pfGateGetFileUrl === 'function') ? _pfGateGetFileUrl() : '';
@@ -51984,7 +52012,7 @@ var P022_RuntimeValidation = {
     }
 
     if (!_prepSimIsAdmin()) {
-      overlay.innerHTML = '<div class="prep-sim-modal"><div class="prep-sim-modal-header"><h3>Preflight Review</h3><button class="prep-sim-modal-close" onclick="closePrepReviewModal()">&times;</button></div><div class="prep-sim-admin-note">Admin-only sandbox.</div></div>';
+      overlay.innerHTML = '<div class="prep-sim-modal"><div class="prep-sim-modal-header"><h3>Preflight Review</h3><button class="prep-sim-modal-close" onclick="closePrepReviewModal()">&times;</button></div><div class="prep-sim-admin-note">Admin-only feature.</div></div>';
       return;
     }
 
@@ -52540,13 +52568,13 @@ var P022_RuntimeValidation = {
     var html = '';
     html += '<div class="pftl-modal">';
     html += '<div class="pftl-header">';
-    html += '<h3>Preflight Test Lab <span style="font-size:0.7em;color:#999;font-weight:400;">Admin Sandbox</span></h3>';
+    html += '<h3>Preflight Test Lab</h3>';
     html += '<button class="pftl-close" onclick="pftlClose()">&times;</button>';
     html += '</div>';
     html += '<div class="pftl-body">';
 
     if (_pftlState.forbidden) {
-      html += '<div class="pftl-forbidden">Admin-only sandbox.</div>';
+      html += '<div class="pftl-forbidden">Admin-only feature.</div>';
       html += '</div></div>';
       overlay.innerHTML = html;
       return;
@@ -52795,7 +52823,7 @@ var P022_RuntimeValidation = {
     var isMaterialized = r.materialized === true;
     var html = '<div class="pftl-footer">';
     if (!isAdmin) {
-      html += '<span style="color:#999;font-size:0.85em;">Admin-only sandbox. Actions are restricted.</span>';
+      html += '<span style="color:#999;font-size:0.85em;">Admin-only. Actions are restricted.</span>';
     } else if (gate === 'GREEN') {
       html += '<span style="color:#2e7d32;font-size:0.85em;font-weight:500;">All checks passed — no action needed.</span>';
     } else {
