@@ -2746,9 +2746,9 @@
                 </svg>
                 <span class="btn-label">Upload</span>
               </button>
-              <button id="toolbar-pdf-preflight-btn" onclick="document.getElementById('toolbar-pdf-preflight-input').click()" class="triage-icon-btn"
+              <button id="toolbar-pdf-preflight-btn" onclick="toolbarPdfPreflightClick()" class="triage-icon-btn"
                       style="display: none; background: linear-gradient(135deg, #6a1b9a 0%, #4a148c 100%); color: white;"
-                      title="Upload PDF for Preflight">
+                      title="Preflight Test Lab">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                   <polyline points="14 2 14 8 20 8"/>
@@ -44595,6 +44595,7 @@
       showToast(isPlayground ? 'Sandbox mode enabled - permissionless access, no Admin role' : 'Production mode - strict role gates active', 'info');
       console.log('[EnvMode] Set to:', mode, 'by', loggedInRole);
       applyDemoControlsVisibility();
+      if (typeof toolbarPdfPreflightInitVisibility === 'function') toolbarPdfPreflightInitVisibility();
     }
     
     function updateEnvModeUI() {
@@ -51519,6 +51520,11 @@ var P022_RuntimeValidation = {
   };
 
   window.pfGateTogglePanel = function() {
+    var sandbox = (typeof isDemoMode === 'function') && isDemoMode();
+    if (sandbox && typeof pftlOpen === 'function') {
+      pftlOpen();
+      return;
+    }
     var panel = document.getElementById('pf-gate-panel');
     if (!panel) return;
     if (panel.classList.contains('active')) {
@@ -51749,10 +51755,21 @@ var P022_RuntimeValidation = {
     var btn = document.getElementById('toolbar-pdf-preflight-btn');
     if (!btn) return;
     var role = (typeof _pfGateGetRole === 'function') ? _pfGateGetRole() : 'analyst';
-    if (role === 'admin' || role === 'architect') {
+    var sandbox = (typeof isDemoMode === 'function') && isDemoMode();
+    if (role === 'admin' || role === 'architect' || sandbox) {
       btn.style.display = '';
     } else {
       btn.style.display = 'none';
+    }
+  };
+
+  window.toolbarPdfPreflightClick = function() {
+    var sandbox = (typeof isDemoMode === 'function') && isDemoMode();
+    if (sandbox && typeof pftlOpen === 'function') {
+      pftlOpen();
+    } else {
+      var input = document.getElementById('toolbar-pdf-preflight-input');
+      if (input) input.click();
     }
   };
 
@@ -52345,7 +52362,8 @@ var P022_RuntimeValidation = {
 
   window.pftlOpen = function() {
     var role = _pftlGetRole();
-    if (role !== 'admin' && role !== 'architect') {
+    var sandbox = (typeof isDemoMode === 'function') && isDemoMode();
+    if (role !== 'admin' && role !== 'architect' && !sandbox) {
       _pftlState.forbidden = true;
     } else {
       _pftlState.forbidden = false;
@@ -52362,7 +52380,8 @@ var P022_RuntimeValidation = {
 
   window.pftlOpenWithResult = function(result) {
     var role = _pftlGetRole();
-    if (role !== 'admin' && role !== 'architect') {
+    var sandbox = (typeof isDemoMode === 'function') && isDemoMode();
+    if (role !== 'admin' && role !== 'architect' && !sandbox) {
       _pftlState.forbidden = true;
     } else {
       _pftlState.forbidden = false;
