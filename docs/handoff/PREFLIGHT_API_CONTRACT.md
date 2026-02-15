@@ -58,17 +58,28 @@ Run preflight analysis on a document.
 ### GET /api/preflight/{doc_id}
 Read cached preflight result.
 
-### POST /api/preflight/action
-Handle Accept Risk or Escalate OCR.
+### POST /api/preflight/action (Internal)
+**Internal endpoint.** Handles Accept Risk or Escalate OCR actions. This endpoint is classified as internal — it does not alter the locked external API contract surface. It is consumed only by the preflight UI panel and is not part of the external-facing API.
+
+**RBAC:** Same admin-only sandbox gate as `/run` and `/{doc_id}`.
 
 **Request:**
 ```json
 {
   "doc_id": "...",
   "action": "accept_risk|escalate_ocr",
-  "patch_id": "optional"
+  "patch_id": "optional — when present, triggers patch-based evidence pack linkage"
 }
 ```
+
+**Persistence semantics:**
+- Without `patch_id`: Cache-only, no FK-bound writes
+- With `patch_id`: Generates `evp_`-prefixed evidence pack ID, writes `patch.metadata.preflight_summary` and `patch.metadata.system_evidence_pack_id` to `/patches/{patch_id}/evidence-packs`
+
+**Gate enforcement:**
+- `accept_risk` on RED gate returns `400 GATE_BLOCKED`
+- `accept_risk` on YELLOW gate is allowed
+- `escalate_ocr` is allowed on both YELLOW and RED gates
 
 ## Workspace Resolution
 1. Auth-resolved workspace first

@@ -14,8 +14,11 @@
 11. Documentation
 
 ## Acceptance Criteria
-- Non-admin requests rejected with FORBIDDEN and exact message "Preflight is in admin sandbox mode."
+- Non-admin API requests rejected with `code: FORBIDDEN`, `message: "Preflight is in admin sandbox mode."` (exact string)
 - Non-admin UI displays "Admin-only sandbox." and disables/hides preflight action controls
+- Non-admin submit gating bypassed (srrCheckSyncPreflightGate returns [] when adminOnly is true)
 - Page/doc classification and gate thresholds match locked P1E policy
 - RED computed immediately after first-pass extraction
-- Patch metadata keys: preflight_summary, system_evidence_pack_id
+- Persistence linkage is patch-based: `patch.metadata.preflight_summary`, `patch.metadata.system_evidence_pack_id`
+- POST /action documented as internal — does not alter locked external contract
+- No schema changes, no migrations, flags default OFF

@@ -20,6 +20,12 @@ The Document Mode Preflight system analyzes PDF documents before patch submissio
 
 ## Key Components
 - **Preflight Engine** (`server/preflight_engine.py`): Deterministic classification and gating logic
-- **API Routes** (`server/routes/preflight.py`): POST /run, GET /{doc_id}, POST /action
-- **UI Panel**: Preflight tab in float controls, gate display, action buttons
-- **Submit Gating**: `validateSubmissionGates()` reads canonical preflight state
+- **API Routes** (`server/routes/preflight.py`): POST /run, GET /{doc_id}, POST /action (internal)
+- **UI Panel**: Preflight tab in float controls, gate display, action buttons (admin-only)
+- **Submit Gating**: `validateSubmissionGates()` reads canonical preflight state; bypasses non-admin users during sandbox stage
+
+## Invariants
+- No schema changes, no migrations
+- Feature flags default OFF
+- All persistence is patch-based (not document-based), via `/patches/{id}/evidence-packs`
+- POST /action is internal; it does not alter the locked external API contract

@@ -23,5 +23,7 @@ Human-readable translations of engine reason codes displayed as bullet points.
 ## Submit Enforcement
 `validateSubmissionGates()` checks the canonical `_pfGateState` object:
 - GREEN: allow submission
-- YELLOW: block until Accept Risk or Escalate OCR
-- RED: block until Escalate OCR (or Cancel)
+- YELLOW: block until Accept Risk or Escalate OCR (admin-only actions)
+- RED: block until Escalate OCR (admin-only action)
+
+**Admin-only bypass:** `srrCheckSyncPreflightGate()` returns `[]` (no gaps) when `_pfGateState.adminOnly` is true, ensuring non-admin users are never blocked by preflight gates they cannot interact with.

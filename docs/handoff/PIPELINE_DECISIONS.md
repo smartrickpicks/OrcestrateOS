@@ -8,10 +8,9 @@
 - Access: ADMIN role only
 - Scope: Document quality analysis + gate enforcement
 
-### Future Note (Not Implemented)
-- Expand to ADMIN OR ANALYST
-- Optional flag: PREFLIGHT_GATE_SYNC_ANALYST
-- This expansion is planned but not part of the current implementation
+### Rollout Boundary (Locked)
+Current stage is ADMIN-only sandbox. No analyst access is implemented or planned in this version.
+Any future rollout expansion would require a separate flag and a new design review.
 
 ## Page Classification Thresholds (Locked P1E)
 - SEARCHABLE: chars >= 50 AND image_ratio <= 0.70
