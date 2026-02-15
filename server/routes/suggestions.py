@@ -2,7 +2,7 @@ import json
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import JSONResponse
 
 from server.db import get_conn, put_conn
@@ -10,7 +10,7 @@ from server.ulid import generate_id
 from server.api_v25 import envelope, collection_envelope, error_envelope
 from server.auth import AuthClass, require_auth
 from server.audit import emit_audit_event
-from server.suggestion_engine import generate_suggestions
+from server.suggestion_engine import generate_suggestions, generate_suggestions_local
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v2.5")
@@ -72,12 +72,15 @@ def _normalize_alias(alias):
 
 
 @router.post("/documents/{document_id}/suggestion-runs", status_code=201)
-def create_suggestion_run(
+async def create_suggestion_run(
     document_id: str,
+    request: Request,
     auth=Depends(require_auth(AuthClass.EITHER)),
 ):
     if isinstance(auth, JSONResponse):
         return auth
+
+    body = {}
 
     conn = get_conn()
     try:
@@ -87,18 +90,25 @@ def create_suggestion_run(
                 (document_id,),
             )
             doc_row = cur.fetchone()
-            if not doc_row:
-                return JSONResponse(
-                    status_code=404,
-                    content=error_envelope("NOT_FOUND", "Document not found: %s" % document_id),
-                )
 
-            workspace_id = doc_row[1]
-            if not _verify_workspace_access(auth, workspace_id, conn):
-                return JSONResponse(
-                    status_code=404,
-                    content=error_envelope("NOT_FOUND", "Document not found: %s" % document_id),
-                )
+            workspace_id = None
+            run_mode = "db_backed"
+
+            if doc_row:
+                workspace_id = doc_row[1]
+                if not _verify_workspace_access(auth, workspace_id, conn):
+                    return JSONResponse(
+                        status_code=404,
+                        content=error_envelope("NOT_FOUND", "Document not found: %s" % document_id),
+                    )
+            else:
+                workspace_id = _resolve_workspace_id(auth, conn)
+                if not workspace_id:
+                    return JSONResponse(
+                        status_code=400,
+                        content=error_envelope("NO_WORKSPACE", "Cannot resolve workspace for local fallback"),
+                    )
+                run_mode = "local_fallback"
 
             run_id = generate_id("sgr_")
 
@@ -110,7 +120,12 @@ def create_suggestion_run(
             )
 
             try:
-                suggestions = generate_suggestions(cur, workspace_id, document_id)
+                if run_mode == "db_backed":
+                    suggestions, diagnostics = generate_suggestions(cur, workspace_id, document_id)
+                else:
+                    source_fields = []
+                    diagnostics = {"run_mode": "local_fallback"}
+                    suggestions, diagnostics = generate_suggestions_local(cur, workspace_id, source_fields)
             except Exception as e:
                 logger.error("[SUGGEST] Engine error: %s", e)
                 cur.execute(
@@ -127,24 +142,28 @@ def create_suggestion_run(
 
             for s in suggestions:
                 sug_id = generate_id("sug_")
+                sug_meta = s.pop("_meta", None)
                 cur.execute(
                     """INSERT INTO suggestions
                        (id, workspace_id, run_id, document_id, source_field,
-                        suggested_term_id, match_score, match_method, candidates)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)""",
+                        suggested_term_id, match_score, match_method, candidates, metadata)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb)""",
                     (sug_id, workspace_id, run_id, document_id,
                      s["source_field"], s["suggested_term_id"],
                      s["match_score"], s["match_method"],
-                     json.dumps(s["candidates"])),
+                     json.dumps(s["candidates"]),
+                     json.dumps(sug_meta) if sug_meta else None),
                 )
 
             now_iso = datetime.now(timezone.utc).isoformat()
+            run_metadata = json.dumps(diagnostics) if diagnostics else None
             cur.execute(
                 """UPDATE suggestion_runs
-                   SET status = 'completed', total_suggestions = %s, completed_at = %s
+                   SET status = 'completed', total_suggestions = %s, completed_at = %s,
+                       metadata = %s::jsonb
                    WHERE id = %s
                    RETURNING """ + RUN_SELECT,
-                (len(suggestions), now_iso, run_id),
+                (len(suggestions), now_iso, run_metadata, run_id),
             )
             run_row = cur.fetchone()
 
@@ -155,16 +174,147 @@ def create_suggestion_run(
                 actor_id=auth.user_id,
                 resource_type="suggestion_run",
                 resource_id=run_id,
-                detail={"document_id": document_id, "total_suggestions": len(suggestions)},
+                detail={
+                    "document_id": document_id,
+                    "total_suggestions": len(suggestions),
+                    "run_mode": diagnostics.get("run_mode", "unknown") if diagnostics else "unknown",
+                },
             )
         conn.commit()
 
+        result = _row_to_dict(run_row, RUN_COLUMNS)
+        if diagnostics:
+            result["diagnostics"] = diagnostics
+
         return JSONResponse(
             status_code=201,
-            content=envelope(_row_to_dict(run_row, RUN_COLUMNS)),
+            content=envelope(result),
         )
     except Exception as e:
         logger.error("create_suggestion_run error: %s", e)
+        conn.rollback()
+        return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
+    finally:
+        put_conn(conn)
+
+
+@router.post("/suggestion-runs/local", status_code=201)
+async def create_local_suggestion_run(
+    request: Request,
+    auth=Depends(require_auth(AuthClass.EITHER)),
+):
+    if isinstance(auth, JSONResponse):
+        return auth
+
+    conn = get_conn()
+    try:
+        body = {}
+        try:
+            content_type = request.headers.get("content-type", "")
+            if "json" in content_type:
+                body = await request.json()
+        except Exception:
+            body = {}
+
+        source_fields = body.get("source_fields", []) if isinstance(body, dict) else []
+        document_id = body.get("document_id", "local_" + generate_id("")) if isinstance(body, dict) else "local_" + generate_id("")
+
+        workspace_id = _resolve_workspace_id(auth, conn)
+        if not workspace_id:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("NO_WORKSPACE", "Cannot resolve workspace"),
+            )
+
+        if not source_fields:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "source_fields array is required for local runs"),
+            )
+
+        with conn.cursor() as cur:
+            run_id = generate_id("sgr_")
+            cur.execute(
+                """INSERT INTO suggestion_runs
+                   (id, workspace_id, document_id, status, created_by, metadata)
+                   VALUES (%s, %s, %s, 'running', %s, %s::jsonb)""",
+                (run_id, workspace_id, document_id, auth.user_id,
+                 json.dumps({"run_mode": "local_fallback"})),
+            )
+
+            try:
+                suggestions, diagnostics = generate_suggestions_local(cur, workspace_id, source_fields)
+            except Exception as e:
+                logger.error("[SUGGEST] Local engine error: %s", e)
+                cur.execute(
+                    """UPDATE suggestion_runs SET status = 'failed',
+                       completed_at = NOW(), metadata = %s::jsonb
+                       WHERE id = %s""",
+                    (json.dumps({"error": str(e), "run_mode": "local_fallback"}), run_id),
+                )
+                conn.commit()
+                return JSONResponse(
+                    status_code=500,
+                    content=error_envelope("SUGGESTION_ENGINE_FAILED", str(e)),
+                )
+
+            sug_results = []
+            for s in suggestions:
+                sug_id = generate_id("sug_")
+                sug_meta = s.pop("_meta", None)
+                cur.execute(
+                    """INSERT INTO suggestions
+                       (id, workspace_id, run_id, document_id, source_field,
+                        suggested_term_id, match_score, match_method, candidates, metadata)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb)
+                       RETURNING """ + SUGGESTION_SELECT,
+                    (sug_id, workspace_id, run_id, document_id,
+                     s["source_field"], s["suggested_term_id"],
+                     s["match_score"], s["match_method"],
+                     json.dumps(s["candidates"]),
+                     json.dumps(sug_meta) if sug_meta else None),
+                )
+                row = cur.fetchone()
+                if row:
+                    sug_results.append(_row_to_dict(row, SUGGESTION_COLUMNS))
+
+            now_iso = datetime.now(timezone.utc).isoformat()
+            run_metadata = json.dumps(diagnostics) if diagnostics else None
+            cur.execute(
+                """UPDATE suggestion_runs
+                   SET status = 'completed', total_suggestions = %s, completed_at = %s,
+                       metadata = %s::jsonb
+                   WHERE id = %s
+                   RETURNING """ + RUN_SELECT,
+                (len(suggestions), now_iso, run_metadata, run_id),
+            )
+            run_row = cur.fetchone()
+
+            emit_audit_event(
+                cur,
+                workspace_id=workspace_id,
+                event_type="suggestion_run.created",
+                actor_id=auth.user_id,
+                resource_type="suggestion_run",
+                resource_id=run_id,
+                detail={
+                    "document_id": document_id,
+                    "total_suggestions": len(suggestions),
+                    "run_mode": "local_fallback",
+                },
+            )
+        conn.commit()
+
+        result = _row_to_dict(run_row, RUN_COLUMNS)
+        result["diagnostics"] = diagnostics
+        result["suggestions"] = sug_results
+
+        return JSONResponse(
+            status_code=201,
+            content=envelope(result),
+        )
+    except Exception as e:
+        logger.error("create_local_suggestion_run error: %s", e)
         conn.rollback()
         return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
     finally:
@@ -190,18 +340,21 @@ def list_suggestions(
                 (document_id,),
             )
             doc_row = cur.fetchone()
-            if not doc_row:
-                return JSONResponse(
-                    status_code=404,
-                    content=error_envelope("NOT_FOUND", "Document not found: %s" % document_id),
-                )
 
-            doc_ws = doc_row[1]
-            if not _verify_workspace_access(auth, doc_ws, conn):
-                return JSONResponse(
-                    status_code=404,
-                    content=error_envelope("NOT_FOUND", "Document not found: %s" % document_id),
-                )
+            if doc_row:
+                doc_ws = doc_row[1]
+                if not _verify_workspace_access(auth, doc_ws, conn):
+                    return JSONResponse(
+                        status_code=404,
+                        content=error_envelope("NOT_FOUND", "Document not found: %s" % document_id),
+                    )
+            else:
+                doc_ws = _resolve_workspace_id(auth, conn)
+                if not doc_ws:
+                    return JSONResponse(
+                        status_code=404,
+                        content=error_envelope("NOT_FOUND", "Document not found: %s" % document_id),
+                    )
 
             conditions = ["document_id = %s", "workspace_id = %s"]
             params: list = [document_id, doc_ws]

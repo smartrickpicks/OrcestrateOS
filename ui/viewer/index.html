@@ -3288,6 +3288,7 @@
             <h3>Field Suggestions</h3>
             <div style="display: flex; gap: 8px; align-items: center;">
               <span id="sync-status-text" style="font-size: 0.82em; color: #666;"></span>
+              <button class="sync-run-btn" id="sync-overlay-toggle" onclick="_syncToggleOverlay()" style="background:#e3f2fd;color:#1565c0;font-size:0.78em;padding:4px 10px;">Keyword Overlay</button>
               <button class="sync-run-btn" id="sync-run-btn" onclick="_syncRunSuggestions()">Run Suggestions</button>
             </div>
           </div>
@@ -16420,7 +16421,7 @@
       document.body.removeChild(a);
     }
 
-    var _syncState = { visible: false, suggestions: [], loading: false, documentId: null };
+    var _syncState = { visible: false, suggestions: [], loading: false, documentId: null, diagnostics: null, runMode: null, keywordOverlay: false };
 
     function _syncTogglePanel() {
       var panel = document.getElementById('sync-suggestions-panel');
@@ -16433,6 +16434,7 @@
       } else {
         panel.classList.remove('active');
         if (syncBtn) syncBtn.className = 'gfc-btn';
+        _syncClearOverlay();
       }
       console.log('[SUGGESTIONS] panel toggled:', _syncState.visible);
     }
@@ -16460,49 +16462,114 @@
       return h;
     }
 
+    function _syncGetSourceFields() {
+      var headers = [];
+      if (typeof workbook !== 'undefined' && workbook.order && workbook.data) {
+        for (var si = 0; si < workbook.order.length; si++) {
+          var sheetName = workbook.order[si];
+          var rows = workbook.data[sheetName];
+          if (rows && rows.length > 0) {
+            var keys = Object.keys(rows[0]);
+            for (var ki = 0; ki < keys.length; ki++) {
+              var k = keys[ki];
+              if (k.charAt(0) !== '_' && headers.indexOf(k) === -1) {
+                headers.push(k);
+              }
+            }
+          }
+        }
+      }
+      return headers;
+    }
+
     function _syncRunSuggestions() {
       var docId = _syncGetDocumentId();
       var statusEl = document.getElementById('sync-status-text');
       var runBtn = document.getElementById('sync-run-btn');
 
-      if (!docId) {
-        if (statusEl) statusEl.textContent = 'No document selected';
-        console.warn('[SUGGESTIONS] No document ID available for suggestion run');
-        _syncRenderDemoSuggestions();
-        return;
-      }
-
       if (_syncState.loading) return;
       _syncState.loading = true;
-      _syncState.documentId = docId;
       if (runBtn) { runBtn.disabled = true; runBtn.textContent = 'Running...'; }
       if (statusEl) statusEl.textContent = 'Generating suggestions...';
 
       var baseUrl = window.location.origin;
-      fetch(baseUrl + '/api/v2.5/documents/' + docId + '/suggestion-runs', {
-        method: 'POST',
-        headers: _syncHeaders(),
-        body: '{}'
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(resp) {
-        if (resp.error) {
-          if (statusEl) statusEl.textContent = 'Error: ' + resp.error.message;
-          console.error('[SUGGESTIONS] Run failed:', resp.error);
+
+      if (docId) {
+        _syncState.documentId = docId;
+        _syncState.runMode = null;
+        fetch(baseUrl + '/api/v2.5/documents/' + docId + '/suggestion-runs', {
+          method: 'POST',
+          headers: _syncHeaders(),
+          body: '{}'
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+          if (resp.error) {
+            if (statusEl) statusEl.textContent = 'Error: ' + resp.error.message;
+            console.error('[SUGGESTIONS] Run failed:', resp.error);
+            return;
+          }
+          var run = resp.data;
+          _syncState.diagnostics = run.diagnostics || null;
+          _syncState.runMode = (run.diagnostics && run.diagnostics.run_mode) || 'db_backed';
+          if (statusEl) statusEl.textContent = run.total_suggestions + ' suggestions found';
+          console.log('[SUGGESTIONS] run_complete: mode=' + _syncState.runMode, run.diagnostics);
+          return _syncFetchSuggestions(docId);
+        })
+        .catch(function(err) {
+          console.error('[SUGGESTIONS] Run error:', err);
+          if (statusEl) statusEl.textContent = 'Network error';
+        })
+        .finally(function() {
+          _syncState.loading = false;
+          if (runBtn) { runBtn.disabled = false; runBtn.textContent = 'Run Suggestions'; }
+          _syncRenderDiagnostics();
+        });
+      } else {
+        var sourceFields = _syncGetSourceFields();
+        if (sourceFields.length === 0) {
+          _syncState.loading = false;
+          if (runBtn) { runBtn.disabled = false; runBtn.textContent = 'Run Suggestions'; }
+          if (statusEl) statusEl.textContent = 'No document context — load data first';
+          _syncState.runMode = 'no_context';
+          _syncRenderDiagnostics();
+          console.warn('[SUGGESTIONS] No document ID and no workbook headers available');
           return;
         }
-        var run = resp.data;
-        if (statusEl) statusEl.textContent = run.total_suggestions + ' suggestions found';
-        return _syncFetchSuggestions(docId);
-      })
-      .catch(function(err) {
-        console.error('[SUGGESTIONS] Run error:', err);
-        if (statusEl) statusEl.textContent = 'Network error';
-      })
-      .finally(function() {
-        _syncState.loading = false;
-        if (runBtn) { runBtn.disabled = false; runBtn.textContent = 'Run Suggestions'; }
-      });
+        _syncState.documentId = 'local';
+        _syncState.runMode = 'local_fallback';
+        fetch(baseUrl + '/api/v2.5/suggestion-runs/local', {
+          method: 'POST',
+          headers: _syncHeaders(),
+          body: JSON.stringify({ source_fields: sourceFields, document_id: 'local_workbook' })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+          if (resp.error) {
+            if (statusEl) statusEl.textContent = 'Error: ' + resp.error.message;
+            console.error('[SUGGESTIONS] Local run failed:', resp.error);
+            return;
+          }
+          var run = resp.data;
+          _syncState.diagnostics = run.diagnostics || null;
+          _syncState.runMode = 'local_fallback';
+          if (run.suggestions) {
+            _syncState.suggestions = run.suggestions;
+            _syncRenderSuggestions();
+          }
+          if (statusEl) statusEl.textContent = run.total_suggestions + ' suggestions (local fallback)';
+          console.log('[SUGGESTIONS] local_run_complete:', run.diagnostics);
+        })
+        .catch(function(err) {
+          console.error('[SUGGESTIONS] Local run error:', err);
+          if (statusEl) statusEl.textContent = 'Network error';
+        })
+        .finally(function() {
+          _syncState.loading = false;
+          if (runBtn) { runBtn.disabled = false; runBtn.textContent = 'Run Suggestions'; }
+          _syncRenderDiagnostics();
+        });
+      }
     }
 
     function _syncFetchSuggestions(docId) {
@@ -16519,19 +16586,48 @@
       });
     }
 
-    function _syncRenderDemoSuggestions() {
-      var list = document.getElementById('sync-suggestions-list');
-      if (!list) return;
-      var demoSuggestions = [
-        { id: 'demo_1', source_field: 'Pmt_Freq', match_method: 'fuzzy', match_score: 0.85, status: 'pending', suggested_term_id: null, candidates: [] },
-        { id: 'demo_2', source_field: 'Account_Name', match_method: 'exact', match_score: 1.0, status: 'pending', suggested_term_id: null, candidates: [] },
-        { id: 'demo_3', source_field: 'Terr_Rights', match_method: 'keyword', match_score: 0.45, status: 'pending', suggested_term_id: null, candidates: [] },
-        { id: 'demo_4', source_field: 'xyz_unknown_col', match_method: 'none', match_score: 0.0, status: 'pending', suggested_term_id: null, candidates: [] },
-      ];
-      _syncState.suggestions = demoSuggestions;
-      var statusEl = document.getElementById('sync-status-text');
-      if (statusEl) statusEl.textContent = 'Demo mode — showing sample suggestions';
-      _syncRenderSuggestions();
+    function _syncRenderDiagnostics() {
+      var existing = document.getElementById('sync-diagnostics-line');
+      if (existing) existing.remove();
+      var panel = document.getElementById('sync-suggestions-panel');
+      if (!panel) return;
+      var diag = _syncState.diagnostics;
+      var mode = _syncState.runMode;
+      if (!mode) return;
+
+      var parts = [];
+      var modeLabels = {
+        'db_backed': 'DB-backed',
+        'local_fallback': 'Local fallback',
+        'no_context': 'No context',
+        'db_doc_not_found': 'Doc not found',
+      };
+      parts.push('Mode: ' + (modeLabels[mode] || mode));
+      if (_syncState.documentId && _syncState.documentId !== 'local') {
+        parts.push('Doc: ' + _syncState.documentId.substring(0, 12) + '...');
+      }
+      if (diag) {
+        if (diag.total_headers) parts.push('Headers: ' + diag.total_headers);
+        if (diag.counts) {
+          var c = diag.counts;
+          parts.push('E:' + (c.exact || 0) + ' F:' + (c.fuzzy || 0) + ' K:' + (c.keyword || 0) + ' N:' + (c.none || 0));
+        }
+        if (diag.has_field_meta === true) parts.push('Meta: yes');
+        else if (diag.has_field_meta === false) parts.push('Meta: missing');
+      }
+
+      var modeColor = mode === 'db_backed' ? '#2e7d32' : mode === 'local_fallback' ? '#e65100' : '#c62828';
+      var diagEl = document.createElement('div');
+      diagEl.id = 'sync-diagnostics-line';
+      diagEl.style.cssText = 'font-size:0.72em;color:#888;padding:4px 0 6px;border-bottom:1px solid #eee;margin-bottom:8px;font-family:monospace;';
+      diagEl.innerHTML = '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:' + modeColor + ';margin-right:4px;vertical-align:middle;"></span>' + _escHtml(parts.join(' | '));
+
+      var listEl = document.getElementById('sync-suggestions-list');
+      if (listEl) {
+        panel.insertBefore(diagEl, listEl);
+      } else {
+        panel.appendChild(diagEl);
+      }
     }
 
     function _syncRenderSuggestions() {
@@ -16594,6 +16690,12 @@
           html += '<span class="sync-target">' + _escHtml(targetText) + '</span>';
           html += '<span class="sync-score ' + scoreClass + '">' + scoreText + '</span>';
 
+          if (sug.match_method !== 'none') {
+            html += '<span class="sync-match-actions" style="display:flex;gap:3px;margin-right:4px;">';
+            html += '<button onclick="_syncShowMatches(\'' + sug.id + '\')" style="font-size:0.7em;padding:2px 6px;background:#fff8e1;border:1px solid #ffe082;border-radius:3px;cursor:pointer;color:#f57f17;" title="Highlight matched keywords in Reader">Show</button>';
+            html += '<button onclick="_syncClearMatches()" style="font-size:0.7em;padding:2px 6px;background:#f5f5f5;border:1px solid #ddd;border-radius:3px;cursor:pointer;color:#888;" title="Clear highlights">Clear</button>';
+            html += '</span>';
+          }
           if (sug.status === 'pending') {
             html += '<div class="sync-actions">';
             html += '<button class="sync-accept-btn" onclick="_syncAccept(\'' + sug.id + '\', ' + (sug.version || 1) + ')">Accept</button>';
@@ -16663,6 +16765,122 @@
         console.error('[SUGGESTIONS] Update error:', err);
       });
     }
+
+    function _syncBuildKeywordMap() {
+      var keywords = {};
+      var suggestions = _syncState.suggestions || [];
+      for (var i = 0; i < suggestions.length; i++) {
+        var s = suggestions[i];
+        if (s.match_method === 'none' || !s.suggested_term_id) continue;
+        var meta = s.metadata || s._meta || {};
+        var matched = meta.matched_keywords || [];
+        var sourceNorm = meta.source_normalized || s.source_field.toLowerCase().replace(/_/g, ' ');
+        var tokens = sourceNorm.split(/\s+/);
+        var all = tokens.concat(matched);
+        for (var j = 0; j < all.length; j++) {
+          var t = all[j].trim().toLowerCase();
+          if (t.length >= 3) {
+            keywords[t] = { source_field: s.source_field, term_id: s.suggested_term_id, method: s.match_method, score: s.match_score };
+          }
+        }
+      }
+      return keywords;
+    }
+
+    function _syncApplyOverlay(singleSugId) {
+      var readerContent = document.getElementById('ev-reader-content');
+      if (!readerContent) return;
+      _syncClearOverlay();
+
+      var keywords = {};
+      if (singleSugId) {
+        var sug = null;
+        for (var i = 0; i < _syncState.suggestions.length; i++) {
+          if (_syncState.suggestions[i].id === singleSugId) { sug = _syncState.suggestions[i]; break; }
+        }
+        if (!sug || sug.match_method === 'none') return;
+        var meta = sug.metadata || sug._meta || {};
+        var matched = meta.matched_keywords || [];
+        var sourceNorm = meta.source_normalized || sug.source_field.toLowerCase().replace(/_/g, ' ');
+        var tokens = sourceNorm.split(/\s+/).concat(matched);
+        for (var j = 0; j < tokens.length; j++) {
+          var t = tokens[j].trim().toLowerCase();
+          if (t.length >= 3) keywords[t] = true;
+        }
+      } else {
+        var map = _syncBuildKeywordMap();
+        for (var k in map) keywords[k] = true;
+      }
+
+      var kList = Object.keys(keywords);
+      if (kList.length === 0) return;
+
+      kList.sort(function(a, b) { return b.length - a.length; });
+      var pattern = kList.map(function(k) { return k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|');
+      var regex = new RegExp('\\b(' + pattern + ')\\b', 'gi');
+
+      var textEls = readerContent.querySelectorAll('.ev-reader-page-text');
+      for (var ti = 0; ti < textEls.length; ti++) {
+        var el = textEls[ti];
+        if (el.querySelector('.sync-kw-highlight')) continue;
+        var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+        var nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+        for (var ni = 0; ni < nodes.length; ni++) {
+          var node = nodes[ni];
+          var txt = node.textContent;
+          if (!regex.test(txt)) continue;
+          regex.lastIndex = 0;
+          var frag = document.createDocumentFragment();
+          var lastIdx = 0;
+          var match;
+          while ((match = regex.exec(txt)) !== null) {
+            if (match.index > lastIdx) frag.appendChild(document.createTextNode(txt.substring(lastIdx, match.index)));
+            var span = document.createElement('span');
+            span.className = 'sync-kw-highlight';
+            span.style.cssText = 'background:#fff176;border-radius:2px;padding:0 2px;border-bottom:2px solid #f9a825;';
+            span.textContent = match[0];
+            frag.appendChild(span);
+            lastIdx = regex.lastIndex;
+          }
+          if (lastIdx < txt.length) frag.appendChild(document.createTextNode(txt.substring(lastIdx)));
+          node.parentNode.replaceChild(frag, node);
+        }
+      }
+      console.log('[SUGGESTIONS] overlay_applied: keywords=' + kList.length + (singleSugId ? ' (single)' : ' (all)'));
+    }
+
+    function _syncClearOverlay() {
+      var readerContent = document.getElementById('ev-reader-content');
+      if (!readerContent) return;
+      var highlights = readerContent.querySelectorAll('.sync-kw-highlight');
+      for (var i = 0; i < highlights.length; i++) {
+        var hl = highlights[i];
+        var parent = hl.parentNode;
+        parent.replaceChild(document.createTextNode(hl.textContent), hl);
+        parent.normalize();
+      }
+    }
+
+    function _syncToggleOverlay() {
+      _syncState.keywordOverlay = !_syncState.keywordOverlay;
+      var btn = document.getElementById('sync-overlay-toggle');
+      if (_syncState.keywordOverlay) {
+        _syncApplyOverlay();
+        if (btn) { btn.textContent = 'Hide Keywords'; btn.style.background = '#f9a825'; btn.style.color = '#333'; }
+      } else {
+        _syncClearOverlay();
+        if (btn) { btn.textContent = 'Keyword Overlay'; btn.style.background = ''; btn.style.color = ''; }
+      }
+    }
+
+    window._syncShowMatches = function(sugId) {
+      _syncApplyOverlay(sugId);
+    };
+
+    window._syncClearMatches = function() {
+      _syncClearOverlay();
+    };
 
     var _gridEditState = { active: false, td: null, originalValue: '', recordId: '', fieldKey: '', sheetName: '' };
 
@@ -18536,7 +18754,31 @@
       if (count) count.textContent = anchors.length;
 
       if (!anchors.length) {
-        list.innerHTML = '<div class="ei-empty">Field linking is available when field relationships are defined in the schema.</div>';
+        var sugLinks = [];
+        if (typeof _resolveLinkedFields === 'function' && typeof _eiState !== 'undefined') {
+          var sheetName = _eiState.sheetName || '';
+          var fieldKey = _eiState.fieldKey || '';
+          if (fieldKey) {
+            sugLinks = _resolveLinkedFields(sheetName, fieldKey);
+          }
+        }
+        if (sugLinks.length > 0) {
+          var sugHtml = '';
+          for (var sli = 0; sli < sugLinks.length; sli++) {
+            var sl = sugLinks[sli];
+            sugHtml += '<div class="ei-item" style="border-left:3px solid #ff9800;opacity:0.85;">';
+            sugHtml += '<div class="ei-item-header">';
+            sugHtml += '<span class="ei-item-field">' + _eiEscapeHtml(sl.label || sl.field_key) + '</span>';
+            sugHtml += '<span style="font-size:0.7em;background:#fff3e0;color:#e65100;padding:1px 6px;border-radius:8px;">suggestion-derived</span>';
+            sugHtml += '</div>';
+            sugHtml += '<div class="ei-item-meta"><span>' + sl.match_method + ' (' + Math.round(sl.match_score * 100) + '%)</span></div>';
+            sugHtml += '</div>';
+          }
+          list.innerHTML = sugHtml;
+          if (count) count.textContent = sugLinks.length;
+        } else {
+          list.innerHTML = '<div class="ei-empty">Field linking is available when field relationships are defined in the schema.</div>';
+        }
         return;
       }
 
@@ -19945,7 +20187,7 @@
       ns.Engines.SuggestionsState = {
         _id: 'Engines.SuggestionsState',
         getState: function() {
-          return (typeof _syncState !== 'undefined') ? _syncState : { visible: false, suggestions: [], loading: false, documentId: null };
+          return (typeof _syncState !== 'undefined') ? _syncState : { visible: false, suggestions: [], loading: false, documentId: null, diagnostics: null, runMode: null, keywordOverlay: false };
         },
         isVisible: function() {
           var s = this.getState();
@@ -32928,7 +33170,41 @@
     }
 
     function _resolveLinkedFields(sheetName, fieldKey) {
-      return [];
+      var results = [];
+      if (!_syncState.suggestions || _syncState.suggestions.length === 0) return results;
+      if (!fieldKey) return results;
+
+      var fieldNorm = fieldKey.toLowerCase().replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+      var fieldMeta = (typeof rulesBundleCache !== 'undefined' && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.fields) ? rulesBundleCache.fieldMeta.fields : [];
+      var fieldMetaMap = {};
+      for (var fi = 0; fi < fieldMeta.length; fi++) {
+        var fm = fieldMeta[fi];
+        fieldMetaMap[fm.field_key] = fm;
+      }
+
+      for (var i = 0; i < _syncState.suggestions.length; i++) {
+        var s = _syncState.suggestions[i];
+        if (s.match_method === 'none' || !s.suggested_term_id) continue;
+        var sourceNorm = s.source_field.toLowerCase().replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+        if (sourceNorm === fieldNorm || s.source_field === fieldKey) {
+          var termLabel = s.suggested_term_id;
+          for (var tfi = 0; tfi < fieldMeta.length; tfi++) {
+            if (fieldMeta[tfi].field_key === s.source_field || fieldMeta[tfi].field_key === fieldKey) {
+              termLabel = fieldMeta[tfi].field_label || termLabel;
+              break;
+            }
+          }
+          results.push({
+            field_key: s.source_field,
+            label: termLabel,
+            sheet: sheetName || '',
+            match_score: s.match_score,
+            match_method: s.match_method,
+            source: 'suggestion',
+          });
+        }
+      }
+      return results;
     }
 
     // v1.4.15: Get active sheet name from grid state or sidebar
