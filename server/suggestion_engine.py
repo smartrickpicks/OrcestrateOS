@@ -2,9 +2,52 @@ import re
 import os
 import json
 import logging
+import unicodedata
 from difflib import SequenceMatcher
 
+from rapidfuzz import fuzz as rf_fuzz
+from rapidfuzz.distance import Levenshtein as rf_lev
+
 logger = logging.getLogger(__name__)
+
+NOISE_TOKENS = frozenset({
+    "a", "an", "the",
+    "and", "or", "of", "for", "to", "in", "on", "at", "by", "with", "from",
+    "agreement", "schedule", "exhibit", "appendix", "annex", "attachment",
+    "section", "clause", "paragraph", "item", "subitem",
+    "hereby", "herein", "thereof", "whereas", "therein", "hereto",
+    "shall", "per", "upon", "between", "under", "above",
+    "this", "that", "are", "was", "will", "has", "have", "been", "not",
+    "its", "into", "used", "can", "may", "when", "which", "also", "each",
+    "such", "than", "any", "all", "but", "does", "other", "only", "how", "about",
+})
+
+KEEP_TOKENS = frozenset({
+    "sync", "synch", "distribution", "digital", "masters", "recording",
+    "royalty", "term", "territory", "recoupment", "fee", "advance",
+    "records", "label", "music", "llc", "inc", "ltd", "limited",
+    "corp", "co", "company", "group", "holdings",
+    "field", "value", "stores", "record", "data", "set", "based",
+})
+
+ENTITY_TOKENS = frozenset({
+    "records", "label", "music", "llc", "inc", "ltd", "limited",
+    "corp", "co", "company", "group", "holdings",
+})
+
+ENTITY_CONTEXT_TOKENS = frozenset({
+    "party", "label", "company", "records", "licensee", "licensor",
+    "address", "entity", "inc", "llc",
+})
+
+DOMAIN_SIGNAL_TOKENS = frozenset({
+    "sync", "synch", "distribution", "digital", "masters", "recording",
+    "royalty", "term", "territory", "recoupment", "fee", "advance",
+    "payment", "revenue", "rate", "amount", "cost", "price",
+    "contract", "agreement", "effective", "expiration",
+    "title", "artist", "album", "track", "isrc", "upc",
+    "genre", "release", "catalog", "rights",
+})
 
 DOCUMENT_TYPE_KEYWORDS = {
     "financial": [
@@ -25,15 +68,11 @@ DOCUMENT_TYPE_KEYWORDS = {
     ],
 }
 
-_STOP_WORDS = frozenset({
-    "the", "this", "that", "and", "for", "from", "with", "are", "was",
-    "will", "has", "have", "been", "not", "its", "into", "used", "can",
-    "may", "when", "which", "also", "each", "such", "than", "any",
-    "all", "but", "does", "field", "value", "stores", "record",
-    "data", "set", "based", "other", "only", "how", "about",
-    "shall", "per", "upon", "between", "under", "above",
-    "herein", "thereof", "hereby", "therein", "hereto",
-})
+_RE_SECTION_MARKER_ROMAN = re.compile(r'^\(?[ivxlcdm]+\)?\.?$', re.IGNORECASE)
+_RE_SECTION_MARKER_NUM = re.compile(r'^\d+(\.\d+)+$')
+_RE_SECTION_MARKER_ALPHA = re.compile(r'^\(?[a-z]\)?$', re.IGNORECASE)
+_RE_PUNCT = re.compile(r'[^a-z0-9\s]')
+_RE_MULTI_SPACE = re.compile(r'\s+')
 
 _field_meta_cache = None
 
@@ -57,15 +96,16 @@ def _load_field_meta():
     return _field_meta_cache
 
 
-def _extract_tokens(text):
-    if not text:
-        return []
-    words = re.findall(r'[a-z]{2,}', text.lower())
-    return [w for w in words if w not in _STOP_WORDS and len(w) > 1]
-
-
-def _extract_token_set(text):
-    return set(_extract_tokens(text))
+def normalize_text(s):
+    if not s:
+        return "", []
+    s = unicodedata.normalize("NFKC", s)
+    s = s.lower()
+    s = _RE_PUNCT.sub(" ", s)
+    s = _RE_MULTI_SPACE.sub(" ", s).strip()
+    tokens = s.split()
+    filtered = [t for t in tokens if t in KEEP_TOKENS or t not in NOISE_TOKENS]
+    return " ".join(filtered), filtered
 
 
 def normalize_field_name(name):
@@ -73,91 +113,168 @@ def normalize_field_name(name):
     s = re.sub(r'__c$', '', s)
     s = re.sub(r'([a-z])([A-Z])', r'\1 \2', s)
     s = s.replace('_', ' ').replace('-', ' ')
-    s = re.sub(r'\s+', ' ', s).strip().lower()
+    s = _RE_MULTI_SPACE.sub(' ', s).strip().lower()
     return s
 
 
-def _char_similarity(a, b):
-    if not a or not b:
-        return 0.0
-    return SequenceMatcher(None, a, b).ratio()
+def _classify_suppression(text, tokens):
+    reasons = []
+    stripped = text.strip()
+    if _RE_SECTION_MARKER_ROMAN.match(stripped):
+        reasons.append("section_marker")
+    if _RE_SECTION_MARKER_NUM.match(stripped):
+        reasons.append("section_marker")
+    if _RE_SECTION_MARKER_ALPHA.match(stripped):
+        reasons.append("section_marker")
+    if "http" in stripped.lower():
+        reasons.append("url_heavy")
+    url_signals = sum(1 for p in ["://", ".com", ".net", ".org"] if p in stripped.lower())
+    slash_count = stripped.count("/")
+    if url_signals + min(slash_count, 2) >= 2:
+        reasons.append("url_heavy")
+    if tokens:
+        digit_chars = sum(1 for c in stripped if c.isdigit())
+        total_chars = max(len(stripped), 1)
+        if digit_chars / total_chars > 0.80 and len(tokens) <= 6:
+            has_entity = any(t in ENTITY_TOKENS for t in tokens)
+            if not has_entity:
+                reasons.append("numeric_heavy")
+    replacement_chars = stripped.count('\ufffd')
+    control_chars = sum(1 for c in stripped if unicodedata.category(c).startswith('C') and c not in ('\n', '\r', '\t'))
+    if (replacement_chars + control_chars) / max(len(stripped), 1) > 0.05:
+        reasons.append("mojibake")
+    if len(tokens) == 1 and len(tokens[0]) < 3 and tokens[0] not in KEEP_TOKENS:
+        reasons.append("too_short")
+    return list(set(reasons))
 
 
-def _ordered_phrase_score(source_tokens_list, glossary_tokens_list):
-    if not source_tokens_list or not glossary_tokens_list:
-        return 0.0
-    g_ptr = 0
-    matched_in_order = 0
-    for st in source_tokens_list:
-        if g_ptr < len(glossary_tokens_list) and st == glossary_tokens_list[g_ptr]:
-            matched_in_order += 1
-            g_ptr += 1
-    if matched_in_order == 0:
-        return 0.0
-    if matched_in_order == len(glossary_tokens_list):
-        return 1.0
-    return min(matched_in_order / max(len(glossary_tokens_list), 1) * 0.8, 0.5)
+def _is_entity_eligible(tokens):
+    if not tokens or len(tokens) < 2:
+        return False
+    if tokens[0].isdigit() and any(t in ENTITY_TOKENS for t in tokens):
+        return True
+    return False
 
 
-def _compute_alias_boost(source_norm, alias_map, glossary_entry):
-    entry_id = glossary_entry.get("id") or glossary_entry.get("field_key", "")
-    alias_hit = alias_map.get(source_norm)
+def _lcs_length(a_tokens, b_tokens):
+    m, n = len(a_tokens), len(b_tokens)
+    if m == 0 or n == 0:
+        return 0
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if a_tokens[i - 1] == b_tokens[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1] + 1
+            else:
+                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+    return dp[m][n]
+
+
+def _compute_exact_alias(candidate_norm, alias_map, entry):
+    entry_id = entry.get("id") or entry.get("field_key", "")
+    alias_hit = alias_map.get(candidate_norm)
     if alias_hit and alias_hit == entry_id:
-        return 1.0, "alias_exact"
-    alias_norm = normalize_field_name(source_norm)
+        return 1.0
+    fk_norm = entry.get("fk_normalized", "")
+    if candidate_norm and candidate_norm == fk_norm:
+        return 1.0
+    norm_label = entry.get("normalized", "")
+    if candidate_norm and candidate_norm == norm_label:
+        return 1.0
     for alias_key, alias_tid in alias_map.items():
-        if alias_tid == entry_id and alias_norm == alias_key:
-            return 0.6, "alias_normalized"
-    return 0.0, None
+        if alias_tid == entry_id:
+            alias_clean = normalize_field_name(alias_key)
+            if candidate_norm == alias_clean:
+                return 1.0
+    return 0.0
 
 
-def _generate_reason_labels(source_tokens_set, glossary_tokens_list, source_norm, glossary_norm, char_sim, ordered_score, alias_boost_val):
-    labels = []
-    if alias_boost_val >= 1.0:
-        labels.append("ALIAS_EXACT")
-    elif alias_boost_val >= 0.6:
-        labels.append("ALIAS_NORMALIZED")
-    if glossary_tokens_list and source_tokens_set:
-        if glossary_tokens_list[0] in source_tokens_set:
-            labels.append("FIRST_TOKEN_MATCH")
-    if ordered_score >= 0.8:
-        labels.append("ORDERED_TOKENS")
-    elif ordered_score >= 0.3:
-        labels.append("PARTIAL_ORDER")
-    if char_sim >= 0.85:
-        labels.append("EDIT_DISTANCE_NEAR")
-    elif char_sim >= 0.7:
-        labels.append("EDIT_DISTANCE_MODERATE")
-    g_set = set(glossary_tokens_list) if glossary_tokens_list else set()
-    overlap = source_tokens_set & g_set
-    if len(overlap) >= 3:
-        labels.append("MULTI_TOKEN_OVERLAP")
-    elif len(overlap) >= 1:
-        labels.append("TOKEN_OVERLAP")
-    return labels
+def _compute_tok_overlap(c_set, a_or_t_set):
+    if not a_or_t_set:
+        return 0.0
+    return len(c_set & a_or_t_set) / max(1, len(a_or_t_set))
 
 
-def _classify_confidence(score):
-    if score >= 0.85:
+def _compute_ordered_overlap(c_tokens, a_or_t_tokens):
+    if not c_tokens or not a_or_t_tokens:
+        return 0.0
+    lcs = _lcs_length(c_tokens, a_or_t_tokens)
+    return lcs / max(1, len(a_or_t_tokens))
+
+
+def _compute_edit_sim(c_tokens, a_or_t_tokens, c_norm, a_or_t_norm):
+    if not c_norm or not a_or_t_norm:
+        return 0.0
+    phrase_sim = rf_fuzz.token_sort_ratio(c_norm, a_or_t_norm) / 100.0
+    if not c_tokens or not a_or_t_tokens:
+        return phrase_sim
+    token_sims = []
+    for at in a_or_t_tokens:
+        best = 0.0
+        for ct in c_tokens:
+            sim = 1.0 - (rf_lev.normalized_distance(ct, at))
+            if sim > best:
+                best = sim
+        token_sims.append(best)
+    avg_token_sim = sum(token_sims) / max(1, len(token_sims))
+    return max(phrase_sim, avg_token_sim)
+
+
+def _compute_first_token_bonus(c_tokens, a_or_t_tokens):
+    if len(a_or_t_tokens) < 2 or not c_tokens:
+        return 0.0
+    return 1.0 if c_tokens[0] == a_or_t_tokens[0] else 0.0
+
+
+def _compute_context_bonus(candidate_tokens_set, all_candidate_tokens_on_line):
+    if not all_candidate_tokens_on_line:
+        return 0.0
+    other_tokens = all_candidate_tokens_on_line - candidate_tokens_set
+    if other_tokens & DOMAIN_SIGNAL_TOKENS:
+        return 1.0
+    return 0.0
+
+
+def _classify_confidence(score_pct):
+    if score_pct >= 80:
         return "HIGH"
-    elif score >= 0.70:
+    elif score_pct >= 60:
         return "MEDIUM"
-    elif score >= 0.55:
+    elif score_pct >= 40:
         return "LOW"
     else:
         return "HIDDEN"
 
 
-def _determine_match_method(alias_boost_val, token_overlap_score, char_sim, ordered_score):
-    if alias_boost_val >= 1.0:
+def _generate_reason_chips(exact_alias, tok_overlap, ordered_overlap, edit_sim, first_token, context_bonus, entity_eligible):
+    chips = []
+    if exact_alias == 1.0:
+        chips.append("Exact alias")
+    if tok_overlap >= 0.50:
+        chips.append("Token overlap")
+    if ordered_overlap >= 0.50:
+        chips.append("Ordered match")
+    if edit_sim >= 0.80:
+        chips.append("Edit-sim")
+    elif edit_sim >= 0.75:
+        chips.append("Edit-sim")
+    if context_bonus == 1.0:
+        chips.append("Context boost")
+    if entity_eligible:
+        chips.append("Entity rule")
+    if first_token == 1.0 and "Exact alias" not in chips:
+        chips.append("First-token anchor")
+    return chips
+
+
+def _determine_match_method(exact_alias, tok_overlap, edit_sim, ordered_overlap):
+    if exact_alias == 1.0:
         return "alias_exact"
-    if alias_boost_val >= 0.6:
-        return "alias_normalized"
-    if ordered_score >= 0.5 and char_sim >= 0.6:
+    if ordered_overlap >= 0.5 and edit_sim >= 0.6:
         return "phrase_fuzzy"
-    if token_overlap_score > 0:
+    if tok_overlap >= 0.3:
         return "token_overlap"
-    if char_sim >= 0.5:
+    if edit_sim >= 0.5:
         return "phrase_fuzzy"
     return "none"
 
@@ -177,39 +294,41 @@ def _build_glossary_index(field_meta_fields, glossary_term_list):
         sheet = fm.get("sheet", "") or ""
         opts = fm.get("options") or []
 
-        normalized = normalize_field_name(label)
-        fk_normalized = normalize_field_name(fk)
-
-        label_tokens = _extract_tokens(label)
-        fk_tokens = _extract_tokens(fk)
-        def_tokens = _extract_tokens(defn)
+        label_norm, label_tokens = normalize_text(label)
+        fk_norm, fk_tokens = normalize_text(fk)
+        _, def_tokens = normalize_text(defn)
         top_def_tokens = sorted(set(def_tokens), key=lambda w: len(w), reverse=True)[:12]
         opt_tokens = []
         for opt in opts[:20]:
-            opt_tokens.extend(_extract_tokens(str(opt)))
+            _, ot = normalize_text(str(opt))
+            opt_tokens.extend(ot)
 
         all_tokens = list(dict.fromkeys(label_tokens + fk_tokens))
         keyword_set = set(all_tokens) | set(top_def_tokens) | set(opt_tokens)
 
         cat_kws_set = set()
         for cat_name, cat_words in DOCUMENT_TYPE_KEYWORDS.items():
-            check_set = set(label_tokens) | set(fk_tokens) | _extract_token_set(sheet)
+            check_set = set(label_tokens) | set(fk_tokens)
             if any(cw in check_set for cw in cat_words):
                 cat_kws_set.update(cat_words)
         keyword_set |= cat_kws_set
 
         glossary_id = None
         for gt in glossary_term_list:
-            if gt["field_key"] == fk or gt["normalized"] == fk_normalized:
+            gt_fk_norm, _ = normalize_text(gt["field_key"])
+            if gt["field_key"] == fk or gt_fk_norm == fk_norm:
                 glossary_id = gt["id"]
                 break
+
+        normalized_label = normalize_field_name(label)
+        normalized_fk = normalize_field_name(fk)
 
         index.append({
             "id": glossary_id or fk,
             "field_key": fk,
             "label": label,
-            "normalized": normalized,
-            "fk_normalized": fk_normalized,
+            "normalized": normalized_label,
+            "fk_normalized": normalized_fk,
             "definition": defn[:200],
             "category": category,
             "tokens_list": all_tokens,
@@ -223,18 +342,19 @@ def _build_glossary_index(field_meta_fields, glossary_term_list):
             seen_keys.add(gt["field_key"])
             fk = gt["field_key"]
             label = gt.get("display_name") or fk
-            normalized = normalize_field_name(label)
-            fk_normalized = normalize_field_name(fk)
-            tokens = _extract_tokens(label)
-            fk_toks = _extract_tokens(fk)
-            all_tokens = list(dict.fromkeys(tokens + fk_toks))
+            _, label_tokens = normalize_text(label)
+            _, fk_tokens = normalize_text(fk)
+            all_tokens = list(dict.fromkeys(label_tokens + fk_tokens))
+
+            normalized_label = normalize_field_name(label)
+            normalized_fk = normalize_field_name(fk)
 
             index.append({
                 "id": gt["id"],
                 "field_key": fk,
                 "label": label,
-                "normalized": normalized,
-                "fk_normalized": fk_normalized,
+                "normalized": normalized_label,
+                "fk_normalized": normalized_fk,
                 "definition": "",
                 "category": gt.get("category", ""),
                 "tokens_list": all_tokens,
@@ -246,74 +366,109 @@ def _build_glossary_index(field_meta_fields, glossary_term_list):
     return index
 
 
-def _score_glossary_candidate(source_norm, source_tokens_list, source_tokens_set, entry, alias_map):
+def _score_candidate_against_entry(
+    c_norm, c_tokens, c_token_set, entry, alias_map,
+    context_tokens=None, entity_eligible=False, entity_context=False,
+):
     g_tokens_list = entry["tokens_list"]
     g_tokens_set = entry["tokens_set"]
-
     if not g_tokens_set:
         return None
 
-    matched = source_tokens_set & g_tokens_set
-    token_overlap_score = len(matched) / len(g_tokens_set) if g_tokens_set else 0.0
+    g_norm = entry["normalized"]
+    g_fk_norm = entry.get("fk_normalized", "")
+    best_g_norm = g_norm if len(g_norm) >= len(g_fk_norm) else g_fk_norm
 
-    char_sim = _char_similarity(source_norm, entry["normalized"])
-    char_sim_fk = _char_similarity(source_norm, entry["fk_normalized"])
-    char_similarity_score = max(char_sim, char_sim_fk)
+    exact_alias = _compute_exact_alias(c_norm, alias_map, entry)
+    tok_overlap = _compute_tok_overlap(c_token_set, g_tokens_set)
+    ordered_overlap = _compute_ordered_overlap(c_tokens, g_tokens_list)
+    edit_sim = _compute_edit_sim(c_tokens, g_tokens_list, c_norm, best_g_norm)
+    first_token = _compute_first_token_bonus(c_tokens, g_tokens_list)
+    context_bonus = _compute_context_bonus(c_token_set, context_tokens) if context_tokens else 0.0
 
-    ordered_score = _ordered_phrase_score(source_tokens_list, g_tokens_list)
-
-    alias_boost_val, alias_type = _compute_alias_boost(source_norm, alias_map, entry)
-
-    final_score = (
-        0.45 * token_overlap_score +
-        0.30 * char_similarity_score +
-        0.15 * ordered_score +
-        0.10 * alias_boost_val
-    )
-    final_score = round(min(final_score, 1.0), 4)
-
-    reason_labels = _generate_reason_labels(
-        source_tokens_set, g_tokens_list, source_norm,
-        entry["normalized"], char_similarity_score, ordered_score, alias_boost_val,
+    S = (
+        0.45 * exact_alias +
+        0.20 * tok_overlap +
+        0.12 * ordered_overlap +
+        0.18 * edit_sim +
+        0.03 * first_token +
+        0.02 * context_bonus
     )
 
-    match_method = _determine_match_method(alias_boost_val, token_overlap_score, char_similarity_score, ordered_score)
-    confidence_bucket = _classify_confidence(final_score)
+    if len(c_tokens) == 1 and len(g_tokens_list) == 1 and edit_sim >= 0.75:
+        short_boost = edit_sim * 0.72
+        S = max(S, short_boost)
+
+    if entity_eligible and entity_context:
+        S = min(1.0, S + 0.05)
+
+    confidence_pct = round(100 * S)
+
+    if exact_alias == 1.0 and confidence_pct < 80:
+        confidence_pct = max(confidence_pct, 80)
+
+    confidence_bucket = _classify_confidence(confidence_pct)
+    reason_chips = _generate_reason_chips(
+        exact_alias, tok_overlap, ordered_overlap, edit_sim,
+        first_token, context_bonus, entity_eligible,
+    )
+    match_method = _determine_match_method(exact_alias, tok_overlap, edit_sim, ordered_overlap)
+
+    matched_tokens = sorted(c_token_set & g_tokens_set)
 
     return {
         "glossary_term_id": entry["id"],
         "glossary_field_key": entry["field_key"],
         "label": entry["label"],
-        "confidence_score": final_score,
-        "confidence_pct": int(round(final_score * 100)),
+        "confidence_score": round(S, 4),
+        "confidence_pct": confidence_pct,
         "confidence_bucket": confidence_bucket,
         "match_method": match_method,
-        "reason_labels": reason_labels,
+        "reason_labels": reason_chips,
         "_components": {
-            "token_overlap": round(token_overlap_score, 4),
-            "char_similarity": round(char_similarity_score, 4),
-            "ordered_phrase": round(ordered_score, 4),
-            "alias_boost": round(alias_boost_val, 4),
+            "exact_alias": round(exact_alias, 4),
+            "tok_overlap": round(tok_overlap, 4),
+            "ordered_overlap": round(ordered_overlap, 4),
+            "edit_sim": round(edit_sim, 4),
+            "first_token_bonus": round(first_token, 4),
+            "context_bonus": round(context_bonus, 4),
         },
-        "matched_tokens": sorted(matched),
+        "matched_tokens": matched_tokens,
     }
 
 
-def _match_source_against_glossary(source_field, glossary_index, alias_map):
+def _match_source_against_glossary(source_field, glossary_index, alias_map, context_tokens=None):
     source_norm = normalize_field_name(source_field)
-    source_tokens_list = _extract_tokens(source_field)
-    source_tokens_set = set(source_tokens_list)
+    _, source_tokens = normalize_text(source_field)
+    source_token_set = set(source_tokens)
+
+    suppression_reasons = _classify_suppression(source_field, source_tokens)
+    entity_eligible = _is_entity_eligible(source_tokens)
+    if entity_eligible and "numeric_heavy" in suppression_reasons:
+        suppression_reasons.remove("numeric_heavy")
+
+    entity_context = False
+    if entity_eligible and context_tokens:
+        entity_context = bool(context_tokens & ENTITY_CONTEXT_TOKENS)
 
     all_candidates = []
-
     for entry in glossary_index:
-        result = _score_glossary_candidate(
-            source_norm, source_tokens_list, source_tokens_set, entry, alias_map,
+        result = _score_candidate_against_entry(
+            source_norm, source_tokens, source_token_set, entry, alias_map,
+            context_tokens=context_tokens,
+            entity_eligible=entity_eligible,
+            entity_context=entity_context,
         )
         if result:
             all_candidates.append(result)
 
-    all_candidates.sort(key=lambda c: (-c["confidence_score"], c["glossary_field_key"]))
+    all_candidates.sort(key=lambda c: (
+        -c["confidence_pct"],
+        -(c["_components"]["exact_alias"]),
+        -(c["_components"]["tok_overlap"]),
+        -(c["_components"]["edit_sim"]),
+        c["glossary_field_key"],
+    ))
 
     seen_keys = set()
     deduped = []
@@ -322,7 +477,8 @@ def _match_source_against_glossary(source_field, glossary_index, alias_map):
             seen_keys.add(c["glossary_field_key"])
             deduped.append(c)
 
-    top = deduped[:5]
+    is_suppressed = len(suppression_reasons) > 0
+    top = deduped[:3]
 
     if top:
         best = top[0]
@@ -344,6 +500,9 @@ def _match_source_against_glossary(source_field, glossary_index, alias_map):
             "match_method": method_label,
             "match_reason": ", ".join(best["reason_labels"]) if best["reason_labels"] else best["match_method"],
             "reason_labels": best["reason_labels"],
+            "suppressed": is_suppressed,
+            "suppression_reasons": suppression_reasons,
+            "entity_eligible": entity_eligible,
             "candidates": [
                 {
                     "term_id": c["glossary_term_id"],
@@ -354,11 +513,13 @@ def _match_source_against_glossary(source_field, glossary_index, alias_map):
                     "confidence_bucket": c["confidence_bucket"],
                     "method": c["match_method"],
                     "reason_labels": c["reason_labels"],
+                    "components": c["_components"],
                 }
                 for c in top
             ],
             "_meta": {
                 "source_normalized": source_norm,
+                "source_tokens": source_tokens,
                 "matched_keywords": best.get("matched_tokens", []),
                 "reason": ", ".join(best["reason_labels"]) if best["reason_labels"] else "no reason",
                 "components": best.get("_components"),
@@ -379,9 +540,13 @@ def _match_source_against_glossary(source_field, glossary_index, alias_map):
         "match_method": "none",
         "match_reason": "No matching canonical field found",
         "reason_labels": [],
+        "suppressed": is_suppressed,
+        "suppression_reasons": suppression_reasons,
+        "entity_eligible": entity_eligible,
         "candidates": [],
         "_meta": {
             "source_normalized": source_norm,
+            "source_tokens": source_tokens,
             "matched_keywords": [],
             "reason": "No match",
             "components": None,
@@ -454,21 +619,34 @@ def _run_suggestions(cur, workspace_id, source_fields, run_mode="db_backed"):
     for row in cur.fetchall():
         alias_map[row[0]] = row[1]
 
+    all_source_tokens = set()
+    for sf in source_fields:
+        _, toks = normalize_text(sf)
+        all_source_tokens.update(toks)
+
     suggestions = []
+    suppressed_list = []
     counts = {
-        "alias_exact": 0, "alias_normalized": 0,
-        "phrase_fuzzy": 0, "token_overlap": 0, "none": 0,
+        "alias_exact": 0, "phrase_fuzzy": 0,
+        "token_overlap": 0, "none": 0,
     }
     bucket_counts = {"HIGH": 0, "MEDIUM": 0, "LOW": 0, "HIDDEN": 0}
 
     for source_field in source_fields:
-        result = _match_source_against_glossary(source_field, glossary_index, alias_map)
+        result = _match_source_against_glossary(
+            source_field, glossary_index, alias_map,
+            context_tokens=all_source_tokens,
+        )
 
         method = result.get("match_method", "none")
         counts[method] = counts.get(method, 0) + 1
         bucket = result.get("confidence_bucket", "HIDDEN")
         bucket_counts[bucket] = bucket_counts.get(bucket, 0) + 1
-        suggestions.append(result)
+
+        if result.get("suppressed"):
+            suppressed_list.append(result)
+        else:
+            suggestions.append(result)
 
     diagnostics = {
         "run_mode": run_mode,
@@ -478,15 +656,16 @@ def _run_suggestions(cur, workspace_id, source_fields, run_mode="db_backed"):
         "glossary_terms_count": len(glossary_term_list),
         "aliases_count": len(alias_map),
         "total_headers": len(source_fields),
+        "suppressed_count": len(suppressed_list),
         "counts": counts,
         "confidence_buckets": bucket_counts,
     }
 
     total_matched = sum(v for k, v in counts.items() if k != "none")
     logger.info(
-        "[SUGGEST] run_complete: mode=%s, fields=%d, matched=%d, unmatched=%d, buckets=%s",
+        "[SUGGEST] run_complete: mode=%s, fields=%d, matched=%d, unmatched=%d, suppressed=%d, buckets=%s",
         run_mode, len(source_fields), total_matched, counts.get("none", 0),
-        bucket_counts,
+        len(suppressed_list), bucket_counts,
     )
 
-    return suggestions, diagnostics
+    return suggestions, diagnostics, suppressed_list

@@ -52393,11 +52393,13 @@ var P022_RuntimeValidation = {
   var _pftlSugState = {
     loading: false,
     suggestions: [],
+    suppressed: [],
     diagnostics: null,
     runMode: null,
     error: null,
     showText: false,
     showLowSignal: false,
+    showSuppressed: false,
     highlightKeywords: []
   };
 
@@ -52452,6 +52454,7 @@ var P022_RuntimeValidation = {
     _pftlState.running = false;
     _pftlState.file = null;
     _pftlSugState.suggestions = [];
+    _pftlSugState.suppressed = [];
     _pftlSugState.diagnostics = null;
     _pftlSugState.runMode = null;
     _pftlSugState.error = null;
@@ -52637,7 +52640,10 @@ var P022_RuntimeValidation = {
       if (run.suggestions) {
         _pftlSugState.suggestions = run.suggestions;
       }
-      console.log('[PFTL-SUG] run_complete:', run.total_suggestions, 'suggestions');
+      if (run.suppressed) {
+        _pftlSugState.suppressed = run.suppressed;
+      }
+      console.log('[PFTL-SUG] run_complete:', run.total_suggestions, 'suggestions,', (run.suppressed || []).length, 'suppressed');
     })
     .catch(function(err) {
       _pftlSugState.error = 'Network error: ' + err.message;
@@ -52651,6 +52657,11 @@ var P022_RuntimeValidation = {
 
   function _pftlToggleLowSignal() {
     _pftlSugState.showLowSignal = !_pftlSugState.showLowSignal;
+    _pftlRenderSuggestionsSection();
+  }
+
+  function _pftlToggleSuppressed() {
+    _pftlSugState.showSuppressed = !_pftlSugState.showSuppressed;
     _pftlRenderSuggestionsSection();
   }
 
@@ -52805,6 +52816,36 @@ var P022_RuntimeValidation = {
               html += '<span style="color:#999;font-size:0.82em;">(no canonical match)</span>';
               html += '</div>';
             }
+          }
+        }
+        html += '</div>';
+      }
+
+      var suppressed = _pftlSugState.suppressed || [];
+      if (suppressed.length > 0) {
+        var showSuppressed = _pftlSugState.showSuppressed || false;
+        html += '<div class="pftl-sug-group" style="margin-top:8px;">';
+        html += '<div class="pftl-sug-group-header" style="color:#b71c1c;cursor:pointer;border-bottom:1px solid #ffcdd2;" onclick="_pftlToggleSuppressed()">';
+        html += (showSuppressed ? '&#9660;' : '&#9654;') + ' Suppressed Candidates (' + suppressed.length + ') <span style=\"font-weight:normal;font-size:0.85em;color:#999;\">[debug]</span>';
+        html += '</div>';
+        if (showSuppressed) {
+          for (var si2 = 0; si2 < suppressed.length; si2++) {
+            var sp = suppressed[si2];
+            var spReasons = (sp.suppression_reasons || []).join(', ') || 'unknown';
+            html += '<div class="pftl-sug-row" style="opacity:0.55;background:#fff8f8;">';
+            html += '<span class="pftl-sug-source" title="' + _pftlEsc(sp.source_field) + '">' + _pftlEsc(sp.source_field) + '</span>';
+            html += '<span style="font-size:0.68em;background:#ffebee;color:#c62828;border-radius:3px;padding:1px 5px;margin-left:6px;">' + _pftlEsc(spReasons) + '</span>';
+            if (sp.entity_eligible) {
+              html += '<span style="font-size:0.62em;background:#fff3e0;color:#e65100;border-radius:3px;padding:1px 4px;margin-left:3px;">ENTITY</span>';
+            }
+            if (sp.confidence_pct > 0) {
+              html += '<span style="font-size:0.72em;color:#999;margin-left:6px;">' + sp.confidence_pct + '% best match</span>';
+            }
+            var spCands = sp.candidates || [];
+            if (spCands.length > 0) {
+              html += '<span style="font-size:0.72em;color:#999;margin-left:4px;">(' + spCands.length + ' candidates)</span>';
+            }
+            html += '</div>';
           }
         }
         html += '</div>';

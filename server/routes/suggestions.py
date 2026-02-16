@@ -121,11 +121,11 @@ async def create_suggestion_run(
 
             try:
                 if run_mode == "db_backed":
-                    suggestions, diagnostics = generate_suggestions(cur, workspace_id, document_id)
+                    suggestions, diagnostics, suppressed = generate_suggestions(cur, workspace_id, document_id)
                 else:
                     source_fields = []
                     diagnostics = {"run_mode": "local_fallback"}
-                    suggestions, diagnostics = generate_suggestions_local(cur, workspace_id, source_fields)
+                    suggestions, diagnostics, suppressed = generate_suggestions_local(cur, workspace_id, source_fields)
             except Exception as e:
                 logger.error("[SUGGEST] Engine error: %s", e)
                 cur.execute(
@@ -234,7 +234,7 @@ async def create_local_suggestion_run(
 
         with conn.cursor() as cur:
             try:
-                suggestions, diagnostics = generate_suggestions_local(cur, workspace_id, source_fields)
+                suggestions, diagnostics, suppressed = generate_suggestions_local(cur, workspace_id, source_fields)
             except Exception as e:
                 logger.error("[SUGGEST] Local engine error: %s", e)
                 return JSONResponse(
@@ -288,6 +288,17 @@ async def create_local_suggestion_run(
             "metadata": {"run_mode": "local_fallback"},
             "diagnostics": diagnostics,
             "suggestions": sug_results,
+            "suppressed": [
+                {
+                    "source_field": s["source_field"],
+                    "suppression_reasons": s.get("suppression_reasons", []),
+                    "entity_eligible": s.get("entity_eligible", False),
+                    "confidence_pct": s.get("confidence_pct", 0),
+                    "confidence_bucket": s.get("confidence_bucket", "HIDDEN"),
+                    "candidates": s.get("candidates", []),
+                }
+                for s in suppressed
+            ],
         }
 
         return JSONResponse(
