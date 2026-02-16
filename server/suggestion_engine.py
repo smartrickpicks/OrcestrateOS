@@ -208,6 +208,46 @@ def _find_alias_match_text(candidate_norm, alias_map, entry):
     return None
 
 
+def _collect_all_aliases_for_entry(entry, alias_map, alias_originals=None):
+    entry_id = entry.get("id") or entry.get("field_key", "")
+    aliases = []
+    for alias_key, alias_tid in alias_map.items():
+        if alias_tid == entry_id:
+            original = (alias_originals or {}).get(alias_key, alias_key)
+            aliases.append(original)
+    return aliases
+
+
+def _find_best_edit_sim_pair(c_tokens, g_tokens_list, c_norm, g_norm):
+    pairs = []
+    if c_norm and g_norm:
+        phrase_sim = rf_fuzz.token_sort_ratio(c_norm, g_norm) / 100.0
+        pairs.append({
+            "source_text": c_norm,
+            "glossary_text": g_norm,
+            "similarity": round(phrase_sim * 100),
+            "type": "phrase",
+        })
+    if c_tokens and g_tokens_list:
+        for gt in g_tokens_list:
+            best_sim = 0.0
+            best_st = ""
+            for ct in c_tokens:
+                sim = 1.0 - (rf_lev.normalized_distance(ct, gt))
+                if sim > best_sim:
+                    best_sim = sim
+                    best_st = ct
+            if best_sim >= 0.6:
+                pairs.append({
+                    "source_text": best_st,
+                    "glossary_text": gt,
+                    "similarity": round(best_sim * 100),
+                    "type": "token",
+                })
+    pairs.sort(key=lambda p: -p["similarity"])
+    return pairs[:5]
+
+
 def _compute_tok_overlap(c_set, a_or_t_set):
     if not a_or_t_set:
         return 0.0
@@ -388,6 +428,7 @@ def _build_glossary_index(field_meta_fields, glossary_term_list):
 def _score_candidate_against_entry(
     c_norm, c_tokens, c_token_set, entry, alias_map,
     context_tokens=None, entity_eligible=False, entity_context=False,
+    alias_originals=None,
 ):
     g_tokens_list = entry["tokens_list"]
     g_tokens_set = entry["tokens_set"]
@@ -435,10 +476,29 @@ def _score_candidate_against_entry(
 
     matched_tokens = sorted(c_token_set & g_tokens_set)
 
-    alias_text = _find_alias_match_text(c_norm, alias_map, entry) if exact_alias == 1.0 else None
+    alias_text_norm = _find_alias_match_text(c_norm, alias_map, entry) if exact_alias == 1.0 else None
+    alias_text = (alias_originals or {}).get(alias_text_norm, alias_text_norm) if alias_text_norm else None
+    all_aliases = _collect_all_aliases_for_entry(entry, alias_map, alias_originals)
     overlapping_tokens = sorted(c_token_set & g_tokens_set)
     glossary_tokens = sorted(g_tokens_set)
     context_overlap = sorted(c_token_set & set(context_tokens)) if context_tokens else []
+    edit_pairs = _find_best_edit_sim_pair(c_tokens, g_tokens_list, c_norm, best_g_norm) if edit_sim > 0.0 else []
+    first_token_match = c_tokens[0] if (first_token == 1.0 and c_tokens) else None
+    domain_kws_hit = sorted(c_token_set & entry.get("domain_keywords", set()))
+
+    trigger_summary = []
+    if exact_alias == 1.0 and alias_text:
+        trigger_summary.append('Alias "' + str(alias_text) + '" exactly matches this glossary term')
+    elif edit_pairs:
+        top_pair = edit_pairs[0]
+        trigger_summary.append(
+            '"' + str(top_pair["source_text"]) + '" is ' + str(top_pair["similarity"]) +
+            '% similar to "' + str(top_pair["glossary_text"]) + '"'
+        )
+    if overlapping_tokens:
+        trigger_summary.append("Shared tokens: " + ", ".join(overlapping_tokens))
+    if entity_eligible:
+        trigger_summary.append("Entity-eligible (numeric-leading name pattern)")
 
     return {
         "glossary_term_id": entry["id"],
@@ -459,7 +519,9 @@ def _score_candidate_against_entry(
         },
         "_match_context": {
             "alias_matched": alias_text,
+            "all_aliases": all_aliases,
             "glossary_label": entry["label"],
+            "glossary_field_key": entry["field_key"],
             "glossary_definition": entry.get("definition", ""),
             "glossary_category": entry.get("category", ""),
             "glossary_tokens": glossary_tokens,
@@ -467,12 +529,16 @@ def _score_candidate_against_entry(
             "glossary_normalized": best_g_norm,
             "overlapping_tokens": overlapping_tokens,
             "context_tokens_matched": context_overlap,
+            "edit_sim_pairs": edit_pairs,
+            "first_token_match": first_token_match,
+            "domain_keywords_hit": domain_kws_hit,
+            "trigger_summary": trigger_summary,
         },
         "matched_tokens": matched_tokens,
     }
 
 
-def _match_source_against_glossary(source_field, glossary_index, alias_map, context_tokens=None):
+def _match_source_against_glossary(source_field, glossary_index, alias_map, context_tokens=None, alias_originals=None):
     source_norm = normalize_field_name(source_field)
     _, source_tokens = normalize_text(source_field)
     source_token_set = set(source_tokens)
@@ -493,6 +559,7 @@ def _match_source_against_glossary(source_field, glossary_index, alias_map, cont
             context_tokens=context_tokens,
             entity_eligible=entity_eligible,
             entity_context=entity_context,
+            alias_originals=alias_originals,
         )
         if result:
             all_candidates.append(result)
@@ -647,14 +714,16 @@ def _run_suggestions(cur, workspace_id, source_fields, run_mode="db_backed"):
     glossary_index = _build_glossary_index(field_meta_fields, glossary_term_list)
 
     cur.execute(
-        """SELECT normalized_alias, term_id
+        """SELECT normalized_alias, term_id, alias
            FROM glossary_aliases
            WHERE workspace_id = %s AND deleted_at IS NULL""",
         (workspace_id,),
     )
     alias_map = {}
+    alias_originals = {}
     for row in cur.fetchall():
         alias_map[row[0]] = row[1]
+        alias_originals[row[0]] = row[2] if len(row) > 2 and row[2] else row[0]
 
     all_source_tokens = set()
     for sf in source_fields:
@@ -673,6 +742,7 @@ def _run_suggestions(cur, workspace_id, source_fields, run_mode="db_backed"):
         result = _match_source_against_glossary(
             source_field, glossary_index, alias_map,
             context_tokens=all_source_tokens,
+            alias_originals=alias_originals,
         )
 
         method = result.get("match_method", "none")

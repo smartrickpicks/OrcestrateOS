@@ -52759,17 +52759,63 @@ var P022_RuntimeValidation = {
     html += '<div class="pftl-sug-detail-field"><div class="pftl-sug-detail-field-label">Match Method</div><div class="pftl-sug-detail-field-value">' + _pftlEsc(sug.match_method || 'none') + '</div></div>';
     html += '</div>';
 
-    if (ctx.glossary_definition || ctx.glossary_category || ctx.alias_matched) {
-      html += '<div style="margin-top:6px;padding:8px 10px;background:#f5f5f5;border-radius:4px;border-left:3px solid #1565c0;">';
-      html += '<div style="font-weight:600;font-size:0.82em;color:#333;margin-bottom:4px;">What Triggered This Match</div>';
+    var triggers = ctx.trigger_summary || [];
+    var hasTriggerData = triggers.length > 0 || ctx.alias_matched || ctx.glossary_definition || ctx.glossary_category;
+    if (hasTriggerData) {
+      html += '<div style="margin-top:6px;padding:8px 10px;background:#e8f5e9;border-radius:4px;border-left:3px solid #2e7d32;">';
+      html += '<div style="font-weight:600;font-size:0.85em;color:#1b5e20;margin-bottom:6px;">What Triggered This Match</div>';
+      if (triggers.length > 0) {
+        for (var tri = 0; tri < triggers.length; tri++) {
+          html += '<div style="font-size:0.82em;margin-bottom:3px;padding:2px 0;"><span style="color:#2e7d32;margin-right:4px;">&#x25B8;</span>' + _pftlEsc(triggers[tri]) + '</div>';
+        }
+      }
       if (ctx.alias_matched) {
-        html += '<div style="font-size:0.82em;margin-bottom:3px;"><span style="color:#888;">Alias hit:</span> <span style="color:#2e7d32;font-weight:500;">"' + _pftlEsc(ctx.alias_matched) + '"</span> <span style="color:#aaa;">&rarr; matched source to this glossary term</span></div>';
+        html += '<div style="font-size:0.82em;margin-top:4px;padding:4px 8px;background:#c8e6c9;border-radius:3px;">';
+        html += '<span style="color:#1b5e20;font-weight:600;">Exact alias:</span> <span style="color:#2e7d32;font-weight:500;">"' + _pftlEsc(ctx.alias_matched) + '"</span>';
+        html += ' <span style="color:#888;">&rarr;</span> <span style="color:#1565c0;">' + _pftlEsc(ctx.glossary_label || '') + '</span>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+
+    var allAliases = ctx.all_aliases || [];
+    if (allAliases.length > 0) {
+      html += '<div style="margin-top:6px;padding:6px 10px;background:#f3e5f5;border-radius:4px;border-left:3px solid #7b1fa2;">';
+      html += '<div style="font-size:0.8em;font-weight:600;color:#4a148c;margin-bottom:3px;">Known Aliases for This Term (' + allAliases.length + ')</div>';
+      for (var ali = 0; ali < allAliases.length && ali < 8; ali++) {
+        html += '<span class="pftl-sug-detail-token" style="background:#e1bee7;color:#6a1b9a;">' + _pftlEsc(allAliases[ali]) + '</span>';
+      }
+      if (allAliases.length > 8) {
+        html += '<span style="font-size:0.72em;color:#999;margin-left:4px;">+' + (allAliases.length - 8) + ' more</span>';
+      }
+      html += '</div>';
+    }
+
+    if (ctx.glossary_definition || ctx.glossary_category) {
+      html += '<div style="margin-top:6px;padding:6px 10px;background:#f5f5f5;border-radius:4px;">';
+      if (ctx.glossary_category) {
+        html += '<div style="font-size:0.82em;margin-bottom:2px;"><span style="color:#888;">Category:</span> <span style="color:#6a1b9a;font-weight:500;">' + _pftlEsc(ctx.glossary_category) + '</span></div>';
       }
       if (ctx.glossary_definition) {
-        html += '<div style="font-size:0.82em;margin-bottom:3px;"><span style="color:#888;">Definition:</span> <span style="color:#333;">' + _pftlEsc(ctx.glossary_definition) + '</span></div>';
+        html += '<div style="font-size:0.82em;"><span style="color:#888;">Definition:</span> <span style="color:#333;">' + _pftlEsc(ctx.glossary_definition) + '</span></div>';
       }
-      if (ctx.glossary_category) {
-        html += '<div style="font-size:0.82em;"><span style="color:#888;">Category:</span> <span style="color:#6a1b9a;font-weight:500;">' + _pftlEsc(ctx.glossary_category) + '</span></div>';
+      html += '</div>';
+    }
+
+    var editPairs = ctx.edit_sim_pairs || [];
+    if (editPairs.length > 0) {
+      html += '<div style="margin-top:6px;padding:8px 10px;background:#fff3e0;border-radius:4px;border-left:3px solid #e65100;">';
+      html += '<div style="font-weight:600;font-size:0.82em;color:#bf360c;margin-bottom:4px;">Edit Similarity Comparisons</div>';
+      for (var epi = 0; epi < editPairs.length; epi++) {
+        var ep = editPairs[epi];
+        var simColor = ep.similarity >= 80 ? '#2e7d32' : ep.similarity >= 60 ? '#e65100' : '#9e9e9e';
+        html += '<div style="font-size:0.8em;margin-bottom:2px;display:flex;align-items:center;gap:4px;">';
+        html += '<span style="color:#e65100;font-family:monospace;">"' + _pftlEsc(ep.source_text) + '"</span>';
+        html += '<span style="color:#aaa;">&harr;</span>';
+        html += '<span style="color:#1565c0;font-family:monospace;">"' + _pftlEsc(ep.glossary_text) + '"</span>';
+        html += '<span style="background:' + simColor + ';color:#fff;padding:1px 5px;border-radius:8px;font-size:0.78em;font-weight:600;">' + ep.similarity + '%</span>';
+        html += '<span style="font-size:0.72em;color:#999;">(' + _pftlEsc(ep.type) + ')</span>';
+        html += '</div>';
       }
       html += '</div>';
     }
@@ -52778,10 +52824,10 @@ var P022_RuntimeValidation = {
     var glossaryToks = ctx.glossary_tokens || [];
     var sourceToks = (meta.source_tokens || []);
     if (overlapping.length > 0 || glossaryToks.length > 0) {
-      html += '<div style="margin-top:8px;padding:8px 10px;background:#fafafa;border-radius:4px;">';
+      html += '<div style="margin-top:6px;padding:8px 10px;background:#fafafa;border-radius:4px;">';
       html += '<div style="font-weight:600;font-size:0.82em;color:#333;margin-bottom:4px;">Token Comparison</div>';
       if (sourceToks.length > 0) {
-        html += '<div style="font-size:0.8em;margin-bottom:3px;"><span style="color:#888;">Source tokens:</span> ';
+        html += '<div style="font-size:0.8em;margin-bottom:3px;"><span style="color:#888;">Source:</span> ';
         for (var sti = 0; sti < sourceToks.length; sti++) {
           var isOverlap = overlapping.indexOf(sourceToks[sti]) >= 0;
           html += '<span class="pftl-sug-detail-token" style="' + (isOverlap ? 'background:#c8e6c9;color:#2e7d32;font-weight:600;' : '') + '">' + _pftlEsc(sourceToks[sti]) + '</span>';
@@ -52789,26 +52835,33 @@ var P022_RuntimeValidation = {
         html += '</div>';
       }
       if (glossaryToks.length > 0) {
-        html += '<div style="font-size:0.8em;margin-bottom:3px;"><span style="color:#888;">Glossary tokens:</span> ';
+        html += '<div style="font-size:0.8em;margin-bottom:3px;"><span style="color:#888;">Glossary:</span> ';
         for (var gti = 0; gti < glossaryToks.length; gti++) {
           var isMatch = overlapping.indexOf(glossaryToks[gti]) >= 0;
           html += '<span class="pftl-sug-detail-token" style="' + (isMatch ? 'background:#c8e6c9;color:#2e7d32;font-weight:600;' : '') + '">' + _pftlEsc(glossaryToks[gti]) + '</span>';
         }
         html += '</div>';
       }
-      if (overlapping.length > 0) {
-        html += '<div style="font-size:0.8em;"><span style="color:#888;">Overlapping:</span> ';
-        for (var oi = 0; oi < overlapping.length; oi++) {
-          html += '<span class="pftl-sug-detail-token" style="background:#c8e6c9;color:#2e7d32;font-weight:600;">' + _pftlEsc(overlapping[oi]) + '</span>';
-        }
-        html += '</div>';
-      }
       html += '</div>';
+    }
+
+    var domainKws = ctx.domain_keywords_hit || [];
+    if (domainKws.length > 0) {
+      html += '<div style="margin-top:6px;padding:6px 10px;background:#e3f2fd;border-radius:4px;border-left:3px solid #1565c0;">';
+      html += '<div style="font-size:0.8em;"><span style="color:#888;">Domain keywords from field_meta:</span> ';
+      for (var dki = 0; dki < domainKws.length; dki++) {
+        html += '<span class="pftl-sug-detail-token" style="background:#bbdefb;color:#0d47a1;">' + _pftlEsc(domainKws[dki]) + '</span>';
+      }
+      html += '</div></div>';
+    }
+
+    if (ctx.first_token_match) {
+      html += '<div style="margin-top:4px;padding:4px 10px;font-size:0.8em;color:#00695c;"><span style="color:#888;">First-token anchor:</span> <span style="font-weight:500;">"' + _pftlEsc(ctx.first_token_match) + '"</span> matched the leading token of the glossary term</div>';
     }
 
     var ctxMatched = ctx.context_tokens_matched || [];
     if (ctxMatched.length > 0) {
-      html += '<div style="margin-top:6px;padding:6px 10px;background:#f9fbe7;border-radius:4px;border-left:3px solid #558b2f;">';
+      html += '<div style="margin-top:4px;padding:6px 10px;background:#f9fbe7;border-radius:4px;border-left:3px solid #558b2f;">';
       html += '<div style="font-size:0.8em;"><span style="color:#888;">Context tokens that boosted score:</span> ';
       for (var cmi = 0; cmi < ctxMatched.length; cmi++) {
         html += '<span class="pftl-sug-detail-token" style="background:#dcedc8;color:#33691e;">' + _pftlEsc(ctxMatched[cmi]) + '</span>';
