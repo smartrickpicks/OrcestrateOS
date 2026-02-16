@@ -143,6 +143,11 @@ async def create_suggestion_run(
             for s in suggestions:
                 sug_id = generate_id("sug_")
                 sug_meta = s.pop("_meta", None)
+                match_context = s.pop("_match_context", None)
+                if sug_meta is None:
+                    sug_meta = {}
+                if match_context:
+                    sug_meta["_match_context"] = match_context
                 cur.execute(
                     """INSERT INTO suggestions
                        (id, workspace_id, run_id, document_id, source_field,
@@ -272,6 +277,7 @@ async def create_local_suggestion_run(
                     "resolved_at": None,
                     "candidates": s.get("candidates", []),
                     "_components": s.get("_components"),
+                    "_match_context": s.get("_match_context"),
                     "matched_tokens": s.get("matched_tokens", []),
                     "entity_eligible": s.get("entity_eligible", False),
                     "created_at": now_iso,

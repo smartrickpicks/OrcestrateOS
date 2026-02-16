@@ -52740,6 +52740,8 @@ var P022_RuntimeValidation = {
     var bucketColor = bucketColors[bucket] || '#bbb';
     var targetLabel = sug.suggested_label || sug.glossary_field_key || sug.suggested_term_id || '(no match)';
     var targetKey = sug.glossary_field_key || sug.suggested_term_id || '';
+    var meta = sug.metadata || sug._meta || {};
+    var ctx = sug._match_context || (meta && meta._match_context) || {};
 
     var html = '<div class="pftl-sug-detail">';
 
@@ -52749,11 +52751,70 @@ var P022_RuntimeValidation = {
     html += '</div>';
 
     html += '<div class="pftl-sug-detail-grid">';
-    html += '<div class="pftl-sug-detail-field"><div class="pftl-sug-detail-field-label">Source Field</div><div class="pftl-sug-detail-field-value">' + _pftlEsc(sug.source_field) + '</div></div>';
+    html += '<div class="pftl-sug-detail-field"><div class="pftl-sug-detail-field-label">Source Field (raw)</div><div class="pftl-sug-detail-field-value">' + _pftlEsc(sug.source_field) + '</div></div>';
     html += '<div class="pftl-sug-detail-field"><div class="pftl-sug-detail-field-label">Suggested Match</div><div class="pftl-sug-detail-field-value" style="color:#1565c0;">' + _pftlEsc(targetLabel) + '</div></div>';
+    html += '<div class="pftl-sug-detail-field"><div class="pftl-sug-detail-field-label">Source (normalized)</div><div class="pftl-sug-detail-field-value" style="font-family:monospace;font-size:0.9em;color:#555;">' + _pftlEsc(ctx.source_normalized || meta.source_normalized || '') + '</div></div>';
+    html += '<div class="pftl-sug-detail-field"><div class="pftl-sug-detail-field-label">Glossary (normalized)</div><div class="pftl-sug-detail-field-value" style="font-family:monospace;font-size:0.9em;color:#555;">' + _pftlEsc(ctx.glossary_normalized || '') + '</div></div>';
     html += '<div class="pftl-sug-detail-field"><div class="pftl-sug-detail-field-label">Glossary Key</div><div class="pftl-sug-detail-field-value" style="font-family:monospace;font-size:0.9em;">' + _pftlEsc(targetKey) + '</div></div>';
     html += '<div class="pftl-sug-detail-field"><div class="pftl-sug-detail-field-label">Match Method</div><div class="pftl-sug-detail-field-value">' + _pftlEsc(sug.match_method || 'none') + '</div></div>';
     html += '</div>';
+
+    if (ctx.glossary_definition || ctx.glossary_category || ctx.alias_matched) {
+      html += '<div style="margin-top:6px;padding:8px 10px;background:#f5f5f5;border-radius:4px;border-left:3px solid #1565c0;">';
+      html += '<div style="font-weight:600;font-size:0.82em;color:#333;margin-bottom:4px;">What Triggered This Match</div>';
+      if (ctx.alias_matched) {
+        html += '<div style="font-size:0.82em;margin-bottom:3px;"><span style="color:#888;">Alias hit:</span> <span style="color:#2e7d32;font-weight:500;">"' + _pftlEsc(ctx.alias_matched) + '"</span> <span style="color:#aaa;">&rarr; matched source to this glossary term</span></div>';
+      }
+      if (ctx.glossary_definition) {
+        html += '<div style="font-size:0.82em;margin-bottom:3px;"><span style="color:#888;">Definition:</span> <span style="color:#333;">' + _pftlEsc(ctx.glossary_definition) + '</span></div>';
+      }
+      if (ctx.glossary_category) {
+        html += '<div style="font-size:0.82em;"><span style="color:#888;">Category:</span> <span style="color:#6a1b9a;font-weight:500;">' + _pftlEsc(ctx.glossary_category) + '</span></div>';
+      }
+      html += '</div>';
+    }
+
+    var overlapping = ctx.overlapping_tokens || [];
+    var glossaryToks = ctx.glossary_tokens || [];
+    var sourceToks = (meta.source_tokens || []);
+    if (overlapping.length > 0 || glossaryToks.length > 0) {
+      html += '<div style="margin-top:8px;padding:8px 10px;background:#fafafa;border-radius:4px;">';
+      html += '<div style="font-weight:600;font-size:0.82em;color:#333;margin-bottom:4px;">Token Comparison</div>';
+      if (sourceToks.length > 0) {
+        html += '<div style="font-size:0.8em;margin-bottom:3px;"><span style="color:#888;">Source tokens:</span> ';
+        for (var sti = 0; sti < sourceToks.length; sti++) {
+          var isOverlap = overlapping.indexOf(sourceToks[sti]) >= 0;
+          html += '<span class="pftl-sug-detail-token" style="' + (isOverlap ? 'background:#c8e6c9;color:#2e7d32;font-weight:600;' : '') + '">' + _pftlEsc(sourceToks[sti]) + '</span>';
+        }
+        html += '</div>';
+      }
+      if (glossaryToks.length > 0) {
+        html += '<div style="font-size:0.8em;margin-bottom:3px;"><span style="color:#888;">Glossary tokens:</span> ';
+        for (var gti = 0; gti < glossaryToks.length; gti++) {
+          var isMatch = overlapping.indexOf(glossaryToks[gti]) >= 0;
+          html += '<span class="pftl-sug-detail-token" style="' + (isMatch ? 'background:#c8e6c9;color:#2e7d32;font-weight:600;' : '') + '">' + _pftlEsc(glossaryToks[gti]) + '</span>';
+        }
+        html += '</div>';
+      }
+      if (overlapping.length > 0) {
+        html += '<div style="font-size:0.8em;"><span style="color:#888;">Overlapping:</span> ';
+        for (var oi = 0; oi < overlapping.length; oi++) {
+          html += '<span class="pftl-sug-detail-token" style="background:#c8e6c9;color:#2e7d32;font-weight:600;">' + _pftlEsc(overlapping[oi]) + '</span>';
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+
+    var ctxMatched = ctx.context_tokens_matched || [];
+    if (ctxMatched.length > 0) {
+      html += '<div style="margin-top:6px;padding:6px 10px;background:#f9fbe7;border-radius:4px;border-left:3px solid #558b2f;">';
+      html += '<div style="font-size:0.8em;"><span style="color:#888;">Context tokens that boosted score:</span> ';
+      for (var cmi = 0; cmi < ctxMatched.length; cmi++) {
+        html += '<span class="pftl-sug-detail-token" style="background:#dcedc8;color:#33691e;">' + _pftlEsc(ctxMatched[cmi]) + '</span>';
+      }
+      html += '</div></div>';
+    }
 
     var components = sug._components || sug.components || null;
     if (components) {
@@ -52798,16 +52859,6 @@ var P022_RuntimeValidation = {
       html += '<div class="pftl-sug-detail-field-label">Reason Chips</div>';
       for (var ri = 0; ri < labels.length; ri++) {
         html += '<span class="pftl-sug-detail-chip">' + _pftlEsc(labels[ri]) + '</span>';
-      }
-      html += '</div>';
-    }
-
-    var matched = (sug.metadata && sug.metadata.matched_keywords) || sug.matched_tokens || [];
-    if (matched.length > 0) {
-      html += '<div class="pftl-sug-detail-tokens">';
-      html += '<div class="pftl-sug-detail-field-label">Matched Tokens</div>';
-      for (var ti = 0; ti < matched.length; ti++) {
-        html += '<span class="pftl-sug-detail-token">' + _pftlEsc(matched[ti]) + '</span>';
       }
       html += '</div>';
     }

@@ -189,6 +189,25 @@ def _compute_exact_alias(candidate_norm, alias_map, entry):
     return 0.0
 
 
+def _find_alias_match_text(candidate_norm, alias_map, entry):
+    entry_id = entry.get("id") or entry.get("field_key", "")
+    alias_hit = alias_map.get(candidate_norm)
+    if alias_hit and alias_hit == entry_id:
+        return candidate_norm
+    fk_norm = entry.get("fk_normalized", "")
+    if candidate_norm and candidate_norm == fk_norm:
+        return entry.get("field_key", fk_norm)
+    norm_label = entry.get("normalized", "")
+    if candidate_norm and candidate_norm == norm_label:
+        return entry.get("label", norm_label)
+    for alias_key, alias_tid in alias_map.items():
+        if alias_tid == entry_id:
+            alias_clean = normalize_field_name(alias_key)
+            if candidate_norm == alias_clean:
+                return alias_key
+    return None
+
+
 def _compute_tok_overlap(c_set, a_or_t_set):
     if not a_or_t_set:
         return 0.0
@@ -416,6 +435,11 @@ def _score_candidate_against_entry(
 
     matched_tokens = sorted(c_token_set & g_tokens_set)
 
+    alias_text = _find_alias_match_text(c_norm, alias_map, entry) if exact_alias == 1.0 else None
+    overlapping_tokens = sorted(c_token_set & g_tokens_set)
+    glossary_tokens = sorted(g_tokens_set)
+    context_overlap = sorted(c_token_set & set(context_tokens)) if context_tokens else []
+
     return {
         "glossary_term_id": entry["id"],
         "glossary_field_key": entry["field_key"],
@@ -432,6 +456,17 @@ def _score_candidate_against_entry(
             "edit_sim": round(edit_sim, 4),
             "first_token_bonus": round(first_token, 4),
             "context_bonus": round(context_bonus, 4),
+        },
+        "_match_context": {
+            "alias_matched": alias_text,
+            "glossary_label": entry["label"],
+            "glossary_definition": entry.get("definition", ""),
+            "glossary_category": entry.get("category", ""),
+            "glossary_tokens": glossary_tokens,
+            "source_normalized": c_norm,
+            "glossary_normalized": best_g_norm,
+            "overlapping_tokens": overlapping_tokens,
+            "context_tokens_matched": context_overlap,
         },
         "matched_tokens": matched_tokens,
     }
@@ -514,9 +549,11 @@ def _match_source_against_glossary(source_field, glossary_index, alias_map, cont
                     "method": c["match_method"],
                     "reason_labels": c["reason_labels"],
                     "components": c["_components"],
+                    "match_context": c.get("_match_context"),
                 }
                 for c in top
             ],
+            "_match_context": best.get("_match_context"),
             "_meta": {
                 "source_normalized": source_norm,
                 "source_tokens": source_tokens,
