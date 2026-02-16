@@ -21,6 +21,7 @@ from server.suggestion_engine import (
     _build_glossary_index,
     KEEP_TOKENS,
     DOMAIN_SIGNAL_TOKENS,
+    SCORING_CONFIG,
 )
 
 
@@ -282,6 +283,182 @@ class TestReasonChips:
     def test_entity_rule_chip(self):
         chips = _generate_reason_chips(0.0, 0.5, 0.0, 0.0, 0.0, 0.0, True)
         assert "Entity rule" in chips
+
+
+class TestAliasDrivenCorrectness:
+
+    def test_alias_present_synch_resolves(self):
+        entry = _make_entry("sync_license_type", "Sync License Type", category="contract")
+        alias_map = {"synch": entry["id"]}
+        result = _match_source_against_glossary("Synch", [entry], alias_map)
+        assert result["confidence_bucket"] == "HIGH"
+        assert result["glossary_field_key"] == "sync_license_type"
+        assert result["match_method"] == "alias_exact"
+
+    def test_alias_present_phrase_resolves(self):
+        entry = _make_entry("sync_license_type", "Sync License Type", category="contract")
+        alias_map = {"synch licenses": entry["id"]}
+        result = _match_source_against_glossary("Synch licenses", [entry], alias_map)
+        assert result["confidence_bucket"] == "HIGH"
+        assert result["glossary_field_key"] == "sync_license_type"
+
+    def test_alias_removed_fuzzy_still_works(self):
+        entry = _make_entry("sync_license_type", "Sync License Type", category="contract")
+        alias_map = {}
+        result = _match_source_against_glossary("Synch", [entry], alias_map)
+        assert result["confidence_pct"] > 0
+        assert result["confidence_bucket"] in ("HIGH", "MEDIUM", "LOW")
+        assert result["match_method"] != "alias_exact"
+
+    def test_genericity_royalti_typo(self):
+        entry = _make_entry("royalty_rate", "Royalty Rate", category="financial")
+        alias_map = {}
+        result = _match_source_against_glossary("Royalti", [entry], alias_map)
+        assert result["confidence_pct"] > 0
+        assert result["glossary_field_key"] == "royalty_rate"
+
+    def test_genericity_distribtn_typo(self):
+        entry = _make_entry("distribution_type", "Distribution Type", category="catalog")
+        alias_map = {}
+        result = _match_source_against_glossary("Distribtn", [entry], alias_map)
+        assert result["confidence_pct"] > 0
+        assert result["glossary_field_key"] == "distribution_type"
+
+    def test_no_hardcoded_sync_logic(self):
+        import inspect
+        from server import suggestion_engine
+        source = inspect.getsource(suggestion_engine._score_candidate_against_entry)
+        assert '"sync"' not in source, "No hardcoded sync string in scorer"
+        assert '"synch"' not in source, "No hardcoded synch string in scorer"
+        assert "'sync'" not in source, "No hardcoded sync string in scorer"
+        assert "'synch'" not in source, "No hardcoded synch string in scorer"
+
+    def test_determinism_multiple_runs(self):
+        entries = [
+            _make_entry("sync_license_type", "Sync License Type", category="contract"),
+            _make_entry("account_name", "Account Name", category="identity"),
+            _make_entry("royalty_rate", "Royalty Rate", category="financial"),
+        ]
+        alias_map = {"synch": "sync_license_type"}
+        fields = ["Synch", "Acct Name", "Royalti Rate"]
+
+        runs = []
+        for _ in range(5):
+            run_results = []
+            for f in fields:
+                r = _match_source_against_glossary(f, entries, alias_map)
+                run_results.append((
+                    r["source_field"],
+                    r["confidence_pct"],
+                    r["glossary_field_key"],
+                    r["match_method"],
+                ))
+            runs.append(run_results)
+
+        for i in range(1, len(runs)):
+            assert runs[i] == runs[0], f"Run {i} differs from run 0"
+
+
+class TestScoringConfigFreeze:
+
+    def test_weights_sum_to_one(self):
+        total = sum(SCORING_CONFIG["weights"].values())
+        assert abs(total - 1.0) < 0.001, f"Weights must sum to 1.0, got {total}"
+
+    def test_thresholds_ordered(self):
+        t = SCORING_CONFIG["thresholds"]
+        assert t["HIGH"] > t["MEDIUM"] > t["LOW"]
+
+    def test_config_has_required_keys(self):
+        assert "weights" in SCORING_CONFIG
+        assert "thresholds" in SCORING_CONFIG
+        assert "boosts" in SCORING_CONFIG
+        assert "tie_break_order" in SCORING_CONFIG
+        assert "chip_thresholds" in SCORING_CONFIG
+
+    def test_boost_multipliers_in_range(self):
+        b = SCORING_CONFIG["boosts"]
+        assert 0 < b["short_single_token_multiplier"] < 1
+        assert 0 < b["domain_single_token_multiplier"] < 1
+        assert 0 < b["entity_boost"] <= 0.10
+
+
+class TestExportContractValidation:
+
+    def test_export_payload_has_required_blocks(self):
+        from server.routes.preflight import _build_export_payload
+        cached = {
+            "doc_mode": "SEARCHABLE",
+            "gate_color": "GREEN",
+            "gate_reasons": [],
+            "metrics": {"total_pages": 1},
+            "page_classifications": [{"page": 1, "classification": "SEARCHABLE"}],
+            "decision_trace": [],
+            "corruption_samples": [],
+            "timestamp": "2026-01-01T00:00:00Z",
+        }
+        payload = _build_export_payload(cached, "ws_1", "doc_1", "ws_1::doc_1")
+        assert payload["schema_version"] == "prep_export_v0"
+        assert "context" in payload
+        assert "source" in payload
+        assert payload["source"] == "cache"
+        assert "preflight" in payload
+        assert "ogc_preview" in payload
+        assert "operator_decisions" in payload
+        assert "evaluation" in payload
+
+    def test_export_context_fields(self):
+        from server.routes.preflight import _build_export_payload
+        cached = {
+            "doc_mode": "SEARCHABLE", "gate_color": "GREEN", "gate_reasons": [],
+            "metrics": {}, "page_classifications": [], "timestamp": "2026-01-01T00:00:00Z",
+        }
+        payload = _build_export_payload(cached, "ws_1", "doc_1", "ws_1::doc_1")
+        ctx = payload["context"]
+        assert ctx["workspace_id"] == "ws_1"
+        assert ctx["doc_id"] == "doc_1"
+        assert ctx["cache_key"] == "ws_1::doc_1"
+
+    def test_export_no_recompute(self):
+        from server.routes.preflight import _build_export_payload
+        cached = {
+            "doc_mode": "MIXED", "gate_color": "YELLOW", "gate_reasons": ["mixed_mode"],
+            "metrics": {"total_pages": 3}, "page_classifications": [],
+            "timestamp": "2026-01-01T00:00:00Z",
+        }
+        payload = _build_export_payload(cached, "ws_1", "doc_1", "ws_1::doc_1")
+        assert payload["preflight"]["doc_mode"] == "MIXED"
+        assert payload["preflight"]["recommended_gate"] == "YELLOW"
+
+
+class TestSalesforceResolverStub:
+
+    def test_resolver_disabled_by_default(self):
+        from server.resolvers.salesforce import is_resolver_enabled
+        assert is_resolver_enabled() is False
+
+    def test_resolve_entity_returns_contract(self):
+        from server.resolvers.salesforce import resolve_entity
+        result = resolve_entity("ws_1", "Acme Corp", address="123 Main St")
+        assert result["classification"] == "Unknown"
+        assert result["score"] == 0.0
+        assert isinstance(result["candidates"], list)
+        assert isinstance(result["explanation"], str)
+        assert result["provider"] == "salesforce_mock"
+        assert result["resolved"] is False
+
+    def test_resolver_status(self):
+        from server.resolvers.salesforce import get_resolver_status
+        status = get_resolver_status()
+        assert status["enabled"] is False
+        assert status["ready_for_integration"] is True
+        assert status["live_api"] is False
+
+    def test_no_network_calls(self):
+        from server.resolvers.salesforce import resolve_entity
+        result = resolve_entity("ws_1", "Test Entity")
+        assert result["provider"] == "salesforce_mock"
+        assert result["resolved"] is False
 
 
 if __name__ == "__main__":

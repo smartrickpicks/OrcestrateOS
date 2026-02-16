@@ -332,6 +332,15 @@ async def preflight_upload(
     return JSONResponse(status_code=200, content=envelope(result))
 
 
+_REQUIRED_CACHE_FIELDS = ["doc_mode", "gate_color", "metrics", "page_classifications"]
+
+
+def _validate_cached_state(cached):
+    """Validate cached preflight state has required fields. Returns list of missing fields."""
+    missing = [f for f in _REQUIRED_CACHE_FIELDS if f not in cached or cached[f] is None]
+    return missing
+
+
 def _build_export_payload(cached, ws_id, doc_id, ck, client_state=None):
     """Build prep_export_v0 payload from cached preflight + optional client state."""
     pages = cached.get("page_classifications", [])
@@ -450,6 +459,16 @@ async def preflight_export_get(
             content=error_envelope("NOT_FOUND", "No preflight result cached for doc_id: %s" % doc_id),
         )
 
+    missing = _validate_cached_state(cached)
+    if missing:
+        return JSONResponse(
+            status_code=422,
+            content=error_envelope(
+                "INVALID_CACHE_STATE",
+                "Cached preflight state is incomplete. Missing: %s" % ", ".join(missing),
+            ),
+        )
+
     export_payload = _build_export_payload(cached, ws_id, doc_id, ck)
     logger.info("[PREFLIGHT] export(GET): doc=%s ws=%s gate=%s source=cache", doc_id, ws_id, cached.get("gate_color"))
     return JSONResponse(status_code=200, content=envelope(export_payload))
@@ -498,6 +517,16 @@ async def preflight_export_post(
         return JSONResponse(
             status_code=404,
             content=error_envelope("NOT_FOUND", "No preflight result cached for doc_id: %s" % doc_id),
+        )
+
+    missing = _validate_cached_state(cached)
+    if missing:
+        return JSONResponse(
+            status_code=422,
+            content=error_envelope(
+                "INVALID_CACHE_STATE",
+                "Cached preflight state is incomplete. Missing: %s" % ", ".join(missing),
+            ),
         )
 
     export_payload = _build_export_payload(cached, ws_id, doc_id, ck, client_state=body)

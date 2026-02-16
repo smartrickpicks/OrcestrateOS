@@ -68,6 +68,43 @@ DOCUMENT_TYPE_KEYWORDS = {
     ],
 }
 
+SCORING_CONFIG = {
+    "weights": {
+        "exact_alias": 0.45,
+        "tok_overlap": 0.20,
+        "ordered_overlap": 0.12,
+        "edit_sim": 0.18,
+        "first_token_bonus": 0.03,
+        "context_bonus": 0.02,
+    },
+    "thresholds": {
+        "HIGH": 80,
+        "MEDIUM": 60,
+        "LOW": 40,
+    },
+    "boosts": {
+        "entity_boost": 0.05,
+        "short_single_token_multiplier": 0.72,
+        "domain_single_token_multiplier": 0.78,
+        "short_single_token_min_sim": 0.75,
+        "domain_single_token_min_sim": 0.75,
+    },
+    "tie_break_order": [
+        "confidence_pct DESC",
+        "exact_alias DESC",
+        "tok_overlap DESC",
+        "edit_sim DESC",
+        "glossary_field_key ASC",
+    ],
+    "chip_thresholds": {
+        "tok_overlap_min": 0.50,
+        "ordered_overlap_min": 0.50,
+        "edit_sim_min": 0.75,
+    },
+    "max_candidates_per_source": 3,
+    "body_text_max_candidates": 150,
+}
+
 _RE_SECTION_MARKER_ROMAN = re.compile(r'^\(?[ivxlcdm]+\)?\.?$', re.IGNORECASE)
 _RE_SECTION_MARKER_NUM = re.compile(r'^\d+(\.\d+)+$')
 _RE_SECTION_MARKER_ALPHA = re.compile(r'^\(?[a-z]\)?$', re.IGNORECASE)
@@ -295,27 +332,27 @@ def _compute_context_bonus(candidate_tokens_set, all_candidate_tokens_on_line):
 
 
 def _classify_confidence(score_pct):
-    if score_pct >= 80:
+    t = SCORING_CONFIG["thresholds"]
+    if score_pct >= t["HIGH"]:
         return "HIGH"
-    elif score_pct >= 60:
+    elif score_pct >= t["MEDIUM"]:
         return "MEDIUM"
-    elif score_pct >= 40:
+    elif score_pct >= t["LOW"]:
         return "LOW"
     else:
         return "HIDDEN"
 
 
 def _generate_reason_chips(exact_alias, tok_overlap, ordered_overlap, edit_sim, first_token, context_bonus, entity_eligible):
+    ct = SCORING_CONFIG["chip_thresholds"]
     chips = []
     if exact_alias == 1.0:
         chips.append("Exact alias")
-    if tok_overlap >= 0.50:
+    if tok_overlap >= ct["tok_overlap_min"]:
         chips.append("Token overlap")
-    if ordered_overlap >= 0.50:
+    if ordered_overlap >= ct["ordered_overlap_min"]:
         chips.append("Ordered match")
-    if edit_sim >= 0.80:
-        chips.append("Edit-sim")
-    elif edit_sim >= 0.75:
+    if edit_sim >= ct["edit_sim_min"]:
         chips.append("Edit-sim")
     if context_bonus == 1.0:
         chips.append("Context boost")
@@ -446,18 +483,20 @@ def _score_candidate_against_entry(
     first_token = _compute_first_token_bonus(c_tokens, g_tokens_list)
     context_bonus = _compute_context_bonus(c_token_set, context_tokens) if context_tokens else 0.0
 
+    w = SCORING_CONFIG["weights"]
     S = (
-        0.45 * exact_alias +
-        0.20 * tok_overlap +
-        0.12 * ordered_overlap +
-        0.18 * edit_sim +
-        0.03 * first_token +
-        0.02 * context_bonus
+        w["exact_alias"] * exact_alias +
+        w["tok_overlap"] * tok_overlap +
+        w["ordered_overlap"] * ordered_overlap +
+        w["edit_sim"] * edit_sim +
+        w["first_token_bonus"] * first_token +
+        w["context_bonus"] * context_bonus
     )
 
+    b = SCORING_CONFIG["boosts"]
     if len(c_tokens) == 1:
-        if len(g_tokens_list) == 1 and edit_sim >= 0.75:
-            short_boost = edit_sim * 0.72
+        if len(g_tokens_list) == 1 and edit_sim >= b["short_single_token_min_sim"]:
+            short_boost = edit_sim * b["short_single_token_multiplier"]
             S = max(S, short_boost)
         elif len(g_tokens_list) > 1:
             best_single_sim = 0.0
@@ -465,17 +504,17 @@ def _score_candidate_against_entry(
                 sim = 1.0 - rf_lev.normalized_distance(c_tokens[0], gt)
                 if sim > best_single_sim:
                     best_single_sim = sim
-            if best_single_sim >= 0.75 and c_tokens[0] in DOMAIN_SIGNAL_TOKENS | KEEP_TOKENS:
-                domain_boost = best_single_sim * 0.78
+            if best_single_sim >= b["domain_single_token_min_sim"] and c_tokens[0] in DOMAIN_SIGNAL_TOKENS | KEEP_TOKENS:
+                domain_boost = best_single_sim * b["domain_single_token_multiplier"]
                 S = max(S, domain_boost)
 
     if entity_eligible and entity_context:
-        S = min(1.0, S + 0.05)
+        S = min(1.0, S + b["entity_boost"])
 
     confidence_pct = round(100 * S)
 
-    if exact_alias == 1.0 and confidence_pct < 80:
-        confidence_pct = max(confidence_pct, 80)
+    if exact_alias == 1.0 and confidence_pct < SCORING_CONFIG["thresholds"]["HIGH"]:
+        confidence_pct = max(confidence_pct, SCORING_CONFIG["thresholds"]["HIGH"])
 
     confidence_bucket = _classify_confidence(confidence_pct)
     reason_chips = _generate_reason_chips(
@@ -590,7 +629,7 @@ def _match_source_against_glossary(source_field, glossary_index, alias_map, cont
             deduped.append(c)
 
     is_suppressed = len(suppression_reasons) > 0
-    top = deduped[:3]
+    top = deduped[:SCORING_CONFIG["max_candidates_per_source"]]
 
     if top:
         best = top[0]
@@ -682,7 +721,9 @@ def _build_glossary_term_list(terms_rows):
     return term_list
 
 
-def _extract_body_text_candidates(body_text, max_candidates=150):
+def _extract_body_text_candidates(body_text, max_candidates=None):
+    if max_candidates is None:
+        max_candidates = SCORING_CONFIG["body_text_max_candidates"]
     if not body_text:
         return []
     candidates = set()

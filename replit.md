@@ -43,7 +43,13 @@ Single-Token Domain Boost: When a single-token candidate (e.g., "Synch") matches
 
 Category Starvation Prevention: `_apply_category_balance()` prevents any single glossary category from dominating results. Uses `max_per_category = max(2, total // (n_cats * 2) + 1)` cap, collecting top items per category first, then appending overflow by score. Ensures balanced representation across identity, contract, catalog, and financial categories.
 
-Tests: `tests/test_suggestion_engine.py` contains 31 deterministic tests covering sync/synch matching, alias fuzzy paths, suppression rules, entity eligibility, deterministic ordering/tie-breaking, body text extraction, category balance, normalization, and reason chip generation.
+Scoring Config Freeze: All scoring weights, thresholds, boost multipliers, and chip thresholds are centralized in `SCORING_CONFIG` dict at the top of `server/suggestion_engine.py`. Weights sum to 1.0. All scoring functions reference this config instead of inline constants. Tie-break order is documented in config.
+
+Export Contract Hardening: Export endpoints (`GET /api/preflight/export`, `POST /api/preflight/export`) validate cached state completeness before building export payload. Missing required fields (doc_mode, gate_color, metrics, page_classifications) return 422 INVALID_CACHE_STATE. Export remains cache-backed only with no recompute.
+
+Salesforce Resolver Stub: `server/resolvers/salesforce.py` provides the `resolve_entity(workspace_id, name, address=None)` interface contract returning classification, score, candidates, explanation, provider, and resolved status. Default off via `SALESFORCE_RESOLVER_ENABLED` flag. Mock provider only — no network calls, no live API. Integration-ready as an additive confidence signal input.
+
+Tests: `tests/test_suggestion_engine.py` contains 49 deterministic tests covering sync/synch matching, alias-present/removed cases, genericity (non-sync typo families), no-hardcoding verification, determinism across reruns, scoring config freeze validation, export contract validation, Salesforce resolver stub, alias fuzzy paths, suppression rules, entity eligibility, deterministic ordering/tie-breaking, body text extraction, category balance, normalization, and reason chip generation.
 
 ## External Dependencies
 - **FastAPI server**: Used as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
