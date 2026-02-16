@@ -455,9 +455,19 @@ def _score_candidate_against_entry(
         0.02 * context_bonus
     )
 
-    if len(c_tokens) == 1 and len(g_tokens_list) == 1 and edit_sim >= 0.75:
-        short_boost = edit_sim * 0.72
-        S = max(S, short_boost)
+    if len(c_tokens) == 1:
+        if len(g_tokens_list) == 1 and edit_sim >= 0.75:
+            short_boost = edit_sim * 0.72
+            S = max(S, short_boost)
+        elif len(g_tokens_list) > 1:
+            best_single_sim = 0.0
+            for gt in g_tokens_list:
+                sim = 1.0 - rf_lev.normalized_distance(c_tokens[0], gt)
+                if sim > best_single_sim:
+                    best_single_sim = sim
+            if best_single_sim >= 0.75 and c_tokens[0] in DOMAIN_SIGNAL_TOKENS | KEEP_TOKENS:
+                domain_boost = best_single_sim * 0.78
+                S = max(S, domain_boost)
 
     if entity_eligible and entity_context:
         S = min(1.0, S + 0.05)
@@ -672,6 +682,42 @@ def _build_glossary_term_list(terms_rows):
     return term_list
 
 
+def _extract_body_text_candidates(body_text, max_candidates=150):
+    if not body_text:
+        return []
+    candidates = set()
+    lines = body_text.split("\n")
+    for line in lines:
+        line = line.strip()
+        if not line or len(line) < 3:
+            continue
+        phrases = re.split(r'[,;:\(\)\[\]\{\}"\u2013\u2014/]|\s{2,}|\t|\|', line)
+        all_phrases = []
+        for phrase in phrases:
+            phrase = phrase.strip()
+            if not phrase or len(phrase) < 3 or len(phrase) > 80:
+                continue
+            words = phrase.split()
+            if len(words) <= 6:
+                all_phrases.append(phrase)
+            else:
+                for w in range(len(words)):
+                    for span in range(1, min(5, len(words) - w + 1)):
+                        window = " ".join(words[w:w + span])
+                        if len(window) >= 3:
+                            all_phrases.append(window)
+        for phrase in all_phrases:
+            _, tokens = normalize_text(phrase)
+            if not tokens:
+                continue
+            has_domain = any(t in DOMAIN_SIGNAL_TOKENS for t in tokens)
+            has_keep = any(t in KEEP_TOKENS for t in tokens)
+            if has_domain or has_keep:
+                candidates.add(phrase)
+    result = sorted(candidates)[:max_candidates]
+    return result
+
+
 def generate_suggestions(cur, workspace_id, document_id):
     cur.execute(
         "SELECT metadata FROM documents WHERE id = %s AND workspace_id = %s AND deleted_at IS NULL",
@@ -691,13 +737,68 @@ def generate_suggestions(cur, workspace_id, document_id):
     return _run_suggestions(cur, workspace_id, source_fields, run_mode="db_backed")
 
 
-def generate_suggestions_local(cur, workspace_id, source_fields):
-    if not source_fields:
+def generate_suggestions_local(cur, workspace_id, source_fields, body_text=None):
+    if not source_fields and not body_text:
         return [], {"run_mode": "local_fallback", "error": "No source_fields provided"}
-    return _run_suggestions(cur, workspace_id, source_fields, run_mode="local_fallback")
+    return _run_suggestions(cur, workspace_id, source_fields or [], run_mode="local_fallback", body_text=body_text)
 
 
-def _run_suggestions(cur, workspace_id, source_fields, run_mode="db_backed"):
+def _get_suggestion_category(s):
+    cat = ""
+    mc = s.get("_match_context")
+    if mc and isinstance(mc, dict):
+        cat = mc.get("glossary_category", "") or ""
+    if not cat:
+        for c in s.get("candidates", []):
+            cm = c.get("match_context", {})
+            if cm and cm.get("glossary_category"):
+                cat = cm["glossary_category"]
+                break
+    return cat
+
+
+def _apply_category_balance(suggestions, max_per_category=None):
+    if not suggestions:
+        return suggestions
+
+    category_groups = {}
+    for s in suggestions:
+        cat = _get_suggestion_category(s)
+        if cat not in category_groups:
+            category_groups[cat] = []
+        category_groups[cat].append(s)
+
+    if len(category_groups) <= 1:
+        return suggestions
+
+    for cat in category_groups:
+        category_groups[cat].sort(key=lambda x: -x.get("confidence_pct", 0))
+
+    n_cats = len(category_groups)
+    if max_per_category is None:
+        max_per_category = max(2, len(suggestions) // (n_cats * 2) + 1)
+
+    balanced = []
+    cat_counts = {cat: 0 for cat in category_groups}
+    all_sorted = sorted(suggestions, key=lambda x: (-x.get("confidence_pct", 0), x.get("glossary_field_key", "")))
+
+    for s in all_sorted:
+        cat = _get_suggestion_category(s)
+        if cat_counts[cat] < max_per_category:
+            balanced.append(s)
+            cat_counts[cat] += 1
+
+    added_keys = set(s.get("glossary_field_key", "") for s in balanced)
+    for s in all_sorted:
+        fk = s.get("glossary_field_key", "")
+        if fk not in added_keys:
+            balanced.append(s)
+            added_keys.add(fk)
+
+    return balanced
+
+
+def _run_suggestions(cur, workspace_id, source_fields, run_mode="db_backed", body_text=None):
     field_meta = _load_field_meta()
     field_meta_fields = field_meta.get("fields", []) if field_meta else []
     has_field_meta = len(field_meta_fields) > 0
@@ -725,8 +826,15 @@ def _run_suggestions(cur, workspace_id, source_fields, run_mode="db_backed"):
         alias_map[row[0]] = row[1]
         alias_originals[row[0]] = row[2] if len(row) > 2 and row[2] else row[0]
 
+    body_candidates = _extract_body_text_candidates(body_text) if body_text else []
+    header_set = set(sf.strip().lower() for sf in source_fields)
+    body_only = [c for c in body_candidates if c.strip().lower() not in header_set]
+
+    merged_fields = list(source_fields)
+    merged_fields.extend(body_only)
+
     all_source_tokens = set()
-    for sf in source_fields:
+    for sf in merged_fields:
         _, toks = normalize_text(sf)
         all_source_tokens.update(toks)
 
@@ -738,12 +846,24 @@ def _run_suggestions(cur, workspace_id, source_fields, run_mode="db_backed"):
     }
     bucket_counts = {"HIGH": 0, "MEDIUM": 0, "LOW": 0, "HIDDEN": 0}
 
-    for source_field in source_fields:
+    seen_source_norm = set()
+    for source_field in merged_fields:
+        snorm = normalize_field_name(source_field)
+        if snorm in seen_source_norm:
+            continue
+        seen_source_norm.add(snorm)
+
         result = _match_source_against_glossary(
             source_field, glossary_index, alias_map,
             context_tokens=all_source_tokens,
             alias_originals=alias_originals,
         )
+
+        is_body = source_field in body_only
+        if is_body:
+            result["candidate_source"] = "body_text"
+        else:
+            result["candidate_source"] = "header"
 
         method = result.get("match_method", "none")
         counts[method] = counts.get(method, 0) + 1
@@ -755,6 +875,8 @@ def _run_suggestions(cur, workspace_id, source_fields, run_mode="db_backed"):
         else:
             suggestions.append(result)
 
+    suggestions = _apply_category_balance(suggestions)
+
     diagnostics = {
         "run_mode": run_mode,
         "has_field_meta": has_field_meta,
@@ -763,6 +885,8 @@ def _run_suggestions(cur, workspace_id, source_fields, run_mode="db_backed"):
         "glossary_terms_count": len(glossary_term_list),
         "aliases_count": len(alias_map),
         "total_headers": len(source_fields),
+        "body_text_candidates": len(body_only),
+        "total_candidates": len(merged_fields),
         "suppressed_count": len(suppressed_list),
         "counts": counts,
         "confidence_buckets": bucket_counts,
@@ -770,8 +894,8 @@ def _run_suggestions(cur, workspace_id, source_fields, run_mode="db_backed"):
 
     total_matched = sum(v for k, v in counts.items() if k != "none")
     logger.info(
-        "[SUGGEST] run_complete: mode=%s, fields=%d, matched=%d, unmatched=%d, suppressed=%d, buckets=%s",
-        run_mode, len(source_fields), total_matched, counts.get("none", 0),
+        "[SUGGEST] run_complete: mode=%s, fields=%d, body_candidates=%d, matched=%d, unmatched=%d, suppressed=%d, buckets=%s",
+        run_mode, len(source_fields), len(body_only), total_matched, counts.get("none", 0),
         len(suppressed_list), bucket_counts,
     )
 

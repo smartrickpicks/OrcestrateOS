@@ -52636,8 +52636,9 @@ var P022_RuntimeValidation = {
   function _pftlAutoRunSuggestions() {
     var result = _pftlState.result;
     if (!result) return;
-    var headers = result.extracted_headers;
-    if (!headers || headers.length === 0) {
+    var headers = result.extracted_headers || [];
+    var bodyText = result.extracted_text || "";
+    if (headers.length === 0 && !bodyText) {
       _pftlSugState.runMode = 'no_headers';
       _pftlSugState.error = 'No candidate headers found in document text.';
       _pftlRenderSuggestionsSection();
@@ -52650,7 +52651,7 @@ var P022_RuntimeValidation = {
     fetch(baseUrl + '/api/v2.5/suggestion-runs/local', {
       method: 'POST',
       headers: reqHeaders,
-      body: JSON.stringify({ source_fields: headers, document_id: result.doc_id || 'preflight_testlab' })
+      body: JSON.stringify({ source_fields: headers, body_text: bodyText, document_id: result.doc_id || 'preflight_testlab' })
     })
     .then(function(r) { return r.json(); })
     .then(function(resp) {
@@ -52701,6 +52702,7 @@ var P022_RuntimeValidation = {
     var isExpanded = _pftlSugState.expandedSugId === sug.id;
     var html = '<div class="pftl-sug-row">';
     html += '<span class="pftl-sug-source" title="' + _pftlEsc(sug.source_field) + '">' + _pftlEsc(sug.source_field) + '</span>';
+    if (sug.candidate_source === "body_text") html += '<span style="background:#fff3e0;color:#e65100;font-size:0.7em;padding:1px 5px;border-radius:3px;margin-left:4px;font-weight:600;vertical-align:middle;">BODY</span>';
     html += '<span class="pftl-sug-arrow">&rarr;</span>';
     html += '<span class="pftl-sug-target" title="' + _pftlEsc(targetKey) + '">' + _pftlEsc(targetLabel) + '</span>';
     html += '<span class="pftl-sug-score" style="background:' + bucketColor + ';color:#fff;padding:1px 7px;border-radius:8px;font-size:0.78em;font-weight:600;margin-left:6px;">' + confPct + '%</span>';
@@ -52986,6 +52988,7 @@ var P022_RuntimeValidation = {
       if (diag.glossary_terms_count) parts.push('Glossary terms: ' + diag.glossary_terms_count);
       if (diag.aliases_count) parts.push('Aliases: ' + diag.aliases_count);
       if (diag.total_headers) parts.push('Headers: ' + diag.total_headers);
+      if (diag.body_text_candidates) parts.push('Body text: ' + diag.body_text_candidates);
       if (diag.confidence_buckets) {
         var cb = diag.confidence_buckets;
         parts.push('H:' + (cb.HIGH || 0) + ' M:' + (cb.MEDIUM || 0) + ' L:' + (cb.LOW || 0));

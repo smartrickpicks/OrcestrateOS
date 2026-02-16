@@ -222,6 +222,7 @@ async def create_local_suggestion_run(
             body = {}
 
         source_fields = body.get("source_fields", []) if isinstance(body, dict) else []
+        body_text = body.get("body_text", None) if isinstance(body, dict) else None
         document_id = body.get("document_id", "local_" + generate_id("doc_")) if isinstance(body, dict) else "local_" + generate_id("doc_")
 
         workspace_id = _resolve_workspace_id(auth, conn)
@@ -231,15 +232,15 @@ async def create_local_suggestion_run(
                 content=error_envelope("NO_WORKSPACE", "Cannot resolve workspace"),
             )
 
-        if not source_fields:
+        if not source_fields and not body_text:
             return JSONResponse(
                 status_code=400,
-                content=error_envelope("VALIDATION_ERROR", "source_fields array is required for local runs"),
+                content=error_envelope("VALIDATION_ERROR", "source_fields array or body_text is required for local runs"),
             )
 
         with conn.cursor() as cur:
             try:
-                suggestions, diagnostics, suppressed = generate_suggestions_local(cur, workspace_id, source_fields)
+                suggestions, diagnostics, suppressed = generate_suggestions_local(cur, workspace_id, source_fields, body_text=body_text)
             except Exception as e:
                 logger.error("[SUGGEST] Local engine error: %s", e)
                 return JSONResponse(
@@ -280,6 +281,7 @@ async def create_local_suggestion_run(
                     "_match_context": s.get("_match_context"),
                     "matched_tokens": s.get("matched_tokens", []),
                     "entity_eligible": s.get("entity_eligible", False),
+                    "candidate_source": s.get("candidate_source", "header"),
                     "created_at": now_iso,
                     "version": 1,
                     "metadata": sug_meta,
