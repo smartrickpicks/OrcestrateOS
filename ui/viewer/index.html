@@ -1534,6 +1534,30 @@
     .pftl-sug-badge.rejected { background: #ffebee; color: #c62828; }
     .pftl-sug-kw-btn { font-size: 0.7em; padding: 2px 6px; background: #fff8e1; border: 1px solid #ffe082; border-radius: 3px; cursor: pointer; color: #f57f17; }
     .pftl-sug-kw-btn:hover { background: #ffe082; }
+    .pftl-sug-kw-btn.active { background: #ffe082; border-color: #f9a825; box-shadow: 0 0 0 2px rgba(249,168,37,0.2); }
+    .pftl-sug-detail { background: #fafbfc; border: 1px solid #e0e0e0; border-radius: 6px; margin: 4px 0 8px 0; padding: 12px 14px; font-size: 0.82em; animation: pftlDetailSlide 0.15s ease-out; }
+    @keyframes pftlDetailSlide { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    .pftl-sug-detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e8e8e8; }
+    .pftl-sug-detail-title { font-weight: 600; color: #333; font-size: 0.95em; }
+    .pftl-sug-detail-close { background: none; border: none; cursor: pointer; color: #999; font-size: 1.1em; padding: 2px 6px; border-radius: 3px; }
+    .pftl-sug-detail-close:hover { background: #eee; color: #333; }
+    .pftl-sug-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-bottom: 10px; }
+    .pftl-sug-detail-field { font-size: 0.88em; }
+    .pftl-sug-detail-field-label { color: #888; font-size: 0.85em; margin-bottom: 1px; }
+    .pftl-sug-detail-field-value { color: #333; font-weight: 500; }
+    .pftl-sug-detail-scoring { margin-top: 8px; }
+    .pftl-sug-detail-scoring-title { font-weight: 600; font-size: 0.85em; color: #555; margin-bottom: 6px; }
+    .pftl-sug-detail-bar-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 0.82em; }
+    .pftl-sug-detail-bar-label { width: 115px; color: #666; text-align: right; flex-shrink: 0; font-size: 0.85em; }
+    .pftl-sug-detail-bar-track { flex: 1; height: 14px; background: #eee; border-radius: 3px; overflow: hidden; position: relative; }
+    .pftl-sug-detail-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease; min-width: 0; }
+    .pftl-sug-detail-bar-val { width: 42px; text-align: right; color: #555; font-weight: 500; font-size: 0.85em; flex-shrink: 0; }
+    .pftl-sug-detail-tokens { margin-top: 8px; }
+    .pftl-sug-detail-token { display: inline-block; font-size: 0.75em; background: #e3f2fd; color: #1565c0; border-radius: 3px; padding: 1px 6px; margin: 2px 3px 2px 0; }
+    .pftl-sug-detail-chip { display: inline-block; font-size: 0.72em; background: #f3e5f5; color: #7b1fa2; border-radius: 3px; padding: 1px 6px; margin: 2px 3px 2px 0; }
+    .pftl-sug-detail-total { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-top: 6px; border-top: 1px solid #e8e8e8; }
+    .pftl-sug-detail-total-score { font-size: 1.3em; font-weight: 700; }
+    .pftl-sug-detail-total-bucket { font-size: 0.82em; font-weight: 600; padding: 2px 10px; border-radius: 10px; color: #fff; }
     .pftl-text-preview { margin-top: 12px; border: 1px solid #e0e0e0; border-radius: 6px; max-height: 300px; overflow-y: auto; padding: 12px; background: #fafbfc; font-size: 0.8em; line-height: 1.6; white-space: pre-wrap; word-break: break-word; color: #444; }
     .pftl-kw-hl { background: #fff176; border-radius: 2px; padding: 0 2px; border-bottom: 2px solid #f9a825; }
     .pftl-text-toggle { cursor: pointer; font-size: 0.8em; color: #1565c0; background: none; border: none; padding: 4px 0; margin-top: 6px; }
@@ -52400,7 +52424,8 @@ var P022_RuntimeValidation = {
     showText: false,
     showLowSignal: false,
     showSuppressed: false,
-    highlightKeywords: []
+    highlightKeywords: [],
+    expandedSugId: null
   };
 
   window.pftlOpen = function() {
@@ -52673,6 +52698,7 @@ var P022_RuntimeValidation = {
     var bucketColor = bucketColors[bucket] || '#bbb';
     var targetLabel = sug.suggested_label || sug.glossary_field_key || sug.suggested_term_id || '(no match)';
     var targetKey = sug.glossary_field_key || sug.suggested_term_id || '';
+    var isExpanded = _pftlSugState.expandedSugId === sug.id;
     var html = '<div class="pftl-sug-row">';
     html += '<span class="pftl-sug-source" title="' + _pftlEsc(sug.source_field) + '">' + _pftlEsc(sug.source_field) + '</span>';
     html += '<span class="pftl-sug-arrow">&rarr;</span>';
@@ -52688,7 +52714,7 @@ var P022_RuntimeValidation = {
       html += '</span>';
     }
     if (sug.match_method !== 'none' && sug.id) {
-      html += '<button class="pftl-sug-kw-btn" onclick="_pftlSugHighlight(\'' + _pftlEsc(sug.id) + '\')">Show</button>';
+      html += '<button class="pftl-sug-kw-btn' + (isExpanded ? ' active' : '') + '" onclick="_pftlSugToggleDetail(\'' + _pftlEsc(sug.id) + '\')">' + (isExpanded ? 'Hide' : 'Show') + '</button>';
     }
     if (sug.status === 'pending') {
       html += '<div class="pftl-sug-actions">';
@@ -52699,6 +52725,114 @@ var P022_RuntimeValidation = {
       var badgeLabel = sug.status === 'rejected' ? 'declined' : sug.status;
       html += '<span class="pftl-sug-badge ' + sug.status + '">' + badgeLabel + '</span>';
     }
+    html += '</div>';
+    if (isExpanded) {
+      html += _pftlRenderSugDetail(sug);
+    }
+    return html;
+  }
+
+  function _pftlRenderSugDetail(sug) {
+    var conf = sug.confidence_score != null ? sug.confidence_score : sug.match_score;
+    var confPct = sug.confidence_pct != null ? sug.confidence_pct : (conf > 0 ? Math.round(conf * 100) : 0);
+    var bucket = sug.confidence_bucket || 'HIDDEN';
+    var bucketColors = { HIGH: '#2e7d32', MEDIUM: '#e65100', LOW: '#9e9e9e', HIDDEN: '#bbb' };
+    var bucketColor = bucketColors[bucket] || '#bbb';
+    var targetLabel = sug.suggested_label || sug.glossary_field_key || sug.suggested_term_id || '(no match)';
+    var targetKey = sug.glossary_field_key || sug.suggested_term_id || '';
+
+    var html = '<div class="pftl-sug-detail">';
+
+    html += '<div class="pftl-sug-detail-header">';
+    html += '<span class="pftl-sug-detail-title">Suggestion Detail</span>';
+    html += '<button class="pftl-sug-detail-close" onclick="_pftlSugToggleDetail(null)" title="Close">&times;</button>';
+    html += '</div>';
+
+    html += '<div class="pftl-sug-detail-grid">';
+    html += '<div class="pftl-sug-detail-field"><div class="pftl-sug-detail-field-label">Source Field</div><div class="pftl-sug-detail-field-value">' + _pftlEsc(sug.source_field) + '</div></div>';
+    html += '<div class="pftl-sug-detail-field"><div class="pftl-sug-detail-field-label">Suggested Match</div><div class="pftl-sug-detail-field-value" style="color:#1565c0;">' + _pftlEsc(targetLabel) + '</div></div>';
+    html += '<div class="pftl-sug-detail-field"><div class="pftl-sug-detail-field-label">Glossary Key</div><div class="pftl-sug-detail-field-value" style="font-family:monospace;font-size:0.9em;">' + _pftlEsc(targetKey) + '</div></div>';
+    html += '<div class="pftl-sug-detail-field"><div class="pftl-sug-detail-field-label">Match Method</div><div class="pftl-sug-detail-field-value">' + _pftlEsc(sug.match_method || 'none') + '</div></div>';
+    html += '</div>';
+
+    var components = sug._components || sug.components || null;
+    if (components) {
+      var bars = [
+        { key: 'exact_alias', label: 'Exact Alias', weight: 0.45, color: '#2e7d32' },
+        { key: 'tok_overlap', label: 'Token Overlap', weight: 0.20, color: '#1565c0' },
+        { key: 'ordered_overlap', label: 'Ordered Match', weight: 0.12, color: '#6a1b9a' },
+        { key: 'edit_sim', label: 'Edit Similarity', weight: 0.18, color: '#e65100' },
+        { key: 'first_token_bonus', label: 'First Token', weight: 0.03, color: '#00838f' },
+        { key: 'context_bonus', label: 'Context Bonus', weight: 0.02, color: '#558b2f' }
+      ];
+      html += '<div class="pftl-sug-detail-scoring">';
+      html += '<div class="pftl-sug-detail-scoring-title">Scoring Breakdown</div>';
+      for (var bi = 0; bi < bars.length; bi++) {
+        var bar = bars[bi];
+        var rawVal = components[bar.key] != null ? components[bar.key] : 0;
+        var pctVal = Math.round(rawVal * 100);
+        var weighted = Math.round(rawVal * bar.weight * 100);
+        html += '<div class="pftl-sug-detail-bar-row">';
+        html += '<span class="pftl-sug-detail-bar-label">' + bar.label + ' <span style="color:#aaa;font-size:0.85em;">(' + Math.round(bar.weight * 100) + '%)</span></span>';
+        html += '<div class="pftl-sug-detail-bar-track">';
+        html += '<div class="pftl-sug-detail-bar-fill" style="width:' + pctVal + '%;background:' + bar.color + ';"></div>';
+        html += '</div>';
+        html += '<span class="pftl-sug-detail-bar-val">' + pctVal + '%</span>';
+        html += '<span style="font-size:0.75em;color:#999;width:30px;text-align:right;">+' + weighted + '</span>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+
+    html += '<div class="pftl-sug-detail-total">';
+    html += '<span class="pftl-sug-detail-total-score" style="color:' + bucketColor + ';">' + confPct + '%</span>';
+    html += '<span class="pftl-sug-detail-total-bucket" style="background:' + bucketColor + ';">' + bucket + '</span>';
+    if (sug.entity_eligible) {
+      html += '<span style="font-size:0.72em;background:#fff3e0;color:#e65100;border-radius:3px;padding:2px 6px;margin-left:4px;">Entity Eligible (+5%)</span>';
+    }
+    html += '</div>';
+
+    var labels = sug.reason_labels || [];
+    if (labels.length > 0) {
+      html += '<div class="pftl-sug-detail-tokens" style="margin-top:8px;">';
+      html += '<div class="pftl-sug-detail-field-label">Reason Chips</div>';
+      for (var ri = 0; ri < labels.length; ri++) {
+        html += '<span class="pftl-sug-detail-chip">' + _pftlEsc(labels[ri]) + '</span>';
+      }
+      html += '</div>';
+    }
+
+    var matched = (sug.metadata && sug.metadata.matched_keywords) || sug.matched_tokens || [];
+    if (matched.length > 0) {
+      html += '<div class="pftl-sug-detail-tokens">';
+      html += '<div class="pftl-sug-detail-field-label">Matched Tokens</div>';
+      for (var ti = 0; ti < matched.length; ti++) {
+        html += '<span class="pftl-sug-detail-token">' + _pftlEsc(matched[ti]) + '</span>';
+      }
+      html += '</div>';
+    }
+
+    var candidates = sug.candidates || [];
+    if (candidates.length > 1) {
+      html += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #e8e8e8;">';
+      html += '<div class="pftl-sug-detail-field-label" style="margin-bottom:4px;">Alternative Candidates (' + (candidates.length - 1) + ')</div>';
+      for (var ci = 1; ci < candidates.length && ci < 4; ci++) {
+        var cand = candidates[ci];
+        var cBucket = cand.confidence_bucket || 'HIDDEN';
+        var cColor = bucketColors[cBucket] || '#bbb';
+        html += '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:0.9em;">';
+        html += '<span style="color:#1565c0;font-weight:500;">' + _pftlEsc(cand.label || cand.field_key || '') + '</span>';
+        html += '<span style="background:' + cColor + ';color:#fff;padding:1px 6px;border-radius:8px;font-size:0.78em;font-weight:600;">' + (cand.confidence_pct || Math.round((cand.score || 0) * 100)) + '%</span>';
+        html += '<span style="font-size:0.72em;color:' + cColor + ';">' + cBucket + '</span>';
+        var cLabels = cand.reason_labels || [];
+        for (var cli = 0; cli < cLabels.length && cli < 2; cli++) {
+          html += '<span style="font-size:0.62em;background:#e8eaf6;color:#3949ab;border-radius:3px;padding:1px 4px;">' + _pftlEsc(cLabels[cli]) + '</span>';
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+
     html += '</div>';
     return html;
   }
@@ -52913,6 +53047,17 @@ var P022_RuntimeValidation = {
     }
     return keywords;
   }
+
+  window._pftlSugToggleDetail = function(sugId) {
+    if (sugId === null || _pftlSugState.expandedSugId === sugId) {
+      _pftlSugState.expandedSugId = null;
+      _pftlRenderSuggestionsSection();
+    } else {
+      _pftlSugState.expandedSugId = sugId;
+      _pftlRenderSuggestionsSection();
+      _pftlSugHighlight(sugId);
+    }
+  };
 
   window._pftlSugHighlight = function(sugId) {
     var sug = null;
