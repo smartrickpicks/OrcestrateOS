@@ -52813,7 +52813,7 @@ var P022_RuntimeValidation = {
 
     container.innerHTML = html;
 
-    if (extractedText && _pftlSugState.showText) {
+    if (_pftlState.result && _pftlState.result.extracted_text && _pftlSugState.showText) {
       _pftlShowTextPreview();
     }
   }
