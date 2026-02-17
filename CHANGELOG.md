@@ -19,9 +19,9 @@ Date: 2026-02-17
 - **P2: Drive Batch Dedupe**
   - Added `source = "drive"` to allowed batch sources
   - Implemented Drive batch deduplication via `drive_file_id` + `revision_marker` with partial unique index
-  - Drive source validation: requires `metadata.drive_file_id` and either `metadata.revision_id` or `metadata.modified_time` (422 if missing)
+  - Drive source validation: requires `metadata.drive_file_id` and either `metadata.revision_id` or `metadata.modified_time` (400 if missing)
   - Duplicate drive imports return 200 with existing batch (no new record created)
-  - Audit events emitted for dedupe hits (`batch.dedupe_hit`)
+  - Audit events emitted for dedupe hits (`batch.drive_dedupe_hit`)
 
 - **P3: Role-Scoped List Visibility + RFI Custody Matrix**
   - Centralized role resolution in `server/role_scope.py` — single source for effective role across all endpoints
