@@ -39275,6 +39275,11 @@
     function vorgLoadData() {
       var wsId = _vorgGetWorkspaceId();
       var headers = _vorgGetAuthHeaders();
+      if (typeof isDemoMode === 'function' && isDemoMode()) {
+        headers['X-Sandbox-Mode'] = 'true';
+        var effRole = (typeof getEffectiveRole === 'function') ? getEffectiveRole() : (currentMode || 'analyst');
+        headers['X-Effective-Role'] = effRole;
+      }
       var loadingEl = document.getElementById('vorg-loading');
       var contentEl = document.getElementById('vorg-content');
       var emptyEl = document.getElementById('vorg-empty');
@@ -39295,9 +39300,10 @@
         var queueResp = results[0];
         var batchResp = results[1];
 
-        var items = (queueResp && queueResp.data) ? queueResp.data : (Array.isArray(queueResp) ? queueResp : []);
+        var qData = (queueResp && queueResp.data) ? queueResp.data : {};
+        var items = Array.isArray(qData.items) ? qData.items : (Array.isArray(qData) ? qData : []);
+        var counts = (qData.counts) ? qData.counts : null;
         var batches = (batchResp && batchResp.data) ? batchResp.data : (Array.isArray(batchResp) ? batchResp : []);
-        var counts = (queueResp && queueResp.counts) ? queueResp.counts : null;
 
         _vorgState.queueItems = items;
         _vorgState.batches = batches;
@@ -39575,9 +39581,9 @@
         var type = it.type || it.item_type || 'patch';
         var typeBadge = _vorgTypeBadge(type);
         var record = _vorgEsc(it.record_id || it.record || '—');
-        var field = _vorgEsc(it.field_name || it.field || '—');
+        var field = _vorgEsc(it.field_key || it.field_name || it.field || '—');
         var status = _vorgStatusLabel(it.status || it.lifecycle_status || 'unknown');
-        var author = _vorgEsc(it.author || it.created_by || '—');
+        var author = _vorgEsc(it.author_email || it.author_id || it.author || it.created_by || '—');
         var age = _vorgAgeText(it.created_at);
         var ageColor = _vorgAgeColor(it.created_at);
         var itemId = it.id || it.item_id || '';
@@ -39590,7 +39596,7 @@
             '<button class="vorg-action-btn vorg-action-btn-reject" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'patch\',\'Rejected\',' + version + ')">Reject</button>';
         } else if (tl === 'rfi') {
           actions = '<button class="vorg-action-btn vorg-action-btn-approve" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'rfi\',\'resolved\',' + version + ')">Resolve</button> ' +
-            '<button class="vorg-action-btn vorg-action-btn-reject" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'rfi\',\'returned\',' + version + ')">Return</button>';
+            '<button class="vorg-action-btn vorg-action-btn-reject" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'rfi\',\'returned_to_analyst\',' + version + ')">Return</button>';
         } else if (tl === 'correction') {
           actions = '<button class="vorg-action-btn vorg-action-btn-approve" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'correction\',\'approved\',' + version + ')">Approve</button> ' +
             '<button class="vorg-action-btn vorg-action-btn-reject" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'correction\',\'rejected\',' + version + ')">Reject</button>';
@@ -39725,6 +39731,10 @@
 
     function opsOnRoleSwitch() {
       console.log('[OpsView] Role switch detected (dbRead=' + _opsViewFlags.dbRead + ')');
+      if (typeof currentPage !== 'undefined' && currentPage === 'verifier-org' && typeof vorgLoadData === 'function') {
+        console.log('[OpsView] Refreshing Org View for role switch');
+        vorgLoadData();
+      }
       if (_opsViewFlags.dbRead) {
         verifierQueueState.payloads = [];
         try { localStorage.removeItem('srr_verifier_queue_v1'); } catch(e) {}
