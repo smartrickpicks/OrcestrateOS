@@ -51,6 +51,8 @@ Salesforce Resolver Stub: `server/resolvers/salesforce.py` provides the `resolve
 
 Tests: `tests/test_suggestion_engine.py` contains 49 deterministic tests covering sync/synch matching, alias-present/removed cases, genericity (non-sync typo families), no-hardcoding verification, determinism across reruns, scoring config freeze validation, export contract validation, Salesforce resolver stub, alias fuzzy paths, suppression rules, entity eligibility, deterministic ordering/tie-breaking, body text extraction, category balance, normalization, and reason chip generation.
 
+Dark Mode v2 ("Blue Steel + Ember Edge") uses a CSS token-based theming system via `html[data-theme="dark"]`. All colors are defined as CSS custom properties (--bg-0 through --bg-4, --text-primary/secondary/muted/disabled, --accent-bright, --ember-border, --focus-ring, --ok/warn/bad/info with derived -bg/-border tokens, --shadow-1/2, --glow-blue/ember-soft/med). The toggle switch in the sidebar persists preference to localStorage key `orchestrate-dark-mode`. A pre-paint script applies the attribute before CSS renders. Glow effects are applied to section headers (glow-blue-soft), KPI numbers (glow-blue-med), and active/selected nav items (ember glow). Focus-visible ring is globally applied. Inline style overrides use `!important` to beat hardcoded backgrounds.
+
 ## External Dependencies
 - **FastAPI server**: Used as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
 - **SheetJS (XLSX)**: Integrated for Excel import/export functionality.
