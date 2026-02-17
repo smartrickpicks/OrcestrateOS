@@ -24246,7 +24246,7 @@
         var hdrs = typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : { 'Content-Type': 'application/json' };
         if (!hdrs['Content-Type']) hdrs['Content-Type'] = 'application/json';
 
-        fetch(API_BASE + '/workspaces/' + ws + '/drive/save', {
+        fetch('/api/v2.5/workspaces/' + ws + '/drive/save', {
           method: 'POST',
           headers: hdrs,
           body: JSON.stringify({
@@ -24285,7 +24285,7 @@
     }
 
     function _showDriveAuthFailure(message, wsId) {
-      fetch(API_BASE + '/workspaces/' + wsId + '/drive/status', {
+      fetch('/api/v2.5/workspaces/' + wsId + '/drive/status', {
         headers: typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : {}
       }).then(function(r) { return r.json(); })
       .then(function(resp) {
@@ -24309,7 +24309,7 @@
     function loadDriveSettings() {
       var ws = typeof _getWorkspaceId === 'function' ? _getWorkspaceId() : '';
       if (!ws) return;
-      fetch(API_BASE + '/workspaces/' + ws + '/drive/settings', {
+      fetch('/api/v2.5/workspaces/' + ws + '/drive/settings', {
         headers: typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : {}
       }).then(function(r) { return r.json(); })
       .then(function(resp) {
@@ -24333,7 +24333,7 @@
       if (statusEl) statusEl.textContent = 'Saving...';
       var hdrs = typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : { 'Content-Type': 'application/json' };
       if (!hdrs['Content-Type']) hdrs['Content-Type'] = 'application/json';
-      fetch(API_BASE + '/workspaces/' + ws + '/drive/settings', {
+      fetch('/api/v2.5/workspaces/' + ws + '/drive/settings', {
         method: 'PUT',
         headers: hdrs,
         body: JSON.stringify({
