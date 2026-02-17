@@ -7694,8 +7694,17 @@
     function _fetchDbMembers(callback) {
       var headers = _getAuthHeaders();
       fetch('/api/v2.5/workspaces/' + _dbMembersWorkspaceId + '/members', { headers: headers })
-        .then(function(res) { return res.json(); })
+        .then(function(res) {
+          if (res.status === 401) {
+            console.warn('[Members] Auth expired (401), prompting re-login');
+            showToast('Session expired — please sign out and sign back in to manage members.', 'warning');
+            if (callback) callback();
+            return null;
+          }
+          return res.json();
+        })
         .then(function(result) {
+          if (!result) return;
           if (result.data && Array.isArray(result.data)) {
             _dbMembers = result.data;
             saveDemoUsers(result.data.map(function(m) {
@@ -7797,8 +7806,15 @@
             workspace_id: _dbMembersWorkspaceId
           })
         })
-        .then(function(res) { return res.json(); })
+        .then(function(res) {
+          if (res.status === 401) {
+            showToast('Session expired — please sign out and sign back in.', 'warning');
+            return null;
+          }
+          return res.json();
+        })
         .then(function(result) {
+          if (!result) return;
           if (result.data) {
             showToast('User updated', 'success');
             renderPeopleMembers();
@@ -7834,8 +7850,15 @@
           method: 'DELETE',
           headers: headers
         })
-        .then(function(res) { return res.json(); })
+        .then(function(res) {
+          if (res.status === 401) {
+            showToast('Session expired — please sign out and sign back in.', 'warning');
+            return null;
+          }
+          return res.json();
+        })
         .then(function(result) {
+          if (!result) return;
           if (result.data) {
             showToast('User removed', 'info');
             renderPeopleMembers();
@@ -24389,15 +24412,23 @@
       var modal = document.getElementById('member-drive-modal');
       if (modal) { modal.style.display = 'flex'; }
 
-      var ws = '';
-      if (typeof _getWorkspaceId === 'function') { ws = _getWorkspaceId(); }
-      else if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) { ws = IDENTITY_CONTEXT.workspace_id; }
-      else { try { var _s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}'); ws = _s.workspace_id || ''; } catch(e) {} }
+      var ws = typeof _dbMembersWorkspaceId !== 'undefined' ? _dbMembersWorkspaceId : '';
+      if (!ws && typeof _getWorkspaceId === 'function') { ws = _getWorkspaceId(); }
+      if (!ws && typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) { ws = IDENTITY_CONTEXT.workspace_id; }
+      if (!ws) { try { var _s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}'); ws = _s.workspace_id || ''; } catch(e) {} }
 
-      fetch('/api/v2.5/members/' + userId + '/drive-folder?workspace_id=' + ws, {
-        headers: typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : {}
-      }).then(function(r) { return r.json(); })
+      var hdrs = typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : {};
+      fetch('/api/v2.5/members/' + userId + '/drive-folder?workspace_id=' + encodeURIComponent(ws), {
+        headers: hdrs
+      }).then(function(r) {
+        if (r.status === 401) {
+          if (statusEl) statusEl.innerHTML = '<span style="color:var(--signal-bad,#e53935);">Session expired — please sign out and sign back in.</span>';
+          return null;
+        }
+        return r.json();
+      })
       .then(function(resp) {
+        if (!resp) return;
         if (resp.data && resp.data.drive_folder_id) {
           if (input) input.value = resp.data.drive_folder_id;
         }
@@ -24419,10 +24450,10 @@
       var folderId = input ? input.value.trim() : '';
       var statusEl = document.getElementById('member-drive-modal-status');
 
-      var ws = '';
-      if (typeof _getWorkspaceId === 'function') { ws = _getWorkspaceId(); }
-      else if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) { ws = IDENTITY_CONTEXT.workspace_id; }
-      else { try { var _s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}'); ws = _s.workspace_id || ''; } catch(e) {} }
+      var ws = typeof _dbMembersWorkspaceId !== 'undefined' ? _dbMembersWorkspaceId : '';
+      if (!ws && typeof _getWorkspaceId === 'function') { ws = _getWorkspaceId(); }
+      if (!ws && typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) { ws = IDENTITY_CONTEXT.workspace_id; }
+      if (!ws) { try { var _s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}'); ws = _s.workspace_id || ''; } catch(e) {} }
 
       if (statusEl) statusEl.textContent = 'Saving...';
       var hdrs = typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : { 'Content-Type': 'application/json' };
@@ -24432,8 +24463,15 @@
         method: 'PUT',
         headers: hdrs,
         body: JSON.stringify({ workspace_id: ws, drive_folder_id: folderId })
-      }).then(function(r) { return r.json(); })
+      }).then(function(r) {
+        if (r.status === 401) {
+          if (statusEl) statusEl.innerHTML = '<span style="color:var(--signal-bad,#e53935);">Session expired — please sign out and sign back in.</span>';
+          return null;
+        }
+        return r.json();
+      })
       .then(function(resp) {
+        if (!resp) return;
         if (resp.data) {
           if (statusEl) statusEl.textContent = 'Saved!';
           showToast('Drive folder mapped for user', 'success');
