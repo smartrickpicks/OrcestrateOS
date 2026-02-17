@@ -24340,11 +24340,16 @@
       });
     }
 
+    function _driveResolveWorkspaceId() {
+      if (typeof _getWorkspaceId === 'function') { var w = _getWorkspaceId(); if (w) return w; }
+      if (typeof _dbMembersWorkspaceId !== 'undefined' && _dbMembersWorkspaceId) return _dbMembersWorkspaceId;
+      if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) return IDENTITY_CONTEXT.workspace_id;
+      try { var _s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}'); if (_s.workspace_id) return _s.workspace_id; } catch(e) {}
+      return '';
+    }
+
     function loadDriveSettings() {
-      var ws = '';
-        if (typeof _getWorkspaceId === 'function') { ws = _getWorkspaceId(); }
-        else if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) { ws = IDENTITY_CONTEXT.workspace_id; }
-        else { try { var _s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}'); ws = _s.workspace_id || ''; } catch(e) {} }
+      var ws = _driveResolveWorkspaceId();
       if (!ws) return;
       fetch('/api/v2.5/workspaces/' + ws + '/drive/settings', {
         headers: typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : {}
@@ -24361,11 +24366,8 @@
     }
 
     function saveDriveSettings() {
-      var ws = '';
-        if (typeof _getWorkspaceId === 'function') { ws = _getWorkspaceId(); }
-        else if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) { ws = IDENTITY_CONTEXT.workspace_id; }
-        else { try { var _s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}'); ws = _s.workspace_id || ''; } catch(e) {} }
-      if (!ws) { showToast('No workspace selected', 'warning'); return; }
+      var ws = _driveResolveWorkspaceId();
+      if (!ws) { showToast('Could not determine workspace. Please re-login and try again.', 'warning'); return; }
       var rootId = (document.getElementById('drive-root-folder-input') || {}).value || '';
       var verId = (document.getElementById('drive-verifier-folder-input') || {}).value || '';
       var admId = (document.getElementById('drive-admin-folder-input') || {}).value || '';
