@@ -196,6 +196,95 @@ async def update_member(user_id: str, request: Request, auth=Depends(require_aut
         put_conn(conn)
 
 
+@router.get("/members/{user_id}/drive-folder")
+async def get_member_drive_folder(user_id: str, request: Request, auth=Depends(require_auth(AuthClass.BEARER))):
+    if isinstance(auth, JSONResponse):
+        return auth
+
+    workspace_id = request.query_params.get("workspace_id", "")
+    if not workspace_id:
+        return JSONResponse(status_code=400, content=error_envelope("VALIDATION_ERROR", "workspace_id required"))
+
+    role_check = require_role(workspace_id, auth, Role.ANALYST)
+    if role_check:
+        return role_check
+
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT drive_folder_id, drive_folder_updated_at FROM user_workspace_roles WHERE user_id = %s AND workspace_id = %s",
+                (user_id, workspace_id),
+            )
+            row = cur.fetchone()
+
+        if not row:
+            return JSONResponse(status_code=404, content=error_envelope("NOT_FOUND", "Member not found in workspace"))
+
+        return JSONResponse(status_code=200, content=envelope({
+            "user_id": user_id,
+            "workspace_id": workspace_id,
+            "drive_folder_id": row[0],
+            "drive_folder_updated_at": row[1].isoformat() if row[1] else None,
+        }))
+    except Exception as e:
+        logger.error("Get member drive folder error: %s", e)
+        return JSONResponse(status_code=500, content=error_envelope("INTERNAL_ERROR", "Failed to get drive folder"))
+    finally:
+        put_conn(conn)
+
+
+@router.put("/members/{user_id}/drive-folder")
+async def update_member_drive_folder(user_id: str, request: Request, auth=Depends(require_auth(AuthClass.BEARER))):
+    if isinstance(auth, JSONResponse):
+        return auth
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse(status_code=400, content=error_envelope("VALIDATION_ERROR", "Invalid JSON"))
+
+    workspace_id = body.get("workspace_id", "")
+    if not workspace_id:
+        return JSONResponse(status_code=400, content=error_envelope("VALIDATION_ERROR", "workspace_id required"))
+
+    role_check = require_role(workspace_id, auth, Role.ADMIN)
+    if role_check:
+        return role_check
+
+    drive_folder_id = body.get("drive_folder_id", "")
+
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """UPDATE user_workspace_roles
+                   SET drive_folder_id = %s, drive_folder_updated_at = NOW()
+                   WHERE user_id = %s AND workspace_id = %s
+                   RETURNING user_id, workspace_id, drive_folder_id, drive_folder_updated_at""",
+                (drive_folder_id or None, user_id, workspace_id),
+            )
+            row = cur.fetchone()
+
+        if not row:
+            conn.rollback()
+            return JSONResponse(status_code=404, content=error_envelope("NOT_FOUND", "Member not found in workspace"))
+
+        conn.commit()
+        return JSONResponse(status_code=200, content=envelope({
+            "user_id": row[0],
+            "workspace_id": row[1],
+            "drive_folder_id": row[2],
+            "drive_folder_updated_at": row[3].isoformat() if row[3] else None,
+        }))
+    except Exception as e:
+        conn.rollback()
+        logger.error("Update member drive folder error: %s", e)
+        return JSONResponse(status_code=500, content=error_envelope("INTERNAL_ERROR", "Failed to update drive folder"))
+    finally:
+        put_conn(conn)
+
+
 @router.delete("/members/{user_id}")
 async def delete_member(user_id: str, request: Request, auth=Depends(require_auth(AuthClass.BEARER))):
     if isinstance(auth, JSONResponse):

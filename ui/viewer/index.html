@@ -7756,6 +7756,7 @@
           '<option value="inactive"' + (u.status === 'inactive' ? ' selected' : '') + '>Inactive</option></select></td>';
         html += '<td style="padding: 10px 8px; text-align: center;">' +
           '<button onclick="savePeopleMemberRow(' + ui + ')" class="toolbar-btn" style="padding: 6px 14px; font-size: 0.85em; background: #4caf50; color: white;">Save</button>' +
+          ' <button onclick="openMemberDriveModal(\'' + (u.id || '') + '\', \'' + (displayName).replace(/'/g, "\\'") + '\', \'' + (u.role || 'analyst') + '\')" class="toolbar-btn" style="padding: 6px 10px; font-size: 0.85em; background: var(--bg-3, #f5f5f5); color: var(--text-1, #333);" title="Map Drive Folder">&#128193;</button>' +
           ' <button onclick="deletePeopleMember(' + ui + ')" class="toolbar-btn" style="padding: 6px 10px; font-size: 0.85em; background: #f5f5f5; color: #c62828;" title="Remove user">&#128465;</button></td>';
         html += '</tr>';
       }
@@ -24239,7 +24240,10 @@
 
         var wbOut = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
 
-        var ws = typeof _getWorkspaceId === 'function' ? _getWorkspaceId() : '';
+        var ws = '';
+        if (typeof _getWorkspaceId === 'function') { ws = _getWorkspaceId(); }
+        else if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) { ws = IDENTITY_CONTEXT.workspace_id; }
+        else { try { var _s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}'); ws = _s.workspace_id || ''; } catch(e) {} }
         var batchId = IDENTITY_CONTEXT.batch_id || datasetName;
 
         showToast('Uploading to Google Drive...', 'info');
@@ -24307,7 +24311,10 @@
     }
 
     function loadDriveSettings() {
-      var ws = typeof _getWorkspaceId === 'function' ? _getWorkspaceId() : '';
+      var ws = '';
+        if (typeof _getWorkspaceId === 'function') { ws = _getWorkspaceId(); }
+        else if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) { ws = IDENTITY_CONTEXT.workspace_id; }
+        else { try { var _s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}'); ws = _s.workspace_id || ''; } catch(e) {} }
       if (!ws) return;
       fetch('/api/v2.5/workspaces/' + ws + '/drive/settings', {
         headers: typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : {}
@@ -24324,7 +24331,10 @@
     }
 
     function saveDriveSettings() {
-      var ws = typeof _getWorkspaceId === 'function' ? _getWorkspaceId() : '';
+      var ws = '';
+        if (typeof _getWorkspaceId === 'function') { ws = _getWorkspaceId(); }
+        else if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) { ws = IDENTITY_CONTEXT.workspace_id; }
+        else { try { var _s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}'); ws = _s.workspace_id || ''; } catch(e) {} }
       if (!ws) { showToast('No workspace selected', 'warning'); return; }
       var rootId = (document.getElementById('drive-root-folder-input') || {}).value || '';
       var verId = (document.getElementById('drive-verifier-folder-input') || {}).value || '';
@@ -24358,6 +24368,98 @@
       });
     }
     
+    var _memberDriveModalUserId = '';
+
+    function openMemberDriveModal(userId, displayName, role) {
+      _memberDriveModalUserId = userId;
+      var titleEl = document.getElementById('member-drive-modal-title');
+      if (titleEl) titleEl.textContent = 'Map Drive Folder — ' + displayName;
+      var roleEl = document.getElementById('member-drive-modal-role');
+      if (roleEl) roleEl.textContent = role.charAt(0).toUpperCase() + role.slice(1);
+      var custodyEl = document.getElementById('member-drive-modal-custody');
+      if (custodyEl) {
+        var custodyStatus = _getMemberCustodyStatus(userId);
+        custodyEl.textContent = custodyStatus || 'No custody';
+        custodyEl.style.display = custodyStatus ? 'inline-block' : 'none';
+      }
+      var input = document.getElementById('member-drive-folder-input');
+      if (input) input.value = '';
+      var statusEl = document.getElementById('member-drive-modal-status');
+      if (statusEl) statusEl.textContent = 'Loading...';
+      var modal = document.getElementById('member-drive-modal');
+      if (modal) { modal.style.display = 'flex'; }
+
+      var ws = '';
+      if (typeof _getWorkspaceId === 'function') { ws = _getWorkspaceId(); }
+      else if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) { ws = IDENTITY_CONTEXT.workspace_id; }
+      else { try { var _s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}'); ws = _s.workspace_id || ''; } catch(e) {} }
+
+      fetch('/api/v2.5/members/' + userId + '/drive-folder?workspace_id=' + ws, {
+        headers: typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : {}
+      }).then(function(r) { return r.json(); })
+      .then(function(resp) {
+        if (resp.data && resp.data.drive_folder_id) {
+          if (input) input.value = resp.data.drive_folder_id;
+        }
+        if (statusEl) statusEl.textContent = '';
+      }).catch(function() {
+        if (statusEl) statusEl.textContent = '';
+      });
+    }
+
+    function closeMemberDriveModal() {
+      var modal = document.getElementById('member-drive-modal');
+      if (modal) modal.style.display = 'none';
+      _memberDriveModalUserId = '';
+    }
+
+    function saveMemberDriveFolder() {
+      if (!_memberDriveModalUserId) return;
+      var input = document.getElementById('member-drive-folder-input');
+      var folderId = input ? input.value.trim() : '';
+      var statusEl = document.getElementById('member-drive-modal-status');
+
+      var ws = '';
+      if (typeof _getWorkspaceId === 'function') { ws = _getWorkspaceId(); }
+      else if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) { ws = IDENTITY_CONTEXT.workspace_id; }
+      else { try { var _s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}'); ws = _s.workspace_id || ''; } catch(e) {} }
+
+      if (statusEl) statusEl.textContent = 'Saving...';
+      var hdrs = typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : { 'Content-Type': 'application/json' };
+      if (!hdrs['Content-Type']) hdrs['Content-Type'] = 'application/json';
+
+      fetch('/api/v2.5/members/' + _memberDriveModalUserId + '/drive-folder', {
+        method: 'PUT',
+        headers: hdrs,
+        body: JSON.stringify({ workspace_id: ws, drive_folder_id: folderId })
+      }).then(function(r) { return r.json(); })
+      .then(function(resp) {
+        if (resp.data) {
+          if (statusEl) statusEl.textContent = 'Saved!';
+          showToast('Drive folder mapped for user', 'success');
+          setTimeout(function() { closeMemberDriveModal(); }, 1000);
+        } else {
+          var msg = (resp.error && resp.error.message) || 'Failed';
+          if (statusEl) statusEl.textContent = msg;
+        }
+      }).catch(function(err) {
+        if (statusEl) statusEl.textContent = 'Error: ' + err.message;
+      });
+    }
+
+    function _getMemberCustodyStatus(userId) {
+      if (typeof RFI_STORE === 'undefined' || typeof RFI_STORE.list !== 'function') return '';
+      var rfis = RFI_STORE.list();
+      var hasActive = false;
+      for (var i = 0; i < rfis.length; i++) {
+        if (rfis[i].custody_owner_id === userId && rfis[i].custody_status !== 'closed') {
+          hasActive = true;
+          break;
+        }
+      }
+      return hasActive ? 'Active Custody' : '';
+    }
+
     // v1.6.33: Build _change_log sheet from patch requests and changeMap
     function buildChangeLogSheet() {
       var headers = [
@@ -54381,5 +54483,28 @@ var P022_RuntimeValidation = {
 })();
 </script>
 <div id="pftl-overlay" class="pftl-overlay" style="display: none;"></div>
+<!-- Member Drive Folder Modal -->
+<div id="member-drive-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;">
+  <div style="background:var(--bg-2,#fff);border-radius:8px;padding:24px;max-width:480px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.3);border:1px solid var(--border-1,#ddd);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 id="member-drive-modal-title" style="margin:0;font-size:1em;color:var(--text-1,#333);">Map Drive Folder</h3>
+      <button onclick="closeMemberDriveModal()" style="background:none;border:none;font-size:1.3em;cursor:pointer;color:var(--text-2,#666);padding:0 4px;">&times;</button>
+    </div>
+    <div style="margin-bottom:12px;">
+      <span id="member-drive-modal-role" style="display:inline-block;padding:3px 10px;border-radius:12px;font-size:0.78em;font-weight:600;background:var(--chip-bg,#e8eaf6);color:var(--text-1,#333);border:1px solid var(--chip-border,#c5cae9);"></span>
+      <span id="member-drive-modal-custody" style="display:inline-block;padding:3px 10px;border-radius:12px;font-size:0.78em;margin-left:6px;background:var(--chip-bg,#e8eaf6);color:var(--text-1,#333);border:1px solid var(--chip-border,#c5cae9);"></span>
+    </div>
+    <p style="font-size:0.82em;color:var(--text-2,#666);margin-bottom:12px;">Paste the Google Drive folder ID for this member. Exports for this user will be routed to their personal folder.</p>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:0.8em;color:var(--text-2,#666);display:block;margin-bottom:4px;">Drive Folder ID</label>
+      <input type="text" id="member-drive-folder-input" placeholder="Paste folder ID from Drive URL" style="width:100%;padding:8px 10px;border:1px solid var(--border-1,#ddd);border-radius:4px;font-size:0.85em;font-family:monospace;background:var(--bg-1,#fff);color:var(--text-1,#333);box-sizing:border-box;">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeMemberDriveModal()" style="padding:8px 16px;background:var(--bg-3,#f5f5f5);color:var(--text-1,#333);border:1px solid var(--border-1,#ddd);border-radius:4px;cursor:pointer;font-size:0.85em;">Cancel</button>
+      <button onclick="saveMemberDriveFolder()" style="padding:8px 16px;background:var(--accent-bright,#1976d2);color:var(--bg-1,white);border:none;border-radius:4px;cursor:pointer;font-size:0.85em;">Save Folder</button>
+    </div>
+    <div id="member-drive-modal-status" style="margin-top:8px;font-size:0.8em;color:var(--text-2,#888);"></div>
+  </div>
+</div>
 </body>
 </html>

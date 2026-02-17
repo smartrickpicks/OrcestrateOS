@@ -676,7 +676,20 @@ async def drive_save(ws_id: str, request: Request, auth=Depends(require_auth(Aut
         settings = _get_drive_settings(ws_id, conn)
         role = auth.role or "analyst"
 
-        target_folder = _resolve_target_folder(role, settings)
+        member_folder = None
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT drive_folder_id FROM user_workspace_roles WHERE user_id = %s AND workspace_id = %s AND drive_folder_id IS NOT NULL",
+                (auth.user_id, ws_id)
+            )
+            row = cur.fetchone()
+            if row and row[0]:
+                member_folder = row[0]
+
+        if member_folder:
+            target_folder = member_folder
+        else:
+            target_folder = _resolve_target_folder(role, settings)
 
         if not target_folder:
             root_id = settings.get("root_folder_id") or DRIVE_ROOT_FOLDER_ID or None
