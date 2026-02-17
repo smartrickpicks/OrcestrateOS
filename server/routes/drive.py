@@ -3,6 +3,7 @@ import io
 import json
 import logging
 import os
+import re
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -320,6 +321,17 @@ def drive_disconnect(ws_id: str, auth=Depends(require_auth(AuthClass.BEARER))):
         put_conn(conn)
 
 
+def _build_redirect_uri():
+    dev_domain = os.environ.get("REPLIT_DEV_DOMAIN", "")
+    if dev_domain:
+        return "https://%s/drive-callback.html" % dev_domain
+    repl_slug = os.environ.get("REPL_SLUG", "")
+    repl_owner = os.environ.get("REPL_OWNER", "")
+    if repl_slug and repl_owner:
+        return "https://%s.%s.repl.co/drive-callback.html" % (repl_slug, repl_owner)
+    return ""
+
+
 @router.get("/workspaces/{ws_id}/drive/status")
 def drive_status(ws_id: str, auth=Depends(require_auth(AuthClass.BEARER))):
     if isinstance(auth, JSONResponse):
@@ -329,24 +341,429 @@ def drive_status(ws_id: str, auth=Depends(require_auth(AuthClass.BEARER))):
     if role_err:
         return role_err
 
+    redirect_uri_expected = _build_redirect_uri()
+
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        return envelope({
+            "connected": False,
+            "has_token": False,
+            "expires_at": None,
+            "scopes": DRIVE_SCOPES,
+            "redirect_uri_expected": redirect_uri_expected,
+            "drive_email": None,
+            "failure_reason": "missing_client_id_or_secret",
+            "connection": None,
+        })
+
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """SELECT id, workspace_id, connected_by, drive_email,
+                          access_token, refresh_token, token_expiry,
+                          status, connected_at, updated_at, metadata
+                   FROM drive_connections
+                   WHERE workspace_id = %s
+                   ORDER BY updated_at DESC LIMIT 1""",
+                (ws_id,),
+            )
+            conn_row = cur.fetchone()
+
+        if not conn_row:
+            return envelope({
+                "connected": False,
+                "has_token": False,
+                "expires_at": None,
+                "scopes": DRIVE_SCOPES,
+                "redirect_uri_expected": redirect_uri_expected,
+                "drive_email": None,
+                "failure_reason": "token_not_found",
+                "connection": None,
+            })
+
+        status = conn_row[7]
+        access_token = conn_row[4]
+        token_expiry = conn_row[6]
+        has_token = bool(access_token)
+        expires_at_iso = token_expiry.isoformat() if token_expiry else None
+
+        connection_info = {
+            "id": conn_row[0],
+            "connected_by": conn_row[2],
+            "connected_at": conn_row[8].isoformat() if conn_row[8] else None,
+            "status": status,
+        }
+
+        if status != "active":
+            return envelope({
+                "connected": False,
+                "has_token": has_token,
+                "expires_at": expires_at_iso,
+                "scopes": DRIVE_SCOPES,
+                "redirect_uri_expected": redirect_uri_expected,
+                "drive_email": conn_row[3],
+                "failure_reason": "connection_revoked",
+                "connection": connection_info,
+            })
+
+        failure_reason = None
+        if token_expiry and token_expiry.replace(tzinfo=timezone.utc) <= datetime.now(timezone.utc):
+            refreshed_token = _refresh_token_if_needed(conn_row, conn)
+            if refreshed_token == access_token:
+                failure_reason = "token_expired"
+            else:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT token_expiry FROM drive_connections WHERE id = %s",
+                        (conn_row[0],),
+                    )
+                    refreshed_row = cur.fetchone()
+                    if refreshed_row and refreshed_row[0]:
+                        expires_at_iso = refreshed_row[0].isoformat()
+                        if refreshed_row[0].replace(tzinfo=timezone.utc) <= datetime.now(timezone.utc):
+                            failure_reason = "refresh_failed"
+
+        return envelope({
+            "connected": failure_reason is None,
+            "has_token": has_token,
+            "expires_at": expires_at_iso,
+            "scopes": DRIVE_SCOPES,
+            "redirect_uri_expected": redirect_uri_expected,
+            "drive_email": conn_row[3],
+            "failure_reason": failure_reason,
+            "connection": connection_info,
+        })
+    except Exception as e:
+        logger.error("drive_status error: %s", e)
+        return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
+    finally:
+        put_conn(conn)
+
+
+@router.get("/workspaces/{ws_id}/drive/settings")
+def drive_settings_get(ws_id: str, auth=Depends(require_auth(AuthClass.BEARER))):
+    if isinstance(auth, JSONResponse):
+        return auth
+
+    role_err = require_role(ws_id, auth, Role.ANALYST)
+    if role_err:
+        return role_err
+
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """SELECT workspace_id, root_folder_id, verifier_folder_id,
+                          admin_folder_id, updated_at, updated_by
+                   FROM workspace_drive_settings
+                   WHERE workspace_id = %s""",
+                (ws_id,),
+            )
+            row = cur.fetchone()
+
+        if not row:
+            return envelope({
+                "workspace_id": ws_id,
+                "root_folder_id": None,
+                "verifier_folder_id": None,
+                "admin_folder_id": None,
+                "updated_at": None,
+                "updated_by": None,
+            })
+
+        return envelope({
+            "workspace_id": row[0],
+            "root_folder_id": row[1],
+            "verifier_folder_id": row[2],
+            "admin_folder_id": row[3],
+            "updated_at": row[4].isoformat() if row[4] else None,
+            "updated_by": row[5],
+        })
+    except Exception as e:
+        logger.error("drive_settings_get error: %s", e)
+        return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
+    finally:
+        put_conn(conn)
+
+
+@router.put("/workspaces/{ws_id}/drive/settings")
+async def drive_settings_put(ws_id: str, request: Request, auth=Depends(require_auth(AuthClass.BEARER))):
+    if isinstance(auth, JSONResponse):
+        return auth
+
+    role_err = require_role(ws_id, auth, Role.ADMIN)
+    if role_err:
+        return role_err
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "Invalid JSON body"),
+        )
+
+    root_folder_id = body.get("root_folder_id")
+    verifier_folder_id = body.get("verifier_folder_id")
+    admin_folder_id = body.get("admin_folder_id")
+
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO workspace_drive_settings
+                   (workspace_id, root_folder_id, verifier_folder_id, admin_folder_id, updated_by)
+                   VALUES (%s, %s, %s, %s, %s)
+                   ON CONFLICT (workspace_id) DO UPDATE SET
+                       root_folder_id = EXCLUDED.root_folder_id,
+                       verifier_folder_id = EXCLUDED.verifier_folder_id,
+                       admin_folder_id = EXCLUDED.admin_folder_id,
+                       updated_at = NOW(),
+                       updated_by = EXCLUDED.updated_by
+                   RETURNING workspace_id, root_folder_id, verifier_folder_id,
+                             admin_folder_id, updated_at, updated_by""",
+                (ws_id, root_folder_id, verifier_folder_id, admin_folder_id, auth.user_id),
+            )
+            row = cur.fetchone()
+
+            emit_audit_event(
+                cur,
+                workspace_id=ws_id,
+                event_type="DRIVE_SETTINGS_UPDATED",
+                actor_id=auth.user_id,
+                actor_role=auth.role,
+                resource_type="workspace_drive_settings",
+                resource_id=ws_id,
+                detail={
+                    "root_folder_id": root_folder_id,
+                    "verifier_folder_id": verifier_folder_id,
+                    "admin_folder_id": admin_folder_id,
+                },
+            )
+        conn.commit()
+
+        return envelope({
+            "workspace_id": row[0],
+            "root_folder_id": row[1],
+            "verifier_folder_id": row[2],
+            "admin_folder_id": row[3],
+            "updated_at": row[4].isoformat() if row[4] else None,
+            "updated_by": row[5],
+        })
+    except Exception as e:
+        logger.error("drive_settings_put error: %s", e)
+        conn.rollback()
+        return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
+    finally:
+        put_conn(conn)
+
+
+def _sanitize_actor_name(name):
+    sanitized = name.replace(" ", "_")
+    sanitized = re.sub(r"[^A-Za-z0-9_.\-@]", "", sanitized)
+    return sanitized or "unknown"
+
+
+def _get_drive_settings(ws_id, db_conn):
+    with db_conn.cursor() as cur:
+        cur.execute(
+            """SELECT root_folder_id, verifier_folder_id, admin_folder_id
+               FROM workspace_drive_settings
+               WHERE workspace_id = %s""",
+            (ws_id,),
+        )
+        row = cur.fetchone()
+    if row:
+        return {
+            "root_folder_id": row[0],
+            "verifier_folder_id": row[1],
+            "admin_folder_id": row[2],
+        }
+    return {"root_folder_id": None, "verifier_folder_id": None, "admin_folder_id": None}
+
+
+def _resolve_target_folder(role, settings):
+    if role in ("analyst",):
+        folder = settings.get("verifier_folder_id")
+    elif role in ("verifier",):
+        folder = settings.get("admin_folder_id")
+    elif role in ("admin", "architect"):
+        folder = settings.get("admin_folder_id")
+    else:
+        folder = None
+    if folder:
+        return folder
+    if settings.get("root_folder_id"):
+        return settings["root_folder_id"]
+    if DRIVE_ROOT_FOLDER_ID:
+        return DRIVE_ROOT_FOLDER_ID
+    return None
+
+
+def _bootstrap_folder(service, folder_label, parent_folder_id, ws_id, settings_key, db_conn):
+    file_metadata = {
+        "name": folder_label,
+        "mimeType": "application/vnd.google-apps.folder",
+    }
+    if parent_folder_id:
+        file_metadata["parents"] = [parent_folder_id]
+
+    created = service.files().create(
+        body=file_metadata,
+        fields="id",
+        supportsAllDrives=True,
+    ).execute()
+    new_folder_id = created["id"]
+
+    with db_conn.cursor() as cur:
+        cur.execute(
+            """INSERT INTO workspace_drive_settings (workspace_id, %s)
+               VALUES (%%s, %%s)
+               ON CONFLICT (workspace_id) DO UPDATE SET
+                   %s = EXCLUDED.%s,
+                   updated_at = NOW()""" % (settings_key, settings_key, settings_key),
+            (ws_id, new_folder_id),
+        )
+    db_conn.commit()
+    return new_folder_id
+
+
+@router.post("/workspaces/{ws_id}/drive/save")
+async def drive_save(ws_id: str, request: Request, auth=Depends(require_auth(AuthClass.BEARER))):
+    if isinstance(auth, JSONResponse):
+        return auth
+
+    role_err = require_role(ws_id, auth, Role.ANALYST)
+    if role_err:
+        return role_err
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "Invalid JSON body"),
+        )
+
+    batch_id = body.get("batch_id", "").strip()
+    save_status = body.get("status", "IN_PROGRESS").strip()
+    note = body.get("note", "").strip()
+    file_content_b64 = body.get("file_content_base64", "")
+
+    if not batch_id:
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "batch_id is required"),
+        )
+    if not file_content_b64:
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "file_content_base64 is required"),
+        )
+
     conn = get_conn()
     try:
         conn_row = _get_workspace_connection(ws_id, conn)
         if not conn_row:
-            return envelope({"connected": False, "drive_email": None, "connection": None})
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("NO_DRIVE_CONNECTION", "No active Drive connection for this workspace"),
+            )
+
+        access_token = _refresh_token_if_needed(conn_row, conn)
+        service = _get_drive_service(access_token)
+
+        settings = _get_drive_settings(ws_id, conn)
+        role = auth.role or "analyst"
+
+        target_folder = _resolve_target_folder(role, settings)
+
+        if not target_folder:
+            root_id = settings.get("root_folder_id") or DRIVE_ROOT_FOLDER_ID or None
+            if role in ("analyst",) and not settings.get("verifier_folder_id"):
+                target_folder = _bootstrap_folder(
+                    service, "Verifier", root_id, ws_id, "verifier_folder_id", conn,
+                )
+                settings["verifier_folder_id"] = target_folder
+            elif role in ("verifier", "admin", "architect") and not settings.get("admin_folder_id"):
+                target_folder = _bootstrap_folder(
+                    service, "Admin", root_id, ws_id, "admin_folder_id", conn,
+                )
+                settings["admin_folder_id"] = target_folder
+
+        actor_name = _sanitize_actor_name(auth.display_name or auth.email or "unknown")
+        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%SZ")
+        file_name = "%s-%s-%s-%s.xlsx" % (batch_id, actor_name, save_status, ts)
+
+        file_bytes = base64.b64decode(file_content_b64)
+
+        from googleapiclient.http import MediaInMemoryUpload
+        media = MediaInMemoryUpload(
+            file_bytes,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            resumable=False,
+        )
+
+        file_metadata = {
+            "name": file_name,
+            "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }
+        if target_folder:
+            file_metadata["parents"] = [target_folder]
+
+        created = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields="id, name, webViewLink, size",
+            supportsAllDrives=True,
+        ).execute()
+
+        drive_file_id = created.get("id", "")
+        web_view_link = created.get("webViewLink", "")
+
+        export_id = generate_id("dxh_")
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO drive_export_history
+                   (id, workspace_id, batch_id, file_name, drive_file_id,
+                    folder_id, web_view_link, status, actor_id, actor_role,
+                    note, size_bytes)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (export_id, ws_id, batch_id, file_name, drive_file_id,
+                 target_folder, web_view_link, save_status, auth.user_id,
+                 role, note, len(file_bytes)),
+            )
+
+            emit_audit_event(
+                cur,
+                workspace_id=ws_id,
+                event_type="DRIVE_SAVE_COMPLETED",
+                actor_id=auth.user_id,
+                actor_role=role,
+                resource_type="drive_export_history",
+                resource_id=export_id,
+                batch_id=batch_id,
+                detail={
+                    "file_name": file_name,
+                    "folder_id": target_folder,
+                    "status": save_status,
+                    "drive_file_id": drive_file_id,
+                    "size_bytes": len(file_bytes),
+                    "note": note,
+                },
+            )
+        conn.commit()
 
         return envelope({
-            "connected": conn_row[7] == "active",
-            "drive_email": conn_row[3],
-            "connection": {
-                "id": conn_row[0],
-                "connected_by": conn_row[2],
-                "connected_at": conn_row[8].isoformat() if conn_row[8] else None,
-                "status": conn_row[7],
-            },
+            "ok": True,
+            "file_id": drive_file_id,
+            "file_name": file_name,
+            "folder_id": target_folder,
+            "webViewLink": web_view_link,
         })
     except Exception as e:
-        logger.error("drive_status error: %s", e)
+        logger.error("drive_save error: %s", e)
+        conn.rollback()
         return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
     finally:
         put_conn(conn)
