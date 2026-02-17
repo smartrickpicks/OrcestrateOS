@@ -9,6 +9,145 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; margin: 0; padding: 0; }
+
+    /* ═══════════════ Dark Mode Theme ═══════════════ */
+    .dark-mode-toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px; border-top: 1px solid #2d2d4a;
+    }
+    .dark-mode-toggle-row .dm-label { font-size: 0.78em; color: #888; display: flex; align-items: center; gap: 6px; }
+    .dark-mode-switch { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+    .dark-mode-switch input { opacity: 0; width: 0; height: 0; }
+    .dark-mode-slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background: #555; border-radius: 11px; transition: background 0.3s;
+    }
+    .dark-mode-slider::before {
+      content: ''; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px;
+      background: white; border-radius: 50%; transition: transform 0.3s;
+    }
+    .dark-mode-switch input:checked + .dark-mode-slider { background: #1565c0; }
+    .dark-mode-switch input:checked + .dark-mode-slider::before { transform: translateX(18px); }
+
+    html.dark-mode body { background: #1e1e2e; color: #d4d4dc; }
+    html.dark-mode .main-content { background: #1e1e2e; }
+    html.dark-mode h1, html.dark-mode h2 { color: #e0e0f0; border-bottom-color: #3a3a5c; }
+    html.dark-mode .page-header h2 { color: #e0e0f0; }
+    html.dark-mode .page-header .page-desc { color: #999; }
+    html.dark-mode .subtitle { color: #999; }
+    html.dark-mode .source-info { color: #999; }
+    html.dark-mode .summary-card { background: #2a2a3e; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    html.dark-mode .summary-card .label { color: #999; }
+    html.dark-mode table { background: #2a2a3e; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    html.dark-mode th { background: #16162a; color: #ccc; }
+    html.dark-mode td { color: #ccc; border-bottom-color: #3a3a5c; }
+    html.dark-mode tr:hover { background: #333350; }
+    html.dark-mode .top-toolbar { background: #252538; border-bottom-color: #3a3a5c; }
+    html.dark-mode .top-toolbar-btn { background: #2a2a40; color: #8ab4f8; border-color: #3a3a5c; }
+    html.dark-mode .top-toolbar-btn:hover { background: #1565c0; color: white; border-color: #1565c0; }
+    html.dark-mode .top-toolbar-btn.primary { background: #1565c0; color: white; }
+    html.dark-mode .modal { background: #2a2a3e; color: #d4d4dc; }
+    html.dark-mode .modal-body { background: #2a2a3e; color: #d4d4dc; }
+    html.dark-mode .modal-header { background: #16162a; }
+    html.dark-mode .drawer { background: #2a2a3e; box-shadow: -4px 0 20px rgba(0,0,0,0.5); }
+    html.dark-mode .drawer-body { background: #2a2a3e; color: #d4d4dc; }
+    html.dark-mode .drawer-header { background: #16162a; }
+    html.dark-mode .drawer-footer { background: #252538; border-top-color: #3a3a5c; }
+    html.dark-mode .toolbar { background: #16162a; }
+    html.dark-mode .welcome-hero h2 { color: #e0e0f0; }
+    html.dark-mode .welcome-hero p { color: #999; }
+    html.dark-mode .welcome-hint { color: #777; }
+    html.dark-mode .info { background: #1a2a3e; color: #8ab4f8; }
+    html.dark-mode .error { background: #3e1a1a; color: #f88a8a; }
+    html.dark-mode .wizard-form-group label { color: #ccc; }
+    html.dark-mode .wizard-form-group .hint { color: #888; }
+    html.dark-mode .wizard-toggle { background: #333350; }
+    html.dark-mode .wizard-toggle-label small { color: #999; }
+    html.dark-mode .wizard-multi-select label { background: #333350; color: #ccc; }
+    html.dark-mode .modal-btn-secondary { background: #444; color: #ddd; }
+    html.dark-mode .modal-btn-secondary:hover { background: #555; }
+    html.dark-mode .modal-status.success { background: #1a3e1a; color: #8af88a; }
+    html.dark-mode .modal-status.error { background: #3e1a1a; color: #f88a8a; }
+    html.dark-mode .modal-status.info { background: #1a2a3e; color: #8ab4f8; }
+    html.dark-mode .rail-item { color: #bbb; }
+    html.dark-mode .rail-item:hover { background: #333350; }
+    html.dark-mode .rail-item.active { background: #1a2a3e; color: #8ab4f8; }
+    html.dark-mode .rail-number { background: #444; color: #ccc; }
+    html.dark-mode .stage-tab { color: #999; }
+    html.dark-mode .stage-tab:hover { color: #ddd; }
+    html.dark-mode .first-run-banner { background: linear-gradient(135deg, #1a2a3e 0%, #2a1a3e 100%); border-bottom-color: #3a3a5c; }
+    html.dark-mode .first-run-banner .banner-text { color: #8ab4f8; }
+    html.dark-mode .first-run-banner .banner-dismiss { color: #999; }
+    html.dark-mode .first-run-banner .banner-dismiss:hover { color: #ddd; }
+    html.dark-mode input[type="text"],
+    html.dark-mode input[type="email"],
+    html.dark-mode input[type="search"],
+    html.dark-mode input[type="number"],
+    html.dark-mode input[type="url"],
+    html.dark-mode textarea,
+    html.dark-mode select { background: #333350; color: #d4d4dc; border-color: #4a4a6a; }
+    html.dark-mode input::placeholder,
+    html.dark-mode textarea::placeholder { color: #777; }
+    html.dark-mode .nav-sidebar { background: #13132a; }
+    html.dark-mode .nav-header { border-bottom-color: #2a2a48; }
+    html.dark-mode .nav-footer { background: #13132a; border-top-color: #2a2a48; }
+    html.dark-mode .nav-divider { background: #2a2a48; }
+    html.dark-mode .nav-mode-section { border-top-color: #2a2a48; }
+    html.dark-mode .dark-mode-toggle-row { border-top-color: #2a2a48; }
+    html.dark-mode .progress-block { background: #1a1a30; }
+    html.dark-mode .active-data-source-bar { background: #1a1a30; border-color: #2a2a48; }
+    html.dark-mode .cache-clear-btn { background: #333; color: #ccc; border-color: #555; }
+    html.dark-mode .remember-toggle { background: #333340; }
+    html.dark-mode .remember-toggle label { color: #999; }
+    html.dark-mode .severity-blocking { background: #3e1a1a; }
+    html.dark-mode .severity-warning { background: #3e2a1a; }
+    html.dark-mode .severity-info { background: #1a2a3e; }
+    html.dark-mode .null-value { color: #666; }
+    html.dark-mode .srr-view-toggle { background: #252538; border-bottom-color: #3a3a5c; }
+    html.dark-mode .srr-view-toggle-btn { background: transparent; color: #999; }
+    html.dark-mode .srr-view-toggle-btn.active { color: #8ab4f8; border-bottom-color: #8ab4f8; }
+    html.dark-mode .ev-view-toggle { border-color: #4a4a6a; }
+    html.dark-mode .ev-view-toggle-btn { background: #333350; color: #999; border-color: #4a4a6a; }
+    html.dark-mode .ev-view-toggle-btn.active { background: #1565c0; color: #fff; }
+    html.dark-mode .grid-mode-toggle { border-color: #3a5a8a; }
+    html.dark-mode .grid-mode-toggle button { background: #2a2a3e; color: #8ab4f8; }
+    html.dark-mode .grid-mode-toggle button.active { background: #1565c0; color: #fff; }
+    html.dark-mode .section-guidance-card { background: #2a2a3e !important; border-color: #3a3a5c !important; }
+    html.dark-mode .ev-reader-raw-toggle { background: #333350; border-color: #4a4a6a; color: #999; }
+    html.dark-mode .ev-reader-raw-toggle:hover { background: #3a3a50; color: #ccc; }
+    html.dark-mode .loader-modal-header { background: #16162a; }
+    html.dark-mode .session-loader-toggle { background: #2a2a50; }
+    html.dark-mode .diff-pane { background: #1a1e28; color: #d4d4dc; }
+    html.dark-mode .diff-pane code { background: #252830; }
+    html.dark-mode .modal-command { background: #1a1e28; color: #d4d4dc; }
+    html.dark-mode .drop-zone,
+    html.dark-mode .wizard-section { background: #333350; border-color: #4a4a6a; color: #ccc; }
+    html.dark-mode .wizard-preset-btn { background: #333350; color: #ccc; border-color: #4a4a6a; }
+    html.dark-mode .wizard-preset-btn:hover { background: #3a3a55; }
+    html.dark-mode .session-chip { background: #333350; color: #ccc; border-color: #4a4a6a; }
+    html.dark-mode .data-indicator-path,
+    html.dark-mode .path-hint-container { background: #333350; color: #ccc; border-color: #4a4a6a; }
+    html.dark-mode .badge,
+    html.dark-mode .chip { background: #333350; color: #ccc; }
+    html.dark-mode .progress-block { border-color: #2a2a48; }
+    html.dark-mode .cache-info { color: #999; }
+    html.dark-mode .nav-action-btn.export-btn { border-color: #4a4a6a; }
+    html.dark-mode .section-guidance-toggle { color: #bbb; }
+    html.dark-mode .section-guidance-toggle:hover { color: #ddd; }
+    html.dark-mode .pftl-raw-toggle,
+    html.dark-mode .pftl-text-toggle { color: #8ab4f8; }
+    html.dark-mode .srr-override-toggle { background: #555; }
+    html.dark-mode .srr-override-toggle.active { background: #e68a00; }
+    html.dark-mode .srr-view-toggle-hint { color: #777; }
+    html.dark-mode .prep-sim-section-toggle { color: #bbb; }
+    html.dark-mode .prep-sim-section-toggle:hover { color: #ddd; }
+    html.dark-mode .wizard-step-dot { background: #555; }
+    html.dark-mode .wizard-form-group input[type="text"],
+    html.dark-mode .wizard-form-group select,
+    html.dark-mode .wizard-form-group textarea { background: #333350; color: #d4d4dc; border-color: #4a4a6a; }
+    html.dark-mode .triage-icon-btn { box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    html.dark-mode .triage-icon-btn:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+    /* ═══════════════ End Dark Mode ═══════════════ */
     h1 { margin-bottom: 10px; color: #1a1a2e; }
 
     /* Staged Loader Overlay */
@@ -2427,6 +2566,34 @@
     </style>
 </head>
 <body>
+  <script>
+    (function() {
+      var saved = localStorage.getItem('orchestrate-dark-mode');
+      if (saved === 'true') {
+        document.documentElement.classList.add('dark-mode');
+      }
+    })();
+    function toggleDarkMode(enabled) {
+      if (enabled) {
+        document.documentElement.classList.add('dark-mode');
+        localStorage.setItem('orchestrate-dark-mode', 'true');
+      } else {
+        document.documentElement.classList.remove('dark-mode');
+        localStorage.setItem('orchestrate-dark-mode', 'false');
+      }
+      var icon = document.getElementById('dm-icon');
+      if (icon) icon.textContent = enabled ? '☀️' : '🌙';
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      var cb = document.getElementById('dark-mode-checkbox');
+      if (cb) {
+        var isDark = document.documentElement.classList.contains('dark-mode');
+        cb.checked = isDark;
+        var icon = document.getElementById('dm-icon');
+        if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+      }
+    });
+  </script>
   <!-- v1.6.37: Excel upload loading overlay -->
   <div id="upload-loading-overlay" class="upload-loading-overlay">
     <div class="upload-loading-spinner"></div>
@@ -2597,8 +2764,17 @@
         <div id="locked-role-display" style="display: none; padding: 6px 12px; font-size: 0.75em; background: rgba(21, 101, 192, 0.15); color: #64b5f6; border-radius: 4px; text-align: center;"></div>
       </div>
       
+      <!-- Dark Mode Toggle -->
+      <div class="dark-mode-toggle-row">
+        <span class="dm-label"><span id="dm-icon">🌙</span> Dark Mode</span>
+        <label class="dark-mode-switch">
+          <input type="checkbox" id="dark-mode-checkbox" onchange="toggleDarkMode(this.checked)">
+          <span class="dark-mode-slider"></span>
+        </label>
+      </div>
+
       <!-- User Profile -->
-      <div id="sidebar-user-profile" style="padding: 10px 16px; border-top: 1px solid #2d2d4a; display: flex; align-items: center; gap: 10px;">
+      <div id="sidebar-user-profile" style="padding: 10px 16px; display: flex; align-items: center; gap: 10px;">
         <div id="sidebar-user-avatar" style="width: 32px; height: 32px; border-radius: 50%; background: #1565c0; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.85em; flex-shrink: 0;"></div>
         <div style="flex: 1; min-width: 0;">
           <div id="sidebar-user-name" style="font-size: 0.82em; font-weight: 600; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
