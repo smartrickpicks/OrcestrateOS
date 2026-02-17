@@ -21,6 +21,7 @@
   --border-strong: rgba(0, 0, 0, 0.22);
   --border-1: #e0e0e0;
   --border-2: #ccc;
+  --divider: #e0e0e0;
   --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.12);
 
@@ -30,11 +31,13 @@
   --text-muted: #666;
   --text-disabled: rgba(0, 0, 0, 0.35);
   --text-inverse: #ffffff;
+  --text-invert: #ffffff;
   --text-1: #1a1a2e;
   --text-2: #333;
   --text-3: #666;
 
   /* Accents */
+  --accent: #5C6BC0;
   --accent-bright: #1565c0;
   --accent-border: #1976d2;
   --accent-1: #5C6BC0;
@@ -43,6 +46,7 @@
   --accent-orange: #FF7A18;
   --ember-border: #FF8A3D;
   --ember-glow: rgba(255, 138, 61, 0.15);
+  --glow: rgba(92, 107, 192, 0.18);
   --focus-ring: #1976d2;
   --focus-ring-shadow: rgba(25, 118, 210, 0.18);
 
@@ -69,10 +73,13 @@
   --glow-ember-med: transparent;
 
   /* Tables */
+  --table-bg: #ffffff;
   --table-head: #f0f2f5;
+  --table-head-text: #333;
   --table-row: #ffffff;
   --table-row-alt: #f8f9fa;
   --table-row-hover: #eef1f5;
+  --table-row-selected: rgba(92, 107, 192, 0.08);
 
   /* Chips / Badges */
   --chip-bg: #eef1f5;
@@ -81,6 +88,42 @@
 
   /* Focus / Selection */
   --selection-bg: rgba(21, 101, 192, 0.08);
+
+  /* Banners */
+  --banner-warn-bg: rgba(245, 124, 0, 0.06);
+  --banner-warn-border: #f57c00;
+  --banner-warn-text: #e65100;
+
+  /* Section headers */
+  --section-title: #1a1a2e;
+  --section-subtitle: #666;
+  --pill-bg: #eef1f5;
+  --pill-border: #ddd;
+
+  /* Lifecycle cards */
+  --life-bg: #ffffff;
+  --life-border: #e0e0e0;
+  --life-active-bg: rgba(21, 101, 192, 0.06);
+  --life-active-border: #1976d2;
+  --life-done: #2e7d32;
+  --life-blocked: #c62828;
+
+  /* Schema snapshot tiles */
+  --tile-bg: #ffffff;
+  --tile-border: #e0e0e0;
+  --tile-mapped-accent: #2e7d32;
+  --tile-mapped-bg: rgba(46, 125, 50, 0.06);
+  --tile-unknown-accent: #1976d2;
+  --tile-unknown-bg: rgba(25, 118, 210, 0.06);
+  --tile-missing-accent: #f57c00;
+  --tile-missing-bg: rgba(245, 124, 0, 0.06);
+  --tile-quality-accent: #c62828;
+  --tile-quality-bg: rgba(198, 40, 40, 0.06);
+
+  /* Encoding highlight */
+  --encoding-ink: #e65100;
+  --encoding-bg: rgba(230, 81, 0, 0.08);
+  --encoding-underline: rgba(230, 81, 0, 0.5);
 
   /* Sidebar (light — matches existing dark sidebar) */
   --sidebar-bg: #1a1a2e;
@@ -93,100 +136,143 @@
   --status-bad: #c62828;
 }
 
-/* ───── Dark Theme v2 — Softer Blue-Gray ───── */
+/* ───── Dark Theme — Palette B: Subtle Futuristic Neon Control Panel ───── */
 html[data-theme="dark"] {
-  /* Surfaces */
-  --bg-base: #0F172A;
-  --surface-1: #1E293B;
-  --surface-2: #243247;
-  --surface-3: #2E3A51;
-  --surface-inset: #162033;
+  /* Core Surfaces */
+  --bg-base: #0B1220;
+  --surface-1: #0F172A;
+  --surface-2: #111C33;
+  --surface-3: #162442;
+  --surface-inset: #0D1526;
 
-  --bg-0: #0F172A;
-  --bg-1: #1E293B;
-  --bg-2: #243247;
-  --bg-3: #2E3A51;
-  --bg-4: #36445F;
+  --bg-0: #0B1220;
+  --bg-1: #0F172A;
+  --bg-2: #111C33;
+  --bg-3: #162442;
+  --bg-4: #1B2C52;
 
   /* Borders + Shadows */
-  --border-soft: #334155;
-  --border-med: #3B4A63;
-  --border-strong: #4B5A73;
-  --border-1: #334155;
-  --border-2: #3B4A63;
-  --shadow-1: 0 6px 20px rgba(0, 0, 0, 0.25);
-  --shadow-2: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --border-soft: #243554;
+  --border-med: #2F4570;
+  --border-strong: #3A5080;
+  --border-1: #243554;
+  --border-2: #2F4570;
+  --divider: #1D2A44;
+  --shadow-1: 0 6px 20px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 10px 30px rgba(0, 0, 0, 0.50);
 
-  /* Text */
-  --text-primary: #F8FAFC;
-  --text-secondary: #CBD5E1;
-  --text-muted: #94A3B8;
-  --text-disabled: rgba(203, 213, 225, 0.45);
-  --text-inverse: #0F172A;
-  --text-1: #F8FAFC;
-  --text-2: #CBD5E1;
-  --text-3: #94A3B8;
+  /* Text — bright and readable */
+  --text-primary: #E6EEFF;
+  --text-secondary: #B7C7E6;
+  --text-muted: #89A0C7;
+  --text-disabled: rgba(183, 199, 230, 0.40);
+  --text-inverse: #0B1220;
+  --text-invert: #0B1220;
+  --text-1: #E6EEFF;
+  --text-2: #B7C7E6;
+  --text-3: #89A0C7;
 
-  /* Accents */
-  --accent-bright: #7DB3FF;
-  --accent-border: #2D4A7B;
-  --accent-1: #7C3AED;
-  --accent-2: #6366F1;
+  /* Accents — electric violet primary, cyan secondary */
+  --accent: #7C5CFF;
+  --accent-bright: #7C5CFF;
+  --accent-border: #7C5CFF;
+  --accent-1: #7C5CFF;
+  --accent-2: #22D3EE;
   --signal-orange: #F97316;
   --accent-orange: #F97316;
   --ember-border: #F97316;
   --ember-glow: rgba(249, 115, 22, 0.35);
-  --focus-ring: rgba(124, 58, 237, 0.55);
-  --focus-ring-shadow: rgba(124, 58, 237, 0.25);
+  --glow: rgba(124, 92, 255, 0.25);
+  --focus-ring: rgba(34, 211, 238, 0.35);
+  --focus-ring-shadow: rgba(124, 92, 255, 0.25);
 
-  /* Status */
-  --ok: #22C55E;
-  --warn: #FBBF24;
-  --bad: #EF4444;
-  --info: #38BDF8;
-  --success: #22C55E;
-  --danger: #EF4444;
-  --ok-bg: rgba(34, 197, 94, 0.12);
-  --ok-border: rgba(34, 197, 94, 0.25);
-  --warn-bg: rgba(251, 191, 36, 0.12);
-  --warn-border: rgba(251, 191, 36, 0.25);
-  --bad-bg: rgba(239, 68, 68, 0.12);
-  --bad-border: rgba(239, 68, 68, 0.25);
-  --info-bg: rgba(56, 189, 248, 0.12);
-  --info-border: rgba(56, 189, 248, 0.25);
+  /* Status — neon-tinted */
+  --ok: #2EE59D;
+  --warn: #F6C177;
+  --bad: #FF5C7A;
+  --info: #22D3EE;
+  --success: #2EE59D;
+  --danger: #FF5C7A;
+  --ok-bg: rgba(46, 229, 157, 0.12);
+  --ok-border: rgba(46, 229, 157, 0.25);
+  --warn-bg: rgba(246, 193, 119, 0.14);
+  --warn-border: rgba(246, 193, 119, 0.25);
+  --bad-bg: rgba(255, 92, 122, 0.14);
+  --bad-border: rgba(255, 92, 122, 0.25);
+  --info-bg: rgba(34, 211, 238, 0.12);
+  --info-border: rgba(34, 211, 238, 0.25);
 
   /* Glow */
-  --glow-blue-soft: rgba(125, 179, 255, 0.16);
-  --glow-blue-med: rgba(125, 179, 255, 0.24);
+  --glow-blue-soft: rgba(124, 92, 255, 0.16);
+  --glow-blue-med: rgba(124, 92, 255, 0.24);
   --glow-ember-soft: rgba(249, 115, 22, 0.20);
   --glow-ember-med: rgba(249, 115, 22, 0.32);
 
-  /* Tables */
-  --table-head: #1B2638;
-  --table-row: #1E293B;
-  --table-row-alt: #1A2436;
-  --table-row-hover: #2E3A51;
+  /* Tables — readable grids */
+  --table-bg: #0F172A;
+  --table-head: #101B31;
+  --table-head-text: #CFE0FF;
+  --table-row: #101C34;
+  --table-row-alt: #0E1930;
+  --table-row-hover: #162A4A;
+  --table-row-selected: rgba(124, 92, 255, 0.16);
 
   /* Chips / Badges */
-  --chip-bg: #2E3A51;
-  --chip-border: #3B4A63;
-  --chip-text: #CBD5E1;
+  --chip-bg: #162442;
+  --chip-border: #2F4570;
+  --chip-text: #B7C7E6;
 
   /* Focus / Selection */
-  --selection-bg: rgba(124, 58, 237, 0.12);
+  --selection-bg: rgba(124, 92, 255, 0.12);
 
-  /* Sidebar (dark) */
-  --sidebar-bg: #1E293B;
-  --sidebar-border: #334155;
-  --sidebar-text: #94A3B8;
-  --sidebar-text-hover: #F8FAFC;
-  --sidebar-hover-bg: #2E3A51;
-  --sidebar-section-header: #64748B;
-  --accent-blue: #3B82F6;
-  --status-bad: #EF4444;
+  /* Banners (stale / preflight bars) */
+  --banner-warn-bg: rgba(246, 193, 119, 0.12);
+  --banner-warn-border: #F6C177;
+  --banner-warn-text: #FBE1B6;
+
+  /* Section headers / pills */
+  --section-title: #D6E4FF;
+  --section-subtitle: #93A9D1;
+  --pill-bg: #142445;
+  --pill-border: #2A3F66;
+
+  /* Lifecycle Progression Cards */
+  --life-bg: #101C34;
+  --life-border: #243554;
+  --life-active-bg: rgba(34, 211, 238, 0.10);
+  --life-active-border: #22D3EE;
+  --life-done: #2EE59D;
+  --life-blocked: #FF5C7A;
+
+  /* Schema Snapshot Tiles */
+  --tile-bg: #101C34;
+  --tile-border: #243554;
+  --tile-mapped-accent: #2EE59D;
+  --tile-mapped-bg: rgba(46, 229, 157, 0.10);
+  --tile-unknown-accent: #60A5FA;
+  --tile-unknown-bg: rgba(96, 165, 250, 0.10);
+  --tile-missing-accent: #F6C177;
+  --tile-missing-bg: rgba(246, 193, 119, 0.10);
+  --tile-quality-accent: #FF5C7A;
+  --tile-quality-bg: rgba(255, 92, 122, 0.10);
+
+  /* Evidence Viewer Encoding Highlight */
+  --encoding-ink: #FFB020;
+  --encoding-bg: rgba(255, 176, 32, 0.14);
+  --encoding-underline: rgba(255, 176, 32, 0.75);
+
+  /* Sidebar */
+  --sidebar-bg: #0F172A;
+  --sidebar-border: #243554;
+  --sidebar-text: #89A0C7;
+  --sidebar-text-hover: #E6EEFF;
+  --sidebar-hover-bg: #162442;
+  --sidebar-section-header: #6B82A8;
+  --accent-blue: #7C5CFF;
+  --status-bad: #FF5C7A;
 }
 
 /* ───── Utility: Accent Glow ───── */
 .glow-accent {
-  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.5), 0 0 12px rgba(124, 58, 237, 0.20);
+  box-shadow: 0 0 0 1px rgba(124, 92, 255, 0.5), 0 0 12px rgba(124, 92, 255, 0.20);
 }
