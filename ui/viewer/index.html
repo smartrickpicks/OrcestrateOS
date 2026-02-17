@@ -857,6 +857,10 @@
     /* Progress Block */
     .progress-block { display: block; background: var(--sidebar-hover-bg); border-radius: 8px; padding: 12px; text-decoration: none; color: inherit; cursor: pointer; transition: background 0.2s; }
     .progress-block:hover { background: #3d3d5a; }
+    .progress-expand-hint { display: none; }
+    .nav-sidebar.collapsed .progress-expand-hint { display: flex; align-items: center; justify-content: center; color: var(--sidebar-text); padding: 4px 0; }
+    .nav-sidebar.collapsed .progress-block { padding: 8px; display: flex; align-items: center; justify-content: center; }
+    .nav-sidebar.collapsed .progress-block:hover .progress-expand-hint { color: var(--sidebar-text-hover); }
     .progress-header { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.5px; color: var(--sidebar-section-header); margin-bottom: 8px; font-weight: 600; }
     .progress-stats { display: flex; justify-content: space-between; margin-bottom: 10px; }
     .progress-stat { text-align: center; flex: 1; }
@@ -2985,14 +2989,14 @@
           <h1 style="font-size: 0.95em; margin: 0;">Orchestrate OS</h1>
           <div class="version">Semantic Control Board</div>
         </div>
-        <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" onclick="toggleSidebarCollapse()" title="Collapse sidebar">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-        </button>
       </div>
       <div class="nav-menu">
         <!-- Progress Block (collapses sidebar on click) -->
         <div class="nav-section" style="padding: 16px 16px 8px;">
           <a class="progress-block" href="javascript:void(0)" onclick="toggleSidebarCollapse(); return false;">
+            <div class="progress-expand-hint">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+            </div>
             <div class="progress-header">Progress</div>
             <div class="progress-stats">
               <div class="progress-stat">
