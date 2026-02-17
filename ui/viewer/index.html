@@ -53552,16 +53552,27 @@ var P022_RuntimeValidation = {
     _pftlSugState.error = null;
     _pftlSugState.showText = false;
     _pftlSugState.highlightKeywords = [];
-    _pftlRender();
-    console.log('[PFTL] run complete:', _pftlState.result.gate_color, _pftlState.result.doc_mode);
-    _pftlAutoRunSuggestions();
+    try {
+      _pftlRender();
+    } catch (renderErr) {
+      console.error('[PFTL] render error after success:', renderErr);
+    }
+    console.log('[PFTL] run complete:', _pftlState.result.gate_color, _pftlState.result.doc_mode,
+      'headers:', (_pftlState.result.extracted_headers || []).length,
+      'text_len:', (_pftlState.result.extracted_text || '').length);
+    try {
+      _pftlAutoRunSuggestions();
+    } catch (sugErr) {
+      console.error('[PFTL] autoRunSuggestions error:', sugErr);
+    }
   }
 
   function _pftlAutoRunSuggestions() {
     var result = _pftlState.result;
-    if (!result) return;
+    if (!result) { console.warn('[PFTL-SUG] no result, skipping'); return; }
     var headers = result.extracted_headers || [];
     var bodyText = result.extracted_text || "";
+    console.log('[PFTL-SUG] auto_run: headers=' + headers.length + ', body_len=' + bodyText.length);
     if (headers.length === 0 && !bodyText) {
       _pftlSugState.runMode = 'no_headers';
       _pftlSugState.error = 'No candidate headers found in document text.';
@@ -53570,14 +53581,20 @@ var P022_RuntimeValidation = {
     }
     _pftlSugState.loading = true;
     _pftlRenderSuggestionsSection();
+    var truncatedBody = bodyText.length > 20000 ? bodyText.substring(0, 20000) : bodyText;
     var baseUrl = window.location.origin;
     var reqHeaders = _pftlGetHeaders();
+    var payload = { source_fields: headers, body_text: truncatedBody, document_id: result.doc_id || 'preflight_testlab' };
+    console.log('[PFTL-SUG] sending request, payload_size=' + JSON.stringify(payload).length);
     fetch(baseUrl + '/api/v2.5/suggestion-runs/local', {
       method: 'POST',
       headers: reqHeaders,
-      body: JSON.stringify({ source_fields: headers, body_text: bodyText, document_id: result.doc_id || 'preflight_testlab' })
+      body: JSON.stringify(payload)
     })
-    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      console.log('[PFTL-SUG] response status=' + r.status);
+      return r.json();
+    })
     .then(function(resp) {
       if (resp.error) {
         _pftlSugState.error = resp.error.message || 'Suggestion run failed';
