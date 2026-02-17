@@ -5702,6 +5702,7 @@
             <button class="people-sub-tab active" data-people-tab="members" onclick="switchPeopleTab('members')" style="padding: 8px 16px; background: #1976d2; color: white; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 0.85em; font-weight: 600;">Members</button>
             <button class="people-sub-tab" data-people-tab="roles" onclick="switchPeopleTab('roles')" style="padding: 8px 16px; background: #f5f5f5; color: #666; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 0.85em;">Roles</button>
             <button class="people-sub-tab" data-people-tab="invites" onclick="switchPeopleTab('invites')" style="padding: 8px 16px; background: #f5f5f5; color: #666; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 0.85em;">Invites</button>
+            <button class="people-sub-tab" data-people-tab="drive" onclick="switchPeopleTab('drive')" style="padding: 8px 16px; background: #f5f5f5; color: #666; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 0.85em;">Drive</button>
           </div>
 
           <!-- Members Sub-Panel -->
@@ -5750,6 +5751,37 @@
               </div>
             </div>
             <div id="people-invites-table"></div>
+          </div>
+
+          <!-- Drive Settings Sub-Panel -->
+          <div id="people-tab-drive" class="people-sub-panel" style="display: none; background: var(--bg-2, white); padding: 16px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h4 style="margin: 0 0 12px; font-size: 0.95em; color: var(--text-1, #333);">Google Drive Folder Configuration</h4>
+            <p style="font-size: 0.82em; color: var(--text-2, #666); margin-bottom: 16px;">Configure folder IDs for role-based Drive export routing. Analysts save to the Verifier folder, Verifiers/Admins save to the Admin folder.</p>
+            <div style="display: flex; flex-direction: column; gap: 12px; max-width: 600px;">
+              <div>
+                <label style="font-size: 0.8em; color: var(--text-2, #666); display: block; margin-bottom: 4px;">Root Folder ID</label>
+                <input type="text" id="drive-root-folder-input" placeholder="Google Drive folder ID (from URL)" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border-1, #ddd); border-radius: 4px; font-size: 0.85em; font-family: monospace; background: var(--bg-1, #fff); color: var(--text-1, #333);">
+                <span style="font-size: 0.72em; color: var(--text-3, #aaa);">Parent folder for all exports. Extract ID from Drive URL.</span>
+              </div>
+              <div>
+                <label style="font-size: 0.8em; color: var(--text-2, #666); display: block; margin-bottom: 4px;">Verifier Folder ID</label>
+                <input type="text" id="drive-verifier-folder-input" placeholder="Auto-created if blank" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border-1, #ddd); border-radius: 4px; font-size: 0.85em; font-family: monospace; background: var(--bg-1, #fff); color: var(--text-1, #333);">
+                <span style="font-size: 0.72em; color: var(--text-3, #aaa);">Analysts export here. Created automatically under root if empty.</span>
+              </div>
+              <div>
+                <label style="font-size: 0.8em; color: var(--text-2, #666); display: block; margin-bottom: 4px;">Admin Folder ID</label>
+                <input type="text" id="drive-admin-folder-input" placeholder="Auto-created if blank" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border-1, #ddd); border-radius: 4px; font-size: 0.85em; font-family: monospace; background: var(--bg-1, #fff); color: var(--text-1, #333);">
+                <span style="font-size: 0.72em; color: var(--text-3, #aaa);">Verifiers and admins export here. Created automatically under root if empty.</span>
+              </div>
+              <div style="display: flex; gap: 10px; margin-top: 8px;">
+                <button id="drive-settings-save-btn" onclick="saveDriveSettings()" style="padding: 8px 18px; background: var(--accent-bright, #4caf50); color: var(--bg-1, white); border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Save Settings</button>
+                <span id="drive-settings-status" style="font-size: 0.8em; color: var(--text-2, #888); align-self: center;"></span>
+              </div>
+            </div>
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-1, #eee);">
+              <h5 style="margin: 0 0 8px; font-size: 0.9em; color: var(--text-1, #333);">Export History</h5>
+              <div id="drive-export-history-table" style="font-size: 0.82em; color: var(--text-2, #666);">Loading...</div>
+            </div>
           </div>
         </div><!-- end admin-tab-people -->
 
@@ -7625,7 +7657,7 @@
 
     // P0.7: People workspace functions
     function switchPeopleTab(tabName) {
-      var subTabs = ['members', 'roles', 'invites'];
+      var subTabs = ['members', 'roles', 'invites', 'drive'];
       for (var ti = 0; ti < subTabs.length; ti++) {
         var panel = document.getElementById('people-tab-' + subTabs[ti]);
         if (panel) panel.style.display = (subTabs[ti] === tabName) ? '' : 'none';
@@ -7641,6 +7673,7 @@
       if (tabName === 'members') renderPeopleMembers();
       if (tabName === 'roles') renderPeopleRoles();
       if (tabName === 'invites') renderPeopleInvites();
+      if (tabName === 'drive') loadDriveSettings();
       localStorage.setItem('people_active_tab', tabName);
     }
 
@@ -23962,15 +23995,22 @@
       var now = new Date();
       var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
       var ts = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
-               '_' + pad(now.getHours()) + '-' + pad(now.getMinutes());
-      var wsId = '';
-      if (typeof _getWorkspaceId === 'function') {
-        wsId = _getWorkspaceId();
-      } else if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) {
-        wsId = IDENTITY_CONTEXT.workspace_id;
+               'T' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds()) + 'Z';
+      var batchId = '';
+      if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.batch_id) {
+        batchId = IDENTITY_CONTEXT.batch_id;
       }
-      var cleanBase = (baseName || 'dataset').replace(/\.xlsx$/i, '').replace(/\.xls$/i, '').replace(/\.csv$/i, '');
-      return cleanBase + '__' + status + '__' + ts + '__' + wsId + '.xlsx';
+      if (!batchId) batchId = baseName || 'dataset';
+      batchId = batchId.replace(/\.xlsx$/i, '').replace(/\.xls$/i, '').replace(/\.csv$/i, '');
+      var actor = '';
+      if (typeof getCurrentUserName === 'function') {
+        actor = getCurrentUserName() || '';
+      }
+      if (!actor && typeof IDENTITY_CONTEXT !== 'undefined') {
+        actor = IDENTITY_CONTEXT.display_name || IDENTITY_CONTEXT.email || '';
+      }
+      actor = actor.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '').substring(0, 30) || 'user';
+      return batchId + '-' + actor + '-' + status + '-' + ts + '.xlsx';
     }
 
     var EXPORT_CELL_FILLS = {
@@ -24061,15 +24101,92 @@
         XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31));
       });
       if (includeMeta) {
-        var changeLogWs = buildChangeLogSheet();
+        var govMetaRows = [['key', 'value']];
+        govMetaRows.push(['batch_id', IDENTITY_CONTEXT.batch_id || '']);
+        govMetaRows.push(['dataset_id', IDENTITY_CONTEXT.dataset_id || '']);
+        govMetaRows.push(['workspace_id', IDENTITY_CONTEXT.workspace_id || '']);
+        govMetaRows.push(['tenant_id', IDENTITY_CONTEXT.tenant_id || '']);
+        govMetaRows.push(['export_status', _resolveExportStatus()]);
+        var actorName = '';
+        if (typeof getCurrentUserName === 'function') actorName = getCurrentUserName() || '';
+        govMetaRows.push(['actor_name', actorName]);
+        var actorRole = 'analyst';
+        if (typeof getCurrentRole === 'function') actorRole = getCurrentRole() || 'analyst';
+        govMetaRows.push(['actor_role', actorRole]);
+        govMetaRows.push(['exported_at', new Date().toISOString()]);
+        var totalRecords = 0;
+        dataSheets.forEach(function(s) {
+          if (workbook.sheets[s] && workbook.sheets[s].rows) totalRecords += workbook.sheets[s].rows.length;
+        });
+        govMetaRows.push(['total_records', totalRecords]);
+        govMetaRows.push(['sheet_count', dataSheets.length]);
+        govMetaRows.push(['orchestrate_version', 'v2.5']);
+        var govWs = XLSX.utils.aoa_to_sheet(govMetaRows);
+        govWs['!cols'] = [{ wch: 20 }, { wch: 50 }];
+        XLSX.utils.book_append_sheet(wb, govWs, 'GOV_META');
+
+        var actionHeaders = ['type', 'record_id', 'sheet', 'field', 'old_value', 'new_value', 'reason', 'actor', 'timestamp', 'status', 'request_id'];
+        var actionRows = [actionHeaders];
+        var patchRequests = typeof PATCH_REQUEST_STORE !== 'undefined' ? PATCH_REQUEST_STORE.list() : [];
+        patchRequests.forEach(function(pr) {
+          actionRows.push([
+            pr.type || 'correction',
+            pr.record_id || '', pr.sheet || '', pr.field || '',
+            pr.old_value || '', pr.new_value || '',
+            pr.justification || pr.comment || '',
+            pr.analyst || actorName,
+            pr.created_at_utc || '', pr.status || 'Draft', pr.request_id || ''
+          ]);
+        });
+        if (typeof changeMap !== 'undefined' && changeMap.changes) {
+          Object.keys(changeMap.changes).forEach(function(recordId) {
+            var recordChanges = changeMap.changes[recordId];
+            Object.keys(recordChanges).forEach(function(field) {
+              var c = recordChanges[field];
+              actionRows.push([
+                c.type || 'edit', recordId, c.sheet || '', field,
+                c.old_value || '', c.new_value || '', c.notes || '',
+                c.analyst || '', c.timestamp || '', 'applied', ''
+              ]);
+            });
+          });
+        }
+        var rfiItems = typeof RFI_STORE !== 'undefined' && typeof RFI_STORE.list === 'function' ? RFI_STORE.list() : [];
+        rfiItems.forEach(function(rfi) {
+          actionRows.push([
+            'rfi', rfi.record_id || '', rfi.sheet || '', rfi.field || '',
+            '', '', rfi.question || rfi.note || '',
+            rfi.created_by || actorName, rfi.created_at || '', rfi.status || 'open', rfi.id || ''
+          ]);
+        });
+        var actionsWs = XLSX.utils.aoa_to_sheet(actionRows);
+        actionsWs['!cols'] = actionHeaders.map(function(h) { return { wch: Math.min(25, Math.max(10, h.length + 2)) }; });
+        XLSX.utils.book_append_sheet(wb, actionsWs, 'ACTIONS');
+
+        var stateObj = {
+          identity: IDENTITY_CONTEXT || {},
+          workbook_meta: { order: workbook.order || [], activeSheet: workbook.activeSheet || '' },
+          applied_patches: patchRequests.filter(function(p) { return p.status === 'Approved' || p.status === 'applied'; }).length,
+          total_patches: patchRequests.length,
+          rfi_count: rfiItems.length,
+          filter_state: typeof window._activeFilters !== 'undefined' ? window._activeFilters : {},
+          verified_cell_count: window._gridVerifiedCells ? Object.keys(window._gridVerifiedCells).length : 0,
+          export_timestamp: new Date().toISOString()
+        };
+        var stateJson = JSON.stringify(stateObj, null, 2);
+        var stateWs = XLSX.utils.aoa_to_sheet([['state_json'], [stateJson]]);
+        stateWs['!cols'] = [{ wch: 120 }];
+        XLSX.utils.book_append_sheet(wb, stateWs, 'STATE_JSON');
+
+        var changeLogWs = typeof buildChangeLogSheet === 'function' ? buildChangeLogSheet() : null;
         if (changeLogWs) XLSX.utils.book_append_sheet(wb, changeLogWs, '_change_log');
-        var rfiWs = buildRFISheet();
+        var rfiWs = typeof buildRFISheet === 'function' ? buildRFISheet() : null;
         if (rfiWs) XLSX.utils.book_append_sheet(wb, rfiWs, 'RFIs & Analyst Notes');
-        var signalsWs = buildSignalsSummarySheet();
+        var signalsWs = typeof buildSignalsSummarySheet === 'function' ? buildSignalsSummarySheet() : null;
         if (signalsWs) XLSX.utils.book_append_sheet(wb, signalsWs, '_signals_summary');
-        var metaWs = buildMetadataSheet();
-        XLSX.utils.book_append_sheet(wb, metaWs, '_orchestrate_meta');
-        var auditWs = buildAuditLogSheet();
+        var metaWs = typeof buildMetadataSheet === 'function' ? buildMetadataSheet() : null;
+        if (metaWs) XLSX.utils.book_append_sheet(wb, metaWs, '_orchestrate_meta');
+        var auditWs = typeof buildAuditLogSheet === 'function' ? buildAuditLogSheet() : null;
         if (auditWs) XLSX.utils.book_append_sheet(wb, auditWs, 'Audit_Log');
       }
       return wb;
@@ -24123,36 +24240,122 @@
         var wbOut = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
 
         var ws = typeof _getWorkspaceId === 'function' ? _getWorkspaceId() : '';
-        var targetFolder = folderId || '';
-        var driveRootId = '';
-        try { driveRootId = localStorage.getItem('drive_root_folder_id') || ''; } catch(e) {}
-        if (!targetFolder && driveRootId) targetFolder = driveRootId;
+        var batchId = IDENTITY_CONTEXT.batch_id || datasetName;
 
         showToast('Uploading to Google Drive...', 'info');
-        fetch(API_BASE + '/workspaces/' + ws + '/drive/export', {
+        var hdrs = typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : { 'Content-Type': 'application/json' };
+        if (!hdrs['Content-Type']) hdrs['Content-Type'] = 'application/json';
+
+        fetch(API_BASE + '/workspaces/' + ws + '/drive/save', {
           method: 'POST',
-          headers: typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : { 'Content-Type': 'application/json' },
+          headers: hdrs,
           body: JSON.stringify({
-            file_name: filename,
-            folder_id: targetFolder,
+            batch_id: batchId,
             status: exportStatus,
+            note: '',
             file_content_base64: wbOut
           })
         }).then(function(r) { return r.json(); })
         .then(function(resp) {
-          if (resp.data && resp.data.drive_file_id) {
-            showToast('Saved to Drive: ' + resp.data.file_name, 'success');
-            console.log('[Drive Export] Saved:', resp.data.file_name, 'id:', resp.data.drive_file_id);
+          if (resp.data && resp.data.file_id) {
+            var link = resp.data.webViewLink || '';
+            var msg = 'Saved to Drive: ' + resp.data.file_name;
+            if (link) {
+              showToast(msg + ' — <a href="' + link + '" target="_blank" style="color: var(--accent-bright, #22D3EE); text-decoration: underline;">Open in Drive</a>', 'success', 8000);
+            } else {
+              showToast(msg, 'success');
+            }
+            console.log('[Drive Save] OK:', resp.data.file_name, 'id:', resp.data.file_id);
           } else {
-            showToast('Drive save failed: ' + ((resp.error && resp.error.message) || 'Unknown error'), 'error');
+            var errMsg = (resp.error && resp.error.message) || 'Unknown error';
+            var errCode = (resp.error && resp.error.code) || '';
+            if (errCode === 'NO_DRIVE_CONNECTION' || errCode === 'TOKEN_REFRESH_FAILED') {
+              _showDriveAuthFailure(errMsg, ws);
+            } else {
+              showToast('Drive save failed: ' + errMsg, 'error');
+            }
           }
         }).catch(function(err) {
           showToast('Drive save failed: ' + err.message, 'error');
         });
       } catch (err) {
-        console.error('[Drive Export] Error:', err);
+        console.error('[Drive Save] Error:', err);
         showToast('Drive save failed: ' + err.message, 'error');
       }
+    }
+
+    function _showDriveAuthFailure(message, wsId) {
+      fetch(API_BASE + '/workspaces/' + wsId + '/drive/status', {
+        headers: typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : {}
+      }).then(function(r) { return r.json(); })
+      .then(function(resp) {
+        var detail = resp.data || {};
+        var reason = detail.failure_reason || message;
+        var redirectUri = detail.redirect_uri_expected || '';
+        var html = '<div style="line-height:1.5;">';
+        html += '<strong>Drive connection issue:</strong> ' + reason;
+        if (redirectUri) {
+          html += '<br><span style="font-size:0.85em;color:var(--text-2,#888);">Expected redirect URI:</span> ';
+          html += '<code style="font-size:0.8em;background:var(--bg-3,#f0f0f0);padding:2px 6px;border-radius:3px;user-select:all;">' + redirectUri + '</code>';
+          html += ' <button onclick="navigator.clipboard.writeText(\'' + redirectUri + '\');showToast(\'Copied!\',\'success\')" style="font-size:0.75em;padding:2px 8px;border:1px solid var(--border-1,#ddd);border-radius:3px;cursor:pointer;background:var(--bg-2,#fafafa);color:var(--text-1,#333);">Copy</button>';
+        }
+        html += '</div>';
+        showToast(html, 'error', 15000);
+      }).catch(function() {
+        showToast('Drive auth error: ' + message, 'error');
+      });
+    }
+
+    function loadDriveSettings() {
+      var ws = typeof _getWorkspaceId === 'function' ? _getWorkspaceId() : '';
+      if (!ws) return;
+      fetch(API_BASE + '/workspaces/' + ws + '/drive/settings', {
+        headers: typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : {}
+      }).then(function(r) { return r.json(); })
+      .then(function(resp) {
+        var d = resp.data || {};
+        var rootEl = document.getElementById('drive-root-folder-input');
+        var verEl = document.getElementById('drive-verifier-folder-input');
+        var admEl = document.getElementById('drive-admin-folder-input');
+        if (rootEl) rootEl.value = d.root_folder_id || '';
+        if (verEl) verEl.value = d.verifier_folder_id || '';
+        if (admEl) admEl.value = d.admin_folder_id || '';
+      }).catch(function() {});
+    }
+
+    function saveDriveSettings() {
+      var ws = typeof _getWorkspaceId === 'function' ? _getWorkspaceId() : '';
+      if (!ws) { showToast('No workspace selected', 'warning'); return; }
+      var rootId = (document.getElementById('drive-root-folder-input') || {}).value || '';
+      var verId = (document.getElementById('drive-verifier-folder-input') || {}).value || '';
+      var admId = (document.getElementById('drive-admin-folder-input') || {}).value || '';
+      var statusEl = document.getElementById('drive-settings-status');
+      if (statusEl) statusEl.textContent = 'Saving...';
+      var hdrs = typeof _getAuthHeaders === 'function' ? _getAuthHeaders() : { 'Content-Type': 'application/json' };
+      if (!hdrs['Content-Type']) hdrs['Content-Type'] = 'application/json';
+      fetch(API_BASE + '/workspaces/' + ws + '/drive/settings', {
+        method: 'PUT',
+        headers: hdrs,
+        body: JSON.stringify({
+          root_folder_id: rootId.trim(),
+          verifier_folder_id: verId.trim(),
+          admin_folder_id: admId.trim()
+        })
+      }).then(function(r) { return r.json(); })
+      .then(function(resp) {
+        if (resp.data) {
+          if (statusEl) statusEl.textContent = 'Saved!';
+          showToast('Drive folder settings saved', 'success');
+          setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, 3000);
+        } else {
+          var msg = (resp.error && resp.error.message) || 'Failed to save';
+          if (statusEl) statusEl.textContent = msg;
+          showToast('Failed: ' + msg, 'error');
+        }
+      }).catch(function(err) {
+        if (statusEl) statusEl.textContent = 'Error';
+        showToast('Save failed: ' + err.message, 'error');
+      });
     }
     
     // v1.6.33: Build _change_log sheet from patch requests and changeMap

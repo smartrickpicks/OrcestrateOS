@@ -31,7 +31,9 @@ Dark Mode v2 — Palette B ("Subtle Futuristic Neon Control Panel") uses `ui/vie
 
 The Sidebar Icon System uses inline SVG icons (`.sidebar-icon`) with `currentColor` inheritance and custom CSS properties for theme integration. A Collapsible Sidebar feature allows users to collapse the navigation for more screen real estate, with state persisted to localStorage.
 
+Google Drive Save (XLSX Export) supports role-based folder routing: analysts export to a verifier folder, verifiers/admins export to an admin folder, with automatic folder bootstrap if subfolders don't exist. The export filename format is `{batch_id}-{actor}-{status}-{timestamp}.xlsx`. The workbook structure includes DATA sheets (with cell styling), GOV_META (governance metadata key-value pairs), ACTIONS (merged patch requests, change map edits, and RFIs), STATE_JSON (serialized session state), plus legacy sheets (_change_log, RFIs, _signals_summary, _orchestrate_meta, Audit_Log). Workspace drive folder settings (root/verifier/admin folder IDs) are configurable via the People & Access > Drive admin sub-tab. Drive status diagnostics include has_token, expires_at, scopes, redirect_uri_expected, and failure_reason for troubleshooting OAuth issues.
+
 ## External Dependencies
 - **FastAPI server**: Used as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
 - **SheetJS (XLSX)**: Integrated for Excel import/export functionality.
-- **Google Drive**: Integrated as a data source for contract workbook import/export.
+- **Google Drive**: Integrated as a data source for contract workbook import/export, with role-based folder routing for XLSX exports.
