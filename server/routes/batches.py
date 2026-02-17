@@ -14,7 +14,7 @@ from server.audit import emit_audit_event
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v2.5")
 
-ALLOWED_SOURCES = ("upload", "merge", "import")
+ALLOWED_SOURCES = ("upload", "merge", "import", "drive")
 ALLOWED_STATUSES = ("active", "archived")
 
 BATCH_COLUMNS = [
@@ -116,6 +116,24 @@ def create_batch(
 
     batch_fingerprint = body.get("batch_fingerprint")
     metadata = body.get("metadata", {})
+
+    if source == "drive":
+        drive_file_id = metadata.get("drive_file_id")
+        if not drive_file_id:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "metadata.drive_file_id is required for drive source"),
+            )
+        revision_id = metadata.get("revisionId") or metadata.get("revision_id")
+        modified_time = metadata.get("modifiedTime") or metadata.get("modified_time")
+        revision_marker = revision_id or modified_time
+        if not revision_marker:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "metadata.revisionId or metadata.modifiedTime is required for drive source"),
+            )
+        metadata["revision_marker"] = revision_marker
+
     bat_id = generate_id("bat_")
 
     conn = get_conn()
@@ -128,6 +146,43 @@ def create_batch(
                     content=error_envelope("NOT_FOUND", "Workspace not found: %s" % ws_id),
                 )
 
+            if source == "drive":
+                drive_file_id = metadata.get("drive_file_id")
+                revision_marker = metadata.get("revision_marker")
+                if drive_file_id and revision_marker:
+                    cur.execute(
+                        """SELECT %s FROM batches
+                           WHERE workspace_id = %%s
+                             AND deleted_at IS NULL
+                             AND source = 'drive'
+                             AND metadata->>'drive_file_id' = %%s
+                             AND metadata->>'revision_marker' = %%s
+                           LIMIT 1""" % BATCH_SELECT,
+                        (ws_id, str(drive_file_id), str(revision_marker)),
+                    )
+                    existing = cur.fetchone()
+                    if existing:
+                        existing_dict = _row_to_dict(existing, BATCH_COLUMNS)
+                        emit_audit_event(
+                            cur,
+                            workspace_id=ws_id,
+                            event_type="batch.drive_dedupe_hit",
+                            actor_id=auth.user_id,
+                            resource_type="batch",
+                            resource_id=existing_dict["id"],
+                            detail={
+                                "source": "drive",
+                                "drive_file_id": str(drive_file_id),
+                                "revision_marker": str(revision_marker),
+                                "dedupe_hit": True,
+                            },
+                        )
+                        conn.commit()
+                        return JSONResponse(
+                            status_code=200,
+                            content=envelope(existing_dict),
+                        )
+
             cur.execute(
                 """INSERT INTO batches (id, workspace_id, name, source, batch_fingerprint, metadata)
                    VALUES (%s, %s, %s, %s, %s, %s)
@@ -136,6 +191,11 @@ def create_batch(
             )
             row = cur.fetchone()
 
+            audit_detail = {"name": name, "source": source, "dedupe_hit": False}
+            if source == "drive":
+                audit_detail["drive_file_id"] = metadata.get("drive_file_id")
+                audit_detail["revision_marker"] = metadata.get("revision_marker")
+
             emit_audit_event(
                 cur,
                 workspace_id=ws_id,
@@ -143,7 +203,7 @@ def create_batch(
                 actor_id=auth.user_id,
                 resource_type="batch",
                 resource_id=bat_id,
-                detail={"name": name, "source": source},
+                detail=audit_detail,
             )
         conn.commit()
 
@@ -152,8 +212,30 @@ def create_batch(
             content=envelope(_row_to_dict(row, BATCH_COLUMNS)),
         )
     except Exception as e:
-        logger.error("create_batch error: %s", e)
         conn.rollback()
+        err_str = str(e)
+        if source == "drive" and "idx_batches_drive_dedupe" in err_str:
+            logger.info("create_batch: concurrent drive dedupe conflict for %s, returning existing", ws_id)
+            try:
+                drive_file_id = metadata.get("drive_file_id")
+                revision_marker = metadata.get("revision_marker")
+                with conn.cursor() as cur2:
+                    cur2.execute(
+                        """SELECT %s FROM batches
+                           WHERE workspace_id = %%s AND deleted_at IS NULL AND source = 'drive'
+                             AND metadata->>'drive_file_id' = %%s AND metadata->>'revision_marker' = %%s
+                           LIMIT 1""" % BATCH_SELECT,
+                        (ws_id, str(drive_file_id), str(revision_marker)),
+                    )
+                    existing = cur2.fetchone()
+                    if existing:
+                        return JSONResponse(
+                            status_code=200,
+                            content=envelope(_row_to_dict(existing, BATCH_COLUMNS)),
+                        )
+            except Exception as e2:
+                logger.error("create_batch dedupe fallback error: %s", e2)
+        logger.error("create_batch error: %s", e)
         return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
     finally:
         put_conn(conn)
