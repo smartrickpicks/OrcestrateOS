@@ -45265,10 +45265,22 @@
       hideColumnMappingBanner();
       showUploadLoading('Processing ' + file.name + '...');
       
+      // v2.4-SESSION-ISOLATE: Stop auto-save timer to prevent stale data persisting during parse
+      if (_autosaveTimer) { clearTimeout(_autosaveTimer); _autosaveTimer = null; }
+      
+      // v2.4-SESSION-ISOLATE: Clear workbook cache so previous session cannot bleed into this upload
+      if (typeof clearWorkbookCache === 'function') clearWorkbookCache();
+      
+      // v2.4-SESSION-ISOLATE: Reset IDENTITY_CONTEXT.dataset_id early to break batch linkage
+      IDENTITY_CONTEXT.dataset_id = null;
+      
       // v1.6.38: Clear all cell-level caches BEFORE loading new dataset to prevent stale highlights
       clearAllCellStores();
       localStorage.removeItem('unknown_columns');
       localStorage.removeItem('unknown_columns_decisions');
+      
+      // v2.4-SESSION-ISOLATE: Clear merged batch state to prevent cross-upload batch combining
+      if (typeof BatchMerge !== 'undefined' && BatchMerge.reset) BatchMerge.reset();
       
       // P0.6: Truth Pack — enforce clean pre-flight from zero
       if (typeof TruthPack !== 'undefined' && TruthPack.isActive()) {
@@ -45381,14 +45393,10 @@
           }
           console.log('[Loader] Workbook imported:', file.name, 'sheets:', result.order.length, 'total rows:', allRows.length);
           console.log('[IMPORT-D6] parse_finished: ' + file.name);
-          // v1.6.46: Cache workbook for session persistence
-          if (workbook.order.length > 0 && typeof saveCurrentSession === 'function') {
-            var prevSource = (document.getElementById('active-data-source-name')?.textContent || '').trim();
-            if (prevSource && prevSource !== 'No dataset loaded' && prevSource !== 'Upload Excel to begin') {
-              saveCurrentSession(prevSource + ' (auto)');
-            }
-          }
+          // v2.4-SESSION-ISOLATE: Do NOT auto-save previous session on new upload — each upload starts a clean session
           saveWorkbookToCache();
+          // v2.4-SESSION-ISOLATE: Restart auto-save timer for the NEW session only
+          scheduleAutosave();
           showToast(ext.toUpperCase() + ' imported: ' + result.order.length + ' section(s), ' + allRows.length + ' rows', 'success');
           if (!validateWorkbookState()) {
             showLoaderError('Import completed but no data was loaded. Please check the file format.');
