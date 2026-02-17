@@ -1,5 +1,68 @@
 # CHANGELOG
 
+## Version: v2.54.1
+Date: 2026-02-17
+
+### Added — Role-Aware Operations View (DB-First Governance Queue)
+
+- **P0: Foundation Fixes**
+  - Fixed DB write URL mismatch: `opsDbWriteStatus()` now targets `PATCH /patches/{id}` (was incorrectly using `/workspaces/{ws}/patches/{id}`)
+  - Implemented strict mode: local state updates only after DB write succeeds (no optimistic divergence)
+  - Added workspace role enforcement on operations queue endpoint via `require_role()`
+  - Added sandbox role-switch rehydration hook: queue clears and re-fetches on role change
+
+- **P1: RFI/Correction DB Write Paths**
+  - Added `opsDbWriteRfiStatus()` — PATCH `/rfis/{id}` for custody transitions when DB write enabled
+  - Added `opsDbWriteCorrectionStatus()` — PATCH `/corrections/{id}` for approval when DB write enabled
+  - Unified `updatePayloadStatus` dispatcher routes writes by payload type (patch/rfi/correction)
+
+- **P2: Drive Batch Dedupe**
+  - Added `source = "drive"` to allowed batch sources
+  - Implemented Drive batch deduplication via `drive_file_id` + `revision_marker` with partial unique index
+  - Drive source validation: requires `metadata.drive_file_id` and either `metadata.revision_id` or `metadata.modified_time` (422 if missing)
+  - Duplicate drive imports return 200 with existing batch (no new record created)
+  - Audit events emitted for dedupe hits (`batch.dedupe_hit`)
+
+- **P3: Role-Scoped List Visibility + RFI Custody Matrix**
+  - Centralized role resolution in `server/role_scope.py` — single source for effective role across all endpoints
+  - Role-scoped list filtering: analyst sees own items only (`author_id`/`created_by = user_id`), verifier/admin see workspace-wide
+  - Applied to: `GET /workspaces/{ws}/patches`, `/rfis`, `/corrections`, `/operations/queue`
+  - RFI custody transition matrix: enforced via `CUSTODY_TRANSITIONS` map with role-gated transitions
+  - Error code fix: `INVALID_TRANSITION` returns 409 (was 400)
+  - New error: `ROLE_NOT_ALLOWED` returns 403 when user role lacks permission for custody transition
+
+### Changed
+
+- Feature flags `OPS_VIEW_DB_READ` and `OPS_VIEW_DB_WRITE` control progressive DB enablement (both default `false`)
+- Operations queue endpoint now requires workspace membership (403 for non-members)
+- Sandbox role simulation restricted to admin/architect users only
+
+### Migrations
+
+- **012_ops_view_v254.sql**: Adds `batch_id` to rfis, backfills from linked patches, creates performance indexes
+- **013_drive_batch_source.sql**: Expands source check constraint for 'drive', adds partial unique index for drive dedupe
+
+### API Contract Notes
+
+| Endpoint | Change |
+|----------|--------|
+| `GET /workspaces/{ws}/patches` | Now role-filtered (analyst: own only) |
+| `GET /workspaces/{ws}/rfis` | Now role-filtered (analyst: own only) |
+| `GET /workspaces/{ws}/corrections` | Now role-filtered (analyst: own only) |
+| `GET /workspaces/{ws}/operations/queue` | Now role-filtered + requires workspace membership |
+| `POST /workspaces/{ws}/batches` | Accepts `source: "drive"` with dedupe |
+| `PATCH /rfis/{id}` | Custody transitions: 409 INVALID_TRANSITION, 403 ROLE_NOT_ALLOWED |
+| `PATCH /patches/{id}` | 409 STALE_VERSION on version conflict |
+
+### Known Limitations (Deferred)
+
+- Client-side automatic version refresh on 409 (planned for v2.55)
+- Correction custody transition matrix (corrections use simpler approve/reject)
+- Prometheus metrics export (logging sufficient for initial rollout)
+- localStorage-to-DB data migration tool (coexistence supported during transition)
+
+---
+
 ## Version: v2.53
 Date: 2026-02-14
 
