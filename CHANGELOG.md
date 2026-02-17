@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## Version: v2.56
+Date: 2026-02-17
+
+### Added — Verifier Triage Unification (Clarity Document Only)
+
+- **DOC: V2.56 Verifier Triage Unification Clarity Document** (`docs/handoff/V256_VERIFIER_TRIAGE_UNIFICATION_CLARITY.md`)
+  - Full audit snapshot of analyst triage frame (9 sections), verifier triage content (flat queue), and standalone org page
+  - Unified IA spec: role-adaptive triage frame replaces standalone `#/verifier-org` page
+  - Section-by-section transformation map (S1–S6): summary strip, batch table, lane cards, lifecycle rail, governance snapshot, unified work queue
+  - Role-based surface contract: visibility matrix + action permission matrix for analyst/verifier/admin
+  - Data contract mapping: endpoint-to-section mapping, no-localStorage policy, fallback behavior
+  - Batch-first metrics definitions: KPI counters, batch rollups, per-analyst workload (admin), aging buckets, lane card metrics, governance snapshot metrics
+  - 16-item UI/API mismatch register (UM-01..UM-16) across structural, CSS, and backend categories
+  - 24 acceptance criteria (AC-01..AC-24)
+  - 21-scenario QA plan across role matrix, concurrency, isolation, batch ingest, and regression categories
+  - 5 blocking clarity questions with recommendations (CQ-01..CQ-05)
+  - 14 phased implementation tasks (VTRIAGE-01..VTRIAGE-14) with dependency graph, ~9 session estimate
+  - No code changes — specification only
+
 ## Version: v2.55.1
 Date: 2026-02-17
 
