@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## Version: v2.55.1
+Date: 2026-02-17
+
+### Added — Verifier Org View UI Polish Specification
+
+- **DOC: V2.55.1 UI Polish Clarity Document**
+  - Comprehensive audit of 28 UI pain points across 6 categories (KPI strip, filter bar, batch table, drilldown actions, empty/loading/error states, responsive behavior)
+  - 12-item mismatch register with file/line references and severity tags (P0–P3)
+  - Visual system contract: CSS variable usage, typography/spacing scales, badge/button variants, accessibility targets
+  - Interaction contract: KPI click, filter URL sync, drilldown entry/exit, role-switch refresh
+  - 20 acceptance criteria covering desktop and narrow-width behavior
+  - 14-scenario QA plan with smoke steps and regression checks
+  - 10 phased implementation tasks (VUI-POLISH-01..10) prioritized P0–P2
+  - Go verdict: all changes are UI-only, additive, dark-mode compatible
+
 ## Version: v2.54.1
 Date: 2026-02-17
 
