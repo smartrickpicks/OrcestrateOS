@@ -369,6 +369,39 @@
     html[data-theme="dark"] .empty-queue-cta:hover { border-color: var(--ember-border) !important; box-shadow: 0 0 8px var(--glow-ember-soft) !important; }
     html[data-theme="dark"] #audit-header-dropdown { background: var(--bg-2) !important; border-color: var(--border-soft) !important; box-shadow: var(--shadow-2) !important; color: var(--text-secondary) !important; }
     html[data-theme="dark"] .verifier-table-container { background: var(--bg-2) !important; border-color: var(--border-soft) !important; }
+
+    /* === VERIFIER ORG VIEW (v2.55) === */
+    .vorg-kpi { transition: box-shadow 0.15s, border-color 0.15s; }
+    .vorg-kpi:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); border-color: var(--accent-bright, #1565c0) !important; }
+    .vorg-kpi.vorg-kpi-active { border-color: var(--accent-bright, #1565c0) !important; box-shadow: 0 0 0 2px var(--accent-bright, #1565c0); }
+    #vorg-batch-table th, #vorg-drilldown-table th { padding: 10px 12px; text-align: left; font-size: 0.82em; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary, #666); background: var(--bg-2, #f8f9fa); border-bottom: 2px solid var(--border-1, #e0e0e0); }
+    #vorg-batch-table td, #vorg-drilldown-table td { padding: 10px 12px; font-size: 0.9em; border-bottom: 1px solid var(--border-1, #e0e0e0); color: var(--text-1, #333); }
+    #vorg-batch-table tbody tr { cursor: pointer; transition: background 0.12s; }
+    #vorg-batch-table tbody tr:hover { background: var(--bg-3, #eef1f5); }
+    .vorg-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.78em; font-weight: 600; }
+    .vorg-badge-patch { background: var(--info-bg, rgba(21,101,192,0.08)); color: var(--info, #1565c0); }
+    .vorg-badge-rfi { background: var(--warn-bg, rgba(245,124,0,0.08)); color: var(--warn, #f57c00); }
+    .vorg-badge-correction { background: var(--ok-bg, rgba(46,125,50,0.08)); color: var(--ok, #2e7d32); }
+    .vorg-badge-source { background: var(--chip-bg, #eef1f5); color: var(--chip-text, #555); border: 1px solid var(--chip-border, #ddd); }
+    .vorg-health-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+    .vorg-action-btn { padding: 4px 10px; border-radius: 4px; font-size: 0.8em; cursor: pointer; border: 1px solid var(--border-1, #e0e0e0); background: var(--bg-1, #fff); color: var(--text-1, #333); transition: background 0.12s, border-color 0.12s; }
+    .vorg-action-btn:hover { background: var(--bg-3, #eef1f5); border-color: var(--accent-bright, #1565c0); }
+    .vorg-action-btn-approve { color: var(--ok, #2e7d32); border-color: var(--ok-border, rgba(46,125,50,0.2)); }
+    .vorg-action-btn-approve:hover { background: var(--ok-bg, rgba(46,125,50,0.08)); }
+    .vorg-action-btn-reject { color: var(--bad, #c62828); border-color: var(--bad-border, rgba(198,40,40,0.2)); }
+    .vorg-action-btn-reject:hover { background: var(--bad-bg, rgba(198,40,40,0.08)); }
+    html[data-theme="dark"] .vorg-kpi { background: var(--bg-2) !important; border-color: var(--border-soft) !important; }
+    html[data-theme="dark"] .vorg-kpi:hover { border-color: var(--accent-bright) !important; box-shadow: 0 0 8px var(--glow-blue-soft); }
+    html[data-theme="dark"] .vorg-kpi.vorg-kpi-active { border-color: var(--accent-bright) !important; box-shadow: 0 0 0 2px var(--accent-bright); }
+    html[data-theme="dark"] .vorg-kpi .kpi-value { color: var(--text-primary); text-shadow: 0 0 14px var(--glow-blue-med); }
+    html[data-theme="dark"] #vorg-batch-table th, html[data-theme="dark"] #vorg-drilldown-table th { background: var(--bg-2); color: var(--text-secondary); border-bottom-color: var(--border-soft); }
+    html[data-theme="dark"] #vorg-batch-table td, html[data-theme="dark"] #vorg-drilldown-table td { color: var(--text-secondary); border-bottom-color: var(--border-soft); }
+    html[data-theme="dark"] #vorg-batch-table tbody tr:hover { background: var(--bg-3); }
+    html[data-theme="dark"] .vorg-action-btn { background: var(--bg-2); color: var(--text-secondary); border-color: var(--border-soft); }
+    html[data-theme="dark"] .vorg-action-btn:hover { background: var(--bg-3); border-color: var(--accent-bright); }
+    html[data-theme="dark"] #vorg-filters { background: var(--bg-2) !important; border-color: var(--border-soft) !important; }
+    /* === END VERIFIER ORG VIEW CSS === */
+
     html[data-theme="dark"] #grid-column-menu { background: var(--bg-2) !important; border-color: var(--border-soft) !important; box-shadow: var(--shadow-2) !important; color: var(--text-secondary) !important; }
     html[data-theme="dark"] #grid-change-legend { background: var(--bg-2) !important; border-color: var(--border-soft) !important; color: var(--text-secondary) !important; }
     html[data-theme="dark"] #system-pass-controls { background: var(--bg-3) !important; border-color: var(--border-med) !important; color: var(--text-secondary) !important; }
@@ -3067,6 +3100,10 @@
               <a class="nav-section-link" data-section="v2_add_ons" href="#" onclick="_selectGridSection('V2 Add Ons'); return false;">V2 Add Ons</a>
             </div>
           </div>
+          <a class="nav-item verifier-only" data-page="verifier-org" href="#/verifier-org" title="Org Overview">
+            <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+            <span class="nav-label">Org Overview</span>
+          </a>
           <a class="nav-item verifier-only" data-page="verifier-review" href="#/verifier-review" title="Verifier Review">
             <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></span>
             <span class="nav-label">Verifier Review</span>
@@ -4593,6 +4630,80 @@
         <div id="review-evidence-summary" class="evidence-summary-panel"></div>
         <div style="margin-top: 12px; text-align: right; font-size: 0.75em; color: #aaa;">PAGE: CONFIG-INSPECTOR | BUILD v1.6.49</div>
       </div><!-- end page-review -->
+
+      <!-- VERIFIER ORG OVERVIEW PAGE (v2.55) -->
+      <div class="page" id="page-verifier-org" style="display:none;">
+        <div class="page-header" style="margin-bottom:20px;">
+          <h2 style="margin:0 0 4px 0;font-size:1.5em;color:var(--text-1,#1a1a2e);">Operations Overview</h2>
+          <p class="page-desc" style="margin:0;font-size:0.9em;color:var(--text-secondary,#666);">Workspace-level governance queue with batch and analyst rollups.</p>
+        </div>
+        <div id="vorg-error-banner" style="display:none;padding:14px 18px;background:var(--bad-bg,rgba(198,40,40,0.08));border:1px solid var(--bad-border,rgba(198,40,40,0.2));border-radius:8px;color:var(--bad,#c62828);margin-bottom:16px;"></div>
+        <div id="vorg-loading" style="padding:40px;text-align:center;color:var(--text-secondary,#666);font-size:0.95em;">Loading operations data...</div>
+        <div id="vorg-empty" style="display:none;padding:60px 20px;text-align:center;color:var(--text-muted,#666);font-size:1em;">No batches with active items. Import data to get started.</div>
+        <div id="vorg-content" style="display:none;">
+          <div id="vorg-summary" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;"></div>
+          <div id="vorg-filters" style="display:flex;gap:12px;align-items:center;margin-bottom:16px;padding:10px 16px;background:var(--bg-2,#f8f9fa);border-radius:8px;border:1px solid var(--border-1,#e0e0e0);flex-wrap:wrap;">
+            <label style="font-size:0.85em;color:var(--text-secondary,#666);">Filters:</label>
+            <select id="vorg-filter-status" onchange="vorgApplyFilters()" style="padding:5px 10px;border-radius:4px;border:1px solid var(--border-1,#e0e0e0);font-size:0.85em;background:var(--bg-1,#fff);color:var(--text-1,#333);">
+              <option value="">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="needs_clarification">Needs Clarification</option>
+              <option value="sent_to_admin">Sent to Admin</option>
+              <option value="resolved">Resolved</option>
+            </select>
+            <select id="vorg-filter-type" onchange="vorgApplyFilters()" style="padding:5px 10px;border-radius:4px;border:1px solid var(--border-1,#e0e0e0);font-size:0.85em;background:var(--bg-1,#fff);color:var(--text-1,#333);">
+              <option value="">All Types</option>
+              <option value="patch">Patches</option>
+              <option value="rfi">RFIs</option>
+              <option value="correction">Corrections</option>
+            </select>
+            <span id="vorg-filter-info" style="font-size:0.8em;color:var(--text-secondary,#666);margin-left:auto;"></span>
+            <button onclick="vorgClearFilters()" style="padding:5px 12px;border-radius:4px;border:1px solid var(--border-1,#e0e0e0);background:var(--bg-1,#fff);color:var(--text-secondary,#666);cursor:pointer;font-size:0.82em;">Clear</button>
+          </div>
+          <div id="vorg-batches" style="margin-bottom:20px;">
+            <h3 style="margin:0 0 12px 0;font-size:1.1em;color:var(--text-1,#333);">Batch Queue</h3>
+            <div id="vorg-batch-table-wrap" style="overflow-x:auto;border:1px solid var(--border-1,#e0e0e0);border-radius:8px;">
+              <table id="vorg-batch-table" style="width:100%;border-collapse:collapse;">
+                <thead>
+                  <tr>
+                    <th>Batch Name</th>
+                    <th>Source</th>
+                    <th>Items</th>
+                    <th>Pending</th>
+                    <th>Clarify</th>
+                    <th>Resolved</th>
+                    <th>Age</th>
+                    <th>Health</th>
+                  </tr>
+                </thead>
+                <tbody id="vorg-batch-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="vorg-queue-drilldown" style="display:none;margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <h3 id="vorg-drilldown-title" style="margin:0;font-size:1.1em;color:var(--text-1,#333);">Batch Items</h3>
+              <button onclick="vorgExitDrilldown()" style="padding:6px 14px;border-radius:4px;border:1px solid var(--border-1,#e0e0e0);background:var(--bg-1,#fff);color:var(--text-1,#333);cursor:pointer;font-size:0.85em;">&#8592; Back to all batches</button>
+            </div>
+            <div style="overflow-x:auto;border:1px solid var(--border-1,#e0e0e0);border-radius:8px;">
+              <table id="vorg-drilldown-table" style="width:100%;border-collapse:collapse;">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Record</th>
+                    <th>Field</th>
+                    <th>Status</th>
+                    <th>Author</th>
+                    <th>Age</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="vorg-drilldown-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div><!-- end page-verifier-org -->
 
       <!-- VERIFIER REVIEW PAGE -->
       <div class="page" id="page-verifier-review">
@@ -25205,7 +25316,7 @@
       options = options || {};
       // Loader is now a drawer, not a page - redirect loader requests to triage
       if (page === 'loader') page = 'triage';
-      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'row', 'restricted'];
+      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-org', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'row', 'restricted'];
       var _basePage = page.split('/')[0];
       if (_basePage === 'row') {
         if (_srrCurrentPage !== 'row') {
@@ -25272,6 +25383,10 @@
       if (page === 'review' && currentMode !== 'verifier' && currentMode !== 'admin') {
         console.log('[Navigate] Review page requires verifier/admin mode');
         restrictedReason = 'Config Inspector is only available to Verifiers and Admins.';
+      }
+      if (page === 'verifier-org' && currentMode !== 'verifier' && currentMode !== 'admin') {
+        console.log('[Navigate] Verifier Org Overview page requires verifier/admin mode');
+        restrictedReason = 'Org Overview is only available to Verifiers and Admins.';
       }
       if (page === 'verifier-review' && currentMode !== 'verifier' && currentMode !== 'admin') {
         console.log('[Navigate] Verifier Review page requires verifier/admin mode');
@@ -25443,6 +25558,11 @@
       // If navigating to admin-approval, load sample data
       if (page === 'admin-approval') {
         setTimeout(function() { loadAdminApprovalData(); }, 0);
+      }
+      
+      // v2.55: If navigating to verifier-org, load operations data
+      if (page === 'verifier-org') {
+        setTimeout(function() { if (typeof vorgLoadData === 'function') vorgLoadData(); }, 0);
       }
       
       // Update hash (include tab for admin deep-links, preserve grid query params)
@@ -39088,6 +39208,452 @@
       
       document.body.appendChild(overlay);
     }
+
+    // === VERIFIER ORG VIEW (v2.55) ===
+    var _vorgState = {
+      queueItems: [],
+      batches: [],
+      filteredItems: [],
+      filteredBatches: [],
+      activeBatchId: null,
+      activeKpiStatus: '',
+      loaded: false
+    };
+
+    function _vorgGetWorkspaceId() {
+      return (typeof _getWorkspaceId === 'function') ? _getWorkspaceId() : 'ws_SEED0100000000000000000000';
+    }
+
+    function _vorgGetAuthHeaders() {
+      return (typeof _getAuthHeaders === 'function') ? _getAuthHeaders() : { 'Content-Type': 'application/json' };
+    }
+
+    function _vorgAgeText(dateStr) {
+      if (!dateStr) return '—';
+      var ms = Date.now() - new Date(dateStr).getTime();
+      var hrs = Math.floor(ms / 3600000);
+      if (hrs < 1) return '<1h';
+      if (hrs < 24) return hrs + 'h';
+      var days = Math.floor(hrs / 24);
+      return days + 'd';
+    }
+
+    function _vorgAgeColor(dateStr) {
+      if (!dateStr) return 'var(--text-secondary,#666)';
+      var hrs = (Date.now() - new Date(dateStr).getTime()) / 3600000;
+      if (hrs < 24) return 'var(--ok,#2e7d32)';
+      if (hrs <= 72) return 'var(--warn,#f57c00)';
+      return 'var(--bad,#c62828)';
+    }
+
+    function _vorgHealthDot(dateStr) {
+      var color = _vorgAgeColor(dateStr);
+      return '<span class="vorg-health-dot" style="background:' + color + ';" title="Age: ' + _vorgAgeText(dateStr) + '"></span>';
+    }
+
+    function _vorgStatusLabel(s) {
+      if (!s) return 'Unknown';
+      return s.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+    }
+
+    function _vorgTypeBadge(type) {
+      var cls = 'vorg-badge vorg-badge-' + (type || 'patch');
+      return '<span class="' + cls + '">' + _vorgStatusLabel(type || 'patch') + '</span>';
+    }
+
+    function _vorgSourceBadge(source) {
+      return '<span class="vorg-badge vorg-badge-source">' + (source || 'manual') + '</span>';
+    }
+
+    function _vorgEsc(str) {
+      if (!str) return '';
+      var d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    function vorgLoadData() {
+      var wsId = _vorgGetWorkspaceId();
+      var headers = _vorgGetAuthHeaders();
+      var loadingEl = document.getElementById('vorg-loading');
+      var contentEl = document.getElementById('vorg-content');
+      var emptyEl = document.getElementById('vorg-empty');
+      var errorEl = document.getElementById('vorg-error-banner');
+
+      if (loadingEl) loadingEl.style.display = 'block';
+      if (contentEl) contentEl.style.display = 'none';
+      if (emptyEl) emptyEl.style.display = 'none';
+      if (errorEl) errorEl.style.display = 'none';
+
+      var queueUrl = '/api/v2.5/workspaces/' + encodeURIComponent(wsId) + '/operations/queue?limit=200';
+      var batchUrl = '/api/v2.5/workspaces/' + encodeURIComponent(wsId) + '/batches?limit=100';
+
+      Promise.all([
+        fetch(queueUrl, { method: 'GET', headers: headers }).then(function(r) { return r.json(); }),
+        fetch(batchUrl, { method: 'GET', headers: headers }).then(function(r) { return r.json(); })
+      ]).then(function(results) {
+        var queueResp = results[0];
+        var batchResp = results[1];
+
+        var items = (queueResp && queueResp.data) ? queueResp.data : (Array.isArray(queueResp) ? queueResp : []);
+        var batches = (batchResp && batchResp.data) ? batchResp.data : (Array.isArray(batchResp) ? batchResp : []);
+        var counts = (queueResp && queueResp.counts) ? queueResp.counts : null;
+
+        _vorgState.queueItems = items;
+        _vorgState.batches = batches;
+        _vorgState.loaded = true;
+
+        if (loadingEl) loadingEl.style.display = 'none';
+
+        if (items.length === 0 && batches.length === 0) {
+          if (emptyEl) emptyEl.style.display = 'block';
+          return;
+        }
+
+        if (contentEl) contentEl.style.display = 'block';
+
+        if (!counts) {
+          counts = { pending: 0, needs_clarification: 0, sent_to_admin: 0, resolved: 0, total: items.length };
+          items.forEach(function(it) {
+            var st = (it.status || it.lifecycle_status || '').toLowerCase();
+            if (st === 'pending' || st === 'submitted') counts.pending++;
+            else if (st === 'needs_clarification') counts.needs_clarification++;
+            else if (st === 'sent_to_admin') counts.sent_to_admin++;
+            else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved') counts.resolved++;
+          });
+        }
+
+        vorgRenderKpi(counts);
+        _vorgParseUrlAndApply();
+        vorgApplyFilters();
+      }).catch(function(err) {
+        console.error('[VorgView] Load error:', err);
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (errorEl) {
+          errorEl.style.display = 'block';
+          errorEl.innerHTML = '<strong>Failed to load operations data.</strong> ' + _vorgEsc(err.message || String(err)) +
+            ' <button onclick="vorgLoadData()" style="margin-left:12px;padding:4px 12px;border-radius:4px;border:1px solid var(--bad-border);background:var(--bg-1);color:var(--bad);cursor:pointer;">Retry</button>';
+        }
+      });
+    }
+
+    function vorgRenderKpi(counts) {
+      var el = document.getElementById('vorg-summary');
+      if (!el) return;
+      var kpis = [
+        { key: 'pending', label: 'Pending', value: counts.pending || 0 },
+        { key: 'needs_clarification', label: 'Needs Clarification', value: counts.needs_clarification || 0 },
+        { key: 'sent_to_admin', label: 'Sent to Admin', value: counts.sent_to_admin || 0 },
+        { key: 'resolved', label: 'Resolved', value: counts.resolved || 0 },
+        { key: '', label: 'Total', value: counts.total || _vorgState.queueItems.length }
+      ];
+      var html = '';
+      kpis.forEach(function(k) {
+        var active = (_vorgState.activeKpiStatus === k.key && k.key !== '') ? ' vorg-kpi-active' : '';
+        var onclick = k.key ? ' onclick="vorgFilterByStatus(\'' + k.key + '\')"' : '';
+        html += '<div class="vorg-kpi' + active + '" data-status="' + k.key + '"' + onclick + ' style="flex:1;min-width:120px;padding:16px;background:var(--bg-1,#fff);border:1px solid var(--border-1,#e0e0e0);border-radius:8px;cursor:' + (k.key ? 'pointer' : 'default') + ';text-align:center;">' +
+          '<div class="kpi-value" style="font-size:2em;font-weight:700;color:var(--text-1,#333);">' + k.value + '</div>' +
+          '<div style="font-size:0.85em;color:var(--text-secondary,#666);">' + k.label + '</div>' +
+          '</div>';
+      });
+      el.innerHTML = html;
+    }
+
+    function vorgFilterByStatus(status) {
+      if (_vorgState.activeKpiStatus === status) {
+        _vorgState.activeKpiStatus = '';
+      } else {
+        _vorgState.activeKpiStatus = status;
+      }
+      var sel = document.getElementById('vorg-filter-status');
+      if (sel) sel.value = _vorgState.activeKpiStatus;
+      document.querySelectorAll('.vorg-kpi').forEach(function(el) {
+        if (el.dataset.status === _vorgState.activeKpiStatus && _vorgState.activeKpiStatus !== '') {
+          el.classList.add('vorg-kpi-active');
+        } else {
+          el.classList.remove('vorg-kpi-active');
+        }
+      });
+      vorgApplyFilters();
+    }
+
+    function vorgApplyFilters() {
+      var statusSel = document.getElementById('vorg-filter-status');
+      var typeSel = document.getElementById('vorg-filter-type');
+      var statusVal = _vorgState.activeKpiStatus || (statusSel ? statusSel.value : '');
+      var typeVal = typeSel ? typeSel.value : '';
+
+      if (statusSel && statusSel.value !== statusVal) statusSel.value = statusVal;
+
+      var filtered = _vorgState.queueItems.filter(function(it) {
+        if (statusVal) {
+          var st = (it.status || it.lifecycle_status || '').toLowerCase();
+          if (statusVal === 'pending' && st !== 'pending' && st !== 'submitted') return false;
+          if (statusVal === 'needs_clarification' && st !== 'needs_clarification') return false;
+          if (statusVal === 'sent_to_admin' && st !== 'sent_to_admin') return false;
+          if (statusVal === 'resolved' && st !== 'resolved' && st !== 'verifier_approved' && st !== 'approved') return false;
+        }
+        if (typeVal) {
+          var t = (it.type || it.item_type || '').toLowerCase();
+          if (t !== typeVal) return false;
+        }
+        return true;
+      });
+
+      _vorgState.filteredItems = filtered;
+
+      var batchItemMap = {};
+      filtered.forEach(function(it) {
+        var bid = it.batch_id || 'unknown';
+        if (!batchItemMap[bid]) batchItemMap[bid] = [];
+        batchItemMap[bid].push(it);
+      });
+
+      var filteredBatches = _vorgState.batches.filter(function(b) {
+        var bid = b.id || b.batch_id;
+        if (statusVal || typeVal) {
+          return !!batchItemMap[bid];
+        }
+        return true;
+      });
+      _vorgState.filteredBatches = filteredBatches;
+
+      var info = document.getElementById('vorg-filter-info');
+      if (info) {
+        if (statusVal || typeVal) {
+          info.textContent = 'Showing ' + filtered.length + ' of ' + _vorgState.queueItems.length + ' items';
+        } else {
+          info.textContent = _vorgState.queueItems.length + ' total items';
+        }
+      }
+
+      if (_vorgState.activeBatchId) {
+        vorgRenderDrilldown(_vorgState.activeBatchId);
+      } else {
+        vorgRenderBatchTable(filteredBatches, batchItemMap);
+      }
+
+      _vorgUpdateUrlState();
+    }
+
+    function _vorgUpdateUrlState() {
+      var parts = ['#/verifier-org'];
+      var params = [];
+      if (_vorgState.activeKpiStatus) params.push('status=' + _vorgState.activeKpiStatus);
+      if (_vorgState.activeBatchId) params.push('batch=' + _vorgState.activeBatchId);
+      var typeSel = document.getElementById('vorg-filter-type');
+      if (typeSel && typeSel.value) params.push('type=' + typeSel.value);
+      if (params.length) parts.push('?' + params.join('&'));
+      var newHash = parts.join('');
+      if (window.location.hash !== newHash) {
+        history.replaceState(null, '', newHash);
+      }
+    }
+
+    function _vorgParseUrlAndApply() {
+      var hash = window.location.hash || '';
+      if (hash.indexOf('verifier-org') === -1) return;
+      var qIdx = hash.indexOf('?');
+      if (qIdx === -1) return;
+      var qs = hash.substring(qIdx + 1);
+      var params = {};
+      qs.split('&').forEach(function(p) {
+        var kv = p.split('=');
+        if (kv.length === 2) params[kv[0]] = decodeURIComponent(kv[1]);
+      });
+      if (params.status) {
+        _vorgState.activeKpiStatus = params.status;
+        var sel = document.getElementById('vorg-filter-status');
+        if (sel) sel.value = params.status;
+      }
+      if (params.type) {
+        var tsel = document.getElementById('vorg-filter-type');
+        if (tsel) tsel.value = params.type;
+      }
+      if (params.batch) {
+        _vorgState.activeBatchId = params.batch;
+      }
+    }
+
+    function vorgClearFilters() {
+      _vorgState.activeKpiStatus = '';
+      _vorgState.activeBatchId = null;
+      var statusSel = document.getElementById('vorg-filter-status');
+      var typeSel = document.getElementById('vorg-filter-type');
+      if (statusSel) statusSel.value = '';
+      if (typeSel) typeSel.value = '';
+      document.querySelectorAll('.vorg-kpi').forEach(function(el) { el.classList.remove('vorg-kpi-active'); });
+      vorgExitDrilldown();
+      vorgApplyFilters();
+    }
+
+    function vorgRenderBatchTable(batches, batchItemMap) {
+      var tbody = document.getElementById('vorg-batch-tbody');
+      if (!tbody) return;
+
+      if (!batchItemMap) {
+        batchItemMap = {};
+        _vorgState.filteredItems.forEach(function(it) {
+          var bid = it.batch_id || 'unknown';
+          if (!batchItemMap[bid]) batchItemMap[bid] = [];
+          batchItemMap[bid].push(it);
+        });
+      }
+
+      if (!batches || batches.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted,#999);">No batches match current filters.</td></tr>';
+        return;
+      }
+
+      var html = '';
+      batches.forEach(function(batch) {
+        var bid = batch.id || batch.batch_id;
+        var items = batchItemMap[bid] || [];
+        var allBatchItems = _vorgState.queueItems.filter(function(it) { return (it.batch_id || 'unknown') === bid; });
+        var total = allBatchItems.length;
+        var pending = 0, clarify = 0, resolved = 0;
+        allBatchItems.forEach(function(it) {
+          var st = (it.status || it.lifecycle_status || '').toLowerCase();
+          if (st === 'pending' || st === 'submitted') pending++;
+          else if (st === 'needs_clarification') clarify++;
+          else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved') resolved++;
+        });
+
+        var name = _vorgEsc(batch.name || batch.filename || bid);
+        var source = _vorgSourceBadge(batch.source || batch.import_source || 'file');
+        var age = _vorgAgeText(batch.created_at);
+        var ageColor = _vorgAgeColor(batch.created_at);
+        var health = _vorgHealthDot(batch.created_at);
+
+        html += '<tr onclick="vorgDrillIntoBatch(\'' + _vorgEsc(bid) + '\')" title="Click to drill down">' +
+          '<td style="font-weight:600;">' + name + '</td>' +
+          '<td>' + source + '</td>' +
+          '<td>' + total + '</td>' +
+          '<td>' + (pending > 0 ? '<span style="color:var(--warn,#f57c00);font-weight:600;">' + pending + '</span>' : '0') + '</td>' +
+          '<td>' + (clarify > 0 ? '<span style="color:var(--info,#1565c0);font-weight:600;">' + clarify + '</span>' : '0') + '</td>' +
+          '<td>' + (resolved > 0 ? '<span style="color:var(--ok,#2e7d32);font-weight:600;">' + resolved + '</span>' : '0') + '</td>' +
+          '<td style="color:' + ageColor + ';font-weight:600;">' + age + '</td>' +
+          '<td>' + health + '</td>' +
+          '</tr>';
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function vorgDrillIntoBatch(batchId) {
+      _vorgState.activeBatchId = batchId;
+      var batchesEl = document.getElementById('vorg-batches');
+      var drillEl = document.getElementById('vorg-queue-drilldown');
+      if (batchesEl) batchesEl.style.display = 'none';
+      if (drillEl) drillEl.style.display = 'block';
+
+      var batch = _vorgState.batches.find(function(b) { return (b.id || b.batch_id) === batchId; });
+      var titleEl = document.getElementById('vorg-drilldown-title');
+      if (titleEl) titleEl.textContent = 'Batch Items — ' + (batch ? (batch.name || batch.filename || batchId) : batchId);
+
+      vorgRenderDrilldown(batchId);
+      _vorgUpdateUrlState();
+    }
+
+    function vorgRenderDrilldown(batchId) {
+      var tbody = document.getElementById('vorg-drilldown-tbody');
+      if (!tbody) return;
+
+      var items = _vorgState.filteredItems.filter(function(it) { return (it.batch_id || 'unknown') === batchId; });
+
+      if (items.length === 0) {
+        items = _vorgState.queueItems.filter(function(it) { return (it.batch_id || 'unknown') === batchId; });
+      }
+
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted,#999);">No items in this batch.</td></tr>';
+        return;
+      }
+
+      var html = '';
+      items.forEach(function(it) {
+        var type = it.type || it.item_type || 'patch';
+        var typeBadge = _vorgTypeBadge(type);
+        var record = _vorgEsc(it.record_id || it.record || '—');
+        var field = _vorgEsc(it.field_name || it.field || '—');
+        var status = _vorgStatusLabel(it.status || it.lifecycle_status || 'unknown');
+        var author = _vorgEsc(it.author || it.created_by || '—');
+        var age = _vorgAgeText(it.created_at);
+        var ageColor = _vorgAgeColor(it.created_at);
+        var itemId = it.id || it.item_id || '';
+        var version = it.version || it.db_version || 1;
+
+        var actions = '';
+        var tl = type.toLowerCase();
+        if (tl === 'patch') {
+          actions = '<button class="vorg-action-btn vorg-action-btn-approve" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'patch\',\'Verifier_Approved\',' + version + ')">Approve</button> ' +
+            '<button class="vorg-action-btn vorg-action-btn-reject" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'patch\',\'Rejected\',' + version + ')">Reject</button>';
+        } else if (tl === 'rfi') {
+          actions = '<button class="vorg-action-btn vorg-action-btn-approve" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'rfi\',\'resolved\',' + version + ')">Resolve</button> ' +
+            '<button class="vorg-action-btn vorg-action-btn-reject" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'rfi\',\'returned\',' + version + ')">Return</button>';
+        } else if (tl === 'correction') {
+          actions = '<button class="vorg-action-btn vorg-action-btn-approve" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'correction\',\'approved\',' + version + ')">Approve</button> ' +
+            '<button class="vorg-action-btn vorg-action-btn-reject" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'correction\',\'rejected\',' + version + ')">Reject</button>';
+        }
+
+        html += '<tr>' +
+          '<td>' + typeBadge + '</td>' +
+          '<td>' + record + '</td>' +
+          '<td>' + field + '</td>' +
+          '<td>' + status + '</td>' +
+          '<td>' + author + '</td>' +
+          '<td style="color:' + ageColor + ';font-weight:600;">' + age + '</td>' +
+          '<td style="white-space:nowrap;">' + actions + '</td>' +
+          '</tr>';
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function vorgAction(itemId, type, newStatus, version) {
+      if (!itemId) return;
+      var promise;
+      if (type === 'patch' && typeof opsDbWriteStatus === 'function') {
+        promise = opsDbWriteStatus(itemId, newStatus, version);
+      } else if (type === 'rfi' && typeof opsDbWriteRfiStatus === 'function') {
+        promise = opsDbWriteRfiStatus(itemId, newStatus, version);
+      } else if (type === 'correction' && typeof opsDbWriteCorrectionStatus === 'function') {
+        promise = opsDbWriteCorrectionStatus(itemId, newStatus, version);
+      } else {
+        showToast('Action handler not available for type: ' + type, 'warning');
+        return;
+      }
+
+      promise.then(function(result) {
+        if (result === false) return;
+        if (result && result.ok) {
+          showToast(_vorgStatusLabel(type) + ' ' + newStatus.replace(/_/g, ' '), 'success');
+          var item = _vorgState.queueItems.find(function(it) { return (it.id || it.item_id) === itemId; });
+          if (item) {
+            item.status = newStatus;
+            item.lifecycle_status = newStatus;
+            if (result.newVersion) {
+              item.version = result.newVersion;
+              item.db_version = result.newVersion;
+            }
+          }
+          vorgApplyFilters();
+        }
+      }).catch(function(err) {
+        console.error('[VorgView] Action error:', err);
+        showToast('Version conflict — refresh to retry', 'error');
+      });
+    }
+
+    function vorgExitDrilldown() {
+      _vorgState.activeBatchId = null;
+      var batchesEl = document.getElementById('vorg-batches');
+      var drillEl = document.getElementById('vorg-queue-drilldown');
+      if (batchesEl) batchesEl.style.display = 'block';
+      if (drillEl) drillEl.style.display = 'none';
+      _vorgUpdateUrlState();
+    }
+    // === END VERIFIER ORG VIEW (v2.55) ===
 
     // ========== VERIFIER TRIAGE & PAYLOAD SYSTEM (v1.5.2) ==========
     var verifierQueueState = {
