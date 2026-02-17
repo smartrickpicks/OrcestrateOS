@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from server.db import get_conn, put_conn
 from server.api_v25 import error_envelope
 from server.auth import AuthClass, require_auth, require_role, get_workspace_role, Role
+from server.role_scope import require_workspace_member
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v2.5")
@@ -48,23 +49,8 @@ def _iso(val):
 
 
 def _resolve_effective_role(request, auth, ws_id):
-    if auth.is_api_key:
-        return "admin"
-
-    sandbox_mode = request.headers.get("X-Sandbox-Mode", "").strip().lower()
-    effective_role_header = request.headers.get("X-Effective-Role", "").strip().lower()
-
-    if sandbox_mode == "true" and effective_role_header in ("analyst", "verifier", "admin"):
-        db_role = get_workspace_role(auth.user_id, ws_id)
-        capable_role = db_role or (auth.role if auth.role else None)
-        if capable_role in ("admin", "architect"):
-            return effective_role_header
-
-    if auth.is_role_simulated and auth.effective_role:
-        return auth.effective_role
-
-    db_role = get_workspace_role(auth.user_id, ws_id)
-    return db_role or "analyst"
+    from server.role_scope import resolve_effective_role
+    return resolve_effective_role(request, auth, ws_id)
 
 
 def _build_patch_item(row):
@@ -382,6 +368,7 @@ def _query_corrections(cur, ws_id, batch_id, author_id, role="admin", user_id=No
 @router.get("/workspaces/{ws_id}/corrections")
 def list_workspace_corrections(
     ws_id: str,
+    request: Request,
     status: str = Query(None),
     batch_id: str = Query(None),
     cursor: str = Query(None),
@@ -390,6 +377,10 @@ def list_workspace_corrections(
 ):
     if isinstance(auth, JSONResponse):
         return auth
+
+    effective_role, role_err = require_workspace_member(request, auth, ws_id)
+    if role_err is not None:
+        return role_err
 
     conn = get_conn()
     try:
@@ -405,6 +396,10 @@ def list_workspace_corrections(
 
             conditions = ["c.workspace_id = %s", "c.deleted_at IS NULL"]
             params = [ws_id]
+
+            if effective_role == "analyst":
+                conditions.append("c.created_by = %s")
+                params.append(auth.user_id)
 
             if status:
                 conditions.append("c.status = %s")

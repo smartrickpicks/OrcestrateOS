@@ -10,6 +10,7 @@ from server.ulid import generate_id
 from server.api_v25 import envelope, collection_envelope, error_envelope
 from server.auth import AuthClass, require_auth, get_workspace_role
 from server.audit import emit_audit_event
+from server.role_scope import require_workspace_member
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v2.5")
@@ -86,6 +87,10 @@ def list_rfis(
     if isinstance(auth, JSONResponse):
         return auth
 
+    effective_role, role_err = require_workspace_member(request, auth, ws_id)
+    if role_err is not None:
+        return role_err
+
     conn = get_conn()
     try:
         with conn.cursor() as cur:
@@ -98,6 +103,10 @@ def list_rfis(
 
             conditions = ["workspace_id = %s"]
             params: list = [ws_id]
+
+            if effective_role == "analyst":
+                conditions.append("author_id = %s")
+                params.append(auth.user_id)
 
             if not include_deleted:
                 conditions.append("deleted_at IS NULL")
@@ -371,7 +380,7 @@ def update_rfi(
                     allowed = CUSTODY_TRANSITIONS.get(old_custody, set())
                     if requested_custody not in allowed:
                         return JSONResponse(
-                            status_code=400,
+                            status_code=409,
                             content=error_envelope(
                                 "INVALID_TRANSITION",
                                 "Cannot transition custody_status from '%s' to '%s'. Allowed: %s"

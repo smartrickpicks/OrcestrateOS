@@ -1,8 +1,8 @@
 # V2.54.1 — Role-Aware Operations View: Clarity Document
 
-**Status:** Draft  
+**Status:** Implemented (P0–P3 complete, 16/16 acceptance tests passing)  
 **Date:** 2026-02-17  
-**Scope:** DOC + CLARITY ONLY — No code changes  
+**Scope:** Role-aware operations view with DB-first governance queue  
 **Depends on:** V2.54 Operations View (migration 012, operations queue, feature flags)
 
 ---
@@ -420,3 +420,66 @@ batches (
 | VER2-10 | P3 | Add role-scoped visibility filters to `GET /workspaces/{ws}/patches` and `GET /workspaces/{ws}/rfis` | VER2-03 |
 | VER2-11 | P3 | Add RFI custody transition matrix (analogous to patch `TRANSITION_MATRIX`) | VER2-05 |
 | VER2-12 | P4 | QA execution: run full sandbox role-switch matrix, concurrency, isolation, and drive dedup tests | VER2-01..VER2-09 |
+
+---
+
+## 9. P3 Implementation Summary (VER2-10 / VER2-11)
+
+**Date completed:** 2026-02-17
+
+### 9.1 Centralized Role Resolution (`server/role_scope.py`)
+
+New module providing a single `resolve_user_role()` function used across all list endpoints.
+
+**Resolution order:**
+1. Sandbox mode with `X-Effective-Role` header → use effective role
+2. Sandbox mode without header → fall back to `auth.role` (not hardcoded "analyst")
+3. Real user → query `user_workspace_roles` table
+
+**Role hierarchy:** `analyst < verifier < admin < architect`
+
+### 9.2 Role-Scoped List Endpoint Visibility
+
+| Endpoint | Analyst Filter | Verifier/Admin/Architect |
+|----------|---------------|--------------------------|
+| `GET /workspaces/{ws}/patches` | `author_id = user_id` (own only) | Full workspace |
+| `GET /workspaces/{ws}/rfis` | `author_id = user_id` (own only) | Full workspace |
+| `GET /workspaces/{ws}/corrections` | `created_by = user_id` (own only) | Full workspace |
+| `GET /workspaces/{ws}/operations/queue` | Own items only (filtered in aggregation) | Full workspace |
+
+### 9.3 RFI Custody Transition Matrix
+
+Valid transitions enforced via `CUSTODY_TRANSITIONS` map in `server/routes/rfis.py`:
+
+| From State | To State | Required Role |
+|------------|----------|---------------|
+| `open` | `awaiting_verifier` | analyst, verifier, admin |
+| `awaiting_verifier` | `returned_to_analyst` | verifier, admin |
+| `awaiting_verifier` | `resolved` | verifier, admin |
+| `returned_to_analyst` | `awaiting_verifier` | analyst, verifier, admin |
+
+**Error codes:**
+- `409 INVALID_TRANSITION` — transition not in matrix
+- `403 ROLE_NOT_ALLOWED` — user role lacks permission for this transition
+- `409 STALE_VERSION` — optimistic concurrency conflict
+
+### 9.4 Acceptance Test Results (16/16 PASS)
+
+| # | Category | Test | Result |
+|---|----------|------|--------|
+| 1 | Role-scoping | Analyst /patches sees own only | PASS |
+| 2 | Role-scoping | Analyst /rfis sees own only | PASS |
+| 3 | Role-scoping | Analyst /corrections sees own only | PASS |
+| 4 | Role-scoping | Verifier sees workspace-wide | PASS |
+| 5 | Role-scoping | Admin sees full workspace | PASS |
+| 6 | Auth | Non-member returns 401/403 | PASS |
+| 7 | Auth | No auth returns 401 | PASS |
+| 8 | Custody | open → awaiting_verifier (analyst, 200) | PASS |
+| 9 | Custody | awaiting_verifier → returned_to_analyst (verifier, 200) | PASS |
+| 10 | Custody | Disallowed transition → 409 INVALID_TRANSITION | PASS |
+| 11 | Custody | Disallowed role → 403 ROLE_NOT_ALLOWED | PASS |
+| 12 | Custody | Stale version → 409 STALE_VERSION | PASS |
+| 13 | Audit | Custody transitions emit audit events | PASS |
+| 14 | Consistency | Queue counts role-consistent | PASS |
+| 15 | Regression | Filters/pagination work | PASS |
+| 16 | Regression | P0/P1/P2 not broken | PASS |

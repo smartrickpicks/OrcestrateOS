@@ -10,6 +10,7 @@ from server.ulid import generate_id
 from server.api_v25 import envelope, collection_envelope, error_envelope
 from server.auth import AuthClass, require_auth
 from server.audit import emit_audit_event
+from server.role_scope import require_workspace_member
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v2.5")
@@ -89,6 +90,7 @@ def _check_role(user_id, workspace_id, min_role, conn):
 @router.get("/workspaces/{ws_id}/patches")
 def list_patches(
     ws_id: str,
+    request: Request = None,
     cursor: str = Query(None),
     limit: int = Query(50, ge=1, le=200),
     status: str = Query(None),
@@ -102,6 +104,10 @@ def list_patches(
     if isinstance(auth, JSONResponse):
         return auth
 
+    effective_role, role_err = require_workspace_member(request, auth, ws_id)
+    if role_err is not None:
+        return role_err
+
     conn = get_conn()
     try:
         with conn.cursor() as cur:
@@ -114,6 +120,10 @@ def list_patches(
 
             conditions = ["workspace_id = %s"]
             params = [ws_id]
+
+            if effective_role == "analyst":
+                conditions.append("author_id = %s")
+                params.append(auth.user_id)
 
             if not include_deleted:
                 conditions.append("deleted_at IS NULL")
