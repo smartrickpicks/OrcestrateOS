@@ -1,12 +1,12 @@
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import JSONResponse
 
 from server.db import get_conn, put_conn
 from server.api_v25 import error_envelope
-from server.auth import AuthClass, require_auth
+from server.auth import AuthClass, require_auth, require_role, get_workspace_role, Role
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v2.5")
@@ -45,6 +45,25 @@ def _iso(val):
     if isinstance(val, datetime):
         return val.isoformat()
     return val
+
+
+def _resolve_effective_role(request, auth, ws_id):
+    if auth.is_api_key:
+        return "admin"
+
+    sandbox_mode = request.headers.get("X-Sandbox-Mode", "").strip().lower()
+    effective_role_header = request.headers.get("X-Effective-Role", "").strip().lower()
+
+    if sandbox_mode == "true" and effective_role_header in ("analyst", "verifier", "admin"):
+        db_role = get_workspace_role(auth.user_id, ws_id)
+        if db_role in ("admin", "architect"):
+            return effective_role_header
+
+    if auth.is_role_simulated and auth.effective_role:
+        return auth.effective_role
+
+    db_role = get_workspace_role(auth.user_id, ws_id)
+    return db_role or "analyst"
 
 
 def _build_patch_item(row):
@@ -151,9 +170,21 @@ def _correction_summary(row):
     return "Correction %s" % row[0][:12]
 
 
+ANALYST_VISIBLE_PATCH_STATUSES = (
+    "Submitted", "Needs_Clarification", "Verifier_Responded",
+    "Verifier_Approved", "Admin_Approved", "Applied", "Rejected", "Cancelled",
+)
+
+VERIFIER_VISIBLE_PATCH_STATUSES = (
+    "Submitted", "Needs_Clarification", "Verifier_Responded",
+    "Verifier_Approved", "Admin_Hold", "Admin_Approved", "Applied", "Rejected",
+)
+
+
 @router.get("/workspaces/{ws_id}/operations/queue")
 def operations_queue(
     ws_id: str,
+    request: Request,
     queue_status: str = Query(None),
     batch_id: str = Query(None),
     item_type: str = Query(None),
@@ -164,6 +195,16 @@ def operations_queue(
 ):
     if isinstance(auth, JSONResponse):
         return auth
+
+    if auth.role and auth.user_id == 'sandbox_user':
+        pass
+    else:
+        role_err = require_role(ws_id, auth, Role.ANALYST)
+        if role_err is not None:
+            return role_err
+
+    effective_role = _resolve_effective_role(request, auth, ws_id)
+    user_id = auth.user_id
 
     conn = get_conn()
     try:
@@ -178,13 +219,13 @@ def operations_queue(
             items = []
 
             if item_type is None or item_type == "patch":
-                items.extend(_query_patches(cur, ws_id, batch_id, author_id))
+                items.extend(_query_patches(cur, ws_id, batch_id, author_id, role=effective_role, user_id=user_id))
 
             if item_type is None or item_type == "rfi":
-                items.extend(_query_rfis(cur, ws_id, batch_id, author_id))
+                items.extend(_query_rfis(cur, ws_id, batch_id, author_id, role=effective_role, user_id=user_id))
 
             if item_type is None or item_type == "correction":
-                items.extend(_query_corrections(cur, ws_id, batch_id, author_id))
+                items.extend(_query_corrections(cur, ws_id, batch_id, author_id, role=effective_role, user_id=user_id))
 
             if queue_status:
                 items = [i for i in items if i["queue_status"] == queue_status]
@@ -192,11 +233,11 @@ def operations_queue(
             counts = {"pending": 0, "needs_clarification": 0, "sent_to_admin": 0, "resolved": 0, "total": 0}
             all_items_for_counts = []
             if item_type is None or item_type == "patch":
-                all_items_for_counts.extend(_query_patches(cur, ws_id, batch_id, None))
+                all_items_for_counts.extend(_query_patches(cur, ws_id, batch_id, None, role=effective_role, user_id=user_id))
             if item_type is None or item_type == "rfi":
-                all_items_for_counts.extend(_query_rfis(cur, ws_id, batch_id, None))
+                all_items_for_counts.extend(_query_rfis(cur, ws_id, batch_id, None, role=effective_role, user_id=user_id))
             if item_type is None or item_type == "correction":
-                all_items_for_counts.extend(_query_corrections(cur, ws_id, batch_id, None))
+                all_items_for_counts.extend(_query_corrections(cur, ws_id, batch_id, None, role=effective_role, user_id=user_id))
             for ci in all_items_for_counts:
                 qs = ci["queue_status"]
                 if qs in counts:
@@ -218,6 +259,7 @@ def operations_queue(
             "cursor": next_cursor,
             "has_more": has_more,
             "limit": limit,
+            "effective_role": effective_role,
         }
         return {
             "data": {
@@ -234,9 +276,24 @@ def operations_queue(
         put_conn(conn)
 
 
-def _query_patches(cur, ws_id, batch_id, author_id):
+def _query_patches(cur, ws_id, batch_id, author_id, role="admin", user_id=None):
     conditions = ["p.workspace_id = %s", "p.deleted_at IS NULL", "p.status != 'Draft'"]
     params = [ws_id]
+
+    if role == "analyst":
+        if user_id:
+            conditions.append("p.author_id = %s")
+            params.append(user_id)
+        if ANALYST_VISIBLE_PATCH_STATUSES:
+            placeholders = ", ".join(["%s"] * len(ANALYST_VISIBLE_PATCH_STATUSES))
+            conditions.append("p.status IN (%s)" % placeholders)
+            params.extend(ANALYST_VISIBLE_PATCH_STATUSES)
+    elif role == "verifier":
+        if VERIFIER_VISIBLE_PATCH_STATUSES:
+            placeholders = ", ".join(["%s"] * len(VERIFIER_VISIBLE_PATCH_STATUSES))
+            conditions.append("p.status IN (%s)" % placeholders)
+            params.extend(VERIFIER_VISIBLE_PATCH_STATUSES)
+
     if batch_id:
         conditions.append("p.batch_id = %s")
         params.append(batch_id)
@@ -259,9 +316,14 @@ def _query_patches(cur, ws_id, batch_id, author_id):
     return [_build_patch_item(row) for row in cur.fetchall()]
 
 
-def _query_rfis(cur, ws_id, batch_id, author_id):
+def _query_rfis(cur, ws_id, batch_id, author_id, role="admin", user_id=None):
     conditions = ["r.workspace_id = %s", "r.deleted_at IS NULL"]
     params = [ws_id]
+
+    if role == "analyst" and user_id:
+        conditions.append("r.author_id = %s")
+        params.append(user_id)
+
     if batch_id:
         conditions.append("r.batch_id = %s")
         params.append(batch_id)
@@ -285,9 +347,14 @@ def _query_rfis(cur, ws_id, batch_id, author_id):
     return [_build_rfi_item(row) for row in cur.fetchall()]
 
 
-def _query_corrections(cur, ws_id, batch_id, author_id):
+def _query_corrections(cur, ws_id, batch_id, author_id, role="admin", user_id=None):
     conditions = ["c.workspace_id = %s", "c.deleted_at IS NULL"]
     params = [ws_id]
+
+    if role == "analyst" and user_id:
+        conditions.append("c.created_by = %s")
+        params.append(user_id)
+
     if batch_id:
         conditions.append("d.batch_id = %s")
         params.append(batch_id)

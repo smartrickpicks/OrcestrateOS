@@ -25799,6 +25799,9 @@
       }
       updateSidebarUserProfile();
       updateRoleSimBadges();
+
+      // v2.54.1 VER2-01: Trigger queue re-hydration on role switch
+      if (typeof opsOnRoleSwitch === 'function') opsOnRoleSwitch();
       
       // Update triage page titles with role
       var roleLabel = mode === 'analyst' ? 'Analyst' : mode === 'verifier' ? 'Verifier' : 'Admin';
@@ -39103,18 +39106,35 @@
       }).catch(function(e) { console.warn('[OpsView] Feature flag fetch failed, staying localStorage-only:', e); });
     })();
 
-    function opsDbHydrateQueue() {
+    function opsDbHydrateQueue(opts) {
+      opts = opts || {};
       var ws = (typeof _getWorkspaceId === 'function') ? _getWorkspaceId() : 'ws_SEED0100000000000000000000';
       var headers = (typeof _getAuthHeaders === 'function') ? _getAuthHeaders() : { 'Content-Type': 'application/json' };
+      if (isDemoMode() || isDemoSession()) {
+        headers['X-Sandbox-Mode'] = 'true';
+        var effRole = (typeof _roleSimulation !== 'undefined' && _roleSimulation.active && _roleSimulation.effectiveRole) ? _roleSimulation.effectiveRole : (currentMode || 'analyst');
+        headers['X-Effective-Role'] = effRole;
+      }
+      var replace = !!opts.replace;
       fetch('/api/v2.5/workspaces/' + ws + '/operations/queue?limit=200', { headers: headers })
         .then(function(r) { return r.json(); })
         .then(function(d) {
           if (!d || !d.data || !d.data.items) { console.warn('[OpsView] Empty queue response'); return; }
           var dbItems = d.data.items;
-          console.log('[OpsView] DB hydration got', dbItems.length, 'items');
+          console.log('[OpsView] DB hydration got', dbItems.length, 'items (replace=' + replace + ')');
+          if (replace) {
+            verifierQueueState.payloads = verifierQueueState.payloads.filter(function(p) { return !p._fromDb; });
+          }
           var existingIds = new Set(verifierQueueState.payloads.map(function(p) { return p.id; }));
           dbItems.forEach(function(item) {
-            if (existingIds.has(item.id)) return;
+            if (existingIds.has(item.id)) {
+              if (replace) {
+                var idx = verifierQueueState.payloads.findIndex(function(p) { return p.id === item.id; });
+                if (idx !== -1) verifierQueueState.payloads.splice(idx, 1);
+              } else {
+                return;
+              }
+            }
             verifierQueueState.payloads.push({
               id: item.id,
               type: item.item_type,
@@ -39137,11 +39157,30 @@
         .catch(function(e) { console.warn('[OpsView] DB hydration failed:', e); });
     }
 
+    function opsOnRoleSwitch() {
+      console.log('[OpsView] Role switch detected (dbRead=' + _opsViewFlags.dbRead + ')');
+      if (_opsViewFlags.dbRead) {
+        verifierQueueState.payloads = [];
+        try { localStorage.removeItem('srr_verifier_queue_v1'); } catch(e) {}
+        try { localStorage.removeItem('verifier_filter_division'); } catch(e) {}
+        try { localStorage.removeItem('verifier_filter_status'); } catch(e) {}
+        try { localStorage.removeItem('verifier_filter_patchtype'); } catch(e) {}
+        if (typeof verifierFilterState !== 'undefined') {
+          verifierFilterState.division = '';
+          verifierFilterState.status = '';
+          verifierFilterState.patchType = '';
+        }
+        opsDbHydrateQueue({ replace: true });
+      } else {
+        if (typeof reloadVerifierQueuesFromStore === 'function') reloadVerifierQueuesFromStore();
+        if (typeof renderVerifierTriage === 'function') renderVerifierTriage();
+      }
+    }
+
     function opsDbWriteStatus(itemId, newLifecycleStatus, version) {
       if (!_opsViewFlags.dbWrite) return Promise.resolve(false);
-      var ws = (typeof _getWorkspaceId === 'function') ? _getWorkspaceId() : 'ws_SEED0100000000000000000000';
       var headers = (typeof _getAuthHeaders === 'function') ? _getAuthHeaders() : { 'Content-Type': 'application/json' };
-      return fetch('/api/v2.5/workspaces/' + ws + '/patches/' + itemId, {
+      return fetch('/api/v2.5/patches/' + itemId, {
         method: 'PATCH',
         headers: headers,
         body: JSON.stringify({ status: newLifecycleStatus, version: version || 1 })
@@ -39149,7 +39188,10 @@
         if (r.status === 409) { showToast('Stale version — someone else updated this item. Please refresh.', 'error'); return false; }
         if (r.status === 403) { return r.json().then(function(d) { showToast(d.error && d.error.detail || 'Permission denied', 'error'); return false; }); }
         if (!r.ok) { showToast('Failed to save to database (HTTP ' + r.status + ')', 'error'); return false; }
-        return true;
+        return r.json().then(function(d) {
+          var newVersion = (d && d.data && d.data.version) ? d.data.version : (version || 1) + 1;
+          return { ok: true, newVersion: newVersion };
+        });
       }).catch(function(e) { console.error('[OpsView] DB write failed:', e); return false; });
     }
 
@@ -43236,16 +43278,25 @@
     function updatePayloadStatus(payloadId, newStatus) {
       const payload = verifierQueueState.payloads.find(p => p.id === payloadId);
       if (payload) {
-        payload.status = newStatus;
-
-        // v2.54 OPS_VIEW_DB_WRITE: persist status to DB if item is DB-sourced
-        if (payload._fromDb && payload.type === 'patch' && typeof opsDbWriteStatus === 'function') {
+        // v2.54.1 VER2-04: For DB-backed patches, defer local status update until DB write succeeds
+        if (payload._fromDb && payload.type === 'patch' && _opsViewFlags.dbWrite && typeof opsDbWriteStatus === 'function') {
           var lifecycleMap = { pending: 'Submitted', needs_clarification: 'Needs_Clarification', sent_to_admin: 'Verifier_Approved', resolved: 'Applied', rejected: 'Rejected' };
           var dbStatus = lifecycleMap[newStatus] || newStatus;
-          opsDbWriteStatus(payloadId, dbStatus, payload.db_version || 1).then(function(ok) {
-            if (ok) { payload.db_version = (payload.db_version || 1) + 1; console.log('[OpsView] DB write success for', payloadId); }
+          var priorStatus = payload.status;
+          opsDbWriteStatus(payloadId, dbStatus, payload.db_version || 1).then(function(result) {
+            if (result && result.ok) {
+              payload.status = newStatus;
+              payload.db_version = result.newVersion || (payload.db_version || 1) + 1;
+              saveVerifierQueue();
+              if (typeof renderVerifierTriage === 'function') renderVerifierTriage();
+              console.log('[OpsView] DB write success for', payloadId, '-> v' + payload.db_version);
+            } else {
+              console.warn('[OpsView] DB write failed for', payloadId, '— local state unchanged');
+            }
           });
+          return;
         }
+        payload.status = newStatus;
         saveVerifierQueue();
         
         // v1.5.1: Also update artifact store and log event
@@ -44425,9 +44476,16 @@
       vrRenderDecisionSummary();
       showToast('Patch approved by Verifier — routed to Admin Approval', 'success');
 
-      // v2.54: DB write for vrApprove
+      // v2.54.1 VER2-04: DB write for vrApprove — strict mode
       if (typeof opsDbWriteStatus === 'function' && vrState.currentPatchId) {
-        var _vrPatchVersion = (verifierQueueState.payloads.find(function(p) { return p.id === vrState.currentPatchId; }) || {}).db_version || 1; opsDbWriteStatus(vrState.currentPatchId, 'Verifier_Approved', _vrPatchVersion);
+        var _vrPayload = verifierQueueState.payloads.find(function(p) { return p.id === vrState.currentPatchId; }) || {};
+        var _vrPatchVersion = _vrPayload.db_version || 1;
+        opsDbWriteStatus(vrState.currentPatchId, 'Verifier_Approved', _vrPatchVersion).then(function(result) {
+          if (result && result.ok) {
+            if (_vrPayload.db_version !== undefined) _vrPayload.db_version = result.newVersion || _vrPatchVersion + 1;
+            console.log('[OpsView] vrApprove DB write success');
+          }
+        });
       }
     }
     
@@ -44449,9 +44507,16 @@
       vrRenderDecisionSummary();
       showToast('Patch rejected', 'info');
 
-      // v2.54: DB write for vrReject
+      // v2.54.1 VER2-04: DB write for vrReject — strict mode
       if (typeof opsDbWriteStatus === 'function' && vrState.currentPatchId) {
-        var _vrPatchVersion = (verifierQueueState.payloads.find(function(p) { return p.id === vrState.currentPatchId; }) || {}).db_version || 1; opsDbWriteStatus(vrState.currentPatchId, 'Rejected', _vrPatchVersion);
+        var _vrPayload = verifierQueueState.payloads.find(function(p) { return p.id === vrState.currentPatchId; }) || {};
+        var _vrPatchVersion = _vrPayload.db_version || 1;
+        opsDbWriteStatus(vrState.currentPatchId, 'Rejected', _vrPatchVersion).then(function(result) {
+          if (result && result.ok) {
+            if (_vrPayload.db_version !== undefined) _vrPayload.db_version = result.newVersion || _vrPatchVersion + 1;
+            console.log('[OpsView] vrReject DB write success');
+          }
+        });
       }
     }
     
