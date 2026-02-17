@@ -108,6 +108,22 @@
       text-shadow: 0 0 14px var(--glow-blue-med);
     }
     html[data-theme="dark"] .section-guidance-card { background: var(--bg-2) !important; border-color: var(--border-soft) !important; }
+    html[data-theme="dark"] .section-guidance-card .section-guidance-toggle { background: var(--bg-3) !important; border-color: var(--border-1) !important; }
+    html[data-theme="dark"] .section-guidance-card span[style*="color: #333"] { color: var(--text-1) !important; }
+    html[data-theme="dark"] .section-guidance-card span[style*="color: #999"] { color: var(--text-3) !important; }
+    html[data-theme="dark"] .section-guidance-card span[style*="color: #888"] { color: var(--text-3) !important; }
+    html[data-theme="dark"] .section-guidance-card div[style*="color: #333"] { color: var(--text-1) !important; }
+    html[data-theme="dark"] .section-guidance-card div[style*="color: #444"] { color: var(--text-2) !important; }
+    html[data-theme="dark"] .section-guidance-card div[style*="color: #666"] { color: var(--text-3) !important; }
+    html[data-theme="dark"] .section-guidance-card div[style*="color: #1565c0"] { color: var(--accent-bright) !important; }
+    html[data-theme="dark"] .section-guidance-card ul[style*="color: #444"] { color: var(--text-2) !important; }
+    html[data-theme="dark"] .section-guidance-card ul[style*="color: #666"] { color: var(--text-3) !important; }
+    html[data-theme="dark"] .section-guidance-card span[style*="background: #e8eaf6"] { background: var(--chip-bg) !important; color: var(--accent-bright) !important; }
+    html[data-theme="dark"] .section-guidance-card span[style*="background: #e0f2f1"] { background: var(--chip-bg) !important; color: #22D3EE !important; }
+    html[data-theme="dark"] .section-guidance-card span[style*="background: #f5f5f5"] { background: var(--chip-bg) !important; color: var(--text-3) !important; }
+    html[data-theme="dark"] .section-guidance-card span[style*="background: #f0f4ff"] { background: var(--bg-3) !important; }
+    html[data-theme="dark"] .p1d1-contract-name { color: #22D3EE !important; }
+    html[data-theme="dark"] .triage-queue-section { background: var(--bg-2); border: 1px solid var(--border-1); border-radius: 8px; padding: 16px; margin-bottom: 20px; }
 
     /* Tables */
     html[data-theme="dark"] table { background: var(--bg-2); box-shadow: var(--shadow-1); }
@@ -416,6 +432,21 @@
     html[data-theme="dark"] [onclick*="handleSchemaClick('matched')"] ~ [onclick*="handleSchemaClick"],
     html[data-theme="dark"] #ta-schema-missing-blank { background: var(--warn-bg) !important; color: var(--warn) !important; }
     html[data-theme="dark"] #ta-schema-missing-pl { background: var(--info-bg) !important; color: var(--accent-2) !important; }
+    html[data-theme="dark"] #ta-schema-matched-count { color: var(--text-3) !important; }
+    html[data-theme="dark"] #ta-schema-matched-subtext { color: var(--text-3) !important; }
+    html[data-theme="dark"] #ta-schema-matched-scope { color: var(--text-3) !important; }
+    html[data-theme="dark"] #ta-schema-glossary-secondary { color: var(--text-3) !important; }
+    html[data-theme="dark"] #ta-schema-missing-split { color: var(--text-3) !important; }
+    html[data-theme="dark"] #ta-schema-acctcheck-detail { color: var(--text-3) !important; }
+    html[data-theme="dark"] [onclick*="handleSchemaClick"] div[style*="color: #555"] { color: var(--text-2) !important; }
+    html[data-theme="dark"] [onclick*="handleSchemaClick"] div[style*="color: #666"] { color: var(--text-3) !important; }
+    html[data-theme="dark"] [onclick*="handleSchemaClick"] div[style*="color: #aaa"] { color: var(--text-3) !important; }
+    html[data-theme="dark"] [onclick*="handleSchemaClick"] div[style*="color: #bbb"] { color: var(--text-3) !important; }
+    html[data-theme="dark"] [onclick*="handleSchemaClick"] div[style*="color: #999"] { color: var(--text-3) !important; }
+    html[data-theme="dark"] #acct-check-card div[style*="color: #555"] { color: var(--text-2) !important; }
+    html[data-theme="dark"] #acct-check-card div[style*="color: #666"] { color: var(--text-3) !important; }
+    html[data-theme="dark"] #acct-check-card div[style*="color: #aaa"] { color: var(--text-3) !important; }
+    html[data-theme="dark"] #acct-check-card div[style*="color: #bbb"] { color: var(--text-3) !important; }
 
     /* Lifecycle progression cards */
     html[data-theme="dark"] .ta-lifecycle-stage { background: var(--life-bg) !important; border-color: var(--life-border) !important; }
@@ -2002,18 +2033,18 @@
     .pftl-sug-target { color: var(--accent-2); font-weight: 500; }
     .pftl-sug-score { font-size: 0.75em; padding: 1px 6px; border-radius: 8px; font-weight: 600; }
     .pftl-sug-score.high { background: var(--ok-bg); color: var(--ok); }
-    .pftl-sug-score.medium { background: #fff8e1; color: #f57f17; }
-    .pftl-sug-score.low { background: #fff3e0; color: #e65100; }
+    .pftl-sug-score.medium { background: var(--warn-bg); color: var(--warn); }
+    .pftl-sug-score.low { background: var(--warn-bg); color: var(--warn); }
     .pftl-sug-score.none { background: var(--bg-base); color: var(--text-3); }
     .pftl-sug-actions { display: flex; gap: 3px; margin-left: auto; }
-    .pftl-sug-accept { font-size: 0.72em; padding: 2px 8px; background: var(--ok-bg); color: var(--ok); border: 1px solid #c8e6c9; border-radius: 3px; cursor: pointer; }
-    .pftl-sug-reject { font-size: 0.72em; padding: 2px 8px; background: var(--bad-bg); color: var(--bad); border: 1px solid #ffcdd2; border-radius: 3px; cursor: pointer; }
+    .pftl-sug-accept { font-size: 0.72em; padding: 2px 8px; background: var(--ok-bg); color: var(--ok); border: 1px solid var(--ok); border-radius: 3px; cursor: pointer; }
+    .pftl-sug-reject { font-size: 0.72em; padding: 2px 8px; background: var(--bad-bg); color: var(--bad); border: 1px solid var(--bad); border-radius: 3px; cursor: pointer; }
     .pftl-sug-badge { font-size: 0.72em; padding: 2px 8px; border-radius: 3px; font-weight: 500; }
     .pftl-sug-badge.accepted { background: var(--ok-bg); color: var(--ok); }
     .pftl-sug-badge.rejected { background: var(--bad-bg); color: var(--bad); }
-    .pftl-sug-kw-btn { font-size: 0.7em; padding: 2px 6px; background: #fff8e1; border: 1px solid #ffe082; border-radius: 3px; cursor: pointer; color: #f57f17; }
-    .pftl-sug-kw-btn:hover { background: #ffe082; }
-    .pftl-sug-kw-btn.active { background: #ffe082; border-color: #f9a825; box-shadow: 0 0 0 2px rgba(249,168,37,0.2); }
+    .pftl-sug-kw-btn { font-size: 0.7em; padding: 2px 6px; background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 3px; cursor: pointer; color: var(--warn); }
+    .pftl-sug-kw-btn:hover { background: var(--warn-border); }
+    .pftl-sug-kw-btn.active { background: var(--warn-border); border-color: var(--warn); box-shadow: 0 0 0 2px rgba(249,168,37,0.2); }
     .pftl-sug-detail { background: var(--bg-2); border: 1px solid var(--border-1); border-radius: 6px; margin: 4px 0 8px 0; padding: 12px 14px; font-size: 0.82em; animation: pftlDetailSlide 0.15s ease-out; }
     @keyframes pftlDetailSlide { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
     .pftl-sug-detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border-1); }
@@ -3427,21 +3458,21 @@
             </div>
             <!-- 2) Contract Summary -->
             <!-- C) Contract Summary Table (collapsible) -->
-            <div id="ta-contract-section" style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
-              <div onclick="TriageAnalytics.toggleContractTable()" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #eee; cursor: pointer; user-select: none;" title="Click to expand/collapse">
+            <div id="ta-contract-section" style="margin-bottom: 20px; background: var(--bg-1); border: 1px solid var(--border-1); border-radius: 10px; overflow: hidden;">
+              <div onclick="TriageAnalytics.toggleContractTable()" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border-1); cursor: pointer; user-select: none;" title="Click to expand/collapse">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <span id="ta-contract-toggle" style="font-size: 0.7em; color: #999; transition: transform 0.2s;">&#9654;</span>
-                  <h4 style="margin: 0; font-size: 0.9em; color: #333;">Contract Summary</h4>
+                  <span id="ta-contract-toggle" style="font-size: 0.7em; color: var(--text-3); transition: transform 0.2s;">&#9654;</span>
+                  <h4 style="margin: 0; font-size: 0.9em; color: var(--text-1);">Contract Summary</h4>
                   <span id="ta-contract-filter-badge" style="display: none; font-size: 0.7em; padding: 1px 8px; border-radius: 10px; background: #e3f2fd; color: #1565c0; font-weight: 600;"></span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <span id="ta-contract-count" style="font-size: 0.8em; color: #666;">0 contracts</span>
+                  <span id="ta-contract-count" style="font-size: 0.8em; color: var(--text-3);">0 contracts</span>
                   <span id="ta-contract-summary-chips" style="display: flex; gap: 6px; font-size: 0.72em;"></span>
-                  <button id="ta-contract-view-grid" onclick="event.stopPropagation(); TriageAnalytics.viewFilteredInGrid();" style="display: none; font-size: 0.7em; padding: 2px 10px; border-radius: 10px; border: 1px solid #1976d2; background: #e3f2fd; color: #1565c0; cursor: pointer; font-weight: 600;">View in Grid</button>
+                  <button id="ta-contract-view-grid" onclick="event.stopPropagation(); TriageAnalytics.viewFilteredInGrid();" style="display: none; font-size: 0.7em; padding: 2px 10px; border-radius: 10px; border: 1px solid var(--accent-blue); background: var(--info-bg); color: var(--info); cursor: pointer; font-weight: 600;">View in Grid</button>
                 </div>
               </div>
-              <div id="ta-health-filter-bar" style="display: none; padding: 6px 16px; background: #fafafa; border-bottom: 1px solid #eee; gap: 8px; flex-wrap: wrap; align-items: center;">
-                <span style="font-size: 0.75em; color: #888; font-weight: 600;">Health:</span>
+              <div id="ta-health-filter-bar" style="display: none; padding: 6px 16px; background: var(--bg-2); border-bottom: 1px solid var(--border-1); gap: 8px; flex-wrap: wrap; align-items: center;">
+                <span style="font-size: 0.75em; color: var(--text-3); font-weight: 600;">Health:</span>
                 <span class="health-filter-chip" data-health-band="critical" onclick="ContractHealthScore.filterByBand('critical')" style="padding: 2px 10px; border-radius: 10px; font-size: 0.72em; font-weight: 600; cursor: pointer; background: #ffebee; color: #c62828; border: 1px solid transparent;">Critical <span id="health-chip-critical-count">0</span></span>
                 <span class="health-filter-chip" data-health-band="at_risk" onclick="ContractHealthScore.filterByBand('at_risk')" style="padding: 2px 10px; border-radius: 10px; font-size: 0.72em; font-weight: 600; cursor: pointer; background: #fff3e0; color: #e65100; border: 1px solid transparent;">At Risk <span id="health-chip-at-risk-count">0</span></span>
                 <span class="health-filter-chip" data-health-band="watch" onclick="ContractHealthScore.filterByBand('watch')" style="padding: 2px 10px; border-radius: 10px; font-size: 0.72em; font-weight: 600; cursor: pointer; background: #fffde7; color: #f9a825; border: 1px solid transparent;">Watch <span id="health-chip-watch-count">0</span></span>
@@ -3450,16 +3481,16 @@
               </div>
               <div id="ta-contract-body" style="max-height: 280px; overflow-y: auto; display: none;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">
-                  <thead style="background: #fafafa; position: sticky; top: 0;">
+                  <thead style="background: var(--table-head); position: sticky; top: 0;">
                     <tr>
-                      <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #555;">Contract</th>
-                      <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #555;">Doc Role</th>
-                      <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #555;">Stage</th>
+                      <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: var(--table-head-text);">Contract</th>
+                      <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: var(--table-head-text);">Doc Role</th>
+                      <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: var(--table-head-text);">Stage</th>
                       <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #f44336;">Pre-Flight</th>
                       <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #ff9800;">Semantic</th>
                       <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #1976d2;">Patches</th>
-                      <th style="padding: 8px 12px; text-align: right; font-weight: 600; color: #555;">Rows</th>
-                      <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #555;">Health</th>
+                      <th style="padding: 8px 12px; text-align: right; font-weight: 600; color: var(--table-head-text);">Rows</th>
+                      <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: var(--table-head-text);">Health</th>
                     </tr>
                   </thead>
                   <tbody id="ta-contract-tbody">
@@ -17912,14 +17943,14 @@
           var c = contracts[j];
           var sl = SL[c.current_stage] || c.current_stage;
           var sc = SC[c.current_stage] || '#666';
-          html += '<tr class="ta-contract-row" onclick="TriageAnalytics.handleContractClick(\'' + (c.contract_id || '').replace(/'/g, "\\'") + '\', \'' + (c.current_stage || '') + '\')" style="cursor: pointer; border-bottom: 1px solid #f0f0f0;">';
+          html += '<tr class="ta-contract-row" onclick="TriageAnalytics.handleContractClick(\'' + (c.contract_id || '').replace(/'/g, "\\'") + '\', \'' + (c.current_stage || '') + '\')" style="cursor: pointer; border-bottom: 1px solid var(--border-1);">';
           html += '<td style="padding: 8px 12px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="' + ((c.display_name || '').replace(/"/g, '&quot;')) + '">' + (c.display_name || c.contract_id) + '</td>';
-          html += '<td style="padding: 8px 12px; color: #666;">' + (c.doc_role || '-') + '</td>';
+          html += '<td style="padding: 8px 12px; color: var(--text-3);">' + (c.doc_role || '-') + '</td>';
           html += '<td style="padding: 8px 12px; text-align: center;"><span style="padding: 2px 8px; border-radius: 10px; font-size: 0.85em; background: ' + sc + '22; color: ' + sc + '; font-weight: 600;">' + sl + '</span></td>';
           html += '<td style="padding: 8px 12px; text-align: center; color: ' + (c.preflight_alerts > 0 ? '#c62828' : '#ccc') + '; font-weight: 600;">' + c.preflight_alerts + '</td>';
           html += '<td style="padding: 8px 12px; text-align: center; color: ' + (c.semantic_alerts > 0 ? '#e65100' : '#ccc') + '; font-weight: 600;">' + c.semantic_alerts + '</td>';
           html += '<td style="padding: 8px 12px; text-align: center; color: ' + (c.patch_alerts > 0 ? '#1565c0' : '#ccc') + '; font-weight: 600;">' + c.patch_alerts + '</td>';
-          html += '<td style="padding: 8px 12px; text-align: right; color: #666;">' + (c.row_count || 0) + '</td>';
+          html += '<td style="padding: 8px 12px; text-align: right; color: var(--text-3);">' + (c.row_count || 0) + '</td>';
           html += (typeof ContractHealthScore !== 'undefined') ? ContractHealthScore.renderHealthCell(c) : '<td></td>';
           html += '</tr>';
         }
@@ -42572,7 +42603,7 @@
       var sheets = Object.keys(sheetCounts).sort();
       var _q = String.fromCharCode(39);
       var _makeTab = function(name, count, isActive, isBold) {
-        return '<button class="p1a-sheet-tab' + (isActive ? ' active' : '') + '" onclick="_p1aSelectSheet(' + _q + name.replace(/'/g, '\\' + _q) + _q + ')" style="padding: 4px 10px; border: 1px solid ' + (isActive ? '#1565c0' : '#ccc') + '; background: ' + (isActive ? '#e3f2fd' : '#f5f5f5') + '; color: ' + (isActive ? '#1565c0' : '#666') + '; border-radius: 14px; cursor: pointer; font-weight: ' + (isBold ? '600' : '500') + '; font-size: 0.9em;">' + name + ' <span style="font-weight: 400;">(' + count + ')</span></button>';
+        return '<button class="p1a-sheet-tab' + (isActive ? ' active' : '') + '" onclick="_p1aSelectSheet(' + _q + name.replace(/'/g, '\\' + _q) + _q + ')" style="padding: 4px 10px; border: 1px solid ' + (isActive ? 'var(--accent-blue)' : 'var(--chip-border)') + '; background: ' + (isActive ? 'var(--chip-bg)' : 'var(--chip-bg)') + '; color: ' + (isActive ? 'var(--accent-bright)' : 'var(--text-3)') + '; border-radius: 14px; cursor: pointer; font-weight: ' + (isBold ? '600' : '500') + '; font-size: 0.9em;">' + name + ' <span style="font-weight: 400;">(' + count + ')</span></button>';
       };
       var tabsHtml = _makeTab('All', totalCount, _p1aActiveSheet === 'All', true);
       for (var s = 0; s < sheets.length; s++) {
@@ -50701,25 +50732,25 @@ Add any additional notes here.
 
     /* ========== EVIDENCE INSPECTOR v2.51 ========== */
     .ei-panel { padding: 0; }
-    .ei-section { border: 1px solid #e0e0e0; border-radius: 6px; margin-bottom: 10px; overflow: hidden; }
-    .ei-section-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #f5f5f5; cursor: pointer; user-select: none; font-size: 0.88em; font-weight: 600; color: #333; border-bottom: 1px solid #e0e0e0; }
-    .ei-section-header:hover { background: #eee; }
-    .ei-section-count { background: #e0e0e0; color: #666; padding: 1px 7px; border-radius: 10px; font-size: 0.8em; font-weight: 600; min-width: 18px; text-align: center; }
-    .ei-section-arrow { margin-left: auto; font-size: 0.7em; color: #999; transition: transform 0.2s; }
+    .ei-section { border: 1px solid var(--border-1); border-radius: 6px; margin-bottom: 10px; overflow: hidden; }
+    .ei-section-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--bg-3); cursor: pointer; user-select: none; font-size: 0.88em; font-weight: 600; color: var(--text-1); border-bottom: 1px solid var(--border-1); }
+    .ei-section-header:hover { background: var(--bg-4); }
+    .ei-section-count { background: var(--chip-bg); color: var(--text-3); padding: 1px 7px; border-radius: 10px; font-size: 0.8em; font-weight: 600; min-width: 18px; text-align: center; }
+    .ei-section-arrow { margin-left: auto; font-size: 0.7em; color: var(--text-3); transition: transform 0.2s; }
     .ei-section-arrow.collapsed { transform: rotate(-90deg); }
     .ei-section-body { padding: 10px 12px; }
     .ei-section-body.collapsed { display: none; }
-    .ei-hint { font-size: 0.8em; color: #888; margin-bottom: 8px; padding: 6px 8px; background: #f9f9f9; border-radius: 4px; border-left: 3px solid #1565c0; }
+    .ei-hint { font-size: 0.8em; color: var(--text-3); margin-bottom: 8px; padding: 6px 8px; background: var(--bg-2); border-radius: 4px; border-left: 3px solid #1565c0; }
     .ei-list { display: flex; flex-direction: column; gap: 6px; }
-    .ei-empty { text-align: center; color: #aaa; font-size: 0.85em; padding: 16px 8px; }
-    .ei-item { border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px 12px; background: #fff; transition: box-shadow 0.15s; cursor: default; }
+    .ei-empty { text-align: center; color: var(--text-3); font-size: 0.85em; padding: 16px 8px; }
+    .ei-item { border: 1px solid var(--border-1); border-radius: 6px; padding: 10px 12px; background: var(--bg-1); transition: box-shadow 0.15s; cursor: default; }
     .ei-item:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
     .ei-item-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-    .ei-item-text { font-size: 0.85em; color: #333; line-height: 1.4; word-break: break-word; }
-    .ei-item-text.preview { max-height: 3.6em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; background: #fafafa; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #1565c0; font-family: 'Courier New', monospace; font-size: 0.82em; }
-    .ei-item-meta { font-size: 0.75em; color: #999; margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .ei-item-text { font-size: 0.85em; color: var(--text-1); line-height: 1.4; word-break: break-word; }
+    .ei-item-text.preview { max-height: 3.6em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; background: var(--bg-2); padding: 6px 8px; border-radius: 4px; border-left: 3px solid #1565c0; font-family: 'Courier New', monospace; font-size: 0.82em; }
+    .ei-item-meta { font-size: 0.75em; color: var(--text-3); margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap; }
     .ei-item-meta span { display: inline-flex; align-items: center; gap: 3px; }
-    .ei-item-field { font-size: 0.78em; color: #1565c0; background: #e3f2fd; padding: 1px 6px; border-radius: 3px; font-weight: 500; }
+    .ei-item-field { font-size: 0.78em; color: var(--info); background: var(--info-bg); padding: 1px 6px; border-radius: 3px; font-weight: 500; }
     .ei-item-values { font-size: 0.83em; margin: 4px 0; }
     .ei-item-values .ei-val-old { color: #c62828; text-decoration: line-through; }
     .ei-item-values .ei-val-new { color: #2e7d32; font-weight: 500; }
