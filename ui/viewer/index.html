@@ -1955,7 +1955,7 @@
     .pftl-gate-badge.green { background: var(--ok-bg); color: var(--ok); border: 1px solid #c8e6c9; }
     .pftl-gate-badge.yellow { background: #fff8e1; color: #f57f17; border: 1px solid #fff176; }
     .pftl-gate-badge.red { background: var(--bad-bg); color: var(--bad); border: 1px solid #ffcdd2; }
-    .pftl-doc-mode { font-size: 0.85em; color: #555; font-weight: 500; }
+    .pftl-doc-mode { font-size: 0.85em; color: var(--text-2); font-weight: 500; }
     .pftl-section { margin-bottom: 16px; }
     .pftl-section-title { font-size: 0.82em; font-weight: 600; color: var(--text-2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
     .pftl-reasons { list-style: none; padding: 0; margin: 0; }
@@ -1966,8 +1966,8 @@
     .pftl-metric-val { font-size: 1.15em; font-weight: 700; color: var(--text-2); }
     .pftl-metric-label { font-size: 0.72em; color: var(--text-3); margin-top: 2px; }
     .pftl-table { width: 100%; border-collapse: collapse; font-size: 0.8em; }
-    .pftl-table th { background: var(--table-head); padding: 6px 10px; text-align: left; font-weight: 600; color: #555; border-bottom: 2px solid var(--border-1); font-size: 0.85em; }
-    .pftl-table td { padding: 5px 10px; border-bottom: 1px solid var(--border-1); color: #444; }
+    .pftl-table th { background: var(--table-head); padding: 6px 10px; text-align: left; font-weight: 600; color: var(--table-head-text); border-bottom: 2px solid var(--border-1); font-size: 0.85em; }
+    .pftl-table td { padding: 5px 10px; border-bottom: 1px solid var(--border-1); color: var(--text-2); }
     .pftl-table tr:hover td { background: var(--table-row-hover); }
     .pftl-page-mode { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.8em; font-weight: 600; }
     .pftl-page-mode.searchable { background: var(--ok-bg); color: var(--ok); }
@@ -1983,8 +1983,8 @@
     .pftl-raw-content.open { display: block; }
     .pftl-why-gate { background: var(--bg-3); border: 1px solid #bbdefb; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.85em; color: var(--accent-2); line-height: 1.5; }
     .pftl-trace-table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
-    .pftl-trace-table th { background: var(--table-head); padding: 6px 10px; text-align: left; font-weight: 600; color: #555; border-bottom: 2px solid var(--border-1); }
-    .pftl-trace-table td { padding: 5px 10px; border-bottom: 1px solid var(--border-1); color: #444; }
+    .pftl-trace-table th { background: var(--table-head); padding: 6px 10px; text-align: left; font-weight: 600; color: var(--table-head-text); border-bottom: 2px solid var(--border-1); }
+    .pftl-trace-table td { padding: 5px 10px; border-bottom: 1px solid var(--border-1); color: var(--text-2); }
     .pftl-trace-table tr:hover td { background: var(--table-row-hover); }
     .pftl-trace-pass { color: var(--ok); font-weight: 600; }
     .pftl-suggestions-section { margin-top: 20px; border-top: 2px solid var(--border-1); padding-top: 16px; }
@@ -1994,7 +1994,7 @@
     .pftl-sug-stats { display: flex; gap: 12px; margin-bottom: 10px; font-size: 0.8em; }
     .pftl-sug-stat { padding: 4px 10px; background: var(--bg-base); border-radius: 4px; }
     .pftl-sug-group { margin-bottom: 12px; }
-    .pftl-sug-group-header { font-size: 0.78em; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 0; border-bottom: 1px solid var(--border-1); margin-bottom: 4px; }
+    .pftl-sug-group-header { font-size: 0.78em; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 0; border-bottom: 1px solid var(--border-1); margin-bottom: 4px; }
     .pftl-sug-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 4px; font-size: 0.82em; }
     .pftl-sug-row:hover { background: var(--table-row-hover); }
     .pftl-sug-source { font-weight: 500; color: var(--text-2); min-width: 120px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2046,11 +2046,11 @@
     .pftl-trace-level { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.8em; font-weight: 600; }
     .pftl-trace-level.red { background: var(--bad-bg); color: var(--bad); }
     .pftl-trace-level.yellow { background: #fff8e1; color: #f57f17; }
-    .pftl-sample-snippet { font-family: monospace; font-size: 0.85em; background: #fff8e1; border: 1px solid #ffe082; border-radius: 4px; padding: 3px 6px; word-break: break-all; max-width: 400px; display: inline-block; }
+    .pftl-sample-snippet { font-family: monospace; font-size: 0.85em; background: var(--bg-2); border: 1px solid var(--border-1); color: var(--text-1); border-radius: 4px; padding: 3px 6px; word-break: break-all; max-width: 400px; display: inline-block; }
     .pftl-sample-type { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.78em; font-weight: 600; }
     .pftl-sample-type.replacement_char { background: var(--bad-bg); color: var(--bad); }
-    .pftl-sample-type.control_char { background: #fce4ec; color: #ad1457; }
-    .pftl-sample-type.latin_ext_cluster { background: #fff3e0; color: #e65100; }
+    .pftl-sample-type.control_char { background: var(--bad-bg); color: var(--bad); }
+    .pftl-sample-type.latin_ext_cluster { background: var(--warn-bg); color: var(--warn); }
     .pftl-sample-type.mojibake_sequence { background: var(--encoding-bg); color: var(--encoding-ink); }
     .pftl-footer { display: flex; gap: 10px; align-items: center; padding: 12px 24px; border-top: 1px solid var(--border-1); }
     .pftl-footer-note { font-size: 0.75em; color: #999; font-style: italic; margin-left: auto; }
@@ -3562,7 +3562,7 @@
           <!-- QUEUE 1: Pre-Flight -->
           <div class="triage-queue-section" style="margin-bottom: 24px;">
             <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
-              <h3 style="margin: 0; font-size: 1.05em; color: #333;">Pre-Flight <span id="manual-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
+              <h3 style="margin: 0; font-size: 1.05em; color: var(--text-1);">Pre-Flight <span id="manual-queue-count" style="font-weight: 400; color: var(--text-3);">(0)</span></h3>
               <div id="p1a-preflight-issue-filters" style="display: flex; gap: 6px; align-items: center; margin-left: 4px;"></div>
             </div>
             <div id="p1a-preflight-sheet-tabs" style="display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; font-size: 0.82em;"></div>
@@ -3577,11 +3577,11 @@
           <!-- QUEUE 2: System Pass -->
           <div class="triage-queue-section" style="margin-bottom: 24px;">
             <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-              <h3 style="margin: 0; font-size: 1.05em; color: #333;">System Pass <span id="sflogic-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
+              <h3 style="margin: 0; font-size: 1.05em; color: var(--text-1);">System Pass <span id="sflogic-queue-count" style="font-weight: 400; color: var(--text-3);">(0)</span></h3>
             </div>
             <div class="queue-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
-                <thead style="background: #f5f5f5; border-bottom: 1px solid #e0e0e0;">
+                <thead style="background: var(--table-head); border-bottom: 1px solid var(--border-1);">
                   <tr>
                     <th style="padding: 8px 12px;">Type</th>
                     <th style="padding: 8px 12px;">Record</th>
@@ -3591,7 +3591,7 @@
                     <th style="padding: 8px 12px;">Actions</th>
                   </tr>
                 </thead>
-                <tbody id="sflogic-queue-list" style="background: #fffaf5;">
+                <tbody id="sflogic-queue-list" style="background: var(--bg-1);">
                   <tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">No system pass items</td></tr>
                 </tbody>
               </table>
@@ -3599,13 +3599,13 @@
           </div>
 
           <!-- System Pass Controls — folded into Semantic lane context (P0.1) -->
-          <div id="system-pass-controls" style="margin-bottom: 12px; padding: 10px 14px; background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px; font-size: 0.82em;">
+          <div id="system-pass-controls" style="margin-bottom: 12px; padding: 10px 14px; background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 6px; font-size: 0.82em;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span style="color: #f57f17; font-weight: 600;">System Pass</span>
+              <span style="color: var(--warn); font-weight: 600;">System Pass</span>
               <button onclick="rerunSystemPass()" id="btn-rerun-system-pass" class="toolbar-btn" style="padding: 4px 10px; font-size: 0.78em; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer;">Re-run</button>
             </div>
             <div id="system-pass-reason-picker" style="display:none; margin-top:6px;">
-              <label style="font-size:0.78em; color:#333;">Reason:</label>
+              <label style="font-size:0.78em; color:var(--text-2);">Reason:</label>
               <select id="system-pass-reason" style="margin-left:4px; padding:2px 6px; font-size:0.78em; border:1px solid #ccc; border-radius:4px;">
                 <option value="manual_rerun">Manual re-run</option>
                 <option value="ocr_readable">OCR became readable</option>
@@ -8234,7 +8234,7 @@
           '<div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 8px;">' +
           '<div style="text-align: center;"><div style="font-size: 1.1em; font-weight: 700; color: #333;">' + (run.dataset_name || '—') + '</div><div style="font-size: 0.7em; color: #888;">Dataset</div></div>' +
           '<div style="text-align: center;"><div style="font-size: 1.1em; font-weight: 700; color: #1565c0;">' + run.total_contracts + '</div><div style="font-size: 0.7em; color: #888;">Contracts</div></div>' +
-          '<div style="text-align: center;"><div style="font-size: 1.1em; font-weight: 700; color: #e65100;">' + pf.total + '</div><div style="font-size: 0.7em; color: #888;">Pre-Flight Issues</div></div>' +
+          '<div style="text-align: center;"><div style="font-size: 1.1em; font-weight: 700; color: var(--warn);">' + pf.total + '</div><div style="font-size: 0.7em; color: var(--text-3);">Pre-Flight Issues</div></div>' +
           '<div style="text-align: center;"><div style="font-size: 0.85em; color: #555;">' + pf.unknown_columns + ' unk | ' + pf.ocr_unreadable + ' ocr/moji | ' + pf.low_confidence + ' conf | ' + pf.document_type + ' doc</div><div style="font-size: 0.7em; color: #888;">Breakdown</div></div>' +
           '</div>' +
           '<div style="display: flex; gap: 8px;">' +
@@ -28010,7 +28010,7 @@
         if (!_srcLabel) _srcLabel = domainHint || 'Source';
         if (_srcLabel.length > 30) _srcLabel = _srcLabel.substring(0, 28) + '\u2026';
         if (_srcUrl) {
-          html += '<td class="p1d1-domain"><a href="' + escapeHtml(_srcUrl) + '" target="_blank" rel="noopener" title="' + escapeHtml(_srcUrl) + '" style="color:#1565c0;text-decoration:none;font-size:0.9em;" onclick="event.stopPropagation();">' + escapeHtml(_srcLabel) + '</a></td>';
+          html += '<td class="p1d1-domain"><a href="' + escapeHtml(_srcUrl) + '" target="_blank" rel="noopener" title="' + escapeHtml(_srcUrl) + '" style="color:var(--accent-blue);text-decoration:none;font-size:0.9em;" onclick="event.stopPropagation();">' + escapeHtml(_srcLabel) + '</a></td>';
         } else {
           html += '<td class="p1d1-domain">' + escapeHtml(_srcLabel) + '</td>';
         }
@@ -28090,9 +28090,9 @@
           if (_secBlockers > 0) _secBadge += '<span style="color:#bf360c;font-weight:600;font-size:0.82em;margin-left:6px;">' + _secBlockers + ' blocker' + (_secBlockers > 1 ? 's' : '') + '</span>';
           if (_secWarnings > 0) _secBadge += '<span style="color:#f57c00;font-weight:600;font-size:0.82em;margin-left:6px;">' + _secWarnings + ' warning' + (_secWarnings > 1 ? 's' : '') + '</span>';
 
-          html += '<tr class="p1d1-child-row p1d1-section-header" data-parent="' + groupId + '" style="display:' + childDisplay + '; background:#f0f4f8; border-top:1px solid #e0e0e0;">';
+          html += '<tr class="p1d1-child-row p1d1-section-header" data-parent="' + groupId + '" style="display:' + childDisplay + '; background:var(--table-row-hover); border-top:1px solid var(--border-1);">';
           html += '<td></td>';
-          html += '<td colspan="8" style="padding:6px 12px;font-weight:600;font-size:0.9em;color:#37474f;">' + escapeHtml(_secLabel) + _secBadge + '</td>';
+          html += '<td colspan="8" style="padding:6px 12px;font-weight:600;font-size:0.9em;color:var(--text-2);">' + escapeHtml(_secLabel) + _secBadge + '</td>';
           html += '</tr>';
 
           for (var _ii = 0; _ii < _secItems.length; _ii++) {
@@ -41776,7 +41776,7 @@
       if (!container) return;
       
       if (items.length === 0) {
-        container.innerHTML = '<tr><td colspan="' + (isPreFlight ? '8' : '7') + '" style="padding: 24px; text-align: center; color: #999;">' + emptyMessage + '</td></tr>';
+        container.innerHTML = '<tr><td colspan="' + (isPreFlight ? '8' : '7') + '" style="padding: 24px; text-align: center; color: var(--text-3);">' + emptyMessage + '</td></tr>';
         return;
       }
       
@@ -41816,7 +41816,7 @@
         }
         if (recordDisplay.length > 28) recordDisplay = recordDisplay.substring(0, 26) + '...';
         
-        var rowStyle = item.section === 'clarification' ? 'background: #fff8e1;' : '';
+        var rowStyle = item.section === 'clarification' ? 'background: var(--warn-bg);' : '';
         
         // v1.6.0: Different click handlers for signal vs patch request items
         var clickHandler = item.source === 'signal' 
@@ -41835,20 +41835,20 @@
         var preflightBadge = '';
         if (isPreFlight && item.blocker_type && typeof _preflightBlockerTypes !== 'undefined') {
           var bt = _preflightBlockerTypes[item.blocker_type] || {};
-          var badgeClass = bt.badge === 'fail' ? 'background:#ffebee; color:#c62828; border:1px solid #ef9a9a;' : 'background:#fff3e0; color:#e65100; border:1px solid #ffe082;';
+          var badgeClass = bt.badge === 'fail' ? 'background:var(--bad-bg); color:var(--bad); border:1px solid var(--bad-border);' : 'background:var(--warn-bg); color:var(--warn); border:1px solid var(--warn-border);';
           preflightBadge = ' <span style="display:inline-flex; align-items:center; gap:2px; padding:1px 6px; border-radius:10px; font-size:0.75em; font-weight:600; ' + badgeClass + '" title="' + (bt.desc || '') + '">' + (bt.icon || '') + ' ' + (bt.label || item.blocker_type) + '</span>';
         }
         var patchFromBlockerBtn = '';
         if (isPreFlight && item.can_create_patch && item.status === 'open') {
           patchFromBlockerBtn = ' <button class="btn-secondary" style="padding:2px 6px; font-size:0.72em; background:#e3f2fd; border:1px solid #bbdefb;" onclick="event.stopPropagation(); createPatchFromBlocker(\'' + (item.request_id || '') + '\', \'' + (item.record_id || '') + '\', \'' + (item.field_name || '') + '\', \'' + (item.blocker_type || '') + '\')">Create Patch</button>';
         }
-        return '<tr style="border-bottom: 1px solid #eee; cursor: pointer; ' + rowStyle + '" onclick="' + clickHandler + '">' +
+        return '<tr style="border-bottom: 1px solid var(--border-1); cursor: pointer; ' + rowStyle + '" onclick="' + clickHandler + '">' +
           '<td style="padding: 10px 12px;"><span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + typeBadgeColor + '15; color: ' + typeBadgeColor + ';" title="' + getTriageTypeTip(item.type) + '">' + typeLabel + '</span>' + preflightBadge + '</td>' +
           '<td style="padding: 10px 12px; font-family: monospace; font-size: 0.85em;">' + recordDisplay + '</td>' +
           '<td style="padding: 10px 12px;">' + (item.field_name || '-') + '</td>' +
-          '<td style="padding: 10px 12px; font-size: 0.82em;">' + (isPreFlight && item.blocker_type ? (function() { var _bt = _preflightBlockerTypes[item.blocker_type] || {}; var _reasonLabel = _bt.label || (item.blocker_type || '').replace(/_/g, ' '); var _reasonTip = _bt.desc || item.message || ''; return '<span style="display:inline-block; padding: 2px 7px; border-radius: 3px; background: #fff3e0; color: #e65100; font-size: 0.85em; font-weight: 500; cursor: help;" title="' + _reasonTip.replace(/"/g, '&quot;') + '">' + _reasonLabel + '</span>'; })() : (item.reason_summary || item.signal_type || '-')) + '</td>' +
+          '<td style="padding: 10px 12px; font-size: 0.82em;">' + (isPreFlight && item.blocker_type ? (function() { var _bt = _preflightBlockerTypes[item.blocker_type] || {}; var _reasonLabel = _bt.label || (item.blocker_type || '').replace(/_/g, ' '); var _reasonTip = _bt.desc || item.message || ''; return '<span style="display:inline-block; padding: 2px 7px; border-radius: 3px; background: var(--warn-bg); color: var(--warn); font-size: 0.85em; font-weight: 500; cursor: help;" title="' + _reasonTip.replace(/"/g, '&quot;') + '">' + _reasonLabel + '</span>'; })() : (item.reason_summary || item.signal_type || '-')) + '</td>' +
           '<td style="padding: 10px 12px;">' + statusBadge + notesIndicator + _threadSnippet + '</td>' +
-          '<td style="padding: 10px 12px; color: #666; font-size: 0.85em;">' + timestamp + '</td>' +
+          '<td style="padding: 10px 12px; color: var(--text-3); font-size: 0.85em;">' + timestamp + '</td>' +
           '<td style="padding: 10px 12px;"><button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75em;" onclick="event.stopPropagation(); ' + viewHandler + '">View</button>' + patchFromBlockerBtn + '</td>' +
           (function() { var qHealthHtml = '<td style="padding:10px 12px; text-align:center;">'; if (typeof ContractHealthScore !== 'undefined') { var qCk = item.contract_key || item.contract_id || ''; var qHs = qCk ? ContractHealthScore._scores[qCk] : null; if (qHs) { qHealthHtml += '<span style="padding:2px 6px;border-radius:10px;font-size:0.85em;background:' + qHs.band.bg + ';color:' + qHs.band.color + ';font-weight:600;cursor:help;" title="Health: ' + qHs.score + '/100 (' + qHs.band.label + ')">' + qHs.score + '</span>'; } else { qHealthHtml += '-'; } } else { qHealthHtml += '-'; } qHealthHtml += '</td>'; return qHealthHtml; })() +
           '</tr>';
@@ -50651,7 +50651,7 @@ Add any additional notes here.
 
     /* ── P1D: Contract-Centric Pre-Flight Grouping ── */
     .p1d-empty-state { text-align: center; padding: 30px; color: #999; font-size: 0.9em; }
-    .p1d1-health-table { width: 100%; border-collapse: collapse; font-size: 0.84em; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; }
+    .p1d1-health-table { width: 100%; border-collapse: collapse; font-size: 0.84em; border: 1px solid var(--border-1); border-radius: 6px; overflow: hidden; }
     
     /* P1F.1: Live Intake table styles */
     .p1f1-live-intake { width: 100%; border-collapse: collapse; font-size: 0.82em; border: 1px solid #dcedc8; border-radius: 6px; overflow: hidden; margin-bottom: 14px; }
@@ -50671,30 +50671,30 @@ Add any additional notes here.
     .p1f1-scan-active-label { display: inline-block; background: #e3f2fd; color: #1565c0; font-size: 0.78em; padding: 2px 8px; border-radius: 10px; font-weight: 600; margin-left: 8px; animation: p1f1Pulse 1.5s infinite; }
     @keyframes p1f1Pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-    .p1d1-health-table thead th { padding: 8px 10px; text-align: left; font-weight: 600; color: #555; background: #f5f5f5; border-bottom: 2px solid #e0e0e0; font-size: 0.88em; white-space: nowrap; }
-    .p1d1-parent-row { cursor: pointer; background: #fafafa; border-bottom: 1px solid #e0e0e0; }
-    .p1d1-parent-row:hover { background: #f0f4f8; }
+    .p1d1-health-table thead th { padding: 8px 10px; text-align: left; font-weight: 600; color: var(--table-head-text); background: var(--table-head); border-bottom: 2px solid var(--border-1); font-size: 0.88em; white-space: nowrap; }
+    .p1d1-parent-row { cursor: pointer; background: var(--table-row); border-bottom: 1px solid var(--border-1); }
+    .p1d1-parent-row:hover { background: var(--table-row-hover); }
 
     .p1d1-parent-row td { padding: 9px 10px; font-weight: 500; vertical-align: middle; }
-    .p1d1-caret { width: 30px; text-align: center; color: #666; font-size: 0.75em; user-select: none; }
-    .p1d1-contract-name { font-weight: 600; color: #333; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .p1d1-contract-id code { font-size: 0.8em; color: #888; background: #f0f0f0; padding: 1px 5px; border-radius: 3px; }
-    .p1d1-domain { font-size: 0.78em; color: #999; }
-    .p1d1-issue-count { font-weight: 700; color: #333; text-align: center; }
+    .p1d1-caret { width: 30px; text-align: center; color: var(--text-3); font-size: 0.75em; user-select: none; }
+    .p1d1-contract-name { font-weight: 600; color: var(--text-1); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .p1d1-contract-id code { font-size: 0.8em; color: var(--text-3); background: var(--bg-3); padding: 1px 5px; border-radius: 3px; }
+    .p1d1-domain { font-size: 0.78em; color: var(--text-3); }
+    .p1d1-issue-count { font-weight: 700; color: var(--text-1); text-align: center; }
     .p1d1-sections { display: flex; gap: 3px; flex-wrap: wrap; }
-    .p1d1-section-chip { font-size: 0.72em; padding: 1px 6px; border-radius: 10px; font-weight: 500; background: #e3f2fd; color: #1565c0; white-space: nowrap; }
+    .p1d1-section-chip { font-size: 0.72em; padding: 1px 6px; border-radius: 10px; font-weight: 500; background: var(--info-bg); color: var(--info); white-space: nowrap; }
     .p1d1-sev-badge { display: inline-block; font-size: 0.72em; padding: 1px 7px; border-radius: 10px; font-weight: 600; margin-right: 3px; }
-    .p1d1-sev-badge.blocker { background: #fbe9e7; color: #bf360c; }
-    .p1d1-sev-badge.warning { background: #fff3e0; color: #e65100; }
-    .p1d1-child-row { background: #fff; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
-    .p1d1-child-row:hover { background: #f8f9fa; }
-    .p1d1-child-row td { padding: 7px 10px; font-weight: 400; font-size: 0.95em; color: #444; }
-    .p1d1-child-section { font-weight: 500; color: #1565c0; }
-    .p1d1-child-ref { color: #555; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .p1d1-sev-badge.blocker { background: var(--bad-bg); color: var(--bad); }
+    .p1d1-sev-badge.warning { background: var(--warn-bg); color: var(--warn); }
+    .p1d1-child-row { background: var(--bg-1); border-bottom: 1px solid var(--border-1); cursor: pointer; }
+    .p1d1-child-row:hover { background: var(--table-row-hover); }
+    .p1d1-child-row td { padding: 7px 10px; font-weight: 400; font-size: 0.95em; color: var(--text-2); }
+    .p1d1-child-section { font-weight: 500; color: var(--accent-blue); }
+    .p1d1-child-ref { color: var(--text-3); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .p1d1-reason-chip { display: inline-block; padding: 2px 7px; border-radius: 3px; background: #fff3e0; color: #e65100; font-size: 0.88em; font-weight: 500; cursor: help; }
     .p1d1-status-badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 0.75em; font-weight: 600; }
-    .p1d1-view-btn { padding: 4px 10px; font-size: 0.78em; font-weight: 500; border: 1px solid #bbdefb; background: #e3f2fd; color: #1565c0; border-radius: 4px; cursor: pointer; white-space: nowrap; }
-    .p1d1-view-btn:hover { background: #bbdefb; }
+    .p1d1-view-btn { padding: 4px 10px; font-size: 0.78em; font-weight: 500; border: 1px solid var(--info-border); background: var(--info-bg); color: var(--info); border-radius: 4px; cursor: pointer; white-space: nowrap; }
+    .p1d1-view-btn:hover { background: var(--accent-blue); color: var(--text-inv); }
     .p1d1-view-btn.small { padding: 2px 7px; font-size: 0.74em; }
     .p1d1-patch-btn { padding: 2px 6px; font-size: 0.72em; background: #e3f2fd; border: 1px solid #bbdefb; border-radius: 4px; color: #1565c0; cursor: pointer; margin-left: 4px; }
     .p1d1-patch-btn:hover { background: #bbdefb; }
