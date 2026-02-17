@@ -30,6 +30,7 @@
       --accent-border: #2D4A7B;
       --focus-ring: #88C4FF;
       --ember-border: #FF8A3D;
+      --accent-orange: #FF7A18;
       --ember-glow: rgba(255, 138, 61, 0.35);
       --ok: #39D98A;
       --warn: #FFD166;
@@ -55,18 +56,18 @@
     /* --- Toggle UI --- */
     .dark-mode-toggle-row {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 8px 16px; border-top: 1px solid #2d2d4a;
+      padding: 8px 16px; border-top: 1px solid var(--sidebar-border, #2d2d4a);
     }
-    .dark-mode-toggle-row .dm-label { font-size: 0.78em; color: #888; display: flex; align-items: center; gap: 6px; }
+    .dark-mode-toggle-row .dm-label { font-size: 0.78em; color: var(--sidebar-text, #888); display: flex; align-items: center; gap: 6px; }
     .dark-mode-switch { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
     .dark-mode-switch input { opacity: 0; width: 0; height: 0; }
     .dark-mode-slider {
       position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-      background: #555; border-radius: 11px; transition: background 0.3s;
+      background: var(--sidebar-border); border-radius: 11px; transition: background 0.3s;
     }
     .dark-mode-slider::before {
       content: ''; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px;
-      background: white; border-radius: 50%; transition: transform 0.3s;
+      background: var(--sidebar-text-hover, white); border-radius: 50%; transition: transform 0.3s;
     }
     .dark-mode-switch input:checked + .dark-mode-slider { background: var(--accent-bright, #7DB3FF); }
     .dark-mode-switch input:checked + .dark-mode-slider::before { transform: translateX(18px); }
@@ -104,11 +105,17 @@
     html[data-theme="dark"] .nav-item { color: var(--text-secondary); }
     html[data-theme="dark"] .nav-item:hover { background: var(--bg-3); color: var(--text-primary); }
     html[data-theme="dark"] .nav-item.active {
-      background: var(--bg-4); color: var(--text-primary);
-      border-left: 3px solid var(--ember-border);
-      box-shadow: 0 0 12px var(--glow-ember-soft);
+      background: rgba(59,130,246,0.08); color: var(--text-primary);
+      border-left-color: transparent;
+      box-shadow: inset 3px 0 0 var(--accent-orange);
     }
+    html[data-theme="dark"] .nav-item.active .sidebar-icon { filter: drop-shadow(0 0 4px rgba(255,122,24,0.4)); }
+    html[data-theme="dark"] .nav-sidebar.collapsed .nav-item .sidebar-icon-wrap { background: rgba(255,255,255,0.04); }
+    html[data-theme="dark"] .nav-section-header { color: var(--text-muted); }
     html[data-theme="dark"] .nav-section-label { color: var(--text-muted); font-weight: 600; }
+    html[data-theme="dark"] .sidebar-collapse-btn { border-color: var(--border-soft); color: var(--text-muted); }
+    html[data-theme="dark"] .sidebar-collapse-btn:hover { background: var(--bg-3); color: var(--text-primary); border-color: var(--border-med); }
+    html[data-theme="dark"] .sidebar-icon { stroke: currentColor; }
     html[data-theme="dark"] .nav-action-btn { color: var(--text-secondary); border-color: var(--border-soft); }
     html[data-theme="dark"] .nav-action-btn:hover { background: var(--bg-3); color: var(--text-primary); border-color: var(--border-med); }
     html[data-theme="dark"] .nav-action-btn.export-btn { border-color: var(--border-soft); }
@@ -539,49 +546,118 @@
     }
 
     .app-layout { display: flex; min-height: 100vh; }
-    .nav-sidebar { width: 280px; background: #1a1a2e; color: white; flex-shrink: 0; display: flex; flex-direction: column; overflow-y: auto; }
-    .nav-header { padding: 16px 20px; border-bottom: 1px solid #2d2d4a; }
+    :root {
+      --sidebar-bg: #1a1a2e;
+      --sidebar-border: #2d2d4a;
+      --sidebar-text: #aaa;
+      --sidebar-text-hover: #fff;
+      --sidebar-hover-bg: #2d2d4a;
+      --sidebar-section-header: #666;
+      --accent-orange: #FF7A18;
+      --accent-blue: #1565c0;
+      --status-bad: #c62828;
+    }
+    html[data-theme="dark"] {
+      --sidebar-bg: var(--bg-2);
+      --sidebar-border: var(--border-soft);
+      --sidebar-text: var(--text-secondary);
+      --sidebar-text-hover: var(--text-primary);
+      --sidebar-hover-bg: var(--bg-3);
+      --sidebar-section-header: var(--text-muted);
+      --accent-blue: #3B82F6;
+      --status-bad: var(--bad);
+    }
+    .nav-sidebar { width: 240px; background: var(--sidebar-bg); color: white; flex-shrink: 0; display: flex; flex-direction: column; overflow-y: auto; transition: width 0.25s ease; }
+    .nav-sidebar.collapsed { width: 72px; }
+    .nav-header { padding: 16px 20px; border-bottom: 1px solid var(--sidebar-border); display: flex; align-items: center; gap: 12px; }
     .nav-header h1 { font-size: 1em; color: white; margin: 0; }
-    .nav-header .version { font-size: 0.7em; color: #888; margin-top: 4px; }
+    .nav-header .version { font-size: 0.7em; color: var(--sidebar-section-header); margin-top: 4px; }
+    .nav-sidebar.collapsed .nav-header { padding: 16px 12px; justify-content: center; }
+    .nav-sidebar.collapsed .nav-header .nav-brand-text { display: none; }
+    .sidebar-collapse-btn { background: none; border: 1px solid var(--sidebar-border); color: var(--sidebar-text); width: 28px; height: 28px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; margin-left: auto; padding: 0; }
+    .sidebar-collapse-btn:hover { background: var(--sidebar-hover-bg); color: var(--sidebar-text-hover); border-color: var(--sidebar-section-header); }
+    .sidebar-collapse-btn svg { transition: transform 0.25s ease; }
+    .nav-sidebar.collapsed .sidebar-collapse-btn svg { transform: rotate(180deg); }
+    .nav-sidebar.collapsed .sidebar-collapse-btn { margin-left: 0; }
     .nav-menu { flex: 1 1 auto; padding: 10px 0; overflow-y: auto; min-height: 0; }
-    .nav-footer { flex-shrink: 0; background: #1a1a2e; border-top: 1px solid #333; }
+    .nav-footer { flex-shrink: 0; background: var(--sidebar-bg); border-top: 1px solid var(--sidebar-border); }
     .nav-section { margin-bottom: 8px; }
-    .nav-section-header { padding: 8px 20px 6px; font-size: 0.65em; color: #666; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-    .nav-item { display: flex; align-items: center; padding: 10px 20px; color: #aaa; text-decoration: none; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
-    .nav-item:hover { background: #2d2d4a; color: white; }
-    .nav-item.active { background: #0f3460; color: white; border-left-color: #1565c0; }
+    .nav-section-header { padding: 8px 20px 6px; font-size: 0.65em; color: var(--sidebar-section-header); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; transition: opacity 0.2s; }
+    .nav-sidebar.collapsed .nav-section-header { opacity: 0; height: 0; padding: 0; overflow: hidden; }
+    .nav-item { display: flex; align-items: center; padding: 10px 20px; color: var(--sidebar-text); text-decoration: none; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
+    .nav-item:hover { background: var(--sidebar-hover-bg); color: var(--sidebar-text-hover); }
+    .nav-item.active { background: rgba(59,130,246,0.08); color: white; border-left-color: transparent; box-shadow: inset 3px 0 0 var(--accent-orange, #FF7A18); }
+    .nav-item.active .sidebar-icon { filter: drop-shadow(0 0 4px rgba(255,122,24,0.4)); }
+    .nav-sidebar.collapsed .nav-item { padding: 10px 0; justify-content: center; border-left: none; }
+    .nav-sidebar.collapsed .nav-item.active { box-shadow: inset 3px 0 0 var(--accent-orange, #FF7A18); }
+    .nav-sidebar.collapsed .nav-item .nav-label,
+    .nav-sidebar.collapsed .nav-item .nav-expand-arrow,
+    .nav-sidebar.collapsed .nav-item .nav-count,
+    .nav-sidebar.collapsed .nav-item .nav-severity-chips { display: none; }
+    .nav-sidebar.collapsed .nav-item .sidebar-icon-wrap { background: rgba(255,255,255,0.06); border-radius: 12px; padding: 10px; display: flex; align-items: center; justify-content: center; }
     .nav-parent { position: relative; }
-    .nav-expand-arrow { margin-left: auto; font-size: 0.7em; transition: transform 0.2s; color: #888; }
-    .nav-parent.expanded .nav-expand-arrow { transform: rotate(90deg); color: #ccc; }
+    .nav-expand-arrow { margin-left: auto; font-size: 0.7em; transition: transform 0.2s; color: var(--sidebar-text); }
+    .nav-parent.expanded .nav-expand-arrow { transform: rotate(90deg); color: var(--sidebar-text-hover); }
     .nav-subitems { display: none; overflow: hidden; }
     .nav-subitems.expanded { display: block; }
+    .nav-sidebar.collapsed .nav-subitems { display: none !important; }
     .nav-subitem { padding-left: 40px !important; font-size: 0.95em; }
-    .nav-subitem .nav-icon { font-size: 0.85em; }
+    .nav-subitem .sidebar-icon { width: 18px; height: 18px; }
     .nav-subparent { position: relative; }
-    .nav-subparent.expanded .nav-expand-arrow { transform: rotate(90deg); color: #ccc; }
+    .nav-subparent.expanded .nav-expand-arrow { transform: rotate(90deg); color: var(--sidebar-text-hover); }
     .nav-level3 { display: none; }
     .nav-level3.expanded { display: block; }
-    .nav-level3 .nav-section-link { display: block; padding: 6px 16px 6px 56px; color: #bbb; font-size: 0.88em; cursor: pointer; transition: all 0.15s; text-decoration: none; border-left: 3px solid transparent; }
-    .nav-level3 .nav-section-link:hover { color: #fff; background: #2d2d4a; }
-    .nav-level3 .nav-section-link.active { color: #fff; background: #0f3460; border-left-color: #42a5f5; }
+    .nav-level3 .nav-section-link { display: block; padding: 6px 16px 6px 56px; color: var(--sidebar-text); font-size: 0.88em; cursor: pointer; transition: all 0.15s; text-decoration: none; border-left: 3px solid transparent; }
+    .nav-level3 .nav-section-link:hover { color: var(--sidebar-text-hover); background: var(--sidebar-hover-bg); }
+    .nav-level3 .nav-section-link.active { color: var(--sidebar-text-hover); background: rgba(59,130,246,0.08); border-left-color: var(--accent-orange); }
+    .nav-sidebar.collapsed .nav-level3 { display: none !important; }
     .nav-item.queue-item { padding: 8px 20px; }
-    .nav-icon { width: 18px; margin-right: 10px; text-align: center; font-size: 0.9em; }
-    .nav-label { font-size: 0.85em; flex-grow: 1; }
-    .nav-count { background: #3d3d5c; color: #aaa; padding: 2px 8px; border-radius: 10px; font-size: 0.7em; font-weight: 600; margin-left: 8px; }
-    .nav-count.has-items { background: #1565c0; color: white; }
-    .nav-count.blocking { background: #c62828; color: white; }
+
+    .sidebar-icon {
+      width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.8;
+      fill: none; stroke-linecap: round; stroke-linejoin: round;
+      transition: all 0.2s ease; flex-shrink: 0;
+    }
+    .sidebar-icon-wrap { display: flex; align-items: center; justify-content: center; margin-right: 10px; flex-shrink: 0; transition: all 0.2s; }
+    .nav-sidebar.collapsed .sidebar-icon-wrap { margin-right: 0; }
+    .nav-label { font-size: 0.85em; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity 0.2s; }
+    .nav-count { background: var(--sidebar-hover-bg); color: var(--sidebar-text); padding: 2px 8px; border-radius: 10px; font-size: 0.7em; font-weight: 600; margin-left: 8px; }
+    .nav-count.has-items { background: var(--accent-blue, #1565c0); color: white; }
+    .nav-count.blocking { background: var(--status-bad, #c62828); color: white; }
     .nav-severity-chips { display: flex; gap: 3px; margin-left: 8px; }
     .nav-severity-chip { width: 6px; height: 6px; border-radius: 50%; }
-    .nav-severity-chip.blocking { background: #c62828; }
-    .nav-severity-chip.warning { background: #f57c00; }
-    .nav-severity-chip.info { background: #1565c0; }
-    .nav-divider { height: 1px; background: #2d2d4a; margin: 8px 20px; }
-    .nav-mode-section { padding: 12px 20px; border-top: 1px solid #2d2d4a; }
-    .nav-mode-label { font-size: 0.65em; color: #666; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
+    .nav-severity-chip.blocking { background: var(--status-bad, #c62828); }
+    .nav-severity-chip.warning { background: var(--accent-orange); }
+    .nav-severity-chip.info { background: var(--accent-blue, #1565c0); }
+    .nav-divider { height: 1px; background: var(--sidebar-border); margin: 8px 20px; }
+
+    .nav-sidebar.collapsed .nav-footer .nav-section,
+    .nav-sidebar.collapsed .nav-footer .cache-info,
+    .nav-sidebar.collapsed .nav-footer .nav-divider,
+    .nav-sidebar.collapsed .dark-mode-toggle-row .dm-label span:not(#dm-icon-svg),
+    .nav-sidebar.collapsed .nav-mode-section .nav-mode-label,
+    .nav-sidebar.collapsed .nav-mode-section .mode-toggle,
+    .nav-sidebar.collapsed #locked-role-display,
+    .nav-sidebar.collapsed #sidebar-user-name,
+    .nav-sidebar.collapsed #sidebar-user-role,
+    .nav-sidebar.collapsed #role-sim-badges,
+    .nav-sidebar.collapsed #sign-out-link,
+    .nav-sidebar.collapsed .progress-block .progress-header,
+    .nav-sidebar.collapsed .progress-block .progress-stats,
+    .nav-sidebar.collapsed .progress-block .progress-bar-container,
+    .nav-sidebar.collapsed .active-data-source-bar,
+    .nav-sidebar.collapsed #locked-role-display-top { display: none !important; }
+    .nav-sidebar.collapsed .nav-mode-section { padding: 8px; }
+    .nav-sidebar.collapsed .dark-mode-toggle-row { justify-content: center; padding: 8px; }
+    .nav-sidebar.collapsed #sidebar-user-profile { justify-content: center; padding: 8px; }
+    .nav-sidebar.collapsed .nav-footer { display: none; }
+    .nav-sidebar.collapsed .dm-label-text { display: none; }
+    .nav-mode-section { padding: 12px 20px; border-top: 1px solid var(--sidebar-border); }
+    .nav-mode-label { font-size: 0.65em; color: var(--sidebar-section-header); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
     .mode-toggle { display: flex; gap: 4px; flex-wrap: wrap; }
-    .mode-btn { padding: 6px 12px; font-size: 0.75em; border: 1px solid #555; background: transparent; color: #aaa; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
-    .mode-btn:hover { border-color: #888; color: white; }
-    .mode-btn.active { background: #1565c0; border-color: #1565c0; color: white; }
+    .mode-btn { padding: 6px 12px; font-size: 0.75em; border: 1px solid var(--sidebar-border); background: transparent; color: var(--sidebar-text); border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+    .mode-btn:hover { border-color: var(--sidebar-section-header); color: var(--sidebar-text-hover); }
+    .mode-btn.active { background: var(--accent-blue, #1565c0); border-color: var(--accent-blue, #1565c0); color: white; }
     .mode-btn.mode-analyst { }
     .mode-btn.mode-verifier { }
     .mode-btn.mode-admin { }
@@ -2863,16 +2939,30 @@
         document.documentElement.removeAttribute('data-theme');
         localStorage.setItem('orchestrate-dark-mode', 'false');
       }
-      var icon = document.getElementById('dm-icon');
-      if (icon) icon.textContent = enabled ? '☀️' : '🌙';
     }
+
+    function toggleSidebarCollapse() {
+      var sidebar = document.getElementById('nav-sidebar');
+      if (!sidebar) return;
+      sidebar.classList.toggle('collapsed');
+      var isCollapsed = sidebar.classList.contains('collapsed');
+      localStorage.setItem('orchestrate-sidebar-collapsed', isCollapsed ? 'true' : 'false');
+      var btn = document.getElementById('sidebar-collapse-btn');
+      if (btn) btn.title = isCollapsed ? 'Expand sidebar' : 'Collapse sidebar';
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
       var cb = document.getElementById('dark-mode-checkbox');
       if (cb) {
         var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
         cb.checked = isDark;
-        var icon = document.getElementById('dm-icon');
-        if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+      }
+      var sidebarCollapsed = localStorage.getItem('orchestrate-sidebar-collapsed');
+      if (sidebarCollapsed === 'true') {
+        var sidebar = document.getElementById('nav-sidebar');
+        if (sidebar) sidebar.classList.add('collapsed');
+        var btn = document.getElementById('sidebar-collapse-btn');
+        if (btn) btn.title = 'Expand sidebar';
       }
     });
   </script>
@@ -2886,15 +2976,18 @@
   <div id="debug-hud" class="admin-only-content" style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: #0f0; font-family: monospace; font-size: 11px; padding: 4px 8px; border-radius: 4px; z-index: 99999;">Route: - | Data: - | Mode: -</div>
   
   <div class="app-layout">
-    <nav class="nav-sidebar">
-      <div class="nav-header" style="display: flex; align-items: center; gap: 12px; height: 56px; padding: 10px 16px;">
-        <div style="width: 44px; height: 44px; flex-shrink: 0; filter: drop-shadow(0 0 8px rgba(100, 200, 255, 0.6)) drop-shadow(0 0 16px rgba(100, 200, 255, 0.3));">
+    <nav class="nav-sidebar" id="nav-sidebar">
+      <div class="nav-header" style="height: 56px; padding: 10px 16px;">
+        <div style="width: 36px; height: 36px; flex-shrink: 0; filter: drop-shadow(0 0 8px rgba(100, 200, 255, 0.6)) drop-shadow(0 0 16px rgba(100, 200, 255, 0.3));">
           <img src="../../assets/brand/orchestrate-os-logo.svg" alt="Orchestrate OS" title="Orchestrate OS" style="width: 100%; height: 100%; display: block; object-fit: contain;">
         </div>
-        <div>
+        <div class="nav-brand-text">
           <h1 style="font-size: 0.95em; margin: 0;">Orchestrate OS</h1>
           <div class="version">Semantic Control Board</div>
         </div>
+        <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" onclick="toggleSidebarCollapse()" title="Collapse sidebar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
       </div>
       <div class="nav-menu">
         <!-- Progress Block (routes to Triage) -->
@@ -2939,15 +3032,14 @@
         <div class="nav-section">
           <div class="nav-section-header">Navigation</div>
 
-          <!-- View Mode: Triage (top-level) with nested sub-items -->
-          <a class="nav-item nav-parent" data-page="triage" href="#/triage" onclick="_toggleTriageSubnav();">
-            <span class="nav-icon">📋</span>
+          <a class="nav-item nav-parent" data-page="triage" href="#/triage" onclick="_toggleTriageSubnav();" title="Triage">
+            <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></span>
             <span class="nav-label">Triage</span>
             <span class="nav-expand-arrow" id="triage-expand-arrow">&#9656;</span>
           </a>
           <div class="nav-subitems" id="triage-subnav">
-            <a class="nav-item nav-subitem nav-subparent" data-page="grid" href="#/grid" onclick="gridState.sheet = null;">
-              <span class="nav-icon">📊</span>
+            <a class="nav-item nav-subitem nav-subparent" data-page="grid" href="#/grid" onclick="gridState.sheet = null;" title="Record Inspector">
+              <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg></span>
               <span class="nav-label">Record Inspector</span>
               <span class="nav-expand-arrow" id="grid-expand-arrow">&#9656;</span>
             </a>
@@ -2962,35 +3054,34 @@
               <a class="nav-section-link" data-section="v2_add_ons" href="#" onclick="_selectGridSection('V2 Add Ons'); return false;">V2 Add Ons</a>
             </div>
           </div>
-          <a class="nav-item verifier-only" data-page="verifier-review" href="#/verifier-review">
-            <span class="nav-icon">✓</span>
+          <a class="nav-item verifier-only" data-page="verifier-review" href="#/verifier-review" title="Verifier Review">
+            <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></span>
             <span class="nav-label">Verifier Review</span>
           </a>
         </div>
 
         <div class="nav-divider"></div>
 
-        <!-- Tools Section -->
         <div class="nav-section">
           <div class="nav-section-header">Tools</div>
-          <a class="nav-item analyst-only" data-page="patch" href="#/patch">
-            <span class="nav-icon">✎</span>
+          <a class="nav-item analyst-only" data-page="patch" href="#/patch" title="Patch Studio">
+            <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span>
             <span class="nav-label">Patch Studio</span>
           </a>
-          <a class="nav-item verifier-only" data-page="review" href="#/review">
-            <span class="nav-icon">🔍</span>
+          <a class="nav-item verifier-only" data-page="review" href="#/review" title="Config Inspector">
+            <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
             <span class="nav-label">Config Inspector</span>
           </a>
-          <a class="nav-item admin-only" data-page="admin-approval" href="#/admin-approval">
-            <span class="nav-icon">✓✓</span>
+          <a class="nav-item admin-only" data-page="admin-approval" href="#/admin-approval" title="Admin Approval">
+            <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
             <span class="nav-label">Admin Approval</span>
           </a>
-          <a class="nav-item admin-only" data-page="admin" href="#/admin">
-            <span class="nav-icon">⚙</span>
+          <a class="nav-item admin-only" data-page="admin" href="#/admin" title="Admin Panel">
+            <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
             <span class="nav-label">Admin Panel</span>
           </a>
-          <a class="nav-item admin-only" id="nav-config-flows" href="#" onclick="openConfigFlows(); return false;">
-            <span class="nav-icon">🔧</span>
+          <a class="nav-item admin-only" id="nav-config-flows" href="#" onclick="openConfigFlows(); return false;" title="Config Flows">
+            <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="12" y1="2" x2="12" y2="22"/></svg></span>
             <span class="nav-label">Config Flows</span>
           </a>
         </div>
@@ -3022,16 +3113,16 @@
         <div class="nav-section" style="padding: 12px 16px;">
           <div style="display:flex;gap:4px;">
             <button class="nav-action-btn export-btn" onclick="handleExportClean()" style="flex:1;font-size:0.78em;" title="Download Excel with your edits only — no extra audit sheets">
-              <span class="nav-action-icon">💾</span>
+              <span class="nav-action-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
               <span>Export</span>
             </button>
             <button class="nav-action-btn export-btn" onclick="handleExportFull()" style="flex:1;font-size:0.78em;background:#2e7d32;color:#fff;" title="Download Excel with change log, signals, RFIs, and audit trail">
-              <span class="nav-action-icon">📋</span>
+              <span class="nav-action-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
               <span>Export Full</span>
             </button>
           </div>
           <button class="nav-action-btn export-btn" onclick="handleSaveToDrive()" style="margin-top:6px;background:#1a73e8;color:#fff;" title="Save full workbook with audit trail to Google Drive for verifier review">
-            <span class="nav-action-icon">☁️</span>
+            <span class="nav-action-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></span>
             <span>Save to Drive</span>
           </button>
         </div>
@@ -3046,9 +3137,8 @@
         <div id="locked-role-display" style="display: none; padding: 6px 12px; font-size: 0.75em; background: rgba(21, 101, 192, 0.15); color: #64b5f6; border-radius: 4px; text-align: center;"></div>
       </div>
       
-      <!-- Dark Mode Toggle -->
       <div class="dark-mode-toggle-row">
-        <span class="dm-label"><span id="dm-icon">🌙</span> Dark Mode</span>
+        <span class="dm-label"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> <span class="dm-label-text">Dark Mode</span></span>
         <label class="dark-mode-switch">
           <input type="checkbox" id="dark-mode-checkbox" onchange="toggleDarkMode(this.checked)">
           <span class="dark-mode-slider"></span>
@@ -3063,8 +3153,8 @@
           <div id="sidebar-user-role" style="font-size: 0.7em; color: #888; text-transform: capitalize;"></div>
           <div id="role-sim-badges" style="display:none;gap:4px;flex-wrap:wrap;margin-top:2px;"></div>
         </div>
-        <a href="#" id="sign-out-link" onclick="handleSignOut(event)" title="Sign Out" style="color: #666; font-size: 1em; text-decoration: none; flex-shrink: 0; transition: color 0.2s;">
-          <span>←</span>
+        <a href="#" id="sign-out-link" onclick="handleSignOut(event)" title="Sign Out" style="color: #666; text-decoration: none; flex-shrink: 0; transition: color 0.2s;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         </a>
       </div>
       
@@ -3074,7 +3164,7 @@
       
       <!-- Empty Queue Message (visible when no data loaded) -->
       <div class="empty-queue-message" id="empty-queue-message">
-        <div class="empty-queue-icon">📋</div>
+        <div class="empty-queue-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></div>
         <h3>No records loaded yet</h3>
         <p>Import a dataset to start working.</p>
         <button class="empty-queue-cta" id="empty-queue-load" onclick="openDataSourcePanel()">Add Data Source</button>
@@ -3086,7 +3176,7 @@
 
           <!-- PRIMARY ACTION PANEL: Continue to Triage (shown when dataset active) -->
           <div id="loader-continue-panel" style="display: none; background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); border-radius: 12px; padding: 30px; margin-bottom: 30px; color: white; text-align: center;">
-            <div style="font-size: 2em; margin-bottom: 10px;">✅</div>
+            <div style="margin-bottom: 10px;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4caf50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
             <h2 style="margin: 0 0 8px 0; font-size: 1.4em; color: white;">Dataset Ready</h2>
             <div id="loader-active-dataset-info" style="font-size: 0.9em; opacity: 0.9; margin-bottom: 20px;"></div>
             <button id="btn-continue-triage" class="empty-queue-cta" style="background: white; color: #1976d2; font-size: 1.1em; padding: 14px 28px; border-radius: 8px;">Continue to Triage</button>
