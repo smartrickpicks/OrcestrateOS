@@ -53,3 +53,13 @@ def require_evidence_inspector():
             ),
         )
     return None
+
+
+OPS_VIEW_DB_READ = "OPS_VIEW_DB_READ"
+OPS_VIEW_DB_WRITE = "OPS_VIEW_DB_WRITE"
+
+def is_ops_view_db_read():
+    return is_enabled(OPS_VIEW_DB_READ)
+
+def is_ops_view_db_write():
+    return is_enabled(OPS_VIEW_DB_WRITE)

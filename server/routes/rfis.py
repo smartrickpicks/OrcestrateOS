@@ -57,7 +57,7 @@ RFI_COLUMNS = [
     "id", "workspace_id", "patch_id", "author_id", "target_record_id",
     "target_field_key", "question", "response", "responder_id", "status",
     "created_at", "updated_at", "deleted_at", "version", "metadata",
-    "custody_status", "custody_owner_id", "custody_owner_role",
+    "custody_status", "custody_owner_id", "custody_owner_role", "batch_id",
 ]
 RFI_SELECT = ", ".join(RFI_COLUMNS)
 
@@ -76,6 +76,7 @@ def _row_to_dict(row, columns):
 @router.get("/workspaces/{ws_id}/rfis")
 def list_rfis(
     ws_id: str,
+    request: Request = None,
     cursor: str = Query(None),
     limit: int = Query(50, ge=1, le=200),
     include_deleted: bool = Query(False),
@@ -103,6 +104,15 @@ def list_rfis(
             if record_id:
                 conditions.append("target_record_id = %s")
                 params.append(record_id)
+
+            batch_id_param = request.query_params.get("batch_id") if hasattr(request, 'query_params') else None
+            custody_status_param = request.query_params.get("custody_status") if hasattr(request, 'query_params') else None
+            if batch_id_param:
+                conditions.append("batch_id = %s")
+                params.append(batch_id_param)
+            if custody_status_param:
+                conditions.append("custody_status = %s")
+                params.append(custody_status_param)
             if cursor:
                 conditions.append("id > %s")
                 params.append(cursor)
@@ -182,16 +192,23 @@ def create_rfi(
                 if cur.fetchone():
                     db_patch_id = patch_id
 
+            rfi_batch_id = body.get("batch_id")
+            if not rfi_batch_id and db_patch_id:
+                cur.execute("SELECT batch_id FROM patches WHERE id = %s", (db_patch_id,))
+                prow = cur.fetchone()
+                if prow and prow[0]:
+                    rfi_batch_id = prow[0]
+
             cur.execute(
                 """INSERT INTO rfis
                    (id, workspace_id, patch_id, author_id, target_record_id,
                     target_field_key, question, status, metadata,
-                    custody_status, custody_owner_id, custody_owner_role)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    custody_status, custody_owner_id, custody_owner_role, batch_id)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                    RETURNING """ + RFI_SELECT,
                 (rfi_id, ws_id, db_patch_id, auth.user_id, target_record_id,
                  target_field_key, question, status, json.dumps(metadata),
-                 "open", auth.user_id, "analyst"),
+                 "open", auth.user_id, "analyst", rfi_batch_id),
             )
             row = cur.fetchone()
 
@@ -497,8 +514,8 @@ def list_batch_rfis(
                 )
             workspace_id = batch_row[1]
 
-            conditions = ["workspace_id = %s", "deleted_at IS NULL"]
-            params: list = [workspace_id]
+            conditions = ["batch_id = %s", "deleted_at IS NULL"]
+            params: list = [bat_id]
 
             if custody_status:
                 conditions.append("custody_status = %s")

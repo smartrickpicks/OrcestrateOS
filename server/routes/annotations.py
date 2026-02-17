@@ -39,6 +39,8 @@ def list_annotations(
     cursor: str = Query(None),
     limit: int = Query(50, ge=1, le=200),
     include_deleted: bool = Query(False),
+    target_type: str = Query(None),
+    target_id: str = Query(None),
     auth=Depends(require_auth(AuthClass.EITHER)),
 ):
     if isinstance(auth, JSONResponse):
@@ -59,6 +61,12 @@ def list_annotations(
 
             if not include_deleted:
                 conditions.append("deleted_at IS NULL")
+            if target_type:
+                conditions.append("target_type = %s")
+                params.append(target_type)
+            if target_id:
+                conditions.append("target_id = %s")
+                params.append(target_id)
             if cursor:
                 conditions.append("id > %s")
                 params.append(cursor)

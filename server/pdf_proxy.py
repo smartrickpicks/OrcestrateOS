@@ -65,7 +65,8 @@ from server.routes.ocr_escalations import router as ocr_escalations_router
 from server.routes.suggestions import router as suggestions_router
 from server.routes.glossary import router as glossary_router
 from server.routes.preflight import router as preflight_router
-from server.feature_flags import is_enabled, EVIDENCE_INSPECTOR, is_preflight_enabled
+from server.routes.operations_queue import router as operations_queue_router
+from server.feature_flags import is_enabled, EVIDENCE_INSPECTOR, is_preflight_enabled, is_ops_view_db_read, is_ops_view_db_write
 import logging as _logging
 
 @app.on_event("startup")
@@ -96,6 +97,8 @@ def get_feature_flags():
         "data": {
             "EVIDENCE_INSPECTOR_V251": is_enabled(EVIDENCE_INSPECTOR),
             "PREFLIGHT_GATE_SYNC": is_preflight_enabled(),
+            "OPS_VIEW_DB_READ": is_ops_view_db_read(),
+            "OPS_VIEW_DB_WRITE": is_ops_view_db_write(),
         }
     }
 
@@ -126,6 +129,7 @@ app.include_router(ocr_escalations_router)
 app.include_router(suggestions_router)
 app.include_router(glossary_router)
 app.include_router(preflight_router)
+app.include_router(operations_queue_router)
 
 PROJECT_ROOT = Path(__file__).parent.parent
 

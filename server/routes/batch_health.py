@@ -37,16 +37,16 @@ def get_batch_health(
             workspace_id = batch_row[1]
 
             cur.execute(
-                "SELECT COUNT(*) FROM rfis WHERE workspace_id = %s "
+                "SELECT COUNT(*) FROM rfis WHERE batch_id = %s "
                 "AND deleted_at IS NULL AND (custody_status = 'open' OR (custody_status IS NULL AND status = 'open'))",
-                (workspace_id,),
+                (bat_id,),
             )
             rfis_open = cur.fetchone()[0]
 
             cur.execute(
-                "SELECT COUNT(*) FROM rfis WHERE workspace_id = %s "
+                "SELECT COUNT(*) FROM rfis WHERE batch_id = %s "
                 "AND deleted_at IS NULL AND (custody_status = 'awaiting_verifier' OR (custody_status IS NULL AND status = 'responded'))",
-                (workspace_id,),
+                (bat_id,),
             )
             rfis_awaiting = cur.fetchone()[0]
 

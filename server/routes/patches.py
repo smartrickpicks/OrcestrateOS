@@ -93,6 +93,8 @@ def list_patches(
     limit: int = Query(50, ge=1, le=200),
     status: str = Query(None),
     author_id: str = Query(None),
+    record_id: str = Query(None),
+    batch_id: str = Query(None),
     include_hidden: bool = Query(False),
     include_deleted: bool = Query(False),
     auth=Depends(require_auth(AuthClass.EITHER)),
@@ -128,6 +130,12 @@ def list_patches(
             if author_id:
                 conditions.append("author_id = %s")
                 params.append(author_id)
+            if record_id:
+                conditions.append("record_id = %s")
+                params.append(record_id)
+            if batch_id:
+                conditions.append("batch_id = %s")
+                params.append(batch_id)
             if cursor:
                 conditions.append("id > %s")
                 params.append(cursor)
