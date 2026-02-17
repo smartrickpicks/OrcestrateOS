@@ -3,17 +3,23 @@
 ## Version: v2.55.1
 Date: 2026-02-17
 
-### Added — Verifier Org View UI Polish Specification
+### Added — Verifier Org View UI Polish (Specification + Implementation)
 
 - **DOC: V2.55.1 UI Polish Clarity Document**
-  - Comprehensive audit of 28 UI pain points across 6 categories (KPI strip, filter bar, batch table, drilldown actions, empty/loading/error states, responsive behavior)
-  - 12-item mismatch register with file/line references and severity tags (P0–P3)
-  - Visual system contract: CSS variable usage, typography/spacing scales, badge/button variants, accessibility targets
-  - Interaction contract: KPI click, filter URL sync, drilldown entry/exit, role-switch refresh
-  - 20 acceptance criteria covering desktop and narrow-width behavior
-  - 14-scenario QA plan with smoke steps and regression checks
-  - 10 phased implementation tasks (VUI-POLISH-01..10) prioritized P0–P2
-  - Go verdict: all changes are UI-only, additive, dark-mode compatible
+  - Comprehensive audit of 28 UI pain points across 6 categories
+  - 12-item mismatch register, visual/interaction contracts, 20 acceptance criteria
+  - 14-scenario QA plan, 10 phased implementation tasks (VUI-POLISH-01..10)
+
+- **VUI-POLISH-01: KPI Strip** — tabular-nums, "items" subtitle, active fill, Total muted, keyboard accessible
+- **VUI-POLISH-02: Batch Table** — zebra striping, hover accent border, selected row state
+- **VUI-POLISH-03: Count Badges** — inline pills for pending/clarify/resolved, muted zeros
+- **VUI-POLISH-04: Health Labels** — dot + text (Fresh/Aging/Stale) color-matched to age
+- **VUI-POLISH-05: Action Buttons** — amber Return styling, flexbox gap, loading/disabled state
+- **VUI-POLISH-06: Filter Bar** — sticky positioning, aria-labels, "Clear all" link styling
+- **VUI-POLISH-07: Loading Spinner** — CSS keyframe animation, inline spinner for buttons
+- **VUI-POLISH-08: Responsive** — 2-col grid ≤768px, single-col ≤480px, scrollable tables
+- **VUI-POLISH-09: Accessibility** — focus-visible outlines, prefers-reduced-motion
+- **VUI-POLISH-10: Dark Mode** — all styles use existing theme.css tokens, Palette B verified
 
 ## Version: v2.54.1
 Date: 2026-02-17

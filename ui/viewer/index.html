@@ -371,35 +371,71 @@
     html[data-theme="dark"] .verifier-table-container { background: var(--bg-2) !important; border-color: var(--border-soft) !important; }
 
     /* === VERIFIER ORG VIEW (v2.55) === */
-    .vorg-kpi { transition: box-shadow 0.15s, border-color 0.15s; }
-    .vorg-kpi:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); border-color: var(--accent-bright, #1565c0) !important; }
-    .vorg-kpi.vorg-kpi-active { border-color: var(--accent-bright, #1565c0) !important; box-shadow: 0 0 0 2px var(--accent-bright, #1565c0); }
-    #vorg-batch-table th, #vorg-drilldown-table th { padding: 10px 12px; text-align: left; font-size: 0.82em; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary, #666); background: var(--bg-2, #f8f9fa); border-bottom: 2px solid var(--border-1, #e0e0e0); }
-    #vorg-batch-table td, #vorg-drilldown-table td { padding: 10px 12px; font-size: 0.9em; border-bottom: 1px solid var(--border-1, #e0e0e0); color: var(--text-1, #333); }
-    #vorg-batch-table tbody tr { cursor: pointer; transition: background 0.12s; }
-    #vorg-batch-table tbody tr:hover { background: var(--bg-3, #eef1f5); }
+    .vorg-kpi-strip { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+    .vorg-filter-bar { display:flex; gap:12px; align-items:center; margin-bottom:16px; padding:10px 16px; background:var(--bg-2,#f8f9fa); border-radius:8px; border:1px solid var(--border-1,#e0e0e0); flex-wrap:wrap; position:sticky; top:0; z-index:10; }
+    .vorg-kpi { transition: box-shadow 0.15s, border-color 0.15s, background 0.15s, transform 0.12s; flex:1; min-width:120px; padding:16px; background:var(--bg-1,#fff); border:1px solid var(--border-1,#e0e0e0); border-radius:8px; text-align:center; }
+    .vorg-kpi[data-status]:not([data-status=""]) { cursor:pointer; }
+    .vorg-kpi[data-status=""] { cursor:default; opacity:0.75; }
+    .vorg-kpi[data-status]:not([data-status=""]):hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); border-color: var(--accent-bright, #1565c0) !important; transform: translateY(-1px); }
+    .vorg-kpi.vorg-kpi-active { border-color: var(--accent-bright, #1565c0) !important; box-shadow: 0 0 0 2px var(--accent-bright, #1565c0); background: var(--accent-bg, rgba(21,101,192,0.06)) !important; }
+    .vorg-kpi .kpi-value { font-size:2em; font-weight:700; color:var(--text-1,#333); font-variant-numeric:tabular-nums; line-height:1.1; }
+    .vorg-kpi .kpi-label { font-size:0.82em; font-weight:500; color:var(--text-secondary,#666); margin-top:2px; }
+    .vorg-kpi .kpi-unit { font-size:0.72em; color:var(--text-muted,#999); margin-top:1px; }
+    #vorg-batch-table th, #vorg-drilldown-table th { padding: 12px 12px; text-align: left; font-size: 0.82em; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary, #666); background: var(--bg-2, #f8f9fa); border-bottom: 2px solid var(--border-1, #e0e0e0); position:sticky; top:0; z-index:2; }
+    #vorg-batch-table td, #vorg-drilldown-table td { padding: 12px 12px; font-size: 0.9em; border-bottom: 1px solid var(--border-1, #e0e0e0); color: var(--text-1, #333); }
+    #vorg-batch-table tbody tr { cursor: pointer; transition: background 0.12s, border-left 0.12s; border-left: 3px solid transparent; }
+    #vorg-batch-table tbody tr:nth-child(even) { background: var(--table-row-alt, rgba(0,0,0,0.02)); }
+    #vorg-batch-table tbody tr:hover { background: var(--bg-3, #eef1f5); border-left-color: var(--accent-bright, #1565c0); }
+    #vorg-batch-table tbody tr.vorg-row-selected { background: var(--accent-bg, rgba(21,101,192,0.06)); border-left-color: var(--accent-bright, #1565c0); }
     .vorg-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.78em; font-weight: 600; }
     .vorg-badge-patch { background: var(--info-bg, rgba(21,101,192,0.08)); color: var(--info, #1565c0); }
     .vorg-badge-rfi { background: var(--warn-bg, rgba(245,124,0,0.08)); color: var(--warn, #f57c00); }
     .vorg-badge-correction { background: var(--ok-bg, rgba(46,125,50,0.08)); color: var(--ok, #2e7d32); }
     .vorg-badge-source { background: var(--chip-bg, #eef1f5); color: var(--chip-text, #555); border: 1px solid var(--chip-border, #ddd); }
-    .vorg-health-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
-    .vorg-action-btn { padding: 4px 10px; border-radius: 4px; font-size: 0.8em; cursor: pointer; border: 1px solid var(--border-1, #e0e0e0); background: var(--bg-1, #fff); color: var(--text-1, #333); transition: background 0.12s, border-color 0.12s; }
-    .vorg-action-btn:hover { background: var(--bg-3, #eef1f5); border-color: var(--accent-bright, #1565c0); }
+    .vorg-count-badge { display:inline-block; padding:1px 7px; border-radius:10px; font-size:0.82em; font-weight:600; min-width:20px; text-align:center; }
+    .vorg-count-badge-pending { background:var(--warn-bg,rgba(245,124,0,0.10)); color:var(--warn,#e65100); }
+    .vorg-count-badge-clarify { background:var(--info-bg,rgba(21,101,192,0.10)); color:var(--info,#1565c0); }
+    .vorg-count-badge-resolved { background:var(--ok-bg,rgba(46,125,50,0.10)); color:var(--ok,#2e7d32); }
+    .vorg-health-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; }
+    .vorg-health-label { font-size:0.8em; font-weight:500; margin-left:5px; vertical-align:middle; }
+    .vorg-action-btn { padding: 4px 10px; border-radius: 4px; font-size: 0.8em; cursor: pointer; border: 1px solid var(--border-1, #e0e0e0); background: var(--bg-1, #fff); color: var(--text-1, #333); transition: background 0.12s, border-color 0.12s, opacity 0.12s; position:relative; }
+    .vorg-action-btn:hover:not(:disabled) { background: var(--bg-3, #eef1f5); border-color: var(--accent-bright, #1565c0); }
+    .vorg-action-btn:disabled { opacity:0.5; cursor:not-allowed; }
     .vorg-action-btn-approve { color: var(--ok, #2e7d32); border-color: var(--ok-border, rgba(46,125,50,0.2)); }
-    .vorg-action-btn-approve:hover { background: var(--ok-bg, rgba(46,125,50,0.08)); }
+    .vorg-action-btn-approve:hover:not(:disabled) { background: var(--ok-bg, rgba(46,125,50,0.08)); }
     .vorg-action-btn-reject { color: var(--bad, #c62828); border-color: var(--bad-border, rgba(198,40,40,0.2)); }
-    .vorg-action-btn-reject:hover { background: var(--bad-bg, rgba(198,40,40,0.08)); }
+    .vorg-action-btn-reject:hover:not(:disabled) { background: var(--bad-bg, rgba(198,40,40,0.08)); }
+    .vorg-action-btn-return { color: var(--warn, #f57c00); border-color: var(--warn-border, rgba(245,124,0,0.25)); }
+    .vorg-action-btn-return:hover:not(:disabled) { background: var(--warn-bg, rgba(245,124,0,0.08)); }
+    .vorg-actions-cell { display:inline-flex; gap:6px; align-items:center; }
+    .vorg-spinner-inline { display:inline-block; width:12px; height:12px; border:2px solid var(--border-1,#e0e0e0); border-top-color:var(--accent-bright,#1565c0); border-radius:50%; animation:vorgSpin 0.6s linear infinite; vertical-align:middle; }
+    @keyframes vorgSpin { to { transform:rotate(360deg); } }
+    .vorg-loading-spinner { display:flex; flex-direction:column; align-items:center; gap:12px; padding:40px; color:var(--text-secondary,#666); font-size:0.95em; }
+    .vorg-loading-spinner::before { content:''; display:block; width:28px; height:28px; border:3px solid var(--border-1,#e0e0e0); border-top-color:var(--accent-bright,#1565c0); border-radius:50%; animation:vorgSpin 0.7s linear infinite; }
+    
+    .vorg-clear-link { background:none; border:none; color:var(--accent-bright,#1565c0); cursor:pointer; font-size:0.82em; text-decoration:underline; padding:2px 4px; }
+    .vorg-clear-link:hover { color:var(--info,#1565c0); text-decoration:none; }
+    .vorg-kpi:focus-visible, .vorg-action-btn:focus-visible, .vorg-clear-link:focus-visible, #vorg-filter-status:focus-visible, #vorg-filter-type:focus-visible { outline:2px solid var(--accent-bright,#1565c0); outline-offset:2px; }
+    @media (prefers-reduced-motion: reduce) { .vorg-kpi, .vorg-action-btn, #vorg-batch-table tbody tr { transition:none !important; } .vorg-spinner-inline, .vorg-loading-spinner::before { animation:none !important; } }
+    @media (max-width:768px) { .vorg-kpi-strip { gap:8px; } .vorg-kpi { min-width:calc(50% - 8px) !important; flex:0 0 calc(50% - 8px) !important; padding:12px !important; } .vorg-kpi .kpi-value { font-size:1.6em; } }
+    @media (max-width:480px) { .vorg-kpi { min-width:100% !important; flex:0 0 100% !important; padding:10px !important; } .vorg-kpi .kpi-value { font-size:1.4em; } .vorg-filter-bar { flex-direction:column; align-items:stretch !important; } }
     html[data-theme="dark"] .vorg-kpi { background: var(--bg-2) !important; border-color: var(--border-soft) !important; }
-    html[data-theme="dark"] .vorg-kpi:hover { border-color: var(--accent-bright) !important; box-shadow: 0 0 8px var(--glow-blue-soft); }
-    html[data-theme="dark"] .vorg-kpi.vorg-kpi-active { border-color: var(--accent-bright) !important; box-shadow: 0 0 0 2px var(--accent-bright); }
+    html[data-theme="dark"] .vorg-kpi[data-status]:not([data-status=""]):hover { border-color: var(--accent-bright) !important; box-shadow: 0 0 8px var(--glow-blue-soft); }
+    html[data-theme="dark"] .vorg-kpi.vorg-kpi-active { border-color: var(--accent-bright) !important; box-shadow: 0 0 0 2px var(--accent-bright); background: var(--accent-bg, rgba(96,165,250,0.08)) !important; }
     html[data-theme="dark"] .vorg-kpi .kpi-value { color: var(--text-primary); text-shadow: 0 0 14px var(--glow-blue-med); }
     html[data-theme="dark"] #vorg-batch-table th, html[data-theme="dark"] #vorg-drilldown-table th { background: var(--bg-2); color: var(--text-secondary); border-bottom-color: var(--border-soft); }
     html[data-theme="dark"] #vorg-batch-table td, html[data-theme="dark"] #vorg-drilldown-table td { color: var(--text-secondary); border-bottom-color: var(--border-soft); }
+    html[data-theme="dark"] #vorg-batch-table tbody tr:nth-child(even) { background: var(--table-row-alt, rgba(255,255,255,0.02)); }
     html[data-theme="dark"] #vorg-batch-table tbody tr:hover { background: var(--bg-3); }
+    html[data-theme="dark"] #vorg-batch-table tbody tr.vorg-row-selected { background: var(--accent-bg, rgba(96,165,250,0.08)); }
     html[data-theme="dark"] .vorg-action-btn { background: var(--bg-2); color: var(--text-secondary); border-color: var(--border-soft); }
-    html[data-theme="dark"] .vorg-action-btn:hover { background: var(--bg-3); border-color: var(--accent-bright); }
-    html[data-theme="dark"] #vorg-filters { background: var(--bg-2) !important; border-color: var(--border-soft) !important; }
+    html[data-theme="dark"] .vorg-action-btn:hover:not(:disabled) { background: var(--bg-3); border-color: var(--accent-bright); }
+    html[data-theme="dark"] .vorg-action-btn-return { color: var(--warn, #FBBF24); border-color: rgba(251,191,36,0.25); }
+    html[data-theme="dark"] .vorg-filter-bar { background: var(--bg-2) !important; border-color: var(--border-soft) !important; }
+    html[data-theme="dark"] .vorg-clear-link { color: var(--accent-bright, #60A5FA); }
+    html[data-theme="dark"] .vorg-count-badge-pending { background:rgba(251,191,36,0.12); color:var(--warn,#FBBF24); }
+    html[data-theme="dark"] .vorg-count-badge-clarify { background:rgba(96,165,250,0.12); color:var(--info,#60A5FA); }
+    html[data-theme="dark"] .vorg-count-badge-resolved { background:rgba(52,211,153,0.12); color:var(--ok,#34D399); }
     /* === END VERIFIER ORG VIEW CSS === */
 
     html[data-theme="dark"] #grid-column-menu { background: var(--bg-2) !important; border-color: var(--border-soft) !important; box-shadow: var(--shadow-2) !important; color: var(--text-secondary) !important; }
@@ -4638,27 +4674,27 @@
           <p class="page-desc" style="margin:0;font-size:0.9em;color:var(--text-secondary,#666);">Workspace-level governance queue with batch and analyst rollups.</p>
         </div>
         <div id="vorg-error-banner" style="display:none;padding:14px 18px;background:var(--bad-bg,rgba(198,40,40,0.08));border:1px solid var(--bad-border,rgba(198,40,40,0.2));border-radius:8px;color:var(--bad,#c62828);margin-bottom:16px;"></div>
-        <div id="vorg-loading" style="padding:40px;text-align:center;color:var(--text-secondary,#666);font-size:0.95em;">Loading operations data...</div>
+        <div id="vorg-loading" class="vorg-loading-spinner">Loading operations data...</div>
         <div id="vorg-empty" style="display:none;padding:60px 20px;text-align:center;color:var(--text-muted,#666);font-size:1em;">No batches with active items. Import data to get started.</div>
         <div id="vorg-content" style="display:none;">
-          <div id="vorg-summary" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;"></div>
-          <div id="vorg-filters" style="display:flex;gap:12px;align-items:center;margin-bottom:16px;padding:10px 16px;background:var(--bg-2,#f8f9fa);border-radius:8px;border:1px solid var(--border-1,#e0e0e0);flex-wrap:wrap;">
+          <div id="vorg-summary" class="vorg-kpi-strip"></div>
+          <div id="vorg-filters" class="vorg-filter-bar">
             <label style="font-size:0.85em;color:var(--text-secondary,#666);">Filters:</label>
-            <select id="vorg-filter-status" onchange="vorgApplyFilters()" style="padding:5px 10px;border-radius:4px;border:1px solid var(--border-1,#e0e0e0);font-size:0.85em;background:var(--bg-1,#fff);color:var(--text-1,#333);">
+            <select id="vorg-filter-status" aria-label="Filter by status" onchange="vorgApplyFilters()" style="padding:5px 10px;border-radius:4px;border:1px solid var(--border-1,#e0e0e0);font-size:0.85em;background:var(--bg-1,#fff);color:var(--text-1,#333);">
               <option value="">All Statuses</option>
               <option value="pending">Pending</option>
               <option value="needs_clarification">Needs Clarification</option>
               <option value="sent_to_admin">Sent to Admin</option>
               <option value="resolved">Resolved</option>
             </select>
-            <select id="vorg-filter-type" onchange="vorgApplyFilters()" style="padding:5px 10px;border-radius:4px;border:1px solid var(--border-1,#e0e0e0);font-size:0.85em;background:var(--bg-1,#fff);color:var(--text-1,#333);">
+            <select id="vorg-filter-type" aria-label="Filter by type" onchange="vorgApplyFilters()" style="padding:5px 10px;border-radius:4px;border:1px solid var(--border-1,#e0e0e0);font-size:0.85em;background:var(--bg-1,#fff);color:var(--text-1,#333);">
               <option value="">All Types</option>
               <option value="patch">Patches</option>
               <option value="rfi">RFIs</option>
               <option value="correction">Corrections</option>
             </select>
-            <span id="vorg-filter-info" style="font-size:0.8em;color:var(--text-secondary,#666);margin-left:auto;"></span>
-            <button onclick="vorgClearFilters()" style="padding:5px 12px;border-radius:4px;border:1px solid var(--border-1,#e0e0e0);background:var(--bg-1,#fff);color:var(--text-secondary,#666);cursor:pointer;font-size:0.82em;">Clear</button>
+            <span id="vorg-filter-info" role="status" style="font-size:0.8em;color:var(--text-secondary,#666);margin-left:auto;"></span>
+            <button class="vorg-clear-link" onclick="vorgClearFilters()">Clear all</button>
           </div>
           <div id="vorg-batches" style="margin-bottom:20px;">
             <h3 style="margin:0 0 12px 0;font-size:1.1em;color:var(--text-1,#333);">Batch Queue</h3>
@@ -39246,9 +39282,19 @@
       return 'var(--bad,#c62828)';
     }
 
+    function _vorgAgeLabel(dateStr) {
+      if (!dateStr) return 'Unknown';
+      var hrs = (Date.now() - new Date(dateStr).getTime()) / 3600000;
+      if (hrs < 24) return 'Fresh';
+      if (hrs <= 72) return 'Aging';
+      return 'Stale';
+    }
+
     function _vorgHealthDot(dateStr) {
       var color = _vorgAgeColor(dateStr);
-      return '<span class="vorg-health-dot" style="background:' + color + ';" title="Age: ' + _vorgAgeText(dateStr) + '"></span>';
+      var label = _vorgAgeLabel(dateStr);
+      return '<span class="vorg-health-dot" style="background:' + color + ';" title="Age: ' + _vorgAgeText(dateStr) + '"></span>' +
+        '<span class="vorg-health-label" style="color:' + color + ';">' + label + '</span>';
     }
 
     function _vorgStatusLabel(s) {
@@ -39357,9 +39403,11 @@
       kpis.forEach(function(k) {
         var active = (_vorgState.activeKpiStatus === k.key && k.key !== '') ? ' vorg-kpi-active' : '';
         var onclick = k.key ? ' onclick="vorgFilterByStatus(\'' + k.key + '\')"' : '';
-        html += '<div class="vorg-kpi' + active + '" data-status="' + k.key + '"' + onclick + ' style="flex:1;min-width:120px;padding:16px;background:var(--bg-1,#fff);border:1px solid var(--border-1,#e0e0e0);border-radius:8px;cursor:' + (k.key ? 'pointer' : 'default') + ';text-align:center;">' +
-          '<div class="kpi-value" style="font-size:2em;font-weight:700;color:var(--text-1,#333);">' + k.value + '</div>' +
-          '<div style="font-size:0.85em;color:var(--text-secondary,#666);">' + k.label + '</div>' +
+        var tabindex = k.key ? ' tabindex="0" role="button"' : '';
+        html += '<div class="vorg-kpi' + active + '" data-status="' + k.key + '"' + onclick + tabindex + '>' +
+          '<div class="kpi-value">' + k.value + '</div>' +
+          '<div class="kpi-label">' + k.label + '</div>' +
+          '<div class="kpi-unit">items</div>' +
           '</div>';
       });
       el.innerHTML = html;
@@ -39531,13 +39579,14 @@
         var ageColor = _vorgAgeColor(batch.created_at);
         var health = _vorgHealthDot(batch.created_at);
 
-        html += '<tr onclick="vorgDrillIntoBatch(\'' + _vorgEsc(bid) + '\')" title="Click to drill down">' +
+        var isSelected = (_vorgState.activeBatchId === bid) ? ' vorg-row-selected' : '';
+        html += '<tr class="' + isSelected.trim() + '" onclick="vorgDrillIntoBatch(\'' + _vorgEsc(bid) + '\')" title="Click to drill down">' +
           '<td style="font-weight:600;">' + name + '</td>' +
           '<td>' + source + '</td>' +
           '<td>' + total + '</td>' +
-          '<td>' + (pending > 0 ? '<span style="color:var(--warn,#f57c00);font-weight:600;">' + pending + '</span>' : '0') + '</td>' +
-          '<td>' + (clarify > 0 ? '<span style="color:var(--info,#1565c0);font-weight:600;">' + clarify + '</span>' : '0') + '</td>' +
-          '<td>' + (resolved > 0 ? '<span style="color:var(--ok,#2e7d32);font-weight:600;">' + resolved + '</span>' : '0') + '</td>' +
+          '<td>' + (pending > 0 ? '<span class="vorg-count-badge vorg-count-badge-pending">' + pending + '</span>' : '<span style="color:var(--text-muted,#999);">0</span>') + '</td>' +
+          '<td>' + (clarify > 0 ? '<span class="vorg-count-badge vorg-count-badge-clarify">' + clarify + '</span>' : '<span style="color:var(--text-muted,#999);">0</span>') + '</td>' +
+          '<td>' + (resolved > 0 ? '<span class="vorg-count-badge vorg-count-badge-resolved">' + resolved + '</span>' : '<span style="color:var(--text-muted,#999);">0</span>') + '</td>' +
           '<td style="color:' + ageColor + ';font-weight:600;">' + age + '</td>' +
           '<td>' + health + '</td>' +
           '</tr>';
@@ -39592,14 +39641,20 @@
         var actions = '';
         var tl = type.toLowerCase();
         if (tl === 'patch') {
-          actions = '<button class="vorg-action-btn vorg-action-btn-approve" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'patch\',\'Verifier_Approved\',' + version + ')">Approve</button> ' +
-            '<button class="vorg-action-btn vorg-action-btn-reject" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'patch\',\'Rejected\',' + version + ')">Reject</button>';
+          actions = '<span class="vorg-actions-cell">' +
+            '<button class="vorg-action-btn vorg-action-btn-approve" data-vorg-action="' + _vorgEsc(itemId) + '" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'patch\',\'Verifier_Approved\',' + version + ',this)">Approve</button>' +
+            '<button class="vorg-action-btn vorg-action-btn-reject" title="This cannot be undone" data-vorg-action="' + _vorgEsc(itemId) + '" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'patch\',\'Rejected\',' + version + ',this)">Reject</button>' +
+            '</span>';
         } else if (tl === 'rfi') {
-          actions = '<button class="vorg-action-btn vorg-action-btn-approve" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'rfi\',\'resolved\',' + version + ')">Resolve</button> ' +
-            '<button class="vorg-action-btn vorg-action-btn-reject" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'rfi\',\'returned_to_analyst\',' + version + ')">Return</button>';
+          actions = '<span class="vorg-actions-cell">' +
+            '<button class="vorg-action-btn vorg-action-btn-approve" data-vorg-action="' + _vorgEsc(itemId) + '" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'rfi\',\'resolved\',' + version + ',this)">Resolve</button>' +
+            '<button class="vorg-action-btn vorg-action-btn-return" data-vorg-action="' + _vorgEsc(itemId) + '" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'rfi\',\'returned_to_analyst\',' + version + ',this)">Return</button>' +
+            '</span>';
         } else if (tl === 'correction') {
-          actions = '<button class="vorg-action-btn vorg-action-btn-approve" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'correction\',\'approved\',' + version + ')">Approve</button> ' +
-            '<button class="vorg-action-btn vorg-action-btn-reject" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'correction\',\'rejected\',' + version + ')">Reject</button>';
+          actions = '<span class="vorg-actions-cell">' +
+            '<button class="vorg-action-btn vorg-action-btn-approve" data-vorg-action="' + _vorgEsc(itemId) + '" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'correction\',\'approved\',' + version + ',this)">Approve</button>' +
+            '<button class="vorg-action-btn vorg-action-btn-reject" title="This cannot be undone" data-vorg-action="' + _vorgEsc(itemId) + '" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'correction\',\'rejected\',' + version + ',this)">Reject</button>' +
+            '</span>';
         }
 
         html += '<tr>' +
@@ -39616,8 +39671,14 @@
       tbody.innerHTML = html;
     }
 
-    function vorgAction(itemId, type, newStatus, version) {
+    function vorgAction(itemId, type, newStatus, version, btnEl) {
       if (!itemId) return;
+
+      var actionBtns = btnEl ? document.querySelectorAll('[data-vorg-action="' + itemId + '"]') : [];
+      var origTexts = [];
+      actionBtns.forEach(function(b) { origTexts.push(b.innerHTML); b.disabled = true; });
+      if (btnEl) { btnEl.innerHTML = '<span class="vorg-spinner-inline"></span>'; }
+
       var promise;
       if (type === 'patch' && typeof opsDbWriteStatus === 'function') {
         promise = opsDbWriteStatus(itemId, newStatus, version);
@@ -39626,11 +39687,13 @@
       } else if (type === 'correction' && typeof opsDbWriteCorrectionStatus === 'function') {
         promise = opsDbWriteCorrectionStatus(itemId, newStatus, version);
       } else {
+        actionBtns.forEach(function(b, i) { b.disabled = false; b.innerHTML = origTexts[i]; });
         showToast('Action handler not available for type: ' + type, 'warning');
         return;
       }
 
       promise.then(function(result) {
+        actionBtns.forEach(function(b, i) { b.disabled = false; b.innerHTML = origTexts[i]; });
         if (result === false) return;
         if (result && result.ok) {
           showToast(_vorgStatusLabel(type) + ' ' + newStatus.replace(/_/g, ' '), 'success');
@@ -39646,6 +39709,7 @@
           vorgApplyFilters();
         }
       }).catch(function(err) {
+        actionBtns.forEach(function(b, i) { b.disabled = false; b.innerHTML = origTexts[i]; });
         console.error('[VorgView] Action error:', err);
         showToast('Version conflict — refresh to retry', 'error');
       });
