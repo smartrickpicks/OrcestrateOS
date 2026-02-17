@@ -17320,12 +17320,18 @@
       }
 
       var groups = { exact: [], fuzzy: [], keyword: [], none: [] };
+      var methodGroupMap = {
+        'alias_exact': 'exact', 'exact': 'exact',
+        'phrase_fuzzy': 'fuzzy', 'fuzzy': 'fuzzy',
+        'token_overlap': 'keyword', 'keyword': 'keyword',
+        'none': 'none'
+      };
       var counts = { total: suggestions.length, pending: 0, accepted: 0, rejected: 0 };
       for (var i = 0; i < suggestions.length; i++) {
         var s = suggestions[i];
         var method = s.match_method || 'none';
-        if (!groups[method]) groups[method] = [];
-        groups[method].push(s);
+        var groupKey = methodGroupMap[method] || 'none';
+        groups[groupKey].push(s);
         if (s.status === 'pending') counts.pending++;
         else if (s.status === 'accepted') counts.accepted++;
         else if (s.status === 'rejected') counts.rejected++;
@@ -17357,9 +17363,10 @@
         html += '<div class="sync-group-header">' + groupLabels[gKey] + ' (' + items.length + ')</div>';
         for (var si = 0; si < items.length; si++) {
           var sug = items[si];
-          var scoreClass = sug.match_score >= 0.8 ? 'high' : sug.match_score >= 0.5 ? 'medium' : sug.match_score > 0 ? 'low' : 'none';
-          var scoreText = sug.match_score > 0 ? Math.round(sug.match_score * 100) + '%' : '--';
-          var targetText = sug.suggested_term_id || '(no match)';
+          var pct = sug.confidence_pct != null ? sug.confidence_pct : (sug.match_score > 0 ? Math.round(sug.match_score * 100) : 0);
+          var scoreClass = pct >= 80 ? 'high' : pct >= 60 ? 'medium' : pct > 0 ? 'low' : 'none';
+          var scoreText = pct > 0 ? pct + '%' : '--';
+          var targetText = sug.suggested_label || sug.suggested_term_id || '(no match)';
 
           html += '<div class="sync-row" data-sug-id="' + sug.id + '">';
           html += '<span class="sync-source">' + _escHtml(sug.source_field) + '</span>';
