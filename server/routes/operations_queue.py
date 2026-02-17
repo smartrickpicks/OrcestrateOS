@@ -56,7 +56,8 @@ def _resolve_effective_role(request, auth, ws_id):
 
     if sandbox_mode == "true" and effective_role_header in ("analyst", "verifier", "admin"):
         db_role = get_workspace_role(auth.user_id, ws_id)
-        if db_role in ("admin", "architect"):
+        capable_role = db_role or (auth.role if auth.role else None)
+        if capable_role in ("admin", "architect"):
             return effective_role_header
 
     if auth.is_role_simulated and auth.effective_role:
