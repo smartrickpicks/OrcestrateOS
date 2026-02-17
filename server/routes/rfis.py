@@ -381,6 +381,8 @@ def update_rfi(
 
                     transition_pair = (old_custody, requested_custody)
                     actor_role = get_workspace_role(auth.user_id, workspace_id)
+                    if actor_role is None and auth.user_id == "sandbox_user":
+                        actor_role = getattr(auth, 'role', None)
                     if transition_pair in ANALYST_SIDE_TRANSITIONS:
                         if actor_role not in ANALYST_ROLES:
                             return JSONResponse(

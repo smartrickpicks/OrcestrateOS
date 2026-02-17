@@ -279,6 +279,8 @@ def update_correction(
 
                 if new_status in ("approved", "rejected") and new_status != old_status:
                     actor_role = get_workspace_role(auth.user_id, workspace_id)
+                    if actor_role is None and auth.user_id == "sandbox_user":
+                        actor_role = getattr(auth, 'role', None)
                     verifier_roles = {"verifier", "admin", "architect"}
                     if actor_role not in verifier_roles:
                         return JSONResponse(

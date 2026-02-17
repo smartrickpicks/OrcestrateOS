@@ -39195,6 +39195,44 @@
       }).catch(function(e) { console.error('[OpsView] DB write failed:', e); return false; });
     }
 
+    // v2.54.1 VER2-05: DB write for RFI custody transitions
+    function opsDbWriteRfiStatus(rfiId, newCustodyStatus, version) {
+      if (!_opsViewFlags.dbWrite) return Promise.resolve(false);
+      var headers = (typeof _getAuthHeaders === 'function') ? _getAuthHeaders() : { 'Content-Type': 'application/json' };
+      return fetch('/api/v2.5/rfis/' + rfiId, {
+        method: 'PATCH',
+        headers: headers,
+        body: JSON.stringify({ custody_status: newCustodyStatus, version: version || 1 })
+      }).then(function(r) {
+        if (r.status === 409) { showToast('Stale version — RFI was updated by someone else. Please refresh.', 'error'); return false; }
+        if (r.status === 403) { return r.json().then(function(d) { showToast(d.error && d.error.detail || 'Permission denied', 'error'); return false; }); }
+        if (!r.ok) { showToast('Failed to save RFI to database (HTTP ' + r.status + ')', 'error'); return false; }
+        return r.json().then(function(d) {
+          var newVersion = (d && d.data && d.data.version) ? d.data.version : (version || 1) + 1;
+          return { ok: true, newVersion: newVersion };
+        });
+      }).catch(function(e) { console.error('[OpsView] RFI DB write failed:', e); return false; });
+    }
+
+    // v2.54.1 VER2-06: DB write for correction status changes
+    function opsDbWriteCorrectionStatus(correctionId, newStatus, version) {
+      if (!_opsViewFlags.dbWrite) return Promise.resolve(false);
+      var headers = (typeof _getAuthHeaders === 'function') ? _getAuthHeaders() : { 'Content-Type': 'application/json' };
+      return fetch('/api/v2.5/corrections/' + correctionId, {
+        method: 'PATCH',
+        headers: headers,
+        body: JSON.stringify({ status: newStatus, version: version || 1 })
+      }).then(function(r) {
+        if (r.status === 409) { showToast('Stale version — correction was updated by someone else. Please refresh.', 'error'); return false; }
+        if (r.status === 403) { return r.json().then(function(d) { showToast(d.error && d.error.detail || 'Permission denied', 'error'); return false; }); }
+        if (!r.ok) { showToast('Failed to save correction to database (HTTP ' + r.status + ')', 'error'); return false; }
+        return r.json().then(function(d) {
+          var newVersion = (d && d.data && d.data.version) ? d.data.version : (version || 1) + 1;
+          return { ok: true, newVersion: newVersion };
+        });
+      }).catch(function(e) { console.error('[OpsView] Correction DB write failed:', e); return false; });
+    }
+
     // v1.5.2: Verifier filter state with persistence
     var verifierFilterState = {
       division: localStorage.getItem('verifier_filter_division') || '',
@@ -43278,23 +43316,38 @@
     function updatePayloadStatus(payloadId, newStatus) {
       const payload = verifierQueueState.payloads.find(p => p.id === payloadId);
       if (payload) {
-        // v2.54.1 VER2-04: For DB-backed patches, defer local status update until DB write succeeds
-        if (payload._fromDb && payload.type === 'patch' && _opsViewFlags.dbWrite && typeof opsDbWriteStatus === 'function') {
-          var lifecycleMap = { pending: 'Submitted', needs_clarification: 'Needs_Clarification', sent_to_admin: 'Verifier_Approved', resolved: 'Applied', rejected: 'Rejected' };
-          var dbStatus = lifecycleMap[newStatus] || newStatus;
-          var priorStatus = payload.status;
-          opsDbWriteStatus(payloadId, dbStatus, payload.db_version || 1).then(function(result) {
-            if (result && result.ok) {
-              payload.status = newStatus;
-              payload.db_version = result.newVersion || (payload.db_version || 1) + 1;
-              saveVerifierQueue();
-              if (typeof renderVerifierTriage === 'function') renderVerifierTriage();
-              console.log('[OpsView] DB write success for', payloadId, '-> v' + payload.db_version);
-            } else {
-              console.warn('[OpsView] DB write failed for', payloadId, '— local state unchanged');
-            }
-          });
-          return;
+        // v2.54.1 VER2-04/05/06: For DB-backed items, defer local status update until DB write succeeds
+        if (payload._fromDb && _opsViewFlags.dbWrite) {
+          var dbWritePromise = null;
+
+          if (payload.type === 'patch' && typeof opsDbWriteStatus === 'function') {
+            var lifecycleMap = { pending: 'Submitted', needs_clarification: 'Needs_Clarification', sent_to_admin: 'Verifier_Approved', resolved: 'Applied', rejected: 'Rejected' };
+            var dbStatus = lifecycleMap[newStatus] || newStatus;
+            dbWritePromise = opsDbWriteStatus(payloadId, dbStatus, payload.db_version || 1);
+          } else if (payload.type === 'rfi' && typeof opsDbWriteRfiStatus === 'function') {
+            var rfiCustodyMap = { pending: 'open', needs_clarification: 'returned_to_analyst', resolved: 'resolved', rejected: 'dismissed', sent_to_admin: 'awaiting_verifier' };
+            var rfiCustody = rfiCustodyMap[newStatus] || newStatus;
+            dbWritePromise = opsDbWriteRfiStatus(payloadId, rfiCustody, payload.db_version || 1);
+          } else if (payload.type === 'correction' && typeof opsDbWriteCorrectionStatus === 'function') {
+            var corStatusMap = { pending: 'pending_verifier', resolved: 'approved', rejected: 'rejected' };
+            var corStatus = corStatusMap[newStatus] || newStatus;
+            dbWritePromise = opsDbWriteCorrectionStatus(payloadId, corStatus, payload.db_version || 1);
+          }
+
+          if (dbWritePromise) {
+            dbWritePromise.then(function(result) {
+              if (result && result.ok) {
+                payload.status = newStatus;
+                payload.db_version = result.newVersion || (payload.db_version || 1) + 1;
+                saveVerifierQueue();
+                if (typeof renderVerifierTriage === 'function') renderVerifierTriage();
+                console.log('[OpsView] DB write success for', payloadId, '(' + payload.type + ') -> v' + payload.db_version);
+              } else {
+                console.warn('[OpsView] DB write failed for', payloadId, '(' + payload.type + ') — local state unchanged');
+              }
+            });
+            return;
+          }
         }
         payload.status = newStatus;
         saveVerifierQueue();
