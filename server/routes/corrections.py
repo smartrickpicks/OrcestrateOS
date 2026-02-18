@@ -269,7 +269,7 @@ def update_correction(
                 allowed_next = STATUS_TRANSITIONS.get(old_status, set())
                 if new_status != old_status and new_status not in allowed_next:
                     return JSONResponse(
-                        status_code=400,
+                        status_code=409,
                         content=error_envelope(
                             "INVALID_TRANSITION",
                             "Cannot transition correction status from '%s' to '%s'. Allowed: %s"
