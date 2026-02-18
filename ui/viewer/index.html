@@ -3828,6 +3828,7 @@
                 <option value="needs_clarification">Needs Clarification</option>
                 <option value="sent_to_admin">Sent to Admin</option>
                 <option value="resolved">Resolved</option>
+                <option value="resolution">Resolution (All)</option>
               </select>
               <select id="vtriage-filter-type" aria-label="Filter by type" onchange="vTriageApplyFilters()" style="padding:5px 10px;border-radius:4px;border:1px solid var(--border-1,#e0e0e0);font-size:0.85em;background:var(--bg-1,#fff);color:var(--text-1,#333);">
                 <option value="">All Types</option>
@@ -27965,14 +27966,81 @@
       _p1dGroupState[groupId] = !isCurrentlyHidden;
     }
 
+    var _P1D_ACCOUNT_FIELDS = [
+      'Account_Name__c', 'Account_Name_c', 'Account_Name', 'account_name', 'account_name_c', 'account_name__c',
+      'Company_Name__c', 'Company_Name_c', 'Company_Name', 'company_name', 'company_name_c', 'company_name__c',
+      'Artist_Name_pka_or_dba__c', 'Artist_Name_pka_or_dba_c', 'Artist_Name__c', 'Artist_Name_c', 'artist_name',
+      'Legal_Name__c', 'Legal_Name_c', 'legal_name',
+      'Payee__c', 'Payee_c', 'Name', 'Account'
+    ];
+
+    function _p1dNormalizeAccountName(name) {
+      if (name === null || name === undefined) return '';
+      var n = String(name).replace(/\s+/g, ' ').trim();
+      if (!n) return '';
+      var nl = n.toLowerCase();
+      if (nl === 'n/a' || nl === 'na' || nl === 'null' || nl === 'none' || nl === '-' || nl === 'unknown') return '';
+      return n;
+    }
+
+    function _p1dExtractAccountFromRow(row) {
+      if (!row || typeof row !== 'object') return '';
+      for (var i = 0; i < _P1D_ACCOUNT_FIELDS.length; i++) {
+        var v = _p1dNormalizeAccountName(row[_P1D_ACCOUNT_FIELDS[i]]);
+        if (v) return v;
+      }
+      var keys = Object.keys(row);
+      for (var ki = 0; ki < keys.length; ki++) {
+        if (typeof isAccountNameField === 'function' && isAccountNameField(keys[ki])) {
+          var vk = _p1dNormalizeAccountName(row[keys[ki]]);
+          if (vk) return vk;
+        }
+      }
+      return '';
+    }
+
+    function _p1dResolveAccountIdentity(item) {
+      if (!item) return { account_key: '', account_name: '', resolution: 'none' };
+      if (item._account_resolved) {
+        return {
+          account_key: item._account_key || '',
+          account_name: item._account_name || '',
+          resolution: item._account_resolution || 'cached'
+        };
+      }
+      var accountName = _p1dNormalizeAccountName(item._account_name || item.account_name || '');
+      var resolution = accountName ? 'item' : 'none';
+      if (!accountName && item.sheet_name && item.row_index !== undefined && item.row_index >= 0 &&
+          typeof workbook !== 'undefined' && workbook && workbook.sheets &&
+          workbook.sheets[item.sheet_name] && workbook.sheets[item.sheet_name].rows &&
+          item.row_index < workbook.sheets[item.sheet_name].rows.length) {
+        accountName = _p1dExtractAccountFromRow(workbook.sheets[item.sheet_name].rows[item.row_index]);
+        if (accountName) resolution = 'sheet_row';
+      }
+      if (!accountName && item.record_id && typeof findRecordById === 'function') {
+        var found = findRecordById(item.record_id);
+        if (found && found.row) {
+          accountName = _p1dExtractAccountFromRow(found.row);
+          if (accountName) resolution = 'record_id';
+        }
+      }
+      if (!accountName) {
+        var ck = item.contract_id || item.contract_key || '';
+        if (ck) {
+          accountName = _p1dNormalizeAccountName(_p1d1ResolveAccountName(ck, item.file_name || ''));
+          if (accountName) resolution = 'contract';
+        }
+      }
+      var accountKey = accountName ? ('acct_' + simpleHash(accountName.toLowerCase())) : '';
+      item._account_name = accountName;
+      item._account_key = accountKey;
+      item._account_resolution = resolution;
+      item._account_resolved = true;
+      return { account_key: accountKey, account_name: accountName, resolution: resolution };
+    }
+
     // v2.3.5-P1D.1: Resolve account name from workbook data fields for a given contract key
     function _p1d1ResolveAccountName(contractKey, fileName) {
-      var ACCT_FIELDS = [
-        'Account_Name_c', 'Account_Name', 'account_name', 'account_name_c',
-        'Artist_Name_pka_or_dba_c', 'Artist_Name_c', 'artist_name',
-        'Legal_Name_c', 'legal_name',
-        'Payee_c', 'Name'
-      ];
       if (typeof workbook === 'undefined' || !workbook.sheets) return '';
       var sheets = Object.keys(workbook.sheets);
       for (var si = 0; si < sheets.length; si++) {
@@ -27987,12 +28055,8 @@
           if (contractKey && rck && rck === contractKey) matched = true;
           if (!matched && fileName && rfn && rfn === fileName) matched = true;
           if (!matched) continue;
-          for (var fi = 0; fi < ACCT_FIELDS.length; fi++) {
-            var val = r[ACCT_FIELDS[fi]];
-            if (val && typeof val === 'string' && val.trim() && val !== 'N/A' && val !== '-' && val.trim().length > 1) {
-              return val.trim();
-            }
-          }
+          var acct = _p1dExtractAccountFromRow(r);
+          if (acct) return acct;
         }
       }
       return '';
@@ -28441,47 +28505,37 @@
         return;
       }
 
-      var _rawGroups = {};
-      var _rawOrder = [];
-      for (var i = 0; i < items.length; i++) {
-        var key = _p1dGetGroupKey(items[i]);
-        if (!_rawGroups[key]) {
-          _rawGroups[key] = { items: [], blockers: 0, warnings: 0 };
-          _rawOrder.push(key);
-        }
-        _rawGroups[key].items.push(items[i]);
-        if (items[i].severity === 'blocker') _rawGroups[key].blockers++;
-        else _rawGroups[key].warnings++;
-      }
-
-      var _acctMap = {};
-      var _acctOrder = [];
-      for (var _ami = 0; _ami < _rawOrder.length; _ami++) {
-        var _amKey = _rawOrder[_ami];
-        var _amDn = _p1dGetDisplayName(_amKey, _rawGroups[_amKey].items);
-        var _amAcct = _amKey === '_batch_level' ? '_batch_level' : (_amDn.indexOf(' : ') >= 0 ? _amDn.split(' : ')[0].trim() : _amDn.trim());
-        if (!_acctMap[_amAcct]) {
-          _acctMap[_amAcct] = { contractKeys: [], items: [], blockers: 0, warnings: 0, displayName: _amDn };
-          _acctOrder.push(_amAcct);
-        }
-        _acctMap[_amAcct].contractKeys.push(_amKey);
-        for (var _aii = 0; _aii < _rawGroups[_amKey].items.length; _aii++) {
-          _acctMap[_amAcct].items.push(_rawGroups[_amKey].items[_aii]);
-        }
-        _acctMap[_amAcct].blockers += _rawGroups[_amKey].blockers;
-        _acctMap[_amAcct].warnings += _rawGroups[_amKey].warnings;
-      }
-
       var groups = {};
       var groupOrder = [];
-      for (var _aoi = 0; _aoi < _acctOrder.length; _aoi++) {
-        var _aoAcct = _acctOrder[_aoi];
-        var _aoData = _acctMap[_aoAcct];
-        var _aoMergedKey = _aoData.contractKeys.length === 1 ? _aoData.contractKeys[0] : 'acct_' + simpleHash(_aoAcct);
-        groups[_aoMergedKey] = { items: _aoData.items, blockers: _aoData.blockers, warnings: _aoData.warnings, _acctName: _aoAcct, _contractKeys: _aoData.contractKeys, _displayName: _aoData.displayName };
-        groupOrder.push(_aoMergedKey);
+      var _rawContractSet = {};
+      for (var i = 0; i < items.length; i++) {
+        var _item = items[i];
+        var _contractGroupKey = _p1dGetGroupKey(_item);
+        if (_contractGroupKey && _contractGroupKey !== '_batch_level') _rawContractSet[_contractGroupKey] = true;
+        var _acctIdentity = _p1dResolveAccountIdentity(_item);
+        var _accountGroupKey = (_contractGroupKey !== '_batch_level' && _acctIdentity.account_key) ? _acctIdentity.account_key : _contractGroupKey;
+        if (!groups[_accountGroupKey]) {
+          groups[_accountGroupKey] = {
+            items: [],
+            blockers: 0,
+            warnings: 0,
+            _acctName: _acctIdentity.account_name || '',
+            _contractKeys: [],
+            _displayName: ''
+          };
+          groupOrder.push(_accountGroupKey);
+        }
+        groups[_accountGroupKey].items.push(_item);
+        if (_item.severity === 'blocker') groups[_accountGroupKey].blockers++;
+        else groups[_accountGroupKey].warnings++;
+        if (_contractGroupKey && _contractGroupKey !== '_batch_level' && groups[_accountGroupKey]._contractKeys.indexOf(_contractGroupKey) === -1) {
+          groups[_accountGroupKey]._contractKeys.push(_contractGroupKey);
+        }
+        if (!groups[_accountGroupKey]._acctName && _acctIdentity.account_name) {
+          groups[_accountGroupKey]._acctName = _acctIdentity.account_name;
+        }
       }
-      console.log('[P1D-MERGE] account_merge: raw_contracts=' + _rawOrder.length + ' merged_accounts=' + groupOrder.length);
+      console.log('[P1D-MERGE] account_merge: raw_contracts=' + Object.keys(_rawContractSet).length + ' merged_accounts=' + groupOrder.length);
 
       groupOrder.sort(function(a, b) {
         if (a === '_batch_level') return 1;
@@ -28489,8 +28543,8 @@
         var ga = groups[a], gb = groups[b];
         if (gb.blockers !== ga.blockers) return gb.blockers - ga.blockers;
         if (gb.items.length !== ga.items.length) return gb.items.length - ga.items.length;
-        var na = ga._acctName || '';
-        var nb = gb._acctName || '';
+        var na = (ga._acctName || '').toLowerCase();
+        var nb = (gb._acctName || '').toLowerCase();
         return na < nb ? -1 : (na > nb ? 1 : 0);
       });
 
@@ -28530,11 +28584,12 @@
       for (var _pdi = 0; _pdi < groupOrder.length; _pdi++) {
         var _pdGk = groupOrder[_pdi];
         var _pdG = groups[_pdGk];
+        var _pdSeedKey = (_pdG._contractKeys && _pdG._contractKeys.length > 0) ? _pdG._contractKeys[0] : _pdGk;
         if (_pdG._acctName) {
           var _batchName = _p1d1GetBatchName();
           _preDisplayNames[_pdGk] = _batchName ? _pdG._acctName + ' : ' + _batchName : _pdG._acctName;
         } else {
-          _preDisplayNames[_pdGk] = _pdG._displayName || _p1dGetDisplayName(_pdGk, _pdG.items);
+          _preDisplayNames[_pdGk] = _pdG._displayName || _p1dGetDisplayName(_pdSeedKey, _pdG.items);
         }
       }
 
@@ -28564,7 +28619,8 @@
               compactId = _idFn.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
               if (compactId.length > 28) compactId = compactId.substring(0, 26) + '\u2026';
             } else {
-              var rawId = gk.indexOf('file:') === 0 ? gk.substring(5) : gk;
+              var _fallbackContractKey = (g._contractKeys && g._contractKeys.length === 1) ? g._contractKeys[0] : gk;
+              var rawId = _fallbackContractKey.indexOf('file:') === 0 ? _fallbackContractKey.substring(5) : _fallbackContractKey;
               if (rawId.indexOf('ctr_') === 0) {
                 rawId = rawId.substring(0, 10);
               } else {
@@ -28621,7 +28677,7 @@
         var caretChar = isCollapsed ? '\u25B6' : '\u25BC';
         var parentClass = 'p1d1-parent-row';
 
-        var _origCk = gk;
+        var _origCk = (g._contractKeys && g._contractKeys.length > 0) ? g._contractKeys[0] : gk;
         for (var _oki = 0; _oki < gItems.length; _oki++) {
           if (gItems[_oki].contract_key) { _origCk = gItems[_oki].contract_key; break; }
           if (gItems[_oki].contract_id) { _origCk = gItems[_oki].contract_id; break; }
@@ -28712,12 +28768,34 @@
           }
           if (ai === -1) ai = 99;
           if (bi === -1) bi = 99;
-          return ai - bi;
+          if (ai !== bi) return ai - bi;
+          var al = a.toLowerCase();
+          var bl = b.toLowerCase();
+          return al < bl ? -1 : (al > bl ? 1 : 0);
         });
 
         for (var _si = 0; _si < _sectionOrder.length; _si++) {
           var _secLabel = _sectionOrder[_si];
           var _secItems = _sectionGroups[_secLabel];
+          _secItems.sort(function(a, b) {
+            var aiItem = a.entry.item || {};
+            var biItem = b.entry.item || {};
+            var aField = (aiItem.field_label || aiItem.field_key || aiItem.field_name || '').toLowerCase();
+            var bField = (biItem.field_label || biItem.field_key || biItem.field_name || '').toLowerCase();
+            if (aField !== bField) return aField < bField ? -1 : 1;
+            var aReason = (aiItem.reason_code || aiItem.blocker_type || aiItem.signal_type || '').toLowerCase();
+            var bReason = (biItem.reason_code || biItem.blocker_type || biItem.signal_type || '').toLowerCase();
+            if (aReason !== bReason) return aReason < bReason ? -1 : 1;
+            var aSeverity = (aiItem.severity || '').toLowerCase();
+            var bSeverity = (biItem.severity || '').toLowerCase();
+            if (aSeverity !== bSeverity) return aSeverity < bSeverity ? -1 : 1;
+            var aRow = aiItem.row_index !== undefined && aiItem.row_index !== null ? Number(aiItem.row_index) : -1;
+            var bRow = biItem.row_index !== undefined && biItem.row_index !== null ? Number(biItem.row_index) : -1;
+            if (aRow !== bRow) return aRow - bRow;
+            var aReq = aiItem.request_id || '';
+            var bReq = biItem.request_id || '';
+            return aReq < bReq ? -1 : (aReq > bReq ? 1 : 0);
+          });
           var _secBlockers = 0, _secWarnings = 0;
           for (var _sci2 = 0; _sci2 < _secItems.length; _sci2++) {
             if (_secItems[_sci2].entry.item.severity === 'blocker') _secBlockers++;
@@ -29209,11 +29287,18 @@
               if (derived) cid = derived;
             }
             if (cid) {
-              if (!perContract[cid]) perContract[cid] = { count: 0, file_name: '' };
+              if (!perContract[cid]) perContract[cid] = { count: 0, file_name: '', account_name: '', account_key: '' };
               perContract[cid].count++;
               if (!perContract[cid].file_name) {
                 var _fn = row.file_name || row.File_Name_c || row.File_Name || row.contract_key || '';
                 if (_fn) perContract[cid].file_name = _fn;
+              }
+              if (!perContract[cid].account_name) {
+                var _acct = _p1dExtractAccountFromRow(row);
+                if (_acct) {
+                  perContract[cid].account_name = _acct;
+                  perContract[cid].account_key = 'acct_' + simpleHash(_acct.toLowerCase());
+                }
               }
             } else {
               batchCount++;
@@ -29252,7 +29337,9 @@
             blocker_type: condition,
             can_create_patch: false,
             _missing_value: true,
-            file_name: _ckFileName
+            file_name: _ckFileName,
+            _account_name: perContract[ck].account_name || '',
+            _account_key: perContract[ck].account_key || ''
           };
           enrichPreflightItem(item);
           _missingValuePreflightItems.push(item);
@@ -29287,6 +29374,23 @@
           _missingValuePreflightItems.push(bItem);
         }
       }
+      _missingValuePreflightItems.sort(function(a, b) {
+        var aSection = (a.sheet_name || '').toLowerCase();
+        var bSection = (b.sheet_name || '').toLowerCase();
+        if (aSection !== bSection) return aSection < bSection ? -1 : 1;
+        var aField = (a.field_name || a.field_key || '').toLowerCase();
+        var bField = (b.field_name || b.field_key || '').toLowerCase();
+        if (aField !== bField) return aField < bField ? -1 : 1;
+        var aType = (a.signal_type || '').toLowerCase();
+        var bType = (b.signal_type || '').toLowerCase();
+        if (aType !== bType) return aType < bType ? -1 : 1;
+        var aContract = (a.contract_key || a.record_id || '').toLowerCase();
+        var bContract = (b.contract_key || b.record_id || '').toLowerCase();
+        if (aContract !== bContract) return aContract < bContract ? -1 : 1;
+        var aReq = a.request_id || '';
+        var bReq = b.request_id || '';
+        return aReq < bReq ? -1 : (aReq > bReq ? 1 : 0);
+      });
     }
 
     function _mergeMissingValuePreflightItems() {
@@ -39832,6 +39936,24 @@
     };
     var _vTriageLoading = false;
 
+    function _vTriageGetStatusRaw(it) {
+      return (it && (it.queue_status || it.status || it.lifecycle_status || '')) || '';
+    }
+
+    function _vTriageGetStatusLower(it) {
+      return _vTriageGetStatusRaw(it).toLowerCase();
+    }
+
+    function _vTriageStatusMatchesFilter(st, statusVal) {
+      if (!statusVal) return true;
+      if (statusVal === 'pending') return (st === 'pending' || st === 'submitted');
+      if (statusVal === 'needs_clarification') return (st === 'needs_clarification' || st === 'returned_to_analyst' || st === 'awaiting_verifier');
+      if (statusVal === 'sent_to_admin') return st === 'sent_to_admin';
+      if (statusVal === 'resolved') return (st === 'resolved' || st === 'verifier_approved' || st === 'approved' || st === 'applied');
+      if (statusVal === 'resolution') return (st === 'sent_to_admin' || st === 'resolved' || st === 'verifier_approved' || st === 'approved' || st === 'applied');
+      return st === statusVal;
+    }
+
     function vTriageLoadData(forceRefresh) {
       if (_vTriageLoading && !forceRefresh) {
         console.log('[V2.56][VTRIAGE] Skipping duplicate load (in-flight)');
@@ -39887,11 +40009,11 @@
         if (!counts) {
           counts = { pending: 0, needs_clarification: 0, sent_to_admin: 0, resolved: 0, total: items.length };
           items.forEach(function(it) {
-            var st = (it.status || it.lifecycle_status || '').toLowerCase();
+            var st = _vTriageGetStatusLower(it);
             if (st === 'pending' || st === 'submitted') counts.pending++;
-            else if (st === 'needs_clarification') counts.needs_clarification++;
+            else if (st === 'needs_clarification' || st === 'returned_to_analyst' || st === 'awaiting_verifier') counts.needs_clarification++;
             else if (st === 'sent_to_admin') counts.sent_to_admin++;
-            else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved') counts.resolved++;
+            else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved' || st === 'applied') counts.resolved++;
           });
         }
 
@@ -39962,13 +40084,8 @@
       var typeVal = typeSel ? typeSel.value : '';
 
       var filtered = _vTriageState.queueItems.filter(function(it) {
-        var st = (it.status || it.lifecycle_status || '').toLowerCase();
-        if (statusVal) {
-          if (statusVal === 'pending' && st !== 'pending' && st !== 'submitted') return false;
-          if (statusVal === 'needs_clarification' && st !== 'needs_clarification') return false;
-          if (statusVal === 'sent_to_admin' && st !== 'sent_to_admin') return false;
-          if (statusVal === 'resolved' && st !== 'resolved' && st !== 'verifier_approved' && st !== 'approved') return false;
-        }
+        var st = _vTriageGetStatusLower(it);
+        if (!_vTriageStatusMatchesFilter(st, statusVal)) return false;
         if (typeVal) {
           var itype = (it.item_type || it.type || '').toLowerCase();
           if (itype !== typeVal) return false;
@@ -40042,10 +40159,10 @@
         var total = allBatchItems.length;
         var pending = 0, clarify = 0, resolved = 0;
         allBatchItems.forEach(function(it) {
-          var st = (it.status || it.lifecycle_status || '').toLowerCase();
+          var st = _vTriageGetStatusLower(it);
           if (st === 'pending' || st === 'submitted') pending++;
-          else if (st === 'needs_clarification') clarify++;
-          else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved') resolved++;
+          else if (st === 'needs_clarification' || st === 'returned_to_analyst' || st === 'awaiting_verifier') clarify++;
+          else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved' || st === 'sent_to_admin' || st === 'applied') resolved++;
         });
 
         var name = _vorgEsc(batch.name || batch.filename || bid);
@@ -40103,12 +40220,12 @@
         var type = _vorgTypeBadge(it.item_type || it.type);
         var record = _vorgEsc(it.record_label || it.record_id || it.contract_id || '—');
         var field = _vorgEsc(it.field_key || it.field_name || it.field || '—');
-        var status = '<span class="vorg-badge">' + _vorgStatusLabel(it.status || it.lifecycle_status) + '</span>';
+        var status = '<span class="vorg-badge">' + _vorgStatusLabel(_vTriageGetStatusRaw(it)) + '</span>';
         var author = _vorgEsc(it.author_email || it.created_by || '—');
         var age = '<span style="color:' + _vorgAgeColor(it.created_at) + ';">' + _vorgAgeText(it.created_at) + '</span>';
         var itemId = it.id || it.item_id || '';
         var itemType = (it.item_type || it.type || 'patch').toLowerCase();
-        var itemStatus = (it.status || it.lifecycle_status || '').toLowerCase();
+        var itemStatus = _vTriageGetStatusLower(it);
         var version = it.version || it.db_version || 1;
 
         var actions = '';
@@ -40148,11 +40265,11 @@
     function _vTriageComputeCounts() {
       var counts = { pending: 0, needs_clarification: 0, sent_to_admin: 0, resolved: 0, total: _vTriageState.queueItems.length };
       _vTriageState.queueItems.forEach(function(it) {
-        var st = (it.status || it.lifecycle_status || '').toLowerCase();
+        var st = _vTriageGetStatusLower(it);
         if (st === 'pending' || st === 'submitted') counts.pending++;
-        else if (st === 'needs_clarification') counts.needs_clarification++;
+        else if (st === 'needs_clarification' || st === 'returned_to_analyst' || st === 'awaiting_verifier') counts.needs_clarification++;
         else if (st === 'sent_to_admin') counts.sent_to_admin++;
-        else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved') counts.resolved++;
+        else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved' || st === 'applied') counts.resolved++;
       });
       return counts;
     }
@@ -40210,7 +40327,7 @@
       var cl = { returned: 0, awaiting: 0, total: 0 };
       var rs = { admin: 0, resolved: 0, applied: 0, total: 0 };
       items.forEach(function(it) {
-        var st = (it.status || it.lifecycle_status || '').toLowerCase();
+        var st = _vTriageGetStatusLower(it);
         var tp = (it.item_type || it.type || '').toLowerCase();
         if (st === 'pending' || st === 'submitted') {
           pv.total++;
@@ -40240,7 +40357,7 @@
     }
 
     function vTriageLaneClick(lane) {
-      var statusMap = { 'pending': 'pending', 'clarification': 'needs_clarification', 'resolution': 'resolved' };
+      var statusMap = { 'pending': 'pending', 'clarification': 'needs_clarification', 'resolution': 'resolution' };
       var statusVal = statusMap[lane] || '';
       _vTriageState.activeKpiStatus = statusVal;
       var sel = document.getElementById('vtriage-filter-status');
@@ -40266,11 +40383,11 @@
         var type = _vorgEsc(it.item_type || it.type || '\u2014');
         var record = _vorgEsc(it.record_label || it.contract_id || it.record_id || '\u2014');
         var field = _vorgEsc(it.field_key || it.field_name || it.field || '\u2014');
-        var rawSt = it.status || it.lifecycle_status || '\u2014';
+        var rawSt = _vTriageGetStatusRaw(it) || '\u2014';
         var stLower = rawSt.toLowerCase();
         var stColor = (stLower === 'pending' || stLower === 'submitted') ? 'var(--warn,#e65100)' :
-          (stLower === 'needs_clarification') ? 'var(--info,#1565c0)' :
-          (stLower === 'resolved' || stLower === 'verifier_approved' || stLower === 'approved') ? 'var(--ok,#2e7d32)' :
+          (stLower === 'needs_clarification' || stLower === 'returned_to_analyst' || stLower === 'awaiting_verifier') ? 'var(--info,#1565c0)' :
+          (stLower === 'resolved' || stLower === 'verifier_approved' || stLower === 'approved' || stLower === 'applied') ? 'var(--ok,#2e7d32)' :
           (stLower === 'sent_to_admin') ? 'var(--accent,#8B5CF6)' : 'var(--text-1,#333)';
         var status = '<span style="color:' + stColor + ';font-weight:600;">' + _vorgEsc(rawSt.replace(/_/g,' ')) + '</span>';
         var author = _vorgEsc(it.author_email || it.author || '\u2014');
@@ -43651,6 +43768,25 @@
     // ═══════════════════════════════════════════════════════════════
     var _p08UnresolvedPayload = null;
 
+    function _p08HasPreflightFieldIssue(row, sheetName, fieldKey) {
+      if (!row || !fieldKey) return false;
+      if (!row.hasOwnProperty(fieldKey)) return false;
+      var val = row[fieldKey];
+      if (typeof isBlankValue === 'function' && isBlankValue(val)) return true;
+      if (typeof getFieldMeta === 'function') {
+        var meta = getFieldMeta(sheetName, fieldKey);
+        if (meta && meta.options && meta.options.length > 0 && val !== null && val !== undefined) {
+          var lowerVal = String(val).toLowerCase().trim();
+          var isValid = false;
+          for (var oi = 0; oi < meta.options.length; oi++) {
+            if (String(meta.options[oi]).toLowerCase().trim() === lowerVal) { isValid = true; break; }
+          }
+          if (!isValid) return true;
+        }
+      }
+      return false;
+    }
+
     function resolveRecordForTriageItem(item, activeDatasetId) {
       var result = { resolved: false, path: 'unresolved', target: null, debug: null };
       var itemDatasetId = item.dataset_id || '';
@@ -43712,6 +43848,43 @@
         }
       }
 
+      // Step 2a: account-first section lookup (deterministic by field then first row)
+      var itemAccountName = '';
+      if (typeof _p1dResolveAccountIdentity === 'function') {
+        var _acctIdentity = _p1dResolveAccountIdentity(item);
+        itemAccountName = _acctIdentity.account_name || '';
+      }
+      if (!itemAccountName && itemContractId && typeof _p1d1ResolveAccountName === 'function') {
+        itemAccountName = _p1d1ResolveAccountName(itemContractId, item.file_name || '');
+      }
+      itemAccountName = (typeof _p1dNormalizeAccountName === 'function') ? _p1dNormalizeAccountName(itemAccountName) : (itemAccountName || '').trim();
+      if (itemSheetName && itemAccountName && workbook && workbook.sheets && workbook.sheets[itemSheetName] && workbook.sheets[itemSheetName].rows) {
+        var _s2aRows = workbook.sheets[itemSheetName].rows;
+        var _s2aTarget = itemAccountName.toLowerCase();
+        var _s2aBestIdx = -1;
+        var _s2aBestRank = 99;
+        for (var _s2ai = 0; _s2ai < _s2aRows.length; _s2ai++) {
+          var _s2aRow = _s2aRows[_s2ai];
+          if (!_s2aRow) continue;
+          var _s2aAcct = (typeof _p1dExtractAccountFromRow === 'function') ? _p1dExtractAccountFromRow(_s2aRow) : '';
+          if (!_s2aAcct || _s2aAcct.toLowerCase() !== _s2aTarget) continue;
+          var _s2aRank = _p08HasPreflightFieldIssue(_s2aRow, itemSheetName, itemFieldKey) ? 0 : 1;
+          if (_s2aRank < _s2aBestRank) {
+            _s2aBestRank = _s2aRank;
+            _s2aBestIdx = _s2ai;
+            if (_s2aBestRank === 0) break;
+          }
+        }
+        if (_s2aBestIdx >= 0) {
+          console.log('[P0.8-LINK] route_resolved_account_first: account=' + itemAccountName + ' sheet=' + itemSheetName + ' row=' + _s2aBestIdx + ' field=' + itemFieldKey);
+          result.resolved = true;
+          result.path = 'account_first';
+          result.target = { row: _s2aRows[_s2aBestIdx], rowIndex: _s2aBestIdx, sheetName: itemSheetName };
+          result.fieldKey = itemFieldKey;
+          return result;
+        }
+      }
+
       // Step 2b: sheet_name + contract_id - find the first matching record in the correct section
       if (itemSheetName && itemContractId && workbook && workbook.sheets && workbook.sheets[itemSheetName] && workbook.sheets[itemSheetName].rows) {
         var _s2bRows = workbook.sheets[itemSheetName].rows;
@@ -43726,22 +43899,9 @@
           }
           if (_s2bCid !== itemContractId) continue;
           if (_s2bFieldKey && _s2bRow.hasOwnProperty(_s2bFieldKey)) {
-            var _s2bVal = _s2bRow[_s2bFieldKey];
-            var _s2bBlank = (_s2bVal === null || _s2bVal === undefined || String(_s2bVal).trim() === '');
-            if (_s2bBlank) {
+            if (_p08HasPreflightFieldIssue(_s2bRow, itemSheetName, _s2bFieldKey)) {
               _s2bFoundIdx = _s2bi;
               break;
-            }
-            if (typeof getFieldMeta === 'function') {
-              var _s2bMeta = getFieldMeta(itemSheetName, _s2bFieldKey);
-              if (_s2bMeta && _s2bMeta.options && _s2bMeta.options.length > 0) {
-                var _s2bLower = String(_s2bVal).toLowerCase().trim();
-                var _s2bMatch = false;
-                for (var _opi = 0; _opi < _s2bMeta.options.length; _opi++) {
-                  if (String(_s2bMeta.options[_opi]).toLowerCase().trim() === _s2bLower) { _s2bMatch = true; break; }
-                }
-                if (!_s2bMatch) { _s2bFoundIdx = _s2bi; break; }
-              }
             }
           }
           if (_s2bFoundIdx === -1) _s2bFoundIdx = _s2bi;
