@@ -25559,7 +25559,6 @@
           if (currentMode === 'verifier' || currentMode === 'admin') {
             _atc.style.display = 'none';
             _vtc.style.display = 'block';
-            setTimeout(function() { if (typeof vTriageLoadData === 'function') vTriageLoadData(); }, 0);
           } else {
             _atc.style.display = 'block';
             _vtc.style.display = 'none';
@@ -39777,8 +39776,14 @@
       activeKpiStatus: '',
       loaded: false
     };
+    var _vTriageLoading = false;
 
-    function vTriageLoadData() {
+    function vTriageLoadData(forceRefresh) {
+      if (_vTriageLoading && !forceRefresh) {
+        console.log('[V2.56][VTRIAGE] Skipping duplicate load (in-flight)');
+        return;
+      }
+      _vTriageLoading = true;
       var wsId = _vorgGetWorkspaceId();
       var headers = _vorgGetAuthHeaders();
       if (typeof isDemoMode === 'function' && isDemoMode()) {
@@ -39818,6 +39823,7 @@
         if (loadingEl) loadingEl.style.display = 'none';
 
         if (items.length === 0 && batches.length === 0) {
+          _vTriageLoading = false;
           if (emptyEl) emptyEl.style.display = 'block';
           return;
         }
@@ -39837,14 +39843,16 @@
 
         vTriageRenderKpi(counts);
         vTriageApplyFilters();
+        _vTriageLoading = false;
         console.log('[V2.56][VTRIAGE] Loaded: items=' + items.length + ', batches=' + batches.length);
       }).catch(function(err) {
+        _vTriageLoading = false;
         console.error('[V2.56][VTRIAGE] Load error:', err);
         if (loadingEl) loadingEl.style.display = 'none';
         if (errorEl) {
           errorEl.style.display = 'block';
           errorEl.innerHTML = '<strong>Failed to load operations data.</strong> ' + _vorgEsc(err.message || String(err)) +
-            ' <button onclick="vTriageLoadData()" style="margin-left:12px;padding:4px 12px;border-radius:4px;border:1px solid var(--bad-border);background:var(--bg-1);color:var(--bad);cursor:pointer;">Retry</button>';
+            ' <button onclick="vTriageLoadData(true)" style="margin-left:12px;padding:4px 12px;border-radius:4px;border:1px solid var(--bad-border);background:var(--bg-1);color:var(--bad);cursor:pointer;">Retry</button>';
         }
       });
     }
@@ -40035,7 +40043,7 @@
       items.forEach(function(it) {
         var type = _vorgTypeBadge(it.item_type || it.type);
         var record = _vorgEsc(it.record_label || it.record_id || it.contract_id || '—');
-        var field = _vorgEsc(it.field_name || it.field || '—');
+        var field = _vorgEsc(it.field_key || it.field_name || it.field || '—');
         var status = '<span class="vorg-badge">' + _vorgStatusLabel(it.status || it.lifecycle_status) + '</span>';
         var author = _vorgEsc(it.author_email || it.created_by || '—');
         var age = '<span style="color:' + _vorgAgeColor(it.created_at) + ';">' + _vorgAgeText(it.created_at) + '</span>';
@@ -40047,8 +40055,8 @@
         var actions = '';
         if (itemStatus === 'pending' || itemStatus === 'submitted') {
           actions = '<div style="display:flex;gap:4px;flex-wrap:wrap;" class="vorg-action-group" data-item-id="' + _vorgEsc(itemId) + '">' +
-            '<button class="vorg-action-btn vorg-action-approve" onclick="event.stopPropagation();vTriageAction(\'' + _vorgEsc(itemId) + '\',\'' + itemType + '\',\'approved\',' + version + ')" title="Approve">Approve</button>' +
-            '<button class="vorg-action-btn vorg-action-reject" onclick="event.stopPropagation();vTriageAction(\'' + _vorgEsc(itemId) + '\',\'' + itemType + '\',\'rejected\',' + version + ')" title="Reject">Reject</button>' +
+            '<button class="vorg-action-btn vorg-action-approve" onclick="event.stopPropagation();vTriageAction(\'' + _vorgEsc(itemId) + '\',\'' + itemType + '\',\'Verifier_Approved\',' + version + ')" title="Approve">Approve</button>' +
+            '<button class="vorg-action-btn vorg-action-reject" onclick="event.stopPropagation();vTriageAction(\'' + _vorgEsc(itemId) + '\',\'' + itemType + '\',\'Rejected\',' + version + ')" title="Reject">Reject</button>' +
             '</div>';
         } else if (itemStatus === 'needs_clarification' && itemType === 'rfi') {
           actions = '<div style="display:flex;gap:4px;flex-wrap:wrap;" class="vorg-action-group" data-item-id="' + _vorgEsc(itemId) + '">' +
@@ -40074,52 +40082,8 @@
     }
 
     function vTriageAction(itemId, type, newStatus, version) {
-      var group = document.querySelector('.vorg-action-group[data-item-id="' + itemId + '"]');
-      if (!group) return;
-      var actionBtns = group.querySelectorAll('.vorg-action-btn');
-      var origTexts = [];
-      actionBtns.forEach(function(b) {
-        origTexts.push(b.innerHTML);
-        b.disabled = true;
-        b.innerHTML = '<span class="vorg-spinner"></span>';
-      });
-
-      var promise;
-      if (type === 'patch' && typeof opsDbWriteStatus === 'function') {
-        promise = opsDbWriteStatus(itemId, newStatus, version);
-      } else if (type === 'rfi' && typeof opsDbWriteRfiStatus === 'function') {
-        promise = opsDbWriteRfiStatus(itemId, newStatus, version);
-      } else if (type === 'correction' && typeof opsDbWriteCorrectionStatus === 'function') {
-        promise = opsDbWriteCorrectionStatus(itemId, newStatus, version);
-      } else {
-        actionBtns.forEach(function(b, i) { b.disabled = false; b.innerHTML = origTexts[i]; });
-        showToast('Action handler not available for type: ' + type, 'warning');
-        return;
-      }
-
-      promise.then(function(result) {
-        actionBtns.forEach(function(b, i) { b.disabled = false; b.innerHTML = origTexts[i]; });
-        if (result === false) return;
-        if (result && result.ok) {
-          showToast(_vorgStatusLabel(type) + ' ' + newStatus.replace(/_/g, ' '), 'success');
-          var item = _vTriageState.queueItems.find(function(it) { return (it.id || it.item_id) === itemId; });
-          if (item) {
-            item.status = newStatus;
-            item.lifecycle_status = newStatus;
-            if (result.newVersion) {
-              item.version = result.newVersion;
-              item.db_version = result.newVersion;
-            }
-          }
-          vTriageApplyFilters();
-          var counts = _vTriageComputeCounts();
-          vTriageRenderKpi(counts);
-        }
-      }).catch(function(err) {
-        actionBtns.forEach(function(b, i) { b.disabled = false; b.innerHTML = origTexts[i]; });
-        console.error('[V2.56][VTRIAGE] Action error:', err);
-        showToast('Version conflict \u2014 refresh to retry', 'error');
-      });
+      console.log('[V2.56][VTRIAGE][P0] Action blocked (read-only): ' + type + ' → ' + newStatus + ' for ' + itemId);
+      showToast('Actions move to P1. Read-only in P0.', 'info');
     }
 
     function _vTriageComputeCounts() {
@@ -40216,10 +40180,6 @@
       if (typeof currentPage !== 'undefined' && currentPage === 'verifier-org' && typeof vorgLoadData === 'function') {
         console.log('[OpsView] Refreshing Org View for role switch');
         vorgLoadData();
-      }
-      if (typeof currentPage !== 'undefined' && currentPage === 'triage' && (currentMode === 'verifier' || currentMode === 'admin') && typeof vTriageLoadData === 'function') {
-        console.log('[V2.56] Refreshing verifier triage for role switch');
-        vTriageLoadData();
       }
       if (_opsViewFlags.dbRead) {
         verifierQueueState.payloads = [];
