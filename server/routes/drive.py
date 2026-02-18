@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import io
 import json
 import logging
@@ -14,6 +15,7 @@ from server.ulid import generate_id
 from server.api_v25 import envelope, collection_envelope, error_envelope
 from server.auth import AuthClass, require_auth, require_role, Role
 from server.audit import emit_audit_event
+from server.custody_canary import trigger_session_handoff
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v2.5", tags=["drive"])
@@ -33,6 +35,23 @@ MAX_IMPORT_SIZE_BYTES = 50 * 1024 * 1024
 
 DRIVE_ROOT_FOLDER_ID = os.environ.get("DRIVE_ROOT_FOLDER_ID", "")
 
+EXPORT_STATUS_ENUM = {
+    "IN_PROGRESS_ANALYST": "IN_PROGRESS_ANALYST",
+    "ANALYST_DONE": "ANALYST_DONE",
+    "VERIFIER_DONE": "VERIFIER_DONE",
+    "ADMIN_FINAL": "ADMIN_FINAL",
+    "REJECTED": "REJECTED",
+}
+EXPORT_STATUS_ALIASES = {
+    "IN_PROGRESS": "IN_PROGRESS_ANALYST",
+    "INPROGRESS": "IN_PROGRESS_ANALYST",
+    "IN_PROGRESS_ANALYST": "IN_PROGRESS_ANALYST",
+    "ANALYST_DONE": "ANALYST_DONE",
+    "VERIFIER_DONE": "VERIFIER_DONE",
+    "ADMIN_FINAL": "ADMIN_FINAL",
+    "REJECTED": "REJECTED",
+}
+
 CONN_COLUMNS = [
     "id", "workspace_id", "connected_by", "drive_email",
     "status", "connected_at", "updated_at", "metadata",
@@ -48,6 +67,16 @@ PROV_COLUMNS = [
 PROV_SELECT = ", ".join(PROV_COLUMNS)
 
 
+class DriveImportFailure(Exception):
+    def __init__(self, code, message, status_code=500, details=None, preflight=None):
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.status_code = status_code
+        self.details = details
+        self.preflight = preflight
+
+
 def _row_to_dict(row, columns):
     d = {}
     for i, col in enumerate(columns):
@@ -57,6 +86,31 @@ def _row_to_dict(row, columns):
         else:
             d[col] = val
     return d
+
+
+def _normalize_export_status(raw_status):
+    status_raw = (raw_status or "").strip()
+    if not status_raw:
+        return EXPORT_STATUS_ENUM["IN_PROGRESS_ANALYST"]
+    normalized = re.sub(r"[^A-Za-z0-9_]+", "_", status_raw).upper()
+    normalized = re.sub(r"_+", "_", normalized).strip("_")
+    return EXPORT_STATUS_ALIASES.get(normalized, EXPORT_STATUS_ENUM["IN_PROGRESS_ANALYST"])
+
+
+def _sanitize_filename_part(value, fallback):
+    part = (value or "").strip()
+    part = re.sub(r"\.(xlsx|xls|csv)$", "", part, flags=re.IGNORECASE)
+    part = re.sub(r"[^A-Za-z0-9_.-]+", "_", part)
+    part = re.sub(r"_+", "_", part).strip("_.")
+    return part[:64] if part else fallback
+
+
+def _build_export_filename(dataset_or_batch, status, workspace_id, now_utc=None):
+    ts = (now_utc or datetime.now(timezone.utc)).strftime("%Y-%m-%d_%H-%M")
+    seed = _sanitize_filename_part(dataset_or_batch, "dataset")
+    ws_part = _sanitize_filename_part(workspace_id, "workspace")
+    normalized_status = _normalize_export_status(status)
+    return "%s__%s__%s__%s.xlsx" % (seed, normalized_status, ts, ws_part)
 
 
 def _get_drive_service(access_token):
@@ -118,6 +172,516 @@ def _get_workspace_connection(ws_id, db_conn):
             (ws_id,),
         )
         return cur.fetchone()
+
+
+def _supported_import_mime(mime):
+    if not mime:
+        return True
+    if mime == "application/vnd.google-apps.spreadsheet":
+        return True
+    return mime in (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-excel",
+        "text/csv",
+        "text/plain",
+    )
+
+
+def _build_drive_import_preflight(
+    file_id,
+    file_name,
+    ordinal=None,
+    total=None,
+    file_meta=None,
+    retry_reused=False,
+    error=None,
+):
+    file_id = (file_id or "").strip()
+    file_name = (file_name or "").strip()
+    mime_type = (file_meta or {}).get("mimeType")
+    modified_time = (file_meta or {}).get("modifiedTime")
+    md5 = (file_meta or {}).get("md5Checksum")
+    size_raw = (file_meta or {}).get("size")
+    size_bytes = None
+    try:
+        size_bytes = int(size_raw) if size_raw is not None else None
+    except Exception:
+        size_bytes = None
+
+    payload = {
+        "file_id": file_id,
+        "file_name": file_name,
+        "ordinal": ordinal,
+        "total": total,
+        "mime_type": mime_type,
+        "size_bytes": size_bytes,
+        "modified_time": modified_time,
+        "md5": md5,
+        "retry_reused": bool(retry_reused),
+        "checks": {
+            "file_id_present": bool(file_id),
+            "drive_metadata_available": file_meta is not None,
+            "size_within_limit": (size_bytes is None) or (size_bytes <= MAX_IMPORT_SIZE_BYTES),
+            "mime_supported": _supported_import_mime(mime_type),
+        },
+        "error": error or None,
+    }
+    stable = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    payload["fingerprint"] = hashlib.sha256(stable.encode("utf-8")).hexdigest()
+    return payload
+
+
+def _new_batch_progress(total):
+    return {
+        "total": int(total or 0),
+        "processed": 0,
+        "remaining": int(total or 0),
+        "succeeded": 0,
+        "failed": 0,
+        "skipped": 0,
+        "state": "running",
+    }
+
+
+def _increment_batch_progress(progress, status):
+    progress["processed"] += 1
+    if status == "succeeded":
+        progress["succeeded"] += 1
+    elif status == "failed":
+        progress["failed"] += 1
+    else:
+        progress["skipped"] += 1
+    progress["remaining"] = max(progress["total"] - progress["processed"], 0)
+    return dict(progress)
+
+
+def _finalize_batch_progress(progress):
+    if progress["failed"] == 0 and progress["succeeded"] == progress["total"]:
+        progress["state"] = "completed"
+    elif progress["failed"] > 0 and progress["succeeded"] > 0:
+        progress["state"] = "partial_failure"
+    elif progress["failed"] > 0 and progress["succeeded"] == 0:
+        progress["state"] = "failed"
+    elif progress["processed"] == progress["total"] and progress["skipped"] == progress["total"]:
+        progress["state"] = "skipped"
+    else:
+        progress["state"] = "completed_with_skips"
+    return progress
+
+
+def _status_message_for_progress(progress):
+    return (
+        "Processed %(processed)d/%(total)d files: %(succeeded)d succeeded, %(failed)d failed, %(skipped)d skipped."
+        % progress
+    )
+
+
+def _status_code_for_progress(progress):
+    return 200 if progress["failed"] == 0 else 207
+
+
+def _execute_batch_import(file_items, import_one, continue_on_error=True):
+    total = len(file_items or [])
+    progress = _new_batch_progress(total)
+    results = []
+    seen_file_ids = set()
+    stop_at = None
+
+    for idx, raw_item in enumerate(file_items or []):
+        item = raw_item if isinstance(raw_item, dict) else {}
+        file_id = (item.get("file_id") or "").strip()
+        file_name = (item.get("file_name") or "").strip()
+        ordinal = idx + 1
+        entry = {
+            "index": idx,
+            "file_id": file_id,
+            "file_name": file_name,
+        }
+
+        if not file_id:
+            pf = _build_drive_import_preflight(
+                file_id=file_id,
+                file_name=file_name,
+                ordinal=ordinal,
+                total=total,
+                error={"code": "VALIDATION_ERROR", "message": "file_id is required"},
+            )
+            entry["status"] = "failed"
+            entry["status_message"] = "Skipped: file_id is required."
+            entry["preflight"] = pf
+            entry["error"] = {"code": "VALIDATION_ERROR", "message": "file_id is required"}
+            entry["progress"] = _increment_batch_progress(progress, "failed")
+            results.append(entry)
+            if not continue_on_error:
+                stop_at = idx + 1
+                break
+            continue
+
+        if file_id in seen_file_ids:
+            pf = _build_drive_import_preflight(
+                file_id=file_id,
+                file_name=file_name,
+                ordinal=ordinal,
+                total=total,
+                retry_reused=True,
+                error={"code": "DUPLICATE_IN_REQUEST", "message": "duplicate file_id in request"},
+            )
+            entry["status"] = "skipped"
+            entry["status_message"] = "Skipped duplicate file in request for retry safety."
+            entry["preflight"] = pf
+            entry["error"] = {"code": "DUPLICATE_IN_REQUEST", "message": "duplicate file_id in request"}
+            entry["progress"] = _increment_batch_progress(progress, "skipped")
+            results.append(entry)
+            continue
+
+        seen_file_ids.add(file_id)
+        try:
+            imported = import_one(file_id=file_id, file_name=file_name, ordinal=ordinal, total=total)
+            entry["status"] = "succeeded"
+            entry["status_message"] = imported.get("status_message", "Imported file successfully.")
+            entry["preflight"] = imported.get(
+                "preflight",
+                _build_drive_import_preflight(file_id=file_id, file_name=file_name, ordinal=ordinal, total=total),
+            )
+            entry["result"] = imported
+            entry["progress"] = _increment_batch_progress(progress, "succeeded")
+            results.append(entry)
+        except DriveImportFailure as e:
+            entry["status"] = "failed"
+            entry["status_message"] = "Import failed: %s" % e.message
+            entry["preflight"] = e.preflight or _build_drive_import_preflight(
+                file_id=file_id,
+                file_name=file_name,
+                ordinal=ordinal,
+                total=total,
+                error={"code": e.code, "message": e.message},
+            )
+            error_obj = {"code": e.code, "message": e.message}
+            if e.details is not None:
+                error_obj["details"] = e.details
+            entry["error"] = error_obj
+            entry["progress"] = _increment_batch_progress(progress, "failed")
+            results.append(entry)
+            if not continue_on_error:
+                stop_at = idx + 1
+                break
+        except Exception as e:
+            entry["status"] = "failed"
+            entry["status_message"] = "Import failed due to an unexpected internal error."
+            entry["preflight"] = _build_drive_import_preflight(
+                file_id=file_id,
+                file_name=file_name,
+                ordinal=ordinal,
+                total=total,
+                error={"code": "INTERNAL", "message": str(e)},
+            )
+            entry["error"] = {"code": "INTERNAL", "message": str(e)}
+            entry["progress"] = _increment_batch_progress(progress, "failed")
+            results.append(entry)
+            if not continue_on_error:
+                stop_at = idx + 1
+                break
+
+    if stop_at is not None and stop_at < total:
+        for idx in range(stop_at, total):
+            item = file_items[idx] if isinstance(file_items[idx], dict) else {}
+            file_id = (item.get("file_id") or "").strip()
+            file_name = (item.get("file_name") or "").strip()
+            pf = _build_drive_import_preflight(
+                file_id=file_id,
+                file_name=file_name,
+                ordinal=idx + 1,
+                total=total,
+                error={"code": "HALTED", "message": "batch stopped after previous failure"},
+            )
+            entry = {
+                "index": idx,
+                "file_id": file_id,
+                "file_name": file_name,
+                "status": "skipped",
+                "status_message": "Not attempted because batch was halted after a failure.",
+                "preflight": pf,
+                "error": {"code": "HALTED", "message": "batch stopped after previous failure"},
+            }
+            entry["progress"] = _increment_batch_progress(progress, "skipped")
+            results.append(entry)
+
+    _finalize_batch_progress(progress)
+    payload = {
+        "progress_state_cleared": True,
+        "progress": progress,
+        "status_message": _status_message_for_progress(progress),
+        "items": results,
+    }
+    return payload, _status_code_for_progress(progress)
+
+
+def _download_drive_file_bytes(service, file_id, file_name, ordinal=None, total=None):
+    try:
+        file_meta = service.files().get(
+            fileId=file_id,
+            fields="id, name, mimeType, size, modifiedTime, md5Checksum, parents",
+            supportsAllDrives=True,
+        ).execute()
+    except Exception as e:
+        raise DriveImportFailure(
+            code="DRIVE_IMPORT_FETCH_FAILED",
+            message="Unable to fetch Google Drive metadata.",
+            status_code=502,
+            details={"file_id": file_id, "reason": str(e)},
+            preflight=_build_drive_import_preflight(
+                file_id=file_id,
+                file_name=file_name,
+                ordinal=ordinal,
+                total=total,
+                error={"code": "DRIVE_IMPORT_FETCH_FAILED", "message": str(e)},
+            ),
+        )
+
+    file_size = int(file_meta.get("size", 0) or 0)
+    if file_size > MAX_IMPORT_SIZE_BYTES:
+        raise DriveImportFailure(
+            code="FILE_TOO_LARGE",
+            message="File exceeds 50MB limit (%d bytes)" % file_size,
+            status_code=413,
+            details={"size_bytes": file_size, "max_bytes": MAX_IMPORT_SIZE_BYTES},
+            preflight=_build_drive_import_preflight(
+                file_id=file_id,
+                file_name=file_name or file_meta.get("name"),
+                ordinal=ordinal,
+                total=total,
+                file_meta=file_meta,
+                error={"code": "FILE_TOO_LARGE", "message": "size exceeds limit"},
+            ),
+        )
+
+    mime = file_meta.get("mimeType", "")
+    google_export_mimes = {
+        "application/vnd.google-apps.spreadsheet": (
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ".xlsx",
+        ),
+    }
+
+    from googleapiclient.http import MediaIoBaseDownload
+    if mime in google_export_mimes:
+        export_mime, ext = google_export_mimes[mime]
+        request_dl = service.files().export_media(fileId=file_id, mimeType=export_mime)
+    else:
+        ext = None
+        request_dl = service.files().get_media(fileId=file_id, supportsAllDrives=True)
+
+    buf = io.BytesIO()
+    downloader = MediaIoBaseDownload(buf, request_dl)
+    done = False
+    while not done:
+        _, done = downloader.next_chunk()
+
+    file_bytes = buf.getvalue()
+    raw_name = file_meta.get("name", "file")
+    if ext:
+        name_base = raw_name.rsplit(".", 1)[0] if "." in raw_name else raw_name
+        download_name = name_base + ext
+    else:
+        download_name = raw_name
+
+    return file_meta, file_bytes, file_size, download_name
+
+
+def _import_drive_file_record(
+    ws_id,
+    auth,
+    conn,
+    service,
+    file_id,
+    file_name="",
+    ordinal=None,
+    total=None,
+):
+    if not file_id:
+        raise DriveImportFailure(
+            code="VALIDATION_ERROR",
+            message="file_id is required",
+            status_code=400,
+            preflight=_build_drive_import_preflight(
+                file_id=file_id,
+                file_name=file_name,
+                ordinal=ordinal,
+                total=total,
+                error={"code": "VALIDATION_ERROR", "message": "file_id is required"},
+            ),
+        )
+
+    file_meta, file_bytes, file_size, download_name = _download_drive_file_bytes(
+        service=service,
+        file_id=file_id,
+        file_name=file_name,
+        ordinal=ordinal,
+        total=total,
+    )
+    file_b64 = base64.b64encode(file_bytes).decode("ascii")
+    modified_time = file_meta.get("modifiedTime")
+    drive_md5 = file_meta.get("md5Checksum")
+    drive_id_val = file_meta.get("parents", [None])[0] if file_meta.get("parents") else None
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """SELECT %s FROM drive_import_provenance
+                   WHERE workspace_id = %s
+                     AND source_file_id = %s
+                     AND drive_modified_time = %s
+                     AND COALESCE(drive_md5, '') = COALESCE(%s, '')
+                   ORDER BY version_number DESC
+                   LIMIT 1""" % PROV_SELECT,
+                (ws_id, file_id, modified_time, drive_md5),
+            )
+            retry_row = cur.fetchone()
+            if retry_row:
+                retry_result = _row_to_dict(retry_row, PROV_COLUMNS)
+                retry_result["is_refresh"] = bool(retry_result.get("supersedes_id"))
+                retry_result["retry_reused"] = True
+                retry_result["file_content_base64"] = file_b64
+                retry_result["file_name"] = download_name
+                retry_result["preflight"] = _build_drive_import_preflight(
+                    file_id=file_id,
+                    file_name=file_name or file_meta.get("name"),
+                    ordinal=ordinal,
+                    total=total,
+                    file_meta=file_meta,
+                    retry_reused=True,
+                )
+                retry_result["status_message"] = "Already imported this file revision; reused existing result."
+                emit_audit_event(
+                    cur,
+                    workspace_id=ws_id,
+                    event_type="DRIVE_FILE_IMPORT_REUSED",
+                    actor_id=auth.user_id,
+                    actor_role=auth.role,
+                    resource_type="drive_import_provenance",
+                    resource_id=retry_result["id"],
+                    detail={
+                        "source_file_id": file_id,
+                        "file_name": file_meta.get("name"),
+                        "version_number": retry_result.get("version_number"),
+                        "retry_reused": True,
+                    },
+                )
+                conn.commit()
+                return retry_result
+
+            cur.execute(
+                """SELECT id, version_number FROM drive_import_provenance
+                   WHERE workspace_id = %s AND source_file_id = %s
+                   ORDER BY version_number DESC LIMIT 1""",
+                (ws_id, file_id),
+            )
+            prev = cur.fetchone()
+
+            if prev:
+                new_version = prev[1] + 1
+                supersedes_id = prev[0]
+                is_refresh = True
+            else:
+                new_version = 1
+                supersedes_id = None
+                is_refresh = False
+
+            prov_id = generate_id("drv_")
+            cur.execute(
+                """INSERT INTO drive_import_provenance
+                   (id, workspace_id, source_file_id, source_file_name,
+                    source_mime_type, source_size_bytes, drive_id,
+                    drive_modified_time, drive_md5,
+                    version_number, supersedes_id, imported_by)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                   RETURNING """ + PROV_SELECT,
+                (
+                    prov_id,
+                    ws_id,
+                    file_id,
+                    file_meta.get("name"),
+                    file_meta.get("mimeType"),
+                    file_size,
+                    drive_id_val,
+                    modified_time,
+                    drive_md5,
+                    new_version,
+                    supersedes_id,
+                    auth.user_id,
+                ),
+            )
+            prov_row = cur.fetchone()
+
+            emit_audit_event(
+                cur,
+                workspace_id=ws_id,
+                event_type="DRIVE_FILE_IMPORTED",
+                actor_id=auth.user_id,
+                actor_role=auth.role,
+                resource_type="drive_import_provenance",
+                resource_id=prov_id,
+                detail={
+                    "source_file_id": file_id,
+                    "file_name": file_meta.get("name"),
+                    "version_number": new_version,
+                    "supersedes_id": supersedes_id,
+                    "is_refresh": is_refresh,
+                    "size_bytes": file_size,
+                },
+            )
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise DriveImportFailure(
+            code="INTERNAL",
+            message="Failed to record Drive import provenance.",
+            status_code=500,
+            details={"file_id": file_id, "reason": str(e)},
+            preflight=_build_drive_import_preflight(
+                file_id=file_id,
+                file_name=file_name or file_meta.get("name"),
+                ordinal=ordinal,
+                total=total,
+                file_meta=file_meta,
+                error={"code": "INTERNAL", "message": str(e)},
+            ),
+        )
+
+    try:
+        trigger_session_handoff(
+            workspace_id=ws_id,
+            actor_id=auth.user_id,
+            trigger="drive_import",
+            source_type="drive",
+            source_ref=file_id,
+            environment=None,
+            metadata={
+                "path": "drive_import",
+                "provenance_id": prov_row[0],
+                "file_name": file_meta.get("name"),
+                "version_number": new_version,
+                "is_refresh": is_refresh,
+            },
+        )
+    except Exception as e:
+        logger.warning("custody session handoff trigger failed (drive_import): %s", e)
+
+    result = _row_to_dict(prov_row, PROV_COLUMNS)
+    result["is_refresh"] = is_refresh
+    result["retry_reused"] = False
+    result["file_content_base64"] = file_b64
+    result["file_name"] = download_name
+    result["preflight"] = _build_drive_import_preflight(
+        file_id=file_id,
+        file_name=file_name or file_meta.get("name"),
+        ordinal=ordinal,
+        total=total,
+        file_meta=file_meta,
+        retry_reused=False,
+    )
+    result["status_message"] = "Imported file successfully."
+    return result
 
 
 @router.post("/workspaces/{ws_id}/drive/connect")
@@ -558,12 +1122,6 @@ async def drive_settings_put(ws_id: str, request: Request, auth=Depends(require_
         put_conn(conn)
 
 
-def _sanitize_actor_name(name):
-    sanitized = name.replace(" ", "_")
-    sanitized = re.sub(r"[^A-Za-z0-9_.\-@]", "", sanitized)
-    return sanitized or "unknown"
-
-
 def _get_drive_settings(ws_id, db_conn):
     with db_conn.cursor() as cur:
         cur.execute(
@@ -646,7 +1204,8 @@ async def drive_save(ws_id: str, request: Request, auth=Depends(require_auth(Aut
         )
 
     batch_id = body.get("batch_id", "").strip()
-    save_status = body.get("status", "IN_PROGRESS").strip()
+    save_status_raw = body.get("status", EXPORT_STATUS_ENUM["IN_PROGRESS_ANALYST"])
+    save_status = _normalize_export_status(save_status_raw)
     note = body.get("note", "").strip()
     file_content_b64 = body.get("file_content_base64", "")
 
@@ -704,9 +1263,7 @@ async def drive_save(ws_id: str, request: Request, auth=Depends(require_auth(Aut
                 )
                 settings["admin_folder_id"] = target_folder
 
-        actor_name = _sanitize_actor_name(auth.display_name or auth.email or "unknown")
-        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%SZ")
-        file_name = "%s-%s-%s-%s.xlsx" % (batch_id, actor_name, save_status, ts)
+        file_name = _build_export_filename(batch_id, save_status, ws_id)
 
         file_bytes = base64.b64decode(file_content_b64)
 
@@ -760,6 +1317,8 @@ async def drive_save(ws_id: str, request: Request, auth=Depends(require_auth(Aut
                     "file_name": file_name,
                     "folder_id": target_folder,
                     "status": save_status,
+                    "status_raw": save_status_raw,
+                    "batch_id": batch_id,
                     "drive_file_id": drive_file_id,
                     "size_bytes": len(file_bytes),
                     "note": note,
@@ -773,6 +1332,7 @@ async def drive_save(ws_id: str, request: Request, auth=Depends(require_auth(Aut
             "file_name": file_name,
             "folder_id": target_folder,
             "webViewLink": web_view_link,
+            "status": save_status,
         })
     except Exception as e:
         logger.error("drive_save error: %s", e)
@@ -916,11 +1476,77 @@ async def drive_import(ws_id: str, request: Request, auth=Depends(require_auth(A
             content=error_envelope("VALIDATION_ERROR", "Invalid JSON body"),
         )
 
-    file_id = body.get("file_id", "").strip()
-    if not file_id:
+    file_id = (body.get("file_id") or "").strip()
+    file_name = (body.get("file_name") or "").strip()
+
+    conn = get_conn()
+    try:
+        conn_row = _get_workspace_connection(ws_id, conn)
+        if not conn_row:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("NO_DRIVE_CONNECTION", "No active Drive connection for this workspace"),
+            )
+
+        access_token = _refresh_token_if_needed(conn_row, conn)
+        service = _get_drive_service(access_token)
+        result = _import_drive_file_record(
+            ws_id=ws_id,
+            auth=auth,
+            conn=conn,
+            service=service,
+            file_id=file_id,
+            file_name=file_name,
+            ordinal=1,
+            total=1,
+        )
+        status_code = 200 if result.get("retry_reused") else 201
+        return JSONResponse(status_code=status_code, content=envelope(result))
+    except DriveImportFailure as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content=error_envelope(e.code, e.message, details=e.details),
+        )
+    except Exception as e:
+        logger.error("drive_import error: %s", e)
+        conn.rollback()
+        return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
+    finally:
+        put_conn(conn)
+
+
+@router.post("/workspaces/{ws_id}/drive/import-batch")
+async def drive_import_batch(ws_id: str, request: Request, auth=Depends(require_auth(AuthClass.BEARER))):
+    if isinstance(auth, JSONResponse):
+        return auth
+
+    role_err = require_role(ws_id, auth, Role.ANALYST)
+    if role_err:
+        return role_err
+
+    try:
+        body = await request.json()
+    except Exception:
         return JSONResponse(
             status_code=400,
-            content=error_envelope("VALIDATION_ERROR", "file_id is required"),
+            content=error_envelope("VALIDATION_ERROR", "Invalid JSON body"),
+        )
+
+    files = body.get("files")
+    continue_on_error = body.get("continue_on_error", True)
+    if not isinstance(continue_on_error, bool):
+        continue_on_error = True
+
+    if not isinstance(files, list) or len(files) == 0:
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "files must be a non-empty array"),
+        )
+
+    if len(files) > 200:
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "files exceeds maximum batch size (200)"),
         )
 
     conn = get_conn()
@@ -935,123 +1561,26 @@ async def drive_import(ws_id: str, request: Request, auth=Depends(require_auth(A
         access_token = _refresh_token_if_needed(conn_row, conn)
         service = _get_drive_service(access_token)
 
-        file_meta = service.files().get(
-            fileId=file_id,
-            fields="id, name, mimeType, size, modifiedTime, md5Checksum, parents",
-            supportsAllDrives=True,
-        ).execute()
-
-        file_size = int(file_meta.get("size", 0))
-        if file_size > MAX_IMPORT_SIZE_BYTES:
-            return JSONResponse(
-                status_code=413,
-                content=error_envelope(
-                    "FILE_TOO_LARGE",
-                    "File exceeds 50MB limit (%d bytes)" % file_size,
-                    details={"size_bytes": file_size, "max_bytes": MAX_IMPORT_SIZE_BYTES},
-                ),
+        def _import_one(file_id, file_name, ordinal, total):
+            return _import_drive_file_record(
+                ws_id=ws_id,
+                auth=auth,
+                conn=conn,
+                service=service,
+                file_id=file_id,
+                file_name=file_name,
+                ordinal=ordinal,
+                total=total,
             )
 
-        mime = file_meta.get("mimeType", "")
-        google_export_mimes = {
-            "application/vnd.google-apps.spreadsheet": (
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                ".xlsx",
-            ),
-        }
-
-        from googleapiclient.http import MediaIoBaseDownload
-        if mime in google_export_mimes:
-            export_mime, ext = google_export_mimes[mime]
-            request_dl = service.files().export_media(
-                fileId=file_id, mimeType=export_mime
-            )
-        else:
-            ext = None
-            request_dl = service.files().get_media(
-                fileId=file_id, supportsAllDrives=True
-            )
-
-        buf = io.BytesIO()
-        downloader = MediaIoBaseDownload(buf, request_dl)
-        done = False
-        while not done:
-            _, done = downloader.next_chunk()
-
-        file_bytes = buf.getvalue()
-        file_b64 = base64.b64encode(file_bytes).decode("ascii")
-
-        raw_name = file_meta.get("name", "file")
-        if ext:
-            name_base = raw_name.rsplit(".", 1)[0] if "." in raw_name else raw_name
-            download_name = name_base + ext
-        else:
-            download_name = raw_name
-
-        with conn.cursor() as cur:
-            cur.execute(
-                """SELECT id, version_number FROM drive_import_provenance
-                   WHERE workspace_id = %s AND source_file_id = %s
-                   ORDER BY version_number DESC LIMIT 1""",
-                (ws_id, file_id),
-            )
-            prev = cur.fetchone()
-
-            if prev:
-                new_version = prev[1] + 1
-                supersedes_id = prev[0]
-                is_refresh = True
-            else:
-                new_version = 1
-                supersedes_id = None
-                is_refresh = False
-
-            prov_id = generate_id("drv_")
-            drive_id_val = file_meta.get("parents", [None])[0] if file_meta.get("parents") else None
-
-            cur.execute(
-                """INSERT INTO drive_import_provenance
-                   (id, workspace_id, source_file_id, source_file_name,
-                    source_mime_type, source_size_bytes, drive_id,
-                    drive_modified_time, drive_md5,
-                    version_number, supersedes_id, imported_by)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                   RETURNING """ + PROV_SELECT,
-                (prov_id, ws_id, file_id, file_meta.get("name"),
-                 file_meta.get("mimeType"), file_size, drive_id_val,
-                 file_meta.get("modifiedTime"), file_meta.get("md5Checksum"),
-                 new_version, supersedes_id, auth.user_id),
-            )
-            prov_row = cur.fetchone()
-
-            emit_audit_event(
-                cur,
-                workspace_id=ws_id,
-                event_type="DRIVE_FILE_IMPORTED",
-                actor_id=auth.user_id,
-                actor_role=auth.role,
-                resource_type="drive_import_provenance",
-                resource_id=prov_id,
-                detail={
-                    "source_file_id": file_id,
-                    "file_name": file_meta.get("name"),
-                    "version_number": new_version,
-                    "supersedes_id": supersedes_id,
-                    "is_refresh": is_refresh,
-                    "size_bytes": file_size,
-                },
-            )
-        conn.commit()
-
-        result = _row_to_dict(prov_row, PROV_COLUMNS)
-        result["is_refresh"] = is_refresh
-        result["file_content_base64"] = file_b64
-        result["file_name"] = download_name
-
-        return JSONResponse(status_code=201, content=envelope(result))
-
+        payload, status_code = _execute_batch_import(
+            file_items=files,
+            import_one=_import_one,
+            continue_on_error=continue_on_error,
+        )
+        return JSONResponse(status_code=status_code, content=envelope(payload))
     except Exception as e:
-        logger.error("drive_import error: %s", e)
+        logger.error("drive_import_batch error: %s", e)
         conn.rollback()
         return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
     finally:
@@ -1143,7 +1672,8 @@ async def drive_export(ws_id: str, request: Request, auth=Depends(require_auth(A
 
     file_name = body.get("file_name", "").strip()
     folder_id = body.get("folder_id", "").strip()
-    export_status = body.get("status", "IN_PROGRESS_ANALYST")
+    export_status_raw = body.get("status", EXPORT_STATUS_ENUM["IN_PROGRESS_ANALYST"])
+    export_status = _normalize_export_status(export_status_raw)
     file_content_b64 = body.get("file_content_base64", "")
 
     if not file_name:
@@ -1208,6 +1738,7 @@ async def drive_export(ws_id: str, request: Request, auth=Depends(require_auth(A
                     "file_name": final_name,
                     "folder_id": folder_id or "root",
                     "status": export_status,
+                    "status_raw": export_status_raw,
                     "drive_file_id": drive_file_id,
                     "size_bytes": len(file_bytes),
                 },

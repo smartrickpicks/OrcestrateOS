@@ -4671,6 +4671,7 @@
                     <th>Items</th>
                     <th>Pending</th>
                     <th>Clarify</th>
+                    <th>To Admin</th>
                     <th>Resolved</th>
                     <th>Age</th>
                     <th>Health</th>
@@ -5691,7 +5692,8 @@
             <button onclick="QARunner.runSuite('p09')" class="p1b-run-btn" title="Runtime Cleanup and ES5: Validates ES5 compatibility (no arrow functions, template literals, etc.), default triage navigation, contract-first selectors, legacy annotation sanitization, toast positioning, and role-based UI hiding." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P0.9</button>
             <button onclick="QARunner.runSuite('p1a')" class="p1b-run-btn" title="Triage Clarity and Contract Section Grouping: Validates human-readable triage labels, contract-section-scoped tab rendering with counts, section-based filtering, pre-flight contract grouping, column display rules, and blocker type routing." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run P1A</button>
             <button onclick="QARunner.runSuite('section_meta')" class="p1b-run-btn" title="Section Metadata Integrity: Validates section_metadata structure, field_section_map coverage, section_focus presence, and fallback behavior for missing sheets." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run Section Meta</button>
-            <button onclick="QARunner.runAll()" title="Runs all 6 suites in sequence (P0.2.2, P1, Calibration, P0.8, P0.9, P1A) and reports combined results. Use this for a full regression check before releases." style="padding: 6px 14px; font-size: 0.85em; background: #388e3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Run All</button>
+            <button onclick="QARunner.runSuite('v256')" class="p1b-run-btn" title="V2.56 Field Verify Rules: Validates actionable-only chip counts, actionable field search behavior, and submit gating for invalid/NA picklist decisions." style="padding: 6px 14px; font-size: 0.85em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">Run V2.56</button>
+            <button onclick="QARunner.runAll()" title="Runs all 8 suites in sequence (P0.2.2, P1, Calibration, P0.8, P0.9, P1A, Section Meta, V2.56) and reports combined results. Use this for a full regression check before releases." style="padding: 6px 14px; font-size: 0.85em; background: #388e3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Run All</button>
             <button onclick="QARunner.exportReport()" title="Exports the most recent run results as a downloadable JSON file for archival, external review, or CI integration." style="padding: 6px 14px; font-size: 0.85em; background: #f57c00; color: white; border: none; border-radius: 4px; cursor: pointer;">Export QA Report JSON</button>
           </div>
           <details id="qa-suite-reference" style="margin-bottom: 16px; border: 1px solid #e0e0e0; border-radius: 6px; background: #fafafa;">
@@ -24116,6 +24118,21 @@
     };
     var EXPORT_FINAL_STATES = ['ADMIN_FINAL', 'VERIFIER_DONE', 'REJECTED'];
 
+    function _normalizeExportStatus(status) {
+      var raw = String(status || '').trim().toUpperCase();
+      raw = raw.replace(/[^A-Z0-9_]+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+      var aliases = {
+        IN_PROGRESS: EXPORT_STATUS_ENUM.IN_PROGRESS_ANALYST,
+        INPROGRESS: EXPORT_STATUS_ENUM.IN_PROGRESS_ANALYST,
+        IN_PROGRESS_ANALYST: EXPORT_STATUS_ENUM.IN_PROGRESS_ANALYST,
+        ANALYST_DONE: EXPORT_STATUS_ENUM.ANALYST_DONE,
+        VERIFIER_DONE: EXPORT_STATUS_ENUM.VERIFIER_DONE,
+        ADMIN_FINAL: EXPORT_STATUS_ENUM.ADMIN_FINAL,
+        REJECTED: EXPORT_STATUS_ENUM.REJECTED
+      };
+      return aliases[raw] || EXPORT_STATUS_ENUM.IN_PROGRESS_ANALYST;
+    }
+
     function _resolveExportStatus() {
       var role = 'analyst';
       if (typeof getCurrentRole === 'function') {
@@ -24128,31 +24145,38 @@
       }
       role = role.toLowerCase();
 
-      if (role === 'admin' || role === 'architect') return EXPORT_STATUS_ENUM.ADMIN_FINAL;
-      if (role === 'verifier') return EXPORT_STATUS_ENUM.VERIFIER_DONE;
-      return EXPORT_STATUS_ENUM.IN_PROGRESS_ANALYST;
+      if (role === 'admin' || role === 'architect') return _normalizeExportStatus(EXPORT_STATUS_ENUM.ADMIN_FINAL);
+      if (role === 'verifier') return _normalizeExportStatus(EXPORT_STATUS_ENUM.VERIFIER_DONE);
+      return _normalizeExportStatus(EXPORT_STATUS_ENUM.IN_PROGRESS_ANALYST);
     }
 
     function _buildExportFilename(baseName, status) {
       var now = new Date();
       var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
-      var ts = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
-               'T' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds()) + 'Z';
+      var ts = now.getUTCFullYear() + '-' + pad(now.getUTCMonth() + 1) + '-' + pad(now.getUTCDate()) +
+               '_' + pad(now.getUTCHours()) + '-' + pad(now.getUTCMinutes());
+      var sanitize = function(value, fallback) {
+        var v = String(value || '').trim();
+        v = v.replace(/\.(xlsx|xls|csv)$/i, '');
+        v = v.replace(/[^a-zA-Z0-9_.-]+/g, '_').replace(/_+/g, '_').replace(/^[_\.]+|[_\.]+$/g, '');
+        if (!v) return fallback;
+        return v.substring(0, 64);
+      };
       var batchId = '';
       if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.batch_id) {
         batchId = IDENTITY_CONTEXT.batch_id;
       }
       if (!batchId) batchId = baseName || 'dataset';
-      batchId = batchId.replace(/\.xlsx$/i, '').replace(/\.xls$/i, '').replace(/\.csv$/i, '');
-      var actor = '';
-      if (typeof getCurrentUserName === 'function') {
-        actor = getCurrentUserName() || '';
+      var ws = '';
+      if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) {
+        ws = IDENTITY_CONTEXT.workspace_id;
+      } else if (typeof _getWorkspaceId === 'function') {
+        ws = _getWorkspaceId() || '';
+      } else {
+        try { var _s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}'); ws = _s.workspace_id || ''; } catch (e) {}
       }
-      if (!actor && typeof IDENTITY_CONTEXT !== 'undefined') {
-        actor = IDENTITY_CONTEXT.display_name || IDENTITY_CONTEXT.email || '';
-      }
-      actor = actor.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '').substring(0, 30) || 'user';
-      return batchId + '-' + actor + '-' + status + '-' + ts + '.xlsx';
+      var statusPart = _normalizeExportStatus(status);
+      return sanitize(batchId, 'dataset') + '__' + statusPart + '__' + ts + '__' + sanitize(ws, 'workspace') + '.xlsx';
     }
 
     var EXPORT_CELL_FILLS = {
@@ -34840,6 +34864,140 @@
       }
     }
     
+    var SRR_ACTIONABLE_SIGNAL_TYPES = {
+      MISSING_REQUIRED: true,
+      PICKLIST_INVALID: true,
+      OCR_UNREADABLE: true,
+      OCR_MOJIBAKE: true
+    };
+    var SRR_PICKLIST_NA_VALUES = {
+      'na': true,
+      'n/a': true,
+      'null': true,
+      'none': true,
+      '-': true,
+      '—': true
+    };
+
+    function srrGetCurrentRecordId(record) {
+      var rec = record || srrState.currentRecord || {};
+      return (rec._identity && rec._identity.record_id) || rec.record_id || srrState.currentRecordId || '';
+    }
+
+    function srrGetSignalFieldMap(record) {
+      var map = {};
+      var recordId = srrGetCurrentRecordId(record);
+      if (!recordId || typeof signalStore === 'undefined' || !signalStore.signals_by_cell) return map;
+      var byField = signalStore.signals_by_cell[recordId] || {};
+      var fieldKeys = Object.keys(byField);
+      for (var i = 0; i < fieldKeys.length; i++) {
+        var fieldKey = fieldKeys[i];
+        var signals = byField[fieldKey] || [];
+        for (var si = 0; si < signals.length; si++) {
+          var signalType = (signals[si].signal_type || '').toUpperCase();
+          if (SRR_ACTIONABLE_SIGNAL_TYPES[signalType]) {
+            map[normalizeFieldKey(fieldKey)] = true;
+            break;
+          }
+        }
+      }
+      return map;
+    }
+
+    function srrBuildActionableFieldMap(record) {
+      var map = srrGetSignalFieldMap(record);
+      if (srrState.verifierMode) {
+        var addKey = function(fieldKey) {
+          if (!fieldKey) return;
+          map[normalizeFieldKey(fieldKey)] = true;
+        };
+        Object.keys(srrState.fieldStates || {}).forEach(addKey);
+        Object.keys(srrState.proposedChanges || {}).forEach(addKey);
+        var payload = srrState.verifierPayload || null;
+        if (payload) {
+          if (payload.field) addKey(payload.field);
+          if (Array.isArray(payload.changes)) {
+            for (var ci = 0; ci < payload.changes.length; ci++) addKey(payload.changes[ci].field || payload.changes[ci].fieldKey || '');
+          }
+          if (payload.body && Array.isArray(payload.body.changes)) {
+            for (var bi = 0; bi < payload.body.changes.length; bi++) addKey(payload.body.changes[bi].field || payload.body.changes[bi].fieldKey || '');
+          }
+        }
+      }
+      return map;
+    }
+
+    function srrFilterActionableFieldKeys(fieldKeys, record) {
+      var map = srrBuildActionableFieldMap(record);
+      var filtered = [];
+      for (var i = 0; i < fieldKeys.length; i++) {
+        if (map[normalizeFieldKey(fieldKeys[i])]) filtered.push(fieldKeys[i]);
+      }
+      return filtered;
+    }
+
+    function srrGetActionableFieldKeysFromOriginalValues(record) {
+      var keys = Object.keys(srrState.originalValues || {}).filter(function(k) {
+        return !k.startsWith('_') && !isHiddenField(k);
+      });
+      return srrFilterActionableFieldKeys(keys, record);
+    }
+
+    function srrFieldHasSignalType(fieldKey, signalType, record, signalMap) {
+      if (!fieldKey || !signalType) return false;
+      var map = signalMap || srrGetSignalFieldMap(record);
+      var normalized = normalizeFieldKey(fieldKey);
+      if (!map[normalized]) return false;
+      var recordId = srrGetCurrentRecordId(record);
+      var byField = (signalStore && signalStore.signals_by_cell && signalStore.signals_by_cell[recordId]) ? signalStore.signals_by_cell[recordId] : {};
+      var target = String(signalType || '').toUpperCase();
+      var fieldKeys = Object.keys(byField || {});
+      for (var i = 0; i < fieldKeys.length; i++) {
+        var candidate = fieldKeys[i];
+        if (normalizeFieldKey(candidate) !== normalized) continue;
+        var signals = byField[candidate] || [];
+        for (var si = 0; si < signals.length; si++) {
+          if ((signals[si].signal_type || '').toUpperCase() === target) return true;
+        }
+      }
+      return false;
+    }
+
+    function srrIsNaLikePicklistValue(value) {
+      if (value === null || value === undefined) return false;
+      var normalized = String(value).trim().toLowerCase();
+      return !!SRR_PICKLIST_NA_VALUES[normalized];
+    }
+
+    function srrRequiresPicklistDecisionJustification(changes, draft, record) {
+      var issueSource = ((((draft || {}).metadata || {}).issue_source) || '').toUpperCase();
+      if (issueSource === 'PICKLIST_INVALID' || issueSource === 'PICKLIST_EXPAND') return true;
+      var signalMap = srrGetSignalFieldMap(record);
+      var sheetName = srrState.currentSheet || srrState.currentSheetName || '';
+      for (var i = 0; i < changes.length; i++) {
+        var change = changes[i] || {};
+        var fieldKey = change.field || change.path || '';
+        if (!fieldKey) continue;
+        if (srrFieldHasSignalType(fieldKey, 'PICKLIST_INVALID', record, signalMap)) return true;
+        var meta = (typeof getFieldMeta === 'function') ? getFieldMeta(sheetName, fieldKey) : null;
+        var isPicklist = meta && meta.picklist === true && meta.options && meta.options.length > 0;
+        if (isPicklist && srrIsNaLikePicklistValue(change.to)) return true;
+      }
+      return false;
+    }
+
+    function srrValidatePicklistDecisionJustification(changes, draft, record) {
+      var required = srrRequiresPicklistDecisionJustification(changes || [], draft || {}, record);
+      if (!required) return { required: false, pass: true, reason: '' };
+      var justification = (draft && draft.justification ? String(draft.justification) : '').trim();
+      if (justification.length >= 10) return { required: true, pass: true, reason: '' };
+      return {
+        required: true,
+        pass: false,
+        reason: 'Analyst justification is required for invalid/N/A picklist decisions (min 10 chars)'
+      };
+    }
+
     function renderSrrFields(record) {
       var container = document.getElementById('srr-field-list');
       if (!record) {
@@ -34880,6 +35038,7 @@
       
       // v1.6.5: Filter out hidden fields (File_Name_c shown in header, File_URL_c internal, metrics hidden)
       allKeys = allKeys.filter(function(k) { return !isHiddenField(k); });
+      allKeys = srrFilterActionableFieldKeys(allKeys, record);
       
       // v1.4.18: Apply search filter to orderedKeys
       var filteredKeys = allKeys;
@@ -35200,7 +35359,11 @@
         }
       }
 
-      container.innerHTML = html || '<div class="srr-empty-state">No fields match current filter</div>';
+      if (!html && allKeys.length === 0) {
+        container.innerHTML = '<div class="srr-empty-state">No flagged fields require verification for this record</div>';
+      } else {
+        container.innerHTML = html || '<div class="srr-empty-state">No fields match current filter</div>';
+      }
 
       // V2.3b: Re-render guidance card at top of field list after each rebuild
       if (record && typeof renderSectionGuidanceCard === 'function' && _sectionGuidanceConfig) {
@@ -35288,8 +35451,7 @@
     
     // v1.4.20: Update filter chip counts
     function srrUpdateFilterCounts() {
-      // v1.6.5: Exclude hidden fields from counts
-      var allKeys = Object.keys(srrState.originalValues).filter(function(k) { return !isHiddenField(k); });
+      var allKeys = srrGetActionableFieldKeysFromOriginalValues(srrState.currentRecord);
       var counts = { all: allKeys.length, todo: 0, verified: 0, modified: 0, submitted: 0, rfi: 0, blocked: 0, patched: 0 };
       allKeys.forEach(function(k) {
         var state = srrState.fieldStates[k] || 'todo';
@@ -35354,9 +35516,7 @@
       
       // Check if all fields are now verified (record fully validated)
       var allVerified = true;
-      var fieldKeys = Object.keys(srrState.originalValues || {}).filter(function(k) {
-        return !k.startsWith('_') && !isHiddenField(k);
-      });
+      var fieldKeys = srrGetActionableFieldKeysFromOriginalValues(srrState.currentRecord);
       for (var i = 0; i < fieldKeys.length; i++) {
         var k = fieldKeys[i];
         var state = srrState.fieldStates[k] || 'todo';
@@ -35468,7 +35628,9 @@
     
     // v1.4.20: Check if there are unresolved PATCHED or RFI fields
     function srrHasUnresolvedFields() {
+      var actionableMap = srrBuildActionableFieldMap(srrState.currentRecord);
       for (var key in srrState.fieldStates) {
+        if (!actionableMap[normalizeFieldKey(key)]) continue;
         var state = srrState.fieldStates[key];
         if (state === 'patched' || state === 'rfi_pending') return true;
       }
@@ -35477,8 +35639,10 @@
     
     // v1.4.20: Get count of unresolved fields
     function srrGetUnresolvedCount() {
+      var actionableMap = srrBuildActionableFieldMap(srrState.currentRecord);
       var count = 0;
       for (var key in srrState.fieldStates) {
+        if (!actionableMap[normalizeFieldKey(key)]) continue;
         var state = srrState.fieldStates[key];
         if (state === 'patched' || state === 'rfi_pending') count++;
       }
@@ -36054,10 +36218,8 @@
 
     function srrCheckAllFieldsCompleted() {
       var completedStates = { verified: 1, rfi: 1, submitted: 1, blocked: 1, modified: 1 };
-      var fieldKeys = Object.keys(srrState.originalValues || {}).filter(function(k) {
-        return !k.startsWith('_');
-      });
-      if (fieldKeys.length === 0) return false;
+      var fieldKeys = srrGetActionableFieldKeysFromOriginalValues(srrState.currentRecord);
+      if (fieldKeys.length === 0) return true;
       for (var i = 0; i < fieldKeys.length; i++) {
         var state = srrState.fieldStates[fieldKeys[i]] || 'todo';
         if (!completedStates[state]) return false;
@@ -38296,9 +38458,18 @@
       console.log('[PATCHSTUDIO-D12] submit_attempted', { source: 'record_inspector', patchType: srrState.patchType || 'correction' });
       
       var patchType = srrState.patchType;
-      var changeCount = Object.keys(srrState.proposedChanges).length;
+      var changes = Object.values(srrState.proposedChanges);
+      var changeCount = changes.length;
       var draft = srrState.patchDraft;
       var justification = draft.justification;
+
+      var picklistJustificationCheck = srrValidatePicklistDecisionJustification(changes, draft, srrState.currentRecord);
+      if (!picklistJustificationCheck.pass) {
+        showToast(picklistJustificationCheck.reason, 'warning');
+        console.log('[SRR] Submit blocked — picklist decision justification missing');
+        console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'picklist_justification_required' });
+        return;
+      }
 
       // v1.6.46: Evidence Pack gate (sandbox mode bypasses)
       if (!isDemoMode()) {
@@ -38333,7 +38504,6 @@
       }
       
       // v1.4.19: Build patch request based on type
-      var changes = Object.values(srrState.proposedChanges);
       var changeSummary = changes.length > 0 ? changes.map(function(c) {
         return c.label + ': ' + (c.from || '(empty)') + ' → ' + c.to;
       }).join('; ') : '(no field changes)';
@@ -39272,9 +39442,58 @@
       return d.innerHTML;
     }
 
+    function _vorgItemType(item) {
+      return (((item && (item.item_type || item.type)) || '') + '').toLowerCase();
+    }
+
+    function _vorgNormalizeQueueStatus(rawStatus, typeHint) {
+      var st = ((rawStatus || '') + '').toLowerCase();
+      if (!st) return '';
+      if (st === 'pending' || st === 'needs_clarification' || st === 'sent_to_admin' || st === 'resolved') return st;
+
+      var legacyMap = {
+        submitted: 'pending',
+        verifier_responded: 'pending',
+        open: 'pending',
+        awaiting_verifier: 'pending',
+        responded: 'pending',
+        pending_verifier: 'pending',
+        needs_clarification: 'needs_clarification',
+        returned_to_analyst: 'needs_clarification',
+        verifier_approved: 'sent_to_admin',
+        admin_hold: 'sent_to_admin',
+        sent_to_kiwi: 'sent_to_admin',
+        kiwi_returned: 'sent_to_admin',
+        resolved: 'resolved',
+        approved: 'resolved',
+        auto_applied: 'resolved',
+        applied: 'resolved',
+        rejected: 'resolved',
+        cancelled: 'resolved',
+        admin_approved: 'resolved',
+        dismissed: 'resolved',
+        closed: 'resolved'
+      };
+      if (legacyMap[st]) return legacyMap[st];
+
+      if (typeHint === 'rfi' && st === 'open') return 'pending';
+      return st;
+    }
+
+    function _vorgItemQueueStatus(item) {
+      return _vorgNormalizeQueueStatus(item && (item.queue_status || item.status || item.lifecycle_status), _vorgItemType(item));
+    }
+
     function vorgLoadData() {
       var wsId = _vorgGetWorkspaceId();
       var headers = _vorgGetAuthHeaders();
+      if (isDemoMode() || isDemoSession()) {
+        headers['X-Sandbox-Mode'] = 'true';
+        var effRole = (typeof _roleSimulation !== 'undefined' && _roleSimulation.active && _roleSimulation.effectiveRole)
+          ? _roleSimulation.effectiveRole
+          : (currentMode || 'analyst');
+        headers['X-Effective-Role'] = effRole;
+      }
       var loadingEl = document.getElementById('vorg-loading');
       var contentEl = document.getElementById('vorg-content');
       var emptyEl = document.getElementById('vorg-empty');
@@ -39295,9 +39514,21 @@
         var queueResp = results[0];
         var batchResp = results[1];
 
-        var items = (queueResp && queueResp.data) ? queueResp.data : (Array.isArray(queueResp) ? queueResp : []);
+        var items = [];
+        if (queueResp && queueResp.data && Array.isArray(queueResp.data.items)) {
+          items = queueResp.data.items;
+        } else if (queueResp && Array.isArray(queueResp.data)) {
+          items = queueResp.data;
+        } else if (Array.isArray(queueResp)) {
+          items = queueResp;
+        }
         var batches = (batchResp && batchResp.data) ? batchResp.data : (Array.isArray(batchResp) ? batchResp : []);
-        var counts = (queueResp && queueResp.counts) ? queueResp.counts : null;
+        var counts = null;
+        if (queueResp && queueResp.data && queueResp.data.counts) {
+          counts = queueResp.data.counts;
+        } else if (queueResp && queueResp.counts) {
+          counts = queueResp.counts;
+        }
 
         _vorgState.queueItems = items;
         _vorgState.batches = batches;
@@ -39315,11 +39546,11 @@
         if (!counts) {
           counts = { pending: 0, needs_clarification: 0, sent_to_admin: 0, resolved: 0, total: items.length };
           items.forEach(function(it) {
-            var st = (it.status || it.lifecycle_status || '').toLowerCase();
-            if (st === 'pending' || st === 'submitted') counts.pending++;
+            var st = _vorgItemQueueStatus(it);
+            if (st === 'pending') counts.pending++;
             else if (st === 'needs_clarification') counts.needs_clarification++;
             else if (st === 'sent_to_admin') counts.sent_to_admin++;
-            else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved') counts.resolved++;
+            else if (st === 'resolved') counts.resolved++;
           });
         }
 
@@ -39387,14 +39618,11 @@
 
       var filtered = _vorgState.queueItems.filter(function(it) {
         if (statusVal) {
-          var st = (it.status || it.lifecycle_status || '').toLowerCase();
-          if (statusVal === 'pending' && st !== 'pending' && st !== 'submitted') return false;
-          if (statusVal === 'needs_clarification' && st !== 'needs_clarification') return false;
-          if (statusVal === 'sent_to_admin' && st !== 'sent_to_admin') return false;
-          if (statusVal === 'resolved' && st !== 'resolved' && st !== 'verifier_approved' && st !== 'approved') return false;
+          var st = _vorgItemQueueStatus(it);
+          if (st !== statusVal) return false;
         }
         if (typeVal) {
-          var t = (it.type || it.item_type || '').toLowerCase();
+          var t = _vorgItemType(it);
           if (t !== typeVal) return false;
         }
         return true;
@@ -39501,7 +39729,7 @@
       }
 
       if (!batches || batches.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted,#999);">No batches match current filters.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted,#999);">No batches match current filters.</td></tr>';
         return;
       }
 
@@ -39509,14 +39737,14 @@
       batches.forEach(function(batch) {
         var bid = batch.id || batch.batch_id;
         var items = batchItemMap[bid] || [];
-        var allBatchItems = _vorgState.queueItems.filter(function(it) { return (it.batch_id || 'unknown') === bid; });
-        var total = allBatchItems.length;
-        var pending = 0, clarify = 0, resolved = 0;
-        allBatchItems.forEach(function(it) {
-          var st = (it.status || it.lifecycle_status || '').toLowerCase();
-          if (st === 'pending' || st === 'submitted') pending++;
+        var total = items.length;
+        var pending = 0, clarify = 0, toAdmin = 0, resolved = 0;
+        items.forEach(function(it) {
+          var st = _vorgItemQueueStatus(it);
+          if (st === 'pending') pending++;
           else if (st === 'needs_clarification') clarify++;
-          else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved') resolved++;
+          else if (st === 'sent_to_admin') toAdmin++;
+          else if (st === 'resolved') resolved++;
         });
 
         var name = _vorgEsc(batch.name || batch.filename || bid);
@@ -39531,6 +39759,7 @@
           '<td>' + total + '</td>' +
           '<td>' + (pending > 0 ? '<span style="color:var(--warn,#f57c00);font-weight:600;">' + pending + '</span>' : '0') + '</td>' +
           '<td>' + (clarify > 0 ? '<span style="color:var(--info,#1565c0);font-weight:600;">' + clarify + '</span>' : '0') + '</td>' +
+          '<td>' + (toAdmin > 0 ? '<span style="color:var(--accent-bright,#6a1b9a);font-weight:600;">' + toAdmin + '</span>' : '0') + '</td>' +
           '<td>' + (resolved > 0 ? '<span style="color:var(--ok,#2e7d32);font-weight:600;">' + resolved + '</span>' : '0') + '</td>' +
           '<td style="color:' + ageColor + ';font-weight:600;">' + age + '</td>' +
           '<td>' + health + '</td>' +
@@ -39562,22 +39791,18 @@
       var items = _vorgState.filteredItems.filter(function(it) { return (it.batch_id || 'unknown') === batchId; });
 
       if (items.length === 0) {
-        items = _vorgState.queueItems.filter(function(it) { return (it.batch_id || 'unknown') === batchId; });
-      }
-
-      if (items.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted,#999);">No items in this batch.</td></tr>';
         return;
       }
 
       var html = '';
       items.forEach(function(it) {
-        var type = it.type || it.item_type || 'patch';
+        var type = _vorgItemType(it) || 'patch';
         var typeBadge = _vorgTypeBadge(type);
         var record = _vorgEsc(it.record_id || it.record || '—');
-        var field = _vorgEsc(it.field_name || it.field || '—');
-        var status = _vorgStatusLabel(it.status || it.lifecycle_status || 'unknown');
-        var author = _vorgEsc(it.author || it.created_by || '—');
+        var field = _vorgEsc(it.field_key || it.field_name || it.field || '—');
+        var status = _vorgStatusLabel(_vorgItemQueueStatus(it) || it.lifecycle_status || 'unknown');
+        var author = _vorgEsc(it.author_email || it.author_id || it.author || it.created_by || '—');
         var age = _vorgAgeText(it.created_at);
         var ageColor = _vorgAgeColor(it.created_at);
         var itemId = it.id || it.item_id || '';
@@ -39590,7 +39815,7 @@
             '<button class="vorg-action-btn vorg-action-btn-reject" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'patch\',\'Rejected\',' + version + ')">Reject</button>';
         } else if (tl === 'rfi') {
           actions = '<button class="vorg-action-btn vorg-action-btn-approve" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'rfi\',\'resolved\',' + version + ')">Resolve</button> ' +
-            '<button class="vorg-action-btn vorg-action-btn-reject" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'rfi\',\'returned\',' + version + ')">Return</button>';
+            '<button class="vorg-action-btn vorg-action-btn-reject" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'rfi\',\'returned_to_analyst\',' + version + ')">Return</button>';
         } else if (tl === 'correction') {
           actions = '<button class="vorg-action-btn vorg-action-btn-approve" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'correction\',\'approved\',' + version + ')">Approve</button> ' +
             '<button class="vorg-action-btn vorg-action-btn-reject" onclick="event.stopPropagation();vorgAction(\'' + _vorgEsc(itemId) + '\',\'correction\',\'rejected\',' + version + ')">Reject</button>';
@@ -39630,8 +39855,9 @@
           showToast(_vorgStatusLabel(type) + ' ' + newStatus.replace(/_/g, ' '), 'success');
           var item = _vorgState.queueItems.find(function(it) { return (it.id || it.item_id) === itemId; });
           if (item) {
-            item.status = newStatus;
             item.lifecycle_status = newStatus;
+            item.queue_status = _vorgNormalizeQueueStatus(newStatus, type);
+            item.status = item.queue_status;
             if (result.newVersion) {
               item.version = result.newVersion;
               item.db_version = result.newVersion;
@@ -39740,6 +39966,9 @@
       } else {
         if (typeof reloadVerifierQueuesFromStore === 'function') reloadVerifierQueuesFromStore();
         if (typeof renderVerifierTriage === 'function') renderVerifierTriage();
+      }
+      if (typeof currentPage !== 'undefined' && currentPage === 'verifier-org' && typeof vorgLoadData === 'function') {
+        vorgLoadData();
       }
     }
 
@@ -52314,7 +52543,8 @@ var P022_RuntimeValidation = {
         'p08':  { label: 'P0.8 Record-Link', fn: '_runP08' },
         'p09':  { label: 'P0.9 Cleanup', fn: '_runP09' },
         'p1a':  { label: 'P1A Triage Clarity', fn: '_runP1A' },
-        'section_meta': { label: 'Section Metadata Integrity', fn: '_runSectionMeta' }
+        'section_meta': { label: 'Section Metadata Integrity', fn: '_runSectionMeta' },
+        'v256': { label: 'V2.56 Field Verify Rules', fn: '_runV256' }
       },
 
       _runSectionMeta: function() {
@@ -52413,7 +52643,7 @@ var P022_RuntimeValidation = {
         this._currentRun = null;
         var tbody = document.getElementById('p1b-results-tbody');
         if (tbody) tbody.innerHTML = '';
-        var keys = ['p022', 'p1', 'calibration', 'p08', 'p09', 'p1a', 'section_meta'];
+        var keys = ['p022', 'p1', 'calibration', 'p08', 'p09', 'p1a', 'section_meta', 'v256'];
         for (var ki = 0; ki < keys.length; ki++) {
           this.runSuite(keys[ki]);
         }
@@ -52698,6 +52928,160 @@ var P022_RuntimeValidation = {
           } catch(e) { return false; }
         })()));
         checks.push(this._check('_preflightBlockerTypes has MISSING_REQUIRED', typeof _preflightBlockerTypes !== 'undefined' && !!_preflightBlockerTypes['MISSING_REQUIRED']));
+        return checks;
+      },
+
+      _runV256: function() {
+        var checks = [];
+        var createdEls = [];
+        var domBackup = {};
+        var cloneMap = function(src) {
+          var out = {};
+          var obj = src || {};
+          for (var key in obj) out[key] = obj[key];
+          return out;
+        };
+        var originalSignalStore = (typeof signalStore !== 'undefined') ? signalStore : null;
+        var originalShowToast = (typeof showToast === 'function') ? showToast : null;
+        var originalSaveEvidenceDraft = (typeof srrSaveEvidenceDraft === 'function') ? srrSaveEvidenceDraft : null;
+        var originalIsDemoMode = (typeof isDemoMode === 'function') ? isDemoMode : null;
+        var originalCreatePatchRequest = (typeof createPatchRequest === 'function') ? createPatchRequest : null;
+        var originalSrrCheckContractPreflightGate = (typeof srrCheckContractPreflightGate === 'function') ? srrCheckContractPreflightGate : null;
+        var originalRulesBundleLoaded = (typeof rulesBundleCache !== 'undefined') ? rulesBundleCache.loaded : false;
+        var originalState = {
+          currentRecord: srrState.currentRecord || null,
+          currentRecordId: srrState.currentRecordId || '',
+          currentSheet: srrState.currentSheet || '',
+          currentSheetName: srrState.currentSheetName || '',
+          originalValues: cloneMap(srrState.originalValues),
+          editedValues: cloneMap(srrState.editedValues),
+          fieldStates: cloneMap(srrState.fieldStates),
+          proposedChanges: cloneMap(srrState.proposedChanges),
+          patchDraft: cloneMap(srrState.patchDraft),
+          patchType: srrState.patchType || 'correction',
+          searchQuery: srrState.searchQuery || '',
+          activeFilter: srrState.activeFilter || 'all'
+        };
+        var ensureEl = function(id, tagName) {
+          var el = document.getElementById(id);
+          if (!el) {
+            el = document.createElement(tagName || 'div');
+            el.id = id;
+            el.style.display = 'none';
+            document.body.appendChild(el);
+            createdEls.push(el);
+          } else if (!domBackup[id]) {
+            domBackup[id] = { textContent: el.textContent, innerHTML: el.innerHTML, value: el.value };
+          }
+          return el;
+        };
+
+        try {
+          ensureEl('srr-field-list', 'div');
+          ensureEl('srr-field-count', 'div');
+          ensureEl('srr-count-all', 'span');
+          ensureEl('srr-count-todo', 'span');
+          ensureEl('srr-count-verified', 'span');
+          ensureEl('srr-count-rfi', 'span');
+          ensureEl('srr-count-patched', 'span');
+
+          if (typeof rulesBundleCache !== 'undefined') rulesBundleCache.loaded = false;
+
+          var qaRecord = { record_id: 'qa_v256_record', Name: 'Acme', Status: 'Legacy', Notes: 'Ignore this field' };
+          srrState.currentRecord = qaRecord;
+          srrState.currentRecordId = qaRecord.record_id;
+          srrState.currentSheet = 'Accounts';
+          srrState.currentSheetName = 'Accounts';
+          srrState.originalValues = { Name: 'Acme', Status: 'Legacy', Notes: 'Ignore this field' };
+          srrState.editedValues = { Status: 'N/A' };
+          srrState.fieldStates = { Status: 'todo', Name: 'verified', Notes: 'verified' };
+          srrState.proposedChanges = {
+            Status: { field: 'Status', label: 'Status', from: 'Legacy', to: 'N/A' }
+          };
+          srrState.patchDraft = { patch_type: 'correction', justification: 'short', metadata: { issue_source: 'PICKLIST_INVALID' } };
+          srrState.patchType = 'correction';
+          srrState.searchQuery = '';
+          srrState.activeFilter = 'all';
+
+          signalStore = { signals_by_cell: {} };
+          signalStore.signals_by_cell[qaRecord.record_id] = {
+            Status: [{ signal_type: 'PICKLIST_INVALID', severity: 'error' }],
+            Name: [{ signal_type: 'QA_FLAG', severity: 'info' }]
+          };
+
+          srrUpdateFilterCounts();
+          var countAll = document.getElementById('srr-count-all');
+          var countTodo = document.getElementById('srr-count-todo');
+          var countVerified = document.getElementById('srr-count-verified');
+          checks.push(this._check(
+            'V2.56 actionable chip counts',
+            countAll && countAll.textContent === '(1)' && countTodo && countTodo.textContent === '(1)' && countVerified && countVerified.textContent === '(0)',
+            'all=' + (countAll ? countAll.textContent : 'missing') + ', todo=' + (countTodo ? countTodo.textContent : 'missing') + ', verified=' + (countVerified ? countVerified.textContent : 'missing')
+          ));
+
+          srrState.searchQuery = 'notes';
+          renderSrrFields(qaRecord);
+          var fieldCountEl = document.getElementById('srr-field-count');
+          var notesCountText = fieldCountEl ? fieldCountEl.textContent : '';
+          srrState.searchQuery = 'status';
+          renderSrrFields(qaRecord);
+          var statusCountText = fieldCountEl ? fieldCountEl.textContent : '';
+          checks.push(this._check(
+            'V2.56 actionable search behavior',
+            notesCountText === '0 fields' && statusCountText === '1 fields',
+            'notes=' + notesCountText + ', status=' + statusCountText
+          ));
+
+          var submitBlockedMsg = '';
+          var createCalled = false;
+          showToast = function(msg) { submitBlockedMsg = String(msg || ''); };
+          srrSaveEvidenceDraft = function() {};
+          isDemoMode = function() { return true; };
+          srrCheckContractPreflightGate = function() { return []; };
+          createPatchRequest = function() {
+            createCalled = true;
+            return { request_id: 'qa_v256_should_not_submit' };
+          };
+          srrSubmitPatchRequest();
+          checks.push(this._check(
+            'V2.56 submit gate for invalid/NA picklist',
+            submitBlockedMsg.indexOf('Analyst justification is required for invalid/N/A picklist decisions') >= 0 && !createCalled,
+            'toast=' + submitBlockedMsg + ', create_called=' + createCalled
+          ));
+        } catch (e) {
+          checks.push(this._check('V2.56 suite execution', false, e && e.message ? e.message : String(e)));
+        } finally {
+          srrState.currentRecord = originalState.currentRecord;
+          srrState.currentRecordId = originalState.currentRecordId;
+          srrState.currentSheet = originalState.currentSheet;
+          srrState.currentSheetName = originalState.currentSheetName;
+          srrState.originalValues = originalState.originalValues || {};
+          srrState.editedValues = originalState.editedValues || {};
+          srrState.fieldStates = originalState.fieldStates || {};
+          srrState.proposedChanges = originalState.proposedChanges || {};
+          srrState.patchDraft = originalState.patchDraft || {};
+          srrState.patchType = originalState.patchType || 'correction';
+          srrState.searchQuery = originalState.searchQuery || '';
+          srrState.activeFilter = originalState.activeFilter || 'all';
+          signalStore = originalSignalStore;
+          if (typeof rulesBundleCache !== 'undefined') rulesBundleCache.loaded = originalRulesBundleLoaded;
+          showToast = originalShowToast;
+          srrSaveEvidenceDraft = originalSaveEvidenceDraft;
+          isDemoMode = originalIsDemoMode;
+          createPatchRequest = originalCreatePatchRequest;
+          srrCheckContractPreflightGate = originalSrrCheckContractPreflightGate;
+          for (var id in domBackup) {
+            var el = document.getElementById(id);
+            if (!el) continue;
+            el.textContent = domBackup[id].textContent;
+            el.innerHTML = domBackup[id].innerHTML;
+            if (typeof domBackup[id].value !== 'undefined') el.value = domBackup[id].value;
+          }
+          for (var ei = 0; ei < createdEls.length; ei++) {
+            if (createdEls[ei] && createdEls[ei].parentNode) createdEls[ei].parentNode.removeChild(createdEls[ei]);
+          }
+        }
+
         return checks;
       }
     };
