@@ -116,6 +116,7 @@
 - docs/handoff/TASKS_UI.md — UI backlog tracker
 - docs/handoff/STATUS.md — General status
 - docs/handoff/HANDOFF.md — Handoff guide
+- docs/handoff/V256_UAT_PACK.md — UAT pack: runbook, edge cases, and signoff (v2.56)
 
 ## AppModules Architecture
 - docs/architecture/appmodules-catalog.md — Full module catalog: 55 modules across 16 phases (C, D1–D15) with delegate sites and deterministic logs
