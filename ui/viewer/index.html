@@ -3883,7 +3883,7 @@
               </div>
             </div>
             <!-- S3: Verifier Lane Cards (moved above filter bar) -->
-            <!-- S4: Governance Lifecycle Rail (placeholder — VTRIAGE-06) -->
+            <!-- S4: Governance Lifecycle Rail (VTRIAGE-06) -->
             <div id="vtriage-lifecycle" style="margin-bottom:20px;">
               <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">
                 <h3 style="margin:0;font-size:1.1em;color:var(--text-1,#333);">Governance Lifecycle</h3>
@@ -3891,7 +3891,7 @@
               </div>
               <div id="vtriage-lifecycle-stages" style="display:flex;gap:2px;align-items:stretch;overflow-x:auto;"></div>
             </div>
-            <!-- S5: Governance Snapshot Tiles (placeholder — VTRIAGE-07) -->
+            <!-- S5: Governance Snapshot Tiles (VTRIAGE-07) -->
             <div id="vtriage-snapshot" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;">
               <div style="background:var(--tile-bg,var(--bg-1,#fff));border:1px solid var(--tile-border,var(--border-1,#e0e0e0));border-radius:10px;padding:14px 16px;text-align:center;">
                 <div style="font-size:0.72em;font-weight:600;color:var(--text-muted,#888);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;">Unknown Columns</div>
@@ -25476,7 +25476,15 @@
       options = options || {};
       // Loader is now a drawer, not a page - redirect loader requests to triage
       if (page === 'loader') page = 'triage';
-      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-org', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'row', 'restricted'];
+      // v2.56: Redirect verifier-org to unified triage (before pages check)
+      if (page === 'verifier-org') {
+        var orgHash = window.location.hash || '';
+        var orgParams = orgHash.indexOf('?') !== -1 ? orgHash.substring(orgHash.indexOf('?')) : '';
+        console.log('[V2.56] Redirecting #/verifier-org → #/triage' + orgParams);
+        window.location.hash = '#/triage' + orgParams;
+        return;
+      }
+      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'row', 'restricted'];
       var _basePage = page.split('/')[0];
       if (_basePage === 'row') {
         if (_srrCurrentPage !== 'row') {
@@ -25543,10 +25551,6 @@
       if (page === 'review' && currentMode !== 'verifier' && currentMode !== 'admin') {
         console.log('[Navigate] Review page requires verifier/admin mode');
         restrictedReason = 'Config Inspector is only available to Verifiers and Admins.';
-      }
-      if (page === 'verifier-org' && currentMode !== 'verifier' && currentMode !== 'admin') {
-        console.log('[Navigate] Verifier Org Overview page requires verifier/admin mode');
-        restrictedReason = 'Org Overview is only available to Verifiers and Admins.';
       }
       if (page === 'verifier-review' && currentMode !== 'verifier' && currentMode !== 'admin') {
         console.log('[Navigate] Verifier Review page requires verifier/admin mode');
@@ -25730,15 +25734,6 @@
       // If navigating to admin-approval, load sample data
       if (page === 'admin-approval') {
         setTimeout(function() { loadAdminApprovalData(); }, 0);
-      }
-      
-      // v2.56: Redirect verifier-org to unified triage
-      if (page === 'verifier-org') {
-        var orgHash = window.location.hash || '';
-        var orgParams = orgHash.indexOf('?') !== -1 ? orgHash.substring(orgHash.indexOf('?')) : '';
-        console.log('[V2.56] Redirecting #/verifier-org → #/triage' + orgParams);
-        window.location.hash = '#/triage' + orgParams;
-        return;
       }
       
       // Update hash (include tab for admin deep-links, preserve grid query params)
@@ -40380,7 +40375,7 @@
       var total = items.length || 1;
       var stages = [
         { label: 'Submitted', icon: '📥', key: 'submitted', statuses: ['pending', 'submitted'] },
-        { label: 'Under Review', icon: '🔍', key: 'review', statuses: ['verifier_responded', 'in_review'] },
+        { label: 'Under Review', icon: '🔍', key: 'review', statuses: ['under_review', 'verifier_responded', 'in_review'] },
         { label: 'Clarification', icon: '💬', key: 'clarification', statuses: ['needs_clarification', 'returned_to_analyst', 'awaiting_verifier'] },
         { label: 'Approved', icon: '✅', key: 'approved', statuses: ['verifier_approved', 'approved', 'sent_to_admin'] },
         { label: 'Applied / Rejected', icon: '🏁', key: 'terminal', statuses: ['applied', 'rejected', 'resolved'] }
@@ -40604,10 +40599,6 @@
 
     function opsOnRoleSwitch() {
       console.log('[OpsView] Role switch detected (dbRead=' + _opsViewFlags.dbRead + ')');
-      if (typeof currentPage !== 'undefined' && currentPage === 'verifier-org' && typeof vorgLoadData === 'function') {
-        console.log('[OpsView] Refreshing Org View for role switch');
-        vorgLoadData();
-      }
       if (_opsViewFlags.dbRead) {
         verifierQueueState.payloads = [];
         try { localStorage.removeItem('srr_verifier_queue_v1'); } catch(e) {}
