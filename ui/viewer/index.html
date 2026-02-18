@@ -3784,6 +3784,41 @@
           <div id="vtriage-content" style="display:none;">
             <!-- S1: Governance Summary Strip -->
             <div id="vtriage-kpi" class="vorg-kpi-strip"></div>
+            <!-- S3: Verifier Lane Cards -->
+            <div id="vtriage-lanes" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;">
+              <div class="ta-lane-card" onclick="vTriageLaneClick('pending')" style="background:var(--bg-1,#fff);border:1px solid var(--border-1,#e0e0e0);border-radius:10px;padding:14px 16px;cursor:pointer;transition:box-shadow 0.2s;border-top:3px solid var(--warn,#f57c00);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <h4 style="margin:0;font-size:0.85em;font-weight:600;color:var(--text-1,#333);letter-spacing:0.01em;">Pending Verification</h4>
+                  <span id="vtriage-lane-pv-total" style="background:var(--warn-bg,#fff3e0);color:var(--warn,#e65100);padding:2px 10px;border-radius:12px;font-size:0.8em;font-weight:600;">0</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px 16px;font-size:0.78em;">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="color:var(--text-muted,#888);font-size:0.92em;">Patches</span><span id="vtriage-lane-pv-patches" style="font-weight:700;color:var(--warn,#e65100);font-size:1.05em;">0</span></div>
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="color:var(--text-muted,#888);font-size:0.92em;">RFIs</span><span id="vtriage-lane-pv-rfis" style="font-weight:700;color:var(--warn,#e65100);font-size:1.05em;">0</span></div>
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="color:var(--text-muted,#888);font-size:0.92em;">Corrections</span><span id="vtriage-lane-pv-corrections" style="font-weight:700;color:var(--warn,#e65100);font-size:1.05em;">0</span></div>
+                </div>
+              </div>
+              <div class="ta-lane-card" onclick="vTriageLaneClick('clarification')" style="background:var(--bg-1,#fff);border:1px solid var(--border-1,#e0e0e0);border-radius:10px;padding:14px 16px;cursor:pointer;transition:box-shadow 0.2s;border-top:3px solid var(--info,#1976d2);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <h4 style="margin:0;font-size:0.85em;font-weight:600;color:var(--text-1,#333);letter-spacing:0.01em;">Clarification</h4>
+                  <span id="vtriage-lane-cl-total" style="background:var(--info-bg,#e3f2fd);color:var(--info,#1565c0);padding:2px 10px;border-radius:12px;font-size:0.8em;font-weight:600;">0</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:0.78em;">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="color:var(--text-muted,#888);font-size:0.92em;">Returned</span><span id="vtriage-lane-cl-returned" style="font-weight:700;color:var(--info,#1565c0);font-size:1.05em;">0</span></div>
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="color:var(--text-muted,#888);font-size:0.92em;">Awaiting</span><span id="vtriage-lane-cl-awaiting" style="font-weight:700;color:var(--info,#1565c0);font-size:1.05em;">0</span></div>
+                </div>
+              </div>
+              <div class="ta-lane-card" onclick="vTriageLaneClick('resolution')" style="background:var(--bg-1,#fff);border:1px solid var(--border-1,#e0e0e0);border-radius:10px;padding:14px 16px;cursor:pointer;transition:box-shadow 0.2s;border-top:3px solid var(--ok,#2e7d32);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <h4 style="margin:0;font-size:0.85em;font-weight:600;color:var(--text-1,#333);letter-spacing:0.01em;">Resolution</h4>
+                  <span id="vtriage-lane-rs-total" style="background:var(--ok-bg,#e8f5e9);color:var(--ok,#2e7d32);padding:2px 10px;border-radius:12px;font-size:0.8em;font-weight:600;">0</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px 16px;font-size:0.78em;">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="color:var(--text-muted,#888);font-size:0.92em;">Sent to Admin</span><span id="vtriage-lane-rs-admin" style="font-weight:700;color:var(--ok,#2e7d32);font-size:1.05em;">0</span></div>
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="color:var(--text-muted,#888);font-size:0.92em;">Resolved</span><span id="vtriage-lane-rs-resolved" style="font-weight:700;color:var(--ok,#2e7d32);font-size:1.05em;">0</span></div>
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="color:var(--text-muted,#888);font-size:0.92em;">Applied</span><span id="vtriage-lane-rs-applied" style="font-weight:700;color:var(--ok,#2e7d32);font-size:1.05em;">0</span></div>
+                </div>
+              </div>
+            </div>
             <!-- S2: Batch Summary Table -->
             <div id="vtriage-filter-bar" class="vorg-filter-bar">
               <label style="font-size:0.85em;color:var(--text-secondary,#666);">Filters:</label>
@@ -3846,14 +3881,33 @@
                 </table>
               </div>
             </div>
-            <!-- S3: Verifier Lane Cards (placeholder — VTRIAGE-05) -->
-            <div id="vtriage-lanes" style="display:none;"></div>
+            <!-- S3: Verifier Lane Cards (moved above filter bar) -->
             <!-- S4: Governance Lifecycle Rail (placeholder — VTRIAGE-06) -->
             <div id="vtriage-lifecycle" style="display:none;"></div>
             <!-- S5: Governance Snapshot Tiles (placeholder — VTRIAGE-07) -->
             <div id="vtriage-snapshot" style="display:none;"></div>
-            <!-- S6: Unified Work Queue (placeholder — VTRIAGE-08) -->
-            <div id="vtriage-queue" style="display:none;"></div>
+            <!-- S6: Unified Work Queue (VTRIAGE-08) -->
+            <div id="vtriage-queue" style="margin-bottom:20px;">
+              <h3 style="margin:0 0 12px 0;font-size:1.1em;color:var(--text-1,#333);">Work Queue</h3>
+              <div style="overflow-x:auto;border:1px solid var(--border-1,#e0e0e0);border-radius:8px;">
+                <table id="vtriage-queue-table" style="width:100%;border-collapse:collapse;">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Record</th>
+                      <th>Field</th>
+                      <th>Status</th>
+                      <th>Author</th>
+                      <th>Batch</th>
+                      <th>Age</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="vtriage-queue-tbody"></tbody>
+                </table>
+              </div>
+              <div id="vtriage-queue-empty" style="display:none;padding:30px 20px;text-align:center;color:var(--text-muted,#666);font-size:0.9em;">No items match current filters.</div>
+            </div>
           </div>
         </div>
         <div style="margin-top: 12px; text-align: right; font-size: 0.75em; color: #aaa;">PAGE: TRIAGE | BUILD v1.6.49</div>
@@ -39842,6 +39896,7 @@
         }
 
         vTriageRenderKpi(counts);
+        _vTriageParseUrlAndApply();
         vTriageApplyFilters();
         _vTriageLoading = false;
         console.log('[V2.56][VTRIAGE] Loaded: items=' + items.length + ', batches=' + batches.length);
@@ -39946,6 +40001,9 @@
       }
 
       vTriageRenderBatchTable(filteredBatches);
+      vTriageRenderLanes();
+      vTriageRenderQueue();
+      _vTriageUpdateUrlState();
     }
 
     function vTriageClearFilters() {
@@ -39958,6 +40016,7 @@
       document.querySelectorAll('#vtriage-kpi .vorg-kpi').forEach(function(el) { el.classList.remove('vorg-kpi-active'); });
       vTriageExitDrilldown();
       vTriageApplyFilters();
+      _vTriageUpdateUrlState();
     }
 
     function vTriageRenderBatchTable(batches) {
@@ -40104,6 +40163,151 @@
       var drillEl = document.getElementById('vtriage-drilldown');
       if (batchSection) batchSection.style.display = 'block';
       if (drillEl) drillEl.style.display = 'none';
+    }
+
+    function _vTriageUpdateUrlState() {
+      var parts = ['#/triage'];
+      var params = [];
+      if (_vTriageState.activeKpiStatus) params.push('status=' + _vTriageState.activeKpiStatus);
+      if (_vTriageState.activeBatchId) params.push('batch=' + _vTriageState.activeBatchId);
+      var typeSel = document.getElementById('vtriage-filter-type');
+      if (typeSel && typeSel.value) params.push('type=' + typeSel.value);
+      if (params.length) parts.push('?' + params.join('&'));
+      var newHash = parts.join('');
+      if (window.location.hash !== newHash) {
+        history.replaceState(null, '', newHash);
+      }
+    }
+
+    function _vTriageParseUrlAndApply() {
+      var hash = window.location.hash || '';
+      if (hash.indexOf('triage') === -1) return;
+      var qIdx = hash.indexOf('?');
+      if (qIdx === -1) return;
+      var qs = hash.substring(qIdx + 1);
+      var params = {};
+      qs.split('&').forEach(function(p) {
+        var kv = p.split('=');
+        if (kv.length === 2) params[kv[0]] = decodeURIComponent(kv[1]);
+      });
+      if (params.status) {
+        _vTriageState.activeKpiStatus = params.status;
+        var sel = document.getElementById('vtriage-filter-status');
+        if (sel) sel.value = params.status;
+      }
+      if (params.type) {
+        var tsel = document.getElementById('vtriage-filter-type');
+        if (tsel) tsel.value = params.type;
+      }
+      if (params.batch) {
+        _vTriageState.activeBatchId = params.batch;
+      }
+    }
+
+    function vTriageRenderLanes() {
+      var items = _vTriageState.queueItems;
+      var pv = { patches: 0, rfis: 0, corrections: 0, total: 0 };
+      var cl = { returned: 0, awaiting: 0, total: 0 };
+      var rs = { admin: 0, resolved: 0, applied: 0, total: 0 };
+      items.forEach(function(it) {
+        var st = (it.status || it.lifecycle_status || '').toLowerCase();
+        var tp = (it.item_type || it.type || '').toLowerCase();
+        if (st === 'pending' || st === 'submitted') {
+          pv.total++;
+          if (tp === 'patch') pv.patches++;
+          else if (tp === 'rfi') pv.rfis++;
+          else if (tp === 'correction') pv.corrections++;
+        } else if (st === 'needs_clarification' || st === 'returned_to_analyst') {
+          cl.total++;
+          if (st === 'returned_to_analyst') cl.returned++;
+          else cl.awaiting++;
+        } else if (st === 'sent_to_admin' || st === 'resolved' || st === 'verifier_approved' || st === 'approved' || st === 'applied') {
+          rs.total++;
+          if (st === 'sent_to_admin') rs.admin++;
+          else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved') rs.resolved++;
+          else if (st === 'applied') rs.applied++;
+        }
+      });
+      var ids = {
+        'vtriage-lane-pv-total': pv.total, 'vtriage-lane-pv-patches': pv.patches, 'vtriage-lane-pv-rfis': pv.rfis, 'vtriage-lane-pv-corrections': pv.corrections,
+        'vtriage-lane-cl-total': cl.total, 'vtriage-lane-cl-returned': cl.returned, 'vtriage-lane-cl-awaiting': cl.awaiting,
+        'vtriage-lane-rs-total': rs.total, 'vtriage-lane-rs-admin': rs.admin, 'vtriage-lane-rs-resolved': rs.resolved, 'vtriage-lane-rs-applied': rs.applied
+      };
+      Object.keys(ids).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = ids[id];
+      });
+    }
+
+    function vTriageLaneClick(lane) {
+      var statusMap = { 'pending': 'pending', 'clarification': 'needs_clarification', 'resolution': 'resolved' };
+      var statusVal = statusMap[lane] || '';
+      _vTriageState.activeKpiStatus = statusVal;
+      var sel = document.getElementById('vtriage-filter-status');
+      if (sel) sel.value = statusVal;
+      vTriageApplyFilters();
+    }
+
+    function vTriageRenderQueue() {
+      var tbody = document.getElementById('vtriage-queue-tbody');
+      var emptyEl = document.getElementById('vtriage-queue-empty');
+      if (!tbody) return;
+      var items = _vTriageState.filteredItems;
+      if (!items || items.length === 0) {
+        tbody.innerHTML = '';
+        if (emptyEl) emptyEl.style.display = 'block';
+        return;
+      }
+      if (emptyEl) emptyEl.style.display = 'none';
+      var batchNames = {};
+      _vTriageState.batches.forEach(function(b) { batchNames[b.id || b.batch_id] = b.name || b.batch_name || (b.id || b.batch_id); });
+      var html = '';
+      items.forEach(function(it) {
+        var type = _vorgEsc(it.item_type || it.type || '\u2014');
+        var record = _vorgEsc(it.record_label || it.contract_id || it.record_id || '\u2014');
+        var field = _vorgEsc(it.field_key || it.field_name || it.field || '\u2014');
+        var rawSt = it.status || it.lifecycle_status || '\u2014';
+        var stLower = rawSt.toLowerCase();
+        var stColor = (stLower === 'pending' || stLower === 'submitted') ? 'var(--warn,#e65100)' :
+          (stLower === 'needs_clarification') ? 'var(--info,#1565c0)' :
+          (stLower === 'resolved' || stLower === 'verifier_approved' || stLower === 'approved') ? 'var(--ok,#2e7d32)' :
+          (stLower === 'sent_to_admin') ? 'var(--accent,#8B5CF6)' : 'var(--text-1,#333)';
+        var status = '<span style="color:' + stColor + ';font-weight:600;">' + _vorgEsc(rawSt.replace(/_/g,' ')) + '</span>';
+        var author = _vorgEsc(it.author_email || it.author || '\u2014');
+        var batchId = it.batch_id || 'unknown';
+        var batchName = _vorgEsc(batchNames[batchId] || batchId);
+        var ageMs = it.created_at ? (Date.now() - new Date(it.created_at).getTime()) : 0;
+        var ageH = Math.floor(ageMs / 3600000);
+        var age = ageH < 24 ? ageH + 'h' : Math.floor(ageH / 24) + 'd';
+        var ageColor = ageH < 24 ? 'var(--ok,#2e7d32)' : ageH < 72 ? 'var(--warn,#f57c00)' : 'var(--bad,#c62828)';
+        var itemId = it.id || it.item_id || '';
+        var version = it.version || 1;
+        var tp = (it.item_type || it.type || '').toLowerCase();
+        var actions = '';
+        if (tp === 'patch') {
+          actions = '<button class="vorg-action-btn" onclick="vTriageAction(\'' + itemId + '\',\'patch\',\'Verifier_Approved\',' + version + ')" style="margin-right:4px;">Approve</button>' +
+            '<button class="vorg-action-btn vorg-action-reject" onclick="vTriageAction(\'' + itemId + '\',\'patch\',\'Rejected\',' + version + ')">Reject</button>';
+        } else if (tp === 'rfi') {
+          actions = '<button class="vorg-action-btn" onclick="vTriageAction(\'' + itemId + '\',\'rfi\',\'resolved\',' + version + ')" style="margin-right:4px;">Resolve</button>' +
+            '<button class="vorg-action-btn vorg-action-return" onclick="vTriageAction(\'' + itemId + '\',\'rfi\',\'returned_to_analyst\',' + version + ')">Return</button>';
+        } else if (tp === 'correction') {
+          actions = '<button class="vorg-action-btn" onclick="vTriageAction(\'' + itemId + '\',\'correction\',\'approved\',' + version + ')" style="margin-right:4px;">Approve</button>' +
+            '<button class="vorg-action-btn vorg-action-reject" onclick="vTriageAction(\'' + itemId + '\',\'correction\',\'rejected\',' + version + ')">Reject</button>';
+        } else {
+          actions = '<span style="color:var(--text-muted,#999);font-size:0.85em;">\u2014</span>';
+        }
+        html += '<tr>' +
+          '<td>' + type + '</td>' +
+          '<td>' + record + '</td>' +
+          '<td>' + field + '</td>' +
+          '<td>' + status + '</td>' +
+          '<td>' + author + '</td>' +
+          '<td>' + batchName + '</td>' +
+          '<td><span style="color:' + ageColor + ';">' + age + '</span></td>' +
+          '<td>' + actions + '</td>' +
+          '</tr>';
+      });
+      tbody.innerHTML = html;
     }
     // === END V2.56 VERIFIER TRIAGE UNIFICATION (P0) ===
 
