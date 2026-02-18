@@ -3136,7 +3136,7 @@
               <a class="nav-section-link" data-section="v2_add_ons" href="#" onclick="_selectGridSection('V2 Add Ons'); return false;">V2 Add Ons</a>
             </div>
           </div>
-          <a class="nav-item verifier-only" data-page="verifier-org" href="#/verifier-org" title="Org Overview">
+          <a class="nav-item verifier-only" data-page="verifier-org" href="#/verifier-org" title="Org Overview" style="display:none;">
             <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
             <span class="nav-label">Org Overview</span>
           </a>
@@ -3884,9 +3884,36 @@
             </div>
             <!-- S3: Verifier Lane Cards (moved above filter bar) -->
             <!-- S4: Governance Lifecycle Rail (placeholder — VTRIAGE-06) -->
-            <div id="vtriage-lifecycle" style="display:none;"></div>
+            <div id="vtriage-lifecycle" style="margin-bottom:20px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">
+                <h3 style="margin:0;font-size:1.1em;color:var(--text-1,#333);">Governance Lifecycle</h3>
+                <span style="font-size:0.75em;color:var(--text-muted,#999);" id="vtriage-lifecycle-updated"></span>
+              </div>
+              <div id="vtriage-lifecycle-stages" style="display:flex;gap:2px;align-items:stretch;overflow-x:auto;"></div>
+            </div>
             <!-- S5: Governance Snapshot Tiles (placeholder — VTRIAGE-07) -->
-            <div id="vtriage-snapshot" style="display:none;"></div>
+            <div id="vtriage-snapshot" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;">
+              <div style="background:var(--tile-bg,var(--bg-1,#fff));border:1px solid var(--tile-border,var(--border-1,#e0e0e0));border-radius:10px;padding:14px 16px;text-align:center;">
+                <div style="font-size:0.72em;font-weight:600;color:var(--text-muted,#888);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;">Unknown Columns</div>
+                <div id="vtriage-snap-unknown" style="font-size:1.5em;font-weight:700;color:var(--tile-unknown-accent,var(--warn,#f57c00));">—</div>
+                <div id="vtriage-snap-unknown-hint" style="font-size:0.68em;color:var(--text-muted,#999);margin-top:4px;">Schema data not loaded</div>
+              </div>
+              <div style="background:var(--tile-bg,var(--bg-1,#fff));border:1px solid var(--tile-border,var(--border-1,#e0e0e0));border-radius:10px;padding:14px 16px;text-align:center;">
+                <div style="font-size:0.72em;font-weight:600;color:var(--text-muted,#888);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;">Address Merges</div>
+                <div id="vtriage-snap-merges" style="font-size:1.5em;font-weight:700;color:var(--tile-mapped-accent,var(--info,#1976d2));">0</div>
+                <div style="font-size:0.68em;color:var(--text-muted,#999);margin-top:4px;">From batch metadata</div>
+              </div>
+              <div style="background:var(--tile-bg,var(--bg-1,#fff));border:1px solid var(--tile-border,var(--border-1,#e0e0e0));border-radius:10px;padding:14px 16px;text-align:center;">
+                <div style="font-size:0.72em;font-weight:600;color:var(--text-muted,#888);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;">NA with Justification</div>
+                <div id="vtriage-snap-na" style="font-size:1.5em;font-weight:700;color:var(--tile-quality-accent,var(--ok,#2e7d32));">0</div>
+                <div style="font-size:0.68em;color:var(--text-muted,#999);margin-top:4px;">Resolved RFIs with NA</div>
+              </div>
+              <div style="background:var(--tile-bg,var(--bg-1,#fff));border:1px solid var(--tile-border,var(--border-1,#e0e0e0));border-radius:10px;padding:14px 16px;text-align:center;">
+                <div style="font-size:0.72em;font-weight:600;color:var(--text-muted,#888);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;">Correction Coverage</div>
+                <div id="vtriage-snap-corrections" style="font-size:1.5em;font-weight:700;color:var(--tile-missing-accent,var(--accent,#8B5CF6));">—</div>
+                <div id="vtriage-snap-corrections-detail" style="font-size:0.68em;color:var(--text-muted,#999);margin-top:4px;">0 / 0 corrections</div>
+              </div>
+            </div>
             <!-- S6: Unified Work Queue (VTRIAGE-08) -->
             <div id="vtriage-queue" style="margin-bottom:20px;">
               <h3 style="margin:0 0 12px 0;font-size:1.1em;color:var(--text-1,#333);">Work Queue</h3>
@@ -3908,6 +3935,24 @@
                 </table>
               </div>
               <div id="vtriage-queue-empty" style="display:none;padding:30px 20px;text-align:center;color:var(--text-muted,#666);font-size:0.9em;">No items match current filters.</div>
+            </div>
+            <div id="vtriage-workload" style="display:none;margin-bottom:20px;">
+              <h3 style="margin:0 0 12px 0;font-size:1.1em;color:var(--text-1,#333);">Analyst Workload</h3>
+              <div style="overflow-x:auto;border:1px solid var(--border-1,#e0e0e0);border-radius:8px;">
+                <table id="vtriage-workload-table" style="width:100%;border-collapse:collapse;">
+                  <thead>
+                    <tr>
+                      <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--border-1,#e0e0e0);font-size:0.8em;color:var(--text-muted,#888);text-transform:uppercase;background:var(--table-head-bg,var(--bg-2,#fafafa));">Analyst</th>
+                      <th style="text-align:center;padding:10px 12px;border-bottom:2px solid var(--border-1,#e0e0e0);font-size:0.8em;color:var(--text-muted,#888);text-transform:uppercase;background:var(--table-head-bg,var(--bg-2,#fafafa));">Total</th>
+                      <th style="text-align:center;padding:10px 12px;border-bottom:2px solid var(--border-1,#e0e0e0);font-size:0.8em;color:var(--text-muted,#888);text-transform:uppercase;background:var(--table-head-bg,var(--bg-2,#fafafa));">Pending</th>
+                      <th style="text-align:center;padding:10px 12px;border-bottom:2px solid var(--border-1,#e0e0e0);font-size:0.8em;color:var(--text-muted,#888);text-transform:uppercase;background:var(--table-head-bg,var(--bg-2,#fafafa));">Open RFIs</th>
+                      <th style="text-align:center;padding:10px 12px;border-bottom:2px solid var(--border-1,#e0e0e0);font-size:0.8em;color:var(--text-muted,#888);text-transform:uppercase;background:var(--table-head-bg,var(--bg-2,#fafafa));">Oldest Pending</th>
+                    </tr>
+                  </thead>
+                  <tbody id="vtriage-workload-tbody"></tbody>
+                </table>
+              </div>
+              <div id="vtriage-workload-empty" style="display:none;padding:20px;text-align:center;color:var(--text-muted,#666);font-size:0.9em;">No analyst workload data.</div>
             </div>
           </div>
         </div>
@@ -25687,9 +25732,13 @@
         setTimeout(function() { loadAdminApprovalData(); }, 0);
       }
       
-      // v2.55: If navigating to verifier-org, load operations data
+      // v2.56: Redirect verifier-org to unified triage
       if (page === 'verifier-org') {
-        setTimeout(function() { if (typeof vorgLoadData === 'function') vorgLoadData(); }, 0);
+        var orgHash = window.location.hash || '';
+        var orgParams = orgHash.indexOf('?') !== -1 ? orgHash.substring(orgHash.indexOf('?')) : '';
+        console.log('[V2.56] Redirecting #/verifier-org → #/triage' + orgParams);
+        window.location.hash = '#/triage' + orgParams;
+        return;
       }
       
       // Update hash (include tab for admin deep-links, preserve grid query params)
@@ -40015,6 +40064,9 @@
       vTriageRenderBatchTable(filteredBatches);
       vTriageRenderLanes();
       vTriageRenderQueue();
+      vTriageRenderLifecycle();
+      vTriageRenderSnapshot();
+      vTriageRenderAnalystWorkload();
       _vTriageUpdateUrlState();
     }
 
@@ -40321,6 +40373,165 @@
       });
       tbody.innerHTML = html;
     }
+    function vTriageRenderLifecycle() {
+      var container = document.getElementById('vtriage-lifecycle-stages');
+      if (!container) return;
+      var items = _vTriageState.queueItems;
+      var total = items.length || 1;
+      var stages = [
+        { label: 'Submitted', icon: '📥', key: 'submitted', statuses: ['pending', 'submitted'] },
+        { label: 'Under Review', icon: '🔍', key: 'review', statuses: ['verifier_responded', 'in_review'] },
+        { label: 'Clarification', icon: '💬', key: 'clarification', statuses: ['needs_clarification', 'returned_to_analyst', 'awaiting_verifier'] },
+        { label: 'Approved', icon: '✅', key: 'approved', statuses: ['verifier_approved', 'approved', 'sent_to_admin'] },
+        { label: 'Applied / Rejected', icon: '🏁', key: 'terminal', statuses: ['applied', 'rejected', 'resolved'] }
+      ];
+      var counts = {};
+      stages.forEach(function(s) { counts[s.key] = 0; });
+      items.forEach(function(it) {
+        var st = _vTriageGetStatusLower(it);
+        for (var i = 0; i < stages.length; i++) {
+          if (stages[i].statuses.indexOf(st) !== -1) { counts[stages[i].key]++; break; }
+        }
+      });
+      var maxKey = '';
+      var maxCount = -1;
+      Object.keys(counts).forEach(function(k) { if (counts[k] > maxCount) { maxCount = counts[k]; maxKey = k; } });
+      var html = '';
+      stages.forEach(function(s, i) {
+        var c = counts[s.key];
+        var pct = items.length > 0 ? Math.round((c / items.length) * 100) : 0;
+        var active = (s.key === maxKey && c > 0);
+        var cls = 'ta-lifecycle-stage' + (active ? ' ta-lifecycle-active' : '');
+        html += '<div class="' + cls + '" style="flex:1;text-align:center;padding:10px 6px;border-radius:8px;min-width:90px;cursor:default;">';
+        html += '<div class="ta-lifecycle-icon" style="font-size:0.85em;display:flex;align-items:center;justify-content:center;">' + s.icon + '</div>';
+        html += '<div class="ta-lifecycle-label" style="font-size:0.62em;font-weight:600;margin:2px 0 0;">' + s.label + '</div>';
+        html += '<div class="ta-lifecycle-count" style="font-size:0.9em;font-weight:700;">' + c + ' <span style="font-size:0.65em;font-weight:400;">(' + pct + '%)</span></div>';
+        html += '</div>';
+        if (i < stages.length - 1) html += '<div class="ta-lifecycle-arrow" style="display:flex;align-items:center;font-size:0.7em;">\u25B6</div>';
+      });
+      container.innerHTML = html;
+      var updEl = document.getElementById('vtriage-lifecycle-updated');
+      if (updEl) updEl.textContent = 'Updated ' + new Date().toLocaleTimeString();
+    }
+
+    function vTriageRenderSnapshot() {
+      var items = _vTriageState.queueItems;
+      var unknownEl = document.getElementById('vtriage-snap-unknown');
+      var unknownHint = document.getElementById('vtriage-snap-unknown-hint');
+      if (unknownEl) {
+        var schemaCache = (typeof window._schemaColumnCache !== 'undefined') ? window._schemaColumnCache : null;
+        if (schemaCache && schemaCache.unknown_count !== undefined) {
+          unknownEl.textContent = schemaCache.unknown_count;
+          if (unknownHint) unknownHint.textContent = 'From schema validation';
+        } else {
+          unknownEl.textContent = '\u2014';
+          if (unknownHint) unknownHint.textContent = 'Schema data not loaded';
+        }
+      }
+      var mergesEl = document.getElementById('vtriage-snap-merges');
+      if (mergesEl) {
+        var mergeCount = 0;
+        _vTriageState.batches.forEach(function(b) {
+          var meta = b.metadata || b.meta || {};
+          mergeCount += parseInt(meta.address_merges || meta.merge_count || 0, 10);
+        });
+        mergesEl.textContent = mergeCount;
+      }
+      var naEl = document.getElementById('vtriage-snap-na');
+      if (naEl) {
+        var naCount = 0;
+        items.forEach(function(it) {
+          var tp = (it.item_type || it.type || '').toLowerCase();
+          var st = _vTriageGetStatusLower(it);
+          if (tp === 'rfi' && (st === 'resolved' || st === 'verifier_approved' || st === 'approved')) {
+            var meta = it.metadata || it.meta || {};
+            if (meta.na_justification || meta.is_na || meta.justification_type === 'NA') naCount++;
+          }
+        });
+        naEl.textContent = naCount;
+      }
+      var corrEl = document.getElementById('vtriage-snap-corrections');
+      var corrDetail = document.getElementById('vtriage-snap-corrections-detail');
+      if (corrEl) {
+        var totalCorr = 0, approvedCorr = 0;
+        items.forEach(function(it) {
+          var tp = (it.item_type || it.type || '').toLowerCase();
+          if (tp === 'correction') {
+            totalCorr++;
+            var st = _vTriageGetStatusLower(it);
+            if (st === 'approved' || st === 'verifier_approved' || st === 'applied') approvedCorr++;
+          }
+        });
+        if (totalCorr > 0) {
+          var pct = Math.round((approvedCorr / totalCorr) * 100);
+          corrEl.textContent = pct + '%';
+          if (corrDetail) corrDetail.textContent = approvedCorr + ' / ' + totalCorr + ' corrections';
+        } else {
+          corrEl.textContent = '\u2014';
+          if (corrDetail) corrDetail.textContent = '0 / 0 corrections';
+        }
+      }
+    }
+
+    function vTriageRenderAnalystWorkload() {
+      var panel = document.getElementById('vtriage-workload');
+      if (!panel) return;
+      if (typeof currentMode !== 'undefined' && currentMode !== 'admin') {
+        panel.style.display = 'none';
+        return;
+      }
+      panel.style.display = 'block';
+      var tbody = document.getElementById('vtriage-workload-tbody');
+      var emptyEl = document.getElementById('vtriage-workload-empty');
+      if (!tbody) return;
+      var items = _vTriageState.queueItems;
+      var analysts = {};
+      items.forEach(function(it) {
+        var author = it.author_email || it.author_id || it.created_by || 'unknown';
+        if (!analysts[author]) analysts[author] = { total: 0, pending: 0, openRfis: 0, oldestPending: null };
+        var a = analysts[author];
+        a.total++;
+        var st = _vTriageGetStatusLower(it);
+        var tp = (it.item_type || it.type || '').toLowerCase();
+        if (st === 'pending' || st === 'submitted') {
+          a.pending++;
+          if (it.created_at) {
+            var ts = new Date(it.created_at).getTime();
+            if (a.oldestPending === null || ts < a.oldestPending) a.oldestPending = ts;
+          }
+        }
+        if (tp === 'rfi' && st !== 'resolved' && st !== 'verifier_approved' && st !== 'approved' && st !== 'applied' && st !== 'rejected') {
+          a.openRfis++;
+        }
+      });
+      var keys = Object.keys(analysts).sort(function(a, b) { return analysts[b].total - analysts[a].total; });
+      if (keys.length === 0) {
+        tbody.innerHTML = '';
+        if (emptyEl) emptyEl.style.display = 'block';
+        return;
+      }
+      if (emptyEl) emptyEl.style.display = 'none';
+      var html = '';
+      keys.forEach(function(k) {
+        var a = analysts[k];
+        var oldest = '\u2014';
+        var oldestColor = 'var(--text-muted,#999)';
+        if (a.oldestPending !== null) {
+          var ageH = Math.floor((Date.now() - a.oldestPending) / 3600000);
+          oldest = ageH < 24 ? ageH + 'h' : Math.floor(ageH / 24) + 'd';
+          oldestColor = ageH < 24 ? 'var(--ok,#2e7d32)' : ageH < 72 ? 'var(--warn,#f57c00)' : 'var(--bad,#c62828)';
+        }
+        html += '<tr>';
+        html += '<td style="padding:8px 12px;border-bottom:1px solid var(--border-1,#eee);font-size:0.85em;font-weight:500;color:var(--text-1,#333);">' + _vorgEsc(k) + '</td>';
+        html += '<td style="padding:8px 12px;border-bottom:1px solid var(--border-1,#eee);text-align:center;font-size:0.85em;">' + a.total + '</td>';
+        html += '<td style="padding:8px 12px;border-bottom:1px solid var(--border-1,#eee);text-align:center;font-size:0.85em;">' + (a.pending > 0 ? '<span style="color:var(--warn,#e65100);font-weight:600;">' + a.pending + '</span>' : '0') + '</td>';
+        html += '<td style="padding:8px 12px;border-bottom:1px solid var(--border-1,#eee);text-align:center;font-size:0.85em;">' + (a.openRfis > 0 ? '<span style="color:var(--info,#1565c0);font-weight:600;">' + a.openRfis + '</span>' : '0') + '</td>';
+        html += '<td style="padding:8px 12px;border-bottom:1px solid var(--border-1,#eee);text-align:center;font-size:0.85em;"><span style="color:' + oldestColor + ';font-weight:600;">' + oldest + '</span></td>';
+        html += '</tr>';
+      });
+      tbody.innerHTML = html;
+    }
+
     // === END V2.56 VERIFIER TRIAGE UNIFICATION (P0) ===
 
     // ========== VERIFIER TRIAGE & PAYLOAD SYSTEM (v1.5.2) ==========
