@@ -3774,62 +3774,86 @@
         </div>
 
         <div id="verifier-triage-content" style="display: none;">
-          <div class="page-header">
-            <h2 id="verifier-triage-title">Triage - Verifier</h2>
-            <p class="page-desc">Review submitted RFIs, Corrections, and Blacklist requests.</p>
+          <div class="page-header" style="margin-bottom: 20px;">
+            <h2 id="verifier-triage-title" style="margin: 0 0 4px 0; font-size: 1.3em; color: var(--text-1, #1a1a2e);">Triage</h2>
+            <p class="page-desc" style="margin: 0; font-size: 0.9em; color: var(--text-secondary, #666);">Workspace-level governance queue — all items requiring review and action.</p>
           </div>
-          <!-- v1.5.2: Division + Status filter bar -->
-          <div class="verifier-filter-bar" style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px; padding: 12px 16px; background: #f8f9fa; border-radius: 8px; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <label style="font-size: 0.85em; color: #666; font-weight: 600;">Division:</label>
-              <select id="verifier-filter-division" class="filter-select" style="min-width: 140px;" onchange="onVerifierFilterChange()">
-                <option value="">All Divisions</option>
-                <option value="__unassigned__">Unassigned</option>
-              </select>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <label style="font-size: 0.85em; color: #666; font-weight: 600;">Status:</label>
-              <select id="verifier-filter-status" class="filter-select" style="min-width: 140px;" onchange="onVerifierFilterChange()">
+          <div id="vtriage-error-banner" style="display:none;padding:14px 18px;background:var(--bad-bg,rgba(198,40,40,0.08));border:1px solid var(--bad-border,rgba(198,40,40,0.2));border-radius:8px;color:var(--bad,#c62828);margin-bottom:16px;"></div>
+          <div id="vtriage-loading" class="vorg-loading-spinner" style="display:none;">Loading operations data...</div>
+          <div id="vtriage-empty" style="display:none;padding:60px 20px;text-align:center;color:var(--text-muted,#666);font-size:1em;">No batches with active items. Import data to get started.</div>
+          <div id="vtriage-content" style="display:none;">
+            <!-- S1: Governance Summary Strip -->
+            <div id="vtriage-kpi" class="vorg-kpi-strip"></div>
+            <!-- S2: Batch Summary Table -->
+            <div id="vtriage-filter-bar" class="vorg-filter-bar">
+              <label style="font-size:0.85em;color:var(--text-secondary,#666);">Filters:</label>
+              <select id="vtriage-filter-status" aria-label="Filter by status" onchange="vTriageApplyFilters()" style="padding:5px 10px;border-radius:4px;border:1px solid var(--border-1,#e0e0e0);font-size:0.85em;background:var(--bg-1,#fff);color:var(--text-1,#333);">
                 <option value="">All Statuses</option>
-                <option value="pending">Pending Review</option>
+                <option value="pending">Pending</option>
                 <option value="needs_clarification">Needs Clarification</option>
                 <option value="sent_to_admin">Sent to Admin</option>
                 <option value="resolved">Resolved</option>
               </select>
+              <select id="vtriage-filter-type" aria-label="Filter by type" onchange="vTriageApplyFilters()" style="padding:5px 10px;border-radius:4px;border:1px solid var(--border-1,#e0e0e0);font-size:0.85em;background:var(--bg-1,#fff);color:var(--text-1,#333);">
+                <option value="">All Types</option>
+                <option value="patch">Patches</option>
+                <option value="rfi">RFIs</option>
+                <option value="correction">Corrections</option>
+              </select>
+              <span id="vtriage-filter-info" role="status" style="font-size:0.8em;color:var(--text-secondary,#666);margin-left:auto;"></span>
+              <button class="vorg-clear-link" onclick="vTriageClearFilters()">Clear all</button>
             </div>
-            <span id="verifier-filter-count" style="font-size: 0.85em; color: #666; margin-left: auto;"></span>
-          </div>
-          <!-- v1.5.3: Patch Type tabs (Corrections, Blacklist, RFI) -->
-          <div class="patch-type-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">
-            <div class="pt-tab active" data-ptype="" onclick="setVerifierPatchType('')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0;">All Types <span id="pt-count-all">(0)</span></div>
-            <div class="pt-tab" data-ptype="correction" onclick="setVerifierPatchType('correction')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #f5f5f5; color: #333; border: 1px solid #ddd;">Corrections <span id="pt-count-correction">(0)</span></div>
-            <div class="pt-tab" data-ptype="blacklist" onclick="setVerifierPatchType('blacklist')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #f5f5f5; color: #333; border: 1px solid #ddd;">Blacklist <span id="pt-count-blacklist">(0)</span></div>
-            <div class="pt-tab" data-ptype="rfi" onclick="setVerifierPatchType('rfi')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #f5f5f5; color: #333; border: 1px solid #ddd;">RFI <span id="pt-count-rfi">(0)</span></div>
-          </div>
-          <div class="verifier-tabs" style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
-            <div class="v-tab active" data-vqueue="pending" onclick="setVerifierQueue('pending')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600; background: #f5f5f5;">Pending <span id="v-count-pending">(0)</span></div>
-            <div class="v-tab" data-vqueue="needs_clarification" onclick="setVerifierQueue('needs_clarification')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600;">Clarification <span id="v-count-clarification">(0)</span></div>
-            <div class="v-tab" data-vqueue="sent_to_admin" onclick="setVerifierQueue('sent_to_admin')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600;">To Admin <span id="v-count-admin">(0)</span></div>
-            <div class="v-tab" data-vqueue="resolved" onclick="setVerifierQueue('resolved')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: 600;">Resolved <span id="v-count-resolved">(0)</span></div>
-          </div>
-
-          <div class="verifier-table-container" style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
-              <thead style="background: #f8f9fa; border-bottom: 1px solid #eee;">
-                <tr>
-                  <th style="padding: 12px;">Type</th>
-                  <th style="padding: 12px;">Record</th>
-                  <th style="padding: 12px;">Field</th>
-                  <th style="padding: 12px;">Change / Value</th>
-                  <th style="padding: 12px;">Comment</th>
-                  <th style="padding: 12px;">Submitted</th>
-                  <th style="padding: 12px;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="verifier-queue-list">
-                <tr><td colspan="7" style="padding: 40px; text-align: center; color: #999;">No payloads in this queue</td></tr>
-              </tbody>
-            </table>
+            <div id="vtriage-batch-section" style="margin-bottom:20px;">
+              <h3 style="margin:0 0 12px 0;font-size:1.1em;color:var(--text-1,#333);">Batch Queue</h3>
+              <div style="overflow-x:auto;border:1px solid var(--border-1,#e0e0e0);border-radius:8px;">
+                <table id="vtriage-batch-table" style="width:100%;border-collapse:collapse;">
+                  <thead>
+                    <tr>
+                      <th>Batch Name</th>
+                      <th>Source</th>
+                      <th>Items</th>
+                      <th>Pending</th>
+                      <th>Clarify</th>
+                      <th>Resolved</th>
+                      <th>Age</th>
+                      <th>Health</th>
+                    </tr>
+                  </thead>
+                  <tbody id="vtriage-batch-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+            <!-- S2b: Batch Drilldown (shown on batch click) -->
+            <div id="vtriage-drilldown" style="display:none;margin-bottom:20px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h3 id="vtriage-drilldown-title" style="margin:0;font-size:1.1em;color:var(--text-1,#333);">Batch Items</h3>
+                <button onclick="vTriageExitDrilldown()" style="padding:6px 14px;border-radius:4px;border:1px solid var(--border-1,#e0e0e0);background:var(--bg-1,#fff);color:var(--text-1,#333);cursor:pointer;font-size:0.85em;">&#8592; Back to all batches</button>
+              </div>
+              <div style="overflow-x:auto;border:1px solid var(--border-1,#e0e0e0);border-radius:8px;">
+                <table id="vtriage-drilldown-table" style="width:100%;border-collapse:collapse;">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Record</th>
+                      <th>Field</th>
+                      <th>Status</th>
+                      <th>Author</th>
+                      <th>Age</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="vtriage-drilldown-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+            <!-- S3: Verifier Lane Cards (placeholder — VTRIAGE-05) -->
+            <div id="vtriage-lanes" style="display:none;"></div>
+            <!-- S4: Governance Lifecycle Rail (placeholder — VTRIAGE-06) -->
+            <div id="vtriage-lifecycle" style="display:none;"></div>
+            <!-- S5: Governance Snapshot Tiles (placeholder — VTRIAGE-07) -->
+            <div id="vtriage-snapshot" style="display:none;"></div>
+            <!-- S6: Unified Work Queue (placeholder — VTRIAGE-08) -->
+            <div id="vtriage-queue" style="display:none;"></div>
           </div>
         </div>
         <div style="margin-top: 12px; text-align: right; font-size: 0.75em; color: #aaa;">PAGE: TRIAGE | BUILD v1.6.49</div>
@@ -25528,6 +25552,19 @@
       
       // DEV-ONLY: Assert no admin sections render inside triage
       if (page === 'triage') {
+        // v2.56: Role-adaptive triage content toggle
+        var _atc = document.getElementById('analyst-triage-content');
+        var _vtc = document.getElementById('verifier-triage-content');
+        if (_atc && _vtc) {
+          if (currentMode === 'verifier' || currentMode === 'admin') {
+            _atc.style.display = 'none';
+            _vtc.style.display = 'block';
+            setTimeout(function() { if (typeof vTriageLoadData === 'function') vTriageLoadData(); }, 0);
+          } else {
+            _atc.style.display = 'block';
+            _vtc.style.display = 'none';
+          }
+        }
         if (window._evRfiPendingPropagation) {
           window._evRfiPendingPropagation = false;
           if (typeof renderAnalystTriage === 'function') {
@@ -25977,14 +26014,19 @@
         appLayout.classList.add('mode-' + mode);
       }
 
-      // v1.5.3 Fix: Toggle Triage view visibility + ALWAYS reload queues from canonical store
+      // v2.56: Toggle Triage view visibility — role-adaptive
       var analystContent = document.getElementById('analyst-triage-content');
       var verifierContent = document.getElementById('verifier-triage-content');
       if (analystContent && verifierContent) {
-        // v1.7.0: All roles see the same Analyst triage view (unified triage)
-        analystContent.style.display = 'block';
-        verifierContent.style.display = 'none';
-        renderAnalystTriage();
+        if (mode === 'verifier' || mode === 'admin') {
+          analystContent.style.display = 'none';
+          verifierContent.style.display = 'block';
+          if (typeof vTriageLoadData === 'function') vTriageLoadData();
+        } else {
+          analystContent.style.display = 'block';
+          verifierContent.style.display = 'none';
+          renderAnalystTriage();
+        }
       }
       
       // v1.5.2: Toggle Grid verifier mode
@@ -39725,6 +39767,382 @@
     }
     // === END VERIFIER ORG VIEW (v2.55) ===
 
+    // ========== V2.56 VERIFIER TRIAGE UNIFICATION (P0) ==========
+    var _vTriageState = {
+      queueItems: [],
+      batches: [],
+      filteredItems: [],
+      filteredBatches: [],
+      activeBatchId: null,
+      activeKpiStatus: '',
+      loaded: false
+    };
+
+    function vTriageLoadData() {
+      var wsId = _vorgGetWorkspaceId();
+      var headers = _vorgGetAuthHeaders();
+      if (typeof isDemoMode === 'function' && isDemoMode()) {
+        headers['X-Sandbox-Mode'] = 'true';
+        var effRole = (typeof getEffectiveRole === 'function') ? getEffectiveRole() : (currentMode || 'analyst');
+        headers['X-Effective-Role'] = effRole;
+      }
+      var loadingEl = document.getElementById('vtriage-loading');
+      var contentEl = document.getElementById('vtriage-content');
+      var emptyEl = document.getElementById('vtriage-empty');
+      var errorEl = document.getElementById('vtriage-error-banner');
+
+      if (loadingEl) loadingEl.style.display = 'block';
+      if (contentEl) contentEl.style.display = 'none';
+      if (emptyEl) emptyEl.style.display = 'none';
+      if (errorEl) errorEl.style.display = 'none';
+
+      var queueUrl = '/api/v2.5/workspaces/' + encodeURIComponent(wsId) + '/operations/queue?limit=200';
+      var batchUrl = '/api/v2.5/workspaces/' + encodeURIComponent(wsId) + '/batches?limit=100';
+
+      Promise.all([
+        fetch(queueUrl, { method: 'GET', headers: headers }).then(function(r) { return r.json(); }),
+        fetch(batchUrl, { method: 'GET', headers: headers }).then(function(r) { return r.json(); })
+      ]).then(function(results) {
+        var queueResp = results[0];
+        var batchResp = results[1];
+
+        var qData = (queueResp && queueResp.data) ? queueResp.data : {};
+        var items = Array.isArray(qData.items) ? qData.items : (Array.isArray(qData) ? qData : []);
+        var counts = (qData.counts) ? qData.counts : null;
+        var batches = (batchResp && batchResp.data) ? batchResp.data : (Array.isArray(batchResp) ? batchResp : []);
+
+        _vTriageState.queueItems = items;
+        _vTriageState.batches = batches;
+        _vTriageState.loaded = true;
+
+        if (loadingEl) loadingEl.style.display = 'none';
+
+        if (items.length === 0 && batches.length === 0) {
+          if (emptyEl) emptyEl.style.display = 'block';
+          return;
+        }
+
+        if (contentEl) contentEl.style.display = 'block';
+
+        if (!counts) {
+          counts = { pending: 0, needs_clarification: 0, sent_to_admin: 0, resolved: 0, total: items.length };
+          items.forEach(function(it) {
+            var st = (it.status || it.lifecycle_status || '').toLowerCase();
+            if (st === 'pending' || st === 'submitted') counts.pending++;
+            else if (st === 'needs_clarification') counts.needs_clarification++;
+            else if (st === 'sent_to_admin') counts.sent_to_admin++;
+            else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved') counts.resolved++;
+          });
+        }
+
+        vTriageRenderKpi(counts);
+        vTriageApplyFilters();
+        console.log('[V2.56][VTRIAGE] Loaded: items=' + items.length + ', batches=' + batches.length);
+      }).catch(function(err) {
+        console.error('[V2.56][VTRIAGE] Load error:', err);
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (errorEl) {
+          errorEl.style.display = 'block';
+          errorEl.innerHTML = '<strong>Failed to load operations data.</strong> ' + _vorgEsc(err.message || String(err)) +
+            ' <button onclick="vTriageLoadData()" style="margin-left:12px;padding:4px 12px;border-radius:4px;border:1px solid var(--bad-border);background:var(--bg-1);color:var(--bad);cursor:pointer;">Retry</button>';
+        }
+      });
+    }
+
+    function vTriageRenderKpi(counts) {
+      var el = document.getElementById('vtriage-kpi');
+      if (!el) return;
+      var kpis = [
+        { key: 'pending', label: 'Pending', value: counts.pending || 0 },
+        { key: 'needs_clarification', label: 'Needs Clarification', value: counts.needs_clarification || 0 },
+        { key: 'sent_to_admin', label: 'Sent to Admin', value: counts.sent_to_admin || 0 },
+        { key: 'resolved', label: 'Resolved', value: counts.resolved || 0 },
+        { key: '', label: 'Total', value: counts.total || _vTriageState.queueItems.length }
+      ];
+      var html = '';
+      kpis.forEach(function(k) {
+        var active = (_vTriageState.activeKpiStatus === k.key && k.key !== '') ? ' vorg-kpi-active' : '';
+        var onclick = k.key ? ' onclick="vTriageFilterByStatus(\'' + k.key + '\')"' : '';
+        var tabindex = k.key ? ' tabindex="0" role="button"' : '';
+        html += '<div class="vorg-kpi' + active + '" data-status="' + k.key + '"' + onclick + tabindex + '>' +
+          '<div class="kpi-value">' + k.value + '</div>' +
+          '<div class="kpi-label">' + k.label + '</div>' +
+          '<div class="kpi-unit">items</div>' +
+          '</div>';
+      });
+      el.innerHTML = html;
+    }
+
+    function vTriageFilterByStatus(status) {
+      if (_vTriageState.activeKpiStatus === status) {
+        _vTriageState.activeKpiStatus = '';
+      } else {
+        _vTriageState.activeKpiStatus = status;
+      }
+      var sel = document.getElementById('vtriage-filter-status');
+      if (sel) sel.value = _vTriageState.activeKpiStatus;
+      document.querySelectorAll('#vtriage-kpi .vorg-kpi').forEach(function(el) {
+        if (el.dataset.status === _vTriageState.activeKpiStatus && _vTriageState.activeKpiStatus !== '') {
+          el.classList.add('vorg-kpi-active');
+        } else {
+          el.classList.remove('vorg-kpi-active');
+        }
+      });
+      vTriageApplyFilters();
+    }
+
+    function vTriageApplyFilters() {
+      var statusVal = _vTriageState.activeKpiStatus || '';
+      var statusSel = document.getElementById('vtriage-filter-status');
+      var typeSel = document.getElementById('vtriage-filter-type');
+      if (!statusVal && statusSel) statusVal = statusSel.value;
+      var typeVal = typeSel ? typeSel.value : '';
+
+      var filtered = _vTriageState.queueItems.filter(function(it) {
+        var st = (it.status || it.lifecycle_status || '').toLowerCase();
+        if (statusVal) {
+          if (statusVal === 'pending' && st !== 'pending' && st !== 'submitted') return false;
+          if (statusVal === 'needs_clarification' && st !== 'needs_clarification') return false;
+          if (statusVal === 'sent_to_admin' && st !== 'sent_to_admin') return false;
+          if (statusVal === 'resolved' && st !== 'resolved' && st !== 'verifier_approved' && st !== 'approved') return false;
+        }
+        if (typeVal) {
+          var itype = (it.item_type || it.type || '').toLowerCase();
+          if (itype !== typeVal) return false;
+        }
+        return true;
+      });
+
+      _vTriageState.filteredItems = filtered;
+
+      var batchIdsInFiltered = {};
+      filtered.forEach(function(it) { batchIdsInFiltered[it.batch_id || 'unknown'] = true; });
+
+      var filteredBatches = _vTriageState.batches.filter(function(b) {
+        var bid = b.id || b.batch_id;
+        return batchIdsInFiltered[bid] || (!statusVal && !typeVal);
+      });
+      _vTriageState.filteredBatches = filteredBatches;
+
+      var info = document.getElementById('vtriage-filter-info');
+      if (info) {
+        if (statusVal || typeVal) {
+          info.textContent = 'Showing ' + filtered.length + ' of ' + _vTriageState.queueItems.length + ' items';
+        } else {
+          info.textContent = _vTriageState.queueItems.length + ' total items';
+        }
+      }
+
+      if (_vTriageState.activeBatchId) {
+        vTriageRenderDrilldown(_vTriageState.activeBatchId);
+      }
+
+      vTriageRenderBatchTable(filteredBatches);
+    }
+
+    function vTriageClearFilters() {
+      _vTriageState.activeKpiStatus = '';
+      _vTriageState.activeBatchId = null;
+      var statusSel = document.getElementById('vtriage-filter-status');
+      var typeSel = document.getElementById('vtriage-filter-type');
+      if (statusSel) statusSel.value = '';
+      if (typeSel) typeSel.value = '';
+      document.querySelectorAll('#vtriage-kpi .vorg-kpi').forEach(function(el) { el.classList.remove('vorg-kpi-active'); });
+      vTriageExitDrilldown();
+      vTriageApplyFilters();
+    }
+
+    function vTriageRenderBatchTable(batches) {
+      var tbody = document.getElementById('vtriage-batch-tbody');
+      if (!tbody) return;
+
+      var batchItemMap = {};
+      _vTriageState.filteredItems.forEach(function(it) {
+        var bid = it.batch_id || 'unknown';
+        if (!batchItemMap[bid]) batchItemMap[bid] = [];
+        batchItemMap[bid].push(it);
+      });
+
+      if (!batches || batches.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted,#999);">No batches match current filters.</td></tr>';
+        return;
+      }
+
+      var html = '';
+      batches.forEach(function(batch) {
+        var bid = batch.id || batch.batch_id;
+        var allBatchItems = _vTriageState.queueItems.filter(function(it) { return (it.batch_id || 'unknown') === bid; });
+        var total = allBatchItems.length;
+        var pending = 0, clarify = 0, resolved = 0;
+        allBatchItems.forEach(function(it) {
+          var st = (it.status || it.lifecycle_status || '').toLowerCase();
+          if (st === 'pending' || st === 'submitted') pending++;
+          else if (st === 'needs_clarification') clarify++;
+          else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved') resolved++;
+        });
+
+        var name = _vorgEsc(batch.name || batch.filename || bid);
+        var source = _vorgSourceBadge(batch.source || batch.import_source || 'file');
+        var age = _vorgAgeText(batch.created_at);
+        var ageColor = _vorgAgeColor(batch.created_at);
+        var health = _vorgHealthDot(batch.created_at);
+
+        var isSelected = (_vTriageState.activeBatchId === bid) ? ' vorg-row-selected' : '';
+        html += '<tr class="' + isSelected.trim() + '" onclick="vTriageDrillIntoBatch(\'' + _vorgEsc(bid) + '\')" title="Click to drill down">' +
+          '<td style="font-weight:600;">' + name + '</td>' +
+          '<td>' + source + '</td>' +
+          '<td>' + total + '</td>' +
+          '<td>' + (pending > 0 ? '<span class="vorg-count-badge vorg-count-badge-pending">' + pending + '</span>' : '<span style="color:var(--text-muted,#999);">0</span>') + '</td>' +
+          '<td>' + (clarify > 0 ? '<span class="vorg-count-badge vorg-count-badge-clarify">' + clarify + '</span>' : '<span style="color:var(--text-muted,#999);">0</span>') + '</td>' +
+          '<td>' + (resolved > 0 ? '<span class="vorg-count-badge vorg-count-badge-resolved">' + resolved + '</span>' : '<span style="color:var(--text-muted,#999);">0</span>') + '</td>' +
+          '<td style="color:' + ageColor + ';font-weight:600;">' + age + '</td>' +
+          '<td>' + health + '</td>' +
+          '</tr>';
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function vTriageDrillIntoBatch(batchId) {
+      _vTriageState.activeBatchId = batchId;
+      var batchSection = document.getElementById('vtriage-batch-section');
+      var drillEl = document.getElementById('vtriage-drilldown');
+      if (batchSection) batchSection.style.display = 'none';
+      if (drillEl) drillEl.style.display = 'block';
+
+      var batch = _vTriageState.batches.find(function(b) { return (b.id || b.batch_id) === batchId; });
+      var titleEl = document.getElementById('vtriage-drilldown-title');
+      if (titleEl) titleEl.textContent = 'Batch Items \u2014 ' + (batch ? (batch.name || batch.filename || batchId) : batchId);
+
+      vTriageRenderDrilldown(batchId);
+    }
+
+    function vTriageRenderDrilldown(batchId) {
+      var tbody = document.getElementById('vtriage-drilldown-tbody');
+      if (!tbody) return;
+
+      var items = _vTriageState.filteredItems.filter(function(it) { return (it.batch_id || 'unknown') === batchId; });
+      if (items.length === 0) {
+        items = _vTriageState.queueItems.filter(function(it) { return (it.batch_id || 'unknown') === batchId; });
+      }
+
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted,#999);">No items in this batch.</td></tr>';
+        return;
+      }
+
+      var html = '';
+      items.forEach(function(it) {
+        var type = _vorgTypeBadge(it.item_type || it.type);
+        var record = _vorgEsc(it.record_label || it.record_id || it.contract_id || '—');
+        var field = _vorgEsc(it.field_name || it.field || '—');
+        var status = '<span class="vorg-badge">' + _vorgStatusLabel(it.status || it.lifecycle_status) + '</span>';
+        var author = _vorgEsc(it.author_email || it.created_by || '—');
+        var age = '<span style="color:' + _vorgAgeColor(it.created_at) + ';">' + _vorgAgeText(it.created_at) + '</span>';
+        var itemId = it.id || it.item_id || '';
+        var itemType = (it.item_type || it.type || 'patch').toLowerCase();
+        var itemStatus = (it.status || it.lifecycle_status || '').toLowerCase();
+        var version = it.version || it.db_version || 1;
+
+        var actions = '';
+        if (itemStatus === 'pending' || itemStatus === 'submitted') {
+          actions = '<div style="display:flex;gap:4px;flex-wrap:wrap;" class="vorg-action-group" data-item-id="' + _vorgEsc(itemId) + '">' +
+            '<button class="vorg-action-btn vorg-action-approve" onclick="event.stopPropagation();vTriageAction(\'' + _vorgEsc(itemId) + '\',\'' + itemType + '\',\'approved\',' + version + ')" title="Approve">Approve</button>' +
+            '<button class="vorg-action-btn vorg-action-reject" onclick="event.stopPropagation();vTriageAction(\'' + _vorgEsc(itemId) + '\',\'' + itemType + '\',\'rejected\',' + version + ')" title="Reject">Reject</button>' +
+            '</div>';
+        } else if (itemStatus === 'needs_clarification' && itemType === 'rfi') {
+          actions = '<div style="display:flex;gap:4px;flex-wrap:wrap;" class="vorg-action-group" data-item-id="' + _vorgEsc(itemId) + '">' +
+            '<button class="vorg-action-btn vorg-action-approve" onclick="event.stopPropagation();vTriageAction(\'' + _vorgEsc(itemId) + '\',\'' + itemType + '\',\'resolved\',' + version + ')" title="Resolve">Resolve</button>' +
+            '<button class="vorg-action-btn vorg-action-return" onclick="event.stopPropagation();vTriageAction(\'' + _vorgEsc(itemId) + '\',\'' + itemType + '\',\'returned_to_analyst\',' + version + ')" title="Return to Analyst">Return</button>' +
+            '</div>';
+        } else {
+          actions = '<span style="color:var(--text-muted,#999);font-size:0.85em;">—</span>';
+        }
+
+        html += '<tr>' +
+          '<td>' + type + '</td>' +
+          '<td>' + record + '</td>' +
+          '<td>' + field + '</td>' +
+          '<td>' + status + '</td>' +
+          '<td>' + author + '</td>' +
+          '<td>' + age + '</td>' +
+          '<td>' + actions + '</td>' +
+          '</tr>';
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function vTriageAction(itemId, type, newStatus, version) {
+      var group = document.querySelector('.vorg-action-group[data-item-id="' + itemId + '"]');
+      if (!group) return;
+      var actionBtns = group.querySelectorAll('.vorg-action-btn');
+      var origTexts = [];
+      actionBtns.forEach(function(b) {
+        origTexts.push(b.innerHTML);
+        b.disabled = true;
+        b.innerHTML = '<span class="vorg-spinner"></span>';
+      });
+
+      var promise;
+      if (type === 'patch' && typeof opsDbWriteStatus === 'function') {
+        promise = opsDbWriteStatus(itemId, newStatus, version);
+      } else if (type === 'rfi' && typeof opsDbWriteRfiStatus === 'function') {
+        promise = opsDbWriteRfiStatus(itemId, newStatus, version);
+      } else if (type === 'correction' && typeof opsDbWriteCorrectionStatus === 'function') {
+        promise = opsDbWriteCorrectionStatus(itemId, newStatus, version);
+      } else {
+        actionBtns.forEach(function(b, i) { b.disabled = false; b.innerHTML = origTexts[i]; });
+        showToast('Action handler not available for type: ' + type, 'warning');
+        return;
+      }
+
+      promise.then(function(result) {
+        actionBtns.forEach(function(b, i) { b.disabled = false; b.innerHTML = origTexts[i]; });
+        if (result === false) return;
+        if (result && result.ok) {
+          showToast(_vorgStatusLabel(type) + ' ' + newStatus.replace(/_/g, ' '), 'success');
+          var item = _vTriageState.queueItems.find(function(it) { return (it.id || it.item_id) === itemId; });
+          if (item) {
+            item.status = newStatus;
+            item.lifecycle_status = newStatus;
+            if (result.newVersion) {
+              item.version = result.newVersion;
+              item.db_version = result.newVersion;
+            }
+          }
+          vTriageApplyFilters();
+          var counts = _vTriageComputeCounts();
+          vTriageRenderKpi(counts);
+        }
+      }).catch(function(err) {
+        actionBtns.forEach(function(b, i) { b.disabled = false; b.innerHTML = origTexts[i]; });
+        console.error('[V2.56][VTRIAGE] Action error:', err);
+        showToast('Version conflict \u2014 refresh to retry', 'error');
+      });
+    }
+
+    function _vTriageComputeCounts() {
+      var counts = { pending: 0, needs_clarification: 0, sent_to_admin: 0, resolved: 0, total: _vTriageState.queueItems.length };
+      _vTriageState.queueItems.forEach(function(it) {
+        var st = (it.status || it.lifecycle_status || '').toLowerCase();
+        if (st === 'pending' || st === 'submitted') counts.pending++;
+        else if (st === 'needs_clarification') counts.needs_clarification++;
+        else if (st === 'sent_to_admin') counts.sent_to_admin++;
+        else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved') counts.resolved++;
+      });
+      return counts;
+    }
+
+    function vTriageExitDrilldown() {
+      _vTriageState.activeBatchId = null;
+      var batchSection = document.getElementById('vtriage-batch-section');
+      var drillEl = document.getElementById('vtriage-drilldown');
+      if (batchSection) batchSection.style.display = 'block';
+      if (drillEl) drillEl.style.display = 'none';
+    }
+    // === END V2.56 VERIFIER TRIAGE UNIFICATION (P0) ===
+
     // ========== VERIFIER TRIAGE & PAYLOAD SYSTEM (v1.5.2) ==========
     var verifierQueueState = {
       activeQueue: 'pending',
@@ -39798,6 +40216,10 @@
       if (typeof currentPage !== 'undefined' && currentPage === 'verifier-org' && typeof vorgLoadData === 'function') {
         console.log('[OpsView] Refreshing Org View for role switch');
         vorgLoadData();
+      }
+      if (typeof currentPage !== 'undefined' && currentPage === 'triage' && (currentMode === 'verifier' || currentMode === 'admin') && typeof vTriageLoadData === 'function') {
+        console.log('[V2.56] Refreshing verifier triage for role switch');
+        vTriageLoadData();
       }
       if (_opsViewFlags.dbRead) {
         verifierQueueState.payloads = [];
