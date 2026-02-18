@@ -3828,6 +3828,7 @@
                 <option value="needs_clarification">Needs Clarification</option>
                 <option value="sent_to_admin">Sent to Admin</option>
                 <option value="resolved">Resolved</option>
+                <option value="resolution">Resolution (All)</option>
               </select>
               <select id="vtriage-filter-type" aria-label="Filter by type" onchange="vTriageApplyFilters()" style="padding:5px 10px;border-radius:4px;border:1px solid var(--border-1,#e0e0e0);font-size:0.85em;background:var(--bg-1,#fff);color:var(--text-1,#333);">
                 <option value="">All Types</option>
@@ -39832,6 +39833,22 @@
     };
     var _vTriageLoading = false;
 
+    function _vTriageGetStatusRaw(it) {
+      return it.queue_status || it.status || it.lifecycle_status || '';
+    }
+    function _vTriageGetStatusLower(it) {
+      return _vTriageGetStatusRaw(it).toLowerCase();
+    }
+    function _vTriageStatusMatchesFilter(st, statusVal) {
+      if (!statusVal) return true;
+      if (statusVal === 'pending') return st === 'pending' || st === 'submitted';
+      if (statusVal === 'needs_clarification') return st === 'needs_clarification' || st === 'returned_to_analyst' || st === 'awaiting_verifier';
+      if (statusVal === 'sent_to_admin') return st === 'sent_to_admin';
+      if (statusVal === 'resolved') return st === 'resolved' || st === 'verifier_approved' || st === 'approved' || st === 'applied';
+      if (statusVal === 'resolution') return st === 'sent_to_admin' || st === 'resolved' || st === 'verifier_approved' || st === 'approved' || st === 'applied';
+      return st === statusVal;
+    }
+
     function vTriageLoadData(forceRefresh) {
       if (_vTriageLoading && !forceRefresh) {
         console.log('[V2.56][VTRIAGE] Skipping duplicate load (in-flight)');
@@ -39887,11 +39904,11 @@
         if (!counts) {
           counts = { pending: 0, needs_clarification: 0, sent_to_admin: 0, resolved: 0, total: items.length };
           items.forEach(function(it) {
-            var st = (it.status || it.lifecycle_status || '').toLowerCase();
+            var st = _vTriageGetStatusLower(it);
             if (st === 'pending' || st === 'submitted') counts.pending++;
-            else if (st === 'needs_clarification') counts.needs_clarification++;
+            else if (st === 'needs_clarification' || st === 'returned_to_analyst' || st === 'awaiting_verifier') counts.needs_clarification++;
             else if (st === 'sent_to_admin') counts.sent_to_admin++;
-            else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved') counts.resolved++;
+            else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved' || st === 'applied') counts.resolved++;
           });
         }
 
@@ -39962,13 +39979,8 @@
       var typeVal = typeSel ? typeSel.value : '';
 
       var filtered = _vTriageState.queueItems.filter(function(it) {
-        var st = (it.status || it.lifecycle_status || '').toLowerCase();
-        if (statusVal) {
-          if (statusVal === 'pending' && st !== 'pending' && st !== 'submitted') return false;
-          if (statusVal === 'needs_clarification' && st !== 'needs_clarification') return false;
-          if (statusVal === 'sent_to_admin' && st !== 'sent_to_admin') return false;
-          if (statusVal === 'resolved' && st !== 'resolved' && st !== 'verifier_approved' && st !== 'approved') return false;
-        }
+        var st = _vTriageGetStatusLower(it);
+        if (statusVal && !_vTriageStatusMatchesFilter(st, statusVal)) return false;
         if (typeVal) {
           var itype = (it.item_type || it.type || '').toLowerCase();
           if (itype !== typeVal) return false;
@@ -40042,10 +40054,10 @@
         var total = allBatchItems.length;
         var pending = 0, clarify = 0, resolved = 0;
         allBatchItems.forEach(function(it) {
-          var st = (it.status || it.lifecycle_status || '').toLowerCase();
+          var st = _vTriageGetStatusLower(it);
           if (st === 'pending' || st === 'submitted') pending++;
-          else if (st === 'needs_clarification') clarify++;
-          else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved') resolved++;
+          else if (st === 'needs_clarification' || st === 'returned_to_analyst' || st === 'awaiting_verifier') clarify++;
+          else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved' || st === 'applied') resolved++;
         });
 
         var name = _vorgEsc(batch.name || batch.filename || bid);
@@ -40103,12 +40115,12 @@
         var type = _vorgTypeBadge(it.item_type || it.type);
         var record = _vorgEsc(it.record_label || it.record_id || it.contract_id || '—');
         var field = _vorgEsc(it.field_key || it.field_name || it.field || '—');
-        var status = '<span class="vorg-badge">' + _vorgStatusLabel(it.status || it.lifecycle_status) + '</span>';
+        var status = '<span class="vorg-badge">' + _vorgStatusLabel(_vTriageGetStatusRaw(it)) + '</span>';
         var author = _vorgEsc(it.author_email || it.created_by || '—');
         var age = '<span style="color:' + _vorgAgeColor(it.created_at) + ';">' + _vorgAgeText(it.created_at) + '</span>';
         var itemId = it.id || it.item_id || '';
         var itemType = (it.item_type || it.type || 'patch').toLowerCase();
-        var itemStatus = (it.status || it.lifecycle_status || '').toLowerCase();
+        var itemStatus = _vTriageGetStatusLower(it);
         var version = it.version || it.db_version || 1;
 
         var actions = '';
@@ -40148,11 +40160,11 @@
     function _vTriageComputeCounts() {
       var counts = { pending: 0, needs_clarification: 0, sent_to_admin: 0, resolved: 0, total: _vTriageState.queueItems.length };
       _vTriageState.queueItems.forEach(function(it) {
-        var st = (it.status || it.lifecycle_status || '').toLowerCase();
+        var st = _vTriageGetStatusLower(it);
         if (st === 'pending' || st === 'submitted') counts.pending++;
-        else if (st === 'needs_clarification') counts.needs_clarification++;
+        else if (st === 'needs_clarification' || st === 'returned_to_analyst' || st === 'awaiting_verifier') counts.needs_clarification++;
         else if (st === 'sent_to_admin') counts.sent_to_admin++;
-        else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved') counts.resolved++;
+        else if (st === 'resolved' || st === 'verifier_approved' || st === 'approved' || st === 'applied') counts.resolved++;
       });
       return counts;
     }
@@ -40210,14 +40222,14 @@
       var cl = { returned: 0, awaiting: 0, total: 0 };
       var rs = { admin: 0, resolved: 0, applied: 0, total: 0 };
       items.forEach(function(it) {
-        var st = (it.status || it.lifecycle_status || '').toLowerCase();
+        var st = _vTriageGetStatusLower(it);
         var tp = (it.item_type || it.type || '').toLowerCase();
         if (st === 'pending' || st === 'submitted') {
           pv.total++;
           if (tp === 'patch') pv.patches++;
           else if (tp === 'rfi') pv.rfis++;
           else if (tp === 'correction') pv.corrections++;
-        } else if (st === 'needs_clarification' || st === 'returned_to_analyst') {
+        } else if (st === 'needs_clarification' || st === 'returned_to_analyst' || st === 'awaiting_verifier') {
           cl.total++;
           if (st === 'returned_to_analyst') cl.returned++;
           else cl.awaiting++;
@@ -40240,7 +40252,7 @@
     }
 
     function vTriageLaneClick(lane) {
-      var statusMap = { 'pending': 'pending', 'clarification': 'needs_clarification', 'resolution': 'resolved' };
+      var statusMap = { 'pending': 'pending', 'clarification': 'needs_clarification', 'resolution': 'resolution' };
       var statusVal = statusMap[lane] || '';
       _vTriageState.activeKpiStatus = statusVal;
       var sel = document.getElementById('vtriage-filter-status');
@@ -40266,11 +40278,11 @@
         var type = _vorgEsc(it.item_type || it.type || '\u2014');
         var record = _vorgEsc(it.record_label || it.contract_id || it.record_id || '\u2014');
         var field = _vorgEsc(it.field_key || it.field_name || it.field || '\u2014');
-        var rawSt = it.status || it.lifecycle_status || '\u2014';
+        var rawSt = _vTriageGetStatusRaw(it) || '\u2014';
         var stLower = rawSt.toLowerCase();
         var stColor = (stLower === 'pending' || stLower === 'submitted') ? 'var(--warn,#e65100)' :
-          (stLower === 'needs_clarification') ? 'var(--info,#1565c0)' :
-          (stLower === 'resolved' || stLower === 'verifier_approved' || stLower === 'approved') ? 'var(--ok,#2e7d32)' :
+          (stLower === 'needs_clarification' || stLower === 'returned_to_analyst' || stLower === 'awaiting_verifier') ? 'var(--info,#1565c0)' :
+          (stLower === 'resolved' || stLower === 'verifier_approved' || stLower === 'approved' || stLower === 'applied') ? 'var(--ok,#2e7d32)' :
           (stLower === 'sent_to_admin') ? 'var(--accent,#8B5CF6)' : 'var(--text-1,#333)';
         var status = '<span style="color:' + stColor + ';font-weight:600;">' + _vorgEsc(rawSt.replace(/_/g,' ')) + '</span>';
         var author = _vorgEsc(it.author_email || it.author || '\u2014');
