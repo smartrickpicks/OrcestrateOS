@@ -21955,21 +21955,12 @@
       html += _gridDrawerEditTabHtml(ctx);
       html += '</div>';
 
-      html += '<div class="srr-left-tab-body' + (activeTab === 'patch' ? ' active' : '') + '" id="grid-drawer-tab-patch" data-tab="patch" style="flex-direction:column;">';
-      html += _gridDrawerPatchTabHtml(ctx);
-      html += '</div>';
-
       html += '<div class="srr-left-tab-body' + (activeTab === 'info' ? ' active' : '') + '" id="grid-drawer-tab-info" data-tab="info" style="flex-direction:column;">';
       html += _gridDrawerInfoTabHtml(ctx);
       html += '</div>';
 
       html += '<div class="srr-left-tabs" id="grid-drawer-tabs">';
       html += '<button class="srr-left-tab' + (activeTab === 'edit' ? ' active' : '') + '" data-tab="edit" onclick="_gridDrawerSwitchTab(\'edit\')" title="Edit Fields">Edit</button>';
-      html += '<button class="srr-left-tab" data-tab="patch" onclick="_gridDrawerOpenPatchModal()" title="Submit Patch" style="position:relative;">Pa';
-      if (editCount > 0) {
-        html += '<span id="grid-drawer-patch-badge" style="position:absolute;top:2px;right:2px;background:#c62828;color:#fff;font-size:0.6em;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1;">' + editCount + '</span>';
-      }
-      html += '</button>';
       html += '<button class="srr-left-tab' + (activeTab === 'info' ? ' active' : '') + '" data-tab="info" onclick="_gridDrawerSwitchTab(\'info\')" title="Info">Info</button>';
       html += '</div>';
 
@@ -21985,7 +21976,6 @@
       var tabs = document.querySelectorAll('#grid-drawer-tabs .srr-left-tab');
       var bodies = [
         document.getElementById('grid-drawer-tab-edit'),
-        document.getElementById('grid-drawer-tab-patch'),
         document.getElementById('grid-drawer-tab-info')
       ];
       for (var i = 0; i < tabs.length; i++) {
@@ -22003,12 +21993,6 @@
           bodies[j].className = 'srr-left-tab-body active';
         } else {
           bodies[j].className = 'srr-left-tab-body';
-        }
-      }
-      if (tabName === 'patch') {
-        var patchBody = document.getElementById('grid-drawer-tab-patch');
-        if (patchBody) {
-          patchBody.innerHTML = _gridDrawerPatchTabHtml(ctx);
         }
       }
     }
@@ -22281,33 +22265,6 @@
         }
       }
 
-      var badge = document.getElementById('grid-drawer-patch-badge');
-      var patchTabBtn = document.querySelector('#grid-drawer-tabs .srr-left-tab[data-tab="patch"]');
-      if (editCount > 0) {
-        if (badge) {
-          badge.textContent = String(editCount);
-        } else if (patchTabBtn) {
-          var span = document.createElement('span');
-          span.id = 'grid-drawer-patch-badge';
-          span.style.cssText = 'position:absolute;top:2px;right:2px;background:#c62828;color:#fff;font-size:0.6em;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1;';
-          span.textContent = String(editCount);
-          patchTabBtn.appendChild(span);
-        }
-      } else {
-        if (badge && badge.parentNode) badge.parentNode.removeChild(badge);
-      }
-
-      if (ctx._pendingEdits.hasOwnProperty(fk) && ctx._activeTab === 'edit') {
-        ctx._autoSwitchField = fk;
-        if (window._gridAutoSwitchTimer) clearTimeout(window._gridAutoSwitchTimer);
-        window._gridAutoSwitchTimer = setTimeout(function() {
-          var cx = window._gridDrawerContext;
-          if (cx && cx._autoSwitchField && Object.keys(cx._pendingEdits).length > 0 && cx._activeTab === 'edit') {
-            _gridDrawerSwitchTab('patch');
-          }
-          delete cx._autoSwitchField;
-        }, 800);
-      }
     }
 
     function _gridDrawerSearchFields() {
@@ -22341,19 +22298,6 @@
           delete ctx._evidenceDraft.expected;
           delete ctx._evidenceDraft.repro;
         }
-      }
-      var chips = document.querySelectorAll('#grid-drawer-tab-patch .srr-patch-type-chip');
-      for (var i = 0; i < chips.length; i++) {
-        var chipType = chips[i].getAttribute('data-type');
-        if (chipType === type) {
-          chips[i].className = 'srr-patch-type-chip ' + chipType + ' active';
-        } else {
-          chips[i].className = 'srr-patch-type-chip ' + chipType;
-        }
-      }
-      var patchBody = document.getElementById('grid-drawer-tab-patch');
-      if (patchBody) {
-        patchBody.innerHTML = _gridDrawerPatchTabHtml(ctx);
       }
     }
 
