@@ -672,64 +672,61 @@ _AGREEMENT_TYPE_KEYWORDS = {
 }
 
 _SUBTYPE_KEYWORD_MAP = {
-    "digital distribution": [
-        "digital distribution", "digital distribution agreement",
-        "digital release", "streaming distribution",
+    "Distribution": [
+        "distribution agreement", "digital distribution", "digital distribution agreement",
+        "distribution", "download and streaming of records", "records monetisation",
+        "records monetization", "channels monetisation", "channels monetization",
     ],
-    "physical distribution": [
-        "physical distribution", "physical release", "cd distribution",
-        "vinyl distribution",
+    "Sync": [
+        "sync licensing", "sync license", "sync licence", "synch licensing",
+        "synch license", "synch licences", "synch licenses", "synchronization",
+        "synchronisation", "synch revenue", "sync revenue",
     ],
-    "label services": [
-        "label services", "label service", "label services agreement",
-        "label services deal",
-    ],
-    "admin publishing": [
-        "admin publishing", "administration publishing",
-        "publishing administration",
-    ],
-    "co-publishing": [
-        "co-publishing", "co publishing", "co-pub",
-    ],
-    "sub-publishing": [
-        "sub-publishing", "sub publishing", "sub-pub",
-    ],
-    "sync": [
-        "sync licensing", "sync license", "sync licence",
-        "synch licensing", "synch license", "synch licence",
-        "synchronization", "synchronisation",
-        "audio visual licensing", "audio/visual licensing",
-        "audio-visual licensing",
-    ],
-    "mechanical license": [
-        "mechanical license", "mechanical licence", "mechanical rights",
-    ],
-    "master license": [
-        "master license", "master licence", "master use",
-        "master recording license",
-    ],
-    "exclusive license": [
-        "exclusive license", "exclusive licence", "exclusive right",
-        "exclusive rights",
-    ],
-    "non-exclusive license": [
+    "Licensing Agreement": [
+        "licensing agreement", "license agreement", "licence agreement",
+        "exclusive license", "exclusive licence", "exclusive right", "exclusive rights",
         "non-exclusive license", "non-exclusive licence",
-        "non exclusive license", "non exclusive licence",
     ],
-    "exclusive recording": [
-        "exclusive recording", "exclusive recording agreement",
+    "Pub Admin": [
+        "admin publishing", "administration publishing", "publishing administration",
+        "pub admin",
     ],
-    "non-exclusive recording": [
-        "non-exclusive recording", "non exclusive recording",
+    "Co-Pub": [
+        "co-publishing", "co publishing", "co-pub", "copub",
     ],
-    "artist management": [
-        "artist management", "management agreement", "talent management",
+    "CMA": [
+        "cma", "catalog management agreement",
     ],
-    "360 deal": [
-        "360 deal", "360 agreement", "360-deal",
+    "CPA": [
+        "cpa", "catalog participation agreement",
     ],
-    "production deal": [
-        "production deal", "production agreement",
+    "CMA/CPA": [
+        "cma/cpa", "cma and cpa", "cma + cpa", "combined cma cpa",
+    ],
+    "Distribution w/ CMA and CPA": [
+        "distribution with cma and cpa", "distribution w/ cma and cpa",
+    ],
+    "Distro CMA": [
+        "distro cma", "distribution cma",
+    ],
+    "Label Ventures": [
+        "label ventures", "label venture", "joint venture",
+        "label services", "label service", "label services agreement",
+    ],
+    "Profit Participation Agreement": [
+        "profit participation agreement", "profit participation", "profit share",
+    ],
+    "Side Artist": [
+        "side artist", "featured artist",
+    ],
+    "Assignment": [
+        "assignment agreement", "assignment of rights", "assignment",
+    ],
+    "LE Revision": [
+        "le revision", "legal entity revision", "legal entity change",
+    ],
+    "Other": [
+        "other subtype", "other agreement",
     ],
 }
 
@@ -988,6 +985,9 @@ _SCHEDULE_TYPE_KEYWORDS = {
     "distro_sync_existing_masters": [
         "distro & sync", "distribution and sync", "distro and sync",
         "existing masters", "master exploitation", "digital exploitation",
+        "for digital distribution", "download and streaming of records",
+        "for synch licenses", "for sync licenses", "synch licenses", "synch license",
+        "synch revenue", "sync revenue",
     ],
     "catalog_acquisition_masters": [
         "catalog acquisition", "acquisition schedule", "schedule 1",

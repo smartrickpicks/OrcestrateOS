@@ -2108,6 +2108,13 @@
     .opp-evidence-chips { display: inline-flex; gap: 4px; flex-wrap: wrap; margin-left: 4px; }
     .opp-evidence-chip { font-size: 0.68em; padding: 1px 6px; border-radius: 3px; background: rgba(74, 144, 217, 0.1); color: var(--accent, #4a90d9); border: 1px solid rgba(74, 144, 217, 0.2); white-space: nowrap; }
     .opp-analyst-note { font-size: 0.78em; color: var(--text-2, #888); font-style: italic; padding: 6px 0 2px; border-top: 1px dashed var(--border-1, #ddd); margin-top: 4px; }
+    .opp-subtype-selector { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-1, #ddd); }
+    .opp-subtype-selected { font-size: 0.78em; color: var(--text-2, #888); margin-bottom: 6px; }
+    .opp-subtype-checks { display: flex; flex-wrap: wrap; gap: 8px 10px; margin-bottom: 6px; }
+    .opp-subtype-check { display: inline-flex; align-items: center; gap: 5px; font-size: 0.8em; }
+    .opp-subtype-manual { display: flex; gap: 6px; align-items: center; }
+    .opp-subtype-manual select { padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border-1, #ddd); font-size: 0.78em; background: var(--bg-1); color: var(--text-2); }
+    .opp-subtype-manual button { padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-1, #ddd); font-size: 0.76em; background: var(--bg-2); color: var(--text-2); cursor: pointer; }
     .sch-structure-section { border: 1px solid var(--border-1, #e0e0e0); border-radius: 8px; padding: 12px 14px; background: var(--bg-2, #fafafa); }
     .sch-overall-badge { font-size: 0.72em; padding: 2px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
     .sch-badge-pass { background: rgba(46, 204, 113, 0.15); color: #27ae60; border: 1px solid rgba(46, 204, 113, 0.3); }
@@ -56455,12 +56462,48 @@ var P022_RuntimeValidation = {
   }
   function _pftlGetAssignments() {
     var key = _pftlGetRecordKey();
-    if (!_pftlAssignmentsStore[key]) _pftlAssignmentsStore[key] = { legal_entity: null, counterparty: null };
+    if (!_pftlAssignmentsStore[key]) _pftlAssignmentsStore[key] = { legal_entity: null, counterparty: null, opportunity_subtypes: [] };
+    if (!_pftlAssignmentsStore[key].opportunity_subtypes) _pftlAssignmentsStore[key].opportunity_subtypes = [];
     return _pftlAssignmentsStore[key];
   }
   function _pftlSaveAssignments() {
     try { sessionStorage.setItem('_pftlAssignmentsStore', JSON.stringify(_pftlAssignmentsStore)); } catch(e) {}
   }
+
+  var _OPP_SUBTYPE_OPTIONS = [
+    "CMA", "CMA/CPA", "Co-Pub", "CPA", "Distribution", "Distribution w/ CMA and CPA",
+    "Distro CMA", "Label Ventures", "LE Revision", "Licensing Agreement",
+    "Profit Participation Agreement", "Pub Admin", "Sync", "Side Artist", "Assignment", "Other"
+  ];
+
+  window.pftlToggleOppSubtype = function(name, checked) {
+    var assigns = _pftlGetAssignments();
+    var vals = assigns.opportunity_subtypes || [];
+    if (checked) {
+      if (vals.indexOf(name) < 0) vals.push(name);
+    } else {
+      vals = vals.filter(function(v) { return v !== name; });
+    }
+    assigns.opportunity_subtypes = vals;
+    _pftlSaveAssignments();
+    var out = document.getElementById('opp-subtype-selected');
+    if (out) out.textContent = vals.length ? vals.join(', ') : 'none';
+  };
+
+  window.pftlAddOppSubtypeOption = function() {
+    var sel = document.getElementById('opp-subtype-manual');
+    if (!sel) return;
+    var name = sel.value;
+    if (!name) return;
+    var assigns = _pftlGetAssignments();
+    if (!assigns.opportunity_subtypes) assigns.opportunity_subtypes = [];
+    if (assigns.opportunity_subtypes.indexOf(name) < 0) assigns.opportunity_subtypes.push(name);
+    _pftlSaveAssignments();
+    var out = document.getElementById('opp-subtype-selected');
+    if (out) out.textContent = assigns.opportunity_subtypes.join(', ');
+    var cb = document.getElementById('opp-subtype-cb-' + name.replace(/[^a-z0-9]+/gi, '_'));
+    if (cb) cb.checked = true;
+  };
 
   function _pftlBuildCandidatePool(story, r) {
     var pool = [];
@@ -56746,6 +56789,11 @@ var P022_RuntimeValidation = {
       html += '</tr>';
 
       if (ck.code === 'OPP_CONTRACT_SUBTYPE' && ck.candidates && ck.candidates.length > 0) {
+        var assigns = _pftlGetAssignments();
+        if (!assigns.opportunity_subtypes || assigns.opportunity_subtypes.length === 0) {
+          assigns.opportunity_subtypes = ck.candidates.map(function(c) { return c.value; }).slice(0, 2);
+          _pftlSaveAssignments();
+        }
         html += '<tr class="opp-subtype-expand-row"><td colspan="4">';
         html += '<details class="opp-subtype-details">';
         html += '<summary class="opp-subtype-toggle">Show subtype candidates (' + ck.candidates.length + ')</summary>';
@@ -56753,7 +56801,12 @@ var P022_RuntimeValidation = {
         for (var j = 0; j < ck.candidates.length; j++) {
           var cand = ck.candidates[j];
           var candBadge = j === 0 ? 'opp-badge-pass' : 'opp-badge-review';
+          var cbId = 'opp-subtype-cb-' + String(cand.value).replace(/[^a-z0-9]+/gi, '_');
+          var checked = (assigns.opportunity_subtypes || []).indexOf(cand.value) >= 0 ? ' checked' : '';
           html += '<div class="opp-subtype-card">';
+          html += '<label class="opp-subtype-check" for="' + cbId + '">';
+          html += '<input id="' + cbId + '" type="checkbox"' + checked + ' onchange="pftlToggleOppSubtype(\'' + _pftlEsc(cand.value) + '\', this.checked)" />';
+          html += '</label>';
           html += '<span class="opp-subtype-name">' + _pftlEsc(cand.value) + '</span>';
           html += ' <span class="opp-conf-badge ' + candBadge + '">' + Math.round(cand.confidence * 100) + '%</span>';
           if (cand.evidence && cand.evidence.length > 0) {
@@ -56768,6 +56821,18 @@ var P022_RuntimeValidation = {
         if (ck.status === 'review') {
           html += '<div class="opp-analyst-note">Multiple plausible subtypes detected \u2014 analyst confirmation required.</div>';
         }
+        html += '<div class="opp-subtype-selector">';
+        html += '<div class="opp-subtype-selected">Selected subtypes: <strong id="opp-subtype-selected">' + _pftlEsc((assigns.opportunity_subtypes || []).join(', ') || 'none') + '</strong></div>';
+        html += '<div class="opp-subtype-manual">';
+        html += '<select id="opp-subtype-manual">';
+        html += '<option value="">Add subtype…</option>';
+        for (var oi = 0; oi < _OPP_SUBTYPE_OPTIONS.length; oi++) {
+          html += '<option value="' + _pftlEsc(_OPP_SUBTYPE_OPTIONS[oi]) + '">' + _pftlEsc(_OPP_SUBTYPE_OPTIONS[oi]) + '</option>';
+        }
+        html += '</select>';
+        html += '<button type="button" onclick="pftlAddOppSubtypeOption()">Add</button>';
+        html += '</div>';
+        html += '</div>';
         html += '</div></details>';
         html += '</td></tr>';
       }
