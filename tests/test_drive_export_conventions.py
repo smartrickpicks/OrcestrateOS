@@ -82,6 +82,7 @@ def _load_drive_module():
 
     class _AuthClass:
         BEARER = "bearer"
+        EITHER = "either"
 
     class _Role:
         ANALYST = "analyst"
@@ -90,6 +91,7 @@ def _load_drive_module():
     server_auth.Role = _Role
     server_auth.require_auth = lambda *_args, **_kwargs: (lambda: None)
     server_auth.require_role = lambda *_args, **_kwargs: None
+    server_auth.get_workspace_role = lambda *_args, **_kwargs: "admin"
     sys.modules["server.auth"] = server_auth
 
     server_audit = types.ModuleType("server.audit")

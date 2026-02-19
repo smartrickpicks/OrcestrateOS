@@ -1234,7 +1234,7 @@
     .srr-nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .srr-nav-pos { font-size: 0.75em; color: var(--text-3); white-space: nowrap; margin: 0 4px; }
     .srr-page-title-filename { font-size: 0.85em; font-weight: 400; color: #94a3b8; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 500px; display: inline-block; vertical-align: middle; }
-    .srr-file-action-bar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 0.82em; min-height: 36px; }
+    .srr-file-action-bar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--bg-2, #f8fafc); border-bottom: 1px solid #e2e8f0; font-size: 0.82em; min-height: 36px; }
     .srr-file-action-bar .file-action-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #334155; font-weight: 500; }
     .srr-file-action-bar .file-action-btn { padding: 4px 10px; border: 1px solid #cbd5e1; background: var(--bg-1); border-radius: 4px; cursor: pointer; font-size: 0.9em; color: #475569; display: flex; align-items: center; gap: 4px; transition: background 0.15s; }
     .srr-file-action-bar .file-action-btn:hover:not(:disabled) { background: #e2e8f0; }
@@ -1459,13 +1459,37 @@
     .srr-filter-chip.active { background: var(--accent-2); color: white; }
     
     /* v1.5.7: Field group headers for hinge-based grouping */
-    .srr-field-group-header { font-size: 0.75em; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 12px; margin-top: 6px; border-bottom: 2px solid var(--border-1); background: var(--bg-2); display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+    .srr-field-group-header { font-size: 0.75em; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 12px; margin-top: 6px; border-bottom: 2px solid var(--border-1); background: var(--bg-2); display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; cursor: pointer; user-select: none; transition: background 0.15s; }
     .srr-field-group-header:first-child { margin-top: 0; }
     /* v1.6.7: Color-coded group headers */
     .srr-field-group-header.group-primary { background: var(--ok-bg); border-bottom-color: #4caf50; color: var(--ok); }
     .srr-field-group-header.group-secondary { background: var(--bg-3); border-bottom-color: var(--accent-border); color: var(--accent-2); }
     .srr-field-group-header.group-other { background: var(--bg-2); border-bottom-color: #9e9e9e; color: #616161; }
     .srr-field-group-header.group-section { background: #f3e5f5; border-bottom-color: #7b1fa2; color: #6a1b9a; }
+    .srr-field-group-header:hover { filter: brightness(0.95); }
+    .srr-field-group-header.section-complete { border-bottom-color: #4caf50; }
+    .srr-section-chevron { font-size: 0.7em; width: 14px; text-align: center; flex-shrink: 0; transition: transform 0.2s; }
+    .srr-section-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .srr-section-status-pills { display: flex; gap: 4px; flex-shrink: 0; }
+    .srr-sec-pill { font-size: 0.8em; padding: 1px 6px; border-radius: 8px; font-weight: 500; line-height: 1.4; }
+    .srr-sec-pill.attention { background: #fff3e0; color: #e65100; }
+    .srr-sec-pill.verified { background: #e8f5e9; color: #2e7d32; }
+    .srr-sec-pill.rfi { background: #fff8e1; color: #f57f17; }
+    .srr-sec-pill.blocked { background: #ffebee; color: #c62828; }
+    .srr-section-body { transition: max-height 0.25s ease, opacity 0.2s ease; overflow: hidden; }
+    .srr-section-body.collapsed { max-height: 0 !important; opacity: 0; overflow: hidden; }
+    html[data-theme="dark"] .srr-sec-pill.attention { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    html[data-theme="dark"] .srr-sec-pill.verified { background: rgba(52,211,153,0.15); color: #34d399; }
+    html[data-theme="dark"] .srr-sec-pill.rfi { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    html[data-theme="dark"] .srr-sec-pill.blocked { background: rgba(251,113,133,0.15); color: #fb7185; }
+    html[data-theme="dark"] .srr-field-group-header.group-section { background: rgba(139,92,246,0.12); border-bottom-color: #8b5cf6; color: #c4b5fd; }
+    html[data-theme="dark"] .srr-file-action-bar { background: var(--bg-2); border-bottom-color: var(--border-1); }
+    html[data-theme="dark"] .srr-file-action-bar .file-action-name { color: var(--text-secondary); }
+    html[data-theme="dark"] .srr-top-bar { background: var(--bg-2); }
+    html[data-theme="dark"] .srr-glossary-entry:hover,
+    html[data-theme="dark"] .srr-glossary-entry.expanded { background: var(--bg-3); }
+    html[data-theme="dark"] .srr-section-info-modal-body .sim-text { color: var(--text-secondary); }
+    html[data-theme="dark"] .srr-section-info-modal-body .sim-list { color: var(--text-secondary); }
     .srr-section-desc { display: none; }
     .srr-group-count { font-weight: 400; color: #999; }
     
@@ -3373,7 +3397,7 @@
           <div id="audit-filter-presets" style="margin-bottom:10px;"></div>
           <div id="audit-full-body" style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
             <table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">
-              <thead style="background: #f5f5f5;">
+              <thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));">
                 <tr>
                   <th style="padding: 8px 10px; text-align: left; border-bottom: 1px solid #e0e0e0;">Timestamp</th>
                   <th style="padding: 8px 10px; text-align: left; border-bottom: 1px solid #e0e0e0;">Event</th>
@@ -3731,7 +3755,7 @@
             </div>
             <div class="queue-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
-                <thead style="background: #f5f5f5; border-bottom: 1px solid #e0e0e0;">
+                <thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5)); border-bottom: 1px solid #e0e0e0;">
                   <tr>
                     <th style="padding: 8px 12px;">Type</th>
                     <th style="padding: 8px 12px;">Record</th>
@@ -3755,7 +3779,7 @@
             </div>
             <div class="queue-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
-                <thead style="background: #f5f5f5; border-bottom: 1px solid #e0e0e0;">
+                <thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5)); border-bottom: 1px solid #e0e0e0;">
                   <tr>
                     <th style="padding: 8px 12px;">Type</th>
                     <th style="padding: 8px 12px;">Record</th>
@@ -5441,7 +5465,7 @@
             
             <div id="patch-queue-table-container" style="max-height: 400px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
-                <thead style="background: #f5f5f5; position: sticky; top: 0;">
+                <thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5)); position: sticky; top: 0;">
                   <tr>
                     <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Type</th>
                     <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Record ID</th>
@@ -5485,7 +5509,7 @@
           <!-- Compact Table -->
           <div id="patch-console-table-container" style="max-height: 300px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px;">
             <table id="patch-console-table" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
-              <thead style="background: #f5f5f5; position: sticky; top: 0;">
+              <thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5)); position: sticky; top: 0;">
                 <tr>
                   <th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 40px;"><input type="checkbox" id="patch-select-all" onchange="toggleSelectAllPatches(this.checked)"></th>
                   <th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">ID</th>
@@ -5653,7 +5677,7 @@
           </div>
           <div id="unknown-cols-table-container" style="overflow-x: auto;">
             <table class="grid-table" id="unknown-cols-table" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
-              <thead style="background: #f5f5f5;">
+              <thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));">
                 <tr>
                   <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Contract Section</th>
                   <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Original Name</th>
@@ -7964,7 +7988,7 @@
       } catch (e) {}
       var inputStyle = 'padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; width: 100%; box-sizing: border-box;';
       var html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">' +
-        '<thead style="background: #f5f5f5;"><tr>' +
+        '<thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));"><tr>' +
         '<th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 20%;">User</th>' +
         '<th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 28%;">Email</th>' +
         '<th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 16%;">Role</th>' +
@@ -8139,7 +8163,7 @@
       var isArch = TruthPack.isArchitect();
       var roleIds = ['architect', 'admin', 'verifier', 'analyst'];
       var html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">' +
-        '<thead style="background: #f5f5f5;"><tr>' +
+        '<thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));"><tr>' +
         '<th style="padding: 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Role ID</th>' +
         '<th style="padding: 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Display Name</th>' +
         '<th style="padding: 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Permissions</th>' +
@@ -8202,7 +8226,7 @@
         return;
       }
       var html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">' +
-        '<thead style="background: #f5f5f5;"><tr>' +
+        '<thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));"><tr>' +
         '<th style="padding: 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Invite ID</th>' +
         '<th style="padding: 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Role</th>' +
         '<th style="padding: 8px; text-align: center; border-bottom: 1px solid #e0e0e0;">Status</th>' +
@@ -9794,7 +9818,7 @@
         
         var html = '<div style="max-height: 400px; overflow-y: auto;">';
         html += '<table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">';
-        html += '<thead><tr style="background: #f5f5f5;">';
+        html += '<thead><tr style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));">';
         html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #ddd;">Contract ID</th>';
         html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #ddd;">File</th>';
         html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #ddd;">Source Batch</th>';
@@ -10106,7 +10130,7 @@
         html += '<summary style="padding:10px 14px; cursor:pointer; font-weight:600; background:#fafafa; border-radius:6px 6px 0 0; font-size:0.9em;">' + escapeHtml(sheetName) + ' <span style="color:#888; font-weight:400;">(' + sheetRefs.length + ' rows)</span></summary>';
         html += '<div style="max-height:300px; overflow-y:auto;">';
         html += '<table style="width:100%; border-collapse:collapse; font-size:0.8em;">';
-        html += '<thead><tr style="background:#f5f5f5;"><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Row</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Record ID</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Role &mdash; Type</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Status</th></tr></thead>';
+        html += '<thead><tr style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));"><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Row</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Record ID</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Role &mdash; Type</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Status</th></tr></thead>';
         html += '<tbody>';
         sheetRefs.forEach(function(ref) {
           var row = workbook.sheets[sheetName] && workbook.sheets[sheetName].rows[ref.row_index];
@@ -10720,7 +10744,7 @@
       html += '</div>';
       html += '<div style="max-height:250px; overflow-y:auto; border:1px solid #e0e0e0; border-radius:4px;">';
       html += '<table style="width:100%; border-collapse:collapse; font-size:0.8em;">';
-      html += '<thead><tr style="background:#f5f5f5;"><th style="padding:4px 8px; text-align:left;">Field</th><th style="padding:4px 8px; text-align:left;">Rule</th><th style="padding:4px 8px; text-align:left;">Confidence</th><th style="padding:4px 8px; text-align:left;">Why</th><th style="padding:4px 8px; text-align:left;">Hinge</th><th style="padding:4px 8px; text-align:left;">Status</th><th style="padding:4px 8px;">Actions</th><th style="padding:4px 8px; text-align:center;">Health</th></tr></thead>';
+      html += '<thead><tr style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));"><th style="padding:4px 8px; text-align:left;">Field</th><th style="padding:4px 8px; text-align:left;">Rule</th><th style="padding:4px 8px; text-align:left;">Confidence</th><th style="padding:4px 8px; text-align:left;">Why</th><th style="padding:4px 8px; text-align:left;">Hinge</th><th style="padding:4px 8px; text-align:left;">Status</th><th style="padding:4px 8px;">Actions</th><th style="padding:4px 8px; text-align:center;">Health</th></tr></thead>';
       html += '<tbody>';
       sorted.forEach(function(p) {
         var statusColor = p.status === 'pending' ? '#ff9800' : p.status === 'accepted' ? '#4caf50' : p.status === 'routed_to_patch' ? '#1565c0' : '#f44336';
@@ -22983,7 +23007,7 @@
       getDiffPreview: function() {
         if (this._changeBuffer.length === 0) return '<p style="color:#888; font-size:0.9em;">No pending changes.</p>';
         var html = '<table style="width:100%; border-collapse:collapse; font-size:0.82em;">';
-        html += '<thead><tr style="background:#f5f5f5;"><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Action</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Path</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Old</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">New</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Time</th></tr></thead><tbody>';
+        html += '<thead><tr style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));"><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Action</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Path</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Old</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">New</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Time</th></tr></thead><tbody>';
         this._changeBuffer.forEach(function(c) {
           var color = '#e8f5e9';
           if (c.action.indexOf('suppress') >= 0 || c.action.indexOf('remove') >= 0) color = '#ffebee';
@@ -27227,7 +27251,7 @@
         '</div></div>';
       if (mapEl) {
         var mapHtml = '<table style="width: 100%; border-collapse: collapse; font-size: 0.85em; margin-top: 8px;">';
-        mapHtml += '<thead><tr style="background: #f5f5f5;"><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #ddd;">Data Section</th><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #ddd;">Definitions Source</th><th style="padding: 6px 10px; text-align: right; border-bottom: 1px solid #ddd;">Fields</th></tr></thead><tbody>';
+        mapHtml += '<thead><tr style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));"><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #ddd;">Data Section</th><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #ddd;">Definitions Source</th><th style="padding: 6px 10px; text-align: right; border-bottom: 1px solid #ddd;">Fields</th></tr></thead><tbody>';
         var sortedSheets = Object.keys(sheetCounts).sort();
         for (var si = 0; si < sortedSheets.length; si++) {
           var sn = sortedSheets[si];
@@ -35333,7 +35357,7 @@
         actionsHtml += '</div>';
         
         var cardTitle = fieldSignalTips.length > 0 ? ' title="' + fieldSignalTips.join('; ').replace(/"/g, '&amp;quot;') + '"' : '';
-        var cardHtml = '<div class="' + cardClass + '"' + cardTitle + ' data-field="' + key + '">' +
+        var cardHtml = '<div class="' + cardClass + '"' + cardTitle + ' data-field="' + key + '" oncontextmenu="srrFieldContextMenu(event, \'' + key + '\')">' +
           '<div class="srr-field-card-header" onclick="srrSelectField(\'' + key + '\')">' +
             '<div style="flex:1;min-width:0;">' +
               '<div class="srr-field-card-label">' + label + labelSuffix + glossaryTooltipHtml + '</div>' +
@@ -35386,18 +35410,33 @@
           var groupTypeClass = group.type ? ' group-' + group.type : '';
           var _sectionKey = group.section_key || group.name.replace(/[^a-zA-Z0-9]/g, '_');
           var _todoInSection = groupFields.filter(function(k) { var s = srrState.fieldStates[k] || 'todo'; return s === 'todo'; }).length;
-          html += '<div class="srr-field-group-header' + groupTypeClass + '">';
-          html += '<span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + group.name + '</span>';
-          html += '<span class="srr-group-count">(' + groupFields.length + ')</span>';
+          var _verifiedInSection = groupFields.filter(function(k) { var s = srrState.fieldStates[k] || 'todo'; return s === 'verified'; }).length;
+          var _rfiInSection = groupFields.filter(function(k) { var s = srrState.fieldStates[k] || 'todo'; return s === 'rfi' || s === 'rfi_pending'; }).length;
+          var _blockedInSection = groupFields.filter(function(k) { var s = srrState.fieldStates[k] || 'todo'; return s === 'blocked'; }).length;
+          var _sectionComplete = (_todoInSection === 0 && groupFields.length > 0);
+          var _collapsedKey = 'srr_section_' + _sectionKey + '_collapsed';
+          var _isCollapsed = localStorage.getItem(_collapsedKey) === '1';
+          var _collapseClass = _isCollapsed ? ' collapsed' : '';
+
+          html += '<div class="srr-field-group-header' + groupTypeClass + _collapseClass + (_sectionComplete ? ' section-complete' : '') + '" data-section-key="' + _sectionKey + '" onclick="srrToggleSection(\'' + _sectionKey + '\', event)">';
+          html += '<span class="srr-section-chevron">' + (_isCollapsed ? '&#9654;' : '&#9660;') + '</span>';
+          html += '<span class="srr-section-title">' + group.name + '</span>';
+          html += '<span class="srr-section-status-pills">';
+          if (_todoInSection > 0) html += '<span class="srr-sec-pill attention">' + _todoInSection + ' todo</span>';
+          if (_verifiedInSection > 0) html += '<span class="srr-sec-pill verified">' + _verifiedInSection + ' &#10003;</span>';
+          if (_rfiInSection > 0) html += '<span class="srr-sec-pill rfi">' + _rfiInSection + ' RFI</span>';
+          if (_blockedInSection > 0) html += '<span class="srr-sec-pill blocked">' + _blockedInSection + ' &#9888;</span>';
+          html += '</span>';
           if (group.description || group.focus) {
-            html += '<button class="srr-section-info-icon" onclick="srrShowSectionInfo(\'' + _sectionKey.replace(/'/g, "\\'") + '\')" title="Section details">&#9432;</button>';
+            html += '<button class="srr-section-info-icon" onclick="event.stopPropagation(); srrShowSectionInfo(\'' + _sectionKey.replace(/'/g, "\\'") + '\')" title="Section details">&#9432;</button>';
           }
           if (_todoInSection > 0 && group.type === 'section') {
-            html += '<button class="srr-bulk-verify-btn" onclick="srrBulkVerifySection(\'' + _sectionKey + '\')" style="padding: 2px 8px; font-size: 0.7em; background: #4caf50; color: white; border: none; border-radius: 10px; cursor: pointer; text-transform: none; letter-spacing: 0; font-weight: 500; flex-shrink: 0;">Verify ' + _todoInSection + '</button>';
+            html += '<button class="srr-bulk-verify-btn" onclick="event.stopPropagation(); srrBulkVerifySection(\'' + _sectionKey + '\')" style="padding: 2px 8px; font-size: 0.7em; background: #4caf50; color: white; border: none; border-radius: 10px; cursor: pointer; text-transform: none; letter-spacing: 0; font-weight: 500; flex-shrink: 0;">Verify ' + _todoInSection + '</button>';
           }
           html += '</div>';
           if (!window._srrSectionInfoCache) window._srrSectionInfoCache = {};
           window._srrSectionInfoCache[_sectionKey] = { name: group.name, description: group.description || '', focus: group.focus || '', fields: groupFields.slice(), failures: group.failures || [] };
+          html += '<div class="srr-section-body' + (_isCollapsed ? ' collapsed' : '') + '" data-section-body="' + _sectionKey + '">';
         }
         
         var _curSection = (group.name && _sectionKey) ? _sectionKey : '';
@@ -35408,6 +35447,7 @@
           }
           html += cardHtml;
         });
+        if (group.name) html += '</div>';
       });
       
       // v1.6.60: System Metadata section for Verifier/Admin (collapsed by default)
@@ -35519,6 +35559,58 @@
         if (chip.dataset.filter === filter) chip.classList.add('active');
       });
       renderSrrFields(srrState.currentRecord);
+    }
+
+    function srrToggleSection(sectionKey, event) {
+      if (event && (event.target.closest('.srr-section-info-icon') || event.target.closest('.srr-bulk-verify-btn'))) return;
+      var key = 'srr_section_' + sectionKey + '_collapsed';
+      var header = document.querySelector('.srr-field-group-header[data-section-key="' + sectionKey + '"]');
+      var body = document.querySelector('.srr-section-body[data-section-body="' + sectionKey + '"]');
+      if (!header || !body) return;
+      var isNowCollapsed = !header.classList.contains('collapsed');
+      header.classList.toggle('collapsed');
+      body.classList.toggle('collapsed');
+      var chevron = header.querySelector('.srr-section-chevron');
+      if (chevron) chevron.innerHTML = isNowCollapsed ? '&#9654;' : '&#9660;';
+      localStorage.setItem(key, isNowCollapsed ? '1' : '0');
+    }
+
+    function srrFieldContextMenu(event, fieldKey) {
+      event.preventDefault();
+      event.stopPropagation();
+      var existing = document.getElementById('srr-field-ctx-menu');
+      if (existing) existing.remove();
+      if (srrState.isReadOnly) return;
+      var state = srrState.fieldStates[fieldKey] || 'todo';
+      var menu = document.createElement('div');
+      menu.id = 'srr-field-ctx-menu';
+      menu.className = 'context-menu';
+      menu.style.cssText = 'position:fixed;top:' + event.clientY + 'px;left:' + event.clientX + 'px;z-index:10000;min-width:160px;padding:4px 0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.15);';
+      var items = [];
+      if (state === 'todo') {
+        items.push({label: '&#10003; Verify', action: "srrVerifyField('" + fieldKey + "')"});
+        items.push({label: '&#9998; Request Info (RFI)', action: "srrRfiField('" + fieldKey + "')"});
+        items.push({label: '&#9873; Flag / Block', action: "srrBlacklistField('" + fieldKey + "')"});
+      } else {
+        items.push({label: '&#8634; Reset to TODO', action: "srrResetFieldState('" + fieldKey + "')"});
+      }
+      items.push({label: '&#128269; Select field', action: "srrSelectField('" + fieldKey + "')"});
+      items.forEach(function(it) {
+        var div = document.createElement('div');
+        div.className = 'context-menu-item';
+        div.style.cssText = 'padding:8px 16px;cursor:pointer;font-size:0.85em;';
+        div.innerHTML = it.label;
+        div.setAttribute('onclick', it.action + '; document.getElementById("srr-field-ctx-menu").remove();');
+        menu.appendChild(div);
+      });
+      document.body.appendChild(menu);
+      setTimeout(function() {
+        function dismissCtx(e) {
+          var m = document.getElementById('srr-field-ctx-menu');
+          if (m && !m.contains(e.target)) { m.remove(); document.removeEventListener('click', dismissCtx); }
+        }
+        document.addEventListener('click', dismissCtx);
+      }, 50);
     }
     
     // v1.4.20: Update filter chip counts
@@ -39344,7 +39436,7 @@
       };
 
       var html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">';
-      html += '<thead><tr style="background: #f5f5f5;">';
+      html += '<thead><tr style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));">';
       html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">Time</th>';
       html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd;">Event</th>';
       html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd;">Actor</th>';
@@ -42176,7 +42268,7 @@
           html += '<div style="margin-bottom:12px;padding:8px 12px;background:#f0f4f8;border-radius:6px;font-size:0.85em;color:#555;">Glossary coverage: ' + cache.schema.standard_matched + ' / ' + cache.schema.standard_total + ' (' + gPct + '%)</div>';
           if (cache.schema._batch_mapped_items && cache.schema._batch_mapped_items.length > 0) {
             html += '<h4 style="margin:12px 0 8px;font-size:0.9em;color:#2e7d32;">Mapped Headers (' + cache.schema._batch_mapped_items.length + ')</h4>';
-            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;"><thead><tr style="background:#f5f5f5;"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Section</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Header</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Canonical Field</th></tr></thead><tbody>';
+            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;"><thead><tr style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Section</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Header</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Canonical Field</th></tr></thead><tbody>';
             cache.schema._batch_mapped_items.forEach(function(item) {
               html += '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.section + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.header + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;color:#2e7d32;">' + item.canonical + '</td></tr>';
             });
