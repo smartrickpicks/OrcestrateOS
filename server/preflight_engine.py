@@ -574,14 +574,18 @@ def extract_account_candidates(full_text, extracted_headers):
 
 
 def _run_salesforce_match(extracted_headers, full_text=""):
-    """Run Salesforce account resolver on extracted candidate values.
+    """Run multi-account Salesforce matching with composite context scoring.
 
-    Extracts actual account-name values from body text (label:value patterns)
-    rather than matching raw header labels against the resolver.
+    Each candidate is scored using:
+        composite = name_evidence + address_evidence + account_context - service_penalty
+
+    Multiple accounts can be returned if each has sufficient evidence.
+    Service-name false positives (Spotify, Amazon Music, etc.) are penalized.
 
     Returns a list of match result dicts shaped for the matrix renderer:
         [{ source_field, suggested_label, match_method, match_score,
-           confidence_pct, match_status, classification, candidates, explanation }]
+           confidence_pct, match_status, classification, candidates,
+           explanation, evidence_chips, scoring_breakdown, visible }]
     """
     try:
         from server.resolvers.salesforce import resolve_account, is_resolver_enabled
@@ -592,6 +596,13 @@ def _run_salesforce_match(extracted_headers, full_text=""):
     if not is_resolver_enabled():
         logger.debug("[PREFLIGHT-SF] resolver not enabled (index not loaded)")
         return []
+
+    try:
+        from server.resolvers.context_scorer import score_candidate, DISPLAY_THRESHOLD
+    except ImportError:
+        logger.debug("[PREFLIGHT-SF] context scorer not available, falling back")
+        DISPLAY_THRESHOLD = 0.25
+        score_candidate = None
 
     candidates = extract_account_candidates(full_text, extracted_headers)
     if not candidates:
@@ -604,30 +615,59 @@ def _run_salesforce_match(extracted_headers, full_text=""):
         if res.get("candidates"):
             top_name = res["candidates"][0].get("account_name", "")
 
-        score = res.get("score", 0.0)
-        pct = round(score * 100)
+        name_score = res.get("score", 0.0)
+        name_tier = "none"
+        if res.get("candidates"):
+            name_tier = res["candidates"][0].get("match_tier", "none")
+
+        if score_candidate is not None:
+            ctx = score_candidate(full_text, candidate, name_score, name_tier)
+            composite = ctx["composite_score"]
+            match_status = ctx["match_status"]
+            evidence_chips = ctx["evidence_chips"]
+            visible = ctx["visible"]
+            scoring_breakdown = {
+                "name_evidence": ctx["name_evidence"],
+                "address_evidence": ctx["address_evidence"],
+                "account_context_evidence": ctx["account_context_evidence"],
+                "service_context_penalty": ctx["service_context_penalty"],
+            }
+        else:
+            composite = name_score
+            if res["classification"] == "matched":
+                match_status = "match"
+            elif res["classification"] == "ambiguous":
+                match_status = "review"
+            else:
+                match_status = "no-match"
+            evidence_chips = []
+            visible = True
+            scoring_breakdown = {"name_evidence": name_score}
+
+        pct = round(composite * 100)
 
         if res["classification"] == "matched":
-            match_status = "match"
             match_method = res["candidates"][0].get("match_tier", "exact") if res.get("candidates") else "exact"
         elif res["classification"] == "ambiguous":
-            match_status = "review"
             match_method = res["candidates"][0].get("match_tier", "fuzzy") if res.get("candidates") else "fuzzy"
         else:
-            match_status = "no-match"
             match_method = "none"
 
         results.append({
             "source_field": candidate,
             "suggested_label": top_name or "\u2014",
             "match_method": match_method,
-            "match_score": score,
+            "match_score": composite,
+            "name_score": name_score,
             "confidence_pct": pct,
             "match_status": match_status,
             "classification": res["classification"],
             "candidates": res.get("candidates", []),
             "explanation": res.get("explanation", ""),
             "provider": res.get("provider", ""),
+            "evidence_chips": evidence_chips,
+            "scoring_breakdown": scoring_breakdown,
+            "visible": visible,
         })
 
     results.sort(key=lambda r: (

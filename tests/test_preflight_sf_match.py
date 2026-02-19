@@ -3,11 +3,13 @@ Tests for Salesforce match integration in the Preflight engine.
 
 Covers:
   - extract_account_candidates: strict label:value, CSV phrase scan, prose rejection
-  - _run_salesforce_match payload shape
+  - _run_salesforce_match payload shape (multi-account, composite scoring)
+  - Context scoring: account-context boost, service-context penalty, address evidence
+  - Evidence chips generation
   - Section ordering: encoding → sf_match → others
-  - Matrix rows include status + confidence
+  - Matrix rows include status + confidence + evidence_chips
   - Deterministic sorting of SF match results
-  - Acceptance criteria: value-over-label, prose rejection
+  - Acceptance criteria: multi-account, service penalty, address boost
 """
 import pytest
 from unittest.mock import patch, MagicMock
@@ -263,6 +265,11 @@ class TestRunSalesforceMatch:
             assert "confidence_pct" in item
             assert "match_status" in item
             assert "classification" in item
+            assert "evidence_chips" in item
+            assert "scoring_breakdown" in item
+            assert "visible" in item
+            assert isinstance(item["evidence_chips"], list)
+            assert isinstance(item["scoring_breakdown"], dict)
 
     def test_match_status_values(self):
         from server.preflight_engine import _run_salesforce_match
@@ -396,3 +403,321 @@ class TestAcceptanceCriteria:
             status_priority = {"review": 0, "no-match": 1, "match": 2}
             priorities = [status_priority.get(r["match_status"], 5) for r in r1]
             assert priorities == sorted(priorities)
+
+
+class TestContextScorer:
+    def test_import(self):
+        from server.resolvers.context_scorer import score_candidate
+        assert callable(score_candidate)
+
+    def test_scoring_weights_present(self):
+        from server.resolvers.context_scorer import SCORING_WEIGHTS
+        assert "name_max" in SCORING_WEIGHTS
+        assert "address_max" in SCORING_WEIGHTS
+        assert "account_context_max" in SCORING_WEIGHTS
+        assert "service_penalty_max" in SCORING_WEIGHTS
+
+    def test_compute_composite_score_basic(self):
+        from server.resolvers.context_scorer import compute_composite_score
+        score = compute_composite_score(1.0, 0.0, 0.0, 0.0)
+        assert score == 0.55
+
+    def test_compute_composite_score_with_address(self):
+        from server.resolvers.context_scorer import compute_composite_score
+        score = compute_composite_score(1.0, 0.30, 0.0, 0.0)
+        assert score == 0.85
+
+    def test_compute_composite_score_full(self):
+        from server.resolvers.context_scorer import compute_composite_score
+        score = compute_composite_score(1.0, 0.30, 0.20, 0.0)
+        assert score == 1.0
+
+    def test_compute_composite_score_with_penalty(self):
+        from server.resolvers.context_scorer import compute_composite_score
+        score = compute_composite_score(1.0, 0.0, 0.0, 0.35)
+        assert score == 0.2
+
+    def test_composite_score_clamped_at_zero(self):
+        from server.resolvers.context_scorer import compute_composite_score
+        score = compute_composite_score(0.0, 0.0, 0.0, 0.35)
+        assert score == 0.0
+
+    def test_composite_score_clamped_at_one(self):
+        from server.resolvers.context_scorer import compute_composite_score
+        score = compute_composite_score(1.0, 0.30, 0.20, 0.0)
+        assert score <= 1.0
+
+
+class TestAccountContextScoring:
+    def test_no_text_returns_zero(self):
+        from server.resolvers.context_scorer import score_account_context
+        score, found = score_account_context("", "Test Corp")
+        assert score == 0.0
+        assert found is False
+
+    def test_no_candidate_returns_zero(self):
+        from server.resolvers.context_scorer import score_account_context
+        score, found = score_account_context("Some text", "")
+        assert score == 0.0
+        assert found is False
+
+    def test_candidate_near_account_cues(self):
+        from server.resolvers.context_scorer import score_account_context
+        text = "Account Name: Acme Corp LLC\nBilling Address: 123 Main St"
+        score, found = score_account_context(text, "Acme Corp")
+        assert score > 0.0
+        assert found is True
+
+    def test_candidate_near_party_cues(self):
+        from server.resolvers.context_scorer import score_account_context
+        text = "The licensee, hereinafter referred to as Acme Corp, agrees to..."
+        score, found = score_account_context(text, "Acme Corp")
+        assert score > 0.0
+        assert found is True
+
+    def test_candidate_with_no_context_cues(self):
+        from server.resolvers.context_scorer import score_account_context
+        text = "Some random text about weather with Acme Corp mentioned casually"
+        score, found = score_account_context(text, "Acme Corp")
+        assert score == 0.0
+
+
+class TestServiceContextPenalty:
+    def test_known_dsp_gets_max_penalty(self):
+        from server.resolvers.context_scorer import score_service_context
+        penalty, found = score_service_context("Spotify is great", "Spotify")
+        assert penalty == 0.35
+        assert found is True
+
+    def test_amazon_music_gets_max_penalty(self):
+        from server.resolvers.context_scorer import score_service_context
+        penalty, found = score_service_context("Available on Amazon Music", "Amazon Music")
+        assert penalty == 0.35
+        assert found is True
+
+    def test_non_dsp_near_streaming_phrases(self):
+        from server.resolvers.context_scorer import score_service_context
+        text = "Available on TestPlatform streaming service via Spotify"
+        penalty, found = score_service_context(text, "TestPlatform")
+        assert penalty > 0.0
+        assert found is True
+
+    def test_normal_company_no_penalty(self):
+        from server.resolvers.context_scorer import score_service_context
+        text = "Account Name: Acme Corp LLC\nBilling Address: 123 Main St"
+        penalty, found = score_service_context(text, "Acme Corp")
+        assert penalty == 0.0
+        assert found is False
+
+    def test_candidate_not_in_text_no_penalty(self):
+        from server.resolvers.context_scorer import score_service_context
+        penalty, found = score_service_context("Some text", "Nonexistent Corp")
+        assert penalty == 0.0
+        assert found is False
+
+
+class TestAddressEvidence:
+    def test_no_text_returns_zero(self):
+        from server.resolvers.context_scorer import score_address_evidence
+        score, chips = score_address_evidence("", "Test Corp")
+        assert score == 0.0
+        assert chips == []
+
+    def test_candidate_near_street_address(self):
+        from server.resolvers.context_scorer import score_address_evidence
+        text = "Account Name: Acme Corp\nAddress: 123 Main Street\nNew York, NY 10001"
+        score, chips = score_address_evidence(text, "Acme Corp")
+        assert score > 0.0
+        assert len(chips) > 0
+
+    def test_candidate_near_zip_code(self):
+        from server.resolvers.context_scorer import score_address_evidence
+        text = "Acme Corp\n90210\nSome other text"
+        score, chips = score_address_evidence(text, "Acme Corp")
+        assert score > 0.0
+        assert "zip_match" in chips
+
+    def test_candidate_near_full_address_gets_max(self):
+        from server.resolvers.context_scorer import score_address_evidence
+        text = "Acme Corp\n123 Main Street\nLos Angeles, CA 90210"
+        score, chips = score_address_evidence(text, "Acme Corp")
+        assert score == 0.30
+        assert "address_verified" in chips
+        assert "city_match" in chips
+        assert "zip_match" in chips
+
+    def test_no_address_near_candidate(self):
+        from server.resolvers.context_scorer import score_address_evidence
+        text = "Acme Corp mentioned in a legal clause without any address information nearby at all"
+        score, chips = score_address_evidence(text, "Acme Corp")
+        assert score == 0.0
+        assert chips == []
+
+    def test_extract_address_fragments(self):
+        from server.resolvers.context_scorer import extract_address_fragments
+        text = "123 Main Street\nSuite 100\nNew York, NY 10001\nPO Box 456"
+        frags = extract_address_fragments(text)
+        assert len(frags) >= 2
+
+
+class TestEvidenceChips:
+    def test_exact_name_chip(self):
+        from server.resolvers.context_scorer import build_evidence_chips
+        chips = build_evidence_chips(1.0, "exact", [], False, False)
+        assert "name_exact" in chips
+
+    def test_fuzzy_name_chip(self):
+        from server.resolvers.context_scorer import build_evidence_chips
+        chips = build_evidence_chips(0.8, "token_overlap", [], False, False)
+        assert "name_fuzzy" in chips
+
+    def test_service_penalty_chip(self):
+        from server.resolvers.context_scorer import build_evidence_chips
+        chips = build_evidence_chips(0.8, "exact", [], False, True)
+        assert "service_context_penalty" in chips
+
+    def test_account_context_chip(self):
+        from server.resolvers.context_scorer import build_evidence_chips
+        chips = build_evidence_chips(1.0, "exact", [], True, False)
+        assert "account_context" in chips
+
+    def test_address_chips_passed_through(self):
+        from server.resolvers.context_scorer import build_evidence_chips
+        chips = build_evidence_chips(1.0, "exact", ["address_verified", "zip_match"], False, False)
+        assert "address_verified" in chips
+        assert "zip_match" in chips
+
+
+class TestScoreCandidate:
+    def test_basic_score_candidate(self):
+        from server.resolvers.context_scorer import score_candidate
+        result = score_candidate("Account Name: Acme Corp", "Acme Corp", 1.0, "exact")
+        assert "composite_score" in result
+        assert "match_status" in result
+        assert "evidence_chips" in result
+        assert "visible" in result
+
+    def test_score_candidate_with_context(self):
+        from server.resolvers.context_scorer import score_candidate
+        text = "Account Name: Acme Corp LLC\nBilling Address: 123 Main Street\nNew York, NY 10001"
+        result = score_candidate(text, "Acme Corp", 1.0, "exact")
+        assert result["composite_score"] > 0.55
+        assert "name_exact" in result["evidence_chips"]
+
+    def test_service_name_penalized(self):
+        from server.resolvers.context_scorer import score_candidate
+        text = "Available on Spotify streaming service via Apple Music"
+        result = score_candidate(text, "Spotify", 1.0, "exact")
+        assert result["service_context_penalty"] > 0.0
+        assert "service_context_penalty" in result["evidence_chips"]
+
+
+class TestMultiAccountOutput:
+    def test_multi_account_document_returns_multiple(self):
+        from server.preflight_engine import _run_salesforce_match
+        text = "Account Name: Alpha Corp\nCompany Name: Beta Inc\nLegal Name: Gamma LLC"
+        result = _run_salesforce_match([], text)
+        assert len(result) >= 2
+
+    def test_each_result_has_evidence_chips(self):
+        from server.preflight_engine import _run_salesforce_match
+        text = "Account Name: Alpha Corp\nCompany Name: Beta Inc"
+        result = _run_salesforce_match([], text)
+        for item in result:
+            assert "evidence_chips" in item
+            assert isinstance(item["evidence_chips"], list)
+
+    def test_each_result_has_scoring_breakdown(self):
+        from server.preflight_engine import _run_salesforce_match
+        text = "Account Name: Alpha Corp\nCompany Name: Beta Inc"
+        result = _run_salesforce_match([], text)
+        for item in result:
+            assert "scoring_breakdown" in item
+            bd = item["scoring_breakdown"]
+            assert "name_evidence" in bd
+
+    def test_each_result_has_visible_flag(self):
+        from server.preflight_engine import _run_salesforce_match
+        text = "Account Name: Alpha Corp\nCompany Name: Beta Inc"
+        result = _run_salesforce_match([], text)
+        for item in result:
+            assert "visible" in item
+            assert isinstance(item["visible"], bool)
+
+    def test_deterministic_multi_account_sorting(self):
+        from server.preflight_engine import _run_salesforce_match
+        text = "Account Name: Alpha Corp\nCompany Name: Beta Inc\nLegal Name: Gamma LLC"
+        r1 = _run_salesforce_match([], text)
+        r2 = _run_salesforce_match([], text)
+        assert [x["source_field"] for x in r1] == [x["source_field"] for x in r2]
+        assert [x["confidence_pct"] for x in r1] == [x["confidence_pct"] for x in r2]
+
+
+class TestServicePenaltyIntegration:
+    def test_spotify_downgraded(self):
+        from server.resolvers.context_scorer import score_candidate
+        result = score_candidate("Streaming on Spotify and Apple Music", "Spotify", 1.0, "exact")
+        assert result["composite_score"] < 0.55
+        assert result["service_context_penalty"] > 0
+
+    def test_real_account_not_penalized(self):
+        from server.resolvers.context_scorer import score_candidate
+        text = "Account Name: Real Corp LLC\nEntity type: Corporation\nBilling Address: 100 Oak Ave"
+        result = score_candidate(text, "Real Corp", 1.0, "exact")
+        assert result["service_context_penalty"] == 0.0
+
+    def test_name_plus_address_high_confidence(self):
+        from server.resolvers.context_scorer import score_candidate
+        text = "Account Name: Real Corp LLC\n123 Main Street\nLos Angeles, CA 90210"
+        result = score_candidate(text, "Real Corp", 1.0, "exact")
+        assert result["composite_score"] >= 0.65
+
+
+class TestClassifyByComposite:
+    def test_high_score_is_match(self):
+        from server.resolvers.context_scorer import classify_by_composite
+        assert classify_by_composite(0.80, False, 1.0) == "match"
+
+    def test_moderate_score_is_review(self):
+        from server.resolvers.context_scorer import classify_by_composite
+        assert classify_by_composite(0.50, False, 0.7) == "review"
+
+    def test_low_score_is_no_match(self):
+        from server.resolvers.context_scorer import classify_by_composite
+        assert classify_by_composite(0.20, False, 0.3) == "no-match"
+
+    def test_service_penalty_prevents_match_for_weak_name(self):
+        from server.resolvers.context_scorer import classify_by_composite
+        status = classify_by_composite(0.70, True, 0.7)
+        assert status == "review"
+
+    def test_service_penalty_allows_match_for_strong_name(self):
+        from server.resolvers.context_scorer import classify_by_composite
+        status = classify_by_composite(0.70, True, 0.90)
+        assert status == "match"
+
+
+class TestAcceptanceCriteriaV2:
+    def test_1888_records_with_address_scores_high(self):
+        from server.resolvers.context_scorer import score_candidate
+        text = "Account Name: 1888 Records\nBilling Address: 456 Record Lane\nNashville, TN 37201"
+        result = score_candidate(text, "1888 Records", 1.0, "exact")
+        assert result["composite_score"] >= 0.65
+        assert result["visible"] is True
+
+    def test_service_mentions_downgraded(self):
+        from server.resolvers.context_scorer import score_candidate
+        for svc in ["Spotify", "Amazon Music", "TikTok", "YouTube"]:
+            text = f"Available on {svc} streaming platform service"
+            result = score_candidate(text, svc, 1.0, "exact")
+            assert result["service_context_penalty"] > 0.0
+            assert result["match_status"] != "match"
+
+    def test_deterministic_output_preserved(self):
+        from server.preflight_engine import _run_salesforce_match
+        text = "Account Name: Corp A\nCompany Name: Corp B\nLegal Name: Corp C"
+        r1 = _run_salesforce_match([], text)
+        r2 = _run_salesforce_match([], text)
+        fields1 = [(r["source_field"], r["confidence_pct"], r["match_status"]) for r in r1]
+        fields2 = [(r["source_field"], r["confidence_pct"], r["match_status"]) for r in r2]
+        assert fields1 == fields2
