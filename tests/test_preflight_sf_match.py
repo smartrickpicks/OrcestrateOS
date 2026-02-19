@@ -1736,6 +1736,30 @@ class TestRecitalExtractionHardening:
         assert "123" not in result
         assert "Main" not in result
 
+    def test_block_format_between_extraction(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = "Distribution Agreement\nBETWEEN:\nOstereo Limited\nand\nRK Entertainments Ltd\n\nSome body text here."
+        parties = _extract_recital_parties(text)
+        names_lower = [p.lower() for p in parties]
+        assert any("ostereo" in n for n in names_lower)
+        assert any("rk entertainments" in n for n in names_lower)
+
+    def test_block_format_no_body_leakage(self):
+        from server.preflight_engine import _extract_recital_parties
+        filler = "\n".join([f"Line {i} of filler text" for i in range(40)])
+        text = "BETWEEN:\nOstereo Limited\nand\n1888 Records Ltd\n" + filler + "\nREVENUE SHARES\nDEFINITIONS\n"
+        parties = _extract_recital_parties(text)
+        names_lower = [p.lower() for p in parties]
+        assert any("ostereo" in n for n in names_lower)
+        assert any("1888 records" in n for n in names_lower)
+        assert not any("revenue" in n for n in names_lower)
+        assert not any("definition" in n for n in names_lower)
+
+    def test_rejects_compound_and_names(self):
+        from server.preflight_engine import is_plausible_party_name
+        assert not is_plausible_party_name("KS Army Entertainment LLC and RK Entertainments Ltd")
+        assert not is_plausible_party_name("Alpha Corp & Beta Inc")
+
     def test_label_party_extraction(self):
         from server.preflight_engine import _extract_recital_parties
         text = 'Acme Records Inc ("Label") and John Smith Productions LLC ("Artist")\n\nBody text here.\n'

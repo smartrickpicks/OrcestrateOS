@@ -695,6 +695,12 @@ _BETWEEN_AND_RE = re.compile(
     re.IGNORECASE | re.MULTILINE,
 )
 
+_PARTY_ZONE_RE = re.compile(
+    r'(?:(?:BETWEEN|between|By and Between|BY AND BETWEEN|PARTIES|parties)\s*[:\-]?\s*\n?)'
+    r'((?:.*\n){1,10})',
+    re.MULTILINE,
+)
+
 _LABEL_PARTY_RE = re.compile(
     r'([A-Z][A-Za-z\s&\.\,\']+?)\s*\(\s*"?\s*'
     r'(?:Owner|Company|Label|Licensor|Licensee|Publisher|Distributor|Artist|Producer|Manager)'
@@ -805,6 +811,8 @@ def is_plausible_party_name(name):
         return False
     if low.endswith("...") or low.startswith("..."):
         return False
+    if " and " in low or " & " in low:
+        return False
     if low in _HARD_DENYLIST or low in _GENERIC_SINGLE_TOKENS:
         return False
     if _COMPANY_MARKERS_RE.search(name):
@@ -848,6 +856,21 @@ def _extract_recital_parties(full_text):
         if norm not in seen:
             seen.add(norm)
             parties.append(name)
+
+    for m in _PARTY_ZONE_RE.finditer(preamble_text):
+        block = m.group(1)
+        for line in block.split("\n"):
+            line = normalize_party_candidate(line)
+            if not is_plausible_party_name(line):
+                continue
+            norm = line.lower().strip()
+            if norm not in seen:
+                seen.add(norm)
+                parties.append(line)
+            if len(parties) >= _MAX_RECITAL_PARTIES:
+                break
+        if len(parties) >= _MAX_RECITAL_PARTIES:
+            break
 
     return parties[:_MAX_RECITAL_PARTIES]
 
