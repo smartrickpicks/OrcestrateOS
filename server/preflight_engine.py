@@ -359,6 +359,7 @@ def run_preflight(pages_data):
     extracted_headers, low_signal_headers = _extract_candidate_headers(full_text)
 
     sf_match = _run_salesforce_match(extracted_headers, full_text)
+    resolution_story = build_resolution_story(sf_match, full_text)
 
     return {
         "doc_mode": doc_mode,
@@ -367,6 +368,7 @@ def run_preflight(pages_data):
         "decision_trace": decision_trace,
         "corruption_samples": corruption_samples,
         "salesforce_match": sf_match,
+        "resolution_story": resolution_story,
         "page_classifications": page_results,
         "extracted_text": full_text[:50000],
         "extracted_headers": extracted_headers,
@@ -611,6 +613,222 @@ _SOURCE_TYPE_PRIORITY = {
 }
 
 
+_CMG_KNOWN_ALIASES = {
+    "ostereo limited",
+    "ostereo publishing limited",
+    "asterio limited",
+    "asterio publishing limited",
+}
+
+_CMG_ACCOUNT_TYPES = {
+    "division",
+}
+
+
+def _is_cmg_side(candidate_name, sf_candidates):
+    name_lower = candidate_name.lower().strip()
+    if name_lower in _CMG_KNOWN_ALIASES:
+        return True
+    for c in sf_candidates:
+        acct_type = (c.get("type") or "").strip().lower()
+        if acct_type in _CMG_ACCOUNT_TYPES:
+            return True
+    return False
+
+
+_AGREEMENT_TYPE_KEYWORDS = {
+    "distribution": ["distribution agreement", "distribution deal", "distribution contract", "distribution"],
+    "license": ["license agreement", "licensing agreement", "licence agreement", "license"],
+    "recording": ["recording agreement", "recording contract", "recording"],
+    "publishing": ["publishing agreement", "publishing contract", "publishing deal", "publishing"],
+    "management": ["management agreement", "management contract", "management"],
+    "service": ["service agreement", "services agreement", "service contract"],
+    "amendment": ["amendment", "addendum", "modification agreement"],
+}
+
+
+def _guess_agreement_type(full_text):
+    if not full_text:
+        return "unknown"
+    text_lower = full_text.lower()
+    lines = text_lower.split("\n")
+    title_zone = "\n".join(lines[:10]) if lines else ""
+
+    best_type = "unknown"
+    best_weight = 0.0
+
+    for atype, keywords in _AGREEMENT_TYPE_KEYWORDS.items():
+        for kw in keywords:
+            title_weight = 3.0 if kw in title_zone else 0.0
+            body_weight = 1.0 if kw in text_lower else 0.0
+            weight = title_weight + body_weight
+            if weight > best_weight:
+                best_weight = weight
+                best_type = atype
+
+    return best_type
+
+
+def build_resolution_story(sf_match_results, full_text):
+    if not sf_match_results:
+        return {
+            "legal_entity_account": None,
+            "counterparties": [],
+            "business_unit": None,
+            "parent_account": None,
+            "agreement_type_guess": _guess_agreement_type(full_text),
+            "reasoning_steps": ["No account candidates were extracted from this document."],
+            "analyst_actions": ["Manual lookup required — no automatic resolution available."],
+            "requires_manual_confirmation": True,
+            "recital_parties": [],
+        }
+
+    try:
+        from server.resolvers.context_scorer import REVIEW_THRESHOLD
+    except ImportError:
+        REVIEW_THRESHOLD = 0.40
+
+    legal_entity = None
+    counterparties = []
+    reasoning = []
+    actions = []
+
+    cmg_candidates = []
+    non_cmg_candidates = []
+
+    for row in sf_match_results:
+        if not row.get("visible", True):
+            continue
+        sf_cands = row.get("candidates", [])
+        candidate_name = row.get("source_field", "")
+        is_cmg = _is_cmg_side(candidate_name, sf_cands)
+        if is_cmg:
+            for sc in sf_cands:
+                if _is_cmg_side(sc.get("account_name", ""), [sc]):
+                    is_cmg = True
+                    break
+        top_name = row.get("suggested_label", "")
+        if top_name == "\u2014":
+            top_name = candidate_name
+        if sf_cands:
+            sf_top = sf_cands[0]
+            if _is_cmg_side(sf_top.get("account_name", ""), [sf_top]):
+                is_cmg = True
+
+        entry = {
+            "name": top_name if top_name != "\u2014" else candidate_name,
+            "confidence": round(row.get("match_score", 0.0), 4),
+            "match_status": row.get("match_status", "no-match"),
+            "source_type": row.get("source_type", "header_fallback"),
+            "cmg_side": is_cmg,
+        }
+        if sf_cands:
+            entry["id"] = sf_cands[0].get("account_id") or None
+        else:
+            entry["id"] = None
+
+        if is_cmg:
+            cmg_candidates.append((entry, row))
+        else:
+            non_cmg_candidates.append((entry, row))
+
+    cmg_candidates.sort(key=lambda x: (
+        0 if x[0]["match_status"] == "match" else 1 if x[0]["match_status"] == "review" else 2,
+        -x[0]["confidence"],
+    ))
+
+    if cmg_candidates:
+        legal_entity = cmg_candidates[0][0]
+        src_row = cmg_candidates[0][1]
+        src_label = _source_type_label(legal_entity["source_type"])
+        reasoning.append(
+            f'"{legal_entity["name"]}" identified as CMG-side entity via {src_label} — assigned as legal entity.'
+        )
+        if legal_entity["match_status"] == "match":
+            actions.append(
+                f'Legal entity "{legal_entity["name"]}" passed CMG-side match — no action required.'
+            )
+        else:
+            actions.append(
+                f'Legal entity "{legal_entity["name"]}" is in "{legal_entity["match_status"]}" status — confirm assignment.'
+            )
+
+    for entry, row in non_cmg_candidates:
+        composite = entry["confidence"]
+        if composite >= REVIEW_THRESHOLD:
+            counterparties.append(entry)
+            src_label = _source_type_label(entry["source_type"])
+            reasoning.append(
+                f'"{entry["name"]}" extracted via {src_label} — assigned as counterparty.'
+            )
+            if entry["match_status"] == "match":
+                actions.append(
+                    f'Counterparty "{entry["name"]}" passed automatic match — no action required.'
+                )
+            else:
+                actions.append(
+                    f'Counterparty "{entry["name"]}" is in "{entry["match_status"]}" status — review match.'
+                )
+
+    for row in sf_match_results:
+        if not row.get("visible", True):
+            continue
+        sbd = row.get("scoring_breakdown", {})
+        if sbd.get("service_context_penalty", 0) > 0:
+            reasoning.append(
+                f'"{row["source_field"]}" suppressed — service-context penalty applied ({sbd["service_context_penalty"]}).'
+            )
+        if sbd.get("address_evidence", 0) > 0:
+            addr_label = "full address match" if sbd["address_evidence"] >= 0.25 else "partial address match"
+            reasoning.append(
+                f'Address evidence ({addr_label}, {sbd["address_evidence"]}) found near "{row["source_field"]}".'
+            )
+
+    requires_manual = False
+    if legal_entity is None:
+        requires_manual = True
+        reasoning.append("No CMG-side candidate passed threshold — manual identification required.")
+        actions.append("Manual lookup required — identify the CMG-side legal entity for this contract.")
+    elif legal_entity["match_status"] != "match":
+        requires_manual = True
+
+    if not counterparties:
+        reasoning.append("No counterparty candidates met the confidence threshold.")
+        actions.append("No counterparty detected. Verify this is a unilateral document or identify counterparty manually.")
+
+    close_scores = []
+    for entry, _ in non_cmg_candidates:
+        if entry["match_status"] == "review":
+            close_scores.append(entry)
+    if len(close_scores) >= 2:
+        scores = [e["confidence"] for e in close_scores]
+        if max(scores) - min(scores) < 0.10:
+            requires_manual = True
+
+    agreement_type = _guess_agreement_type(full_text)
+
+    return {
+        "legal_entity_account": legal_entity,
+        "counterparties": counterparties,
+        "business_unit": None,
+        "parent_account": None,
+        "agreement_type_guess": agreement_type,
+        "reasoning_steps": reasoning,
+        "analyst_actions": actions,
+        "requires_manual_confirmation": requires_manual,
+        "recital_parties": [],
+    }
+
+
+def _source_type_label(source_type):
+    labels = {
+        "strict_label_value": "strict label:value extraction",
+        "csv_phrase_hit": "CSV phrase scan (known account match)",
+        "header_fallback": "header fallback extraction",
+    }
+    return labels.get(source_type, source_type)
+
+
 def _run_salesforce_match(extracted_headers, full_text=""):
     """Run multi-account Salesforce matching with composite context scoring.
 
@@ -713,6 +931,8 @@ def _run_salesforce_match(extracted_headers, full_text=""):
             "scoring_breakdown": scoring_breakdown,
             "visible": visible,
             "source_type": source_type,
+            "label_value_hit": source_type == "strict_label_value",
+            "recital_party_hit": False,
         })
 
     results.sort(key=lambda r: (

@@ -962,3 +962,365 @@ class TestCalibrationRegression:
         fields1 = [(r["source_field"], r["source_type"], r["confidence_pct"]) for r in r1]
         fields2 = [(r["source_field"], r["source_type"], r["confidence_pct"]) for r in r2]
         assert fields1 == fields2
+
+
+class TestPerCandidateExplainabilityFields:
+    def test_label_value_hit_true_for_strict(self):
+        from server.preflight_engine import _run_salesforce_match
+        result = _run_salesforce_match([], "Account Name: Test Corp")
+        for item in result:
+            if item["source_type"] == "strict_label_value":
+                assert item["label_value_hit"] is True
+
+    def test_label_value_hit_false_for_header(self):
+        from server.preflight_engine import _run_salesforce_match
+        result = _run_salesforce_match(["Some Real Company"], "No label patterns here")
+        for item in result:
+            if item["source_type"] == "header_fallback":
+                assert item["label_value_hit"] is False
+
+    def test_recital_party_hit_stub_false(self):
+        from server.preflight_engine import _run_salesforce_match
+        result = _run_salesforce_match([], "Account Name: Test Corp")
+        for item in result:
+            assert item["recital_party_hit"] is False
+
+    def test_fields_present_in_payload(self):
+        from server.preflight_engine import _run_salesforce_match
+        result = _run_salesforce_match([], "Account Name: Some Corp Name")
+        for item in result:
+            assert "label_value_hit" in item
+            assert "recital_party_hit" in item
+            assert isinstance(item["label_value_hit"], bool)
+            assert isinstance(item["recital_party_hit"], bool)
+
+
+class TestCmgSideGating:
+    def test_is_cmg_side_known_alias(self):
+        from server.preflight_engine import _is_cmg_side
+        assert _is_cmg_side("Ostereo Limited", []) is True
+        assert _is_cmg_side("ostereo limited", []) is True
+        assert _is_cmg_side("Ostereo Publishing Limited", []) is True
+        assert _is_cmg_side("Asterio Limited", []) is True
+
+    def test_is_cmg_side_unknown_name(self):
+        from server.preflight_engine import _is_cmg_side
+        assert _is_cmg_side("1888 Records", []) is False
+        assert _is_cmg_side("Acme Corp", []) is False
+
+    def test_is_cmg_side_by_account_type(self):
+        from server.preflight_engine import _is_cmg_side
+        assert _is_cmg_side("Some Division Name", [{"type": "Division"}]) is True
+        assert _is_cmg_side("Some Artist Name", [{"type": "Artist"}]) is False
+
+    def test_is_cmg_side_empty_candidates(self):
+        from server.preflight_engine import _is_cmg_side
+        assert _is_cmg_side("Random Name", []) is False
+
+
+class TestAgreementTypeGuess:
+    def test_distribution_from_title(self):
+        from server.preflight_engine import _guess_agreement_type
+        text = "Distribution Agreement\nBetween Party A and Party B"
+        assert _guess_agreement_type(text) == "distribution"
+
+    def test_license_from_body(self):
+        from server.preflight_engine import _guess_agreement_type
+        text = "Some Title\n\nThis license agreement governs the terms."
+        assert _guess_agreement_type(text) == "license"
+
+    def test_recording_agreement(self):
+        from server.preflight_engine import _guess_agreement_type
+        text = "Recording Agreement\nArtist Name: Test"
+        assert _guess_agreement_type(text) == "recording"
+
+    def test_publishing_agreement(self):
+        from server.preflight_engine import _guess_agreement_type
+        text = "Publishing Agreement\nWriter: Test"
+        assert _guess_agreement_type(text) == "publishing"
+
+    def test_management_agreement(self):
+        from server.preflight_engine import _guess_agreement_type
+        text = "Management Agreement\nManager: Test"
+        assert _guess_agreement_type(text) == "management"
+
+    def test_service_agreement(self):
+        from server.preflight_engine import _guess_agreement_type
+        text = "Service Agreement\nProvider: Test"
+        assert _guess_agreement_type(text) == "service"
+
+    def test_amendment(self):
+        from server.preflight_engine import _guess_agreement_type
+        text = "Amendment to Agreement\nOriginal Date: 2024-01-01"
+        assert _guess_agreement_type(text) == "amendment"
+
+    def test_unknown_when_no_keywords(self):
+        from server.preflight_engine import _guess_agreement_type
+        assert _guess_agreement_type("Random text with no keywords") == "unknown"
+
+    def test_empty_text(self):
+        from server.preflight_engine import _guess_agreement_type
+        assert _guess_agreement_type("") == "unknown"
+
+    def test_title_zone_weighted_higher(self):
+        from server.preflight_engine import _guess_agreement_type
+        text = "Distribution Agreement\n" + "\n".join(["line"] * 20) + "\nlicense agreement in body"
+        assert _guess_agreement_type(text) == "distribution"
+
+
+class TestBuildResolutionStory:
+    def _make_row(self, source_field, match_status="review", confidence=0.50,
+                  source_type="strict_label_value", candidates=None, visible=True):
+        return {
+            "source_field": source_field,
+            "suggested_label": source_field,
+            "match_method": "exact",
+            "match_score": confidence,
+            "name_score": confidence,
+            "confidence_pct": round(confidence * 100),
+            "match_status": match_status,
+            "classification": "matched" if match_status == "match" else "ambiguous",
+            "candidates": candidates or [],
+            "explanation": "",
+            "provider": "cmg_csv_v1",
+            "evidence_chips": [],
+            "scoring_breakdown": {"name_evidence": confidence * 0.55},
+            "visible": visible,
+            "source_type": source_type,
+            "label_value_hit": source_type == "strict_label_value",
+            "recital_party_hit": False,
+        }
+
+    def test_empty_sf_match_returns_null_entity(self):
+        from server.preflight_engine import build_resolution_story
+        story = build_resolution_story([], "Some text")
+        assert story["legal_entity_account"] is None
+        assert story["counterparties"] == []
+        assert story["requires_manual_confirmation"] is True
+        assert story["recital_parties"] == []
+
+    def test_payload_shape(self):
+        from server.preflight_engine import build_resolution_story
+        story = build_resolution_story([], "")
+        required_keys = [
+            "legal_entity_account", "counterparties", "business_unit",
+            "parent_account", "agreement_type_guess", "reasoning_steps",
+            "analyst_actions", "requires_manual_confirmation", "recital_parties",
+        ]
+        for key in required_keys:
+            assert key in story, f"Missing key: {key}"
+
+    def test_cmg_entity_assigned_as_legal_entity(self):
+        from server.preflight_engine import build_resolution_story
+        rows = [
+            self._make_row("Ostereo Limited", "match", 0.91,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division", "account_id": "001"}]),
+            self._make_row("1888 Records", "match", 0.87,
+                           candidates=[{"account_name": "1888 Records", "type": "Artist", "account_id": "002"}]),
+        ]
+        story = build_resolution_story(rows, "Distribution Agreement")
+        assert story["legal_entity_account"] is not None
+        assert story["legal_entity_account"]["name"] == "Ostereo Limited"
+        assert story["legal_entity_account"]["cmg_side"] is True
+
+    def test_non_cmg_as_counterparty(self):
+        from server.preflight_engine import build_resolution_story
+        rows = [
+            self._make_row("Ostereo Limited", "match", 0.91,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division", "account_id": "001"}]),
+            self._make_row("1888 Records", "match", 0.87,
+                           candidates=[{"account_name": "1888 Records", "type": "Artist", "account_id": "002"}]),
+        ]
+        story = build_resolution_story(rows, "Distribution Agreement")
+        cparty_names = [c["name"] for c in story["counterparties"]]
+        assert "1888 Records" in cparty_names
+        assert all(not c["cmg_side"] for c in story["counterparties"])
+
+    def test_no_cmg_candidate_sets_null_and_manual(self):
+        from server.preflight_engine import build_resolution_story
+        rows = [
+            self._make_row("1888 Records", "match", 0.87,
+                           candidates=[{"account_name": "1888 Records", "type": "Artist", "account_id": "002"}]),
+            self._make_row("Acme Corp", "review", 0.50,
+                           candidates=[{"account_name": "Acme Corp", "type": "Artist", "account_id": "003"}]),
+        ]
+        story = build_resolution_story(rows, "Some text")
+        assert story["legal_entity_account"] is None
+        assert story["requires_manual_confirmation"] is True
+        assert any("manual" in a.lower() for a in story["analyst_actions"])
+
+    def test_reasoning_steps_not_empty(self):
+        from server.preflight_engine import build_resolution_story
+        rows = [
+            self._make_row("Ostereo Limited", "match", 0.91,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division", "account_id": "001"}]),
+        ]
+        story = build_resolution_story(rows, "Distribution Agreement")
+        assert len(story["reasoning_steps"]) >= 1
+
+    def test_analyst_actions_present(self):
+        from server.preflight_engine import build_resolution_story
+        rows = [
+            self._make_row("Ostereo Limited", "match", 0.91,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division", "account_id": "001"}]),
+        ]
+        story = build_resolution_story(rows, "Distribution Agreement")
+        assert len(story["analyst_actions"]) >= 1
+
+    def test_agreement_type_guess_populated(self):
+        from server.preflight_engine import build_resolution_story
+        rows = [
+            self._make_row("Ostereo Limited", "match", 0.91,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division", "account_id": "001"}]),
+        ]
+        story = build_resolution_story(rows, "Distribution Agreement between parties")
+        assert story["agreement_type_guess"] == "distribution"
+
+    def test_recital_parties_stub_empty(self):
+        from server.preflight_engine import build_resolution_story
+        rows = [
+            self._make_row("Ostereo Limited", "match", 0.91,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division", "account_id": "001"}]),
+        ]
+        story = build_resolution_story(rows, "")
+        assert story["recital_parties"] == []
+
+    def test_role_selection_independent_of_table_sort(self):
+        from server.preflight_engine import build_resolution_story
+        rows_order_a = [
+            self._make_row("1888 Records", "match", 0.92,
+                           candidates=[{"account_name": "1888 Records", "type": "Artist", "account_id": "002"}]),
+            self._make_row("Ostereo Limited", "match", 0.85,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division", "account_id": "001"}]),
+        ]
+        rows_order_b = [
+            self._make_row("Ostereo Limited", "match", 0.85,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division", "account_id": "001"}]),
+            self._make_row("1888 Records", "match", 0.92,
+                           candidates=[{"account_name": "1888 Records", "type": "Artist", "account_id": "002"}]),
+        ]
+        story_a = build_resolution_story(rows_order_a, "Distribution Agreement")
+        story_b = build_resolution_story(rows_order_b, "Distribution Agreement")
+        assert story_a["legal_entity_account"]["name"] == story_b["legal_entity_account"]["name"]
+        assert story_a["legal_entity_account"]["name"] == "Ostereo Limited"
+        cparties_a = [c["name"] for c in story_a["counterparties"]]
+        cparties_b = [c["name"] for c in story_b["counterparties"]]
+        assert cparties_a == cparties_b
+
+    def test_non_cmg_never_legal_entity(self):
+        from server.preflight_engine import build_resolution_story
+        rows = [
+            self._make_row("1888 Records", "match", 0.99,
+                           candidates=[{"account_name": "1888 Records", "type": "Artist", "account_id": "002"}]),
+        ]
+        story = build_resolution_story(rows, "text")
+        assert story["legal_entity_account"] is None
+
+    def test_low_confidence_counterparty_excluded(self):
+        from server.preflight_engine import build_resolution_story
+        rows = [
+            self._make_row("Ostereo Limited", "match", 0.91,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division", "account_id": "001"}]),
+            self._make_row("Weak Corp", "no-match", 0.20,
+                           candidates=[{"account_name": "Weak Corp", "type": "Artist", "account_id": "005"}]),
+        ]
+        story = build_resolution_story(rows, "text")
+        cparty_names = [c["name"] for c in story["counterparties"]]
+        assert "Weak Corp" not in cparty_names
+
+    def test_review_status_legal_entity_requires_manual(self):
+        from server.preflight_engine import build_resolution_story
+        rows = [
+            self._make_row("Ostereo Limited", "review", 0.50,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division", "account_id": "001"}]),
+        ]
+        story = build_resolution_story(rows, "text")
+        assert story["legal_entity_account"] is not None
+        assert story["requires_manual_confirmation"] is True
+
+    def test_service_penalty_generates_reasoning(self):
+        from server.preflight_engine import build_resolution_story
+        rows = [
+            {
+                "source_field": "Spotify",
+                "suggested_label": "Spotify",
+                "match_method": "exact",
+                "match_score": 0.20,
+                "name_score": 1.0,
+                "confidence_pct": 20,
+                "match_status": "no-match",
+                "classification": "not_found",
+                "candidates": [],
+                "explanation": "",
+                "provider": "cmg_csv_v1",
+                "evidence_chips": ["service_context_penalty"],
+                "scoring_breakdown": {"name_evidence": 0.55, "service_context_penalty": 0.35},
+                "visible": True,
+                "source_type": "header_fallback",
+                "label_value_hit": False,
+                "recital_party_hit": False,
+            },
+        ]
+        story = build_resolution_story(rows, "text")
+        assert any("suppressed" in s.lower() or "penalty" in s.lower() for s in story["reasoning_steps"])
+
+    def test_multiple_counterparties_supported(self):
+        from server.preflight_engine import build_resolution_story
+        rows = [
+            self._make_row("Ostereo Limited", "match", 0.91,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division", "account_id": "001"}]),
+            self._make_row("1888 Records", "match", 0.87,
+                           candidates=[{"account_name": "1888 Records", "type": "Artist", "account_id": "002"}]),
+            self._make_row("Acme Corp", "review", 0.55,
+                           candidates=[{"account_name": "Acme Corp", "type": "Artist", "account_id": "003"}]),
+        ]
+        story = build_resolution_story(rows, "Distribution Agreement")
+        assert len(story["counterparties"]) >= 2
+
+    def test_hidden_row_excluded(self):
+        from server.preflight_engine import build_resolution_story
+        rows = [
+            self._make_row("Ostereo Limited", "match", 0.91, visible=True,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division", "account_id": "001"}]),
+            self._make_row("Hidden Corp", "no-match", 0.10, visible=False,
+                           candidates=[{"account_name": "Hidden Corp", "type": "Artist", "account_id": "009"}]),
+        ]
+        story = build_resolution_story(rows, "text")
+        cparty_names = [c["name"] for c in story["counterparties"]]
+        assert "Hidden Corp" not in cparty_names
+
+
+class TestResolutionStoryInPreflight:
+    def test_run_preflight_includes_resolution_story(self):
+        from server.preflight_engine import run_preflight
+        pages = [{"page": 1, "text": "Account Name: Test Corp\nSome data here to pad", "char_count": 60, "image_coverage_ratio": 0.0}]
+        result = run_preflight(pages)
+        assert "resolution_story" in result
+        story = result["resolution_story"]
+        assert "legal_entity_account" in story
+        assert "counterparties" in story
+        assert "agreement_type_guess" in story
+        assert "reasoning_steps" in story
+        assert "analyst_actions" in story
+        assert "requires_manual_confirmation" in story
+        assert "recital_parties" in story
+
+    def test_resolution_story_empty_pages(self):
+        from server.preflight_engine import run_preflight
+        result = run_preflight([])
+        assert "resolution_story" not in result
+
+    def test_resolution_story_alongside_sf_match(self):
+        from server.preflight_engine import run_preflight
+        pages = [{"page": 1, "text": "Account Name: Test Corp\nSome data here to pad more", "char_count": 60, "image_coverage_ratio": 0.0}]
+        result = run_preflight(pages)
+        assert "salesforce_match" in result
+        assert "resolution_story" in result
+
+    def test_resolution_story_deterministic(self):
+        from server.preflight_engine import run_preflight
+        pages = [{"page": 1, "text": "Account Name: Alpha Corp\nCompany Name: Beta Inc", "char_count": 60, "image_coverage_ratio": 0.0}]
+        r1 = run_preflight(pages)
+        r2 = run_preflight(pages)
+        assert r1["resolution_story"]["agreement_type_guess"] == r2["resolution_story"]["agreement_type_guess"]
+        assert r1["resolution_story"]["requires_manual_confirmation"] == r2["resolution_story"]["requires_manual_confirmation"]
