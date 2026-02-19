@@ -1444,6 +1444,52 @@
     .srr-pdf-match-bar.has-match { animation: matchPulse 1.5s ease-in-out 2; border-color: var(--accent-2); }
     @keyframes framePulse { 0% { box-shadow: inset 0 0 0 3px rgba(21, 101, 192, 0.5); } 100% { box-shadow: inset 0 0 0 0 rgba(21, 101, 192, 0); } }
     .srr-doc-frame.match-active { animation: framePulse 1s ease-out; }
+
+    /* ===== Document Text Search Bar (shared by EV + SRR) ===== */
+    .doc-search-bar {
+      display: none; align-items: center; gap: 6px;
+      padding: 6px 10px; background: var(--bg-1); border-bottom: 1px solid var(--border-1);
+      font-size: 0.82em; z-index: 50;
+    }
+    .doc-search-bar.visible { display: flex; }
+    .doc-search-bar .ds-input {
+      flex: 1; min-width: 0; padding: 5px 8px; border: 1px solid var(--border-1);
+      border-radius: 4px; font-size: 0.92em; background: var(--bg-base, #fff); color: var(--text-2);
+      outline: none;
+    }
+    .doc-search-bar .ds-input:focus { border-color: var(--accent-2); }
+    .doc-search-bar .ds-input::placeholder { color: var(--text-3, #999); }
+    .doc-search-bar .ds-count { white-space: nowrap; color: var(--text-3); font-size: 0.9em; min-width: 50px; text-align: center; }
+    .doc-search-bar .ds-nav-btn {
+      background: var(--bg-3); border: none; color: var(--accent-2); width: 24px; height: 24px;
+      border-radius: 50%; cursor: pointer; font-size: 0.8em; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .doc-search-bar .ds-nav-btn:hover { background: #c5cae9; }
+    .doc-search-bar .ds-nav-btn:disabled { opacity: 0.4; cursor: default; }
+    .doc-search-bar .ds-close { cursor: pointer; color: #999; font-size: 1.1em; margin-left: 2px; flex-shrink: 0; }
+    .doc-search-bar .ds-close:hover { color: var(--text-2); }
+    .doc-search-bar .ds-icon-btn {
+      background: none; border: none; cursor: pointer; color: var(--text-3); font-size: 1em;
+      padding: 2px; display: flex; align-items: center;
+    }
+    .doc-search-bar .ds-icon-btn:hover { color: var(--accent-2); }
+    .doc-search-highlight { background: #ffe082; color: #333; border-radius: 2px; padding: 0 1px; }
+    .doc-search-highlight.active { background: #ff9800; color: #fff; outline: 2px solid #e65100; }
+    html[data-theme="dark"] .doc-search-bar .ds-input { background: var(--bg-2); color: var(--text-1); border-color: var(--border-soft); }
+    html[data-theme="dark"] .doc-search-bar .ds-nav-btn { background: var(--bg-3); color: var(--accent-2, #60a5fa); }
+    html[data-theme="dark"] .doc-search-bar .ds-nav-btn:hover { background: var(--bg-4); }
+    html[data-theme="dark"] .doc-search-highlight { background: #5c4000; color: #ffe082; }
+    html[data-theme="dark"] .doc-search-highlight.active { background: #e65100; color: #fff; }
+    /* Search trigger button in headers */
+    .doc-search-trigger {
+      background: none; border: none; cursor: pointer; color: var(--text-3); font-size: 0.95em;
+      padding: 4px 6px; border-radius: 4px; display: flex; align-items: center; gap: 3px;
+    }
+    .doc-search-trigger:hover { color: var(--accent-2); background: var(--bg-3); }
+    .doc-search-trigger svg { width: 15px; height: 15px; }
+    .ds-page-hint { color: var(--text-3); font-size: 0.85em; font-style: italic; margin-left: 4px; }
+
     .srr-anchor-list { padding: 12px; border-top: 1px solid var(--border-1); max-height: 150px; overflow-y: auto; }
     .srr-anchor-item { padding: 8px 10px; background: var(--bg-2); border-radius: 4px; margin-bottom: 6px; font-size: 0.8em; cursor: pointer; border-left: 3px solid var(--accent-2); }
     .srr-anchor-item:hover { background: var(--bg-3); }
@@ -4080,7 +4126,15 @@
                     <button class="ev-view-toggle-btn" id="ev-toggle-pdf" onclick="_evSetViewMode('pdf')" title="Native PDF embed">PDF</button>
                   </div>
                   <span class="ev-pdf-source" id="ev-pdf-source"></span>
+                  <button class="doc-search-trigger" id="ev-search-trigger" onclick="docSearchToggle('ev')" title="Search text (Ctrl+F)"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg></button>
                 </div>
+              </div>
+              <div class="doc-search-bar" id="ev-search-bar">
+                <input class="ds-input" id="ev-search-input" type="text" placeholder="Find in document..." oninput="docSearchRun('ev')" />
+                <span class="ds-count" id="ev-search-count"></span>
+                <button class="ds-nav-btn" id="ev-search-prev" onclick="docSearchNav('ev', -1)" disabled title="Previous">&#9650;</button>
+                <button class="ds-nav-btn" id="ev-search-next" onclick="docSearchNav('ev', 1)" disabled title="Next">&#9660;</button>
+                <span class="ds-close" onclick="docSearchClose('ev')" title="Close (Esc)">&#10005;</span>
               </div>
               <div class="ev-pdf-body" id="ev-pdf-body">
                 <div class="ev-pdf-empty" id="ev-pdf-empty">
@@ -4284,6 +4338,14 @@
                 <button class="srr-view-toggle-btn active" id="srr-toggle-reader" onclick="srrViewToggle('reader')">Reader Mode</button>
                 <button class="srr-view-toggle-btn" id="srr-toggle-pdf" onclick="srrViewToggle('pdf')">PDF Mode</button>
                 <span class="srr-view-toggle-hint" id="srr-view-toggle-hint"></span>
+                <button class="doc-search-trigger" id="srr-search-trigger" onclick="docSearchToggle('srr')" title="Search text (Ctrl+F)"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg></button>
+              </div>
+              <div class="doc-search-bar" id="srr-search-bar">
+                <input class="ds-input" id="srr-search-input" type="text" placeholder="Find in document..." oninput="docSearchRun('srr')" />
+                <span class="ds-count" id="srr-search-count"></span>
+                <button class="ds-nav-btn" id="srr-search-prev" onclick="docSearchNav('srr', -1)" disabled title="Previous">&#9650;</button>
+                <button class="ds-nav-btn" id="srr-search-next" onclick="docSearchNav('srr', 1)" disabled title="Next">&#9660;</button>
+                <span class="ds-close" onclick="docSearchClose('srr')" title="Close (Esc)">&#10005;</span>
               </div>
               <div id="srr-anchor-scroll-hint" class="srr-anchor-scroll-hint"></div>
               <div class="srr-doc-controls" style="display: none;">
@@ -19262,6 +19324,362 @@
       _srrViewState.mode = 'reader';
       _srrViewState.readerNodes = null;
     }
+    // ========== DOCUMENT TEXT SEARCH (EV + SRR) ==========
+    var _docSearch = {
+      ev: { matches: [], idx: -1, term: '', savedHtml: null, timer: null, cachedPages: null },
+      srr: { matches: [], idx: -1, term: '', savedHtml: null, timer: null, cachedPages: null }
+    };
+
+    function docSearchToggle(ctx) {
+      var bar = document.getElementById(ctx + '-search-bar');
+      if (!bar) return;
+      if (bar.classList.contains('visible')) {
+        docSearchClose(ctx);
+      } else {
+        bar.classList.add('visible');
+        var inp = document.getElementById(ctx + '-search-input');
+        if (inp) { inp.value = ''; inp.focus(); }
+        _docSearch[ctx].matches = [];
+        _docSearch[ctx].idx = -1;
+        _docSearch[ctx].term = '';
+        _docSearch[ctx].savedHtml = null;
+        _docSearchCachePageTexts(ctx);
+        _docSearchUpdateCount(ctx);
+      }
+    }
+
+    function docSearchClose(ctx) {
+      var bar = document.getElementById(ctx + '-search-bar');
+      if (bar) bar.classList.remove('visible');
+      _docSearchRestoreHtml(ctx);
+      _docSearch[ctx].matches = [];
+      _docSearch[ctx].idx = -1;
+      _docSearch[ctx].term = '';
+      _docSearch[ctx].savedHtml = null;
+      _docSearch[ctx].cachedPages = null;
+      var inp = document.getElementById(ctx + '-search-input');
+      if (inp) inp.value = '';
+      _docSearchUpdateCount(ctx);
+    }
+
+    function _docSearchCachePageTexts(ctx) {
+      var state = _docSearch[ctx];
+      if (ctx === 'ev') {
+        var evContainer = document.getElementById('ev-reader-content');
+        if (evContainer) {
+          var pageEls = evContainer.querySelectorAll('.ev-reader-page');
+          if (pageEls.length > 0) {
+            var pages = [];
+            for (var i = 0; i < pageEls.length; i++) {
+              var pageNum = pageEls[i].getAttribute('data-page') || (i + 1);
+              var textEl = pageEls[i].querySelector('.ev-reader-page-text');
+              pages.push({ page: parseInt(pageNum), text: textEl ? textEl.textContent : '' });
+            }
+            state.cachedPages = pages;
+            return;
+          }
+        }
+        if (_evState._lastPdfUrl) {
+          state.cachedPages = null;
+          _docSearchFetchText(ctx, _evState._lastPdfUrl);
+        } else {
+          state.cachedPages = [];
+        }
+      } else {
+        var nodes = _srrViewState.readerNodes;
+        if (nodes && nodes.length > 0) {
+          var pagesMap = {};
+          for (var i = 0; i < nodes.length; i++) {
+            var pg = nodes[i].page || 1;
+            if (!pagesMap[pg]) pagesMap[pg] = { page: pg, text: '' };
+            pagesMap[pg].text += ' ' + (nodes[i].text || '');
+          }
+          var result = [];
+          for (var k in pagesMap) { if (pagesMap.hasOwnProperty(k)) result.push(pagesMap[k]); }
+          result.sort(function(a, b) { return a.page - b.page; });
+          state.cachedPages = result;
+          return;
+        }
+        state.cachedPages = [];
+      }
+    }
+
+    function _docSearchFetchText(ctx, pdfProxyUrl) {
+      var rawUrl = '';
+      try {
+        var match = pdfProxyUrl.match(/[?&]url=([^&]+)/);
+        if (match) rawUrl = decodeURIComponent(match[1]);
+      } catch (e) { rawUrl = ''; }
+      if (!rawUrl && pdfProxyUrl && (pdfProxyUrl.indexOf('http') === 0)) rawUrl = pdfProxyUrl;
+      if (!rawUrl) { _docSearch[ctx].cachedPages = []; return; }
+      fetch('/api/pdf/text?url=' + encodeURIComponent(rawUrl))
+        .then(function(resp) { return resp.ok ? resp.json() : null; })
+        .then(function(data) {
+          if (!data || !data.pages) { _docSearch[ctx].cachedPages = []; return; }
+          _docSearch[ctx].cachedPages = data.pages.map(function(p, i) { return { page: p.page || (i + 1), text: p.text || '' }; });
+          if (_docSearch[ctx].term && _docSearch[ctx].term.length >= 2) {
+            _docSearchPdfText(ctx, _docSearch[ctx].term);
+          }
+        })
+        .catch(function() { _docSearch[ctx].cachedPages = []; });
+    }
+
+    function docSearchRun(ctx) {
+      var state = _docSearch[ctx];
+      if (state.timer) clearTimeout(state.timer);
+      state.timer = setTimeout(function() { _docSearchExec(ctx); }, 200);
+    }
+
+    function _docSearchExec(ctx) {
+      var inp = document.getElementById(ctx + '-search-input');
+      var term = inp ? inp.value.trim() : '';
+      var state = _docSearch[ctx];
+      _docSearchRestoreHtml(ctx);
+      state.matches = [];
+      state.idx = -1;
+      state.term = term;
+
+      if (!term || term.length < 2) {
+        _docSearchUpdateCount(ctx);
+        return;
+      }
+
+      var viewMode = _docSearchGetViewMode(ctx);
+      if (viewMode === 'reader') {
+        _docSearchReader(ctx, term);
+      } else {
+        _docSearchPdfText(ctx, term);
+      }
+    }
+
+    function _docSearchGetViewMode(ctx) {
+      if (ctx === 'ev') return _evState.viewMode || 'reader';
+      return _srrViewState.mode || 'reader';
+    }
+
+    function _docSearchGetReaderContainer(ctx) {
+      if (ctx === 'ev') return document.getElementById('ev-reader-content');
+      return document.getElementById('srr-reader-content');
+    }
+
+    function _docSearchReader(ctx, term) {
+      var container = _docSearchGetReaderContainer(ctx);
+      if (!container) return;
+      var state = _docSearch[ctx];
+
+      if (!state.savedHtml) {
+        state.savedHtml = container.innerHTML;
+      }
+
+      var textNodes = [];
+      var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+      var node;
+      while (node = walker.nextNode()) {
+        if (node.nodeValue && node.nodeValue.trim().length > 0) {
+          textNodes.push(node);
+        }
+      }
+
+      var termLower = term.toLowerCase();
+      var matchElements = [];
+
+      for (var i = 0; i < textNodes.length; i++) {
+        var textNode = textNodes[i];
+        var text = textNode.nodeValue;
+        var textLower = text.toLowerCase();
+        var positions = [];
+        var searchPos = 0;
+        while (true) {
+          var found = textLower.indexOf(termLower, searchPos);
+          if (found === -1) break;
+          positions.push(found);
+          searchPos = found + 1;
+        }
+        if (positions.length === 0) continue;
+
+        var parent = textNode.parentNode;
+        var frag = document.createDocumentFragment();
+        var lastEnd = 0;
+        for (var j = 0; j < positions.length; j++) {
+          var pos = positions[j];
+          if (pos > lastEnd) {
+            frag.appendChild(document.createTextNode(text.substring(lastEnd, pos)));
+          }
+          var mark = document.createElement('mark');
+          mark.className = 'doc-search-highlight';
+          mark.textContent = text.substring(pos, pos + term.length);
+          frag.appendChild(mark);
+          matchElements.push(mark);
+          lastEnd = pos + term.length;
+        }
+        if (lastEnd < text.length) {
+          frag.appendChild(document.createTextNode(text.substring(lastEnd)));
+        }
+        parent.replaceChild(frag, textNode);
+      }
+
+      state.matches = matchElements;
+      if (matchElements.length > 0) {
+        state.idx = 0;
+        matchElements[0].classList.add('active');
+        matchElements[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      _docSearchUpdateCount(ctx);
+    }
+
+    function _docSearchPdfText(ctx, term) {
+      var state = _docSearch[ctx];
+      var pages = state.cachedPages;
+      if (!pages || pages.length === 0) {
+        state.matches = [];
+        _docSearchUpdateCount(ctx);
+        return;
+      }
+
+      var termLower = term.toLowerCase();
+      var pageMatches = [];
+      var totalCount = 0;
+
+      for (var i = 0; i < pages.length; i++) {
+        var pageText = (pages[i].text || '').toLowerCase();
+        var count = 0;
+        var searchPos = 0;
+        while (true) {
+          var found = pageText.indexOf(termLower, searchPos);
+          if (found === -1) break;
+          count++;
+          searchPos = found + 1;
+        }
+        if (count > 0) {
+          pageMatches.push({ page: pages[i].page || (i + 1), count: count });
+          totalCount += count;
+        }
+      }
+
+      state.matches = pageMatches;
+      state.idx = pageMatches.length > 0 ? 0 : -1;
+      _docSearchUpdateCount(ctx);
+    }
+
+    function _docSearchRestoreHtml(ctx) {
+      var state = _docSearch[ctx];
+      if (!state.savedHtml) return;
+      var container = _docSearchGetReaderContainer(ctx);
+      if (container) {
+        container.innerHTML = state.savedHtml;
+      }
+      state.savedHtml = null;
+    }
+
+    function _docSearchUpdateCount(ctx) {
+      var state = _docSearch[ctx];
+      var countEl = document.getElementById(ctx + '-search-count');
+      var prevBtn = document.getElementById(ctx + '-search-prev');
+      var nextBtn = document.getElementById(ctx + '-search-next');
+      if (!countEl) return;
+
+      var viewMode = _docSearchGetViewMode(ctx);
+      if (!state.term || state.term.length < 2) {
+        countEl.textContent = '';
+        if (prevBtn) prevBtn.disabled = true;
+        if (nextBtn) nextBtn.disabled = true;
+        return;
+      }
+
+      if (viewMode === 'reader') {
+        var total = state.matches.length;
+        if (total === 0) {
+          countEl.innerHTML = '<span style="color: #e65100;">No matches</span>';
+          if (prevBtn) prevBtn.disabled = true;
+          if (nextBtn) nextBtn.disabled = true;
+        } else {
+          countEl.textContent = (state.idx + 1) + ' of ' + total;
+          if (prevBtn) prevBtn.disabled = total <= 1;
+          if (nextBtn) nextBtn.disabled = total <= 1;
+        }
+      } else {
+        var pageMatches = state.matches;
+        if (pageMatches.length === 0) {
+          countEl.innerHTML = '<span style="color: #e65100;">No matches</span>';
+          if (prevBtn) prevBtn.disabled = true;
+          if (nextBtn) nextBtn.disabled = true;
+        } else {
+          var totalCount = 0;
+          for (var i = 0; i < pageMatches.length; i++) totalCount += pageMatches[i].count;
+          var activeIdx = Math.max(0, state.idx);
+          var activePage = pageMatches[activeIdx] ? pageMatches[activeIdx].page : '?';
+          var pageList = pageMatches.map(function(m, idx) {
+            var label = 'p' + m.page + '(' + m.count + ')';
+            if (idx === activeIdx) label = '<strong>' + label + '</strong>';
+            return label;
+          }).join(', ');
+          countEl.innerHTML = totalCount + ' match' + (totalCount !== 1 ? 'es' : '') + ' &middot; Page ' + activePage + ' <span class="ds-page-hint">[' + pageList + ']</span>';
+          if (prevBtn) prevBtn.disabled = pageMatches.length <= 1;
+          if (nextBtn) nextBtn.disabled = pageMatches.length <= 1;
+        }
+      }
+    }
+
+    function docSearchNav(ctx, dir) {
+      var state = _docSearch[ctx];
+      if (state.matches.length === 0) return;
+      var viewMode = _docSearchGetViewMode(ctx);
+
+      if (viewMode === 'reader') {
+        if (state.matches[state.idx]) state.matches[state.idx].classList.remove('active');
+        state.idx += dir;
+        if (state.idx >= state.matches.length) state.idx = 0;
+        if (state.idx < 0) state.idx = state.matches.length - 1;
+        state.matches[state.idx].classList.add('active');
+        state.matches[state.idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        state.idx += dir;
+        if (state.idx >= state.matches.length) state.idx = 0;
+        if (state.idx < 0) state.idx = state.matches.length - 1;
+      }
+      _docSearchUpdateCount(ctx);
+    }
+
+    function _docSearchIsBarOpen(ctx) {
+      var bar = document.getElementById(ctx + '-search-bar');
+      return bar && bar.classList.contains('visible');
+    }
+
+    function _docSearchHandleKey(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        var evOpen = _docSearchIsBarOpen('ev');
+        var srrOpen = _docSearchIsBarOpen('srr');
+        if (evOpen || srrOpen) {
+          e.preventDefault();
+          var inp = document.getElementById((evOpen ? 'ev' : 'srr') + '-search-input');
+          if (inp) inp.focus();
+          return;
+        }
+        var evWrapper = document.getElementById('ev-inline-wrapper');
+        if (evWrapper && evWrapper.offsetParent !== null && evWrapper.style.display !== 'none' && _evState.viewerOpen) {
+          e.preventDefault();
+          docSearchToggle('ev');
+          return;
+        }
+        var srrToggle = document.getElementById('srr-view-toggle');
+        if (srrToggle && srrToggle.style.display !== 'none') {
+          e.preventDefault();
+          docSearchToggle('srr');
+          return;
+        }
+      }
+      if (e.key === 'Escape') {
+        if (_docSearchIsBarOpen('ev')) { docSearchClose('ev'); e.preventDefault(); return; }
+        if (_docSearchIsBarOpen('srr')) { docSearchClose('srr'); e.preventDefault(); return; }
+      }
+      if (e.key === 'Enter') {
+        if (_docSearchIsBarOpen('ev')) { docSearchNav('ev', e.shiftKey ? -1 : 1); e.preventDefault(); return; }
+        if (_docSearchIsBarOpen('srr')) { docSearchNav('srr', e.shiftKey ? -1 : 1); e.preventDefault(); return; }
+      }
+    }
+    document.addEventListener('keydown', _docSearchHandleKey);
+    // ========== END DOCUMENT TEXT SEARCH ==========
+
     // ========== END READER/PDF TOGGLE ==========
 
     // ========== ANCHOR SCROLL MAPPING (Evidence Viewer v2.51 Phase 5 - EVIDENCE-24) ==========
