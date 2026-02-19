@@ -2242,6 +2242,51 @@
     html[data-theme="dark"] .sm-conf-bucket.med { background: rgba(251,191,36,0.15); color: #fbbf24; }
     html[data-theme="dark"] .sm-conf-bucket.low { background: rgba(251,113,133,0.15); color: #fb7185; }
 
+    .rs-story-container { margin-bottom: 16px; }
+    .rs-section { background: var(--bg-2, #f8f9fa); border: 1px solid var(--border-1, #e0e0e0); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
+    .rs-section-header { font-size: 0.78em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--accent-2, #5c6bc0); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .rs-entity-card { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-base, #fff); border: 1px solid var(--border-1, #e0e0e0); border-radius: 6px; margin-bottom: 6px; }
+    .rs-entity-card.rs-entity-legal { border-left: 3px solid var(--ok, #43a047); }
+    .rs-entity-card.rs-entity-counter { border-left: 3px solid var(--accent-2, #5c6bc0); }
+    .rs-entity-card.rs-entity-empty { border-left: 3px solid var(--text-3, #aaa); opacity: 0.7; }
+    .rs-entity-name { font-weight: 600; font-size: 0.92em; flex-grow: 1; }
+    .rs-entity-meta { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .rs-entity-conf { font-size: 0.82em; font-weight: 600; font-family: 'Courier New', monospace; }
+    .rs-entity-row { display: flex; align-items: center; gap: 8px; padding: 4px 12px; font-size: 0.85em; color: var(--text-2, #666); }
+    .rs-entity-row-label { font-weight: 600; min-width: 110px; flex-shrink: 0; }
+    .rs-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 10px; font-size: 0.72em; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
+    .rs-badge-legal { background: var(--ok-bg, #e8f5e9); color: var(--ok, #43a047); }
+    .rs-badge-counter { background: #e8eaf6; color: #3949ab; }
+    .rs-badge-multi { background: #ede7f6; color: #7b1fa2; }
+    .rs-badge-manual { background: #fff3e0; color: #e65100; }
+    .rs-reasoning-list { list-style: none; padding: 0; margin: 0; }
+    .rs-reasoning-item { display: flex; gap: 8px; padding: 5px 0; font-size: 0.85em; color: var(--text-1, #333); line-height: 1.4; border-bottom: 1px solid var(--border-1, #f0f0f0); }
+    .rs-reasoning-item:last-child { border-bottom: none; }
+    .rs-reasoning-num { font-weight: 700; color: var(--accent-2, #5c6bc0); min-width: 18px; flex-shrink: 0; }
+    .rs-agreement-type { font-size: 0.95em; font-weight: 600; color: var(--text-1, #333); text-transform: capitalize; }
+    .rs-agreement-source { font-size: 0.78em; color: var(--text-3, #aaa); margin-top: 2px; }
+    .rs-action-item { display: flex; gap: 8px; padding: 5px 0; font-size: 0.85em; color: var(--text-1, #333); line-height: 1.4; }
+    .rs-action-icon { flex-shrink: 0; font-size: 1em; }
+    .rs-action-icon.rs-ok { color: var(--ok, #43a047); }
+    .rs-action-icon.rs-warn { color: #e65100; }
+    .rs-action-icon.rs-alert { color: var(--bad, #c62828); }
+    .rs-table-toggle { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.82em; font-weight: 600; background: var(--bg-2, #f5f5f5); border: 1px solid var(--border-1, #ddd); border-radius: 6px; cursor: pointer; color: var(--text-2, #666); margin-bottom: 8px; }
+    .rs-table-toggle:hover { background: var(--bg-3, #eee); }
+
+    html[data-theme="dark"] .rs-section { background: var(--bg-2); border-color: var(--border-1); }
+    html[data-theme="dark"] .rs-entity-card { background: var(--bg-1); border-color: var(--border-1); }
+    html[data-theme="dark"] .rs-entity-card.rs-entity-legal { border-left-color: #81c784; }
+    html[data-theme="dark"] .rs-entity-card.rs-entity-counter { border-left-color: #7c4dff; }
+    html[data-theme="dark"] .rs-badge-legal { background: rgba(76,175,80,0.15); color: #81c784; }
+    html[data-theme="dark"] .rs-badge-counter { background: rgba(139,92,246,0.15); color: #c4b5fd; }
+    html[data-theme="dark"] .rs-badge-multi { background: rgba(124,77,255,0.15); color: #b388ff; }
+    html[data-theme="dark"] .rs-badge-manual { background: rgba(255,152,0,0.15); color: #ffcc80; }
+    html[data-theme="dark"] .rs-reasoning-item { border-bottom-color: var(--border-1); color: var(--text-1); }
+    html[data-theme="dark"] .rs-reasoning-num { color: #7c4dff; }
+    html[data-theme="dark"] .rs-agreement-type { color: var(--text-1); }
+    html[data-theme="dark"] .rs-table-toggle { background: var(--bg-2); border-color: var(--border-1); color: var(--text-2); }
+    html[data-theme="dark"] .rs-table-toggle:hover { background: var(--bg-3); }
+
     /* Evidence Viewer — Layout: middle (viewer+details) | right (grid) */
     .ev-inline-wrapper { display: flex; gap: 0; width: 100%; height: calc(100vh - 280px); min-height: 500px; }
     #ev-middle-column { flex: 0 0 48%; max-width: 55%; display: none; flex-direction: column; background: var(--bg-2); border-right: 2px solid var(--border-1); overflow: hidden; }
@@ -56099,6 +56144,8 @@ var P022_RuntimeValidation = {
 
     html += _pftlRenderCorruptionSamples(r);
 
+    html += _pftlRenderResolutionStory(r);
+
     html += _pftlRenderSfMatchSection(r);
 
     var m = r.metrics || {};
@@ -56311,6 +56358,132 @@ var P022_RuntimeValidation = {
     return candidates.slice(0, 10);
   }
 
+
+  function _pftlRenderResolutionStory(r) {
+    var story = r.resolution_story;
+    if (!story) return '';
+
+    var html = '<div class="pftl-section rs-story-container">';
+    html += '<div class="pftl-section-title">Entity Resolution Story</div>';
+
+    html += _pftlRenderStoryWho(story);
+    html += _pftlRenderStoryWhy(story);
+    html += _pftlRenderStoryWhat(story);
+    html += _pftlRenderStoryAction(story);
+
+    html += '</div>';
+    return html;
+  }
+
+  function _pftlRenderStoryWho(story) {
+    var html = '<div class="rs-section">';
+    html += '<div class="rs-section-header"><span class="rs-section-icon">A.</span> Who We Think This Is</div>';
+
+    var le = story.legal_entity_account;
+    if (le) {
+      var confPct = le.confidence ? Math.round(le.confidence * 100) + '%' : '\u2014';
+      var statusLabel = le.match_status === 'match' ? 'Match' : le.match_status === 'review' ? 'Review' : 'No Match';
+      html += '<div class="rs-entity-card rs-entity-legal">';
+      html += '<span class="rs-entity-name">' + _pftlEsc(le.name) + '</span>';
+      html += '<span class="rs-entity-meta">';
+      html += '<span class="rs-badge rs-badge-legal">Legal Entity</span>';
+      html += '<span class="sm-status-badge ' + (le.match_status || '') + '">' + statusLabel + '</span>';
+      html += '<span class="rs-entity-conf">' + confPct + '</span>';
+      html += '</span></div>';
+    } else {
+      html += '<div class="rs-entity-card rs-entity-empty">';
+      html += '<span class="rs-entity-name" style="font-style:italic;color:var(--text-3,#aaa);">\u2014 no CMG-side entity identified \u2014</span>';
+      html += '</div>';
+    }
+
+    var cps = story.counterparties || [];
+    if (cps.length > 0) {
+      for (var i = 0; i < cps.length; i++) {
+        var cp = cps[i];
+        var cpPct = cp.confidence ? Math.round(cp.confidence * 100) + '%' : '\u2014';
+        var cpStatus = cp.match_status === 'match' ? 'Match' : cp.match_status === 'review' ? 'Review' : 'No Match';
+        html += '<div class="rs-entity-card rs-entity-counter">';
+        html += '<span class="rs-entity-name">' + _pftlEsc(cp.name) + '</span>';
+        html += '<span class="rs-entity-meta">';
+        if (cps.length > 1) {
+          html += '<span class="rs-badge rs-badge-multi">Multi-Counterparty</span>';
+        }
+        html += '<span class="rs-badge rs-badge-counter">Counterparty</span>';
+        html += '<span class="sm-status-badge ' + (cp.match_status || '') + '">' + cpStatus + '</span>';
+        html += '<span class="rs-entity-conf">' + cpPct + '</span>';
+        html += '</span></div>';
+      }
+    }
+
+    html += '<div class="rs-entity-row"><span class="rs-entity-row-label">Business Unit:</span><span>' + _pftlEsc(story.business_unit || '\u2014 none detected \u2014') + '</span></div>';
+    html += '<div class="rs-entity-row"><span class="rs-entity-row-label">Parent Account:</span><span>' + _pftlEsc(story.parent_account || '\u2014 none detected \u2014') + '</span></div>';
+
+    if (story.requires_manual_confirmation) {
+      html += '<div style="margin-top:8px;"><span class="rs-badge rs-badge-manual">Manual Confirmation Required</span></div>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  function _pftlRenderStoryWhy(story) {
+    var steps = story.reasoning_steps || [];
+    if (steps.length === 0) return '';
+
+    var html = '<div class="rs-section">';
+    html += '<div class="rs-section-header"><span class="rs-section-icon">B.</span> Why We Think That</div>';
+    html += '<div class="rs-reasoning-list">';
+    for (var i = 0; i < steps.length; i++) {
+      html += '<div class="rs-reasoning-item">';
+      html += '<span class="rs-reasoning-num">' + (i + 1) + '.</span>';
+      html += '<span>' + _pftlEsc(steps[i]) + '</span>';
+      html += '</div>';
+    }
+    html += '</div></div>';
+    return html;
+  }
+
+  function _pftlRenderStoryWhat(story) {
+    var agType = story.agreement_type_guess || 'unknown';
+    var html = '<div class="rs-section">';
+    html += '<div class="rs-section-header"><span class="rs-section-icon">C.</span> What This Agreement Appears To Be</div>';
+    html += '<div class="rs-agreement-type">' + _pftlEsc(agType === 'unknown' ? 'Unknown Agreement Type' : agType.charAt(0).toUpperCase() + agType.slice(1) + ' Agreement') + '</div>';
+    html += '<div class="rs-agreement-source">(inferred from title + body keywords)</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function _pftlRenderStoryAction(story) {
+    var actions = story.analyst_actions || [];
+    if (actions.length === 0) return '';
+
+    var html = '<div class="rs-section">';
+    html += '<div class="rs-section-header"><span class="rs-section-icon">D.</span> What Needs Analyst Action</div>';
+    for (var i = 0; i < actions.length; i++) {
+      var act = actions[i];
+      var iconClass = 'rs-ok';
+      var iconChar = '\u2713';
+      if (act.indexOf('confirm') >= 0 || act.indexOf('review') >= 0 || act.indexOf('Review') >= 0 || act.indexOf('Confirm') >= 0) {
+        iconClass = 'rs-warn';
+        iconChar = '\u26A0';
+      }
+      if (act.indexOf('Manual') >= 0 || act.indexOf('manual') >= 0) {
+        iconClass = 'rs-alert';
+        iconChar = '\u2716';
+      }
+      if (act.indexOf('no action required') >= 0) {
+        iconClass = 'rs-ok';
+        iconChar = '\u2713';
+      }
+      html += '<div class="rs-action-item">';
+      html += '<span class="rs-action-icon ' + iconClass + '">' + iconChar + '</span>';
+      html += '<span>' + _pftlEsc(act) + '</span>';
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
   var _PFTL_CHIP_LABELS = {
     'name_exact': 'Name Exact', 'name_fuzzy': 'Name Fuzzy',
     'address_partial': 'Address Partial', 'address_verified': 'Address Verified',
@@ -56328,6 +56501,7 @@ var P022_RuntimeValidation = {
     var matches = r.salesforce_match || [];
     if (matches.length === 0) return '';
 
+    var hasStory = !!(r.resolution_story);
     var visible = [];
     var hidden = [];
     for (var k = 0; k < matches.length; k++) {
@@ -56335,7 +56509,17 @@ var P022_RuntimeValidation = {
       else visible.push(matches[k]);
     }
 
-    var html = '<div class="pftl-section pftl-sf-match-section">';
+    var html = '';
+    if (hasStory) {
+      html += '<div class="pftl-section pftl-sf-match-section">';
+      html += '<button class="rs-table-toggle" onclick="pftlToggleSfTable()">';
+      html += '<span id="pftl-sf-table-arrow" style="font-size:0.9em;">&#9654;</span>';
+      html += '<span id="pftl-sf-table-label">Show Full Match Table</span>';
+      html += '</button>';
+      html += '<div id="pftl-sf-table-wrap" style="display:none;">';
+    } else {
+      html += '<div class="pftl-section pftl-sf-match-section">';
+    }
     html += '<div class="pftl-section-title" style="display:flex;align-items:center;gap:8px;">Salesforce Account Match';
     if (visible.length > 1) html += ' <span style="font-weight:400;font-size:0.85em;opacity:0.7;">(' + visible.length + ' accounts)</span>';
     html += ' <button onclick="pftlToggleSfDebug()" style="margin-left:auto;font-size:0.72em;padding:2px 8px;border:1px solid var(--border-1,#ddd);border-radius:4px;background:var(--bg-2,#f5f5f5);color:var(--text-2,#888);cursor:pointer;">Debug</button>';
@@ -56366,9 +56550,23 @@ var P022_RuntimeValidation = {
       html += '</tbody></table></div></details>';
     }
 
+    if (hasStory) {
+      html += '</div>';
+    }
     html += '</div>';
     return html;
   }
+
+  window.pftlToggleSfTable = function() {
+    var wrap = document.getElementById('pftl-sf-table-wrap');
+    var arrow = document.getElementById('pftl-sf-table-arrow');
+    var label = document.getElementById('pftl-sf-table-label');
+    if (!wrap) return;
+    var isVisible = wrap.style.display !== 'none';
+    wrap.style.display = isVisible ? 'none' : 'block';
+    if (arrow) arrow.innerHTML = isVisible ? '&#9654;' : '&#9660;';
+    if (label) label.textContent = isVisible ? 'Show Full Match Table' : 'Hide Full Match Table';
+  };
 
   function _pftlRenderSfRow(m, isHidden) {
     var statusLabel = m.match_status === 'match' ? 'Match' : m.match_status === 'review' ? 'Review' : 'No Match';
