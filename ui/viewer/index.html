@@ -1187,10 +1187,9 @@
     .srr-panel-left { flex: 0 0 380px; flex-shrink: 0; border-right: none; order: 3; transition: flex-basis 0.3s ease, opacity 0.3s ease; position: relative; overflow: hidden; }
     .srr-panel-left.collapsed { flex-basis: 0px; min-width: 0; overflow: hidden; opacity: 0; padding: 0; border: none; }
     .srr-panel-center { flex: 1; min-width: 300px; order: 2; }
-    .srr-panel-right { flex: 0 0 0px; flex-shrink: 0; border-left: none; order: 1; display: none; }
-    .srr-panel-right.collapsed { flex-basis: 0px; min-width: 0; overflow: hidden; opacity: 0; padding: 0; border: none; }
-    .srr-patch-expand-strip { display: none; writing-mode: vertical-rl; text-orientation: mixed; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 4px 0 0 4px; padding: 12px 6px; cursor: pointer; font-size: 0.75em; font-weight: 600; color: #1976d2; position: relative; order: 0; flex-shrink: 0; letter-spacing: 1px; }
-    .srr-patch-expand-strip:hover { background: #bbdefb; }
+    .srr-panel-right { display: none !important; width: 0 !important; flex: 0 0 0 !important; overflow: hidden !important; visibility: hidden !important; }
+    .srr-panel-right.collapsed { display: none !important; }
+    .srr-patch-expand-strip { display: none !important; }
     .srr-left-tabs { display: flex; flex-direction: column; gap: 2px; background: var(--bg-3); flex-shrink: 0; padding: 6px 3px; width: 36px; min-width: 36px; border-left: 1px solid var(--border-1); }
     .srr-left-tab { padding: 7px 0; font-size: 0.6em; font-weight: 700; color: var(--text-3); cursor: pointer; border: none; background: none; border-radius: 4px; transition: color 0.15s, background 0.15s; white-space: nowrap; text-align: center; line-height: 1.2; letter-spacing: 0.02em; }
     .srr-left-tab:hover { color: #555; background: var(--bg-4); }
@@ -4363,6 +4362,16 @@
             <div class="srr-panel-body" id="srr-field-list" style="padding: 0; flex: 1;">
               <div class="srr-empty-state">No fields loaded</div>
             </div>
+
+            <div id="srr-patch-action-bar" style="padding: 8px 12px; border-top: 1px solid var(--border-1, #e0e0e0); background: var(--bg-2, #fafbfc); flex-shrink: 0;">
+              <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                <div class="srr-patch-type-chip correction active" data-type="correction" onclick="srrOnPatchTypeChange('correction')" style="cursor:pointer;font-size:0.78em;padding:4px 10px;">Correction</div>
+                <div class="srr-patch-type-chip blacklist" data-type="blacklist" onclick="srrOnPatchTypeChange('blacklist')" style="cursor:pointer;font-size:0.78em;padding:4px 10px;">Blacklist</div>
+                <div class="srr-patch-type-chip rfi" data-type="rfi" onclick="srrOnPatchTypeChange('rfi')" style="cursor:pointer;font-size:0.78em;padding:4px 10px;">RFI</div>
+              </div>
+              <div id="srr-patch-action-summary" style="font-size:0.78em;color:var(--text-2,#888);margin-bottom:6px;">Select a field and make changes</div>
+              <button class="srr-btn srr-btn-primary" id="srr-submit-btn" onclick="srrSubmitPatchRequest()" style="width:100%;padding:8px 12px;font-size:0.85em;">Submit Patch Request</button>
+            </div>
             </div>
 
             <div class="srr-left-tab-body" id="srr-tab-glossary" data-tab="glossary">
@@ -4579,15 +4588,6 @@
                 </div>
               </div>
 
-              <!-- Spacer to push button lower -->
-              <div style="flex-grow: 1; min-height: 20px;"></div>
-              
-              <!-- Submit Section — opens modal for evidence + justification -->
-              <div class="srr-patch-section" style="margin-top: auto; padding-top: 16px; border-top: 1px solid #e0e0e0;">
-                <div class="srr-actions" style="justify-content: center;">
-                  <button class="srr-btn srr-btn-primary" id="srr-submit-btn" onclick="srrSubmitPatchRequest()" style="width:100%;">Submit Patch Request</button>
-                </div>
-              </div>
             </div><!-- end srr-tab-fields -->
             
             <!-- Patch Studio Content -->
@@ -35094,7 +35094,7 @@
       if (_gridViewMode === 'grid' && typeof eiShowTab === 'function') {
         setTimeout(function() {
           var rightPanel = document.querySelector('.srr-panel-right');
-          if (rightPanel) rightPanel.style.display = '';
+          /* v2.57: right panel permanently hidden — patch submission uses modal */
           eiShowTab();
         }, 150);
       }
@@ -36021,6 +36021,18 @@
       var countEl = document.getElementById('srr-change-count');
       var changes = Object.values(srrState.proposedChanges);
       var patchType = srrState.patchType;
+
+      var summaryEl = document.getElementById('srr-patch-action-summary');
+      if (summaryEl) {
+        var n = changes.length;
+        if (patchType === 'rfi' && srrState.rfiField) {
+          summaryEl.textContent = 'RFI: ' + (srrState.rfiField.label || srrState.rfiField.key || 'field');
+        } else if (n > 0) {
+          summaryEl.textContent = n + ' field change' + (n > 1 ? 's' : '') + ' ready to submit';
+        } else {
+          summaryEl.textContent = 'Select a field and make changes';
+        }
+      }
       
       if (!container) return;
       
