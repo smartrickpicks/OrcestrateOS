@@ -49,10 +49,10 @@ These terms are locked for all resolution-story features. All backend payloads, 
 
 | Term | Definition | Usage |
 |---|---|---|
-| `legal_entity_account` | The primary Salesforce account that owns or originates the contract. Typically the "first party" or the entity on whose behalf the agreement is executed. | Exactly one per resolution. May be `null` if unresolvable. |
-| `counterparty_account` | A Salesforce account representing the other party (or parties) to the agreement. | Zero or more per resolution. Supports multi-counterparty contracts. |
-| `business_unit` | An organizational subdivision of the legal entity (e.g., "Atlantic Records" as a division of "Warner Music Group"). | Optional. Populated only when the document or CSV data indicates a parent-child relationship. |
-| `parent_account` | The top-level Salesforce account in a corporate hierarchy. | Optional. Derived from CSV `parent_account_name` field or Salesforce hierarchy data if available. |
+| `legal_entity_account` | The CMG-side Salesforce account that owns or originates the contract. This is always the internal/CMG entity (e.g., Ostereo Limited), never the external counterparty. | Exactly one per resolution. May be `null` if no CMG-side candidate passes threshold — triggers `requires_manual_confirmation = true`. |
+| `counterparty_account` | A Salesforce account representing the external party (or parties) to the agreement (e.g., 1888 Records, Aakriti Digital). These are non-CMG entities. | Zero or more per resolution. Supports multi-counterparty contracts. |
+| `business_unit` | An organizational subdivision of the legal entity (e.g., "Atlantic Records" as a division of "Warner Music Group"). | Optional. Source precedence: Salesforce BU field > CSV BU hint > inferred mention in document > `null`. |
+| `parent_account` | The top-level Salesforce account in a corporate hierarchy. | Optional. Source precedence: Salesforce hierarchy > CSV `parent_account_name` hint > `null`. |
 | `recital_parties` | Named entities extracted from the recital/preamble block of the contract (WHEREAS clauses, "by and between" patterns). | Array of `{name, role_hint}` where `role_hint` is "first_party", "second_party", or "unknown". Not yet matched to Salesforce — raw extraction only. |
 | `agreement_type_guess` | A best-effort classification of the contract type based on title, recital text, and body keywords. | One of: `distribution`, `license`, `recording`, `publishing`, `management`, `service`, `amendment`, `unknown`. Always a guess — never authoritative. |
 | `reasoning_steps` | An ordered list of prose sentences explaining the resolution logic. | Array of strings. Each step corresponds to one evidence signal or decision. |
@@ -106,19 +106,19 @@ These terms are locked for all resolution-story features. All backend payloads, 
 │  ├───────────────────────────────────────────────────────┤  │
 │  │                                                       │  │
 │  │  ┌─── A. WHO WE THINK THIS IS ────────────────────┐  │  │
-│  │  │  Legal Entity:  [Badge] 1888 Records (87%)      │  │  │
-│  │  │  Counterparty:  [Badge] Universal Music (72%)   │  │  │
+│  │  │  Legal Entity:  [Badge] Ostereo Limited (91%)   │  │  │
+│  │  │  Counterparty:  [Badge] 1888 Records (87%)      │  │  │
 │  │  │  Business Unit: — none detected —               │  │  │
 │  │  │  Parent Account: — none detected —              │  │  │
 │  │  └────────────────────────────────────────────────┘  │  │
 │  │                                                       │  │
 │  │  ┌─── B. WHY WE THINK THAT ───────────────────────┐  │  │
-│  │  │  1. "1888 Records" found via label:value        │  │  │
+│  │  │  1. "Ostereo Limited" identified as CMG-side    │  │  │
+│  │  │     entity via known-alias match — legal entity │  │  │
+│  │  │  2. "1888 Records" found via label:value        │  │  │
 │  │  │     (Account Name: 1888 Records) — high trust   │  │  │
-│  │  │  2. Address "123 Music Row, Nashville TN 37203" │  │  │
-│  │  │     verified within 60 chars of mention         │  │  │
-│  │  │  3. "Universal Music" found via CSV phrase      │  │  │
-│  │  │     match in recital block                      │  │  │
+│  │  │  3. Address "123 Music Row, Nashville TN 37203" │  │  │
+│  │  │     verified within 150 chars of "1888 Records" │  │  │
 │  │  │  4. "Spotify" suppressed — DSP service mention  │  │  │
 │  │  └────────────────────────────────────────────────┘  │  │
 │  │                                                       │  │
@@ -128,9 +128,8 @@ These terms are locked for all resolution-story features. All backend payloads, 
 │  │  └────────────────────────────────────────────────┘  │  │
 │  │                                                       │  │
 │  │  ┌─── D. WHAT NEEDS ANALYST ACTION ───────────────┐  │  │
-│  │  │  ⚠ Confirm counterparty "Universal Music" —    │  │  │
-│  │  │    confidence below match threshold (72%)       │  │  │
-│  │  │  ✓ Legal entity "1888 Records" — high conf.    │  │  │
+│  │  │  ✓ Legal entity "Ostereo Limited" — CMG match  │  │  │
+│  │  │  ✓ Counterparty "1888 Records" — high conf.    │  │  │
 │  │  └────────────────────────────────────────────────┘  │  │
 │  │                                                       │  │
 │  │  [▸ Show Full Match Table] ← collapsed by default    │  │
@@ -165,39 +164,41 @@ The existing `run_preflight()` response in `server/preflight_engine.py` currentl
 
   "resolution_story": {
     "legal_entity_account": {
-      "id": "sf_001ABC",           // Salesforce Account ID or null
-      "name": "1888 Records",     // Display name
-      "confidence": 0.87,         // Composite score (0.0–1.0)
+      "id": "sf_003GHI",           // Salesforce Account ID or null
+      "name": "Ostereo Limited",   // CMG-side entity — always internal
+      "confidence": 0.91,         // Composite score (0.0–1.0)
       "match_status": "match",    // match | review | no-match
-      "source_type": "strict_label_value"
+      "source_type": "csv_phrase_hit",
+      "cmg_side": true            // locked: legal entity must be CMG-side
     },
     "counterparties": [
       {
-        "id": "sf_002DEF",
-        "name": "Universal Music Group",
-        "confidence": 0.72,
-        "match_status": "review",
-        "source_type": "csv_phrase_hit"
+        "id": "sf_001ABC",
+        "name": "1888 Records",    // External party — non-CMG
+        "confidence": 0.87,
+        "match_status": "match",
+        "source_type": "strict_label_value",
+        "cmg_side": false
       }
     ],
-    "business_unit": null,          // string or null
-    "parent_account": null,         // string or null
+    "business_unit": null,          // string or null (source: SF BU field > CSV hint > inferred > null)
+    "parent_account": null,         // string or null (source: SF hierarchy > CSV hint > null)
     "agreement_type_guess": "distribution",
     "reasoning_steps": [
-      "\"1888 Records\" extracted via strict label:value (Account Name: 1888 Records) — high-trust source.",
-      "Address \"123 Music Row, Nashville TN 37203\" verified within 150-char proximity window — full address match (0.30).",
-      "\"Universal Music Group\" found via CSV phrase scan in document body — medium-trust source.",
+      "\"Ostereo Limited\" identified as CMG-side entity via known-alias match — assigned as legal entity.",
+      "\"1888 Records\" extracted via strict label:value (Account Name: 1888 Records) — high-trust source, assigned as counterparty.",
+      "Address \"123 Music Row, Nashville TN 37203\" verified within 150-char proximity window of \"1888 Records\" — full address match (0.30).",
       "\"Spotify\" suppressed — recognized as DSP platform with service-context penalty (0.35).",
       "\"Distribution\" suppressed — hard denylist term (legal boilerplate)."
     ],
     "analyst_actions": [
-      "Confirm counterparty \"Universal Music Group\" — confidence (72%) below automatic match threshold.",
-      "Legal entity \"1888 Records\" passed automatic match — no action required."
+      "Legal entity \"Ostereo Limited\" passed CMG-side match — no action required.",
+      "Counterparty \"1888 Records\" passed automatic match — no action required."
     ],
-    "requires_manual_confirmation": true,
+    "requires_manual_confirmation": false,
     "recital_parties": [
-      {"name": "1888 Records LLC", "role_hint": "first_party"},
-      {"name": "Universal Music Distribution", "role_hint": "second_party"}
+      {"name": "Ostereo Limited", "role_hint": "first_party"},
+      {"name": "1888 Records LLC", "role_hint": "second_party"}
     ]
   }
 }
@@ -252,12 +253,34 @@ composite = name_evidence (≤ 0.55)
            - service_penalty (≤ 0.35)
 ```
 
-### 5.3 Multi-Counterparty Support
+### 5.3 Role-Gated Entity Selection (Locked Rule)
 
-The system does **not** force a single winner. All candidates with `composite >= DISPLAY_THRESHOLD (0.25)` are retained and displayed. The resolution story selects:
+Resolution Story role selection operates **independently** from table rendering order. The table sort (§5.6) controls debug/triage display; the role selection below controls which candidates are assigned to `legal_entity_account` vs. `counterparties[]`.
 
-- **legal_entity_account**: The highest-scoring candidate with `match` status and `source_type` of `strict_label_value` or `csv_phrase_hit`. If no `match`-status candidate exists, the highest `review`-status candidate with `source_type != header_fallback`.
-- **counterparties[]**: All remaining candidates with `composite >= REVIEW_THRESHOLD (0.40)` that are not the selected legal entity and not suppressed by service penalty.
+> **Resolution Story role selection is confidence-first within role constraints, not table-order-first.**
+
+#### 5.3.1 CMG-Side Gating for `legal_entity_account`
+
+The `legal_entity_account` **must** be a CMG-side entity. A candidate qualifies as CMG-side if it satisfies **any** of:
+
+1. **Known CMG alias set**: Candidate name matches an entry in a maintained CMG-alias list (e.g., Ostereo Limited, and any configured BU/subsidiary names).
+2. **Account type / record type hints**: CSV record has `account_type` or `record_type` indicating internal/legal-entity classification.
+3. **Parent hierarchy hints**: CSV `parent_account_name` resolves to a known CMG parent entity.
+
+**Selection logic (deterministic):**
+1. Filter all scored candidates to those satisfying CMG-side gating.
+2. Among CMG-gated candidates, select the highest-confidence candidate with `match` status.
+3. If no `match`-status CMG candidate exists, select the highest `review`-status CMG candidate.
+4. **If no CMG-side candidate passes threshold**: `legal_entity_account = null`, `requires_manual_confirmation = true`.
+
+#### 5.3.2 Counterparty Selection
+
+- **counterparties[]**: All non-CMG candidates with `composite >= REVIEW_THRESHOLD (0.40)` that are not suppressed by service penalty (i.e., not DSP platforms).
+- Multi-counterparty is supported — no forced single winner.
+
+#### 5.3.3 Multi-Counterparty Support
+
+The system does **not** force a single winner for counterparties. All candidates with `composite >= DISPLAY_THRESHOLD (0.25)` are retained and displayed in the full table. The resolution story promotes non-CMG candidates above `REVIEW_THRESHOLD` into the `counterparties[]` array.
 
 ### 5.4 Confidence Threshold Behavior
 
@@ -278,9 +301,12 @@ The system does **not** force a single winner. All candidates with `composite >=
   - `header_fallback` source: no cap
 - Generic/common tokens (`_HARD_DENYLIST`) are suppressed entirely unless extracted via `strict_label_value`.
 
-### 5.6 Sorting Order (Locked)
+### 5.6 Table Rendering Sort Order (Locked)
+
+The table sort below controls the **Full Match Table** display order only. It is intentionally separate from Resolution Story entity selection (§5.3), which uses role-gated confidence-first logic.
 
 ```python
+# Table rendering sort — review-first for analyst triage/debug
 results.sort(key=lambda r: (
     _SOURCE_TYPE_PRIORITY[r["source_type"]],     # strict=0, csv=1, header=2
     0 if status == "review" else 1 if "no-match" else 2,  # review first
@@ -288,6 +314,8 @@ results.sort(key=lambda r: (
     r["source_field"].lower(),                    # alpha tie-breaker
 ))
 ```
+
+> **Important:** Resolution Story entity selection (§5.3) does NOT read table sort order. It applies CMG-side gating to select `legal_entity_account`, then selects `counterparties[]` from remaining non-CMG candidates by confidence. Table order and story selection are independent.
 
 ---
 
@@ -343,11 +371,11 @@ Badges are rendered as inline chips next to entity names in Section A.
 
 | # | Criterion | Expected Behavior |
 |---|---|---|
-| AC-01 | 1888 Records distribution agreement | `legal_entity_account` = "1888 Records" with `match` status. "Distribution", "Trademark", "DELAY", "Image", "Mean" do NOT appear in resolution story entities. |
-| AC-02 | Aakriti contract | `legal_entity_account` = "Aakriti" (or closest CSV match). If confidence < 0.65, `requires_manual_confirmation = true`. |
+| AC-01 | 1888 Records distribution agreement | `legal_entity_account` = CMG-side entity (e.g., Ostereo Limited) with `match` status. `counterparties[]` includes "1888 Records" as external party. "Distribution", "Trademark", "DELAY", "Image", "Mean" do NOT appear in resolution story entities. |
+| AC-02 | Aakriti Digital contract | `legal_entity_account` = CMG-side entity. `counterparties[]` includes "Aakriti Digital" (or closest CSV match) as external party. If no CMG-side candidate passes threshold, `legal_entity_account = null` and `requires_manual_confirmation = true`. |
 | AC-03 | DSP-heavy document (Spotify/TikTok/Apple Music listed) | DSP names do NOT appear as `legal_entity_account` or `counterparties`. They appear only in the full table with `service_context_penalty` chip and reduced scores. |
 | AC-04 | Multi-counterparty agreement | Both counterparties appear in `counterparties[]`. `Multi-Counterparty` badge is shown. |
-| AC-05 | Strict label:value extraction | "Account Name: Acme Corp" → `legal_entity_account` with `source_type = strict_label_value` and highest priority. |
+| AC-05 | Strict label:value extraction | "Account Name: Acme Corp" → candidate with `source_type = strict_label_value` and highest extraction priority. Role assignment (legal entity vs. counterparty) determined by CMG-side gating, not source type. |
 | AC-06 | CSV phrase hit | Known account name found in body text → candidate with `source_type = csv_phrase_hit`. |
 | AC-07 | Header fallback only | When no label:value or CSV matches exist, header-fallback candidates appear with lower trust and explicit "Header Fallback" indicator. |
 
@@ -361,6 +389,8 @@ Badges are rendered as inline chips next to entity names in Section A.
 | AC-11 | Address locality | Address evidence only boosts candidates mentioned within 150-char proximity window. A street address on page 1 does NOT boost a candidate on page 8. |
 | AC-12 | Service penalty caps | `strict_label_value` source: service penalty ≤ 0.08. `csv_phrase_hit` source: ≤ 0.15 (unless known DSP). |
 | AC-13 | Two-tier context proximity | Strong cues searched in both 60-char and 120-char windows. Weak cues searched only in 60-char window. |
+| AC-13a | CMG-side gating enforced | `legal_entity_account` is always a CMG-side entity. If no CMG candidate passes threshold, `legal_entity_account = null` and `requires_manual_confirmation = true`. Non-CMG candidates never appear as `legal_entity_account`. |
+| AC-13b | Role selection independent of table sort | Changing table sort order does not change which candidate is assigned as `legal_entity_account` or `counterparty`. |
 
 ### Narrative Panel
 
@@ -400,8 +430,8 @@ Badges are rendered as inline chips next to entity names in Section A.
 
 | Fixture | Expected Legal Entity | Expected Counterparty | Key Test Points |
 |---|---|---|---|
-| 1888 Records Distribution Agreement | 1888 Records | (counterparty from recitals) | Noise suppression (Distribution, Trademark, DELAY). Source-type priority. Address locality. |
-| Aakriti Contract | Aakriti | (per document) | Low-confidence handling. Manual confirmation flag. |
+| 1888 Records Distribution Agreement | Ostereo Limited (CMG-side) | 1888 Records (external) | Noise suppression (Distribution, Trademark, DELAY). CMG-side gating. Source-type priority. Address locality. |
+| Aakriti Digital Contract | CMG-side entity | Aakriti Digital (external) | Low-confidence handling. Manual confirmation flag. CMG gating with weak signal. |
 | DSP-heavy agreement | (non-DSP entity) | (non-DSP entity) | Spotify/TikTok/Apple Music suppressed. Service penalty applied correctly. |
 | Multi-party agreement | (first party) | (second party, third party) | Multi-counterparty badge. Multiple entries in `counterparties[]`. |
 | Single-page simple contract | (labeled entity) | — | Clean extraction. No noise. No counterparty detected state. |
@@ -428,7 +458,7 @@ Badges are rendered as inline chips next to entity names in Section A.
 ```
 1. Start PDF Proxy workflow
 2. Load preflight modal for 1888 Records fixture
-3. Verify Section A shows "1888 Records" as Legal Entity with match badge
+3. Verify Section A shows CMG-side entity (e.g., Ostereo Limited) as Legal Entity, "1888 Records" as Counterparty
 4. Verify Section B shows ≥ 3 reasoning steps
 5. Verify Section C shows "Distribution Agreement"
 6. Verify Section D shows appropriate analyst actions
@@ -447,7 +477,7 @@ Badges are rendered as inline chips next to entity names in Section A.
 | # | Question | Recommendation | Blocking? |
 |---|---|---|---|
 | CQ-1 | Should recital-party parsing (P1) be implemented in this phase, or deferred to a follow-up? | **Recommend: Defer to P2 phase.** Recital parsing requires regex development and testing against diverse contract formats. The resolution story can launch with P2–P4 sources and add P1 later. The `recital_parties` field should be present in the payload but populated as `[]` initially. | Yes — determines scope of P0 backend work. |
-| CQ-2 | Should `legal_entity_account` selection require analyst confirmation before downstream use, or is it purely informational in preflight? | **Recommend: Informational only in V1.** The preflight modal is a read-only preview. Add confirmation buttons in a follow-up phase. Set `requires_manual_confirmation` flag but do not gate any workflow on it yet. | Yes — determines whether UI needs interactive confirm/reject buttons. |
+| CQ-2 | Should `legal_entity_account` selection require analyst confirmation before downstream use, or is it purely informational in preflight? | **Recommend: Informational only in V1.** The preflight modal is a read-only preview. Add confirmation buttons in a follow-up phase. Set `requires_manual_confirmation` flag but do not gate any workflow on it yet. **No workflow gating or status transition dependency on analyst confirmation in this release.** | Yes — determines whether UI needs interactive confirm/reject buttons. |
 | CQ-3 | Should `agreement_type_guess` be surfaced as a confidence-weighted guess or a deterministic classification? | **Recommend: Confidence-weighted guess.** Use keyword matching with a simple scoring heuristic (title weight > recital weight > body keyword weight). Display with "(inferred)" qualifier. | No — does not change data contract shape. |
 | CQ-4 | Should the `resolution_story` field be included in the existing `prep_export_v0` export, or in a new `prep_export_v1` format? | **Recommend: Add to existing `prep_export_v0`.** The field is additive and backward-compatible. Consumers that don't expect it will ignore it. | No — additive change. |
 
@@ -467,7 +497,7 @@ The resolution story is a presentation-layer feature built on top of the already
 
 | Task ID | Description | Dependencies | Estimate |
 |---|---|---|---|
-| P0-1 | Implement `build_resolution_story()` in `preflight_engine.py` | None | Core assembly function. Selects `legal_entity_account`, builds `counterparties[]`, generates `reasoning_steps[]` and `analyst_actions[]` from existing `salesforce_match` results. |
+| P0-1 | Implement `build_resolution_story()` in `preflight_engine.py` | None | Core assembly function. Applies CMG-side gating to select `legal_entity_account` (must be CMG entity), builds `counterparties[]` from non-CMG candidates, generates `reasoning_steps[]` and `analyst_actions[]` from existing `salesforce_match` results. |
 | P0-2 | Add `agreement_type_guess` inference | None | Keyword-based heuristic scanning title, recitals, body. Returns one of the canonical types. |
 | P0-3 | Add `recital_parties` stub | None | Empty array `[]` in V1. Field present in payload for forward compatibility. |
 | P0-4 | Wire `resolution_story` into `run_preflight()` response | P0-1, P0-2, P0-3 | Add `resolution_story` key to return dict after `salesforce_match`. |
@@ -528,6 +558,21 @@ P0-7 (after P0-4)                       P2-2 (can start after P0-3)
 
 ---
 
+## Revision Notes (Patch 2026-02-19)
+
+This patch resolves GO blockers and internal inconsistencies identified during review. No code files changed.
+
+| # | Change | Sections Affected |
+|---|---|---|
+| R1 | **Fixed role assignment contradiction.** `legal_entity_account` is now always the CMG-side entity (e.g., Ostereo Limited), never the external counterparty. `counterparty_account` is the external party (e.g., 1888 Records, Aakriti Digital). All examples, payload samples, acceptance criteria, fixture matrix, and smoke sequence updated accordingly. | §2, §3.2, §4.1, §7 (AC-01, AC-02, AC-05), §8.2, §8.5 |
+| R2 | **Added explicit CMG-side role-gating logic.** New §5.3.1 defines deterministic CMG-side gating: candidates must satisfy known-alias, account-type, or parent-hierarchy checks. If no CMG candidate passes threshold, `legal_entity_account = null` and `requires_manual_confirmation = true`. This is a locked rule. | §5.3 (new subsections §5.3.1, §5.3.2, §5.3.3) |
+| R3 | **Separated table sort from resolution story selection.** §5.6 now explicitly states table sort controls display only. Added callout: "Resolution Story role selection is confidence-first within role constraints, not table-order-first." New AC-13a and AC-13b codify this separation. | §5.3, §5.6, §7 (AC-13a, AC-13b) |
+| R4 | **Normalized naming.** Ensured "Ostereo" spelling is used consistently throughout (no "Asterio" variants present). | All sections |
+| R5 | **Clarified data source precedence for hierarchy fields.** `parent_account` and `business_unit` definitions in §2 now include explicit source precedence chains. | §2 |
+| R6 | **Clarified CQ-2 release behavior.** Added explicit statement: "No workflow gating or status transition dependency on analyst confirmation in this release." | §9 (CQ-2) |
+
+---
+
 **END OF CLARITY DOCUMENT**
 
-**GO/NO-GO: GO** — Proceed to implementation with CQ-1 (recital parsing) deferred to P2 and CQ-2 (confirmation buttons) deferred to P2.
+**GO/NO-GO: GO** — Proceed to implementation with CQ-1 (recital parsing) deferred to P2, CQ-2 (confirmation buttons) deferred to P2, and CMG-side role-gating as a P0 locked requirement.
