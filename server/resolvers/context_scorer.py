@@ -214,7 +214,9 @@ def score_service_context(full_text, candidate, positions=None, source_type="hea
             ratio = min(max_service_count / 3.0, 1.0)
             raw_penalty = round(ratio * SCORING_WEIGHTS["service_penalty_max"], 4)
 
-    if source_type == "strict_label_value":
+    if source_type == "recital_party":
+        raw_penalty = min(raw_penalty, 0.03)
+    elif source_type == "strict_label_value":
         raw_penalty = min(raw_penalty, 0.08)
     elif source_type == "csv_phrase_hit":
         if not is_dsp:

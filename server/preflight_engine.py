@@ -447,6 +447,25 @@ _HARD_DENYLIST = {
 }
 
 
+_BORNE_PHRASE_PATTERNS = [
+    "to be borne by",
+    "borne by the",
+    "shall be borne by",
+    "costs borne by",
+    "expenses borne by",
+]
+
+
+def _is_borne_in_verb_context(candidate, full_text):
+    if not full_text or candidate.lower().strip() != "borne":
+        return False
+    text_lower = full_text.lower()
+    for phrase in _BORNE_PHRASE_PATTERNS:
+        if phrase in text_lower:
+            return True
+    return False
+
+
 def _is_generic_noise(val):
     low = val.lower().strip()
     if low in _HARD_DENYLIST:
@@ -607,9 +626,10 @@ def extract_account_candidates(full_text, extracted_headers):
 
 
 _SOURCE_TYPE_PRIORITY = {
-    "strict_label_value": 0,
-    "csv_phrase_hit": 1,
-    "header_fallback": 2,
+    "recital_party": 0,
+    "strict_label_value": 1,
+    "csv_phrase_hit": 2,
+    "header_fallback": 3,
 }
 
 
@@ -929,6 +949,7 @@ def build_resolution_story(sf_match_results, full_text):
 
 def _source_type_label(source_type):
     labels = {
+        "recital_party": "contract party/recital block extraction",
         "strict_label_value": "strict label:value extraction",
         "csv_phrase_hit": "CSV phrase scan (known account match)",
         "header_fallback": "header fallback extraction",
@@ -972,11 +993,25 @@ def _run_salesforce_match(extracted_headers, full_text=""):
     if not candidate_dicts:
         return []
 
+    recital_parties = _extract_recital_parties(full_text)
+    recital_lower = {p.lower() for p in recital_parties}
+
+    seen_lower = {c["value"].lower() for c in candidate_dicts}
+    for rp in recital_parties:
+        if rp.lower() not in seen_lower and not _is_generic_noise(rp):
+            candidate_dicts.append({"value": rp, "source_type": "recital_party"})
+            seen_lower.add(rp.lower())
+
     results = []
     for cand_info in candidate_dicts:
         candidate = cand_info["value"]
         source_type = cand_info["source_type"]
         is_generic = _is_generic_noise(candidate)
+
+        if _is_borne_in_verb_context(candidate, full_text):
+            continue
+
+        is_recital = source_type == "recital_party" or candidate.lower() in recital_lower
 
         res = resolve_account(candidate)
         top_name = ""
@@ -988,18 +1023,24 @@ def _run_salesforce_match(extracted_headers, full_text=""):
         if res.get("candidates"):
             name_tier = res["candidates"][0].get("match_tier", "none")
 
+        effective_source = "recital_party" if is_recital else source_type
+
         if score_candidate is not None:
             ctx = score_candidate(full_text, candidate, name_score, name_tier,
-                                  source_type=source_type, is_generic_token=is_generic)
+                                  source_type=effective_source, is_generic_token=is_generic)
             composite = ctx["composite_score"]
             match_status = ctx["match_status"]
             evidence_chips = ctx["evidence_chips"]
             visible = ctx["visible"]
+            name_evidence = ctx["name_evidence"]
+            address_evidence = ctx["address_evidence"]
+            account_ctx = ctx["account_context_evidence"]
+            svc_penalty = ctx["service_context_penalty"]
             scoring_breakdown = {
-                "name_evidence": ctx["name_evidence"],
-                "address_evidence": ctx["address_evidence"],
-                "account_context_evidence": ctx["account_context_evidence"],
-                "service_context_penalty": ctx["service_context_penalty"],
+                "name_evidence": name_evidence,
+                "address_evidence": address_evidence,
+                "account_context_evidence": account_ctx,
+                "service_context_penalty": svc_penalty,
             }
         else:
             composite = name_score
@@ -1011,9 +1052,16 @@ def _run_salesforce_match(extracted_headers, full_text=""):
                 match_status = "no-match"
             evidence_chips = []
             visible = True
+            name_evidence = name_score
+            address_evidence = 0.0
+            account_ctx = 0.0
+            svc_penalty = 0.0
             scoring_breakdown = {"name_evidence": name_score}
 
-        pct = round(composite * 100)
+        identity_raw = name_evidence + address_evidence + account_ctx
+        identity_confidence_pct = round(min(identity_raw / 0.55, 1.0) * 100)
+        context_risk_penalty_pct = round(svc_penalty * 100)
+        final_confidence_pct = round(composite * 100)
 
         if res["classification"] == "matched":
             match_method = res["candidates"][0].get("match_tier", "exact") if res.get("candidates") else "exact"
@@ -1028,7 +1076,10 @@ def _run_salesforce_match(extracted_headers, full_text=""):
             "match_method": match_method,
             "match_score": composite,
             "name_score": name_score,
-            "confidence_pct": pct,
+            "confidence_pct": final_confidence_pct,
+            "identity_confidence_pct": identity_confidence_pct,
+            "context_risk_penalty_pct": context_risk_penalty_pct,
+            "final_confidence_pct": final_confidence_pct,
             "match_status": match_status,
             "classification": res["classification"],
             "candidates": res.get("candidates", []),
@@ -1037,13 +1088,13 @@ def _run_salesforce_match(extracted_headers, full_text=""):
             "evidence_chips": evidence_chips,
             "scoring_breakdown": scoring_breakdown,
             "visible": visible,
-            "source_type": source_type,
+            "source_type": effective_source,
             "label_value_hit": source_type == "strict_label_value",
-            "recital_party_hit": False,
+            "recital_party_hit": is_recital,
         })
 
     results.sort(key=lambda r: (
-        _SOURCE_TYPE_PRIORITY.get(r.get("source_type", "header_fallback"), 2),
+        _SOURCE_TYPE_PRIORITY.get(r.get("source_type", "header_fallback"), 3),
         0 if r["match_status"] == "review" else 1 if r["match_status"] == "no-match" else 2,
         -r["confidence_pct"],
         r["source_field"].lower(),

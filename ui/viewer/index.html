@@ -56522,10 +56522,13 @@ var P022_RuntimeValidation = {
 
   function _pftlRenderSfRow(m, isHidden) {
     var statusLabel = m.match_status === 'match' ? 'Match' : m.match_status === 'review' ? 'Review' : 'No Match';
-    var pct = m.confidence_pct || 0;
-    var bucket = _smGetConfidenceBucket(pct);
+    var identPct = m.identity_confidence_pct != null ? m.identity_confidence_pct : (m.confidence_pct || 0);
+    var finalPct = m.final_confidence_pct != null ? m.final_confidence_pct : (m.confidence_pct || 0);
+    var ctxPenPct = m.context_risk_penalty_pct || 0;
+    var pct = finalPct;
+    var bucket = _smGetConfidenceBucket(identPct);
     var bucketLabel = bucket === 'high' ? 'HIGH' : bucket === 'med' ? 'MED' : bucket === 'low' ? 'LOW' : '\u2014';
-    var pctText = pct > 0 ? pct + '%' : '\u2014';
+    var pctText = identPct > 0 ? identPct + '%' : '\u2014';
 
     var chips = m.evidence_chips || [];
     if (chips.length === 0) {
@@ -56542,6 +56545,7 @@ var P022_RuntimeValidation = {
     html += '<td><span class="sm-status-badge ' + m.match_status + '">' + statusLabel + '</span></td>';
     html += '<td><span class="sm-confidence"><span class="sm-conf-pct">' + pctText + '</span>';
     if (bucket !== 'none') html += ' <span class="sm-conf-bucket ' + bucket + '">' + bucketLabel + '</span>';
+    if (ctxPenPct > 0) html += '<div style="font-size:0.72em;color:var(--text-3,#999);margin-top:1px;">context-adjusted: ' + finalPct + '%</div>';
     html += '</span></td>';
     html += '<td><span class="sm-evidence-chips">';
     for (var ci = 0; ci < chips.length; ci++) {
@@ -56556,6 +56560,7 @@ var P022_RuntimeValidation = {
     var srcType = m.source_type || '';
     var detailParts = [];
     if (srcType) detailParts.push('source: ' + srcType);
+    if (m.recital_party_hit) detailParts.push('recital_party_hit: true');
     if (bd.name_evidence !== undefined) detailParts.push('name: ' + (bd.name_evidence || 0).toFixed(3));
     if (bd.address_evidence !== undefined) detailParts.push('addr: ' + (bd.address_evidence || 0).toFixed(3));
     if (bd.account_context_evidence !== undefined) detailParts.push('ctx: ' + (bd.account_context_evidence || 0).toFixed(3));

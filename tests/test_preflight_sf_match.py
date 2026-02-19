@@ -1434,3 +1434,138 @@ class TestNewEntryDetection:
         text = "Distribution Agreement\nBETWEEN:\nOstereo Limited\nand\nRK Entertainments Ltd\n\nBody."
         story = build_resolution_story(sf, text)
         assert any("new entry detected" in s for s in story["reasoning_steps"])
+
+
+class TestBorneSuppression:
+    def test_borne_verb_context_detected(self):
+        from server.preflight_engine import _is_borne_in_verb_context
+        assert _is_borne_in_verb_context("borne", "costs to be borne by the licensee") is True
+        assert _is_borne_in_verb_context("borne", "borne by the distributor") is True
+        assert _is_borne_in_verb_context("borne", "shall be borne by the company") is True
+
+    def test_borne_not_suppressed_without_phrase(self):
+        from server.preflight_engine import _is_borne_in_verb_context
+        assert _is_borne_in_verb_context("borne", "Borne Records is a label") is False
+
+    def test_non_borne_candidate_not_affected(self):
+        from server.preflight_engine import _is_borne_in_verb_context
+        assert _is_borne_in_verb_context("Acme Corp", "costs to be borne by Acme") is False
+
+    def test_borne_excluded_from_sf_results(self):
+        from server.preflight_engine import build_resolution_story
+        sf = [
+            {
+                "source_field": "Ostereo Limited",
+                "suggested_label": "Ostereo Limited",
+                "match_method": "exact", "match_score": 0.92, "name_score": 0.92,
+                "confidence_pct": 92, "match_status": "match",
+                "classification": "matched",
+                "candidates": [{"account_name": "Ostereo Limited", "type": "Division"}],
+                "explanation": "", "provider": "", "evidence_chips": [],
+                "scoring_breakdown": {"name_evidence": 0.50},
+                "visible": True, "source_type": "strict_label_value",
+                "label_value_hit": True, "recital_party_hit": False,
+            },
+        ]
+        text = "Distribution Agreement\nBETWEEN:\nOstereo Limited\n\ncosts to be borne by the licensee"
+        story = build_resolution_story(sf, text)
+        all_names = [cp["name"] for cp in story.get("counterparties", [])]
+        assert "borne" not in [n.lower() for n in all_names]
+
+
+class TestRecitalPartyBoost:
+    def test_recital_party_source_type(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = "BETWEEN:\nOstereo Limited\nand\n1888 Records Ltd\n\nBody text."
+        parties = _extract_recital_parties(text)
+        assert "1888 Records Ltd" in parties
+
+    def test_recital_party_marked_in_results(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = "BETWEEN:\nOstereo Limited\nand\nRK Entertainments Ltd\n\nBody text."
+        parties = _extract_recital_parties(text)
+        assert "RK Entertainments Ltd" in parties
+
+
+class TestConfidenceSplitFields:
+    def _make_row(self, source_field, name_score=0.50, svc_penalty=0.0, addr=0.0, acct_ctx=0.0):
+        name_ev = min(name_score, 1.0) * 0.55
+        composite = max(0, name_ev + addr + acct_ctx - svc_penalty)
+        identity_raw = name_ev + addr + acct_ctx
+        return {
+            "source_field": source_field,
+            "suggested_label": source_field,
+            "match_method": "exact", "match_score": composite, "name_score": name_score,
+            "confidence_pct": round(composite * 100),
+            "identity_confidence_pct": round(min(identity_raw / 0.55, 1.0) * 100),
+            "context_risk_penalty_pct": round(svc_penalty * 100),
+            "final_confidence_pct": round(composite * 100),
+            "match_status": "match", "classification": "matched",
+            "candidates": [], "explanation": "", "provider": "",
+            "evidence_chips": [], "scoring_breakdown": {"name_evidence": name_ev},
+            "visible": True, "source_type": "strict_label_value",
+            "label_value_hit": True, "recital_party_hit": False,
+        }
+
+    def test_identity_confidence_higher_than_final(self):
+        row = self._make_row("Test Corp", name_score=1.0, svc_penalty=0.10)
+        assert row["identity_confidence_pct"] >= row["final_confidence_pct"]
+
+    def test_no_penalty_identity_equals_final(self):
+        row = self._make_row("Test Corp", name_score=0.80, svc_penalty=0.0)
+        assert row["context_risk_penalty_pct"] == 0
+
+    def test_all_confidence_fields_present(self):
+        row = self._make_row("Test Corp")
+        assert "identity_confidence_pct" in row
+        assert "context_risk_penalty_pct" in row
+        assert "final_confidence_pct" in row
+
+    def test_identity_confidence_populated_from_build(self):
+        from server.preflight_engine import build_resolution_story
+        sf = [
+            {
+                "source_field": "Ostereo Limited",
+                "suggested_label": "Ostereo Limited",
+                "match_method": "exact", "match_score": 0.50, "name_score": 1.0,
+                "confidence_pct": 50,
+                "identity_confidence_pct": 100,
+                "context_risk_penalty_pct": 5,
+                "final_confidence_pct": 50,
+                "match_status": "match", "classification": "matched",
+                "candidates": [{"account_name": "Ostereo Limited", "type": "Division"}],
+                "explanation": "", "provider": "", "evidence_chips": [],
+                "scoring_breakdown": {"name_evidence": 0.55},
+                "visible": True, "source_type": "strict_label_value",
+                "label_value_hit": True, "recital_party_hit": False,
+            },
+        ]
+        story = build_resolution_story(sf, "Some text")
+        assert story["legal_entity_account"] is not None
+
+
+class TestUnresolvedCounterpartyNewEntry:
+    def test_recital_counterparty_triggers_new_entry(self):
+        from server.preflight_engine import build_resolution_story
+        sf = [
+            {
+                "source_field": "Ostereo Limited",
+                "suggested_label": "Ostereo Limited",
+                "match_method": "exact", "match_score": 0.92, "name_score": 0.92,
+                "confidence_pct": 92, "match_status": "match",
+                "classification": "matched",
+                "candidates": [{"account_name": "Ostereo Limited", "type": "Division"}],
+                "explanation": "", "provider": "", "evidence_chips": [],
+                "scoring_breakdown": {"name_evidence": 0.50},
+                "visible": True, "source_type": "strict_label_value",
+                "label_value_hit": True, "recital_party_hit": False,
+                "identity_confidence_pct": 100,
+                "context_risk_penalty_pct": 0,
+                "final_confidence_pct": 92,
+            },
+        ]
+        text = "Distribution Agreement\nBETWEEN:\nOstereo Limited\nand\nRK Entertainments Ltd\n\nBody text."
+        story = build_resolution_story(sf, text)
+        assert story["new_entry_detected"] is True
+        assert "RK Entertainments Ltd" in story["unresolved_counterparties"]
+        assert any("Create Account" in a for a in story["analyst_actions"])
