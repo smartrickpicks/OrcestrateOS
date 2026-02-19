@@ -719,7 +719,19 @@ def _extract_recital_parties(full_text):
                 continue
             if line.lower().startswith(("hereinafter", "the ", "this ", "whereas")):
                 continue
+            if any(c in line for c in ('\x00', '\x01', '\x02', '\x03', '\x04')):
+                continue
+            if re.match(r'^[^a-zA-Z0-9]+$', line):
+                continue
+            if line.endswith(':'):
+                continue
+            clause_starts = ("shall ", "will ", "may ", "subject to", "in accordance",
+                             "pursuant to", "notwithstanding", "provided that", "for the purpose")
+            if line.lower().startswith(clause_starts):
+                continue
             norm = line.lower().strip()
+            if norm in _HARD_DENYLIST or norm in _GENERIC_SINGLE_TOKENS:
+                continue
             if norm not in seen:
                 seen.add(norm)
                 parties.append(line)
@@ -800,6 +812,9 @@ def build_resolution_story(sf_match_results, full_text):
             "match_status": row.get("match_status", "no-match"),
             "source_type": row.get("source_type", "header_fallback"),
             "cmg_side": is_cmg,
+            "identity_confidence_pct": row.get("identity_confidence_pct"),
+            "context_risk_penalty_pct": row.get("context_risk_penalty_pct", 0),
+            "final_confidence_pct": row.get("final_confidence_pct"),
         }
         if sf_cands:
             entry["id"] = sf_cands[0].get("account_id") or None
@@ -883,6 +898,15 @@ def build_resolution_story(sf_match_results, full_text):
         scores = [e["confidence"] for e in close_scores]
         if max(scores) - min(scores) < 0.10:
             requires_manual = True
+
+    has_any_penalty = any(
+        row.get("context_risk_penalty_pct", 0) > 0
+        for row in sf_match_results if row.get("visible", True)
+    )
+    if has_any_penalty:
+        reasoning.append(
+            "Final confidence is identity evidence adjusted by context risk penalties (e.g., service/platform context)."
+        )
 
     agreement_type = _guess_agreement_type(full_text)
 
@@ -996,11 +1020,8 @@ def _run_salesforce_match(extracted_headers, full_text=""):
     recital_parties = _extract_recital_parties(full_text)
     recital_lower = {p.lower() for p in recital_parties}
 
-    seen_lower = {c["value"].lower() for c in candidate_dicts}
-    for rp in recital_parties:
-        if rp.lower() not in seen_lower and not _is_generic_noise(rp):
-            candidate_dicts.append({"value": rp, "source_type": "recital_party"})
-            seen_lower.add(rp.lower())
+    _MAX_RESOLVER_CANDIDATES = 24
+    candidate_dicts = candidate_dicts[:_MAX_RESOLVER_CANDIDATES]
 
     results = []
     for cand_info in candidate_dicts:

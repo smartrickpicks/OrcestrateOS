@@ -56333,7 +56333,11 @@ var P022_RuntimeValidation = {
 
     var le = story.legal_entity_account;
     if (le) {
-      var confPct = le.confidence ? Math.round(le.confidence * 100) + '%' : '\u2014';
+      var leConfRaw = le.confidence ? Math.round(le.confidence * 100) : 0;
+      var leIdentPct = le.identity_confidence_pct != null ? le.identity_confidence_pct : leConfRaw;
+      var lePenPct = le.context_risk_penalty_pct || 0;
+      var leFinalPct = le.final_confidence_pct != null ? le.final_confidence_pct : leConfRaw;
+      var confPct = leFinalPct > 0 ? leFinalPct + '%' : '\u2014';
       var statusLabel = le.match_status === 'match' ? 'Match' : le.match_status === 'review' ? 'Review' : 'No Match';
       html += '<div class="rs-entity-card rs-entity-legal">';
       html += '<span class="rs-entity-name">' + _pftlEsc(le.name) + '</span>';
@@ -56341,6 +56345,7 @@ var P022_RuntimeValidation = {
       html += '<span class="rs-badge rs-badge-legal">Legal Entity</span>';
       html += '<span class="sm-status-badge ' + (le.match_status || '') + '">' + statusLabel + '</span>';
       html += '<span class="rs-entity-conf">' + confPct + '</span>';
+      if (lePenPct > 0) html += '<span style="font-size:0.72em;color:var(--text-3,#999);margin-left:4px;" title="Identity ' + leIdentPct + '% \u2022 Risk \u2212' + lePenPct + '%">Identity ' + leIdentPct + '% \u2022 Risk \u2212' + lePenPct + '%</span>';
       html += '</span></div>';
     } else {
       html += '<div class="rs-entity-card rs-entity-empty">';
@@ -56352,7 +56357,11 @@ var P022_RuntimeValidation = {
     if (cps.length > 0) {
       for (var i = 0; i < cps.length; i++) {
         var cp = cps[i];
-        var cpPct = cp.confidence ? Math.round(cp.confidence * 100) + '%' : '\u2014';
+        var cpConfRaw = cp.confidence ? Math.round(cp.confidence * 100) : 0;
+        var cpIdentPct = cp.identity_confidence_pct != null ? cp.identity_confidence_pct : cpConfRaw;
+        var cpPenPct = cp.context_risk_penalty_pct || 0;
+        var cpFinalPct = cp.final_confidence_pct != null ? cp.final_confidence_pct : cpConfRaw;
+        var cpPct = cpFinalPct > 0 ? cpFinalPct + '%' : '\u2014';
         var cpStatus = cp.match_status === 'match' ? 'Match' : cp.match_status === 'review' ? 'Review' : 'No Match';
         html += '<div class="rs-entity-card rs-entity-counter">';
         html += '<span class="rs-entity-name">' + _pftlEsc(cp.name) + '</span>';
@@ -56363,6 +56372,7 @@ var P022_RuntimeValidation = {
         html += '<span class="rs-badge rs-badge-counter">Counterparty</span>';
         html += '<span class="sm-status-badge ' + (cp.match_status || '') + '">' + cpStatus + '</span>';
         html += '<span class="rs-entity-conf">' + cpPct + '</span>';
+        if (cpPenPct > 0) html += '<span style="font-size:0.72em;color:var(--text-3,#999);margin-left:4px;" title="Identity ' + cpIdentPct + '% \u2022 Risk \u2212' + cpPenPct + '%">Identity ' + cpIdentPct + '% \u2022 Risk \u2212' + cpPenPct + '%</span>';
         html += '</span></div>';
       }
     }
@@ -56480,7 +56490,7 @@ var P022_RuntimeValidation = {
     html += '<th>Source Text</th>';
     html += '<th>Mapped Account</th>';
     html += '<th>Match Status</th>';
-    html += '<th>Confidence</th>';
+    html += '<th>Confidence <span style="font-weight:400;font-size:0.72em;opacity:0.6;">(Identity / Final)</span></th>';
     html += '<th>Evidence</th>';
     html += '</tr></thead><tbody>';
 
@@ -56543,9 +56553,13 @@ var P022_RuntimeValidation = {
     html += '<td class="sm-source" title="' + _pftlEsc(m.source_field) + '">' + _pftlEsc(m.source_field) + '</td>';
     html += '<td class="sm-target" title="' + _pftlEsc(m.suggested_label || '') + '">' + _pftlEsc(m.suggested_label || '\u2014') + '</td>';
     html += '<td><span class="sm-status-badge ' + m.match_status + '">' + statusLabel + '</span></td>';
-    html += '<td><span class="sm-confidence"><span class="sm-conf-pct">' + pctText + '</span>';
+    html += '<td><span class="sm-confidence">';
+    html += '<div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.78em;color:var(--text-2,#888);">Identity:</span> <span class="sm-conf-pct">' + (identPct > 0 ? identPct + '%' : '\u2014') + '</span>';
     if (bucket !== 'none') html += ' <span class="sm-conf-bucket ' + bucket + '">' + bucketLabel + '</span>';
-    if (ctxPenPct > 0) html += '<div style="font-size:0.72em;color:var(--text-3,#999);margin-top:1px;">context-adjusted: ' + finalPct + '%</div>';
+    html += '</div>';
+    html += '<div style="display:flex;align-items:center;gap:4px;margin-top:2px;"><span style="font-size:0.78em;color:var(--text-2,#888);">Final:</span> <span style="font-weight:600;font-size:0.9em;">' + (finalPct > 0 ? finalPct + '%' : '\u2014') + '</span>';
+    if (ctxPenPct > 0) html += ' <span style="font-size:0.72em;padding:1px 6px;border-radius:8px;background:rgba(251,113,133,0.12);color:var(--bad,#e53935);font-weight:600;">Risk \u2212' + ctxPenPct + '%</span>';
+    html += '</div>';
     html += '</span></td>';
     html += '<td><span class="sm-evidence-chips">';
     for (var ci = 0; ci < chips.length; ci++) {

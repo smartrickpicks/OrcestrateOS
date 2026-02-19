@@ -1569,3 +1569,61 @@ class TestUnresolvedCounterpartyNewEntry:
         assert story["new_entry_detected"] is True
         assert "RK Entertainments Ltd" in story["unresolved_counterparties"]
         assert any("Create Account" in a for a in story["analyst_actions"])
+
+
+class TestConfidenceSemanticsReasoning:
+    def _make_sf_row(self, name, penalty_pct=0):
+        return {
+            "source_field": name, "suggested_label": name,
+            "match_method": "exact", "match_score": 0.50, "name_score": 1.0,
+            "confidence_pct": 50, "identity_confidence_pct": 100,
+            "context_risk_penalty_pct": penalty_pct, "final_confidence_pct": 50,
+            "match_status": "match", "classification": "matched",
+            "candidates": [{"account_name": name, "type": "Division"}],
+            "explanation": "", "provider": "", "evidence_chips": [],
+            "scoring_breakdown": {"name_evidence": 0.55, "service_context_penalty": penalty_pct / 100.0},
+            "visible": True, "source_type": "strict_label_value",
+            "label_value_hit": True, "recital_party_hit": False,
+        }
+
+    def test_semantics_line_added_when_penalty_exists(self):
+        from server.preflight_engine import build_resolution_story
+        sf = [self._make_sf_row("Ostereo Limited", penalty_pct=5)]
+        story = build_resolution_story(sf, "Some text")
+        assert any("identity evidence adjusted by context risk" in s for s in story["reasoning_steps"])
+
+    def test_semantics_line_absent_when_no_penalty(self):
+        from server.preflight_engine import build_resolution_story
+        sf = [self._make_sf_row("Ostereo Limited", penalty_pct=0)]
+        story = build_resolution_story(sf, "Some text")
+        assert not any("identity evidence adjusted by context risk" in s for s in story["reasoning_steps"])
+
+    def test_story_entity_has_confidence_split(self):
+        from server.preflight_engine import build_resolution_story
+        sf = [self._make_sf_row("Ostereo Limited", penalty_pct=5)]
+        story = build_resolution_story(sf, "Some text")
+        le = story["legal_entity_account"]
+        assert le is not None
+        assert le["identity_confidence_pct"] == 100
+        assert le["context_risk_penalty_pct"] == 5
+        assert le["final_confidence_pct"] == 50
+
+
+class TestResolverCandidateCap:
+    def test_recital_parties_not_in_resolver(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = "BETWEEN:\nOstereo Limited\nand\n1888 Records Ltd\n\nBody text."
+        parties = _extract_recital_parties(text)
+        assert len(parties) >= 1
+
+    def test_extract_rejects_clause_lines(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = "BETWEEN:\nOstereo Limited\nshall be responsible\nand\n1888 Records Ltd\n\nBody."
+        parties = _extract_recital_parties(text)
+        assert "shall be responsible" not in parties
+
+    def test_extract_rejects_colon_labels(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = "BETWEEN:\nParty A:\nOstereo Limited\nand\n1888 Records Ltd\n\nBody."
+        parties = _extract_recital_parties(text)
+        assert "Party A:" not in parties
