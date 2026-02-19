@@ -2189,18 +2189,29 @@
     .sync-run-btn { padding: 6px 16px; background: var(--accent-2); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 600; }
     .sync-run-btn:hover { background: #0d47a1; }
     .sync-run-btn:disabled { background: var(--border-2); cursor: not-allowed; }
-    .sync-group { margin-bottom: 14px; }
-    .sync-group-header { font-size: 0.82em; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border-1); }
-    .sync-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-1); border: 1px solid var(--border-1); border-radius: 6px; margin-bottom: 4px; font-size: 0.85em; }
-    .sync-row:hover { border-color: #90caf9; }
-    .sync-source { font-weight: 600; color: var(--text-2); min-width: 150px; flex-shrink: 0; }
-    .sync-arrow { color: #999; font-size: 0.9em; }
-    .sync-target { color: var(--accent-2); font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .sync-score { font-size: 0.75em; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
-    .sync-score.high { background: var(--ok-bg); color: var(--ok); }
-    .sync-score.medium { background: #fff8e1; color: #f57f17; }
-    .sync-score.low { background: var(--bad-bg); color: var(--bad); }
-    .sync-score.none { background: var(--bg-base); color: var(--text-3); }
+    .sync-matrix-wrap { overflow-x: auto; margin-top: 4px; }
+    .sync-matrix { width: 100%; border-collapse: collapse; font-size: 0.84em; }
+    .sync-matrix thead { position: sticky; top: 0; z-index: 2; }
+    .sync-matrix thead th { padding: 8px 10px; text-align: left; font-weight: 700; font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.5px; background: var(--table-head-bg, var(--bg-2)); color: var(--table-head-text, var(--text-3)); border-bottom: 2px solid var(--border-1); white-space: nowrap; }
+    .sync-matrix tbody td { padding: 7px 10px; border-bottom: 1px solid var(--border-1); vertical-align: middle; color: var(--text-2); }
+    .sync-matrix tbody tr { background: var(--table-row-bg, var(--bg-1)); }
+    .sync-matrix tbody tr:nth-child(even) { background: var(--table-row-alt, var(--bg-base, #fafafa)); }
+    .sync-matrix tbody tr:hover { background: var(--table-row-hover, #e3f2fd); }
+    .sync-matrix .sm-source { font-weight: 600; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sync-matrix .sm-target { color: var(--accent-2); font-weight: 500; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sm-status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 10px; font-size: 0.82em; font-weight: 600; white-space: nowrap; }
+    .sm-status-badge.match { background: var(--ok-bg); color: var(--ok); }
+    .sm-status-badge.review { background: #fff8e1; color: #e65100; }
+    .sm-status-badge.no-match { background: var(--bg-base, #f5f5f5); color: var(--text-3); }
+    .sm-confidence { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .sm-conf-pct { font-weight: 700; font-size: 0.95em; }
+    .sm-conf-bucket { font-size: 0.72em; padding: 1px 6px; border-radius: 8px; font-weight: 600; text-transform: uppercase; }
+    .sm-conf-bucket.high { background: var(--ok-bg); color: var(--ok); }
+    .sm-conf-bucket.med { background: #fff8e1; color: #f57f17; }
+    .sm-conf-bucket.low { background: var(--bad-bg); color: var(--bad); }
+    .sm-conf-bucket.none { background: var(--bg-base); color: var(--text-3); }
+    .sm-evidence-chips { display: flex; gap: 3px; flex-wrap: wrap; }
+    .sm-evidence-chip { font-size: 0.72em; padding: 1px 6px; border-radius: 6px; background: var(--chip-bg, #e8eaf6); color: var(--chip-text, #3949ab); border: 1px solid var(--chip-border, #c5cae9); white-space: nowrap; }
     .sync-actions { display: flex; gap: 4px; flex-shrink: 0; }
     .sync-accept-btn { padding: 3px 10px; background: #4caf50; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: 600; }
     .sync-accept-btn:hover { background: var(--ok); }
@@ -2213,6 +2224,17 @@
     .sync-stats { display: flex; gap: 16px; margin-bottom: 12px; }
     .sync-stat { font-size: 0.82em; color: var(--text-3); }
     .sync-stat strong { color: var(--text-2); }
+    .sm-hidden-section { margin-top: 10px; }
+    .sm-hidden-toggle { background: none; border: 1px solid var(--border-1); border-radius: 6px; padding: 5px 12px; font-size: 0.8em; color: var(--text-3); cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .sm-hidden-toggle:hover { background: var(--bg-2); }
+    .sm-hidden-body { margin-top: 6px; }
+    .sm-hidden-body.collapsed { display: none; }
+    html[data-theme="dark"] .sync-matrix tbody tr:hover { background: var(--table-row-hover, rgba(96,165,250,0.08)); }
+    html[data-theme="dark"] .sm-status-badge.review { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    html[data-theme="dark"] .sm-status-badge.no-match { background: rgba(142,162,200,0.12); color: #8ea2c8; }
+    html[data-theme="dark"] .sm-evidence-chip { background: rgba(139,92,246,0.12); color: #c4b5fd; border-color: rgba(139,92,246,0.25); }
+    html[data-theme="dark"] .sm-conf-bucket.med { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    html[data-theme="dark"] .sm-conf-bucket.low { background: rgba(251,113,133,0.15); color: #fb7185; }
 
     /* Evidence Viewer — Layout: middle (viewer+details) | right (grid) */
     .ev-inline-wrapper { display: flex; gap: 0; width: 100%; height: calc(100vh - 280px); min-height: 500px; }
@@ -17557,6 +17579,81 @@
       }
     }
 
+    function _smGetMatchStatus(sug) {
+      if (!sug) return 'no-match';
+      var method = sug.match_method || 'none';
+      if (method === 'none') return 'no-match';
+      var pct = _smGetConfidencePct(sug);
+      if (pct >= 80) return 'match';
+      if (pct >= 40) return 'review';
+      return 'no-match';
+    }
+
+    function _smGetConfidencePct(sug) {
+      if (!sug) return 0;
+      if (sug.confidence_pct != null) return sug.confidence_pct;
+      if (sug.match_score > 0) return Math.round(sug.match_score * 100);
+      return 0;
+    }
+
+    function _smGetConfidenceBucket(pct) {
+      if (pct >= 80) return 'high';
+      if (pct >= 60) return 'med';
+      if (pct > 0) return 'low';
+      return 'none';
+    }
+
+    function _smStatusPriority(status) {
+      if (status === 'review') return 0;
+      if (status === 'no-match') return 1;
+      return 2;
+    }
+
+    function _smSortSuggestions(suggestions) {
+      var sorted = suggestions.slice();
+      sorted.sort(function(a, b) {
+        var sa = _smGetMatchStatus(a);
+        var sb = _smGetMatchStatus(b);
+        var pa = _smStatusPriority(sa);
+        var pb = _smStatusPriority(sb);
+        if (pa !== pb) return pa - pb;
+        var ca = _smGetConfidencePct(a);
+        var cb = _smGetConfidencePct(b);
+        if (ca !== cb) return cb - ca;
+        var na = (a.source_field || '').toLowerCase();
+        var nb = (b.source_field || '').toLowerCase();
+        return na < nb ? -1 : na > nb ? 1 : 0;
+      });
+      return sorted;
+    }
+
+    function _smGetEvidenceChips(sug) {
+      var chips = [];
+      var method = sug.match_method || 'none';
+      var methodLabels = {
+        'alias_exact': 'Alias', 'exact': 'Exact', 'phrase_fuzzy': 'Fuzzy',
+        'fuzzy': 'Fuzzy', 'token_overlap': 'Keyword', 'keyword': 'Keyword', 'none': ''
+      };
+      if (methodLabels[method]) chips.push(methodLabels[method]);
+      if (sug.match_reason) chips.push(sug.match_reason);
+      if (sug.glossary_category) chips.push(sug.glossary_category);
+      if (sug.body_source) chips.push('BODY');
+      return chips;
+    }
+
+    var _smHiddenExpanded = false;
+
+    function _smToggleHidden() {
+      _smHiddenExpanded = !_smHiddenExpanded;
+      var body = document.getElementById('sm-hidden-body');
+      var toggle = document.getElementById('sm-hidden-toggle');
+      if (body) body.className = 'sm-hidden-body' + (_smHiddenExpanded ? '' : ' collapsed');
+      if (toggle) {
+        var chevron = toggle.querySelector('.sm-hidden-chevron');
+        if (chevron) chevron.innerHTML = _smHiddenExpanded ? '&#9660;' : '&#9654;';
+      }
+    }
+
     function _syncRenderSuggestions() {
       var list = document.getElementById('sync-suggestions-list');
       var statsEl = document.getElementById('sync-stats');
@@ -17569,80 +17666,115 @@
         return;
       }
 
-      var groups = { exact: [], fuzzy: [], keyword: [], none: [] };
-      var methodGroupMap = {
-        'alias_exact': 'exact', 'exact': 'exact',
-        'phrase_fuzzy': 'fuzzy', 'fuzzy': 'fuzzy',
-        'token_overlap': 'keyword', 'keyword': 'keyword',
-        'none': 'none'
-      };
-      var counts = { total: suggestions.length, pending: 0, accepted: 0, rejected: 0 };
+      var counts = { total: suggestions.length, pending: 0, accepted: 0, rejected: 0, matchCount: 0, reviewCount: 0, noMatchCount: 0 };
       for (var i = 0; i < suggestions.length; i++) {
         var s = suggestions[i];
-        var method = s.match_method || 'none';
-        var groupKey = methodGroupMap[method] || 'none';
-        groups[groupKey].push(s);
         if (s.status === 'pending') counts.pending++;
         else if (s.status === 'accepted') counts.accepted++;
         else if (s.status === 'rejected') counts.rejected++;
+        var ms = _smGetMatchStatus(s);
+        if (ms === 'match') counts.matchCount++;
+        else if (ms === 'review') counts.reviewCount++;
+        else counts.noMatchCount++;
       }
 
       if (statsEl) {
         statsEl.style.display = 'flex';
         statsEl.innerHTML =
           '<div class="sync-stat"><strong>' + counts.total + '</strong> total</div>' +
-          '<div class="sync-stat"><strong>' + counts.pending + '</strong> pending</div>' +
+          '<div class="sync-stat" style="color: var(--ok, #2e7d32);"><strong>' + counts.matchCount + '</strong> matched</div>' +
+          '<div class="sync-stat" style="color: #e65100;"><strong>' + counts.reviewCount + '</strong> review</div>' +
+          '<div class="sync-stat" style="color: var(--text-3);"><strong>' + counts.noMatchCount + '</strong> no match</div>' +
           '<div class="sync-stat" style="color: #2e7d32;"><strong>' + counts.accepted + '</strong> accepted</div>' +
           '<div class="sync-stat" style="color: #c62828;"><strong>' + counts.rejected + '</strong> declined</div>';
       }
 
-      var groupLabels = {
-        exact: 'Exact Matches',
-        fuzzy: 'Fuzzy Matches',
-        keyword: 'Keyword Matches',
-        none: 'Unmatched Fields'
-      };
+      var sorted = _smSortSuggestions(suggestions);
 
-      var html = '';
-      var order = ['exact', 'fuzzy', 'keyword', 'none'];
-      for (var gi = 0; gi < order.length; gi++) {
-        var gKey = order[gi];
-        var items = groups[gKey];
-        if (!items || items.length === 0) continue;
-        html += '<div class="sync-group">';
-        html += '<div class="sync-group-header">' + groupLabels[gKey] + ' (' + items.length + ')</div>';
-        for (var si = 0; si < items.length; si++) {
-          var sug = items[si];
-          var pct = sug.confidence_pct != null ? sug.confidence_pct : (sug.match_score > 0 ? Math.round(sug.match_score * 100) : 0);
-          var scoreClass = pct >= 80 ? 'high' : pct >= 60 ? 'medium' : pct > 0 ? 'low' : 'none';
-          var scoreText = pct > 0 ? pct + '%' : '--';
-          var targetText = sug.suggested_label || sug.suggested_term_id || '(no match)';
+      var HIDDEN_THRESHOLD = 20;
+      var visibleRows = [];
+      var hiddenRows = [];
+      for (var vi = 0; vi < sorted.length; vi++) {
+        var pctV = _smGetConfidencePct(sorted[vi]);
+        var methodV = sorted[vi].match_method || 'none';
+        if (methodV === 'none' && pctV === 0 && sorted[vi].status !== 'accepted' && sorted[vi].status !== 'rejected') {
+          hiddenRows.push(sorted[vi]);
+        } else if (pctV < HIDDEN_THRESHOLD && methodV === 'none') {
+          hiddenRows.push(sorted[vi]);
+        } else {
+          visibleRows.push(sorted[vi]);
+        }
+      }
 
-          html += '<div class="sync-row" data-sug-id="' + sug.id + '">';
-          html += '<span class="sync-source">' + _escHtml(sug.source_field) + '</span>';
-          html += '<span class="sync-arrow">&rarr;</span>';
-          html += '<span class="sync-target">' + _escHtml(targetText) + '</span>';
-          html += '<span class="sync-score ' + scoreClass + '">' + scoreText + '</span>';
+      function buildTableHtml(rows) {
+        var h = '';
+        for (var ri = 0; ri < rows.length; ri++) {
+          var sug = rows[ri];
+          var pct = _smGetConfidencePct(sug);
+          var bucket = _smGetConfidenceBucket(pct);
+          var matchStatus = _smGetMatchStatus(sug);
+          var targetText = sug.suggested_label || sug.suggested_term_id || '\u2014';
+          var statusLabel = matchStatus === 'match' ? 'Match' : matchStatus === 'review' ? 'Review' : 'No Match';
+          var pctText = pct > 0 ? pct + '%' : '\u2014';
+          var bucketLabel = bucket === 'high' ? 'HIGH' : bucket === 'med' ? 'MED' : bucket === 'low' ? 'LOW' : '\u2014';
+          var chips = _smGetEvidenceChips(sug);
 
-          if (sug.match_method !== 'none') {
-            html += '<span class="sync-match-actions" style="display:flex;gap:3px;margin-right:4px;">';
-            html += '<button onclick="_syncShowMatches(\'' + sug.id + '\')" style="font-size:0.7em;padding:2px 6px;background:#fff8e1;border:1px solid #ffe082;border-radius:3px;cursor:pointer;color:#f57f17;" title="Highlight matched keywords in Reader">Show</button>';
-            html += '<button onclick="_syncClearMatches()" style="font-size:0.7em;padding:2px 6px;background:#f5f5f5;border:1px solid #ddd;border-radius:3px;cursor:pointer;color:#888;" title="Clear highlights">Clear</button>';
-            html += '</span>';
+          h += '<tr data-sug-id="' + sug.id + '">';
+          h += '<td class="sm-source" title="' + _escHtml(sug.source_field) + '">' + _escHtml(sug.source_field) + '</td>';
+          h += '<td class="sm-target" title="' + _escHtml(targetText) + '">' + _escHtml(targetText) + '</td>';
+          h += '<td><span class="sm-status-badge ' + matchStatus + '">' + statusLabel + '</span></td>';
+          h += '<td><span class="sm-confidence"><span class="sm-conf-pct">' + pctText + '</span>';
+          if (bucket !== 'none') h += ' <span class="sm-conf-bucket ' + bucket + '">' + bucketLabel + '</span>';
+          h += '</span></td>';
+          h += '<td><span class="sm-evidence-chips">';
+          for (var ci = 0; ci < chips.length; ci++) {
+            h += '<span class="sm-evidence-chip">' + _escHtml(chips[ci]) + '</span>';
           }
+          h += '</span></td>';
+          h += '<td>';
           if (sug.status === 'pending') {
-            html += '<div class="sync-actions">';
-            html += '<button class="sync-accept-btn" onclick="_syncAccept(\'' + sug.id + '\', ' + (sug.version || 1) + ')">Accept</button>';
-            html += '<button class="sync-reject-btn" onclick="_syncReject(\'' + sug.id + '\', ' + (sug.version || 1) + ')">Decline</button>';
-            html += '</div>';
+            h += '<div class="sync-actions">';
+            h += '<button class="sync-accept-btn" onclick="_syncAccept(\'' + sug.id + '\', ' + (sug.version || 1) + ')">Accept</button>';
+            h += '<button class="sync-reject-btn" onclick="_syncReject(\'' + sug.id + '\', ' + (sug.version || 1) + ')">Decline</button>';
+            if (sug.match_method !== 'none') {
+              h += '<button onclick="_syncShowMatches(\'' + sug.id + '\')" style="font-size:0.7em;padding:2px 6px;background:var(--chip-bg, #fff8e1);border:1px solid var(--chip-border, #ffe082);border-radius:3px;cursor:pointer;color:var(--chip-text, #f57f17);margin-left:2px;" title="Show in Reader">Show</button>';
+            }
+            h += '</div>';
           } else {
             var badgeLabel = sug.status === 'rejected' ? 'declined' : sug.status;
-            html += '<span class="sync-status-badge ' + sug.status + '">' + badgeLabel + '</span>';
+            h += '<span class="sync-status-badge ' + sug.status + '">' + badgeLabel + '</span>';
           }
-          html += '</div>';
+          h += '</td>';
+          h += '</tr>';
         }
-        html += '</div>';
+        return h;
       }
+
+      var html = '<div class="sync-matrix-wrap"><table class="sync-matrix"><thead><tr>';
+      html += '<th>Source Field</th>';
+      html += '<th>Suggested Canonical</th>';
+      html += '<th>Match Status</th>';
+      html += '<th>Confidence</th>';
+      html += '<th>Evidence / Reason</th>';
+      html += '<th>Actions</th>';
+      html += '</tr></thead><tbody>';
+      html += buildTableHtml(visibleRows);
+      html += '</tbody></table></div>';
+
+      if (hiddenRows.length > 0) {
+        html += '<div class="sm-hidden-section">';
+        html += '<button class="sm-hidden-toggle" id="sm-hidden-toggle" onclick="_smToggleHidden()">';
+        html += '<span class="sm-hidden-chevron">&#9654;</span> Hidden / Low-signal fields (' + hiddenRows.length + ')';
+        html += '</button>';
+        html += '<div class="sm-hidden-body collapsed" id="sm-hidden-body">';
+        html += '<div class="sync-matrix-wrap"><table class="sync-matrix"><thead><tr>';
+        html += '<th>Source Field</th><th>Suggested Canonical</th><th>Match Status</th><th>Confidence</th><th>Evidence / Reason</th><th>Actions</th>';
+        html += '</tr></thead><tbody>';
+        html += buildTableHtml(hiddenRows);
+        html += '</tbody></table></div>';
+        html += '</div></div>';
+      }
+
       list.innerHTML = html;
     }
 
