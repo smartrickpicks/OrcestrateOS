@@ -21965,7 +21965,7 @@
 
       html += '<div class="srr-left-tabs" id="grid-drawer-tabs">';
       html += '<button class="srr-left-tab' + (activeTab === 'edit' ? ' active' : '') + '" data-tab="edit" onclick="_gridDrawerSwitchTab(\'edit\')" title="Edit Fields">Edit</button>';
-      html += '<button class="srr-left-tab' + (activeTab === 'patch' ? ' active' : '') + '" data-tab="patch" onclick="_gridDrawerSwitchTab(\'patch\')" title="Patch Studio" style="position:relative;">Patch';
+      html += '<button class="srr-left-tab" data-tab="patch" onclick="_gridDrawerOpenPatchModal()" title="Submit Patch" style="position:relative;">Pa';
       if (editCount > 0) {
         html += '<span id="grid-drawer-patch-badge" style="position:absolute;top:2px;right:2px;background:#c62828;color:#fff;font-size:0.6em;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1;">' + editCount + '</span>';
       }
@@ -22368,10 +22368,9 @@
       window._gridDrawerContext = null;
     }
 
-    function _gridDrawerSubmit() {
+    function _gridDrawerOpenPatchModal() {
       var ctx = window._gridDrawerContext;
-      if (!ctx) return;
-      console.log('[PATCHSTUDIO-D12] submit_attempted', { source: 'grid_drawer', patchType: ctx.patchType || 'correction' });
+      if (!ctx) { showToast('No context available', 'warning'); return; }
       var patchType = ctx.patchType || 'correction';
       var pendingEdits = ctx._pendingEdits || {};
       var oldVals = window._gridDrawerOldValues || {};
@@ -22381,8 +22380,10 @@
         var fk = editKeys[i];
         changes.push({ field: fk, label: fk, from: oldVals[fk] || '', to: pendingEdits[fk] });
       }
-      if (changes.length === 0 && patchType !== 'rfi') { console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'no_changes', source: 'grid_drawer' }); showToast('No changes entered', 'warning'); return; }
-
+      if (changes.length === 0 && patchType !== 'rfi') {
+        showToast('Make edits first, then submit', 'info');
+        return;
+      }
       srrState.patchType = patchType;
       srrState.proposedChanges = {};
       for (var j = 0; j < changes.length; j++) {
@@ -22390,8 +22391,11 @@
       }
       srrState._gridDrawerSource = true;
       srrState._gridDrawerCtx = ctx;
-
       _patchModalOpen(patchType, changes, '');
+    }
+
+    function _gridDrawerSubmit() {
+      _gridDrawerOpenPatchModal();
       _gridCloseDrawer();
     }
 
