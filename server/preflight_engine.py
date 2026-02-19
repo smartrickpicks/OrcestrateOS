@@ -774,6 +774,7 @@ def normalize_party_candidate(raw):
     raw = re.sub(r'\s*\(.*?\)\s*$', '', raw).strip()
     raw = re.sub(r'\s*\(\s*c\/o[^)\n]*(?:\)|$)\s*', '', raw, flags=re.IGNORECASE).strip()
     raw = re.sub(r'\s*\(\s*care of[^)\n]*(?:\)|$)\s*', '', raw, flags=re.IGNORECASE).strip()
+    raw = re.sub(r'^c\s*/\s*o\b.*$', '', raw, flags=re.IGNORECASE).strip()
     raw = re.sub(r'^(and|AND|&)\s+', '', raw).strip()
     if " of " in raw.lower():
         head, tail = re.split(r'\bof\b', raw, maxsplit=1, flags=re.IGNORECASE)
@@ -838,6 +839,8 @@ def is_plausible_party_name(name):
     if low in ("and", "or", "by", "between", "of", "the"):
         return False
     if low.startswith("of "):
+        return False
+    if re.match(r'^c\s*/\s*o\b', low):
         return False
     if low in _GENERIC_ROLE_NOUNS:
         return False
