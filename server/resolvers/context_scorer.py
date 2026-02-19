@@ -25,16 +25,22 @@ DISPLAY_THRESHOLD = 0.25
 MATCH_THRESHOLD = 0.65
 REVIEW_THRESHOLD = 0.40
 
-PROXIMITY_CHARS = 200
+PROXIMITY_STRICT = 60
+PROXIMITY_SOFT = 120
 
-_ACCOUNT_CONTEXT_CUES = [
+_STRONG_ACCOUNT_CUES = [
     "account name", "company name", "legal name", "artist name",
     "party", "licensee", "licensor",
-    "billing address", "address",
-    "registered office", "entity", "corporation",
-    "limited", "llc", "inc", "ltd", "corp",
+    "billing address", "registered office",
     "counterparty", "payee", "vendor",
 ]
+
+_WEAK_ACCOUNT_CUES = [
+    "limited", "llc", "inc", "ltd", "corp",
+    "corporation",
+]
+
+_ALL_ACCOUNT_CUES = _STRONG_ACCOUNT_CUES + _WEAK_ACCOUNT_CUES
 
 _SERVICE_CONTEXT_PHRASES = [
     "available on", "streaming on", "listen on",
@@ -52,7 +58,7 @@ _DSP_NAMES = {
 }
 
 _ADDRESS_RE = re.compile(
-    r'(?:(?:\d{1,5}\s+[\w\s]{2,30}(?:street|st|avenue|ave|road|rd|drive|dr|boulevard|blvd|lane|ln|way|court|ct|place|pl|circle|cir))'
+    r'(?:(?:\d{1,5}[ \t]+[\w ]{2,30}(?:street|st|avenue|ave|road|rd|drive|dr|boulevard|blvd|lane|ln|way|court|ct|place|pl|circle|cir))'
     r'|(?:p\.?\s*o\.?\s*box\s+\d+)'
     r'|(?:suite\s+\d+[a-z]?)'
     r'|(?:\b[A-Z][a-z]+(?:\s[A-Z][a-z]+)?,?\s*[A-Z]{2}\s+\d{5}(?:-\d{4})?)'
@@ -83,10 +89,19 @@ def _find_candidate_positions(text_lower, candidate_lower):
     return positions
 
 
-def _get_proximity_window(text, pos, candidate_len, radius=PROXIMITY_CHARS):
+def _get_proximity_window(text, pos, candidate_len, radius):
     start = max(0, pos - radius)
     end = min(len(text), pos + candidate_len + radius)
     return text[start:end].lower()
+
+
+ADDRESS_PROXIMITY_CHARS = 150
+
+
+def _get_address_window(text, pos, candidate_len):
+    start = max(0, pos - ADDRESS_PROXIMITY_CHARS)
+    end = min(len(text), pos + candidate_len + ADDRESS_PROXIMITY_CHARS)
+    return text[start:end]
 
 
 def score_account_context(full_text, candidate, positions=None):
@@ -104,59 +119,108 @@ def score_account_context(full_text, candidate, positions=None):
 
     cand_tokens = set(cand_lower.split())
 
-    max_cue_count = 0
+    best_strong = 0
+    best_weak = 0
     for pos in positions:
-        window = _get_proximity_window(full_text, pos, len(candidate))
-        window_without_cand = window.replace(cand_lower, " ")
-        cue_count = 0
-        for cue in _ACCOUNT_CONTEXT_CUES:
+        window_strict = _get_proximity_window(full_text, pos, len(candidate), PROXIMITY_STRICT)
+        window_soft = _get_proximity_window(full_text, pos, len(candidate), PROXIMITY_SOFT)
+        window_strict_clean = window_strict.replace(cand_lower, " ")
+        window_soft_clean = window_soft.replace(cand_lower, " ")
+
+        strong_count = 0
+        weak_count = 0
+        for cue in _STRONG_ACCOUNT_CUES:
             cue_tokens = set(cue.split())
             if cue_tokens & cand_tokens:
                 continue
-            if cue in window_without_cand:
-                cue_count += 1
-        max_cue_count = max(max_cue_count, cue_count)
+            if cue in window_strict_clean:
+                strong_count += 1
+            elif cue in window_soft_clean:
+                strong_count += 1
 
-    if max_cue_count == 0:
+        for cue in _WEAK_ACCOUNT_CUES:
+            cue_tokens = set(cue.split())
+            if cue_tokens & cand_tokens:
+                continue
+            if cue in window_strict_clean:
+                weak_count += 1
+
+        if strong_count > best_strong:
+            best_strong = strong_count
+            best_weak = weak_count
+        elif strong_count == best_strong and weak_count > best_weak:
+            best_weak = weak_count
+
+    if best_strong == 0 and best_weak == 0:
         return 0.0, False
 
-    ratio = min(max_cue_count / 4.0, 1.0)
+    if best_strong == 0:
+        ratio = min(best_weak / 4.0, 0.25)
+    else:
+        total = best_strong + min(best_weak, 2) * 0.3
+        ratio = min(total / 4.0, 1.0)
+
     return round(ratio * SCORING_WEIGHTS["account_context_max"], 4), True
 
 
-def score_service_context(full_text, candidate, positions=None):
+def score_service_context(full_text, candidate, positions=None, source_type="header_fallback"):
     if not full_text or not candidate:
         return 0.0, False
 
     text_lower = full_text.lower()
     cand_lower = candidate.lower()
 
-    if cand_lower in _DSP_NAMES:
-        return SCORING_WEIGHTS["service_penalty_max"], True
+    is_dsp = cand_lower in _DSP_NAMES
 
-    if positions is None:
-        positions = _find_candidate_positions(text_lower, cand_lower)
+    if is_dsp:
+        raw_penalty = SCORING_WEIGHTS["service_penalty_max"]
+    else:
+        if positions is None:
+            positions = _find_candidate_positions(text_lower, cand_lower)
 
-    if not positions:
-        return 0.0, False
+        if not positions:
+            return 0.0, False
 
-    max_service_count = 0
-    for pos in positions:
-        window = _get_proximity_window(full_text, pos, len(candidate))
-        svc_count = 0
-        for phrase in _SERVICE_CONTEXT_PHRASES:
-            if phrase in window:
-                svc_count += 1
-        for dsp in _DSP_NAMES:
-            if dsp in window and dsp != cand_lower:
-                svc_count += 1
-        max_service_count = max(max_service_count, svc_count)
+        max_service_count = 0
+        for pos in positions:
+            window = _get_proximity_window(full_text, pos, len(candidate), PROXIMITY_STRICT)
+            svc_count = 0
+            for phrase in _SERVICE_CONTEXT_PHRASES:
+                if phrase in window:
+                    svc_count += 1
+            for dsp in _DSP_NAMES:
+                if dsp in window and dsp != cand_lower:
+                    svc_count += 1
+            max_service_count = max(max_service_count, svc_count)
 
-    if max_service_count == 0:
-        return 0.0, False
+        if max_service_count == 0:
+            window_soft_max = 0
+            for pos in positions:
+                window = _get_proximity_window(full_text, pos, len(candidate), PROXIMITY_SOFT)
+                svc_count = 0
+                for phrase in _SERVICE_CONTEXT_PHRASES:
+                    if phrase in window:
+                        svc_count += 1
+                for dsp in _DSP_NAMES:
+                    if dsp in window and dsp != cand_lower:
+                        svc_count += 1
+                window_soft_max = max(window_soft_max, svc_count)
 
-    ratio = min(max_service_count / 3.0, 1.0)
-    return round(ratio * SCORING_WEIGHTS["service_penalty_max"], 4), True
+            if window_soft_max == 0:
+                return 0.0, False
+            ratio = min(window_soft_max / 4.0, 0.7)
+            raw_penalty = round(ratio * SCORING_WEIGHTS["service_penalty_max"], 4)
+        else:
+            ratio = min(max_service_count / 3.0, 1.0)
+            raw_penalty = round(ratio * SCORING_WEIGHTS["service_penalty_max"], 4)
+
+    if source_type == "strict_label_value":
+        raw_penalty = min(raw_penalty, 0.08)
+    elif source_type == "csv_phrase_hit":
+        if not is_dsp:
+            raw_penalty = min(raw_penalty, 0.15)
+
+    return raw_penalty, True
 
 
 def extract_address_fragments(full_text):
@@ -182,41 +246,41 @@ def score_address_evidence(full_text, candidate, positions=None):
     best_score = 0.0
 
     for pos in positions:
-        window_start = max(0, pos - PROXIMITY_CHARS)
-        window_end = min(len(full_text), pos + len(candidate) + PROXIMITY_CHARS)
-        window = full_text[window_start:window_end]
+        addr_window = _get_address_window(full_text, pos, len(candidate))
 
-        addr_matches = _ADDRESS_RE.findall(window)
-        zip_matches = _ZIP_RE.findall(window)
-        city_matches = _CITY_STATE_RE.findall(window)
+        addr_matches = _ADDRESS_RE.findall(addr_window)
+        if not addr_matches:
+            continue
 
-        if addr_matches:
-            if city_matches and zip_matches:
-                score = SCORING_WEIGHTS["address_max"]
-                if "address_verified" not in chips:
-                    chips.append("address_verified")
-                if "city_match" not in chips:
-                    chips.append("city_match")
-                if "zip_match" not in chips:
-                    chips.append("zip_match")
-            elif zip_matches:
-                score = SCORING_WEIGHTS["address_max"] * 0.6
-                if "address_partial" not in chips:
-                    chips.append("address_partial")
-                if "zip_match" not in chips:
-                    chips.append("zip_match")
-            elif city_matches:
-                score = SCORING_WEIGHTS["address_max"] * 0.5
-                if "address_partial" not in chips:
-                    chips.append("address_partial")
-                if "city_match" not in chips:
-                    chips.append("city_match")
-            else:
-                score = SCORING_WEIGHTS["address_max"] * 0.3
-                if "address_partial" not in chips:
-                    chips.append("address_partial")
+        zip_matches = _ZIP_RE.findall(addr_window)
+        city_matches = _CITY_STATE_RE.findall(addr_window)
 
-            best_score = max(best_score, score)
+        if city_matches and zip_matches:
+            score = SCORING_WEIGHTS["address_max"]
+            if "address_verified" not in chips:
+                chips.append("address_verified")
+            if "city_match" not in chips:
+                chips.append("city_match")
+            if "zip_match" not in chips:
+                chips.append("zip_match")
+        elif zip_matches:
+            score = SCORING_WEIGHTS["address_max"] * 0.6
+            if "address_partial" not in chips:
+                chips.append("address_partial")
+            if "zip_match" not in chips:
+                chips.append("zip_match")
+        elif city_matches:
+            score = SCORING_WEIGHTS["address_max"] * 0.5
+            if "address_partial" not in chips:
+                chips.append("address_partial")
+            if "city_match" not in chips:
+                chips.append("city_match")
+        else:
+            score = SCORING_WEIGHTS["address_max"] * 0.3
+            if "address_partial" not in chips:
+                chips.append("address_partial")
+
+        best_score = max(best_score, score)
 
     return round(best_score, 4), chips
 
@@ -227,7 +291,12 @@ def compute_composite_score(name_score, address_score, account_ctx_score, servic
     return round(max(0.0, min(composite, 1.0)), 4)
 
 
-def classify_by_composite(composite_score, has_service_penalty, name_score):
+def classify_by_composite(composite_score, has_service_penalty, name_score, source_type="header_fallback", is_generic_token=False):
+    if is_generic_token and source_type != "strict_label_value":
+        if composite_score >= REVIEW_THRESHOLD:
+            return "review"
+        return "no-match"
+
     if composite_score >= MATCH_THRESHOLD and not (has_service_penalty and name_score < 0.85):
         return "match"
     if composite_score >= REVIEW_THRESHOLD:
@@ -254,17 +323,18 @@ def build_evidence_chips(name_score, name_tier, address_chips, has_account_ctx, 
     return chips
 
 
-def score_candidate(full_text, candidate, name_score, name_tier):
+def score_candidate(full_text, candidate, name_score, name_tier, source_type="header_fallback", is_generic_token=False):
     text_lower = (full_text or "").lower()
     cand_lower = candidate.lower()
     positions = _find_candidate_positions(text_lower, cand_lower)
 
     acct_ctx_score, has_acct_ctx = score_account_context(full_text, candidate, positions)
-    svc_penalty, has_svc_penalty = score_service_context(full_text, candidate, positions)
+    svc_penalty, has_svc_penalty = score_service_context(full_text, candidate, positions, source_type=source_type)
     addr_score, addr_chips = score_address_evidence(full_text, candidate, positions)
 
     composite = compute_composite_score(name_score, addr_score, acct_ctx_score, svc_penalty)
-    status = classify_by_composite(composite, has_svc_penalty, name_score)
+    status = classify_by_composite(composite, has_svc_penalty, name_score,
+                                   source_type=source_type, is_generic_token=is_generic_token)
     chips = build_evidence_chips(name_score, name_tier, addr_chips, has_acct_ctx, has_svc_penalty)
 
     return {

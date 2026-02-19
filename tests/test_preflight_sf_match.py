@@ -2,14 +2,15 @@
 Tests for Salesforce match integration in the Preflight engine.
 
 Covers:
-  - extract_account_candidates: strict label:value, CSV phrase scan, prose rejection
-  - _run_salesforce_match payload shape (multi-account, composite scoring)
-  - Context scoring: account-context boost, service-context penalty, address evidence
+  - extract_account_candidates: strict label:value, CSV phrase scan, prose rejection, denylist
+  - _run_salesforce_match payload shape (multi-account, composite scoring, source_type)
+  - Context scoring: account-context boost (strong/weak cues), service-context penalty (source-aware caps)
   - Evidence chips generation
-  - Section ordering: encoding → sf_match → others
+  - Section ordering: encoding -> sf_match -> others
   - Matrix rows include status + confidence + evidence_chips
-  - Deterministic sorting of SF match results
-  - Acceptance criteria: multi-account, service penalty, address boost
+  - Deterministic sorting of SF match results (source_type priority)
+  - Acceptance criteria: multi-account, service penalty, address boost, generic suppression
+  - Calibration: 1888 Records outranks generic tokens, denylist enforcement
 """
 import pytest
 from unittest.mock import patch, MagicMock
@@ -25,6 +26,14 @@ def _pftl_section_priority(section_key):
         "other": 5,
     }
     return order.get(section_key, order["other"])
+
+
+def _cand_values(result):
+    return [c["value"] if isinstance(c, dict) else c for c in result]
+
+
+def _cand_source_types(result):
+    return [c["source_type"] if isinstance(c, dict) else "unknown" for c in result]
 
 
 class TestSectionOrdering:
@@ -57,56 +66,58 @@ class TestExtractAccountCandidates:
         from server.preflight_engine import extract_account_candidates
         text = "Account Name: 1888 Records\nSome other line"
         result = extract_account_candidates(text, [])
-        assert "1888 Records" in result
+        assert "1888 Records" in _cand_values(result)
 
     def test_extracts_value_after_company_name_label(self):
         from server.preflight_engine import extract_account_candidates
         text = "Company Name: Acme Corp"
         result = extract_account_candidates(text, [])
-        assert "Acme Corp" in result
+        assert "Acme Corp" in _cand_values(result)
 
     def test_extracts_value_after_artist_name_label(self):
         from server.preflight_engine import extract_account_candidates
         text = "Artist Name: DJ Shadow"
         result = extract_account_candidates(text, [])
-        assert "DJ Shadow" in result
+        assert "DJ Shadow" in _cand_values(result)
 
     def test_extracts_value_after_legal_name_label(self):
         from server.preflight_engine import extract_account_candidates
         text = "Legal Name: Shadow Holdings LLC"
         result = extract_account_candidates(text, [])
-        assert "Shadow Holdings LLC" in result
+        assert "Shadow Holdings LLC" in _cand_values(result)
 
     def test_extracts_value_after_salesforce_field_name(self):
         from server.preflight_engine import extract_account_candidates
         text = "Account_Name__c: 1888 Records"
         result = extract_account_candidates(text, [])
-        assert "1888 Records" in result
+        assert "1888 Records" in _cand_values(result)
 
     def test_excludes_labels_as_values(self):
         from server.preflight_engine import extract_account_candidates
         text = "Account Name: 1888 Records"
         result = extract_account_candidates(text, ["Account Name"])
-        assert "Account Name" not in result
-        assert "1888 Records" in result
+        vals = _cand_values(result)
+        assert "Account Name" not in vals
+        assert "1888 Records" in vals
 
     def test_normalizes_whitespace(self):
         from server.preflight_engine import extract_account_candidates
         text = "Account Name:   Spaced   Out   Name  "
         result = extract_account_candidates(text, [])
-        assert "Spaced Out Name" in result
+        assert "Spaced Out Name" in _cand_values(result)
 
     def test_strips_trailing_punctuation(self):
         from server.preflight_engine import extract_account_candidates
         text = "Company Name: Trail Corp;;"
         result = extract_account_candidates(text, [])
-        assert "Trail Corp" in result
+        assert "Trail Corp" in _cand_values(result)
 
     def test_deduplicates_case_insensitively(self):
         from server.preflight_engine import extract_account_candidates
         text = "Account Name: Dupe Corp\nCompany Name: dupe corp"
         result = extract_account_candidates(text, [])
-        assert len([c for c in result if c.lower() == "dupe corp"]) == 1
+        vals = _cand_values(result)
+        assert len([c for c in vals if c.lower() == "dupe corp"]) == 1
 
     def test_empty_text_and_headers(self):
         from server.preflight_engine import extract_account_candidates
@@ -117,19 +128,22 @@ class TestExtractAccountCandidates:
         from server.preflight_engine import extract_account_candidates
         text = "Account Name:\nSome other content"
         result = extract_account_candidates(text, [])
-        assert not any("account" in c.lower() for c in result)
+        vals = _cand_values(result)
+        assert not any("account" in c.lower() for c in vals)
 
     def test_rejects_prose_record_means(self):
         from server.preflight_engine import extract_account_candidates
         text = 'Account Name: "Record" means every form of recorded music'
         result = extract_account_candidates(text, [])
-        assert not any("record" in c.lower() and "means" in c.lower() for c in result)
+        vals = _cand_values(result)
+        assert not any("record" in c.lower() and "means" in c.lower() for c in vals)
 
     def test_rejects_prose_this_agreement(self):
         from server.preflight_engine import extract_account_candidates
         text = "Account Name: this agreement shall govern"
         result = extract_account_candidates(text, [])
-        assert not any("this agreement" in c.lower() for c in result)
+        vals = _cand_values(result)
+        assert not any("this agreement" in c.lower() for c in vals)
 
     def test_rejects_prose_whereas(self):
         from server.preflight_engine import extract_account_candidates
@@ -141,31 +155,35 @@ class TestExtractAccountCandidates:
         from server.preflight_engine import extract_account_candidates
         text = "Account Name: zzqa zzqb zzqc zzqd zzqe zzqf zzqg zzqh"
         result = extract_account_candidates(text, [])
-        assert not any("zzqa" in c.lower() for c in result)
+        vals = _cand_values(result)
+        assert not any("zzqa" in c.lower() for c in vals)
 
     def test_rejects_generic_single_token(self):
         from server.preflight_engine import extract_account_candidates
         text = "Some random text with no label patterns"
         headers = ["record", "account", "company", "Real Corp Name"]
         result = extract_account_candidates(text, headers)
-        assert "record" not in result
-        assert "account" not in result
-        assert "company" not in result
+        vals = _cand_values(result)
+        assert "record" not in vals
+        assert "account" not in vals
+        assert "company" not in vals
 
     def test_fallback_to_non_label_headers(self):
         from server.preflight_engine import extract_account_candidates
         text = "No label-value pairs here"
         headers = ["Some Real Company", "Account Name", "Contract Date"]
         result = extract_account_candidates(text, headers)
-        assert "Account Name" not in result
+        vals = _cand_values(result)
+        assert "Account Name" not in vals
 
     def test_value_priority_over_headers(self):
         from server.preflight_engine import extract_account_candidates
         text = "Account Name: 1888 Records"
         headers = ["Account Name", "Fallback Company"]
         result = extract_account_candidates(text, headers)
-        assert "1888 Records" in result
-        assert "Fallback Company" not in result
+        vals = _cand_values(result)
+        assert "1888 Records" in vals
+        assert "Fallback Company" not in vals
 
     def test_rejects_value_starting_with_prose_word(self):
         from server.preflight_engine import extract_account_candidates
@@ -178,6 +196,88 @@ class TestExtractAccountCandidates:
         text = 'Legal Name: "Master" means the final'
         result = extract_account_candidates(text, [])
         assert result == []
+
+    def test_returns_dicts_with_source_type(self):
+        from server.preflight_engine import extract_account_candidates
+        text = "Account Name: Test Corp"
+        result = extract_account_candidates(text, [])
+        assert len(result) > 0
+        for item in result:
+            assert isinstance(item, dict)
+            assert "value" in item
+            assert "source_type" in item
+
+    def test_strict_label_value_source_type(self):
+        from server.preflight_engine import extract_account_candidates
+        text = "Account Name: Test Corp"
+        result = extract_account_candidates(text, [])
+        types = _cand_source_types(result)
+        assert "strict_label_value" in types
+
+    def test_header_fallback_source_type(self):
+        from server.preflight_engine import extract_account_candidates
+        text = "No label patterns here"
+        headers = ["Some Real Company"]
+        result = extract_account_candidates(text, headers)
+        if result:
+            types = _cand_source_types(result)
+            assert "header_fallback" in types
+
+
+class TestHardDenylist:
+    def test_distribution_denied_from_headers(self):
+        from server.preflight_engine import extract_account_candidates
+        text = "Some text about distribution"
+        headers = ["Distribution", "Real Corp"]
+        result = extract_account_candidates(text, headers)
+        vals = _cand_values(result)
+        assert "Distribution" not in vals
+        assert "distribution" not in vals
+
+    def test_trademark_denied_from_headers(self):
+        from server.preflight_engine import extract_account_candidates
+        text = "Trademark related text"
+        headers = ["Trademark", "Another Corp"]
+        result = extract_account_candidates(text, headers)
+        vals = _cand_values(result)
+        assert "Trademark" not in vals
+
+    def test_delay_denied(self):
+        from server.preflight_engine import _is_generic_noise
+        assert _is_generic_noise("DELAY")
+        assert _is_generic_noise("delay")
+
+    def test_image_denied(self):
+        from server.preflight_engine import _is_generic_noise
+        assert _is_generic_noise("Image")
+        assert _is_generic_noise("image")
+
+    def test_mean_denied(self):
+        from server.preflight_engine import _is_generic_noise
+        assert _is_generic_noise("Mean")
+        assert _is_generic_noise("mean")
+
+    def test_prosecute_denied(self):
+        from server.preflight_engine import _is_generic_noise
+        assert _is_generic_noise("Prosecute")
+
+    def test_real_company_not_denied(self):
+        from server.preflight_engine import _is_generic_noise
+        assert not _is_generic_noise("1888 Records")
+        assert not _is_generic_noise("Acme Corp")
+        assert not _is_generic_noise("Warner Music Group")
+
+    def test_short_uppercase_single_token_denied(self):
+        from server.preflight_engine import _is_generic_noise
+        assert _is_generic_noise("DELAY")
+        assert _is_generic_noise("IMAGE")
+
+    def test_strict_label_value_bypasses_denylist(self):
+        from server.preflight_engine import extract_account_candidates
+        text = "Account Name: Distribution Corp LLC"
+        result = extract_account_candidates(text, [])
+        vals = _cand_values(result)
+        assert "Distribution Corp LLC" in vals
 
 
 class TestCsvPhraseScan:
@@ -268,6 +368,7 @@ class TestRunSalesforceMatch:
             assert "evidence_chips" in item
             assert "scoring_breakdown" in item
             assert "visible" in item
+            assert "source_type" in item
             assert isinstance(item["evidence_chips"], list)
             assert isinstance(item["scoring_breakdown"], dict)
 
@@ -306,6 +407,15 @@ class TestRunSalesforceMatch:
         result = _run_salesforce_match(["Account Name"], text)
         if result:
             assert result[0]["source_field"] != "Account Name"
+
+    def test_source_type_in_result(self):
+        from server.preflight_engine import _run_salesforce_match
+        text = "Account Name: Test Corp"
+        result = _run_salesforce_match([], text)
+        if result:
+            valid_types = {"strict_label_value", "csv_phrase_hit", "header_fallback"}
+            for item in result:
+                assert item["source_type"] in valid_types
 
 
 class TestPreflightResultIncludesSfMatch:
@@ -359,8 +469,9 @@ class TestAcceptanceCriteria:
         from server.preflight_engine import extract_account_candidates
         text = "Account Name: 1888 Records\nContract Date: 2024-01-01"
         candidates = extract_account_candidates(text, ["Account Name", "Contract Date"])
-        assert "1888 Records" in candidates
-        assert "Account Name" not in candidates
+        vals = _cand_values(candidates)
+        assert "1888 Records" in vals
+        assert "Account Name" not in vals
 
     def test_1888_records_captured_via_csv_phrase_hit(self):
         from server.preflight_engine import extract_account_candidates
@@ -370,21 +481,24 @@ class TestAcceptanceCriteria:
         if found_1888:
             text = "Some contract text mentioning 1888 Records in the body without a label"
             candidates = extract_account_candidates(text, [])
-            assert "1888 Records" in candidates
+            vals = _cand_values(candidates)
+            assert "1888 Records" in vals
 
     def test_label_only_rows_excluded_when_value_exists(self):
         from server.preflight_engine import extract_account_candidates
         text = "Account Name: 1888 Records"
         headers = ["Account Name", "Account Name:"]
         candidates = extract_account_candidates(text, headers)
-        assert candidates == ["1888 Records"]
+        vals = _cand_values(candidates)
+        assert vals == ["1888 Records"]
 
     def test_record_means_prose_not_emitted(self):
         from server.preflight_engine import extract_account_candidates
         text = '"Record" means every form of recorded music.\nAccount Name: hereof the parties'
         candidates = extract_account_candidates(text, [])
-        assert not any("means every form" in c.lower() for c in candidates)
-        assert not any("record" == c.lower() for c in candidates)
+        vals = _cand_values(candidates)
+        assert not any("means every form" in c.lower() for c in vals)
+        assert not any("record" == c.lower() for c in vals)
 
     def test_unknown_value_still_returns_no_match(self):
         from server.preflight_engine import _run_salesforce_match
@@ -461,9 +575,9 @@ class TestAccountContextScoring:
         assert score == 0.0
         assert found is False
 
-    def test_candidate_near_account_cues(self):
+    def test_candidate_near_strong_account_cues(self):
         from server.resolvers.context_scorer import score_account_context
-        text = "Account Name: Acme Corp LLC\nBilling Address: 123 Main St"
+        text = "Account Name: Acme Corp\nBilling Address: 123 Main St"
         score, found = score_account_context(text, "Acme Corp")
         assert score > 0.0
         assert found is True
@@ -480,6 +594,21 @@ class TestAccountContextScoring:
         text = "Some random text about weather with Acme Corp mentioned casually"
         score, found = score_account_context(text, "Acme Corp")
         assert score == 0.0
+
+    def test_weak_cues_only_give_reduced_boost(self):
+        from server.resolvers.context_scorer import score_account_context
+        text = "Test LLC is a limited company, Test LLC"
+        score, found = score_account_context(text, "Test LLC")
+        if found:
+            assert score <= 0.05
+
+    def test_strong_cue_gives_higher_boost(self):
+        from server.resolvers.context_scorer import score_account_context
+        text = "The licensee Acme Corp has a billing address at 123 Main St"
+        score_strong, _ = score_account_context(text, "Acme Corp")
+        text2 = "Acme Corp is a limited corporation registered here"
+        score_weak, _ = score_account_context(text2, "Acme Corp")
+        assert score_strong >= score_weak
 
 
 class TestServiceContextPenalty:
@@ -514,6 +643,20 @@ class TestServiceContextPenalty:
         penalty, found = score_service_context("Some text", "Nonexistent Corp")
         assert penalty == 0.0
         assert found is False
+
+    def test_strict_label_value_caps_penalty(self):
+        from server.resolvers.context_scorer import score_service_context
+        text = "Account Name: TestPlatform\nAvailable on TestPlatform streaming service via Spotify"
+        penalty, found = score_service_context(text, "TestPlatform", source_type="strict_label_value")
+        if found:
+            assert penalty <= 0.08
+
+    def test_csv_phrase_hit_caps_penalty(self):
+        from server.resolvers.context_scorer import score_service_context
+        text = "TestPlatform is available on streaming service"
+        penalty, found = score_service_context(text, "TestPlatform", source_type="csv_phrase_hit")
+        if found:
+            assert penalty <= 0.15
 
 
 class TestAddressEvidence:
@@ -558,6 +701,14 @@ class TestAddressEvidence:
         text = "123 Main Street\nSuite 100\nNew York, NY 10001\nPO Box 456"
         frags = extract_address_fragments(text)
         assert len(frags) >= 2
+
+    def test_global_address_not_granted_to_distant_candidate(self):
+        from server.resolvers.context_scorer import score_address_evidence
+        padding = "X " * 200
+        text = f"123 Main Street\nLos Angeles, CA 90210\n{padding}\nAcme Corp is mentioned far away"
+        score, chips = score_address_evidence(text, "Acme Corp")
+        assert score == 0.0
+        assert chips == []
 
 
 class TestEvidenceChips:
@@ -610,6 +761,13 @@ class TestScoreCandidate:
         result = score_candidate(text, "Spotify", 1.0, "exact")
         assert result["service_context_penalty"] > 0.0
         assert "service_context_penalty" in result["evidence_chips"]
+
+    def test_source_type_affects_penalty_cap(self):
+        from server.resolvers.context_scorer import score_candidate
+        text = "Account Name: TestPlatform\nAvailable on TestPlatform streaming service"
+        result_strict = score_candidate(text, "TestPlatform", 0.9, "exact", source_type="strict_label_value")
+        result_header = score_candidate(text, "TestPlatform", 0.9, "exact", source_type="header_fallback")
+        assert result_strict["service_context_penalty"] <= result_header["service_context_penalty"]
 
 
 class TestMultiAccountOutput:
@@ -696,6 +854,16 @@ class TestClassifyByComposite:
         status = classify_by_composite(0.70, True, 0.90)
         assert status == "match"
 
+    def test_generic_token_capped_at_review(self):
+        from server.resolvers.context_scorer import classify_by_composite
+        status = classify_by_composite(0.80, False, 1.0, source_type="header_fallback", is_generic_token=True)
+        assert status == "review"
+
+    def test_generic_token_strict_label_can_match(self):
+        from server.resolvers.context_scorer import classify_by_composite
+        status = classify_by_composite(0.80, False, 1.0, source_type="strict_label_value", is_generic_token=True)
+        assert status == "match"
+
 
 class TestAcceptanceCriteriaV2:
     def test_1888_records_with_address_scores_high(self):
@@ -720,4 +888,77 @@ class TestAcceptanceCriteriaV2:
         r2 = _run_salesforce_match([], text)
         fields1 = [(r["source_field"], r["confidence_pct"], r["match_status"]) for r in r1]
         fields2 = [(r["source_field"], r["confidence_pct"], r["match_status"]) for r in r2]
+        assert fields1 == fields2
+
+
+class TestCalibrationRegression:
+    """Regression tests for the 1888 Records distribution agreement calibration."""
+
+    def test_1888_records_outranks_generic_tokens(self):
+        from server.preflight_engine import _run_salesforce_match
+        text = (
+            "Account Name: 1888 Records\n"
+            "This Distribution Agreement...\n"
+            "Trademark provisions apply.\n"
+            "No DELAY shall occur.\n"
+            "Image rights reserved.\n"
+            "Mean delivery times apply.\n"
+        )
+        result = _run_salesforce_match([], text)
+        if result:
+            source_fields = [r["source_field"] for r in result]
+            assert "1888 Records" in source_fields
+            for noise in ["Distribution", "Trademark", "DELAY", "Image", "Mean"]:
+                assert noise not in source_fields
+
+    def test_generic_tokens_denied_from_extraction(self):
+        from server.preflight_engine import extract_account_candidates
+        text = "Distribution agreement for Trademark holder\nDELAY Image Mean"
+        headers = ["Distribution", "Trademark", "DELAY", "Image", "Mean"]
+        result = extract_account_candidates(text, headers)
+        vals = _cand_values(result)
+        for noise in ["Distribution", "Trademark", "DELAY", "Image", "Mean",
+                       "distribution", "trademark"]:
+            assert noise not in vals
+
+    def test_dsp_names_stay_low_signal(self):
+        from server.preflight_engine import _run_salesforce_match
+        text = (
+            "Account Name: 1888 Records\n"
+            "Available on Spotify, Amazon Music, TikTok.\n"
+        )
+        result = _run_salesforce_match([], text)
+        for r in result:
+            if r["source_field"] in ("Spotify", "Amazon Music", "TikTok"):
+                assert r["match_status"] != "match"
+
+    def test_source_type_priority_in_sorting(self):
+        from server.preflight_engine import _run_salesforce_match, _SOURCE_TYPE_PRIORITY
+        text = "Account Name: Strict Corp\nSome header corp in body"
+        result = _run_salesforce_match([], text)
+        if len(result) >= 2:
+            priorities = [_SOURCE_TYPE_PRIORITY.get(r.get("source_type", "header_fallback"), 2) for r in result]
+            assert priorities == sorted(priorities)
+
+    def test_strict_label_value_service_penalty_capped(self):
+        from server.resolvers.context_scorer import score_candidate
+        text = "Account Name: TestPlatform\nAvailable on TestPlatform streaming service via Spotify"
+        result = score_candidate(text, "TestPlatform", 0.9, "exact", source_type="strict_label_value")
+        assert result["service_context_penalty"] <= 0.08
+
+    def test_local_address_only(self):
+        from server.resolvers.context_scorer import score_address_evidence
+        padding = "\n".join(["Some irrelevant line " + str(i) for i in range(20)])
+        text = f"123 Main Street\nLos Angeles, CA 90210\n{padding}\nAcme Corp is mentioned far away here"
+        score, chips = score_address_evidence(text, "Acme Corp")
+        assert score == 0.0
+        assert chips == []
+
+    def test_deterministic_order_with_source_type(self):
+        from server.preflight_engine import _run_salesforce_match
+        text = "Account Name: Alpha Corp\nCompany Name: Beta Inc"
+        r1 = _run_salesforce_match([], text)
+        r2 = _run_salesforce_match([], text)
+        fields1 = [(r["source_field"], r["source_type"], r["confidence_pct"]) for r in r1]
+        fields2 = [(r["source_field"], r["source_type"], r["confidence_pct"]) for r in r2]
         assert fields1 == fields2

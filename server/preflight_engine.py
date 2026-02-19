@@ -430,6 +430,33 @@ _PROSE_FRAGMENTS = [
 
 _GENERIC_SINGLE_TOKENS = {"record", "records", "account", "accounts", "company", "companies", "artist", "artists", "vendor", "vendors", "name", "entity"}
 
+_HARD_DENYLIST = {
+    "distribution", "trademark", "delay", "image", "mean",
+    "prosecute", "secrets", "master", "territory", "term",
+    "schedule", "exhibit", "section", "clause", "paragraph",
+    "article", "appendix", "annex", "recital", "preamble",
+    "definitions", "notices", "whereas", "agreement", "contract",
+    "license", "rights", "obligations", "representations",
+    "warranties", "indemnification", "confidential",
+    "termination", "governing", "jurisdiction", "arbitration",
+    "force majeure", "amendment", "waiver", "assignment",
+    "counterparts", "entire agreement", "severability",
+    "survival", "headings", "notices", "miscellaneous",
+}
+
+
+def _is_generic_noise(val):
+    low = val.lower().strip()
+    if low in _HARD_DENYLIST:
+        return True
+    tokens = low.split()
+    if len(tokens) == 1:
+        if low in _GENERIC_SINGLE_TOKENS:
+            return True
+        if low.isupper() and len(low) <= 6:
+            return True
+    return False
+
 
 def _normalize_candidate(text):
     text = text.strip()
@@ -524,8 +551,8 @@ def extract_account_candidates(full_text, extracted_headers):
       2) Strict label:value extraction with anchored labels and prose rejection
       3) Fallback to non-label headers (last resort)
 
-    Returns deduplicated, normalized list of (candidate, source_type) tuples
-    flattened to candidate strings, ordered by priority.
+    Returns list of dicts: [{"value": str, "source_type": str}]
+    where source_type is one of: strict_label_value, csv_phrase_hit, header_fallback
     """
     all_candidates = []
     seen_lower = set()
@@ -534,8 +561,10 @@ def extract_account_candidates(full_text, extracted_headers):
     for hit in csv_hits:
         normed = _normalize_candidate(hit)
         if normed and normed.lower() not in seen_lower:
+            if _is_generic_noise(normed):
+                continue
             seen_lower.add(normed.lower())
-            all_candidates.append(normed)
+            all_candidates.append({"value": normed, "source_type": "csv_phrase_hit"})
 
     lines = full_text.split("\n") if full_text else []
     for line in lines:
@@ -547,7 +576,7 @@ def extract_account_candidates(full_text, extracted_headers):
             val = _normalize_candidate(m.group(1))
             if _is_valid_value(val) and val.lower() not in seen_lower:
                 seen_lower.add(val.lower())
-                all_candidates.append(val)
+                all_candidates.append({"value": val, "source_type": "strict_label_value"})
 
     if all_candidates:
         return all_candidates
@@ -563,14 +592,23 @@ def extract_account_candidates(full_text, extracted_headers):
         is_label = any(h_lower == hint or h_lower == hint + ":" for hint in _SF_ENTITY_HINTS)
         if is_label:
             continue
+        if _is_generic_noise(normed):
+            continue
         if normed.lower() in _GENERIC_SINGLE_TOKENS:
             continue
         if _is_prose(normed):
             continue
         seen_lower.add(normed.lower())
-        header_values.append(normed)
+        header_values.append({"value": normed, "source_type": "header_fallback"})
 
     return header_values[:10]
+
+
+_SOURCE_TYPE_PRIORITY = {
+    "strict_label_value": 0,
+    "csv_phrase_hit": 1,
+    "header_fallback": 2,
+}
 
 
 def _run_salesforce_match(extracted_headers, full_text=""):
@@ -585,7 +623,8 @@ def _run_salesforce_match(extracted_headers, full_text=""):
     Returns a list of match result dicts shaped for the matrix renderer:
         [{ source_field, suggested_label, match_method, match_score,
            confidence_pct, match_status, classification, candidates,
-           explanation, evidence_chips, scoring_breakdown, visible }]
+           explanation, evidence_chips, scoring_breakdown, visible,
+           source_type }]
     """
     try:
         from server.resolvers.salesforce import resolve_account, is_resolver_enabled
@@ -604,12 +643,16 @@ def _run_salesforce_match(extracted_headers, full_text=""):
         DISPLAY_THRESHOLD = 0.25
         score_candidate = None
 
-    candidates = extract_account_candidates(full_text, extracted_headers)
-    if not candidates:
+    candidate_dicts = extract_account_candidates(full_text, extracted_headers)
+    if not candidate_dicts:
         return []
 
     results = []
-    for candidate in candidates:
+    for cand_info in candidate_dicts:
+        candidate = cand_info["value"]
+        source_type = cand_info["source_type"]
+        is_generic = _is_generic_noise(candidate)
+
         res = resolve_account(candidate)
         top_name = ""
         if res.get("candidates"):
@@ -621,7 +664,8 @@ def _run_salesforce_match(extracted_headers, full_text=""):
             name_tier = res["candidates"][0].get("match_tier", "none")
 
         if score_candidate is not None:
-            ctx = score_candidate(full_text, candidate, name_score, name_tier)
+            ctx = score_candidate(full_text, candidate, name_score, name_tier,
+                                  source_type=source_type, is_generic_token=is_generic)
             composite = ctx["composite_score"]
             match_status = ctx["match_status"]
             evidence_chips = ctx["evidence_chips"]
@@ -668,9 +712,11 @@ def _run_salesforce_match(extracted_headers, full_text=""):
             "evidence_chips": evidence_chips,
             "scoring_breakdown": scoring_breakdown,
             "visible": visible,
+            "source_type": source_type,
         })
 
     results.sort(key=lambda r: (
+        _SOURCE_TYPE_PRIORITY.get(r.get("source_type", "header_fallback"), 2),
         0 if r["match_status"] == "review" else 1 if r["match_status"] == "no-match" else 2,
         -r["confidence_pct"],
         r["source_field"].lower(),
