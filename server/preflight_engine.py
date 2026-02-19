@@ -358,7 +358,7 @@ def run_preflight(pages_data):
     full_text = "\n".join(pages_text)
     extracted_headers, low_signal_headers = _extract_candidate_headers(full_text)
 
-    sf_match = _run_salesforce_match(extracted_headers)
+    sf_match = _run_salesforce_match(extracted_headers, full_text)
 
     return {
         "doc_mode": doc_mode,
@@ -393,9 +393,97 @@ _SF_ENTITY_HINTS = [
     "licensor", "party name",
 ]
 
+_SF_STOP_LABELS = {
+    "account name", "account name:", "account number", "account number:",
+    "account", "account:", "client name", "client name:", "client",
+    "client:", "company name", "company name:", "company", "company:",
+    "vendor name", "vendor name:", "vendor", "vendor:", "artist name",
+    "artist name:", "artist", "artist:", "entity name", "entity name:",
+    "entity", "entity:", "legal name", "legal name:", "legal entity",
+    "legal entity:", "counterparty", "counterparty:", "customer name",
+    "customer name:", "customer", "customer:", "payee name", "payee name:",
+    "payee", "payee:", "licensee", "licensee:", "licensor", "licensor:",
+    "party name", "party name:", "payments/accounting", "n/a", "na",
+    "none", "tbd", "unknown",
+}
 
-def _run_salesforce_match(extracted_headers):
-    """Run Salesforce account resolver on extracted headers that look like entity fields.
+_LABEL_VALUE_RE = re.compile(
+    r'(?:account\s*name|account|client\s*name|client|company\s*name|company'
+    r'|legal\s*name|legal\s*entity|entity\s*name|entity|artist\s*name|artist'
+    r'|vendor\s*name|vendor|counterparty|customer\s*name|customer'
+    r'|payee\s*name|payee|licensee|licensor|party\s*name)'
+    r'\s*[:;\-–—]\s*(.+)',
+    re.IGNORECASE,
+)
+
+
+def _normalize_candidate(text):
+    text = text.strip()
+    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r'[;:,]+$', '', text).strip()
+    return text
+
+
+def extract_account_candidates(full_text, extracted_headers):
+    """Extract actual account-name values from body text, not labels.
+
+    Priority:
+      a) Value-after-label patterns ("Account Name: 1888 Records" → "1888 Records")
+      b) Standalone entity-like lines
+      c) Fallback to headers only if no values found
+
+    Returns deduplicated, normalized list of candidate strings.
+    """
+    value_candidates = []
+    seen_lower = set()
+
+    lines = full_text.split("\n") if full_text else []
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        m = _LABEL_VALUE_RE.search(line)
+        if m:
+            val = _normalize_candidate(m.group(1))
+            if val and len(val) >= 2 and val.lower() not in _SF_STOP_LABELS:
+                if val.lower() not in seen_lower:
+                    seen_lower.add(val.lower())
+                    value_candidates.append(val)
+
+    if value_candidates:
+        return value_candidates
+
+    header_values = []
+    for h in extracted_headers:
+        normed = _normalize_candidate(h)
+        if normed and normed.lower() not in _SF_STOP_LABELS and normed.lower() not in seen_lower:
+            h_lower = normed.lower().strip()
+            is_label = False
+            for hint in _SF_ENTITY_HINTS:
+                if h_lower == hint or h_lower == hint + ":":
+                    is_label = True
+                    break
+            if not is_label:
+                seen_lower.add(normed.lower())
+                header_values.append(normed)
+
+    if header_values:
+        return header_values[:10]
+
+    fallback = []
+    for h in extracted_headers[:5]:
+        normed = _normalize_candidate(h)
+        if normed and normed.lower() not in seen_lower:
+            seen_lower.add(normed.lower())
+            fallback.append(normed)
+    return fallback
+
+
+def _run_salesforce_match(extracted_headers, full_text=""):
+    """Run Salesforce account resolver on extracted candidate values.
+
+    Extracts actual account-name values from body text (label:value patterns)
+    rather than matching raw header labels against the resolver.
 
     Returns a list of match result dicts shaped for the matrix renderer:
         [{ source_field, suggested_label, match_method, match_score,
@@ -411,20 +499,13 @@ def _run_salesforce_match(extracted_headers):
         logger.debug("[PREFLIGHT-SF] resolver not enabled (index not loaded)")
         return []
 
-    entity_headers = []
-    for h in extracted_headers:
-        h_lower = h.lower().strip()
-        for hint in _SF_ENTITY_HINTS:
-            if hint in h_lower or h_lower in hint:
-                entity_headers.append(h)
-                break
-
-    if not entity_headers and extracted_headers:
-        entity_headers = extracted_headers[:5]
+    candidates = extract_account_candidates(full_text, extracted_headers)
+    if not candidates:
+        return []
 
     results = []
-    for header in entity_headers:
-        res = resolve_account(header)
+    for candidate in candidates:
+        res = resolve_account(candidate)
         top_name = ""
         if res.get("candidates"):
             top_name = res["candidates"][0].get("account_name", "")
@@ -443,7 +524,7 @@ def _run_salesforce_match(extracted_headers):
             match_method = "none"
 
         results.append({
-            "source_field": header,
+            "source_field": candidate,
             "suggested_label": top_name or "\u2014",
             "match_method": match_method,
             "match_score": score,

@@ -56227,6 +56227,53 @@ var P022_RuntimeValidation = {
     return PFTL_SECTION_ORDER[sectionKey] != null ? PFTL_SECTION_ORDER[sectionKey] : PFTL_SECTION_ORDER.other;
   }
 
+  var _PFTL_STOP_LABELS = {
+    'account name':1,'account name:':1,'account number':1,'account number:':1,
+    'account':1,'account:':1,'client name':1,'client name:':1,'client':1,
+    'client:':1,'company name':1,'company name:':1,'company':1,'company:':1,
+    'vendor name':1,'vendor name:':1,'vendor':1,'vendor:':1,'artist name':1,
+    'artist name:':1,'artist':1,'artist:':1,'entity name':1,'entity name:':1,
+    'entity':1,'entity:':1,'legal name':1,'legal name:':1,'legal entity':1,
+    'legal entity:':1,'counterparty':1,'counterparty:':1,'customer name':1,
+    'customer name:':1,'customer':1,'customer:':1,'payee name':1,'payee name:':1,
+    'payee':1,'payee:':1,'licensee':1,'licensee:':1,'licensor':1,'licensor:':1,
+    'party name':1,'party name:':1,'payments/accounting':1,'n/a':1,'na':1,
+    'none':1,'tbd':1,'unknown':1
+  };
+
+  var _PFTL_LABEL_VALUE_RE = /(?:account\s*name|account|client\s*name|client|company\s*name|company|legal\s*name|legal\s*entity|entity\s*name|entity|artist\s*name|artist|vendor\s*name|vendor|counterparty|customer\s*name|customer|payee\s*name|payee|licensee|licensor|party\s*name)\s*[:;\-\u2013\u2014]\s*(.+)/i;
+
+  function _pftlExtractAccountCandidates(extractedText, extractedHeaders) {
+    var candidates = [];
+    var seen = {};
+    var lines = (extractedText || '').split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].replace(/^\s+|\s+$/g, '');
+      if (!line) continue;
+      var m = _PFTL_LABEL_VALUE_RE.exec(line);
+      if (m) {
+        var val = m[1].replace(/^\s+|\s+$/g, '').replace(/\s+/g, ' ').replace(/[;:,]+$/, '').replace(/^\s+|\s+$/g, '');
+        if (val && val.length >= 2 && !_PFTL_STOP_LABELS[val.toLowerCase()]) {
+          if (!seen[val.toLowerCase()]) {
+            seen[val.toLowerCase()] = true;
+            candidates.push(val);
+          }
+        }
+      }
+    }
+    if (candidates.length > 0) return candidates;
+
+    var hdrs = extractedHeaders || [];
+    for (var h = 0; h < hdrs.length; h++) {
+      var normed = hdrs[h].replace(/^\s+|\s+$/g, '').replace(/\s+/g, ' ').replace(/[;:,]+$/, '').replace(/^\s+|\s+$/g, '');
+      if (normed && !_PFTL_STOP_LABELS[normed.toLowerCase()] && !seen[normed.toLowerCase()]) {
+        seen[normed.toLowerCase()] = true;
+        candidates.push(normed);
+      }
+    }
+    return candidates.slice(0, 10);
+  }
+
   function _pftlRenderSfMatchSection(r) {
     var matches = r.salesforce_match || [];
     if (matches.length === 0) return '';
