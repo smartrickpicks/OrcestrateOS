@@ -33,7 +33,7 @@ Google Drive Save (XLSX Export) supports hierarchical folder routing with per-me
 
 Analyst Pending Patch Visualization displays the analyst's proposed value in grid cells that have pending RFI or correction patches.
 
-Patch Submission Modal provides a centralized modal dialog for submitting patch requests (corrections and RFIs) directly from the record inspector.
+Patch Submission Modal provides a centralized modal dialog for submitting patch requests (corrections and RFIs) directly from the record inspector. The grid context menu "Create Correction" and "Create RFI" actions use a streamlined direct-modal workflow (`_gridCtxDirectModal`) that bypasses the side panel/drawer, opening the submission modal immediately with an editable field tile showing current value and proposed value input (corrections) or read-only RFI target display. Submission routes through `_gridCtxDirectModalSubmit` → `_srrExecutePatchSubmit` for consistent patch creation.
 
 Salesforce Multi-Account Matching uses `server/resolvers/account_index.py`, `server/resolvers/context_scorer.py`, and enhanced `server/resolvers/salesforce.py`. The preflight engine (`server/preflight_engine.py`) includes `_run_salesforce_match()`, `build_resolution_story()`, and `build_opportunity_spine()` for deterministic contract spine completeness checks.
 

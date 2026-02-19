@@ -2426,6 +2426,19 @@
     html[data-theme="dark"] .patch-submit-modal-obs { background: var(--bg-2); border-color: var(--border-1); }
     html[data-theme="dark"] .patch-submit-modal-textarea { background: var(--bg-2); border-color: var(--border-1); color: var(--text-1); }
 
+    .patch-direct-field-tile { background: var(--bg-2, #f5f7fa); border: 1px solid var(--border-1, #e0e0e0); border-radius: 8px; padding: 12px 14px; }
+    .patch-direct-field-tile-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .patch-direct-field-tile-label { font-weight: 600; font-size: 0.95em; color: var(--text-1, #222); }
+    .patch-direct-field-tile-badge { font-size: 0.72em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; background: var(--accent-1, #2196F3); color: #fff; }
+    .patch-direct-field-tile-badge.rfi { background: var(--accent-2, #5c6bc0); }
+    .patch-direct-field-tile-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 0.9em; }
+    .patch-direct-field-tile-current-label, .patch-direct-field-tile-new-label { font-weight: 500; color: var(--text-2, #666); min-width: 70px; }
+    .patch-direct-field-tile-current-val { color: var(--text-1, #333); font-family: monospace; font-size: 0.92em; word-break: break-all; }
+    .patch-direct-field-tile-input { flex: 1; padding: 6px 10px; border: 1.5px solid var(--accent-1, #2196F3); border-radius: 6px; font-size: 0.92em; color: var(--text-1, #222); background: var(--bg-base, #fff); outline: none; transition: border-color 0.15s; }
+    .patch-direct-field-tile-input:focus { border-color: var(--accent-1, #1976D2); box-shadow: 0 0 0 2px rgba(33,150,243,0.15); }
+    html[data-theme="dark"] .patch-direct-field-tile { background: var(--bg-2); border-color: var(--border-1); }
+    html[data-theme="dark"] .patch-direct-field-tile-input { background: var(--bg-1); border-color: var(--accent-1); color: var(--text-1); }
+
     /* Evidence Viewer — Layout: middle (viewer+details) | right (grid) */
     .ev-inline-wrapper { display: flex; gap: 0; width: 100%; height: calc(100vh - 280px); min-height: 500px; }
     #ev-middle-column { flex: 0 0 48%; max-width: 55%; display: none; flex-direction: column; background: var(--bg-2); border-right: 2px solid var(--border-1); overflow: hidden; }
@@ -22243,41 +22256,34 @@
         _gridCtxClose();
         if (!ctx.recordId) { showToast('No record context available', 'warning'); return; }
 
-        var panelResult = Components.PatchPanel.openWithContext({
-          recordId: ctx.recordId, sheetName: ctx.sheetName, rowIdx: ctx.rowIdx,
-          fieldKey: ctx.fieldKey, record: record, source: 'grid_context_menu'
-        }, action, 'grid_drawer');
+        var fieldKey = ctx.fieldKey || '';
+        var oldValue = (record && fieldKey) ? (record[fieldKey] || '') : '';
+        var contractId = (record && (record.contract_key || record.contract_id || record.contractKey)) || ctx.sheetName || '';
 
-        _gridOpenPatchDrawer(ctx.recordId, ctx.sheetName, ctx.rowIdx, ctx.fieldKey);
+        srrState.currentRecordId = ctx.recordId;
+        srrState.currentSheetName = ctx.sheetName;
+        srrState.currentRowIndex = ctx.rowIdx;
+        srrState.currentRecord = record || {};
+        srrState.patchType = action;
+        srrState.patchDraft = srrState.patchDraft || {};
+        srrState.patchDraft.contract_section = ctx.sheetName;
+        srrState.patchDraft.contract_id = contractId;
+        srrState.proposedChanges = {};
 
-        setTimeout(function() {
-          var drawerCtx = window._gridDrawerContext;
-          if (drawerCtx) {
-            drawerCtx.patchType = action;
-            drawerCtx._patchContext = {
-              record_id: panelResult.context.record_id,
-              field_key: panelResult.context.field_key,
-              old_value: panelResult.context.old_value,
-              contract_section: panelResult.context.contract_section,
-              contract_id: panelResult.context.contract_id,
-              row_index: panelResult.context.row_index
-            };
-            if (action === 'rfi') {
-              drawerCtx._activeTab = 'patch';
-            } else {
-              drawerCtx._activeTab = 'edit';
-            }
-            if (typeof _gridDrawerRender === 'function') _gridDrawerRender(drawerCtx);
-            console.log('[GRID-CONTEXT][P0] patch_preload_success', {
-              type: action, record_id: panelResult.context.record_id,
-              field_key: panelResult.context.field_key, old_value: panelResult.context.old_value,
-              contract_id: panelResult.context.contract_id,
-              contract_section: panelResult.context.contract_section
-            });
-          } else {
-            console.log('[GRID-CONTEXT][P0] patch_preload_fail', { reason: 'drawer_context_missing' });
+        if (action === 'rfi') {
+          srrState.rfiField = { key: fieldKey, label: fieldKey, value: oldValue };
+          _gridCtxDirectModal(action, [], fieldKey, oldValue, record, ctx);
+        } else {
+          var changes = [];
+          if (fieldKey) {
+            changes.push({ field: fieldKey, label: fieldKey, from: String(oldValue), to: String(oldValue) });
           }
-        }, 100);
+          _gridCtxDirectModal(action, changes, fieldKey, oldValue, record, ctx);
+        }
+
+        console.log('[GRID-CONTEXT][P0] direct_modal_opened', {
+          type: action, record_id: ctx.recordId, field_key: fieldKey, old_value: oldValue
+        });
         return;
       }
 
@@ -22882,6 +22888,193 @@
 
     function _gridPatchModalSubmit() {
       _gridDrawerSubmit();
+    }
+
+    function _gridCtxDirectModal(patchType, changes, fieldKey, oldValue, record, ctx) {
+      srrState._gridDirectModalSource = true;
+      srrState._gridDirectModalCtx = {
+        record_id: ctx.recordId,
+        field_key: fieldKey,
+        old_value: oldValue,
+        contract_section: ctx.sheetName,
+        contract_id: srrState.patchDraft.contract_id || ctx.sheetName,
+        row_index: ctx.rowIdx
+      };
+
+      var existing = document.getElementById('patch-submit-modal-root');
+      if (existing) existing.remove();
+
+      var overlay = document.createElement('div');
+      overlay.id = 'patch-submit-modal-root';
+      overlay.className = 'patch-submit-modal-overlay';
+
+      var typeLabel = patchType === 'correction' ? 'Correction' : (patchType === 'blacklist' ? 'Blacklist' : 'RFI');
+      var badgeClass = patchType || 'correction';
+
+      var fieldTileHtml = '';
+      if (fieldKey) {
+        var displayLabel = fieldKey.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+        if (patchType === 'correction') {
+          fieldTileHtml = '<div class="patch-direct-field-tile">' +
+            '<div class="patch-direct-field-tile-header">' +
+            '<span class="patch-direct-field-tile-label">' + _escHtml(displayLabel) + '</span>' +
+            '<span class="patch-direct-field-tile-badge">Editable</span></div>' +
+            '<div class="patch-direct-field-tile-row">' +
+            '<span class="patch-direct-field-tile-current-label">Current:</span>' +
+            '<span class="patch-direct-field-tile-current-val">' + _escHtml(String(oldValue) || '(empty)') + '</span></div>' +
+            '<div class="patch-direct-field-tile-row">' +
+            '<span class="patch-direct-field-tile-new-label">Proposed:</span>' +
+            '<input type="text" class="patch-direct-field-tile-input" id="patch-direct-field-input" value="' + _escHtml(String(oldValue)) + '" placeholder="Enter new value..." /></div></div>';
+        } else if (patchType === 'rfi') {
+          fieldTileHtml = '<div class="patch-direct-field-tile">' +
+            '<div class="patch-direct-field-tile-header">' +
+            '<span class="patch-direct-field-tile-label">' + _escHtml(displayLabel) + '</span>' +
+            '<span class="patch-direct-field-tile-badge rfi">RFI Target</span></div>' +
+            '<div class="patch-direct-field-tile-row">' +
+            '<span class="patch-direct-field-tile-current-label">Current Value:</span>' +
+            '<span class="patch-direct-field-tile-current-val">' + _escHtml(String(oldValue) || '(empty)') + '</span></div></div>';
+        }
+      }
+
+      var draft = srrState.patchDraft || {};
+      var html = '<div class="patch-submit-modal-title">' +
+        '<span>Submit Patch Request</span>' +
+        '<span class="patch-submit-modal-badge ' + badgeClass + '">' + typeLabel + '</span></div>';
+
+      html += '<div class="patch-submit-modal-section">' + fieldTileHtml + '</div>';
+
+      if (patchType === 'correction') {
+        html += '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Observation (WHEN)</div>' +
+          '<select class="patch-submit-modal-textarea" id="patch-modal-observation" style="min-height:auto;padding:8px 12px;">' +
+          '<option value="">-- Select observation type --</option>' +
+          '<option value="incorrect_value">Incorrect Value</option>' +
+          '<option value="missing_value">Missing Value</option>' +
+          '<option value="formatting_issue">Formatting Issue</option>' +
+          '<option value="duplicate_entry">Duplicate Entry</option>' +
+          '<option value="inconsistent_data">Inconsistent Data</option>' +
+          '<option value="override_needed">Override Needed</option></select></div>';
+
+        html += '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Expected (THEN)</div>' +
+          '<select class="patch-submit-modal-textarea" id="patch-modal-expected" style="min-height:auto;padding:8px 12px;">' +
+          '<option value="">-- Select expected behavior --</option>' +
+          '<option value="correct_value">Use Correct Value</option>' +
+          '<option value="populate_field">Populate Empty Field</option>' +
+          '<option value="standardize_format">Standardize Format</option>' +
+          '<option value="remove_duplicate">Remove Duplicate</option>' +
+          '<option value="align_with_source">Align with Source Document</option>' +
+          '<option value="allow_override">Allow Override</option></select></div>';
+
+        html += '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Repro Method</div>' +
+          '<select class="patch-submit-modal-textarea" id="patch-modal-repro" style="min-height:auto;padding:8px 12px;">' +
+          '<option value="">-- Select repro method --</option>' +
+          '<option value="breaks_salesforce_rule">System Pass Violation</option>' +
+          '<option value="breaks_qa_gate">Breaks QA Gate</option>' +
+          '<option value="resolver_mismatch">Resolver Mismatch</option>' +
+          '<option value="doc_evidence_mismatch">Doc Evidence Mismatch</option></select></div>';
+      }
+
+      html += '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Justification (BECAUSE) <span style="color:var(--accent-2,#5c6bc0);font-weight:400;text-transform:none;">(required)</span></div>' +
+        '<textarea class="patch-submit-modal-textarea" id="patch-modal-justification" placeholder="Explain why this ' +
+        (patchType === 'rfi' ? 'clarification is needed' : patchType === 'blacklist' ? 'value should be blacklisted' : 'change is necessary') +
+        '..."></textarea></div>';
+
+      html += '<div class="patch-submit-modal-footer">' +
+        '<button class="patch-submit-modal-btn secondary" onclick="_patchModalClose()">Cancel</button>' +
+        '<button class="patch-submit-modal-btn primary" id="patch-modal-confirm-btn" onclick="_gridCtxDirectModalSubmit()">Confirm Submit</button></div>';
+
+      var modal = document.createElement('div');
+      modal.className = 'patch-submit-modal';
+      modal.innerHTML = html;
+
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) _patchModalClose();
+      });
+
+      document.addEventListener('keydown', function _escHandler(e) {
+        if (e.key === 'Escape') { _patchModalClose(); document.removeEventListener('keydown', _escHandler); }
+      });
+
+      setTimeout(function() {
+        var inp = document.getElementById('patch-direct-field-input');
+        if (inp) { inp.focus(); inp.select(); }
+        else {
+          var ta = document.getElementById('patch-modal-justification');
+          if (ta) ta.focus();
+        }
+      }, 100);
+
+      console.log('[GRID-CTX-DIRECT-MODAL] opened', { patchType: patchType, fieldKey: fieldKey, recordId: ctx.recordId });
+    }
+
+    function _gridCtxDirectModalSubmit() {
+      var patchType = srrState.patchType || 'correction';
+      var directCtx = srrState._gridDirectModalCtx || {};
+      var ta = document.getElementById('patch-modal-justification');
+      var justification = ta ? ta.value.trim() : '';
+      if (!justification) {
+        showToast('Justification is required', 'warning');
+        if (ta) ta.focus();
+        return;
+      }
+
+      var fieldKey = directCtx.field_key || '';
+
+      if (patchType === 'correction') {
+        var inp = document.getElementById('patch-direct-field-input');
+        var newValue = inp ? inp.value.trim() : '';
+        var oldVal = directCtx.old_value || '';
+        if (fieldKey && newValue !== String(oldVal)) {
+          srrState.proposedChanges[fieldKey] = { field: fieldKey, label: fieldKey, from: String(oldVal), to: newValue };
+        }
+        if (Object.keys(srrState.proposedChanges).length === 0) {
+          showToast('Enter a new value different from the current one', 'warning');
+          if (inp) inp.focus();
+          return;
+        }
+
+        var obsEl = document.getElementById('patch-modal-observation');
+        var expEl = document.getElementById('patch-modal-expected');
+        var reproEl = document.getElementById('patch-modal-repro');
+        if (obsEl) srrState.patchDraft.observation_type = obsEl.value;
+        if (expEl) srrState.patchDraft.expected_type = expEl.value;
+        if (reproEl) srrState.patchDraft.repro_type = reproEl.value;
+
+        if (!isDemoMode()) {
+          if (!srrState.patchDraft.observation_type) {
+            showToast('Please select an observation type', 'warning');
+            if (obsEl) obsEl.focus();
+            return;
+          }
+          if (!srrState.patchDraft.expected_type) {
+            showToast('Please select an expected behavior', 'warning');
+            if (expEl) expEl.focus();
+            return;
+          }
+        }
+      } else if (patchType === 'rfi') {
+        srrState.rfiField = { key: fieldKey, label: fieldKey, value: directCtx.old_value || '' };
+      }
+
+      srrState.patchDraft.justification = justification;
+      srrState.currentRecordKey = directCtx.record_id;
+
+      _patchModalClose();
+
+      if (typeof _srrExecutePatchSubmit === 'function') {
+        _srrExecutePatchSubmit(justification);
+        console.log('[GRID-CTX-DIRECT-MODAL] submitted via _srrExecutePatchSubmit', {
+          patchType: patchType, fieldKey: fieldKey, recordId: directCtx.record_id
+        });
+      } else {
+        console.log('[GRID-CTX-DIRECT-MODAL] _srrExecutePatchSubmit not available');
+        showToast('Patch submission not available', 'error');
+      }
+
+      srrState._gridDirectModalSource = false;
+      srrState._gridDirectModalCtx = null;
     }
     function initPatchConsole() {
       renderPatchConsoleTable();
