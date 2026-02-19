@@ -2253,6 +2253,8 @@
     .rs-entity-conf { font-size: 0.82em; font-weight: 600; font-family: 'Courier New', monospace; }
     .rs-entity-row { display: flex; align-items: center; gap: 8px; padding: 4px 12px; font-size: 0.85em; color: var(--text-2, #666); }
     .rs-entity-row-label { font-weight: 600; min-width: 110px; flex-shrink: 0; }
+    .rs-assign-select { flex: 1; padding: 6px 10px; border: 1px solid var(--border-1, #ddd); border-radius: 6px; background: var(--bg-base, #fff); color: var(--text-1, #333); font-size: 0.88em; font-family: inherit; cursor: pointer; max-width: 360px; appearance: auto; }
+    .rs-assign-select:focus { outline: none; border-color: var(--accent-1, #1976d2); box-shadow: 0 0 0 2px rgba(25,118,210,0.15); }
     .rs-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 10px; font-size: 0.72em; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
     .rs-badge-legal { background: var(--ok-bg, #e8f5e9); color: var(--ok, #43a047); }
     .rs-badge-counter { background: #e8eaf6; color: #3949ab; }
@@ -2293,6 +2295,7 @@
     html[data-theme="dark"] .rs-entity-card.rs-entity-counter { border-left-color: #7c4dff; }
     html[data-theme="dark"] .rs-badge-legal { background: rgba(76,175,80,0.15); color: #81c784; }
     html[data-theme="dark"] .rs-badge-counter { background: rgba(139,92,246,0.15); color: #c4b5fd; }
+    html[data-theme="dark"] .rs-assign-select { background: var(--bg-1, #1e1e1e); color: var(--text-1, #e0e0e0); border-color: var(--border-1, #444); }
     html[data-theme="dark"] .rs-badge-multi { background: rgba(124,77,255,0.15); color: #b388ff; }
     html[data-theme="dark"] .rs-badge-manual { background: rgba(255,152,0,0.15); color: #ffcc80; }
     html[data-theme="dark"] .rs-reasoning-item { border-bottom-color: var(--border-1); color: var(--text-1); }
@@ -56295,7 +56298,7 @@ var P022_RuntimeValidation = {
       html += '</div></div>';
     }
 
-    html += _pftlRenderStoryWho(story);
+    html += _pftlRenderStoryWho(story, r);
     html += _pftlRenderOnboardingCard(story);
     html += _pftlRenderStoryWhy(story);
     html += _pftlRenderStoryWhat(story);
@@ -56327,66 +56330,179 @@ var P022_RuntimeValidation = {
     return html;
   }
 
-  function _pftlRenderStoryWho(story) {
-    var html = '<div class="rs-section">';
-    html += '<div class="rs-section-header"><span class="rs-section-icon">A.</span> Who We Think This Is</div>';
+  var _pftlAssignmentsStore = {};
+  (function() {
+    try {
+      var saved = sessionStorage.getItem('_pftlAssignmentsStore');
+      if (saved) _pftlAssignmentsStore = JSON.parse(saved);
+    } catch(e) {}
+  })();
+  function _pftlGetRecordKey() {
+    try {
+      var sel = (typeof currentSelection !== 'undefined') ? currentSelection : null;
+      if (sel && sel.joinIdentity) {
+        return 'assign_' + (sel.joinIdentity.contractKey || '') + '_' + (sel.joinIdentity.fileName || '');
+      }
+    } catch(e) {}
+    return 'assign_default';
+  }
+  function _pftlGetAssignments() {
+    var key = _pftlGetRecordKey();
+    if (!_pftlAssignmentsStore[key]) _pftlAssignmentsStore[key] = { legal_entity: null, counterparty: null };
+    return _pftlAssignmentsStore[key];
+  }
+  function _pftlSaveAssignments() {
+    try { sessionStorage.setItem('_pftlAssignmentsStore', JSON.stringify(_pftlAssignmentsStore)); } catch(e) {}
+  }
 
-    var le = story.legal_entity_account;
-    if (le) {
-      var leConfRaw = le.confidence ? Math.round(le.confidence * 100) : 0;
-      var leIdentPct = le.identity_confidence_pct != null ? le.identity_confidence_pct : leConfRaw;
-      var lePenPct = le.context_risk_penalty_pct || 0;
-      var leFinalPct = le.final_confidence_pct != null ? le.final_confidence_pct : leConfRaw;
-      var confPct = leFinalPct > 0 ? leFinalPct + '%' : '\u2014';
-      var statusLabel = le.match_status === 'match' ? 'Match' : le.match_status === 'review' ? 'Review' : 'No Match';
-      html += '<div class="rs-entity-card rs-entity-legal">';
-      html += '<span class="rs-entity-name">' + _pftlEsc(le.name) + '</span>';
-      html += '<span class="rs-entity-meta">';
-      html += '<span class="rs-badge rs-badge-legal">Legal Entity</span>';
-      html += '<span class="sm-status-badge ' + (le.match_status || '') + '">' + statusLabel + '</span>';
-      html += '<span class="rs-entity-conf">' + confPct + '</span>';
-      if (lePenPct > 0) html += '<span style="font-size:0.72em;color:var(--text-3,#999);margin-left:4px;" title="Identity ' + leIdentPct + '% \u2022 Risk \u2212' + lePenPct + '%">Identity ' + leIdentPct + '% \u2022 Risk \u2212' + lePenPct + '%</span>';
-      html += '</span></div>';
-    } else {
-      html += '<div class="rs-entity-card rs-entity-empty">';
-      html += '<span class="rs-entity-name" style="font-style:italic;color:var(--text-3,#aaa);">\u2014 no CMG-side entity identified \u2014</span>';
-      html += '</div>';
+  function _pftlBuildCandidatePool(story, r) {
+    var pool = [];
+    var seen = {};
+    var sfRows = (r && r.salesforce_match) ? r.salesforce_match : [];
+    for (var i = 0; i < sfRows.length; i++) {
+      var row = sfRows[i];
+      if (!row.visible && row.visible !== undefined) continue;
+      var name = row.suggested_label && row.suggested_label !== '\u2014' ? row.suggested_label : row.source_field;
+      if (!name || seen[name.toLowerCase()]) continue;
+      seen[name.toLowerCase()] = true;
+      var confRaw = row.match_score ? Math.round(row.match_score * 100) : 0;
+      pool.push({
+        name: name,
+        source_field: row.source_field || name,
+        confidence: row.match_score || 0,
+        match_status: row.match_status || 'no-match',
+        identity_confidence_pct: row.identity_confidence_pct != null ? row.identity_confidence_pct : confRaw,
+        context_risk_penalty_pct: row.context_risk_penalty_pct || 0,
+        final_confidence_pct: row.final_confidence_pct != null ? row.final_confidence_pct : confRaw,
+      });
     }
-
+    var le = story.legal_entity_account;
+    if (le && !seen[le.name.toLowerCase()]) {
+      seen[le.name.toLowerCase()] = true;
+      pool.push({
+        name: le.name, source_field: le.name,
+        confidence: le.confidence || 0, match_status: le.match_status || 'no-match',
+        identity_confidence_pct: le.identity_confidence_pct, context_risk_penalty_pct: le.context_risk_penalty_pct || 0,
+        final_confidence_pct: le.final_confidence_pct,
+      });
+    }
     var cps = story.counterparties || [];
-    if (cps.length > 0) {
-      for (var i = 0; i < cps.length; i++) {
-        var cp = cps[i];
-        var cpConfRaw = cp.confidence ? Math.round(cp.confidence * 100) : 0;
-        var cpIdentPct = cp.identity_confidence_pct != null ? cp.identity_confidence_pct : cpConfRaw;
-        var cpPenPct = cp.context_risk_penalty_pct || 0;
-        var cpFinalPct = cp.final_confidence_pct != null ? cp.final_confidence_pct : cpConfRaw;
-        var cpPct = cpFinalPct > 0 ? cpFinalPct + '%' : '\u2014';
-        var cpStatus = cp.match_status === 'match' ? 'Match' : cp.match_status === 'review' ? 'Review' : 'No Match';
-        html += '<div class="rs-entity-card rs-entity-counter">';
-        html += '<span class="rs-entity-name">' + _pftlEsc(cp.name) + '</span>';
-        html += '<span class="rs-entity-meta">';
-        if (cps.length > 1) {
-          html += '<span class="rs-badge rs-badge-multi">Multi-Counterparty</span>';
-        }
-        html += '<span class="rs-badge rs-badge-counter">Counterparty</span>';
-        html += '<span class="sm-status-badge ' + (cp.match_status || '') + '">' + cpStatus + '</span>';
-        html += '<span class="rs-entity-conf">' + cpPct + '</span>';
-        if (cpPenPct > 0) html += '<span style="font-size:0.72em;color:var(--text-3,#999);margin-left:4px;" title="Identity ' + cpIdentPct + '% \u2022 Risk \u2212' + cpPenPct + '%">Identity ' + cpIdentPct + '% \u2022 Risk \u2212' + cpPenPct + '%</span>';
-        html += '</span></div>';
+    for (var j = 0; j < cps.length; j++) {
+      if (!seen[cps[j].name.toLowerCase()]) {
+        seen[cps[j].name.toLowerCase()] = true;
+        pool.push({
+          name: cps[j].name, source_field: cps[j].name,
+          confidence: cps[j].confidence || 0, match_status: cps[j].match_status || 'no-match',
+          identity_confidence_pct: cps[j].identity_confidence_pct, context_risk_penalty_pct: cps[j].context_risk_penalty_pct || 0,
+          final_confidence_pct: cps[j].final_confidence_pct,
+        });
       }
     }
+    pool.sort(function(a, b) { return b.confidence - a.confidence; });
+    return pool;
+  }
 
-    html += '<div class="rs-entity-row"><span class="rs-entity-row-label">Business Unit:</span><span>' + _pftlEsc(story.business_unit || '\u2014 none detected \u2014') + '</span></div>';
-    html += '<div class="rs-entity-row"><span class="rs-entity-row-label">Parent Account:</span><span>' + _pftlEsc(story.parent_account || '\u2014 none detected \u2014') + '</span></div>';
+  function _pftlRenderEntityCard(entity, role) {
+    if (!entity) {
+      return '<div class="rs-entity-card rs-entity-empty"><span class="rs-entity-name" style="font-style:italic;color:var(--text-3,#aaa);">\u2014 not assigned \u2014</span></div>';
+    }
+    var confRaw = entity.confidence ? Math.round(entity.confidence * 100) : 0;
+    var identPct = entity.identity_confidence_pct != null ? entity.identity_confidence_pct : confRaw;
+    var penPct = entity.context_risk_penalty_pct || 0;
+    var finalPct = entity.final_confidence_pct != null ? entity.final_confidence_pct : confRaw;
+    var confDisplay = finalPct > 0 ? finalPct + '%' : '\u2014';
+    var statusLabel = entity.match_status === 'match' ? 'Match' : entity.match_status === 'review' ? 'Review' : 'No Match';
+    var cardClass = role === 'legal_entity' ? 'rs-entity-legal' : 'rs-entity-counter';
+    var badgeClass = role === 'legal_entity' ? 'rs-badge-legal' : 'rs-badge-counter';
+    var badgeText = role === 'legal_entity' ? 'Legal Entity' : 'Counterparty';
+    var html = '<div class="rs-entity-card ' + cardClass + '">';
+    html += '<span class="rs-entity-name">' + _pftlEsc(entity.name) + '</span>';
+    html += '<span class="rs-entity-meta">';
+    html += '<span class="rs-badge ' + badgeClass + '">' + badgeText + '</span>';
+    html += '<span class="sm-status-badge ' + (entity.match_status || '') + '">' + statusLabel + '</span>';
+    html += '<span class="rs-entity-conf">' + confDisplay + '</span>';
+    if (penPct > 0) html += '<span style="font-size:0.72em;color:var(--text-3,#999);margin-left:4px;">Identity ' + identPct + '% \u2022 Risk \u2212' + penPct + '%</span>';
+    html += '</span></div>';
+    return html;
+  }
+
+  function _pftlRenderStoryWho(story, r) {
+    var pool = _pftlBuildCandidatePool(story, r);
+    var le = story.legal_entity_account;
+    var cps = story.counterparties || [];
+    var assigns = _pftlGetAssignments();
+    var defaultLe = assigns.legal_entity || (le ? le.name : '');
+    var defaultCp = assigns.counterparty || (cps.length > 0 ? cps[0].name : '');
+    if (!assigns.legal_entity && le) { assigns.legal_entity = le.name; _pftlSaveAssignments(); }
+    if (!assigns.counterparty && cps.length > 0) { assigns.counterparty = cps[0].name; _pftlSaveAssignments(); }
+
+    var html = '<div class="rs-section" id="rs-section-who">';
+    html += '<div class="rs-section-header"><span class="rs-section-icon">A.</span> Who We Think This Is</div>';
+
+    html += '<div class="rs-assign-row" style="margin-bottom:10px;">';
+    html += '<label class="rs-assign-label" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">';
+    html += '<span class="rs-badge rs-badge-legal" style="min-width:100px;text-align:center;">Legal Entity</span>';
+    html += '<select id="rs-assign-legal" class="rs-assign-select" onchange="pftlOnAssignChange(\'legal_entity\')">';
+    html += '<option value="">\u2014 Select Legal Entity \u2014</option>';
+    for (var i = 0; i < pool.length; i++) {
+      var sel = pool[i].name === defaultLe ? ' selected' : '';
+      var pctLabel = pool[i].final_confidence_pct != null ? ' (' + pool[i].final_confidence_pct + '%)' : '';
+      html += '<option value="' + _pftlEsc(pool[i].name) + '"' + sel + '>' + _pftlEsc(pool[i].name) + pctLabel + '</option>';
+    }
+    html += '</select></label>';
+    html += '<div id="rs-card-legal">';
+    var leEntity = null;
+    for (var k = 0; k < pool.length; k++) { if (pool[k].name === defaultLe) { leEntity = pool[k]; break; } }
+    html += _pftlRenderEntityCard(leEntity, 'legal_entity');
+    html += '</div></div>';
+
+    html += '<div class="rs-assign-row">';
+    html += '<label class="rs-assign-label" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">';
+    html += '<span class="rs-badge rs-badge-counter" style="min-width:100px;text-align:center;">Counterparty</span>';
+    html += '<select id="rs-assign-counter" class="rs-assign-select" onchange="pftlOnAssignChange(\'counterparty\')">';
+    html += '<option value="">\u2014 Select Counterparty \u2014</option>';
+    for (var j = 0; j < pool.length; j++) {
+      var sel2 = pool[j].name === defaultCp ? ' selected' : '';
+      var pctLabel2 = pool[j].final_confidence_pct != null ? ' (' + pool[j].final_confidence_pct + '%)' : '';
+      html += '<option value="' + _pftlEsc(pool[j].name) + '"' + sel2 + '>' + _pftlEsc(pool[j].name) + pctLabel2 + '</option>';
+    }
+    html += '</select></label>';
+    html += '<div id="rs-card-counter">';
+    var cpEntity = null;
+    for (var m = 0; m < pool.length; m++) { if (pool[m].name === defaultCp) { cpEntity = pool[m]; break; } }
+    html += _pftlRenderEntityCard(cpEntity, 'counterparty');
+    html += '</div></div>';
 
     if (story.requires_manual_confirmation) {
       html += '<div style="margin-top:8px;"><span class="rs-badge rs-badge-manual">Manual Confirmation Required</span></div>';
     }
 
     html += '</div>';
+
+    window._pftlCandidatePool = pool;
+    window._pftlCurrentRecordKey = _pftlGetRecordKey();
+
     return html;
   }
+
+  window.pftlOnAssignChange = function(role) {
+    var selectId = role === 'legal_entity' ? 'rs-assign-legal' : 'rs-assign-counter';
+    var cardId = role === 'legal_entity' ? 'rs-card-legal' : 'rs-card-counter';
+    var sel = document.getElementById(selectId);
+    var cardWrap = document.getElementById(cardId);
+    if (!sel || !cardWrap) return;
+    var chosen = sel.value;
+    var assigns = _pftlGetAssignments();
+    assigns[role] = chosen;
+    _pftlSaveAssignments();
+    var pool = window._pftlCandidatePool || [];
+    var entity = null;
+    for (var i = 0; i < pool.length; i++) {
+      if (pool[i].name === chosen) { entity = pool[i]; break; }
+    }
+    cardWrap.innerHTML = _pftlRenderEntityCard(entity, role);
+    console.log('[RS-ASSIGN] ' + role + ' = ' + (chosen || '(none)'));
+  };
 
   function _pftlRenderStoryWhy(story) {
     var steps = story.reasoning_steps || [];
