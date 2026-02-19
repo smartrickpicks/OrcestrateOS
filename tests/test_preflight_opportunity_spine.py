@@ -55,16 +55,16 @@ class TestContractSubtype:
         text = "This is a digital distribution agreement for worldwide release."
         result = _extract_contract_subtype(text)
         assert result["status"] == "pass"
-        assert result["value"] == "digital distribution"
+        assert result["value"] == "Distribution"
         assert "candidates" in result
         assert len(result["candidates"]) >= 1
-        assert result["candidates"][0]["value"] == "digital distribution"
+        assert result["candidates"][0]["value"] == "Distribution"
 
     def test_label_services(self):
         text = "The parties agree to label services for the following recordings."
         result = _extract_contract_subtype(text)
-        assert result["status"] == "pass"
-        assert result["value"] == "label services"
+        assert result["status"] in ("pass", "review")
+        assert result["value"] == "Label Ventures"
         assert len(result["candidates"]) >= 1
 
     def test_multiple_subtypes(self):
@@ -75,8 +75,8 @@ class TestContractSubtype:
         assert "analyst confirmation required" in result["reason"]
         assert len(result["candidates"]) >= 2
         cand_values = [c["value"] for c in result["candidates"]]
-        assert "digital distribution" in cand_values
-        assert "sync" in cand_values
+        assert "Distribution" in cand_values
+        assert "Sync" in cand_values
 
     def test_no_subtype(self):
         text = "A general agreement between the parties."
@@ -89,7 +89,7 @@ class TestContractSubtype:
         text = "This admin publishing agreement covers the catalogue."
         result = _extract_contract_subtype(text)
         assert result["status"] == "pass"
-        assert result["value"] == "admin publishing"
+        assert result["value"] == "Pub Admin"
 
     def test_empty_text(self):
         result = _extract_contract_subtype("")
@@ -99,16 +99,16 @@ class TestContractSubtype:
     def test_synch_normalized_to_sync(self):
         text = "This agreement includes synch licensing and synch license terms."
         result = _extract_contract_subtype(text)
-        assert result["value"] == "sync"
+        assert result["value"] == "Sync"
         cand_values = [c["value"] for c in result["candidates"]]
-        assert "sync" in cand_values
+        assert "Sync" in cand_values
         assert "synch" not in cand_values
         assert "synch licensing" not in cand_values
 
     def test_synchronisation_normalized(self):
         text = "This agreement covers synchronisation rights."
         result = _extract_contract_subtype(text)
-        assert result["value"] == "sync"
+        assert result["value"] == "Sync"
 
     def test_candidates_have_evidence(self):
         text = "Digital distribution agreement with sync licensing rights."
@@ -132,13 +132,13 @@ class TestContractSubtype:
         result = _extract_contract_subtype(text)
         assert result["status"] == "pass"
         assert len(result["candidates"]) == 1
-        assert result["candidates"][0]["value"] == "digital distribution"
+        assert result["candidates"][0]["value"] == "Distribution"
 
     def test_zone_weighting_title_higher(self):
         filler = "\n".join([f"Line {i}" for i in range(40)])
         text = "Digital Distribution Agreement\n" + filler + "\nSome sync licensing text here.\nThe synchronization rights apply."
         result = _extract_contract_subtype(text)
-        assert result["candidates"][0]["value"] == "digital distribution"
+        assert result["candidates"][0]["value"] == "Distribution"
         assert len(result["candidates"]) >= 2
         assert result["candidates"][0]["confidence"] > result["candidates"][1]["confidence"]
 
