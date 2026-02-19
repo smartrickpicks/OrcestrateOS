@@ -22265,6 +22265,19 @@
         }
       }
 
+      if (ctx._pendingEdits.hasOwnProperty(fk) && editCount > 0 && !window._gridModalOpenedForSession) {
+        if (window._gridAutoSwitchTimer) clearTimeout(window._gridAutoSwitchTimer);
+        window._gridAutoSwitchTimer = setTimeout(function() {
+          var cx = window._gridDrawerContext;
+          if (cx && Object.keys(cx._pendingEdits).length > 0 && !window._gridModalOpenedForSession) {
+            var activeEl = document.activeElement;
+            if (activeEl && activeEl.getAttribute && activeEl.getAttribute('data-field')) return;
+            window._gridModalOpenedForSession = true;
+            _gridDrawerOpenPatchModal();
+          }
+        }, 800);
+      }
+
     }
 
     function _gridDrawerSearchFields() {
@@ -22283,6 +22296,8 @@
       ctx._editCommitted = false;
       ctx.patchType = null;
       ctx._activeTab = 'edit';
+      window._gridModalOpenedForSession = false;
+      if (window._gridAutoSwitchTimer) { clearTimeout(window._gridAutoSwitchTimer); window._gridAutoSwitchTimer = null; }
       var drawer = document.getElementById('grid-patch-drawer');
       if (drawer) _gridDrawerRender(drawer);
     }
@@ -22310,6 +22325,8 @@
         Components.PatchPanel.cancel('grid_drawer');
       }
       window._gridDrawerContext = null;
+      window._gridModalOpenedForSession = false;
+      if (window._gridAutoSwitchTimer) { clearTimeout(window._gridAutoSwitchTimer); window._gridAutoSwitchTimer = null; }
     }
 
     function _gridDrawerOpenPatchModal() {
@@ -38693,6 +38710,7 @@
     function _patchModalClose() {
       var el = document.getElementById('patch-submit-modal-root');
       if (el) el.remove();
+      window._gridModalOpenedForSession = false;
     }
 
     function _patchModalConfirmSubmit() {
