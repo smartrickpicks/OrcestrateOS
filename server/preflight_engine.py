@@ -689,15 +689,9 @@ def _guess_agreement_type(full_text):
     return best_type
 
 
-_PARTY_ZONE_RE = re.compile(
-    r'(?:(?:BETWEEN|between|By and Between|BY AND BETWEEN|PARTIES|parties)\s*[:\-]?\s*\n?)'
-    r'((?:.*\n){1,10})',
-    re.MULTILINE,
-)
-
 _BETWEEN_AND_RE = re.compile(
     r'(?:between|BETWEEN|By\s+and\s+Between|BY\s+AND\s+BETWEEN)\s+'
-    r'(.+?)\s+(?:and|AND|&)\s+(.+?)(?:\s*[\(\,]|$)',
+    r'(.+?)\s+(?:and|AND|&)\s+(.+?)(?:\s*[\(\,\.]|$)',
     re.IGNORECASE | re.MULTILINE,
 )
 
@@ -708,19 +702,33 @@ _LABEL_PARTY_RE = re.compile(
     re.IGNORECASE,
 )
 
-_COMPANY_MARKERS = re.compile(
-    r'\b(?:ltd|limited|inc|incorporated|llc|corp|corporation|gmbh|plc|pty|s\.a\.|sa|bv|ag)\b',
+_COMPANY_MARKERS_RE = re.compile(
+    r'\b(?:ltd|limited|inc|incorporated|llc|corp|corporation|gmbh|plc|pty|'
+    r's\.a\.|sa|bv|ag|entertainments|entertainment|records|recordings|'
+    r'music|media|studios|productions|publishing|group)\b',
     re.IGNORECASE,
 )
 
-_RECITAL_CLAUSE_WORDS = (
-    "shall", "will", "may", "subject to", "in accordance", "pursuant to",
-    "notwithstanding", "provided that", "for the purpose", "agrees to",
-    "agrees that", "represents", "warrants", "acknowledges", "except as",
-    "without limiting", "to the extent", "in consideration", "in witness",
-    "hereby", "hereunder", "hereto", "hereof", "therein", "thereof",
-    "whereas", "now therefore", "witnesseth", "effective as of",
-    "dated as of", "entered into", "made and entered",
+_BANNED_PARTY_MARKERS = re.compile(
+    r'\b(?:schedule|definitions|revenue\s+shares?|bank|account\s*(?:number|no|name|#)|'
+    r'sort\s*code|iban|swift|routing|wire\s*transfer|ach|beneficiary|'
+    r'page|pages|channels?|means|exhibit|appendix|annex|attachment|'
+    r'recital|preamble|article|section|clause|paragraph|notices)\b',
+    re.IGNORECASE,
+)
+
+_COLON_LABEL_RE = re.compile(
+    r'^[A-Za-z\s]+:\s',
+)
+
+_PROSE_CLAUSE_RE = re.compile(
+    r'\b(?:shall|provided that|in accordance|pursuant to|notwithstanding|'
+    r'agrees? to|represents|warrants|acknowledges|except as|'
+    r'without limiting|to the extent|in consideration|in witness|'
+    r'hereby|hereunder|hereto|hereof|therein|thereof|whereas|'
+    r'now therefore|witnesseth|effective as of|dated as of|'
+    r'entered into|made and entered|for the purpose|subject to)\b',
+    re.IGNORECASE,
 )
 
 _RECITAL_ADDRESS_RE = re.compile(
@@ -733,17 +741,6 @@ _RECITAL_ADDRESS_RE = re.compile(
     re.IGNORECASE,
 )
 
-_RECITAL_BANK_RE = re.compile(
-    r'\b(?:bank|routing|swift|iban|account\s*(?:number|no|#)|sort\s*code|'
-    r'wire\s*transfer|ach|beneficiary)\b',
-    re.IGNORECASE,
-)
-
-_RECITAL_SCHEDULE_RE = re.compile(
-    r'^(?:schedule|exhibit|appendix|annex|attachment|part)\s+[a-z0-9]',
-    re.IGNORECASE,
-)
-
 _PAGINATION_RE = re.compile(r'(?:page|pg\.?)\s*\d+\s*(?:of\s*\d+)?', re.IGNORECASE)
 
 _GENERIC_ROLE_NOUNS = {
@@ -752,60 +749,73 @@ _GENERIC_ROLE_NOUNS = {
     "recipient", "sender", "buyer", "seller", "lender", "borrower",
 }
 
-_MAX_RECITAL_PARTIES = 8
+_MAX_RECITAL_PARTIES = 6
+_PREAMBLE_LINES = 35
 
 
-def _is_recital_noise(line):
-    low = line.lower().strip()
-    if any(low.startswith(cw) for cw in _RECITAL_CLAUSE_WORDS):
-        return True
-    if _RECITAL_ADDRESS_RE.search(line):
-        return True
-    if _RECITAL_BANK_RE.search(line):
-        return True
-    if _RECITAL_SCHEDULE_RE.match(line):
-        return True
-    if _PAGINATION_RE.search(line):
-        return True
-    if line.endswith(':'):
-        return True
-    if any(c < ' ' and c not in ('\n', '\r', '\t') for c in line):
-        return True
-    if re.match(r'^[^a-zA-Z0-9]+$', line):
-        return True
-    if low in ("and", "or", "by", "between", "of", "the"):
-        return True
-    if low in _GENERIC_ROLE_NOUNS:
-        return True
-    if low.startswith(("hereinafter", "the ", "this ", "whereas")):
-        return True
-    word_count = len(low.split())
-    if word_count > 10:
-        return True
-    if not re.search(r'[A-Z]', line):
-        return True
-    return False
-
-
-def _clean_party_name(raw):
-    raw = raw.strip().strip("()").strip()
+def normalize_party_candidate(raw):
+    raw = raw.strip()
     raw = re.sub(r'^\d+[\.\)]\s*', '', raw)
-    raw = re.sub(r'\s*\(\s*"?\s*(?:the\s+)?(?:Owner|Company|Label|Licensor|Licensee|Publisher|Distributor|Artist|Producer|Manager)\s*"?\s*\)', '', raw, flags=re.IGNORECASE).strip()
+    raw = re.sub(
+        r'\s*\(\s*"?\s*(?:the\s+)?(?:Owner|Company|Label|Licensor|Licensee|'
+        r'Publisher|Distributor|Artist|Producer|Manager)\s*"?\s*\)',
+        '', raw, flags=re.IGNORECASE,
+    ).strip()
+    raw = raw.strip("()\"'").strip()
     raw = re.sub(r'\s*\(.*?\)\s*$', '', raw).strip()
     raw = re.sub(r'^(and|AND|&)\s+', '', raw).strip()
+    raw = re.sub(r',?\s*(?:of|located at|at)\s+\d.*$', '', raw, flags=re.IGNORECASE).strip()
     raw = re.sub(r',?\s*(?:a|an)\s+(?:company|corporation|partnership|firm|entity)\s+.*$', '', raw, flags=re.IGNORECASE).strip()
     raw = re.sub(r',?\s*(?:with|having|whose|located|organized|incorporated|formed)\s+.*$', '', raw, flags=re.IGNORECASE).strip()
+    raw = re.sub(r'\s*[,;]+\s*$', '', raw).strip()
+    raw = re.sub(r'^["\']|["\']$', '', raw).strip()
     return raw
 
 
-def _is_plausible_entity(name):
-    if len(name) < 3 or len(name) > 100:
+def is_plausible_party_name(name):
+    if not name or len(name) < 3 or len(name) > 100:
         return False
-    if _COMPANY_MARKERS.search(name):
+    low = name.lower().strip()
+    if _BANNED_PARTY_MARKERS.search(name):
+        return False
+    if _COLON_LABEL_RE.match(name):
+        return False
+    if _PROSE_CLAUSE_RE.search(name):
+        return False
+    if _RECITAL_ADDRESS_RE.search(name):
+        return False
+    if _PAGINATION_RE.search(name):
+        return False
+    if name.endswith(':'):
+        return False
+    if any(c < ' ' and c not in ('\n', '\r', '\t') for c in name):
+        return False
+    if re.match(r'^[^a-zA-Z0-9]+$', name):
+        return False
+    if low in ("and", "or", "by", "between", "of", "the"):
+        return False
+    if low in _GENERIC_ROLE_NOUNS:
+        return False
+    if low.startswith(("hereinafter", "the ", "this ", "whereas")):
+        return False
+    word_count = len(low.split())
+    if word_count > 10:
+        return False
+    if not re.search(r'[A-Z]', name):
+        return False
+    if low.endswith("...") or low.startswith("..."):
+        return False
+    if low in _HARD_DENYLIST or low in _GENERIC_SINGLE_TOKENS:
+        return False
+    if _COMPANY_MARKERS_RE.search(name):
         return True
     words = name.split()
-    if len(words) >= 2 and any(w[0].isupper() for w in words if w):
-        return True
+    if len(words) >= 2:
+        title_words = [w for w in words if w and w[0].isupper()]
+        if len(title_words) >= 2:
+            return True
+        if len(title_words) >= 1 and len(words) <= 3:
+            return True
     if len(words) == 1 and words[0][0].isupper() and len(words[0]) >= 4:
         return True
     return False
@@ -817,60 +827,27 @@ def _extract_recital_parties(full_text):
     parties = []
     seen = set()
 
-    preamble_lines = full_text.split("\n")[:30]
+    preamble_lines = full_text.split("\n")[:_PREAMBLE_LINES]
     preamble_text = "\n".join(preamble_lines)
 
     for m in _BETWEEN_AND_RE.finditer(preamble_text):
         for g in (m.group(1), m.group(2)):
-            name = _clean_party_name(g)
-            if not name or len(name) < 3 or len(name) > 120:
-                continue
-            if _is_recital_noise(name):
+            name = normalize_party_candidate(g)
+            if not is_plausible_party_name(name):
                 continue
             norm = name.lower().strip()
-            if norm in _HARD_DENYLIST or norm in _GENERIC_SINGLE_TOKENS:
-                continue
-            if not _is_plausible_entity(name):
-                continue
             if norm not in seen:
                 seen.add(norm)
                 parties.append(name)
 
     for m in _LABEL_PARTY_RE.finditer(preamble_text):
-        name = _clean_party_name(m.group(1))
-        if not name or len(name) < 3 or len(name) > 120:
-            continue
-        if _is_recital_noise(name):
+        name = normalize_party_candidate(m.group(1))
+        if not is_plausible_party_name(name):
             continue
         norm = name.lower().strip()
-        if norm in _HARD_DENYLIST or norm in _GENERIC_SINGLE_TOKENS:
-            continue
-        if not _is_plausible_entity(name):
-            continue
         if norm not in seen:
             seen.add(norm)
             parties.append(name)
-
-    for m in _PARTY_ZONE_RE.finditer(full_text):
-        block = m.group(1)
-        for line in block.split("\n"):
-            line = _clean_party_name(line)
-            if not line or len(line) < 3 or len(line) > 120:
-                continue
-            if _is_recital_noise(line):
-                continue
-            norm = line.lower().strip()
-            if norm in _HARD_DENYLIST or norm in _GENERIC_SINGLE_TOKENS:
-                continue
-            if not _is_plausible_entity(line):
-                continue
-            if norm not in seen:
-                seen.add(norm)
-                parties.append(line)
-            if len(parties) >= _MAX_RECITAL_PARTIES:
-                break
-        if len(parties) >= _MAX_RECITAL_PARTIES:
-            break
 
     return parties[:_MAX_RECITAL_PARTIES]
 
@@ -878,7 +855,7 @@ def _extract_recital_parties(full_text):
 def _build_onboarding_recommendation(name, agreement_type):
     if not name:
         return None
-    has_company_marker = bool(_COMPANY_MARKERS.search(name))
+    has_company_marker = bool(_COMPANY_MARKERS_RE.search(name))
     if agreement_type == "distribution" and has_company_marker:
         acct_type = "Record Label"
     elif has_company_marker:
@@ -1067,6 +1044,8 @@ def build_resolution_story(sf_match_results, full_text):
                     resolved_names_lower.add(sl.lower())
 
         for party_name in recital_parties:
+            if not is_plausible_party_name(party_name):
+                continue
             party_lower = party_name.lower()
             if party_lower in _CMG_KNOWN_ALIASES:
                 continue
@@ -1079,18 +1058,23 @@ def build_resolution_story(sf_match_results, full_text):
                 unresolved_counterparties.append(party_name)
 
         if unresolved_counterparties and not counterparties:
-            new_entry_detected = True
-            first_unresolved = unresolved_counterparties[0]
-            onboarding_recommendation = _build_onboarding_recommendation(
-                first_unresolved, agreement_type
-            )
-            reasoning.append(
-                f'Party "{first_unresolved}" found in contract party block but not matched in Salesforce index — new entry detected.'
-            )
-            actions.append(
-                "New counterparty not found in Salesforce index. Create Account + Contact before proceeding."
-            )
-            requires_manual = True
+            first_plausible = None
+            for uc in unresolved_counterparties:
+                if is_plausible_party_name(uc):
+                    first_plausible = uc
+                    break
+            if first_plausible:
+                new_entry_detected = True
+                onboarding_recommendation = _build_onboarding_recommendation(
+                    first_plausible, agreement_type
+                )
+                reasoning.append(
+                    f'Party "{first_plausible}" found in contract party block but not matched in Salesforce index — new entry detected.'
+                )
+                actions.append(
+                    "New counterparty not found in Salesforce index. Create Account + Contact before proceeding."
+                )
+                requires_manual = True
 
     return {
         "legal_entity_account": legal_entity,

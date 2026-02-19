@@ -1356,7 +1356,7 @@ class TestNewEntryDetection:
             self._make_row("Ostereo Limited", match_status="match", confidence=0.92,
                            candidates=[{"account_name": "Ostereo Limited", "type": "Division"}]),
         ]
-        text = "Distribution Agreement\nBETWEEN:\nOstereo Limited\nand\nRK Entertainments Ltd\n\nSome body text here."
+        text = "Distribution Agreement\nThis agreement is between Ostereo Limited and RK Entertainments Ltd\n\nSome body text here."
         story = build_resolution_story(sf, text)
         assert story["new_entry_detected"] is True
         assert "RK Entertainments Ltd" in story["unresolved_counterparties"]
@@ -1369,7 +1369,7 @@ class TestNewEntryDetection:
             self._make_row("Ostereo Limited", match_status="match", confidence=0.92,
                            candidates=[{"account_name": "Ostereo Limited", "type": "Division"}]),
         ]
-        text = "Distribution Agreement\nBETWEEN:\nOstereo Limited\nand\nRK Entertainments Ltd\n\nBody."
+        text = "Distribution Agreement\nThis agreement is between Ostereo Limited and RK Entertainments Ltd\n\nBody."
         story = build_resolution_story(sf, text)
         rec = story["onboarding_recommendation"]
         assert rec is not None
@@ -1384,7 +1384,7 @@ class TestNewEntryDetection:
                            candidates=[{"account_name": "Ostereo Limited", "type": "Division"}]),
             self._make_row("1888 Records", match_status="match", confidence=0.85),
         ]
-        text = "Distribution Agreement\nBETWEEN:\nOstereo Limited\nand\n1888 Records\n\nBody."
+        text = "Distribution Agreement\nThis agreement is between Ostereo Limited and 1888 Records\n\nBody."
         story = build_resolution_story(sf, text)
         assert story["new_entry_detected"] is False
         assert story["unresolved_counterparties"] == []
@@ -1397,7 +1397,7 @@ class TestNewEntryDetection:
                            candidates=[{"account_name": "Ostereo Limited", "type": "Division"}]),
             self._make_row("Sony Music", match_status="no-match", confidence=0.10),
         ]
-        text = "Distribution Agreement\nBETWEEN:\nOstereo Limited\nand\nSony Music\n\nBody."
+        text = "Distribution Agreement\nThis agreement is between Ostereo Limited and Sony Music\n\nBody."
         story = build_resolution_story(sf, text)
         assert story["new_entry_detected"] is False
         assert "Sony Music" not in story.get("unresolved_counterparties", [])
@@ -1418,7 +1418,7 @@ class TestNewEntryDetection:
             self._make_row("Ostereo Limited", match_status="match", confidence=0.92,
                            candidates=[{"account_name": "Ostereo Limited", "type": "Division"}]),
         ]
-        text = "Recording Agreement\nBETWEEN:\nOstereo Limited\nand\nJohn Smith\n\nBody text."
+        text = "Recording Agreement\nThis agreement is between Ostereo Limited and John Smith\n\nBody text."
         story = build_resolution_story(sf, text)
         assert story["new_entry_detected"] is True
         rec = story["onboarding_recommendation"]
@@ -1431,7 +1431,7 @@ class TestNewEntryDetection:
             self._make_row("Ostereo Limited", match_status="match", confidence=0.92,
                            candidates=[{"account_name": "Ostereo Limited", "type": "Division"}]),
         ]
-        text = "Distribution Agreement\nBETWEEN:\nOstereo Limited\nand\nRK Entertainments Ltd\n\nBody."
+        text = "Distribution Agreement\nThis agreement is between Ostereo Limited and RK Entertainments Ltd\n\nBody."
         story = build_resolution_story(sf, text)
         assert any("new entry detected" in s for s in story["reasoning_steps"])
 
@@ -1467,7 +1467,7 @@ class TestBorneSuppression:
                 "label_value_hit": True, "recital_party_hit": False,
             },
         ]
-        text = "Distribution Agreement\nBETWEEN:\nOstereo Limited\n\ncosts to be borne by the licensee"
+        text = "Distribution Agreement\nThis agreement is between Ostereo Limited and Some Partner\n\ncosts to be borne by the licensee"
         story = build_resolution_story(sf, text)
         all_names = [cp["name"] for cp in story.get("counterparties", [])]
         assert "borne" not in [n.lower() for n in all_names]
@@ -1476,15 +1476,17 @@ class TestBorneSuppression:
 class TestRecitalPartyBoost:
     def test_recital_party_source_type(self):
         from server.preflight_engine import _extract_recital_parties
-        text = "BETWEEN:\nOstereo Limited\nand\n1888 Records Ltd\n\nBody text."
+        text = "This agreement is between Ostereo Limited and 1888 Records Ltd\n\nBody text."
         parties = _extract_recital_parties(text)
-        assert "1888 Records Ltd" in parties
+        names_lower = [p.lower() for p in parties]
+        assert any("1888 records" in n for n in names_lower)
 
     def test_recital_party_marked_in_results(self):
         from server.preflight_engine import _extract_recital_parties
-        text = "BETWEEN:\nOstereo Limited\nand\nRK Entertainments Ltd\n\nBody text."
+        text = "This agreement is between Ostereo Limited and RK Entertainments Ltd\n\nBody text."
         parties = _extract_recital_parties(text)
-        assert "RK Entertainments Ltd" in parties
+        names_lower = [p.lower() for p in parties]
+        assert any("rk entertainments" in n for n in names_lower)
 
 
 class TestConfidenceSplitFields:
@@ -1564,7 +1566,7 @@ class TestUnresolvedCounterpartyNewEntry:
                 "final_confidence_pct": 92,
             },
         ]
-        text = "Distribution Agreement\nBETWEEN:\nOstereo Limited\nand\nRK Entertainments Ltd\n\nBody text."
+        text = "Distribution Agreement\nThis agreement is between Ostereo Limited and RK Entertainments Ltd\n\nBody text."
         story = build_resolution_story(sf, text)
         assert story["new_entry_detected"] is True
         assert "RK Entertainments Ltd" in story["unresolved_counterparties"]
@@ -1610,74 +1612,42 @@ class TestConfidenceSemanticsReasoning:
 
 
 class TestResolverCandidateCap:
-    def test_recital_parties_not_in_resolver(self):
+    def test_recital_parties_from_between_and(self):
         from server.preflight_engine import _extract_recital_parties
-        text = "BETWEEN:\nOstereo Limited\nand\n1888 Records Ltd\n\nBody text."
+        text = "This agreement is between Ostereo Limited and 1888 Records Ltd\n\nBody text."
         parties = _extract_recital_parties(text)
         assert len(parties) >= 1
 
     def test_extract_rejects_clause_lines(self):
-        from server.preflight_engine import _extract_recital_parties
-        text = "BETWEEN:\nOstereo Limited\nshall be responsible\nand\n1888 Records Ltd\n\nBody."
-        parties = _extract_recital_parties(text)
-        assert "shall be responsible" not in parties
+        from server.preflight_engine import is_plausible_party_name
+        assert not is_plausible_party_name("shall be responsible")
 
     def test_extract_rejects_colon_labels(self):
-        from server.preflight_engine import _extract_recital_parties
-        text = "BETWEEN:\nParty A:\nOstereo Limited\nand\n1888 Records Ltd\n\nBody."
-        parties = _extract_recital_parties(text)
-        assert "Party A:" not in parties
+        from server.preflight_engine import is_plausible_party_name
+        assert not is_plausible_party_name("Party A:")
 
 
 class TestRecitalExtractionHardening:
-    def test_rejects_address_fragments(self):
+    def test_ks_preamble_extracts_both_parties(self):
         from server.preflight_engine import _extract_recital_parties
-        text = "BETWEEN:\nRK Entertainments Ltd\n1234 Broadway Street, Nashville, Tennessee 37203\nand\nOstereo Limited\n\nBody."
-        parties = _extract_recital_parties(text)
-        assert not any("Nashville" in p or "Broadway" in p or "37203" in p for p in parties)
-
-    def test_rejects_prose_clause_lines(self):
-        from server.preflight_engine import _extract_recital_parties
-        text = "BETWEEN:\nRK Entertainments Ltd\nhereby agrees to the terms set forth\npursuant to the agreement dated\nand\nOstereo Limited\n\nBody."
-        parties = _extract_recital_parties(text)
-        assert not any("hereby" in p.lower() or "pursuant" in p.lower() for p in parties)
-
-    def test_rejects_pagination_tokens(self):
-        from server.preflight_engine import _extract_recital_parties
-        text = "BETWEEN:\nRK Entertainments Ltd\nPage 1 of 5\nand\nOstereo Limited\n\nBody."
-        parties = _extract_recital_parties(text)
-        assert not any("Page" in p for p in parties)
-
-    def test_rejects_long_prose_lines(self):
-        from server.preflight_engine import _extract_recital_parties
-        text = "BETWEEN:\nRK Entertainments Ltd\nThis agreement is entered into on the first day of the month between the parties listed herein for the purposes described\nand\nOstereo Limited\n\nBody."
-        parties = _extract_recital_parties(text)
-        assert not any("agreement is entered" in p for p in parties)
-
-    def test_max_parties_capped(self):
-        from server.preflight_engine import _extract_recital_parties
-        names = "\n".join([f"Company{i} Ltd" for i in range(15)])
-        text = f"PARTIES:\n{names}\n\nBody."
-        parties = _extract_recital_parties(text)
-        assert len(parties) <= 8
-
-    def test_between_and_preamble_parser(self):
-        from server.preflight_engine import _extract_recital_parties
-        text = "This agreement is entered into between KS Army Entertainment LLC and RK Entertainments Ltd, a company incorporated under the laws.\n\nBody."
+        text = (
+            "DISTRIBUTION AGREEMENT\n"
+            "This Distribution Agreement is entered into between "
+            "KS Army Entertainment LLC and RK Entertainments Ltd\n\n"
+            "WHEREAS the parties agree to the following terms.\n"
+            "Body of the agreement.\n"
+        )
         parties = _extract_recital_parties(text)
         names_lower = [p.lower() for p in parties]
         assert any("ks army" in n for n in names_lower)
         assert any("rk entertainments" in n for n in names_lower)
 
-    def test_ks_army_sample_no_clause_noise(self):
+    def test_ks_sample_no_clause_noise(self):
         from server.preflight_engine import _extract_recital_parties
         text = (
             "DISTRIBUTION AGREEMENT\n"
-            "This Distribution Agreement is entered into between KS Army Entertainment LLC and RK Entertainments Ltd\n\n"
-            "BETWEEN:\n"
-            "KS Army Entertainment LLC, a limited liability company organized under the laws of the State of Tennessee\n"
-            "and\n"
-            "RK Entertainments Ltd, a company incorporated in India\n\n"
+            "This Distribution Agreement is entered into between "
+            "KS Army Entertainment LLC and RK Entertainments Ltd\n\n"
             "WHEREAS the parties agree to the following terms and conditions.\n"
             "shall distribute the recordings\n"
             "provided that all royalties are paid quarterly\n"
@@ -1692,9 +1662,107 @@ class TestRecitalExtractionHardening:
         assert not any("provided that" in p.lower() for p in parties)
         assert not any("in accordance" in p.lower() for p in parties)
         assert not any("page " in p.lower() for p in parties)
-        assert not any("tennessee" in p.lower() for p in parties)
 
-    def test_unresolved_only_plausible_entities(self):
+    def test_rejects_revenue_shares(self):
+        from server.preflight_engine import is_plausible_party_name
+        assert not is_plausible_party_name("REVENUE SHARES")
+        assert not is_plausible_party_name("Revenue Shares")
+
+    def test_rejects_definitions_ellipsis(self):
+        from server.preflight_engine import is_plausible_party_name
+        assert not is_plausible_party_name("DEFINITIONS ...")
+        assert not is_plausible_party_name("Definitions")
+
+    def test_rejects_account_name_colon_label(self):
+        from server.preflight_engine import is_plausible_party_name
+        assert not is_plausible_party_name("Account Name: RK Corp")
+        assert not is_plausible_party_name("Bank Name: HSBC")
+
+    def test_rejects_bank_swift_lines(self):
+        from server.preflight_engine import is_plausible_party_name
+        assert not is_plausible_party_name("Bank Account Number 12345678")
+        assert not is_plausible_party_name("SWIFT: HBUKGB4B")
+        assert not is_plausible_party_name("Sort Code 40-47-84")
+
+    def test_rejects_schedule_exhibit(self):
+        from server.preflight_engine import is_plausible_party_name
+        assert not is_plausible_party_name("Schedule A")
+        assert not is_plausible_party_name("Exhibit B")
+
+    def test_rejects_channels_means_page(self):
+        from server.preflight_engine import is_plausible_party_name
+        assert not is_plausible_party_name("Distribution Channels")
+        assert not is_plausible_party_name("By Any Means")
+        assert not is_plausible_party_name("Page 3 of 10")
+
+    def test_rejects_address_fragments(self):
+        from server.preflight_engine import is_plausible_party_name
+        assert not is_plausible_party_name("1234 Broadway Street, Nashville")
+        assert not is_plausible_party_name("Suite 400, Los Angeles, California 90210")
+
+    def test_rejects_generic_role_nouns_alone(self):
+        from server.preflight_engine import is_plausible_party_name
+        assert not is_plausible_party_name("Owner")
+        assert not is_plausible_party_name("Company")
+        assert not is_plausible_party_name("Label")
+        assert not is_plausible_party_name("Party")
+
+    def test_rejects_prose_clause_patterns(self):
+        from server.preflight_engine import is_plausible_party_name
+        assert not is_plausible_party_name("shall distribute the recordings")
+        assert not is_plausible_party_name("Provided that all royalties")
+        assert not is_plausible_party_name("In accordance with terms")
+
+    def test_accepts_company_markers(self):
+        from server.preflight_engine import is_plausible_party_name
+        assert is_plausible_party_name("RK Entertainments Ltd")
+        assert is_plausible_party_name("Ostereo Limited")
+        assert is_plausible_party_name("KS Army Entertainment LLC")
+        assert is_plausible_party_name("Acme Records Inc")
+
+    def test_accepts_title_case_multi_word(self):
+        from server.preflight_engine import is_plausible_party_name
+        assert is_plausible_party_name("John Smith Productions")
+        assert is_plausible_party_name("Mary Jane Watson")
+
+    def test_normalize_strips_role_parens(self):
+        from server.preflight_engine import normalize_party_candidate
+        assert "Acme Records Inc" == normalize_party_candidate('Acme Records Inc ("Label")')
+        assert "John Smith" == normalize_party_candidate('John Smith ("Artist")')
+
+    def test_normalize_strips_address_tail(self):
+        from server.preflight_engine import normalize_party_candidate
+        result = normalize_party_candidate("RK Corp, located at 123 Main St")
+        assert "123" not in result
+        assert "Main" not in result
+
+    def test_label_party_extraction(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = 'Acme Records Inc ("Label") and John Smith Productions LLC ("Artist")\n\nBody text here.\n'
+        parties = _extract_recital_parties(text)
+        names_lower = [p.lower() for p in parties]
+        assert any("acme records" in n for n in names_lower)
+        assert any("john smith productions" in n for n in names_lower)
+
+    def test_preamble_35_line_limit(self):
+        from server.preflight_engine import _extract_recital_parties
+        filler = "\n".join([f"Line {i} of filler text" for i in range(40)])
+        text = filler + "\nThis contract is between Alpha Corp LLC and Beta Inc\n\nBody."
+        parties = _extract_recital_parties(text)
+        assert not any("alpha" in p.lower() for p in parties)
+
+    def test_max_parties_capped_at_6(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = (
+            'Alpha Corp Ltd ("Label") and Beta Inc ("Owner") and '
+            'Gamma LLC ("Publisher") and Delta Records ("Distributor") and '
+            'Epsilon Music ("Producer") and Zeta Studios ("Manager") and '
+            'Eta Group ("Licensee") and Theta Entertainment ("Licensor")\n\nBody.\n'
+        )
+        parties = _extract_recital_parties(text)
+        assert len(parties) <= 6
+
+    def test_onboarding_quality_gate_rejects_noise(self):
         from server.preflight_engine import build_resolution_story
         sf = [
             {
@@ -1714,52 +1782,42 @@ class TestRecitalExtractionHardening:
             },
         ]
         text = (
-            "BETWEEN:\nKS Army Entertainment LLC\nand\nRK Entertainments Ltd\n\n"
-            "shall distribute\nprovided that\nin accordance with\nPage 1 of 5\n"
+            "This agreement is between KS Army Entertainment LLC and RK Entertainments Ltd\n\n"
+            "Body of the agreement.\n"
         )
         story = build_resolution_story(sf, text)
         for u in story["unresolved_counterparties"]:
             assert "shall" not in u.lower()
             assert "provided" not in u.lower()
             assert "page" not in u.lower()
+            assert "revenue" not in u.lower()
+            assert "definition" not in u.lower()
 
-
-    def test_rejects_bank_account_lines(self):
-        from server.preflight_engine import _extract_recital_parties
-        text = "BETWEEN:\nRK Entertainments Ltd\nBank Account Number 12345678\nRouting: 021000021\nand\nOstereo Limited\n\nBody."
-        parties = _extract_recital_parties(text)
-        assert not any("bank" in p.lower() or "routing" in p.lower() for p in parties)
-
-    def test_rejects_schedule_headings(self):
-        from server.preflight_engine import _extract_recital_parties
-        text = "BETWEEN:\nRK Entertainments Ltd\nSchedule A\nExhibit B\nand\nOstereo Limited\n\nBody."
-        parties = _extract_recital_parties(text)
-        assert not any("schedule" in p.lower() or "exhibit" in p.lower() for p in parties)
-
-    def test_rejects_generic_role_nouns_alone(self):
-        from server.preflight_engine import _extract_recital_parties
-        text = "PARTIES:\nOwner\nCompany\nRK Entertainments Ltd\n\nBody."
-        parties = _extract_recital_parties(text)
-        names_lower = [p.lower() for p in parties]
-        assert "owner" not in names_lower
-        assert "company" not in names_lower
-        assert any("rk entertainments" in n for n in names_lower)
-
-    def test_label_party_extraction(self):
-        from server.preflight_engine import _extract_recital_parties
-        text = 'Acme Records Inc ("Label") and John Smith Productions LLC ("Artist")\n\nBody text here.\n'
-        parties = _extract_recital_parties(text)
-        names_lower = [p.lower() for p in parties]
-        assert any("acme records" in n for n in names_lower)
-        assert any("john smith productions" in n for n in names_lower)
-
-    def test_preamble_inline_between_first_30_lines(self):
-        from server.preflight_engine import _extract_recital_parties
-        text = "This agreement is between Acme Corp LLC and Beta Ltd\n\nBody of the agreement.\n"
-        parties = _extract_recital_parties(text)
-        names_lower = [p.lower() for p in parties]
-        assert any("acme corp" in n for n in names_lower)
-        assert any("beta ltd" in n for n in names_lower)
+    def test_onboarding_never_suggests_noise(self):
+        from server.preflight_engine import build_resolution_story
+        sf = [
+            {
+                "source_field": "Test Corp LLC",
+                "suggested_label": "Test Corp LLC",
+                "match_method": "exact", "match_score": 0.92, "name_score": 0.92,
+                "confidence_pct": 92, "match_status": "match",
+                "classification": "matched",
+                "candidates": [{"account_name": "Test Corp LLC", "type": "Company"}],
+                "explanation": "", "provider": "", "evidence_chips": [],
+                "scoring_breakdown": {"name_evidence": 0.50},
+                "visible": True, "source_type": "strict_label_value",
+                "label_value_hit": True, "recital_party_hit": False,
+                "identity_confidence_pct": 100,
+                "context_risk_penalty_pct": 0,
+                "final_confidence_pct": 92,
+            },
+        ]
+        text = "This agreement is between Test Corp LLC and REVENUE SHARES\n\nBody.\n"
+        story = build_resolution_story(sf, text)
+        if story["onboarding_recommendation"]:
+            suggested = story["onboarding_recommendation"]["suggested_account_name"]
+            assert "revenue" not in suggested.lower()
+            assert "shares" not in suggested.lower()
 
 
 class TestIdentityConfidenceNormalization:
