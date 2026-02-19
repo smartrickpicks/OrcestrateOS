@@ -360,6 +360,7 @@ def run_preflight(pages_data):
 
     sf_match = _run_salesforce_match(extracted_headers, full_text)
     resolution_story = build_resolution_story(sf_match, full_text)
+    opportunity_spine = build_opportunity_spine(full_text, resolution_story)
 
     return {
         "doc_mode": doc_mode,
@@ -369,6 +370,7 @@ def run_preflight(pages_data):
         "corruption_samples": corruption_samples,
         "salesforce_match": sf_match,
         "resolution_story": resolution_story,
+        "opportunity_spine": opportunity_spine,
         "page_classifications": page_results,
         "extracted_text": full_text[:50000],
         "extracted_headers": extracted_headers,
@@ -664,7 +666,320 @@ _AGREEMENT_TYPE_KEYWORDS = {
     "management": ["management agreement", "management contract", "management"],
     "service": ["service agreement", "services agreement", "service contract"],
     "amendment": ["amendment", "addendum", "modification agreement"],
+    "termination": ["termination agreement", "termination notice", "termination"],
 }
+
+_SUBTYPE_KEYWORD_MAP = {
+    "digital distribution": [
+        "digital distribution", "digital distribution agreement",
+        "digital release", "streaming distribution",
+    ],
+    "physical distribution": [
+        "physical distribution", "physical release", "cd distribution",
+        "vinyl distribution",
+    ],
+    "label services": [
+        "label services", "label service", "label services agreement",
+        "label services deal",
+    ],
+    "admin publishing": [
+        "admin publishing", "administration publishing",
+        "publishing administration",
+    ],
+    "co-publishing": [
+        "co-publishing", "co publishing", "co-pub",
+    ],
+    "sub-publishing": [
+        "sub-publishing", "sub publishing", "sub-pub",
+    ],
+    "sync": [
+        "sync licensing", "sync license", "sync licence",
+        "synch licensing", "synch license", "synch licence",
+        "synchronization", "synchronisation",
+        "audio visual licensing", "audio/visual licensing",
+        "audio-visual licensing",
+    ],
+    "mechanical license": [
+        "mechanical license", "mechanical licence", "mechanical rights",
+    ],
+    "master license": [
+        "master license", "master licence", "master use",
+        "master recording license",
+    ],
+    "exclusive license": [
+        "exclusive license", "exclusive licence", "exclusive right",
+        "exclusive rights",
+    ],
+    "non-exclusive license": [
+        "non-exclusive license", "non-exclusive licence",
+        "non exclusive license", "non exclusive licence",
+    ],
+    "exclusive recording": [
+        "exclusive recording", "exclusive recording agreement",
+    ],
+    "non-exclusive recording": [
+        "non-exclusive recording", "non exclusive recording",
+    ],
+    "artist management": [
+        "artist management", "management agreement", "talent management",
+    ],
+    "360 deal": [
+        "360 deal", "360 agreement", "360-deal",
+    ],
+    "production deal": [
+        "production deal", "production agreement",
+    ],
+}
+
+_SUBTYPE_REVIEW_DELTA = 0.15
+_SUBTYPE_CANDIDATE_THRESHOLD = 0.20
+
+_TERRITORY_PATTERNS = [
+    (re.compile(r'\b(?:worldwide|world-wide|the\s+world)\b', re.IGNORECASE), "Worldwide"),
+    (re.compile(r'\b(?:united\s+states|USA|U\.S\.A|U\.S\.)\b', re.IGNORECASE), "United States"),
+    (re.compile(r'\b(?:united\s+kingdom|UK|U\.K\.)\b', re.IGNORECASE), "United Kingdom"),
+    (re.compile(r'\b(?:european\s+union|EU|europe)\b', re.IGNORECASE), "Europe"),
+    (re.compile(r'\b(?:north\s+america)\b', re.IGNORECASE), "North America"),
+    (re.compile(r'\b(?:asia[\s-]*pacific|APAC)\b', re.IGNORECASE), "Asia-Pacific"),
+]
+
+_EFFECTIVE_DATE_RE = re.compile(
+    r'(?:effective\s+(?:date|as\s+of)|as\s+of|dated?\s+(?:as\s+of\s+)?|made\s+(?:on\s+)?(?:the\s+)?|entered\s+into\s+(?:as\s+of\s+)?(?:the\s+)?)'
+    r'\s*[:;]?\s*'
+    r'(\d{1,2}[\s/\-\.]+(?:January|February|March|April|May|June|July|August|September|October|November|December|'
+    r'Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[\s/\-\.,]+\d{2,4}'
+    r'|\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4}'
+    r'|(?:January|February|March|April|May|June|July|August|September|October|November|December|'
+    r'Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}[\s,]+\d{2,4}'
+    r'|\d{1,2}(?:st|nd|rd|th)?\s+(?:day\s+of\s+)?(?:January|February|March|April|May|June|July|August|September|October|November|December|'
+    r'Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[\s,]+\d{2,4})',
+    re.IGNORECASE,
+)
+
+_TERM_DURATION_RE = re.compile(
+    r'(?:(?:initial|minimum|the)?\s*term\s+(?:(?:of\s+)?(?:this\s+)?(?:agreement\s+)?(?:shall\s+be|is|commencing)\s+|of\s+)|'
+    r'period\s+of\s+|duration\s+of\s+|for\s+a\s+period\s+of\s+)'
+    r'(\d+)\s*(years?|months?|weeks?|days?)',
+    re.IGNORECASE,
+)
+
+_TERM_PHRASE_RE = re.compile(
+    r'(\d+)\s*[\-\(]?\s*(?:year|month|week|day)s?\s*(?:term|period|duration)',
+    re.IGNORECASE,
+)
+
+_PERPETUAL_RE = re.compile(
+    r'\b(?:perpetual|in\s+perpetuity|life\s+of\s+copyright)\b',
+    re.IGNORECASE,
+)
+
+
+def _extract_contract_type(full_text):
+    if not full_text:
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
+    result = _guess_agreement_type(full_text)
+    if result == "unknown":
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "Contract type not detected in text"}
+    text_lower = full_text.lower()
+    lines = text_lower.split("\n")
+    title_zone = "\n".join(lines[:10])
+    best_kw = ""
+    for kw in _AGREEMENT_TYPE_KEYWORDS.get(result, []):
+        if kw in title_zone:
+            return {"status": "pass", "confidence": 0.95, "value": result, "reason": f"'{kw}' found in title block"}
+        if kw in text_lower and not best_kw:
+            best_kw = kw
+    if best_kw:
+        return {"status": "review", "confidence": 0.6, "value": result, "reason": f"'{best_kw}' found in body text only"}
+    return {"status": "fail", "confidence": 0, "value": None, "reason": "Contract type not detected"}
+
+
+def _extract_contract_subtype(full_text):
+    if not full_text:
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available", "candidates": []}
+    text_lower = full_text.lower()
+    lines = text_lower.split("\n")
+    title_zone = "\n".join(lines[:10])
+    preamble_zone = "\n".join(lines[:35])
+
+    scores = {}
+    evidence_map = {}
+    for canonical, keywords in _SUBTYPE_KEYWORD_MAP.items():
+        best_score = 0.0
+        hits = []
+        for kw in keywords:
+            if kw in title_zone:
+                w = 0.40
+                hits.append(f"title: {kw}")
+            elif kw in preamble_zone:
+                w = 0.25
+                hits.append(f"preamble: {kw}")
+            elif kw in text_lower:
+                w = 0.15
+                hits.append(f"body: {kw}")
+            else:
+                w = 0.0
+            if w > best_score:
+                best_score = w
+        if hits:
+            base = best_score
+            bonus = min(len(hits) - 1, 3) * 0.08
+            total = round(min(base + bonus, 1.0), 4)
+            scores[canonical] = total
+            evidence_map[canonical] = hits
+
+    ranked = sorted(scores.items(), key=lambda x: (-x[1], x[0]))
+    candidates = []
+    for val, conf in ranked:
+        if conf >= _SUBTYPE_CANDIDATE_THRESHOLD or len(candidates) < 1:
+            candidates.append({
+                "value": val,
+                "confidence": round(conf, 2),
+                "evidence": evidence_map.get(val, []),
+            })
+    candidates = [c for c in candidates if c["confidence"] > 0]
+
+    if not candidates:
+        return {
+            "status": "review", "confidence": 0.3, "value": None,
+            "reason": "No specific subtype phrase detected",
+            "candidates": [],
+        }
+
+    top = candidates[0]
+    if len(candidates) == 1:
+        status = "pass"
+        reason = f"Subtype '{top['value']}' detected"
+    else:
+        delta = top["confidence"] - candidates[1]["confidence"]
+        above_threshold = [c for c in candidates if c["confidence"] >= _SUBTYPE_CANDIDATE_THRESHOLD]
+        if delta > _SUBTYPE_REVIEW_DELTA and len(above_threshold) <= 1:
+            status = "pass"
+            reason = f"Subtype '{top['value']}' detected (clear winner)"
+        else:
+            alts = ", ".join(c["value"] for c in candidates[:3])
+            status = "review"
+            reason = f"Multiple plausible subtypes detected — analyst confirmation required ({alts})"
+
+    return {
+        "status": status,
+        "confidence": top["confidence"],
+        "value": top["value"],
+        "reason": reason,
+        "candidates": candidates,
+    }
+
+
+def _extract_effective_date(full_text):
+    if not full_text:
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
+    m = _EFFECTIVE_DATE_RE.search(full_text[:5000])
+    if m:
+        date_str = m.group(1).strip().rstrip(",. ")
+        return {"status": "pass", "confidence": 0.9, "value": date_str, "reason": "Date found near effective date marker"}
+    return {"status": "fail", "confidence": 0, "value": None, "reason": "No effective date found"}
+
+
+def _extract_term(full_text):
+    if not full_text:
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
+    if _PERPETUAL_RE.search(full_text):
+        return {"status": "pass", "confidence": 0.9, "value": "Perpetual", "reason": "Perpetual/life-of-copyright term detected"}
+    m = _TERM_DURATION_RE.search(full_text)
+    if m:
+        val = f"{m.group(1)} {m.group(2).lower()}"
+        return {"status": "pass", "confidence": 0.85, "value": val, "reason": f"Term duration '{val}' detected"}
+    m2 = _TERM_PHRASE_RE.search(full_text)
+    if m2:
+        val = f"{m2.group(1)} year(s)"
+        return {"status": "review", "confidence": 0.6, "value": val, "reason": f"Possible term '{val}' detected from phrase pattern"}
+    return {"status": "fail", "confidence": 0, "value": None, "reason": "No term/duration found"}
+
+
+def _extract_territory(full_text):
+    if not full_text:
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
+    territory_ctx_re = re.compile(
+        r'(?:territory|territories|licensed\s+territory|distribution\s+territory)\s*[:;]?\s*(.{1,200})',
+        re.IGNORECASE,
+    )
+    ctx_match = territory_ctx_re.search(full_text)
+    search_zone = ctx_match.group(1) if ctx_match else full_text
+
+    found = []
+    for pattern, label in _TERRITORY_PATTERNS:
+        if pattern.search(search_zone):
+            found.append(label)
+    if not found:
+        for pattern, label in _TERRITORY_PATTERNS:
+            if pattern.search(full_text):
+                found.append(label)
+
+    if not found:
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No territory references found"}
+    unique = list(dict.fromkeys(found))
+    if "Worldwide" in unique:
+        return {"status": "pass", "confidence": 0.9, "value": "Worldwide", "reason": "'Worldwide' territory detected"}
+    if len(unique) == 1:
+        return {"status": "pass", "confidence": 0.75, "value": unique[0], "reason": f"Territory '{unique[0]}' detected"}
+    return {"status": "review", "confidence": 0.55, "value": ", ".join(unique[:4]), "reason": f"Multiple territories detected: {', '.join(unique[:4])}"}
+
+
+def _check_role_linkage(resolution_story):
+    if not resolution_story:
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No resolution story available"}
+    legal = resolution_story.get("legal_entity_account")
+    cparties = resolution_story.get("counterparties", [])
+    unresolved = resolution_story.get("unresolved_counterparties", [])
+    manual_req = resolution_story.get("requires_manual_confirmation", False)
+
+    has_legal = legal is not None
+    has_counter = len(cparties) > 0 or len(unresolved) > 0 or manual_req
+
+    if has_legal and has_counter:
+        if len(cparties) > 0:
+            return {"status": "pass", "confidence": 0.9, "value": "Legal entity + counterparty resolved", "reason": "Both legal entity and counterparty identified"}
+        return {"status": "review", "confidence": 0.6, "value": "Legal entity resolved, counterparty unresolved", "reason": "Legal entity found; counterparty requires manual confirmation"}
+    if has_legal and not has_counter:
+        return {"status": "review", "confidence": 0.4, "value": "Legal entity only", "reason": "Legal entity found but no counterparty identified"}
+    if not has_legal and has_counter:
+        return {"status": "fail", "confidence": 0.2, "value": "No legal entity", "reason": "No CMG legal entity resolved"}
+    return {"status": "fail", "confidence": 0, "value": None, "reason": "No role linkage — neither legal entity nor counterparty resolved"}
+
+
+_OPP_CRITICAL_CHECKS = {"OPP_CONTRACT_TYPE", "OPP_ROLE_LINKAGE"}
+
+
+def build_opportunity_spine(full_text, resolution_story):
+    checks = [
+        {"code": "OPP_CONTRACT_TYPE", "label": "Contract Type", **_extract_contract_type(full_text)},
+        {"code": "OPP_CONTRACT_SUBTYPE", "label": "Contract Subtype", **_extract_contract_subtype(full_text)},
+        {"code": "OPP_EFFECTIVE_DATE", "label": "Effective Date", **_extract_effective_date(full_text)},
+        {"code": "OPP_TERM", "label": "Term", **_extract_term(full_text)},
+        {"code": "OPP_TERRITORY", "label": "Territory", **_extract_territory(full_text)},
+        {"code": "OPP_ROLE_LINKAGE", "label": "Role Linkage", **_check_role_linkage(resolution_story)},
+    ]
+
+    passed = sum(1 for c in checks if c["status"] == "pass")
+    review = sum(1 for c in checks if c["status"] == "review")
+    failed = sum(1 for c in checks if c["status"] == "fail")
+
+    has_critical_fail = any(
+        c["status"] == "fail" and c["code"] in _OPP_CRITICAL_CHECKS for c in checks
+    )
+
+    if has_critical_fail:
+        overall = "fail"
+    elif failed > 0 or review > 0:
+        overall = "review"
+    else:
+        overall = "pass"
+
+    return {
+        "status": overall,
+        "checks": checks,
+        "summary": {"passed": passed, "review": review, "failed": failed},
+    }
 
 
 def _guess_agreement_type(full_text):
