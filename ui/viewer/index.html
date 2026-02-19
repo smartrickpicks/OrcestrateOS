@@ -4364,11 +4364,7 @@
               <div class="srr-empty-state">No fields loaded</div>
             </div>
             </div>
-            <div class="srr-left-tab-body" id="srr-tab-patch" data-tab="patch">
-              <div id="srr-patch-tab-content" style="padding: 12px; display: flex; flex-direction: column; flex: 1; overflow-y: auto;">
-                <div class="srr-empty-state">Select a field and action to begin a patch.</div>
-              </div>
-            </div>
+
             <div class="srr-left-tab-body" id="srr-tab-glossary" data-tab="glossary">
               <div style="padding: 8px 12px;">
                 <input type="text" class="srr-glossary-search" id="srr-glossary-search" placeholder="Search glossary..." oninput="srrFilterGlossary()">
@@ -4381,7 +4377,6 @@
               </div>
               <div class="srr-left-tabs" id="srr-left-tabs">
                 <button class="srr-left-tab active" data-tab="editor" onclick="srrSwitchLeftTab('editor')" title="Editor">Edit</button>
-                <button class="srr-left-tab" data-tab="patch" onclick="srrSwitchLeftTab('patch')" title="Patch Studio">Patch</button>
                 <button class="srr-left-tab" data-tab="glossary" onclick="srrSwitchLeftTab('glossary')" title="Glossary">Info</button>
               </div>
             </div>
@@ -30931,7 +30926,6 @@
             sheet: srrState.currentSheetName || ''
           };
         }
-        srrSwitchLeftTab('patch');
         srrSyncProposedChanges();
         srrRenderPatchEditor();
         AuditTimeline.emit('PICKLIST_EXPAND_INITIATED', {
@@ -35951,7 +35945,8 @@
       srrUpdatePatchFormSections();
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditor();
-      _srrExpandPatchPanel();
+      var _blChanges = Object.values(srrState.proposedChanges);
+      _patchModalOpen('blacklist', _blChanges, srrState.patchDraft.justification || '');
     }
     
     // v1.4.20: Field action - RFI (question)
@@ -35984,7 +35979,8 @@
       srrUpdatePatchFormSections();
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditor();
-      _srrExpandPatchPanel();
+      var _rfiChanges = Object.values(srrState.proposedChanges);
+      _patchModalOpen('rfi', _rfiChanges, srrState.patchDraft.justification || '');
     }
     
     // v1.4.20: Reset field state to TODO
@@ -36883,20 +36879,11 @@
     }
     
     function _srrExpandPatchPanel() {
-      if (!srrIsPatchOverlayOpen()) {
-        srrOpenPatchOverlay(srrState.patchType || 'correction');
-        console.log('[PATCHSTUDIO-D12] panel_opened', { source: 'srr_expand', patchType: srrState.patchType || 'correction' });
-      }
+      console.log('[PATCHSTUDIO-D12] panel_expand_noop — patch tab removed, modal used instead');
     }
     function _srrCollapsePatchPanel() {
-      srrClosePatchOverlay();
     }
     function _srrTogglePatchPanel() {
-      if (srrIsPatchOverlayOpen()) {
-        srrClosePatchOverlay();
-      } else {
-        srrOpenPatchOverlay(srrState.patchType || 'correction');
-      }
     }
     function _srrUpdateToggleBtn() {
       var _pp = document.querySelector('.srr-panel-right');
@@ -36920,9 +36907,7 @@
       for (var i = 0; i < bodies.length; i++) {
         bodies[i].classList.toggle('active', bodies[i].getAttribute('data-tab') === tabName);
       }
-      if (tabName === 'patch') {
-        srrMovePatchContentToTab();
-      }
+
       if (tabName === 'glossary' && !_srrGlossaryLoaded) {
         srrRenderGlossary();
       }
@@ -36930,25 +36915,14 @@
     }
 
     function srrMovePatchContentToTab() {
-      var patchTabContent = document.getElementById('srr-patch-tab-content');
-      var fieldsContent = document.getElementById('srr-tab-fields');
-      if (!patchTabContent || !fieldsContent) return;
-      if (fieldsContent.parentNode !== patchTabContent) {
-        patchTabContent.innerHTML = '';
-        patchTabContent.appendChild(fieldsContent);
-        fieldsContent.style.display = 'block';
-      }
     }
 
     function srrOpenPatchOverlay(actionType) {
-      srrSwitchLeftTab('patch');
-      srrMovePatchContentToTab();
-      console.log('[SRR] Patch Studio tab opened:', actionType);
+      console.log('[SRR] Patch overlay noop — modal flow active');
     }
 
     function srrClosePatchOverlay() {
-      srrSwitchLeftTab('editor');
-      console.log('[SRR] Returned to Editor tab');
+      console.log('[SRR] Close overlay noop — modal flow active');
     }
 
     function srrOpenTesterInOverlay() {
@@ -36963,7 +36937,7 @@
     }
 
     function srrIsPatchOverlayOpen() {
-      return _srrActiveLeftTab === 'patch';
+      return false;
     }
 
     function srrRenderGlossary() {
@@ -38591,11 +38565,8 @@
     
     // Handle patch type dropdown change
     function srrOnPatchTypeChange(newType) {
-      // v1.6.55: Set type first, then open overlay so title is correct
       srrState.patchType = newType;
       srrState.patchDraft.patch_type = newType;
-      _srrExpandPatchPanel();
-      // v1.5.2: If a field is selected, apply the action to that field
       if (srrPeSelectedField) {
         var fieldKey = srrPeSelectedField.key;
         var fieldLabel = srrPeSelectedField.label;
@@ -38605,21 +38576,14 @@
         console.log('[SRR] Patch type chip action:', newType, 'on field:', fieldKey);
         
         if (newType === 'rfi') {
-          // Same as srrRfiField
           srrState.rfiField = { key: fieldKey, label: fieldLabel, value: currentValue };
           srrState.fieldStates[fieldKey] = 'rfi_pending'; _cacheFieldState(srrState.currentRecordId, fieldKey, 'rfi_pending');
           showToast('RFI started for: ' + fieldLabel, 'info');
         } else if (newType === 'blacklist') {
-          // Same as srrBlacklistField
           srrState.fieldStates[fieldKey] = 'blocked'; _cacheFieldState(srrState.currentRecordId, fieldKey, 'blocked');
           srrState.patchDraft.blacklist_subject = fieldLabel + ': ' + (currentValue || '(empty)');
-          var subjectEl = document.getElementById('srr-blacklist-subject-value');
-          if (subjectEl) {
-            subjectEl.textContent = fieldLabel + ': ' + (currentValue || '(empty)');
-          }
           showToast('Blacklist flag set for: ' + fieldLabel, 'info');
         } else if (newType === 'correction') {
-          // Set up for correction / edit mode
           if (!srrState.proposedChanges[fieldKey]) {
             srrState.proposedChanges[fieldKey] = {
               field: fieldKey,
@@ -38633,11 +38597,14 @@
           showToast('Correction mode for: ' + fieldLabel, 'info');
         }
         
-        // Refresh Field Inspector
         renderSrrFields(srrState.currentRecord);
+        
+        if (newType === 'rfi' || newType === 'blacklist') {
+          var _changes = Object.values(srrState.proposedChanges);
+          _patchModalOpen(newType, _changes, srrState.patchDraft.justification || '');
+        }
       }
       
-      // Update patch type state
       srrState.patchType = newType;
       srrState.patchDraft.patch_type = newType;
       srrUpdatePatchFormSections();
@@ -38879,47 +38846,89 @@
       var typeLabel = patchType === 'correction' ? 'Correction' : (patchType === 'blacklist' ? 'Blacklist' : 'RFI');
       var badgeClass = patchType || 'correction';
 
-      var obsHtml = '';
+      var changesHtml = '';
       if (changes.length > 0) {
-        obsHtml = '<ul class="patch-submit-modal-change-list">';
+        changesHtml = '<ul class="patch-submit-modal-change-list">';
         changes.forEach(function(c) {
-          var fromVal = c.from || '(empty)';
-          var toVal = c.to || '(empty)';
-          obsHtml += '<li><strong>' + _escHtml(c.label || c.field) + ':</strong> ' + _escHtml(fromVal) + ' &rarr; ' + _escHtml(toVal) + '</li>';
+          changesHtml += '<li><strong>' + _escHtml(c.label || c.field) + ':</strong> ' + _escHtml(c.from || '(empty)') + ' &rarr; ' + _escHtml(c.to || '(empty)') + '</li>';
         });
-        obsHtml += '</ul>';
+        changesHtml += '</ul>';
       } else if (patchType === 'rfi') {
-        obsHtml = '<div style="color:var(--text-2,#888);font-size:0.9em;">Clarification request — no field changes</div>';
+        var rfiInfo = srrState.rfiField || {};
+        changesHtml = '<div style="padding:6px 0;font-size:0.9em;color:var(--text-1,#333);">';
+        changesHtml += '<strong>Field:</strong> ' + _escHtml(rfiInfo.label || rfiInfo.key || 'N/A');
+        if (rfiInfo.value) changesHtml += '<br><strong>Current Value:</strong> ' + _escHtml(String(rfiInfo.value));
+        changesHtml += '</div>';
+      } else if (patchType === 'blacklist') {
+        changesHtml = '<div style="padding:6px 0;font-size:0.9em;color:var(--text-1,#333);">' + _escHtml(srrState.patchDraft.blacklist_subject || 'No subject') + '</div>';
       } else {
-        obsHtml = '<div style="color:var(--text-2,#888);font-size:0.9em;">No field changes</div>';
+        changesHtml = '<div style="color:var(--text-2,#888);font-size:0.9em;">No field changes</div>';
       }
 
-      var obsTypeText = '';
-      if (patchType === 'correction' && srrState.patchDraft.observation_type) {
-        var obsMap = {incorrect_value:'Incorrect Value',missing_value:'Missing Value',formatting_issue:'Formatting Issue',duplicate_entry:'Duplicate Entry',inconsistent_data:'Inconsistent Data',override_needed:'Override Needed'};
-        obsTypeText = obsMap[srrState.patchDraft.observation_type] || srrState.patchDraft.observation_type;
+      var draft = srrState.patchDraft || {};
+      var html = '<div class="patch-submit-modal-title">' +
+        '<span>Submit Patch Request</span>' +
+        '<span class="patch-submit-modal-badge ' + badgeClass + '">' + typeLabel + '</span></div>';
+
+      html += '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">' +
+        (patchType === 'rfi' ? 'RFI Target' : patchType === 'blacklist' ? 'Blacklist Subject' : 'Changes') +
+        '</div><div class="patch-submit-modal-obs">' + changesHtml + '</div></div>';
+
+      if (patchType === 'correction') {
+        html += '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Observation (WHEN)</div>' +
+          '<select class="patch-submit-modal-textarea" id="patch-modal-observation" style="min-height:auto;padding:8px 12px;">' +
+          '<option value="">-- Select observation type --</option>' +
+          '<option value="incorrect_value"' + (draft.observation_type === 'incorrect_value' ? ' selected' : '') + '>Incorrect Value</option>' +
+          '<option value="missing_value"' + (draft.observation_type === 'missing_value' ? ' selected' : '') + '>Missing Value</option>' +
+          '<option value="formatting_issue"' + (draft.observation_type === 'formatting_issue' ? ' selected' : '') + '>Formatting Issue</option>' +
+          '<option value="duplicate_entry"' + (draft.observation_type === 'duplicate_entry' ? ' selected' : '') + '>Duplicate Entry</option>' +
+          '<option value="inconsistent_data"' + (draft.observation_type === 'inconsistent_data' ? ' selected' : '') + '>Inconsistent Data</option>' +
+          '<option value="override_needed"' + (draft.observation_type === 'override_needed' ? ' selected' : '') + '>Override Needed</option>' +
+          '</select></div>';
+
+        html += '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Expected (THEN)</div>' +
+          '<select class="patch-submit-modal-textarea" id="patch-modal-expected" style="min-height:auto;padding:8px 12px;">' +
+          '<option value="">-- Select expected behavior --</option>' +
+          '<option value="correct_value"' + (draft.expected_type === 'correct_value' ? ' selected' : '') + '>Use Correct Value</option>' +
+          '<option value="populate_field"' + (draft.expected_type === 'populate_field' ? ' selected' : '') + '>Populate Empty Field</option>' +
+          '<option value="standardize_format"' + (draft.expected_type === 'standardize_format' ? ' selected' : '') + '>Standardize Format</option>' +
+          '<option value="remove_duplicate"' + (draft.expected_type === 'remove_duplicate' ? ' selected' : '') + '>Remove Duplicate</option>' +
+          '<option value="align_with_source"' + (draft.expected_type === 'align_with_source' ? ' selected' : '') + '>Align with Source Document</option>' +
+          '<option value="allow_override"' + (draft.expected_type === 'allow_override' ? ' selected' : '') + '>Allow Override</option>' +
+          '</select></div>';
+
+        html += '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Repro Method</div>' +
+          '<select class="patch-submit-modal-textarea" id="patch-modal-repro" style="min-height:auto;padding:8px 12px;">' +
+          '<option value="">-- Select repro method --</option>' +
+          '<option value="breaks_salesforce_rule"' + (draft.repro_type === 'breaks_salesforce_rule' ? ' selected' : '') + '>System Pass Violation</option>' +
+          '<option value="breaks_qa_gate"' + (draft.repro_type === 'breaks_qa_gate' ? ' selected' : '') + '>Breaks QA Gate</option>' +
+          '<option value="resolver_mismatch"' + (draft.repro_type === 'resolver_mismatch' ? ' selected' : '') + '>Resolver Mismatch</option>' +
+          '<option value="doc_evidence_mismatch"' + (draft.repro_type === 'doc_evidence_mismatch' ? ' selected' : '') + '>Doc Evidence Mismatch</option>' +
+          '</select></div>';
       }
+
+      html += '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Justification (BECAUSE) <span style="color:var(--accent-2,#5c6bc0);font-weight:400;text-transform:none;">(required)</span></div>' +
+        '<textarea class="patch-submit-modal-textarea" id="patch-modal-justification" placeholder="Explain why this ' +
+        (patchType === 'rfi' ? 'clarification is needed' : patchType === 'blacklist' ? 'value should be blacklisted' : 'change is necessary') +
+        '...">' + _escHtml(prefillJustification) + '</textarea></div>';
+
+      html += '<div class="patch-submit-modal-footer">' +
+        '<button class="patch-submit-modal-btn secondary" onclick="_patchModalClose()">Cancel</button>' +
+        '<button class="patch-submit-modal-btn primary" id="patch-modal-confirm-btn" onclick="_patchModalConfirmSubmit()">Confirm Submit</button></div>';
 
       var modal = document.createElement('div');
       modal.className = 'patch-submit-modal';
-      modal.innerHTML = '<div class="patch-submit-modal-title">' +
-        '<span>Submit Patch Request</span>' +
-        '<span class="patch-submit-modal-badge ' + badgeClass + '">' + typeLabel + '</span>' +
-        '</div>' +
-        (obsTypeText ? '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Observation</div><div class="patch-submit-modal-obs">' + _escHtml(obsTypeText) + '</div></div>' : '') +
-        '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Changes</div><div class="patch-submit-modal-obs">' + obsHtml + '</div></div>' +
-        '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Justification <span style="color:var(--accent-2,#5c6bc0);font-weight:400;text-transform:none;">(required)</span></div>' +
-        '<textarea class="patch-submit-modal-textarea" id="patch-modal-justification" placeholder="Explain why this change is necessary...">' + _escHtml(prefillJustification) + '</textarea></div>' +
-        '<div class="patch-submit-modal-footer">' +
-        '<button class="patch-submit-modal-btn secondary" onclick="_patchModalClose()">Cancel</button>' +
-        '<button class="patch-submit-modal-btn primary" id="patch-modal-confirm-btn" onclick="_patchModalConfirmSubmit()">Confirm Submit</button>' +
-        '</div>';
+      modal.innerHTML = html;
 
       overlay.appendChild(modal);
       document.body.appendChild(overlay);
 
       overlay.addEventListener('click', function(e) {
         if (e.target === overlay) _patchModalClose();
+      });
+
+      document.addEventListener('keydown', function _escHandler(e) {
+        if (e.key === 'Escape') { _patchModalClose(); document.removeEventListener('keydown', _escHandler); }
       });
 
       setTimeout(function() {
@@ -38934,6 +38943,7 @@
     }
 
     function _patchModalConfirmSubmit() {
+      var patchType = srrState.patchType || 'correction';
       var ta = document.getElementById('patch-modal-justification');
       var justification = ta ? ta.value.trim() : '';
       if (!justification) {
@@ -38941,6 +38951,29 @@
         if (ta) ta.focus();
         return;
       }
+
+      if (patchType === 'correction') {
+        var obsEl = document.getElementById('patch-modal-observation');
+        var expEl = document.getElementById('patch-modal-expected');
+        var reproEl = document.getElementById('patch-modal-repro');
+        if (obsEl) srrState.patchDraft.observation_type = obsEl.value;
+        if (expEl) srrState.patchDraft.expected_type = expEl.value;
+        if (reproEl) srrState.patchDraft.repro_type = reproEl.value;
+
+        if (!isDemoMode()) {
+          if (!srrState.patchDraft.observation_type) {
+            showToast('Please select an observation type', 'warning');
+            if (obsEl) obsEl.focus();
+            return;
+          }
+          if (!srrState.patchDraft.expected_type) {
+            showToast('Please select an expected behavior', 'warning');
+            if (expEl) expEl.focus();
+            return;
+          }
+        }
+      }
+
       _patchModalClose();
 
       srrState.patchDraft.justification = justification;
@@ -38949,7 +38982,6 @@
 
       _srrExecutePatchSubmit(justification);
     }
-
     function _srrExecutePatchSubmit(justification) {
       var patchType = srrState.patchType;
       var changeCount = Object.keys(srrState.proposedChanges).length;
