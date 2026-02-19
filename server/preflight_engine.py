@@ -361,6 +361,7 @@ def run_preflight(pages_data):
     sf_match = _run_salesforce_match(extracted_headers, full_text)
     resolution_story = build_resolution_story(sf_match, full_text)
     opportunity_spine = build_opportunity_spine(full_text, resolution_story)
+    schedule_structure = build_schedule_structure(full_text, resolution_story, opportunity_spine)
 
     return {
         "doc_mode": doc_mode,
@@ -371,6 +372,7 @@ def run_preflight(pages_data):
         "salesforce_match": sf_match,
         "resolution_story": resolution_story,
         "opportunity_spine": opportunity_spine,
+        "schedule_structure": schedule_structure,
         "page_classifications": page_results,
         "extracted_text": full_text[:50000],
         "extracted_headers": extracted_headers,
@@ -967,6 +969,181 @@ def build_opportunity_spine(full_text, resolution_story):
     has_critical_fail = any(
         c["status"] == "fail" and c["code"] in _OPP_CRITICAL_CHECKS for c in checks
     )
+
+    if has_critical_fail:
+        overall = "fail"
+    elif failed > 0 or review > 0:
+        overall = "review"
+    else:
+        overall = "pass"
+
+    return {
+        "status": overall,
+        "checks": checks,
+        "summary": {"passed": passed, "review": review, "failed": failed},
+    }
+
+
+_SCHEDULE_TYPE_KEYWORDS = {
+    "distro_sync_existing_masters": [
+        "distro & sync", "distribution and sync", "distro and sync",
+        "existing masters", "master exploitation", "digital exploitation",
+    ],
+    "catalog_acquisition_masters": [
+        "catalog acquisition", "acquisition schedule", "schedule 1",
+        "schedule i", "masters acquisition",
+    ],
+    "termination_schedule": [
+        "termination schedule", "termination notice", "offboard",
+        "actual termination date", "termination date",
+    ],
+    "general_schedule": [
+        "schedule", "exhibit", "appendix", "annex",
+    ],
+}
+
+_OWNERSHIP_KEYWORDS = [
+    "master ownership", "composition ownership", "asset owner",
+    "acquired", "ownership split", "split", "rights ownership",
+]
+
+_LIFECYCLE_KEYWORDS = [
+    "termination notice", "offboard date", "actual termination date",
+    "effective date", "delivery date", "commencement",
+]
+
+
+def _opp_check_value(opportunity_spine, check_code):
+    if not opportunity_spine:
+        return None
+    checks = opportunity_spine.get("checks", [])
+    for ck in checks:
+        if ck.get("code") == check_code:
+            return ck.get("value")
+    return None
+
+
+def _extract_schedule_presence(full_text, opportunity_spine):
+    if not full_text:
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
+    has_schedule = re.search(r'\b(schedule|exhibit|appendix|annex)\b', full_text, re.IGNORECASE) is not None
+    ctype = (_opp_check_value(opportunity_spine, "OPP_CONTRACT_TYPE") or "").lower()
+    if has_schedule:
+        return {"status": "pass", "confidence": 0.9, "value": "Schedule references detected", "reason": "Found schedule/exhibit references in document text"}
+    if ctype in {"termination", "amendment"}:
+        return {"status": "review", "confidence": 0.5, "value": None, "reason": "No explicit schedule markers; may be valid for termination/amendment form"}
+    return {"status": "fail", "confidence": 0.0, "value": None, "reason": "No schedule/exhibit markers detected"}
+
+
+def _extract_schedule_type(full_text):
+    if not full_text:
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available", "candidates": []}
+
+    text_lower = full_text.lower()
+    lines = text_lower.split("\n")
+    title_zone = "\n".join(lines[:10])
+    preamble_zone = "\n".join(lines[:35])
+    scores = {}
+    evidence_map = {}
+
+    for stype, keywords in _SCHEDULE_TYPE_KEYWORDS.items():
+        best = 0.0
+        hits = []
+        for kw in keywords:
+            if kw in title_zone:
+                w = 0.40
+                hits.append(f"title: {kw}")
+            elif kw in preamble_zone:
+                w = 0.25
+                hits.append(f"preamble: {kw}")
+            elif kw in text_lower:
+                w = 0.15
+                hits.append(f"body: {kw}")
+            else:
+                w = 0.0
+            if w > best:
+                best = w
+        if hits:
+            bonus = min(len(hits) - 1, 3) * 0.08
+            scores[stype] = round(min(best + bonus, 1.0), 4)
+            evidence_map[stype] = hits
+
+    ranked = sorted(scores.items(), key=lambda x: (-x[1], x[0]))
+    candidates = [
+        {"value": val, "confidence": round(conf, 2), "evidence": evidence_map.get(val, [])}
+        for val, conf in ranked if conf >= _SUBTYPE_CANDIDATE_THRESHOLD
+    ]
+    if not candidates and ranked:
+        val, conf = ranked[0]
+        candidates = [{"value": val, "confidence": round(conf, 2), "evidence": evidence_map.get(val, [])}]
+
+    if not candidates:
+        return {"status": "review", "confidence": 0.3, "value": None, "reason": "No clear schedule type markers found", "candidates": []}
+
+    top = candidates[0]
+    if len(candidates) == 1:
+        return {"status": "pass", "confidence": top["confidence"], "value": top["value"], "reason": f"Schedule type '{top['value']}' detected", "candidates": candidates}
+
+    delta = top["confidence"] - candidates[1]["confidence"]
+    if delta > _SUBTYPE_REVIEW_DELTA:
+        return {"status": "pass", "confidence": top["confidence"], "value": top["value"], "reason": f"Schedule type '{top['value']}' detected (clear winner)", "candidates": candidates}
+    alts = ", ".join(c["value"] for c in candidates[:3])
+    return {"status": "review", "confidence": top["confidence"], "value": top["value"], "reason": f"Multiple schedule types detected — analyst confirmation required ({alts})", "candidates": candidates}
+
+
+def _extract_ownership_signals(full_text):
+    if not full_text:
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
+    hits = [kw for kw in _OWNERSHIP_KEYWORDS if kw in full_text.lower()]
+    if len(hits) >= 2:
+        return {"status": "pass", "confidence": 0.85, "value": ", ".join(hits[:3]), "reason": f"Ownership markers detected ({len(hits)} hits)"}
+    if len(hits) == 1:
+        return {"status": "review", "confidence": 0.55, "value": hits[0], "reason": "Limited ownership evidence; verify schedule rows manually"}
+    return {"status": "fail", "confidence": 0.0, "value": None, "reason": "No ownership markers detected"}
+
+
+def _extract_lifecycle_signals(full_text):
+    if not full_text:
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
+    hits = [kw for kw in _LIFECYCLE_KEYWORDS if kw in full_text.lower()]
+    if len(hits) >= 2:
+        return {"status": "pass", "confidence": 0.8, "value": ", ".join(hits[:3]), "reason": f"Lifecycle timing markers detected ({len(hits)} hits)"}
+    if len(hits) == 1:
+        return {"status": "review", "confidence": 0.5, "value": hits[0], "reason": "Single lifecycle marker detected; review timing fields"}
+    return {"status": "review", "confidence": 0.35, "value": None, "reason": "No lifecycle markers detected"}
+
+
+def _check_schedule_role_alignment(resolution_story):
+    if not resolution_story:
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No resolution story available"}
+    legal = resolution_story.get("legal_entity_account")
+    counterparty_count = len(resolution_story.get("counterparties", []))
+    unresolved = len(resolution_story.get("unresolved_counterparties", []))
+    if legal and counterparty_count > 0:
+        return {"status": "pass", "confidence": 0.9, "value": "Legal + counterparty resolved", "reason": "Schedule routing can be anchored to resolved parties"}
+    if legal and unresolved > 0:
+        return {"status": "review", "confidence": 0.6, "value": "Counterparty unresolved", "reason": "Legal entity resolved but counterparty needs manual onboarding"}
+    if legal:
+        return {"status": "review", "confidence": 0.5, "value": "Legal entity only", "reason": "Counterparty not resolved; schedule ownership requires review"}
+    return {"status": "fail", "confidence": 0.2, "value": "No legal entity", "reason": "No legal entity resolved for schedule alignment"}
+
+
+_SCH_CRITICAL_CHECKS = {"SCH_PRESENCE", "SCH_ROLE_ALIGNMENT"}
+
+
+def build_schedule_structure(full_text, resolution_story, opportunity_spine):
+    checks = [
+        {"code": "SCH_PRESENCE", "label": "Schedule Presence", **_extract_schedule_presence(full_text, opportunity_spine)},
+        {"code": "SCH_TYPE", "label": "Schedule Type", **_extract_schedule_type(full_text)},
+        {"code": "SCH_OWNERSHIP", "label": "Ownership Signals", **_extract_ownership_signals(full_text)},
+        {"code": "SCH_LIFECYCLE", "label": "Lifecycle Signals", **_extract_lifecycle_signals(full_text)},
+        {"code": "SCH_ROLE_ALIGNMENT", "label": "Role Alignment", **_check_schedule_role_alignment(resolution_story)},
+    ]
+
+    passed = sum(1 for c in checks if c["status"] == "pass")
+    review = sum(1 for c in checks if c["status"] == "review")
+    failed = sum(1 for c in checks if c["status"] == "fail")
+    has_critical_fail = any(c["status"] == "fail" and c["code"] in _SCH_CRITICAL_CHECKS for c in checks)
 
     if has_critical_fail:
         overall = "fail"

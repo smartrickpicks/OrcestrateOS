@@ -2108,6 +2108,31 @@
     .opp-evidence-chips { display: inline-flex; gap: 4px; flex-wrap: wrap; margin-left: 4px; }
     .opp-evidence-chip { font-size: 0.68em; padding: 1px 6px; border-radius: 3px; background: rgba(74, 144, 217, 0.1); color: var(--accent, #4a90d9); border: 1px solid rgba(74, 144, 217, 0.2); white-space: nowrap; }
     .opp-analyst-note { font-size: 0.78em; color: var(--text-2, #888); font-style: italic; padding: 6px 0 2px; border-top: 1px dashed var(--border-1, #ddd); margin-top: 4px; }
+    .sch-structure-section { border: 1px solid var(--border-1, #e0e0e0); border-radius: 8px; padding: 12px 14px; background: var(--bg-2, #fafafa); }
+    .sch-overall-badge { font-size: 0.72em; padding: 2px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sch-badge-pass { background: rgba(46, 204, 113, 0.15); color: #27ae60; border: 1px solid rgba(46, 204, 113, 0.3); }
+    .sch-badge-review { background: rgba(241, 196, 15, 0.15); color: #d4a017; border: 1px solid rgba(241, 196, 15, 0.3); }
+    .sch-badge-fail { background: rgba(231, 76, 60, 0.15); color: #c0392b; border: 1px solid rgba(231, 76, 60, 0.3); }
+    .sch-summary { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .sch-chip { font-size: 0.75em; padding: 3px 10px; border-radius: 12px; font-weight: 600; }
+    .sch-chip-pass { background: rgba(46, 204, 113, 0.12); color: #27ae60; }
+    .sch-chip-review { background: rgba(241, 196, 15, 0.12); color: #d4a017; }
+    .sch-chip-fail { background: rgba(231, 76, 60, 0.12); color: #c0392b; }
+    .sch-table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+    .sch-table th { text-align: left; padding: 6px 8px; border-bottom: 2px solid var(--border-1, #ddd); color: var(--text-2, #888); font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.3px; }
+    .sch-table td { padding: 6px 8px; border-bottom: 1px solid var(--border-1, #eee); }
+    .sch-label { font-weight: 500; white-space: nowrap; }
+    .sch-value { font-family: var(--font-mono, monospace); font-size: 0.92em; }
+    .sch-reason { color: var(--text-2, #888); font-size: 0.92em; }
+    .sch-status-badge { font-size: 0.75em; padding: 2px 7px; border-radius: 3px; font-weight: 600; }
+    .sch-conf-badge { font-size: 0.72em; padding: 1px 6px; border-radius: 3px; background: var(--bg-3, #eee); color: var(--text-2, #666); font-weight: 600; margin-left: 4px; }
+    .sch-candidates-row td { padding: 0 8px 8px 8px !important; border-bottom: 1px solid var(--border-1, #eee); }
+    .sch-candidates-toggle { cursor: pointer; font-size: 0.78em; color: var(--accent, #4a90d9); padding: 4px 0; user-select: none; }
+    .sch-candidates-toggle:hover { text-decoration: underline; }
+    .sch-candidates-list { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
+    .sch-candidate-card { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 5px 8px; border-radius: 5px; background: var(--bg-1, #fff); border: 1px solid var(--border-1, #e0e0e0); }
+    .sch-candidate-name { font-weight: 600; font-size: 0.85em; }
+    .sch-evidence-chip { font-size: 0.68em; padding: 1px 6px; border-radius: 3px; background: rgba(74, 144, 217, 0.1); color: var(--accent, #4a90d9); border: 1px solid rgba(74, 144, 217, 0.2); white-space: nowrap; }
     .pftl-section-title { font-size: 0.82em; font-weight: 600; color: var(--text-2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
     .pftl-reasons { list-style: none; padding: 0; margin: 0; }
     .pftl-reasons li { padding: 3px 0; font-size: 0.82em; color: var(--text-3); }
@@ -56117,6 +56142,8 @@ var P022_RuntimeValidation = {
 
     html += _pftlRenderOpportunitySpine(r);
 
+    html += _pftlRenderScheduleStructure(r);
+
     html += _pftlRenderSfMatchSection(r);
 
     var m = r.metrics || {};
@@ -56743,6 +56770,70 @@ var P022_RuntimeValidation = {
         }
         html += '</div></details>';
         html += '</td></tr>';
+      }
+    }
+
+    html += '</tbody></table></div>';
+    return html;
+  }
+
+  function _pftlRenderScheduleStructure(r) {
+    var sch = r.schedule_structure;
+    if (!sch) return '';
+
+    var checks = sch.checks || [];
+    var summary = sch.summary || {};
+    var overall = sch.status || 'review';
+
+    var html = '<div class="pftl-section sch-structure-section">';
+    html += '<div class="pftl-section-title" style="display:flex;align-items:center;gap:8px;">Schedule Structure';
+    var overallClass = overall === 'pass' ? 'sch-badge-pass' : overall === 'fail' ? 'sch-badge-fail' : 'sch-badge-review';
+    html += ' <span class="sch-overall-badge ' + overallClass + '">' + overall.toUpperCase() + '</span>';
+    html += '</div>';
+
+    html += '<div class="sch-summary">';
+    if (summary.passed > 0) html += '<span class="sch-chip sch-chip-pass">' + summary.passed + ' Passed</span>';
+    if (summary.review > 0) html += '<span class="sch-chip sch-chip-review">' + summary.review + ' Review</span>';
+    if (summary.failed > 0) html += '<span class="sch-chip sch-chip-fail">' + summary.failed + ' Failed</span>';
+    html += '</div>';
+
+    html += '<table class="sch-table"><thead><tr>';
+    html += '<th>Check</th><th>Status</th><th>Value</th><th>Reason</th>';
+    html += '</tr></thead><tbody>';
+
+    for (var i = 0; i < checks.length; i++) {
+      var ck = checks[i];
+      var st = ck.status || 'fail';
+      var badgeClass = st === 'pass' ? 'sch-badge-pass' : st === 'fail' ? 'sch-badge-fail' : 'sch-badge-review';
+      html += '<tr>';
+      html += '<td class="sch-label">' + _pftlEsc(ck.label || ck.code) + '</td>';
+      html += '<td><span class="sch-status-badge ' + badgeClass + '">' + st.toUpperCase() + '</span></td>';
+      var valueCell = ck.value ? _pftlEsc(String(ck.value)) : '\u2014';
+      if (ck.confidence) {
+        valueCell += ' <span class="sch-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
+      }
+      html += '<td class="sch-value">' + valueCell + '</td>';
+      html += '<td class="sch-reason">' + (ck.reason ? _pftlEsc(ck.reason) : '') + '</td>';
+      html += '</tr>';
+
+      if (ck.code === 'SCH_TYPE' && ck.candidates && ck.candidates.length > 0) {
+        html += '<tr class="sch-candidates-row"><td colspan="4">';
+        html += '<details>';
+        html += '<summary class="sch-candidates-toggle">Show schedule type candidates (' + ck.candidates.length + ')</summary>';
+        html += '<div class="sch-candidates-list">';
+        for (var j = 0; j < ck.candidates.length; j++) {
+          var cand = ck.candidates[j];
+          html += '<div class="sch-candidate-card">';
+          html += '<span class="sch-candidate-name">' + _pftlEsc(cand.value) + '</span>';
+          html += '<span class="sch-conf-badge">' + Math.round((cand.confidence || 0) * 100) + '%</span>';
+          if (cand.evidence && cand.evidence.length > 0) {
+            for (var e = 0; e < cand.evidence.length; e++) {
+              html += '<span class="sch-evidence-chip">' + _pftlEsc(cand.evidence[e]) + '</span>';
+            }
+          }
+          html += '</div>';
+        }
+        html += '</div></details></td></tr>';
       }
     }
 
