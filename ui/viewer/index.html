@@ -24248,26 +24248,26 @@
       return EXPORT_STATUS_ENUM.IN_PROGRESS_ANALYST;
     }
 
-    function _buildExportFilename(baseName, status) {
+    function _normalizeExportStatus(status) {
+      var s = String(status || '').toLowerCase().replace(/\s+/g, '_');
+      if (s === 'verifier_done' || s === 'verifier-approved' || s === 'verifier_approved') return 'VERIFIER_DONE';
+      if (s === 'admin_final' || s === 'applied') return 'ADMIN_FINAL';
+      if (s === 'rejected') return 'REJECTED';
+      if (s === 'in_progress' || s === 'in_progress_analyst') return 'IN_PROGRESS_ANALYST';
+      return 'IN_PROGRESS_ANALYST';
+    }
+
+    function _buildExportFilename(baseName, status, workspaceName) {
       var now = new Date();
-      var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
-      var ts = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
-               'T' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds()) + 'Z';
-      var batchId = '';
-      if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.batch_id) {
-        batchId = IDENTITY_CONTEXT.batch_id;
-      }
-      if (!batchId) batchId = baseName || 'dataset';
-      batchId = batchId.replace(/\.xlsx$/i, '').replace(/\.xls$/i, '').replace(/\.csv$/i, '');
-      var actor = '';
-      if (typeof getCurrentUserName === 'function') {
-        actor = getCurrentUserName() || '';
-      }
-      if (!actor && typeof IDENTITY_CONTEXT !== 'undefined') {
-        actor = IDENTITY_CONTEXT.display_name || IDENTITY_CONTEXT.email || '';
-      }
-      actor = actor.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '').substring(0, 30) || 'user';
-      return batchId + '-' + actor + '-' + status + '-' + ts + '.xlsx';
+      var yyyy = now.getFullYear();
+      var mm = String(now.getMonth() + 1).padStart(2, '0');
+      var dd = String(now.getDate()).padStart(2, '0');
+      var HH = String(now.getHours()).padStart(2, '0');
+      var MM = String(now.getMinutes()).padStart(2, '0');
+      var safeBatch = String(baseName || 'dataset').replace(/[^\w\-]+/g, '_');
+      var safeWs = String(workspaceName || (typeof _getWorkspaceId === 'function' ? _getWorkspaceId() : 'workspace')).replace(/[^\w\-]+/g, '_');
+      var norm = _normalizeExportStatus(status);
+      return safeBatch + '__' + norm + '__' + yyyy + '-' + mm + '-' + dd + '_' + HH + '-' + MM + '__' + safeWs + '.xlsx';
     }
 
     var EXPORT_CELL_FILLS = {
