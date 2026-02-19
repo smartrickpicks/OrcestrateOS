@@ -1760,6 +1760,66 @@ class TestRecitalExtractionHardening:
         assert not is_plausible_party_name("KS Army Entertainment LLC and RK Entertainments Ltd")
         assert not is_plausible_party_name("Alpha Corp & Beta Inc")
 
+    def test_between_parser_handles_wrapped_intro(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = (
+            'DIGITAL DISTRIBUTION AGREEMENT\\n\\n'
+            'This agreement is made and entered into as of 18 Sep 2023 by and between '
+            'Ostereo Limited (“Ostereo”) of International House, 61 Mosley Street and '
+            'Aryan GFX Private Limited (c/o Ajay Kumar Chaurasia: ajay@example.com) ("Owner"), '
+            'of Patna, India.\\n'
+        )
+        parties = _extract_recital_parties(text)
+        low = [p.lower() for p in parties]
+        assert any("ostereo limited" in n for n in low)
+        assert any("aryan gfx private limited" in n for n in low)
+
+
+class TestRecitalGatedCounterparties:
+    def _row(self, source_field, suggested_label, score, status="review", acct_type="Artist", source_type="csv_phrase_hit"):
+        return {
+            "source_field": source_field,
+            "suggested_label": suggested_label,
+            "match_method": "fuzzy",
+            "match_score": score,
+            "name_score": score,
+            "confidence_pct": round(score * 100),
+            "identity_confidence_pct": round(score * 100),
+            "context_risk_penalty_pct": 0,
+            "final_confidence_pct": round(score * 100),
+            "match_status": status,
+            "classification": "ambiguous",
+            "candidates": [{"account_name": suggested_label, "type": acct_type}],
+            "explanation": "",
+            "provider": "cmg_csv_v1",
+            "evidence_chips": [],
+            "scoring_breakdown": {"name_evidence": score, "address_evidence": 0.0, "account_context_evidence": 0.0, "service_context_penalty": 0.0},
+            "visible": True,
+            "source_type": source_type,
+            "label_value_hit": source_type == "strict_label_value",
+            "recital_party_hit": source_type == "recital_party",
+        }
+
+    def test_story_counterparties_prefer_recital_party_names(self):
+        from server.preflight_engine import build_resolution_story
+        sf = [
+            self._row("Ostereo Limited", "Ostereo Limited", 0.64, "review", "Division", "csv_phrase_hit"),
+            self._row("Aryan GFX Private Limited", "Sanjay", 0.60, "review", "Artist", "recital_party"),
+            self._row("Navin", "Navin", 0.55, "review", "Artist", "csv_phrase_hit"),
+            self._row("Rohan", "Rohan", 0.55, "review", "Artist", "csv_phrase_hit"),
+        ]
+        text = (
+            'This agreement is between Ostereo Limited and Aryan GFX Private Limited ("Owner").\\n'
+            'Body has many names unrelated to party block.'
+        )
+        story = build_resolution_story(sf, text)
+        cps = [c["name"] for c in story["counterparties"]]
+        # Weak recital-party fuzzy candidates should not auto-promote.
+        assert "Sanjay" not in cps
+        assert "Navin" not in cps
+        assert "Rohan" not in cps
+        assert story["new_entry_detected"] is True
+
     def test_label_party_extraction(self):
         from server.preflight_engine import _extract_recital_parties
         text = 'Acme Records Inc ("Label") and John Smith Productions LLC ("Artist")\n\nBody text here.\n'

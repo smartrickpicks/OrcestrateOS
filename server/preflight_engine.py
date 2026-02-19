@@ -690,8 +690,10 @@ def _guess_agreement_type(full_text):
 
 
 _BETWEEN_AND_RE = re.compile(
-    r'(?:between|BETWEEN|By\s+and\s+Between|BY\s+AND\s+BETWEEN)\s+'
-    r'(.+?)\s+(?:and|AND|&)\s+(.+?)(?:\s*[\(\,\.]|$)',
+    r'(?is)\b(?:by\s+and\s+)?between\s+'
+    r'(?P<a>.+?)\s+(?:and|&)\s+'
+    r'(?P<b>.+?)'
+    r'(?=(?:\n\s*\n)|(?:\s*\(\s*["“]?(?:Owner|Company|Label|Licensor|Licensee|Publisher|Distributor|Artist|Producer|Manager)\b)|(?:,\s*of\b)|(?:\.\s)|$)',
     re.IGNORECASE | re.MULTILINE,
 )
 
@@ -740,6 +742,7 @@ _PROSE_CLAUSE_RE = re.compile(
 _RECITAL_ADDRESS_RE = re.compile(
     r'\b(?:street|st\.|avenue|ave\.|road|rd\.|boulevard|blvd|suite|floor|'
     r'p\.?o\.?\s*box|zip|postal|state of|county of|province|country|'
+    r'plot|district|tehsil|road no\.?|hub|park|'
     r'california|new york|texas|florida|illinois|tennessee|georgia|'
     r'nashville|los angeles|united states|united kingdom|uk|usa|'
     r'u\.s\.a|u\.k\.|canada|australia|india|germany|france|'
@@ -769,13 +772,47 @@ def normalize_party_candidate(raw):
     ).strip()
     raw = raw.strip("()\"'").strip()
     raw = re.sub(r'\s*\(.*?\)\s*$', '', raw).strip()
+    raw = re.sub(r'\s*\(\s*c\/o[^)\n]*(?:\)|$)\s*', '', raw, flags=re.IGNORECASE).strip()
+    raw = re.sub(r'\s*\(\s*care of[^)\n]*(?:\)|$)\s*', '', raw, flags=re.IGNORECASE).strip()
     raw = re.sub(r'^(and|AND|&)\s+', '', raw).strip()
+    if " of " in raw.lower():
+        head, tail = re.split(r'\bof\b', raw, maxsplit=1, flags=re.IGNORECASE)
+        if _RECITAL_ADDRESS_RE.search(tail) or any(ch.isdigit() for ch in tail) or "," in tail:
+            raw = head.strip()
+    raw = re.sub(r'^of\s+', '', raw, flags=re.IGNORECASE).strip()
     raw = re.sub(r',?\s*(?:of|located at|at)\s+\d.*$', '', raw, flags=re.IGNORECASE).strip()
     raw = re.sub(r',?\s*(?:a|an)\s+(?:company|corporation|partnership|firm|entity)\s+.*$', '', raw, flags=re.IGNORECASE).strip()
     raw = re.sub(r',?\s*(?:with|having|whose|located|organized|incorporated|formed)\s+.*$', '', raw, flags=re.IGNORECASE).strip()
     raw = re.sub(r'\s*[,;]+\s*$', '', raw).strip()
     raw = re.sub(r'^["\']|["\']$', '', raw).strip()
+    raw = re.sub(r'\bbody(?:\s+text(?:\s+here)?)?\.?$', '', raw, flags=re.IGNORECASE).strip()
     return raw
+
+
+def _norm_name_tokens(name):
+    if not name:
+        return []
+    low = re.sub(r'[^a-z0-9\s]+', ' ', name.lower())
+    toks = [t for t in low.split() if t]
+    stop = {"the", "and", "of", "private", "limited", "ltd", "llc", "inc", "corp", "corporation", "records", "recordings"}
+    return [t for t in toks if t not in stop]
+
+
+def _name_matches_party(name, party_name):
+    if not name or not party_name:
+        return False
+    na = " ".join(_norm_name_tokens(name))
+    nb = " ".join(_norm_name_tokens(party_name))
+    if not na or not nb:
+        return False
+    if na == nb or na in nb or nb in na:
+        return True
+    ta = set(na.split())
+    tb = set(nb.split())
+    if not ta or not tb:
+        return False
+    inter = len(ta & tb)
+    return inter >= 2 or (inter >= 1 and (len(ta) <= 2 or len(tb) <= 2))
 
 
 def is_plausible_party_name(name):
@@ -799,6 +836,8 @@ def is_plausible_party_name(name):
     if re.match(r'^[^a-zA-Z0-9]+$', name):
         return False
     if low in ("and", "or", "by", "between", "of", "the"):
+        return False
+    if low.startswith("of "):
         return False
     if low in _GENERIC_ROLE_NOUNS:
         return False
@@ -837,9 +876,9 @@ def _extract_recital_parties(full_text):
 
     preamble_lines = full_text.split("\n")[:_PREAMBLE_LINES]
     preamble_text = "\n".join(preamble_lines)
-
+    # Primary extraction: bounded "between X and Y" parser on preamble sentence.
     for m in _BETWEEN_AND_RE.finditer(preamble_text):
-        for g in (m.group(1), m.group(2)):
+        for g in (m.group("a"), m.group("b")):
             name = normalize_party_candidate(g)
             if not is_plausible_party_name(name):
                 continue
@@ -984,8 +1023,25 @@ def build_resolution_story(sf_match_results, full_text):
                 f'Legal entity "{legal_entity["name"]}" is in "{legal_entity["match_status"]}" status — confirm assignment.'
             )
 
+    recital_parties = _extract_recital_parties(full_text)
     for entry, row in non_cmg_candidates:
         composite = entry["confidence"]
+        # For recital-derived candidates, require a strong resolver basis;
+        # weak edit-distance fuzzy matches should remain unresolved/new-entry.
+        if row.get("source_type") == "recital_party":
+            top = (row.get("candidates") or [{}])[0]
+            top_tier = (top.get("match_tier") or "").lower()
+            top_score = float(top.get("score") or 0.0)
+            if row.get("classification") != "matched":
+                continue
+            if top_tier == "edit_distance" and top_score < 0.90:
+                continue
+        if recital_parties:
+            if not any(
+                _name_matches_party(entry["name"], rp) or _name_matches_party(row.get("source_field", ""), rp)
+                for rp in recital_parties
+            ):
+                continue
         if composite >= REVIEW_THRESHOLD:
             counterparties.append(entry)
             src_label = _source_type_label(entry["source_type"])
@@ -1047,8 +1103,6 @@ def build_resolution_story(sf_match_results, full_text):
 
     agreement_type = _guess_agreement_type(full_text)
 
-    recital_parties = _extract_recital_parties(full_text)
-
     new_entry_detected = False
     unresolved_counterparties = []
     onboarding_recommendation = None
@@ -1059,12 +1113,6 @@ def build_resolution_story(sf_match_results, full_text):
             resolved_names_lower.add(legal_entity["name"].lower())
         for cp in counterparties:
             resolved_names_lower.add(cp["name"].lower())
-        for sf_row in sf_match_results:
-            if sf_row.get("visible", True):
-                resolved_names_lower.add(sf_row.get("source_field", "").lower())
-                sl = sf_row.get("suggested_label", "")
-                if sl and sl != "\u2014":
-                    resolved_names_lower.add(sl.lower())
 
         for party_name in recital_parties:
             if not is_plausible_party_name(party_name):
@@ -1077,6 +1125,26 @@ def build_resolution_story(sf_match_results, full_text):
                 if party_lower == rn or party_lower in rn or rn in party_lower:
                     is_resolved = True
                     break
+            if not is_resolved:
+                # Treat as resolved when a row explicitly extracted the same source
+                # and resolver confirmed that exact name (not just fuzzy remap).
+                for sf_row in sf_match_results:
+                    src = (sf_row.get("source_field") or "").lower()
+                    if not src:
+                        continue
+                    if not (party_lower == src or party_lower in src or src in party_lower):
+                        continue
+                    sl = (sf_row.get("suggested_label") or "").lower()
+                    if sl and sl != "\u2014" and (party_lower == sl or party_lower in sl or sl in party_lower):
+                        is_resolved = True
+                        break
+                    for cand in sf_row.get("candidates", []):
+                        an = (cand.get("account_name") or "").lower()
+                        if an and (party_lower == an or party_lower in an or an in party_lower):
+                            is_resolved = True
+                            break
+                    if is_resolved:
+                        break
             if not is_resolved:
                 unresolved_counterparties.append(party_name)
 
@@ -1161,10 +1229,15 @@ def _run_salesforce_match(extracted_headers, full_text=""):
     if not candidate_dicts:
         return []
 
-    recital_parties = _extract_recital_parties(full_text)
-    recital_lower = {p.lower() for p in recital_parties}
-
     _MAX_RESOLVER_CANDIDATES = 24
+    recital_parties = _extract_recital_parties(full_text)
+    seen = {c.get("value", "").lower() for c in candidate_dicts}
+    for rp in recital_parties:
+        low = rp.lower()
+        if low not in seen and is_plausible_party_name(rp):
+            candidate_dicts.append({"value": rp, "source_type": "recital_party"})
+            seen.add(low)
+
     candidate_dicts = candidate_dicts[:_MAX_RESOLVER_CANDIDATES]
 
     results = []
@@ -1176,8 +1249,6 @@ def _run_salesforce_match(extracted_headers, full_text=""):
         if _is_borne_in_verb_context(candidate, full_text):
             continue
 
-        is_recital = source_type == "recital_party" or candidate.lower() in recital_lower
-
         res = resolve_account(candidate)
         top_name = ""
         if res.get("candidates"):
@@ -1188,7 +1259,7 @@ def _run_salesforce_match(extracted_headers, full_text=""):
         if res.get("candidates"):
             name_tier = res["candidates"][0].get("match_tier", "none")
 
-        effective_source = "recital_party" if is_recital else source_type
+        effective_source = source_type
 
         if score_candidate is not None:
             ctx = score_candidate(full_text, candidate, name_score, name_tier,
@@ -1256,7 +1327,7 @@ def _run_salesforce_match(extracted_headers, full_text=""):
             "visible": visible,
             "source_type": effective_source,
             "label_value_hit": source_type == "strict_label_value",
-            "recital_party_hit": is_recital,
+            "recital_party_hit": source_type == "recital_party",
         })
 
     results.sort(key=lambda r: (
