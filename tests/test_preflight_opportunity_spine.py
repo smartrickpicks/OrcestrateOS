@@ -56,24 +56,34 @@ class TestContractSubtype:
         result = _extract_contract_subtype(text)
         assert result["status"] == "pass"
         assert result["value"] == "digital distribution"
+        assert "candidates" in result
+        assert len(result["candidates"]) >= 1
+        assert result["candidates"][0]["value"] == "digital distribution"
 
     def test_label_services(self):
         text = "The parties agree to label services for the following recordings."
         result = _extract_contract_subtype(text)
         assert result["status"] == "pass"
         assert result["value"] == "label services"
+        assert len(result["candidates"]) >= 1
 
     def test_multiple_subtypes(self):
-        text = "This covers both digital distribution and sync licensing rights."
+        filler = "\n".join([f"Line {i}" for i in range(12)])
+        text = "Distribution Agreement\n" + filler + "\nThis covers digital distribution and sync licensing rights.\nThe synchronization fees apply."
         result = _extract_contract_subtype(text)
         assert result["status"] == "review"
-        assert "Multiple" in result["reason"]
+        assert "analyst confirmation required" in result["reason"]
+        assert len(result["candidates"]) >= 2
+        cand_values = [c["value"] for c in result["candidates"]]
+        assert "digital distribution" in cand_values
+        assert "sync" in cand_values
 
     def test_no_subtype(self):
         text = "A general agreement between the parties."
         result = _extract_contract_subtype(text)
         assert result["status"] == "review"
         assert result["value"] is None
+        assert result["candidates"] == []
 
     def test_admin_publishing(self):
         text = "This admin publishing agreement covers the catalogue."
@@ -84,6 +94,53 @@ class TestContractSubtype:
     def test_empty_text(self):
         result = _extract_contract_subtype("")
         assert result["status"] == "fail"
+        assert result["candidates"] == []
+
+    def test_synch_normalized_to_sync(self):
+        text = "This agreement includes synch licensing and synch license terms."
+        result = _extract_contract_subtype(text)
+        assert result["value"] == "sync"
+        cand_values = [c["value"] for c in result["candidates"]]
+        assert "sync" in cand_values
+        assert "synch" not in cand_values
+        assert "synch licensing" not in cand_values
+
+    def test_synchronisation_normalized(self):
+        text = "This agreement covers synchronisation rights."
+        result = _extract_contract_subtype(text)
+        assert result["value"] == "sync"
+
+    def test_candidates_have_evidence(self):
+        text = "Digital distribution agreement with sync licensing rights."
+        result = _extract_contract_subtype(text)
+        for cand in result["candidates"]:
+            assert "evidence" in cand
+            assert len(cand["evidence"]) > 0
+            assert "confidence" in cand
+            assert "value" in cand
+
+    def test_candidate_ordering_deterministic(self):
+        text = "Distribution Agreement\nDigital distribution and sync licensing and exclusive license rights."
+        results = [_extract_contract_subtype(text) for _ in range(5)]
+        first_order = [c["value"] for c in results[0]["candidates"]]
+        for r in results[1:]:
+            assert [c["value"] for c in r["candidates"]] == first_order
+
+    def test_single_candidate_pass(self):
+        filler = "\n".join([f"Line {i}" for i in range(12)])
+        text = "Agreement\n" + filler + "\nThis is a digital distribution agreement."
+        result = _extract_contract_subtype(text)
+        assert result["status"] == "pass"
+        assert len(result["candidates"]) == 1
+        assert result["candidates"][0]["value"] == "digital distribution"
+
+    def test_zone_weighting_title_higher(self):
+        filler = "\n".join([f"Line {i}" for i in range(40)])
+        text = "Digital Distribution Agreement\n" + filler + "\nSome sync licensing text here.\nThe synchronization rights apply."
+        result = _extract_contract_subtype(text)
+        assert result["candidates"][0]["value"] == "digital distribution"
+        assert len(result["candidates"]) >= 2
+        assert result["candidates"][0]["confidence"] > result["candidates"][1]["confidence"]
 
 
 class TestEffectiveDate:

@@ -669,29 +669,70 @@ _AGREEMENT_TYPE_KEYWORDS = {
     "termination": ["termination agreement", "termination notice", "termination"],
 }
 
-_CONTRACT_SUBTYPE_PHRASES = {
-    "digital distribution": "digital distribution",
-    "physical distribution": "physical distribution",
-    "label services": "label services",
-    "label service": "label services",
-    "admin publishing": "admin publishing",
-    "administration publishing": "admin publishing",
-    "co-publishing": "co-publishing",
-    "co publishing": "co-publishing",
-    "sub-publishing": "sub-publishing",
-    "sub publishing": "sub-publishing",
-    "sync licensing": "sync licensing",
-    "synchronization": "sync licensing",
-    "mechanical license": "mechanical license",
-    "master license": "master license",
-    "exclusive license": "exclusive license",
-    "non-exclusive license": "non-exclusive license",
-    "exclusive recording": "exclusive recording",
-    "non-exclusive recording": "non-exclusive recording",
-    "artist management": "artist management",
-    "360 deal": "360 deal",
-    "production deal": "production deal",
+_SUBTYPE_KEYWORD_MAP = {
+    "digital distribution": [
+        "digital distribution", "digital distribution agreement",
+        "digital release", "streaming distribution",
+    ],
+    "physical distribution": [
+        "physical distribution", "physical release", "cd distribution",
+        "vinyl distribution",
+    ],
+    "label services": [
+        "label services", "label service", "label services agreement",
+        "label services deal",
+    ],
+    "admin publishing": [
+        "admin publishing", "administration publishing",
+        "publishing administration",
+    ],
+    "co-publishing": [
+        "co-publishing", "co publishing", "co-pub",
+    ],
+    "sub-publishing": [
+        "sub-publishing", "sub publishing", "sub-pub",
+    ],
+    "sync": [
+        "sync licensing", "sync license", "sync licence",
+        "synch licensing", "synch license", "synch licence",
+        "synchronization", "synchronisation",
+        "audio visual licensing", "audio/visual licensing",
+        "audio-visual licensing",
+    ],
+    "mechanical license": [
+        "mechanical license", "mechanical licence", "mechanical rights",
+    ],
+    "master license": [
+        "master license", "master licence", "master use",
+        "master recording license",
+    ],
+    "exclusive license": [
+        "exclusive license", "exclusive licence", "exclusive right",
+        "exclusive rights",
+    ],
+    "non-exclusive license": [
+        "non-exclusive license", "non-exclusive licence",
+        "non exclusive license", "non exclusive licence",
+    ],
+    "exclusive recording": [
+        "exclusive recording", "exclusive recording agreement",
+    ],
+    "non-exclusive recording": [
+        "non-exclusive recording", "non exclusive recording",
+    ],
+    "artist management": [
+        "artist management", "management agreement", "talent management",
+    ],
+    "360 deal": [
+        "360 deal", "360 agreement", "360-deal",
+    ],
+    "production deal": [
+        "production deal", "production agreement",
+    ],
 }
+
+_SUBTYPE_REVIEW_DELTA = 0.15
+_SUBTYPE_CANDIDATE_THRESHOLD = 0.20
 
 _TERRITORY_PATTERNS = [
     (re.compile(r'\b(?:worldwide|world-wide|the\s+world)\b', re.IGNORECASE), "Worldwide"),
@@ -755,18 +796,78 @@ def _extract_contract_type(full_text):
 
 def _extract_contract_subtype(full_text):
     if not full_text:
-        return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available", "candidates": []}
     text_lower = full_text.lower()
-    found = []
-    for phrase, canonical in _CONTRACT_SUBTYPE_PHRASES.items():
-        if phrase in text_lower:
-            found.append(canonical)
-    unique = list(dict.fromkeys(found))
-    if not unique:
-        return {"status": "review", "confidence": 0.3, "value": None, "reason": "No specific subtype phrase detected"}
-    if len(unique) == 1:
-        return {"status": "pass", "confidence": 0.85, "value": unique[0], "reason": f"Subtype '{unique[0]}' detected"}
-    return {"status": "review", "confidence": 0.5, "value": unique[0], "reason": f"Multiple subtypes detected: {', '.join(unique[:3])}"}
+    lines = text_lower.split("\n")
+    title_zone = "\n".join(lines[:10])
+    preamble_zone = "\n".join(lines[:35])
+
+    scores = {}
+    evidence_map = {}
+    for canonical, keywords in _SUBTYPE_KEYWORD_MAP.items():
+        best_score = 0.0
+        hits = []
+        for kw in keywords:
+            if kw in title_zone:
+                w = 0.40
+                hits.append(f"title: {kw}")
+            elif kw in preamble_zone:
+                w = 0.25
+                hits.append(f"preamble: {kw}")
+            elif kw in text_lower:
+                w = 0.15
+                hits.append(f"body: {kw}")
+            else:
+                w = 0.0
+            if w > best_score:
+                best_score = w
+        if hits:
+            base = best_score
+            bonus = min(len(hits) - 1, 3) * 0.08
+            total = round(min(base + bonus, 1.0), 4)
+            scores[canonical] = total
+            evidence_map[canonical] = hits
+
+    ranked = sorted(scores.items(), key=lambda x: (-x[1], x[0]))
+    candidates = []
+    for val, conf in ranked:
+        if conf >= _SUBTYPE_CANDIDATE_THRESHOLD or len(candidates) < 1:
+            candidates.append({
+                "value": val,
+                "confidence": round(conf, 2),
+                "evidence": evidence_map.get(val, []),
+            })
+    candidates = [c for c in candidates if c["confidence"] > 0]
+
+    if not candidates:
+        return {
+            "status": "review", "confidence": 0.3, "value": None,
+            "reason": "No specific subtype phrase detected",
+            "candidates": [],
+        }
+
+    top = candidates[0]
+    if len(candidates) == 1:
+        status = "pass"
+        reason = f"Subtype '{top['value']}' detected"
+    else:
+        delta = top["confidence"] - candidates[1]["confidence"]
+        above_threshold = [c for c in candidates if c["confidence"] >= _SUBTYPE_CANDIDATE_THRESHOLD]
+        if delta > _SUBTYPE_REVIEW_DELTA and len(above_threshold) <= 1:
+            status = "pass"
+            reason = f"Subtype '{top['value']}' detected (clear winner)"
+        else:
+            alts = ", ".join(c["value"] for c in candidates[:3])
+            status = "review"
+            reason = f"Multiple plausible subtypes detected — analyst confirmation required ({alts})"
+
+    return {
+        "status": status,
+        "confidence": top["confidence"],
+        "value": top["value"],
+        "reason": reason,
+        "candidates": candidates,
+    }
 
 
 def _extract_effective_date(full_text):
