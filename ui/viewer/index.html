@@ -4579,92 +4579,13 @@
                 </div>
               </div>
 
-              <!-- Evidence Pack: Conditional sections based on Patch Type -->
-              <div style="font-size: 0.85em; font-weight: 600; color: #333; margin-bottom: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">Evidence Pack</div>
-              
-              <!-- Observation (Correction only) -->
-              <div class="srr-evidence-block" id="srr-observation-block">
-                <div class="srr-evidence-label">Observation <span class="srr-evidence-alias">(WHEN)</span></div>
-                <select class="srr-evidence-select" id="srr-observation-type" onchange="srrOnObservationChange()">
-                  <option value="">-- Select observation type --</option>
-                  <option value="incorrect_value">Incorrect Value</option>
-                  <option value="missing_value">Missing Value</option>
-                  <option value="formatting_issue">Formatting Issue</option>
-                  <option value="duplicate_entry">Duplicate Entry</option>
-                  <option value="inconsistent_data">Inconsistent Data</option>
-                  <option value="override_needed">Override Needed</option>
-                </select>
-              </div>
-              
-              <!-- Expected (Correction only) -->
-              <div class="srr-evidence-block" id="srr-expected-block">
-                <div class="srr-evidence-label">Expected <span class="srr-evidence-alias">(THEN)</span></div>
-                <select class="srr-evidence-select" id="srr-expected-type" onchange="srrOnExpectedChange()">
-                  <option value="">-- Select expected behavior --</option>
-                  <option value="correct_value">Use Correct Value</option>
-                  <option value="populate_field">Populate Empty Field</option>
-                  <option value="standardize_format">Standardize Format</option>
-                  <option value="remove_duplicate">Remove Duplicate</option>
-                  <option value="align_with_source">Align with Source Document</option>
-                  <option value="allow_override">Allow Override</option>
-                </select>
-              </div>
-              
-              <!-- Justification / Comment (all patch types) -->
-              <div class="srr-evidence-block" id="srr-justification-block">
-                <div class="srr-evidence-label" id="srr-justification-label">Justification <span class="srr-evidence-alias">(BECAUSE)</span></div>
-                <textarea class="srr-evidence-textarea" id="srr-justification" placeholder="Explain why this change/flag/question is necessary..." oninput="srrSaveEvidenceDraft()"></textarea>
-              </div>
-              
-              <!-- Repro (Correction only, when required) -->
-              <div class="srr-evidence-block" id="srr-repro-block">
-                <div class="srr-evidence-label">
-                  Repro Method
-                  <span id="srr-repro-required-marker" class="srr-repro-required">(required)</span>
-                </div>
-                <select class="srr-evidence-select" id="srr-repro-type" onchange="srrSaveEvidenceDraft(); srrUpdateReproFileVisibility();">
-                  <option value="">-- Select repro method --</option>
-                  <option value="breaks_salesforce_rule">System Pass Violation</option>
-                  <option value="breaks_qa_gate">Breaks QA Gate</option>
-                  <option value="resolver_mismatch">Resolver Mismatch</option>
-                  <option value="doc_evidence_mismatch">Doc Evidence Mismatch (attach file)</option>
-                </select>
-                <div class="srr-evidence-file-input" id="srr-repro-file-section" style="display:none;">
-                  <input type="file" id="srr-repro-file" accept=".pdf,.png,.jpg,.jpeg" onchange="srrHandleReproFile(this)">
-                  <span id="srr-repro-file-name" style="font-size: 0.8em; color: #666;"></span>
-                </div>
-              </div>
-
-              <!-- Replay Contract (v1.6.57: Correction/Blacklist required, RFI optional) -->
-              <div class="srr-evidence-block" id="srr-replay-contract-block" style="padding-top: 12px; border-top: 1px solid #e0e0e0; display: none;">
-                <div style="font-size: 0.85em; font-weight: 600; color: #333; margin-bottom: 8px;">Replay Contract</div>
-                <div class="srr-evidence-block" id="srr-replay-type-block">
-                  <div class="srr-evidence-label">Replay Type <span id="srr-replay-type-required" class="srr-repro-required">(required)</span></div>
-                  <select class="srr-evidence-select" id="srr-replay-type" onchange="srrSaveEvidenceDraft()">
-                    <option value="">-- Select replay type --</option>
-                    <option value="MANUAL">Manual</option>
-                    <option value="STUBBED">Stubbed</option>
-                    <option value="NA">N/A</option>
-                  </select>
-                </div>
-                <div class="srr-evidence-block" id="srr-replay-steps-block">
-                  <div class="srr-evidence-label">Replay Steps <span id="srr-replay-steps-required" class="srr-repro-required">(required)</span></div>
-                  <textarea class="srr-evidence-textarea" id="srr-replay-steps" placeholder="Describe the steps to replay this change..." oninput="srrSaveEvidenceDraft()"></textarea>
-                </div>
-                <div class="srr-evidence-block" id="srr-replay-expected-block">
-                  <div class="srr-evidence-label">Replay Expected Result <span id="srr-replay-expected-required" class="srr-repro-required">(required)</span></div>
-                  <textarea class="srr-evidence-textarea" id="srr-replay-expected-result" placeholder="What is the expected result of replaying?" oninput="srrSaveEvidenceDraft()"></textarea>
-                </div>
-              </div>
-
-              <!-- Spacer to push buttons lower -->
+              <!-- Spacer to push button lower -->
               <div style="flex-grow: 1; min-height: 20px;"></div>
               
-              <!-- Submit Section (positioned lower) -->
+              <!-- Submit Section — opens modal for evidence + justification -->
               <div class="srr-patch-section" style="margin-top: auto; padding-top: 16px; border-top: 1px solid #e0e0e0;">
-                <div class="srr-actions">
-                  <button class="srr-btn srr-btn-secondary" onclick="srrSaveDraft()">Save Draft</button>
-                  <button class="srr-btn srr-btn-primary" id="srr-submit-btn" onclick="srrSubmitPatchRequest()">Submit Patch Request</button>
+                <div class="srr-actions" style="justify-content: center;">
+                  <button class="srr-btn srr-btn-primary" id="srr-submit-btn" onclick="srrSubmitPatchRequest()" style="width:100%;">Submit Patch Request</button>
                 </div>
               </div>
             </div><!-- end srr-tab-fields -->
@@ -22248,112 +22169,17 @@
       }
       html += '</div>';
 
-      html += '<div style="font-size:0.85em;font-weight:600;color:#333;margin-bottom:12px;padding-top:12px;border-top:1px solid #e0e0e0;">Evidence Pack</div>';
-
-      if (patchType === 'correction') {
-        html += '<div class="srr-evidence-block">';
-        html += '<div class="srr-evidence-label">Observation <span class="srr-evidence-alias">(WHEN)</span></div>';
-        html += '<select class="srr-evidence-select" id="grid-drawer-observation" onchange="_gridDrawerSaveEvidence()">';
-        html += '<option value="">-- Select observation type --</option>';
-        html += '<option value="incorrect_value"' + (evDraft.observation === 'incorrect_value' ? ' selected' : '') + '>Incorrect Value</option>';
-        html += '<option value="missing_value"' + (evDraft.observation === 'missing_value' ? ' selected' : '') + '>Missing Value</option>';
-        html += '<option value="formatting_issue"' + (evDraft.observation === 'formatting_issue' ? ' selected' : '') + '>Formatting Issue</option>';
-        html += '<option value="duplicate_entry"' + (evDraft.observation === 'duplicate_entry' ? ' selected' : '') + '>Duplicate Entry</option>';
-        html += '<option value="inconsistent_data"' + (evDraft.observation === 'inconsistent_data' ? ' selected' : '') + '>Inconsistent Data</option>';
-        html += '<option value="override_needed"' + (evDraft.observation === 'override_needed' ? ' selected' : '') + '>Override Needed</option>';
-        html += '</select>';
-        html += '</div>';
-
-        html += '<div class="srr-evidence-block">';
-        html += '<div class="srr-evidence-label">Expected <span class="srr-evidence-alias">(THEN)</span></div>';
-        html += '<select class="srr-evidence-select" id="grid-drawer-expected" onchange="_gridDrawerSaveEvidence()">';
-        html += '<option value="">-- Select expected behavior --</option>';
-        html += '<option value="correct_value"' + (evDraft.expected === 'correct_value' ? ' selected' : '') + '>Use Correct Value</option>';
-        html += '<option value="populate_field"' + (evDraft.expected === 'populate_field' ? ' selected' : '') + '>Populate Empty Field</option>';
-        html += '<option value="standardize_format"' + (evDraft.expected === 'standardize_format' ? ' selected' : '') + '>Standardize Format</option>';
-        html += '<option value="remove_duplicate"' + (evDraft.expected === 'remove_duplicate' ? ' selected' : '') + '>Remove Duplicate</option>';
-        html += '<option value="align_with_source"' + (evDraft.expected === 'align_with_source' ? ' selected' : '') + '>Align with Source Document</option>';
-        html += '<option value="allow_override"' + (evDraft.expected === 'allow_override' ? ' selected' : '') + '>Allow Override</option>';
-        html += '</select>';
-        html += '</div>';
-      }
-
-      html += '<div class="srr-evidence-block">';
-      if (patchType === 'rfi') {
-        html += '<div class="srr-evidence-label">Question <span class="srr-evidence-alias">(ASK)</span></div>';
-        html += '<textarea class="srr-evidence-textarea" id="grid-drawer-justification" placeholder="What information do you need?" oninput="_gridDrawerSaveEvidence()">' + escapeHtml(evDraft.justification || '') + '</textarea>';
-      } else {
-        html += '<div class="srr-evidence-label">Justification <span class="srr-evidence-alias">(BECAUSE)</span></div>';
-        html += '<textarea class="srr-evidence-textarea" id="grid-drawer-justification" placeholder="Explain why this change/flag is necessary..." oninput="_gridDrawerSaveEvidence()">' + escapeHtml(evDraft.justification || '') + '</textarea>';
-      }
       html += '</div>';
 
-      if (patchType === 'correction') {
-        html += '<div class="srr-evidence-block">';
-        html += '<div class="srr-evidence-label">Repro Method <span class="srr-repro-required">(required)</span></div>';
-        html += '<select class="srr-evidence-select" id="grid-drawer-repro" onchange="_gridDrawerSaveEvidence(); _gridDrawerToggleReproFile();">';
-        html += '<option value="">-- Select repro method --</option>';
-        html += '<option value="breaks_salesforce_rule"' + (evDraft.repro === 'breaks_salesforce_rule' ? ' selected' : '') + '>System Pass Violation</option>';
-        html += '<option value="breaks_qa_gate"' + (evDraft.repro === 'breaks_qa_gate' ? ' selected' : '') + '>Breaks QA Gate</option>';
-        html += '<option value="resolver_mismatch"' + (evDraft.repro === 'resolver_mismatch' ? ' selected' : '') + '>Resolver Mismatch</option>';
-        html += '<option value="doc_evidence_mismatch"' + (evDraft.repro === 'doc_evidence_mismatch' ? ' selected' : '') + '>Doc Evidence Mismatch (attach file)</option>';
-        html += '</select>';
-        html += '<div id="grid-drawer-repro-file-section" style="margin-top:6px;display:' + (evDraft.repro === 'doc_evidence_mismatch' ? 'block' : 'none') + ';">';
-        html += '<input type="file" id="grid-drawer-repro-file" accept=".pdf,.png,.jpg,.jpeg" style="font-size:0.82em;">';
-        html += '</div>';
-        html += '</div>';
-      }
-
-      if (patchType === 'blacklist') {
-        html += '<div style="margin-bottom:16px;padding:10px;background:#fff3e0;border-radius:6px;border-left:3px solid #e65100;font-size:0.82em;color:#bf360c;">';
-        html += '<strong>Blacklist Subject:</strong> ';
-        if (ctx.focusField && pendingEdits.hasOwnProperty(ctx.focusField)) {
-          html += escapeHtml(ctx.focusField) + ' = ' + escapeHtml(pendingEdits[ctx.focusField]);
-        } else {
-          html += '(derived from selected field/value)';
-        }
-        html += '</div>';
-      }
-
-      html += '<div style="margin-bottom:16px;padding:8px 10px;background:#f8f9fa;border-radius:6px;font-size:0.8em;color:#999;display:flex;align-items:center;gap:8px;">';
-      html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
-      html += 'Assign user (future release)';
-      html += '</div>';
-
-      html += '</div>';
-
-      var submitLabel = 'Submit Correction';
-      if (patchType === 'blacklist') submitLabel = 'Submit Blacklist';
-      if (patchType === 'rfi') submitLabel = 'Send RFI';
-
-      html += '<div style="padding:12px 14px;border-top:1px solid #e0e0e0;display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;background:#fafbfc;">';
-      html += '<button onclick="_gridDrawerClearEdits()" style="padding:7px 16px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#475569;font-size:0.82em;font-weight:600;cursor:pointer;">Save Draft</button>';
-      html += '<button onclick="_gridDrawerSubmit()" style="padding:7px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#1e3a5f,#1565c0);color:#fff;font-size:0.82em;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(21,101,192,0.3);">' + submitLabel + '</button>';
+      html += '<div style="padding:12px 14px;border-top:1px solid #e0e0e0;display:flex;justify-content:center;flex-shrink:0;background:#fafbfc;">';
+      html += '<button onclick="_gridDrawerSubmit()" style="padding:9px 24px;border-radius:8px;border:none;background:linear-gradient(135deg,#1e3a5f,#1565c0);color:#fff;font-size:0.85em;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(21,101,192,0.3);width:100%;">Submit Patch Request</button>';
       html += '</div>';
 
       return html;
     }
 
-    function _gridDrawerSaveEvidence() {
-      var ctx = window._gridDrawerContext;
-      if (!ctx) return;
-      if (!ctx._evidenceDraft) ctx._evidenceDraft = {};
-      var obs = document.getElementById('grid-drawer-observation');
-      var exp = document.getElementById('grid-drawer-expected');
-      var just = document.getElementById('grid-drawer-justification');
-      var repro = document.getElementById('grid-drawer-repro');
-      if (obs) ctx._evidenceDraft.observation = obs.value;
-      if (exp) ctx._evidenceDraft.expected = exp.value;
-      if (just) ctx._evidenceDraft.justification = just.value;
-      if (repro) ctx._evidenceDraft.repro = repro.value;
-    }
-
-    function _gridDrawerToggleReproFile() {
-      var repro = document.getElementById('grid-drawer-repro');
-      var fileSection = document.getElementById('grid-drawer-repro-file-section');
-      if (!repro || !fileSection) return;
-      fileSection.style.display = (repro.value === 'doc_evidence_mismatch') ? 'block' : 'none';
-    }
+    function _gridDrawerSaveEvidence() {}
+    function _gridDrawerToggleReproFile() {}
 
     function _gridDrawerInfoTabHtml(ctx) {
       var fileMeta = ctx.fileMeta || {};
@@ -22545,57 +22371,27 @@
     function _gridDrawerSubmit() {
       var ctx = window._gridDrawerContext;
       if (!ctx) return;
-      _gridDrawerSaveEvidence();
-      Components.PatchPanel.submit('grid_drawer');
       console.log('[PATCHSTUDIO-D12] submit_attempted', { source: 'grid_drawer', patchType: ctx.patchType || 'correction' });
       var patchType = ctx.patchType || 'correction';
-      var evDraft = ctx._evidenceDraft || {};
-      var justification = (document.getElementById('grid-drawer-justification') || {}).value || '';
       var pendingEdits = ctx._pendingEdits || {};
       var oldVals = window._gridDrawerOldValues || {};
       var changes = [];
       var editKeys = Object.keys(pendingEdits);
       for (var i = 0; i < editKeys.length; i++) {
         var fk = editKeys[i];
-        changes.push({ field: fk, from: oldVals[fk] || '', to: pendingEdits[fk] });
+        changes.push({ field: fk, label: fk, from: oldVals[fk] || '', to: pendingEdits[fk] });
       }
       if (changes.length === 0 && patchType !== 'rfi') { console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'no_changes', source: 'grid_drawer' }); showToast('No changes entered', 'warning'); return; }
-      var author = currentMode ? currentMode.charAt(0).toUpperCase() + currentMode.slice(1) : 'Analyst';
-      var request = createPatchRequest({
-        type: patchType,
-        category: 'grid_patch',
-        author: author,
-        author_role: currentMode || 'analyst',
-        record_id: ctx.recordId,
-        dataset_id: ctx.sheetName,
-        contract_section: ctx.sheetName,
-        changes: changes,
-        justification: justification || (patchType === 'rfi' ? 'RFI from Grid Mode' : 'Patch from Grid Mode'),
-        summary: (patchType === 'rfi' ? 'RFI' : changes.length + ' field(s) patched') + ' via Grid Mode',
-        when: evDraft.observation || 'Grid Mode patch',
-        then: evDraft.expected || (changes.length > 0 ? changes.map(function(c) { return c.field + ': ' + c.from + ' -> ' + c.to; }).join('; ') : 'RFI request'),
-        repro_method: evDraft.repro || ''
-      });
-      if (request) {
-        var submitted = submitPatchRequest(request.request_id, author, currentMode || 'analyst');
-        if (submitted) {
-          console.log('[PATCHSTUDIO-D12] submit_succeeded', { source: 'grid_drawer', patchType: patchType, requestId: request.request_id });
-          showToast('Patch submitted: ' + request.request_id, 'success');
-          if (typeof renderPatchConsoleTable === 'function') renderPatchConsoleTable();
-          if (typeof updatePatchQueueCounts === 'function') updatePatchQueueCounts();
-          if (patchType === 'rfi' && ctx.focusField) {
-            var cells = document.querySelectorAll('tr[data-record-id="' + ctx.recordId + '"] td[data-gfield="' + ctx.focusField + '"]');
-            for (var ci = 0; ci < cells.length; ci++) {
-              cells[ci].style.background = '#fff3e0';
-              cells[ci].style.borderLeft = '2px solid #e65100';
-            }
-          }
-        } else {
-          showToast('Patch created but could not be submitted', 'warning');
-        }
-      } else {
-        showToast('Failed to create patch', 'error');
+
+      srrState.patchType = patchType;
+      srrState.proposedChanges = {};
+      for (var j = 0; j < changes.length; j++) {
+        srrState.proposedChanges[changes[j].field] = changes[j];
       }
+      srrState._gridDrawerSource = true;
+      srrState._gridDrawerCtx = ctx;
+
+      _patchModalOpen(patchType, changes, '');
       _gridCloseDrawer();
     }
 
@@ -38659,14 +38455,20 @@
     
     function srrSaveEvidenceDraft() {
       srrState.patchDraft.patch_type = srrState.patchType;
-      srrState.patchDraft.observation_type = document.getElementById('srr-observation-type').value;
-      srrState.patchDraft.expected_type = document.getElementById('srr-expected-type').value;
-      srrState.patchDraft.justification = document.getElementById('srr-justification').value;
-      srrState.patchDraft.repro_type = document.getElementById('srr-repro-type').value;
-      srrState.patchDraft.replay_type = document.getElementById('srr-replay-type') ? document.getElementById('srr-replay-type').value : '';
-      srrState.patchDraft.replay_steps = document.getElementById('srr-replay-steps') ? document.getElementById('srr-replay-steps').value : '';
-      srrState.patchDraft.replay_expected_result = document.getElementById('srr-replay-expected-result') ? document.getElementById('srr-replay-expected-result').value : '';
-      // RFI target: future feature — field not yet rendered (no current enforcement)
+      var obsEl = document.getElementById('srr-observation-type');
+      var expEl = document.getElementById('srr-expected-type');
+      var justEl = document.getElementById('srr-justification');
+      var reproEl = document.getElementById('srr-repro-type');
+      var replayEl = document.getElementById('srr-replay-type');
+      var replayStepsEl = document.getElementById('srr-replay-steps');
+      var replayExpEl = document.getElementById('srr-replay-expected-result');
+      if (obsEl) srrState.patchDraft.observation_type = obsEl.value;
+      if (expEl) srrState.patchDraft.expected_type = expEl.value;
+      if (justEl) srrState.patchDraft.justification = justEl.value;
+      if (reproEl) srrState.patchDraft.repro_type = reproEl.value;
+      if (replayEl) srrState.patchDraft.replay_type = replayEl.value;
+      if (replayStepsEl) srrState.patchDraft.replay_steps = replayStepsEl.value;
+      if (replayExpEl) srrState.patchDraft.replay_expected_result = replayExpEl.value;
       srrState.patchDraft.rfi_target = '';
       srrState.patchDraft.override_enabled = srrState.overrideEnabled;
     }
@@ -38803,15 +38605,6 @@
       var patchType = srrState.patchType;
       var changeCount = Object.keys(srrState.proposedChanges).length;
       var draft = srrState.patchDraft;
-
-      if (!isDemoMode()) {
-        var evidenceGaps = srrCheckEvidenceGate(patchType, draft, changeCount, srrState.overrideEnabled);
-        if (evidenceGaps.length > 0) {
-          showToast('Missing requirements: ' + evidenceGaps.join(', '), 'warning');
-          console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'evidence_gaps', gaps: evidenceGaps });
-          return;
-        }
-      }
 
       if (!isDemoMode() && patchType !== 'rfi') {
         var preflightGaps = srrCheckPreflightGate();
