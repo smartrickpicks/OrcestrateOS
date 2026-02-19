@@ -1488,6 +1488,9 @@
     }
     .doc-search-trigger:hover { color: var(--accent-2); background: var(--bg-3); }
     .doc-search-trigger svg { width: 15px; height: 15px; }
+    .srr-search-float { display: none; padding: 4px 12px; background: var(--bg-base); border-bottom: 1px solid var(--border-1); text-align: right; }
+    .srr-search-float.visible { display: block; }
+    html[data-theme="dark"] .srr-search-float { background: var(--bg-1); border-bottom-color: var(--border-soft); }
     .ds-page-hint { color: var(--text-3); font-size: 0.85em; font-style: italic; margin-left: 4px; }
 
     .srr-anchor-list { padding: 12px; border-top: 1px solid var(--border-1); max-height: 150px; overflow-y: auto; }
@@ -4338,6 +4341,9 @@
                 <button class="srr-view-toggle-btn active" id="srr-toggle-reader" onclick="srrViewToggle('reader')">Reader Mode</button>
                 <button class="srr-view-toggle-btn" id="srr-toggle-pdf" onclick="srrViewToggle('pdf')">PDF Mode</button>
                 <span class="srr-view-toggle-hint" id="srr-view-toggle-hint"></span>
+                <button class="doc-search-trigger" id="srr-search-trigger-toggle" onclick="docSearchToggle('srr')" title="Search text (Ctrl+F)"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg></button>
+              </div>
+              <div id="srr-search-float" class="srr-search-float" style="display: none;">
                 <button class="doc-search-trigger" id="srr-search-trigger" onclick="docSearchToggle('srr')" title="Search text (Ctrl+F)"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg></button>
               </div>
               <div class="doc-search-bar" id="srr-search-bar">
@@ -19238,6 +19244,8 @@
 
       if (!toggle) return;
       toggle.style.display = 'flex';
+      var searchFloat = document.getElementById('srr-search-float');
+      if (searchFloat) searchFloat.style.display = 'none';
 
       if (_srrViewState.readerDisabled) {
         readerBtn.disabled = true;
@@ -19321,8 +19329,25 @@
     function srrViewToggleHide() {
       var toggle = document.getElementById('srr-view-toggle');
       if (toggle) toggle.style.display = 'none';
+      var searchFloat = document.getElementById('srr-search-float');
+      if (searchFloat) searchFloat.style.display = 'none';
       _srrViewState.mode = 'reader';
       _srrViewState.readerNodes = null;
+    }
+
+    function _srrSearchFloatSync() {
+      var toggle = document.getElementById('srr-view-toggle');
+      var searchFloat = document.getElementById('srr-search-float');
+      if (!searchFloat) return;
+      var toggleVisible = toggle && toggle.style.display !== 'none';
+      var hasDoc = typeof srrState !== 'undefined' && srrState.currentPdfUrl;
+      var docContainer = document.getElementById('srr-doc-container');
+      var docVisible = docContainer && docContainer.style.display !== 'none';
+      if (!toggleVisible && (hasDoc || docVisible)) {
+        searchFloat.style.display = 'block';
+      } else {
+        searchFloat.style.display = 'none';
+      }
     }
     // ========== DOCUMENT TEXT SEARCH (EV + SRR) ==========
     var _docSearch = {
@@ -19400,7 +19425,12 @@
           state.cachedPages = result;
           return;
         }
-        state.cachedPages = [];
+        if (typeof srrState !== 'undefined' && srrState.currentPdfUrl) {
+          state.cachedPages = null;
+          _docSearchFetchText(ctx, srrState.currentPdfUrl);
+        } else {
+          state.cachedPages = [];
+        }
       }
     }
 
@@ -19662,7 +19692,9 @@
           return;
         }
         var srrToggle = document.getElementById('srr-view-toggle');
-        if (srrToggle && srrToggle.style.display !== 'none') {
+        var srrDocContainer = document.getElementById('srr-doc-container');
+        var srrHasDoc = (srrToggle && srrToggle.style.display !== 'none') || (srrDocContainer && srrDocContainer.style.display !== 'none') || (typeof srrState !== 'undefined' && srrState.currentPdfUrl);
+        if (srrHasDoc) {
           e.preventDefault();
           docSearchToggle('srr');
           return;
@@ -38391,6 +38423,7 @@
       srrUpdatePageDisplay();
       
       console.log('[SRR_PDF_LOAD]', JSON.stringify(logEntry));
+      if (typeof _srrSearchFloatSync === 'function') _srrSearchFloatSync();
     }
     
     // v1.4.13: Show empty state
@@ -38415,6 +38448,7 @@
       srrUpdatePageDisplay();
       
       console.log('[SRR_PDF_LOAD]', JSON.stringify(srrBuildLogEntry('none', 'empty', '')));
+      if (typeof _srrSearchFloatSync === 'function') _srrSearchFloatSync();
     }
     
     // v1.4.13: Show offline stub when network unavailable and no local fallback
