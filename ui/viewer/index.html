@@ -35956,6 +35956,20 @@
         console.log('[SRR] Field committed (locked):', fieldKey, 'from:', originalVal, 'to:', newValue);
         showToast('Field changed and locked: ' + fieldKey, 'success');
         scheduleAutosave();
+
+        if (!window._srrModalOpenedForSession) {
+          if (window._srrAutoModalTimer) clearTimeout(window._srrAutoModalTimer);
+          window._srrAutoModalTimer = setTimeout(function() {
+            if (window._srrModalOpenedForSession) return;
+            var activeEl = document.activeElement;
+            if (activeEl && activeEl.tagName === 'INPUT' && activeEl.closest && activeEl.closest('.srr-field-card')) return;
+            var changes = Object.values(srrState.proposedChanges);
+            if (changes.length > 0) {
+              window._srrModalOpenedForSession = true;
+              _patchModalOpen(srrState.patchType || 'correction', changes, srrState.patchDraft.justification || '');
+            }
+          }, 800);
+        }
       } else {
         srrState.editingField = null;
       }
@@ -38711,6 +38725,7 @@
       var el = document.getElementById('patch-submit-modal-root');
       if (el) el.remove();
       window._gridModalOpenedForSession = false;
+      window._srrModalOpenedForSession = false;
     }
 
     function _patchModalConfirmSubmit() {
