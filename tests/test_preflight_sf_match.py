@@ -1724,6 +1724,44 @@ class TestRecitalExtractionHardening:
             assert "page" not in u.lower()
 
 
+    def test_rejects_bank_account_lines(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = "BETWEEN:\nRK Entertainments Ltd\nBank Account Number 12345678\nRouting: 021000021\nand\nOstereo Limited\n\nBody."
+        parties = _extract_recital_parties(text)
+        assert not any("bank" in p.lower() or "routing" in p.lower() for p in parties)
+
+    def test_rejects_schedule_headings(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = "BETWEEN:\nRK Entertainments Ltd\nSchedule A\nExhibit B\nand\nOstereo Limited\n\nBody."
+        parties = _extract_recital_parties(text)
+        assert not any("schedule" in p.lower() or "exhibit" in p.lower() for p in parties)
+
+    def test_rejects_generic_role_nouns_alone(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = "PARTIES:\nOwner\nCompany\nRK Entertainments Ltd\n\nBody."
+        parties = _extract_recital_parties(text)
+        names_lower = [p.lower() for p in parties]
+        assert "owner" not in names_lower
+        assert "company" not in names_lower
+        assert any("rk entertainments" in n for n in names_lower)
+
+    def test_label_party_extraction(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = 'Acme Records Inc ("Label") and John Smith Productions LLC ("Artist")\n\nBody text here.\n'
+        parties = _extract_recital_parties(text)
+        names_lower = [p.lower() for p in parties]
+        assert any("acme records" in n for n in names_lower)
+        assert any("john smith productions" in n for n in names_lower)
+
+    def test_preamble_inline_between_first_30_lines(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = "This agreement is between Acme Corp LLC and Beta Ltd\n\nBody of the agreement.\n"
+        parties = _extract_recital_parties(text)
+        names_lower = [p.lower() for p in parties]
+        assert any("acme corp" in n for n in names_lower)
+        assert any("beta ltd" in n for n in names_lower)
+
+
 class TestIdentityConfidenceNormalization:
     def test_name_only_normalization(self):
         from server.preflight_engine import _extract_recital_parties

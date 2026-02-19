@@ -701,6 +701,13 @@ _BETWEEN_AND_RE = re.compile(
     re.IGNORECASE | re.MULTILINE,
 )
 
+_LABEL_PARTY_RE = re.compile(
+    r'([A-Z][A-Za-z\s&\.\,\']+?)\s*\(\s*"?\s*'
+    r'(?:Owner|Company|Label|Licensor|Licensee|Publisher|Distributor|Artist|Producer|Manager)'
+    r'\s*"?\s*\)',
+    re.IGNORECASE,
+)
+
 _COMPANY_MARKERS = re.compile(
     r'\b(?:ltd|limited|inc|incorporated|llc|corp|corporation|gmbh|plc|pty|s\.a\.|sa|bv|ag)\b',
     re.IGNORECASE,
@@ -712,7 +719,8 @@ _RECITAL_CLAUSE_WORDS = (
     "agrees that", "represents", "warrants", "acknowledges", "except as",
     "without limiting", "to the extent", "in consideration", "in witness",
     "hereby", "hereunder", "hereto", "hereof", "therein", "thereof",
-    "whereas", "now therefore", "witnesseth",
+    "whereas", "now therefore", "witnesseth", "effective as of",
+    "dated as of", "entered into", "made and entered",
 )
 
 _RECITAL_ADDRESS_RE = re.compile(
@@ -725,7 +733,24 @@ _RECITAL_ADDRESS_RE = re.compile(
     re.IGNORECASE,
 )
 
+_RECITAL_BANK_RE = re.compile(
+    r'\b(?:bank|routing|swift|iban|account\s*(?:number|no|#)|sort\s*code|'
+    r'wire\s*transfer|ach|beneficiary)\b',
+    re.IGNORECASE,
+)
+
+_RECITAL_SCHEDULE_RE = re.compile(
+    r'^(?:schedule|exhibit|appendix|annex|attachment|part)\s+[a-z0-9]',
+    re.IGNORECASE,
+)
+
 _PAGINATION_RE = re.compile(r'(?:page|pg\.?)\s*\d+\s*(?:of\s*\d+)?', re.IGNORECASE)
+
+_GENERIC_ROLE_NOUNS = {
+    "owner", "company", "label", "licensor", "licensee", "publisher",
+    "distributor", "artist", "producer", "manager", "party", "parties",
+    "recipient", "sender", "buyer", "seller", "lender", "borrower",
+}
 
 _MAX_RECITAL_PARTIES = 8
 
@@ -735,6 +760,10 @@ def _is_recital_noise(line):
     if any(low.startswith(cw) for cw in _RECITAL_CLAUSE_WORDS):
         return True
     if _RECITAL_ADDRESS_RE.search(line):
+        return True
+    if _RECITAL_BANK_RE.search(line):
+        return True
+    if _RECITAL_SCHEDULE_RE.match(line):
         return True
     if _PAGINATION_RE.search(line):
         return True
@@ -746,10 +775,14 @@ def _is_recital_noise(line):
         return True
     if low in ("and", "or", "by", "between", "of", "the"):
         return True
+    if low in _GENERIC_ROLE_NOUNS:
+        return True
     if low.startswith(("hereinafter", "the ", "this ", "whereas")):
         return True
     word_count = len(low.split())
-    if word_count > 12:
+    if word_count > 10:
+        return True
+    if not re.search(r'[A-Z]', line):
         return True
     return False
 
@@ -757,11 +790,25 @@ def _is_recital_noise(line):
 def _clean_party_name(raw):
     raw = raw.strip().strip("()").strip()
     raw = re.sub(r'^\d+[\.\)]\s*', '', raw)
+    raw = re.sub(r'\s*\(\s*"?\s*(?:the\s+)?(?:Owner|Company|Label|Licensor|Licensee|Publisher|Distributor|Artist|Producer|Manager)\s*"?\s*\)', '', raw, flags=re.IGNORECASE).strip()
     raw = re.sub(r'\s*\(.*?\)\s*$', '', raw).strip()
     raw = re.sub(r'^(and|AND|&)\s+', '', raw).strip()
     raw = re.sub(r',?\s*(?:a|an)\s+(?:company|corporation|partnership|firm|entity)\s+.*$', '', raw, flags=re.IGNORECASE).strip()
-    raw = re.sub(r',?\s*(?:with|having|whose|located|organized|incorporated)\s+.*$', '', raw, flags=re.IGNORECASE).strip()
+    raw = re.sub(r',?\s*(?:with|having|whose|located|organized|incorporated|formed)\s+.*$', '', raw, flags=re.IGNORECASE).strip()
     return raw
+
+
+def _is_plausible_entity(name):
+    if len(name) < 3 or len(name) > 100:
+        return False
+    if _COMPANY_MARKERS.search(name):
+        return True
+    words = name.split()
+    if len(words) >= 2 and any(w[0].isupper() for w in words if w):
+        return True
+    if len(words) == 1 and words[0][0].isupper() and len(words[0]) >= 4:
+        return True
+    return False
 
 
 def _extract_recital_parties(full_text):
@@ -770,7 +817,10 @@ def _extract_recital_parties(full_text):
     parties = []
     seen = set()
 
-    for m in _BETWEEN_AND_RE.finditer(full_text):
+    preamble_lines = full_text.split("\n")[:30]
+    preamble_text = "\n".join(preamble_lines)
+
+    for m in _BETWEEN_AND_RE.finditer(preamble_text):
         for g in (m.group(1), m.group(2)):
             name = _clean_party_name(g)
             if not name or len(name) < 3 or len(name) > 120:
@@ -780,9 +830,26 @@ def _extract_recital_parties(full_text):
             norm = name.lower().strip()
             if norm in _HARD_DENYLIST or norm in _GENERIC_SINGLE_TOKENS:
                 continue
+            if not _is_plausible_entity(name):
+                continue
             if norm not in seen:
                 seen.add(norm)
                 parties.append(name)
+
+    for m in _LABEL_PARTY_RE.finditer(preamble_text):
+        name = _clean_party_name(m.group(1))
+        if not name or len(name) < 3 or len(name) > 120:
+            continue
+        if _is_recital_noise(name):
+            continue
+        norm = name.lower().strip()
+        if norm in _HARD_DENYLIST or norm in _GENERIC_SINGLE_TOKENS:
+            continue
+        if not _is_plausible_entity(name):
+            continue
+        if norm not in seen:
+            seen.add(norm)
+            parties.append(name)
 
     for m in _PARTY_ZONE_RE.finditer(full_text):
         block = m.group(1)
@@ -794,6 +861,8 @@ def _extract_recital_parties(full_text):
                 continue
             norm = line.lower().strip()
             if norm in _HARD_DENYLIST or norm in _GENERIC_SINGLE_TOKENS:
+                continue
+            if not _is_plausible_entity(line):
                 continue
             if norm not in seen:
                 seen.add(norm)

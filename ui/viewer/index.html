@@ -2288,6 +2288,22 @@
     html[data-theme="dark"] .rs-onboarding-title { color: #ffcc80; }
     html[data-theme="dark"] .rs-onboarding-row { color: var(--text-1); }
     html[data-theme="dark"] .rs-onboarding-row-label { color: var(--text-2); }
+    .rs-unresolved-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .rs-unresolved-chip { display: inline-block; padding: 3px 10px; font-size: 0.82em; background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; border-radius: 12px; font-weight: 500; }
+    html[data-theme="dark"] .rs-unresolved-chip { background: rgba(255,152,0,0.15); color: #ffcc80; border-color: rgba(255,152,0,0.3); }
+    .rs-manual-input-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-1, #e0e0e0); }
+    .rs-manual-input-label { display: block; font-size: 0.82em; font-weight: 700; color: var(--text-1, #333); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .rs-manual-input { width: 100%; padding: 8px 12px; font-size: 0.88em; border: 2px solid #ff9800; border-radius: 6px; background: var(--bg-base, #fff); color: var(--text-1, #333); box-sizing: border-box; }
+    .rs-manual-input:focus { outline: none; border-color: #e65100; box-shadow: 0 0 0 2px rgba(230,81,0,0.15); }
+    html[data-theme="dark"] .rs-manual-input { background: var(--bg-1, #1e1e1e); color: var(--text-1, #e0e0e0); border-color: #ff9800; }
+    html[data-theme="dark"] .rs-manual-input:focus { border-color: #ffcc80; box-shadow: 0 0 0 2px rgba(255,152,0,0.2); }
+    .rs-manual-status { font-size: 0.78em; margin-top: 6px; font-weight: 500; }
+    .rs-manual-status-empty { color: #e65100; }
+    .rs-manual-status-ok { color: #2e7d32; }
+    html[data-theme="dark"] .rs-manual-status-empty { color: #ffcc80; }
+    html[data-theme="dark"] .rs-manual-status-ok { color: #66bb6a; }
+    html[data-theme="dark"] .rs-manual-input-label { color: var(--text-1, #e0e0e0); }
+    html[data-theme="dark"] .rs-manual-input-section { border-top-color: var(--border-1, #444); }
 
     html[data-theme="dark"] .rs-section { background: var(--bg-2); border-color: var(--border-1); }
     html[data-theme="dark"] .rs-entity-card { background: var(--bg-1); border-color: var(--border-1); }
@@ -56311,26 +56327,58 @@ var P022_RuntimeValidation = {
   }
 
   function _pftlRenderOnboardingCard(story) {
-    if (!story.new_entry_detected || !story.onboarding_recommendation) return '';
+    if (!story.new_entry_detected) return '';
+    var unresolved = story.unresolved_counterparties || [];
     var rec = story.onboarding_recommendation;
     var html = '<div class="rs-onboarding-card">';
-    html += '<div class="rs-onboarding-title">Recommended Onboarding</div>';
-    if (rec.suggested_account_name) {
-      html += '<div class="rs-onboarding-row"><span class="rs-onboarding-row-label">Account Name:</span><span>' + _pftlEsc(rec.suggested_account_name) + '</span></div>';
+    html += '<div class="rs-onboarding-title">Unresolved Counterparty</div>';
+
+    if (unresolved.length > 0) {
+      html += '<div class="rs-onboarding-row"><span class="rs-onboarding-row-label">Possible Matches:</span>';
+      html += '<div class="rs-unresolved-chips">';
+      for (var i = 0; i < unresolved.length; i++) {
+        html += '<span class="rs-unresolved-chip">' + _pftlEsc(unresolved[i]) + '</span>';
+      }
+      html += '</div></div>';
     }
-    if (rec.suggested_account_type) {
-      html += '<div class="rs-onboarding-row"><span class="rs-onboarding-row-label">Account Type:</span><span>' + _pftlEsc(rec.suggested_account_type) + '</span></div>';
+
+    if (rec) {
+      if (rec.suggested_account_type) {
+        html += '<div class="rs-onboarding-row"><span class="rs-onboarding-row-label">Suggested Type:</span><span>' + _pftlEsc(rec.suggested_account_type) + '</span></div>';
+      }
+      if (rec.reason) {
+        html += '<div class="rs-onboarding-row"><span class="rs-onboarding-row-label">Reason:</span><span>' + _pftlEsc(rec.reason) + '</span></div>';
+      }
     }
-    if (rec.suggested_contact_name) {
-      html += '<div class="rs-onboarding-row"><span class="rs-onboarding-row-label">Contact Name:</span><span>' + _pftlEsc(rec.suggested_contact_name) + '</span></div>';
-    }
-    if (rec.reason) {
-      html += '<div class="rs-onboarding-row"><span class="rs-onboarding-row-label">Reason:</span><span>' + _pftlEsc(rec.reason) + '</span></div>';
-    }
-    html += '<div class="rs-onboarding-readonly">Read-only preview — account creation not yet available.</div>';
+
+    html += '<div class="rs-manual-input-section">';
+    html += '<label class="rs-manual-input-label" for="rs-manual-counterparty">Confirmed Counterparty (Manual)</label>';
+    html += '<input type="text" id="rs-manual-counterparty" class="rs-manual-input" placeholder="" oninput="pftlOnManualCounterpartyInput(this)" />';
+    html += '<div id="rs-manual-counterparty-status" class="rs-manual-status rs-manual-status-empty">Required — type the confirmed counterparty name to proceed.</div>';
+    html += '</div>';
+
     html += '</div>';
     return html;
   }
+
+  window.pftlOnManualCounterpartyInput = function(el) {
+    var val = (el.value || '').trim();
+    var statusEl = document.getElementById('rs-manual-counterparty-status');
+    if (!statusEl) return;
+    if (val.length === 0) {
+      statusEl.className = 'rs-manual-status rs-manual-status-empty';
+      statusEl.textContent = 'Required — type the confirmed counterparty name to proceed.';
+    } else if (val.length < 3) {
+      statusEl.className = 'rs-manual-status rs-manual-status-empty';
+      statusEl.textContent = 'Name too short — enter the full entity name.';
+    } else {
+      statusEl.className = 'rs-manual-status rs-manual-status-ok';
+      statusEl.textContent = 'Confirmed: ' + val;
+    }
+    var assigns = _pftlGetAssignments();
+    assigns.manual_counterparty = val.length >= 3 ? val : null;
+    _pftlSaveAssignments();
+  };
 
   var _pftlAssignmentsStore = {};
   (function() {
