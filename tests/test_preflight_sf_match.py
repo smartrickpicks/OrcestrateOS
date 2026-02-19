@@ -1627,3 +1627,146 @@ class TestResolverCandidateCap:
         text = "BETWEEN:\nParty A:\nOstereo Limited\nand\n1888 Records Ltd\n\nBody."
         parties = _extract_recital_parties(text)
         assert "Party A:" not in parties
+
+
+class TestRecitalExtractionHardening:
+    def test_rejects_address_fragments(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = "BETWEEN:\nRK Entertainments Ltd\n1234 Broadway Street, Nashville, Tennessee 37203\nand\nOstereo Limited\n\nBody."
+        parties = _extract_recital_parties(text)
+        assert not any("Nashville" in p or "Broadway" in p or "37203" in p for p in parties)
+
+    def test_rejects_prose_clause_lines(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = "BETWEEN:\nRK Entertainments Ltd\nhereby agrees to the terms set forth\npursuant to the agreement dated\nand\nOstereo Limited\n\nBody."
+        parties = _extract_recital_parties(text)
+        assert not any("hereby" in p.lower() or "pursuant" in p.lower() for p in parties)
+
+    def test_rejects_pagination_tokens(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = "BETWEEN:\nRK Entertainments Ltd\nPage 1 of 5\nand\nOstereo Limited\n\nBody."
+        parties = _extract_recital_parties(text)
+        assert not any("Page" in p for p in parties)
+
+    def test_rejects_long_prose_lines(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = "BETWEEN:\nRK Entertainments Ltd\nThis agreement is entered into on the first day of the month between the parties listed herein for the purposes described\nand\nOstereo Limited\n\nBody."
+        parties = _extract_recital_parties(text)
+        assert not any("agreement is entered" in p for p in parties)
+
+    def test_max_parties_capped(self):
+        from server.preflight_engine import _extract_recital_parties
+        names = "\n".join([f"Company{i} Ltd" for i in range(15)])
+        text = f"PARTIES:\n{names}\n\nBody."
+        parties = _extract_recital_parties(text)
+        assert len(parties) <= 8
+
+    def test_between_and_preamble_parser(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = "This agreement is entered into between KS Army Entertainment LLC and RK Entertainments Ltd, a company incorporated under the laws.\n\nBody."
+        parties = _extract_recital_parties(text)
+        names_lower = [p.lower() for p in parties]
+        assert any("ks army" in n for n in names_lower)
+        assert any("rk entertainments" in n for n in names_lower)
+
+    def test_ks_army_sample_no_clause_noise(self):
+        from server.preflight_engine import _extract_recital_parties
+        text = (
+            "DISTRIBUTION AGREEMENT\n"
+            "This Distribution Agreement is entered into between KS Army Entertainment LLC and RK Entertainments Ltd\n\n"
+            "BETWEEN:\n"
+            "KS Army Entertainment LLC, a limited liability company organized under the laws of the State of Tennessee\n"
+            "and\n"
+            "RK Entertainments Ltd, a company incorporated in India\n\n"
+            "WHEREAS the parties agree to the following terms and conditions.\n"
+            "shall distribute the recordings\n"
+            "provided that all royalties are paid quarterly\n"
+            "in accordance with Schedule A attached hereto\n"
+            "Page 1 of 12\n"
+        )
+        parties = _extract_recital_parties(text)
+        names_lower = [p.lower() for p in parties]
+        assert any("ks army" in n for n in names_lower)
+        assert any("rk entertainments" in n for n in names_lower)
+        assert not any("shall " in p.lower() for p in parties)
+        assert not any("provided that" in p.lower() for p in parties)
+        assert not any("in accordance" in p.lower() for p in parties)
+        assert not any("page " in p.lower() for p in parties)
+        assert not any("tennessee" in p.lower() for p in parties)
+
+    def test_unresolved_only_plausible_entities(self):
+        from server.preflight_engine import build_resolution_story
+        sf = [
+            {
+                "source_field": "KS Army Entertainment LLC",
+                "suggested_label": "KS Army Entertainment LLC",
+                "match_method": "exact", "match_score": 0.92, "name_score": 0.92,
+                "confidence_pct": 92, "match_status": "match",
+                "classification": "matched",
+                "candidates": [{"account_name": "KS Army Entertainment LLC", "type": "Division"}],
+                "explanation": "", "provider": "", "evidence_chips": [],
+                "scoring_breakdown": {"name_evidence": 0.50},
+                "visible": True, "source_type": "strict_label_value",
+                "label_value_hit": True, "recital_party_hit": False,
+                "identity_confidence_pct": 100,
+                "context_risk_penalty_pct": 0,
+                "final_confidence_pct": 92,
+            },
+        ]
+        text = (
+            "BETWEEN:\nKS Army Entertainment LLC\nand\nRK Entertainments Ltd\n\n"
+            "shall distribute\nprovided that\nin accordance with\nPage 1 of 5\n"
+        )
+        story = build_resolution_story(sf, text)
+        for u in story["unresolved_counterparties"]:
+            assert "shall" not in u.lower()
+            assert "provided" not in u.lower()
+            assert "page" not in u.lower()
+
+
+class TestIdentityConfidenceNormalization:
+    def test_name_only_normalization(self):
+        from server.preflight_engine import _extract_recital_parties
+        identity_raw = 0.55
+        positive_max = 0.55 + 0.30 + 0.20
+        pct = round(min(identity_raw / positive_max, 1.0) * 100)
+        assert pct == 52
+
+    def test_full_evidence_normalization(self):
+        identity_raw = 0.55 + 0.30 + 0.20
+        positive_max = 0.55 + 0.30 + 0.20
+        pct = round(min(identity_raw / positive_max, 1.0) * 100)
+        assert pct == 100
+
+    def test_name_plus_address_normalization(self):
+        identity_raw = 0.55 + 0.30
+        positive_max = 0.55 + 0.30 + 0.20
+        pct = round(min(identity_raw / positive_max, 1.0) * 100)
+        assert pct == 81
+
+    def test_confidence_fields_all_present(self):
+        from server.preflight_engine import build_resolution_story
+        sf = [
+            {
+                "source_field": "Test Corp",
+                "suggested_label": "Test Corp",
+                "match_method": "exact", "match_score": 0.92, "name_score": 1.0,
+                "confidence_pct": 92, "match_status": "match",
+                "classification": "matched",
+                "candidates": [{"account_name": "Test Corp", "type": "Division"}],
+                "explanation": "", "provider": "", "evidence_chips": [],
+                "scoring_breakdown": {"name_evidence": 0.55},
+                "visible": True, "source_type": "strict_label_value",
+                "label_value_hit": True, "recital_party_hit": False,
+                "identity_confidence_pct": 52,
+                "context_risk_penalty_pct": 0,
+                "final_confidence_pct": 92,
+            },
+        ]
+        story = build_resolution_story(sf, "Some text")
+        le = story["legal_entity_account"]
+        assert le is not None
+        assert "identity_confidence_pct" in le
+        assert "context_risk_penalty_pct" in le
+        assert "final_confidence_pct" in le
+        assert "confidence" in le

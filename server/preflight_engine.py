@@ -695,10 +695,73 @@ _PARTY_ZONE_RE = re.compile(
     re.MULTILINE,
 )
 
+_BETWEEN_AND_RE = re.compile(
+    r'(?:between|BETWEEN|By\s+and\s+Between|BY\s+AND\s+BETWEEN)\s+'
+    r'(.+?)\s+(?:and|AND|&)\s+(.+?)(?:\s*[\(\,]|$)',
+    re.IGNORECASE | re.MULTILINE,
+)
+
 _COMPANY_MARKERS = re.compile(
     r'\b(?:ltd|limited|inc|incorporated|llc|corp|corporation|gmbh|plc|pty|s\.a\.|sa|bv|ag)\b',
     re.IGNORECASE,
 )
+
+_RECITAL_CLAUSE_WORDS = (
+    "shall", "will", "may", "subject to", "in accordance", "pursuant to",
+    "notwithstanding", "provided that", "for the purpose", "agrees to",
+    "agrees that", "represents", "warrants", "acknowledges", "except as",
+    "without limiting", "to the extent", "in consideration", "in witness",
+    "hereby", "hereunder", "hereto", "hereof", "therein", "thereof",
+    "whereas", "now therefore", "witnesseth",
+)
+
+_RECITAL_ADDRESS_RE = re.compile(
+    r'\b(?:street|st\.|avenue|ave\.|road|rd\.|boulevard|blvd|suite|floor|'
+    r'p\.?o\.?\s*box|zip|postal|state of|county of|province|country|'
+    r'california|new york|texas|florida|illinois|tennessee|georgia|'
+    r'nashville|los angeles|united states|united kingdom|uk|usa|'
+    r'u\.s\.a|u\.k\.|canada|australia|india|germany|france|'
+    r'\d{5}[\-]?\d{0,4})\b',
+    re.IGNORECASE,
+)
+
+_PAGINATION_RE = re.compile(r'(?:page|pg\.?)\s*\d+\s*(?:of\s*\d+)?', re.IGNORECASE)
+
+_MAX_RECITAL_PARTIES = 8
+
+
+def _is_recital_noise(line):
+    low = line.lower().strip()
+    if any(low.startswith(cw) for cw in _RECITAL_CLAUSE_WORDS):
+        return True
+    if _RECITAL_ADDRESS_RE.search(line):
+        return True
+    if _PAGINATION_RE.search(line):
+        return True
+    if line.endswith(':'):
+        return True
+    if any(c < ' ' and c not in ('\n', '\r', '\t') for c in line):
+        return True
+    if re.match(r'^[^a-zA-Z0-9]+$', line):
+        return True
+    if low in ("and", "or", "by", "between", "of", "the"):
+        return True
+    if low.startswith(("hereinafter", "the ", "this ", "whereas")):
+        return True
+    word_count = len(low.split())
+    if word_count > 12:
+        return True
+    return False
+
+
+def _clean_party_name(raw):
+    raw = raw.strip().strip("()").strip()
+    raw = re.sub(r'^\d+[\.\)]\s*', '', raw)
+    raw = re.sub(r'\s*\(.*?\)\s*$', '', raw).strip()
+    raw = re.sub(r'^(and|AND|&)\s+', '', raw).strip()
+    raw = re.sub(r',?\s*(?:a|an)\s+(?:company|corporation|partnership|firm|entity)\s+.*$', '', raw, flags=re.IGNORECASE).strip()
+    raw = re.sub(r',?\s*(?:with|having|whose|located|organized|incorporated)\s+.*$', '', raw, flags=re.IGNORECASE).strip()
+    return raw
 
 
 def _extract_recital_parties(full_text):
@@ -706,28 +769,28 @@ def _extract_recital_parties(full_text):
         return []
     parties = []
     seen = set()
+
+    for m in _BETWEEN_AND_RE.finditer(full_text):
+        for g in (m.group(1), m.group(2)):
+            name = _clean_party_name(g)
+            if not name or len(name) < 3 or len(name) > 120:
+                continue
+            if _is_recital_noise(name):
+                continue
+            norm = name.lower().strip()
+            if norm in _HARD_DENYLIST or norm in _GENERIC_SINGLE_TOKENS:
+                continue
+            if norm not in seen:
+                seen.add(norm)
+                parties.append(name)
+
     for m in _PARTY_ZONE_RE.finditer(full_text):
         block = m.group(1)
         for line in block.split("\n"):
-            line = line.strip().strip("()").strip()
-            line = re.sub(r'^\d+[\.\)]\s*', '', line)
-            line = re.sub(r'\s*\(.*?\)\s*$', '', line).strip()
-            line = re.sub(r'^(and|AND|&)\s*', '', line).strip()
+            line = _clean_party_name(line)
             if not line or len(line) < 3 or len(line) > 120:
                 continue
-            if line.lower() in ("and", "or", "by", "between"):
-                continue
-            if line.lower().startswith(("hereinafter", "the ", "this ", "whereas")):
-                continue
-            if any(c in line for c in ('\x00', '\x01', '\x02', '\x03', '\x04')):
-                continue
-            if re.match(r'^[^a-zA-Z0-9]+$', line):
-                continue
-            if line.endswith(':'):
-                continue
-            clause_starts = ("shall ", "will ", "may ", "subject to", "in accordance",
-                             "pursuant to", "notwithstanding", "provided that", "for the purpose")
-            if line.lower().startswith(clause_starts):
+            if _is_recital_noise(line):
                 continue
             norm = line.lower().strip()
             if norm in _HARD_DENYLIST or norm in _GENERIC_SINGLE_TOKENS:
@@ -735,7 +798,12 @@ def _extract_recital_parties(full_text):
             if norm not in seen:
                 seen.add(norm)
                 parties.append(line)
-    return parties
+            if len(parties) >= _MAX_RECITAL_PARTIES:
+                break
+        if len(parties) >= _MAX_RECITAL_PARTIES:
+            break
+
+    return parties[:_MAX_RECITAL_PARTIES]
 
 
 def _build_onboarding_recommendation(name, agreement_type):
@@ -1080,7 +1148,8 @@ def _run_salesforce_match(extracted_headers, full_text=""):
             scoring_breakdown = {"name_evidence": name_score}
 
         identity_raw = name_evidence + address_evidence + account_ctx
-        identity_confidence_pct = round(min(identity_raw / 0.55, 1.0) * 100)
+        _POSITIVE_MAX = 0.55 + 0.30 + 0.20
+        identity_confidence_pct = round(min(identity_raw / _POSITIVE_MAX, 1.0) * 100)
         context_risk_penalty_pct = round(svc_penalty * 100)
         final_confidence_pct = round(composite * 100)
 

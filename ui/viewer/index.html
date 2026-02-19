@@ -2296,6 +2296,8 @@
     html[data-theme="dark"] .rs-badge-legal { background: rgba(76,175,80,0.15); color: #81c784; }
     html[data-theme="dark"] .rs-badge-counter { background: rgba(139,92,246,0.15); color: #c4b5fd; }
     html[data-theme="dark"] .rs-assign-select { background: var(--bg-1, #1e1e1e); color: var(--text-1, #e0e0e0); border-color: var(--border-1, #444); }
+    .rs-assign-warning { color: #e74c3c; font-size: 11px; margin-top: 4px; font-weight: 600; }
+    html[data-theme="dark"] .rs-assign-warning { color: #ff6b6b; }
     html[data-theme="dark"] .rs-badge-multi { background: rgba(124,77,255,0.15); color: #b388ff; }
     html[data-theme="dark"] .rs-badge-manual { background: rgba(255,152,0,0.15); color: #ffcc80; }
     html[data-theme="dark"] .rs-reasoning-item { border-bottom-color: var(--border-1); color: var(--text-1); }
@@ -56488,10 +56490,34 @@ var P022_RuntimeValidation = {
   window.pftlOnAssignChange = function(role) {
     var selectId = role === 'legal_entity' ? 'rs-assign-legal' : 'rs-assign-counter';
     var cardId = role === 'legal_entity' ? 'rs-card-legal' : 'rs-card-counter';
+    var otherRole = role === 'legal_entity' ? 'counterparty' : 'legal_entity';
+    var otherSelectId = role === 'legal_entity' ? 'rs-assign-counter' : 'rs-assign-legal';
     var sel = document.getElementById(selectId);
     var cardWrap = document.getElementById(cardId);
     if (!sel || !cardWrap) return;
     var chosen = sel.value;
+
+    var otherSel = document.getElementById(otherSelectId);
+    var otherVal = otherSel ? otherSel.value : '';
+    if (chosen && chosen === otherVal) {
+      var warnId = 'rs-assign-warn-' + role;
+      var existing = document.getElementById(warnId);
+      if (!existing) {
+        var warn = document.createElement('div');
+        warn.id = warnId;
+        warn.className = 'rs-assign-warning';
+        warn.textContent = 'Cannot assign same entity to both Legal Entity (CMG-side) and Counterparty (external).';
+        sel.parentNode.appendChild(warn);
+      }
+      var assigns = _pftlGetAssignments();
+      sel.value = assigns[role] || '';
+      console.log('[RS-ASSIGN] BLOCKED duplicate: ' + chosen + ' already assigned as ' + otherRole);
+      return;
+    }
+
+    var warns = document.querySelectorAll('.rs-assign-warning');
+    for (var w = 0; w < warns.length; w++) warns[w].remove();
+
     var assigns = _pftlGetAssignments();
     assigns[role] = chosen;
     _pftlSaveAssignments();
