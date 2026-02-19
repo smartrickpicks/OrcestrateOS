@@ -407,14 +407,28 @@ _SF_STOP_LABELS = {
     "none", "tbd", "unknown",
 }
 
-_LABEL_VALUE_RE = re.compile(
-    r'(?:account\s*name|account|client\s*name|client|company\s*name|company'
-    r'|legal\s*name|legal\s*entity|entity\s*name|entity|artist\s*name|artist'
-    r'|vendor\s*name|vendor|counterparty|customer\s*name|customer'
-    r'|payee\s*name|payee|licensee|licensor|party\s*name)'
-    r'\s*[:;\-–—]\s*(.+)',
+_STRICT_LABEL_VALUE_RE = re.compile(
+    r'^\s*(?:Account\s*Name(?:_c|__c)?|Company\s*Name(?:_c|__c)?'
+    r'|Artist\s*Name(?:\s*\(pka\s+or\s+dba\))?|Legal\s*Name)'
+    r'\s*[:\-]\s*(.+?)\s*$',
     re.IGNORECASE,
 )
+
+_PROSE_START_WORDS = {"record", "records", "agreement", "whereas", "means", "term", "party", "parties", "shall", "includes", "including"}
+
+_PROSE_FRAGMENTS = [
+    "means every form of",
+    "this agreement",
+    "hereof",
+    "whereas",
+    "herein",
+    "hereunder",
+    "pursuant to",
+    "in connection with",
+    "notwithstanding",
+]
+
+_GENERIC_SINGLE_TOKENS = {"record", "records", "account", "accounts", "company", "companies", "artist", "artists", "vendor", "vendors", "name", "entity"}
 
 
 def _normalize_candidate(text):
@@ -424,59 +438,139 @@ def _normalize_candidate(text):
     return text
 
 
+def _is_prose(val):
+    low = val.lower()
+    tokens = low.split()
+    if not tokens:
+        return True
+    if tokens[0] in _PROSE_START_WORDS:
+        return True
+    for frag in _PROSE_FRAGMENTS:
+        if frag in low:
+            return True
+    if len(tokens) > 6:
+        return True
+    has_quotes = '"' in val or '\u201c' in val or '\u201d' in val
+    verb_words = {"means", "shall", "includes", "including", "agrees", "acknowledges"}
+    if has_quotes and any(t in verb_words for t in tokens):
+        return True
+    alnum_count = sum(1 for c in val if c.isalnum())
+    if len(val) > 0 and alnum_count / len(val) < 0.5:
+        return True
+    return False
+
+
+def _is_valid_value(val):
+    if not val or len(val) < 4:
+        return False
+    tokens = val.split()
+    if len(tokens) < 2 and not any(c.isalnum() for c in val):
+        return False
+    if len(tokens) == 1 and val.lower() in _GENERIC_SINGLE_TOKENS:
+        return False
+    if val.lower() in _SF_STOP_LABELS:
+        return False
+    if _is_prose(val):
+        return False
+    return True
+
+
+def _csv_phrase_scan(full_text):
+    """Scan full_text for exact CSV account name phrases (word-boundary, case-insensitive)."""
+    try:
+        from server.resolvers.account_index import get_index
+    except ImportError:
+        return []
+
+    idx = get_index()
+    if not idx.loaded:
+        return []
+
+    hits = []
+    seen_lower = set()
+    text_lower = full_text.lower() if full_text else ""
+    if not text_lower:
+        return []
+
+    for rec in idx.all_records():
+        for name_attr in ("account_name", "artist_name", "company_name", "legal_name"):
+            name = getattr(rec, name_attr, "")
+            if not name or len(name) < 3:
+                continue
+            name_low = name.lower()
+            if name_low in seen_lower:
+                continue
+            if name_low in _GENERIC_SINGLE_TOKENS:
+                continue
+            pos = text_lower.find(name_low)
+            if pos < 0:
+                continue
+            before_ok = pos == 0 or not text_lower[pos - 1].isalnum()
+            end = pos + len(name_low)
+            after_ok = end >= len(text_lower) or not text_lower[end].isalnum()
+            if before_ok and after_ok:
+                seen_lower.add(name_low)
+                hits.append(name)
+
+    hits.sort(key=lambda n: (-len(n), n.lower()))
+    return hits
+
+
 def extract_account_candidates(full_text, extracted_headers):
-    """Extract actual account-name values from body text, not labels.
+    """Extract actual account-name values from body text using strict rules.
 
     Priority:
-      a) Value-after-label patterns ("Account Name: 1888 Records" → "1888 Records")
-      b) Standalone entity-like lines
-      c) Fallback to headers only if no values found
+      1) CSV-first exact phrase scan — highest confidence
+      2) Strict label:value extraction with anchored labels and prose rejection
+      3) Fallback to non-label headers (last resort)
 
-    Returns deduplicated, normalized list of candidate strings.
+    Returns deduplicated, normalized list of (candidate, source_type) tuples
+    flattened to candidate strings, ordered by priority.
     """
-    value_candidates = []
+    all_candidates = []
     seen_lower = set()
+
+    csv_hits = _csv_phrase_scan(full_text)
+    for hit in csv_hits:
+        normed = _normalize_candidate(hit)
+        if normed and normed.lower() not in seen_lower:
+            seen_lower.add(normed.lower())
+            all_candidates.append(normed)
 
     lines = full_text.split("\n") if full_text else []
     for line in lines:
         line = line.strip()
         if not line:
             continue
-        m = _LABEL_VALUE_RE.search(line)
+        m = _STRICT_LABEL_VALUE_RE.match(line)
         if m:
             val = _normalize_candidate(m.group(1))
-            if val and len(val) >= 2 and val.lower() not in _SF_STOP_LABELS:
-                if val.lower() not in seen_lower:
-                    seen_lower.add(val.lower())
-                    value_candidates.append(val)
+            if _is_valid_value(val) and val.lower() not in seen_lower:
+                seen_lower.add(val.lower())
+                all_candidates.append(val)
 
-    if value_candidates:
-        return value_candidates
+    if all_candidates:
+        return all_candidates
 
     header_values = []
     for h in extracted_headers:
         normed = _normalize_candidate(h)
-        if normed and normed.lower() not in _SF_STOP_LABELS and normed.lower() not in seen_lower:
-            h_lower = normed.lower().strip()
-            is_label = False
-            for hint in _SF_ENTITY_HINTS:
-                if h_lower == hint or h_lower == hint + ":":
-                    is_label = True
-                    break
-            if not is_label:
-                seen_lower.add(normed.lower())
-                header_values.append(normed)
+        if not normed or normed.lower() in seen_lower:
+            continue
+        if normed.lower() in _SF_STOP_LABELS:
+            continue
+        h_lower = normed.lower()
+        is_label = any(h_lower == hint or h_lower == hint + ":" for hint in _SF_ENTITY_HINTS)
+        if is_label:
+            continue
+        if normed.lower() in _GENERIC_SINGLE_TOKENS:
+            continue
+        if _is_prose(normed):
+            continue
+        seen_lower.add(normed.lower())
+        header_values.append(normed)
 
-    if header_values:
-        return header_values[:10]
-
-    fallback = []
-    for h in extracted_headers[:5]:
-        normed = _normalize_candidate(h)
-        if normed and normed.lower() not in seen_lower:
-            seen_lower.add(normed.lower())
-            fallback.append(normed)
-    return fallback
+    return header_values[:10]
 
 
 def _run_salesforce_match(extracted_headers, full_text=""):

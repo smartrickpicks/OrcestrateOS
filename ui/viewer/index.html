@@ -56241,23 +56241,52 @@ var P022_RuntimeValidation = {
     'none':1,'tbd':1,'unknown':1
   };
 
-  var _PFTL_LABEL_VALUE_RE = /(?:account\s*name|account|client\s*name|client|company\s*name|company|legal\s*name|legal\s*entity|entity\s*name|entity|artist\s*name|artist|vendor\s*name|vendor|counterparty|customer\s*name|customer|payee\s*name|payee|licensee|licensor|party\s*name)\s*[:;\-\u2013\u2014]\s*(.+)/i;
+  var _PFTL_STRICT_LABEL_RE = /^\s*(?:Account\s*Name(?:_c|__c)?|Company\s*Name(?:_c|__c)?|Artist\s*Name(?:\s*\(pka\s+or\s+dba\))?|Legal\s*Name)\s*[:\-]\s*(.+?)\s*$/i;
+
+  var _PFTL_PROSE_STARTS = {'record':1,'records':1,'agreement':1,'whereas':1,'means':1,'term':1,'party':1,'parties':1,'shall':1,'includes':1,'including':1};
+  var _PFTL_PROSE_FRAGS = ['means every form of','this agreement','hereof','whereas','herein','hereunder','pursuant to','in connection with','notwithstanding'];
+  var _PFTL_GENERIC_TOKENS = {'record':1,'records':1,'account':1,'accounts':1,'company':1,'companies':1,'artist':1,'artists':1,'vendor':1,'vendors':1,'name':1,'entity':1};
+
+  function _pftlIsProse(val) {
+    var low = val.toLowerCase();
+    var tokens = low.split(/\s+/);
+    if (!tokens.length) return true;
+    if (_PFTL_PROSE_STARTS[tokens[0]]) return true;
+    for (var f = 0; f < _PFTL_PROSE_FRAGS.length; f++) {
+      if (low.indexOf(_PFTL_PROSE_FRAGS[f]) >= 0) return true;
+    }
+    if (tokens.length > 6) return true;
+    var hasQuotes = val.indexOf('"') >= 0 || val.indexOf('\u201c') >= 0 || val.indexOf('\u201d') >= 0;
+    var verbWords = {'means':1,'shall':1,'includes':1,'including':1,'agrees':1,'acknowledges':1};
+    if (hasQuotes) { for (var v = 0; v < tokens.length; v++) { if (verbWords[tokens[v]]) return true; } }
+    var alnum = 0; for (var a = 0; a < val.length; a++) { if (/[a-zA-Z0-9]/.test(val[a])) alnum++; }
+    if (val.length > 0 && alnum / val.length < 0.5) return true;
+    return false;
+  }
+
+  function _pftlIsValidValue(val) {
+    if (!val || val.length < 4) return false;
+    var tokens = val.split(/\s+/);
+    if (tokens.length === 1 && _PFTL_GENERIC_TOKENS[val.toLowerCase()]) return false;
+    if (_PFTL_STOP_LABELS[val.toLowerCase()]) return false;
+    if (_pftlIsProse(val)) return false;
+    return true;
+  }
 
   function _pftlExtractAccountCandidates(extractedText, extractedHeaders) {
     var candidates = [];
     var seen = {};
+
     var lines = (extractedText || '').split('\n');
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i].replace(/^\s+|\s+$/g, '');
       if (!line) continue;
-      var m = _PFTL_LABEL_VALUE_RE.exec(line);
+      var m = _PFTL_STRICT_LABEL_RE.exec(line);
       if (m) {
         var val = m[1].replace(/^\s+|\s+$/g, '').replace(/\s+/g, ' ').replace(/[;:,]+$/, '').replace(/^\s+|\s+$/g, '');
-        if (val && val.length >= 2 && !_PFTL_STOP_LABELS[val.toLowerCase()]) {
-          if (!seen[val.toLowerCase()]) {
-            seen[val.toLowerCase()] = true;
-            candidates.push(val);
-          }
+        if (_pftlIsValidValue(val) && !seen[val.toLowerCase()]) {
+          seen[val.toLowerCase()] = true;
+          candidates.push(val);
         }
       }
     }
@@ -56266,10 +56295,12 @@ var P022_RuntimeValidation = {
     var hdrs = extractedHeaders || [];
     for (var h = 0; h < hdrs.length; h++) {
       var normed = hdrs[h].replace(/^\s+|\s+$/g, '').replace(/\s+/g, ' ').replace(/[;:,]+$/, '').replace(/^\s+|\s+$/g, '');
-      if (normed && !_PFTL_STOP_LABELS[normed.toLowerCase()] && !seen[normed.toLowerCase()]) {
-        seen[normed.toLowerCase()] = true;
-        candidates.push(normed);
-      }
+      if (!normed || seen[normed.toLowerCase()]) continue;
+      if (_PFTL_STOP_LABELS[normed.toLowerCase()]) continue;
+      if (_PFTL_GENERIC_TOKENS[normed.toLowerCase()]) continue;
+      if (_pftlIsProse(normed)) continue;
+      seen[normed.toLowerCase()] = true;
+      candidates.push(normed);
     }
     return candidates.slice(0, 10);
   }

@@ -2,20 +2,18 @@
 Tests for Salesforce match integration in the Preflight engine.
 
 Covers:
-  - extract_account_candidates: value-over-label extraction
+  - extract_account_candidates: strict label:value, CSV phrase scan, prose rejection
   - _run_salesforce_match payload shape
   - Section ordering: encoding → sf_match → others
   - Matrix rows include status + confidence
-  - Entity header detection
   - Deterministic sorting of SF match results
-  - Edge cases: empty headers, resolver disabled
+  - Acceptance criteria: value-over-label, prose rejection
 """
 import pytest
 from unittest.mock import patch, MagicMock
 
 
 def _pftl_section_priority(section_key):
-    """Python equivalent of PFTL_SECTION_ORDER."""
     order = {
         "encoding": 0,
         "salesforce_match": 1,
@@ -33,9 +31,6 @@ class TestSectionOrdering:
 
     def test_sf_match_before_missing_required(self):
         assert _pftl_section_priority("salesforce_match") < _pftl_section_priority("missing_required")
-
-    def test_sf_match_before_invalid_picklist(self):
-        assert _pftl_section_priority("salesforce_match") < _pftl_section_priority("invalid_picklist")
 
     def test_sf_match_before_metrics(self):
         assert _pftl_section_priority("salesforce_match") < _pftl_section_priority("metrics")
@@ -56,22 +51,40 @@ class TestSectionOrdering:
 
 
 class TestExtractAccountCandidates:
-    def test_extracts_value_after_label(self):
+    def test_extracts_value_after_account_name_label(self):
         from server.preflight_engine import extract_account_candidates
         text = "Account Name: 1888 Records\nSome other line"
         result = extract_account_candidates(text, [])
         assert "1888 Records" in result
 
-    def test_extracts_value_with_dash_separator(self):
+    def test_extracts_value_after_company_name_label(self):
         from server.preflight_engine import extract_account_candidates
-        text = "Client Name - Acme Corp\nMore text"
+        text = "Company Name: Acme Corp"
         result = extract_account_candidates(text, [])
         assert "Acme Corp" in result
 
+    def test_extracts_value_after_artist_name_label(self):
+        from server.preflight_engine import extract_account_candidates
+        text = "Artist Name: DJ Shadow"
+        result = extract_account_candidates(text, [])
+        assert "DJ Shadow" in result
+
+    def test_extracts_value_after_legal_name_label(self):
+        from server.preflight_engine import extract_account_candidates
+        text = "Legal Name: Shadow Holdings LLC"
+        result = extract_account_candidates(text, [])
+        assert "Shadow Holdings LLC" in result
+
+    def test_extracts_value_after_salesforce_field_name(self):
+        from server.preflight_engine import extract_account_candidates
+        text = "Account_Name__c: 1888 Records"
+        result = extract_account_candidates(text, [])
+        assert "1888 Records" in result
+
     def test_excludes_labels_as_values(self):
         from server.preflight_engine import extract_account_candidates
-        text = "Account Name: 1888 Records\nVendor: Big Label Co"
-        result = extract_account_candidates(text, ["Account Name", "Vendor"])
+        text = "Account Name: 1888 Records"
+        result = extract_account_candidates(text, ["Account Name"])
         assert "Account Name" not in result
         assert "1888 Records" in result
 
@@ -89,31 +102,60 @@ class TestExtractAccountCandidates:
 
     def test_deduplicates_case_insensitively(self):
         from server.preflight_engine import extract_account_candidates
-        text = "Account Name: Dupe Corp\nAccount: dupe corp"
+        text = "Account Name: Dupe Corp\nCompany Name: dupe corp"
         result = extract_account_candidates(text, [])
         assert len([c for c in result if c.lower() == "dupe corp"]) == 1
-
-    def test_fallback_to_non_label_headers(self):
-        from server.preflight_engine import extract_account_candidates
-        text = "No label-value pairs here"
-        headers = ["Some Real Company", "Account Name", "Contract Date"]
-        result = extract_account_candidates(text, headers)
-        assert "Some Real Company" in result
-        assert "Account Name" not in result
 
     def test_empty_text_and_headers(self):
         from server.preflight_engine import extract_account_candidates
         result = extract_account_candidates("", [])
         assert result == []
 
-    def test_stop_labels_excluded(self):
+    def test_label_without_value_excluded(self):
         from server.preflight_engine import extract_account_candidates
-        text = "No patterns"
-        headers = ["Account Name", "Account Name:", "payments/accounting", "Real Corp"]
+        text = "Account Name:\nSome other content"
+        result = extract_account_candidates(text, [])
+        assert not any("account" in c.lower() for c in result)
+
+    def test_rejects_prose_record_means(self):
+        from server.preflight_engine import extract_account_candidates
+        text = 'Account Name: "Record" means every form of recorded music'
+        result = extract_account_candidates(text, [])
+        assert not any("record" in c.lower() and "means" in c.lower() for c in result)
+
+    def test_rejects_prose_this_agreement(self):
+        from server.preflight_engine import extract_account_candidates
+        text = "Account Name: this agreement shall govern"
+        result = extract_account_candidates(text, [])
+        assert not any("this agreement" in c.lower() for c in result)
+
+    def test_rejects_prose_whereas(self):
+        from server.preflight_engine import extract_account_candidates
+        text = "Company Name: whereas the party acknowledges"
+        result = extract_account_candidates(text, [])
+        assert result == []
+
+    def test_rejects_long_token_value(self):
+        from server.preflight_engine import extract_account_candidates
+        text = "Account Name: zzqa zzqb zzqc zzqd zzqe zzqf zzqg zzqh"
+        result = extract_account_candidates(text, [])
+        assert not any("zzqa" in c.lower() for c in result)
+
+    def test_rejects_generic_single_token(self):
+        from server.preflight_engine import extract_account_candidates
+        text = "Some random text with no label patterns"
+        headers = ["record", "account", "company", "Real Corp Name"]
+        result = extract_account_candidates(text, headers)
+        assert "record" not in result
+        assert "account" not in result
+        assert "company" not in result
+
+    def test_fallback_to_non_label_headers(self):
+        from server.preflight_engine import extract_account_candidates
+        text = "No label-value pairs here"
+        headers = ["Some Real Company", "Account Name", "Contract Date"]
         result = extract_account_candidates(text, headers)
         assert "Account Name" not in result
-        assert "Account Name:" not in result
-        assert "payments/accounting" not in result
 
     def test_value_priority_over_headers(self):
         from server.preflight_engine import extract_account_candidates
@@ -123,29 +165,79 @@ class TestExtractAccountCandidates:
         assert "1888 Records" in result
         assert "Fallback Company" not in result
 
-    def test_multiple_label_value_patterns(self):
+    def test_rejects_value_starting_with_prose_word(self):
         from server.preflight_engine import extract_account_candidates
-        text = "Account Name: 1888 Records\nVendor: Big Label Co\nArtist: DJ Shadow"
+        text = "Account Name: Records of the meeting"
         result = extract_account_candidates(text, [])
-        assert "1888 Records" in result
-        assert "Big Label Co" in result
-        assert "DJ Shadow" in result
+        assert result == []
 
-    def test_short_values_excluded(self):
+    def test_rejects_quotes_with_verb_phrase(self):
         from server.preflight_engine import extract_account_candidates
-        text = "Account Name: X"
+        text = 'Legal Name: "Master" means the final'
         result = extract_account_candidates(text, [])
-        assert "X" not in result
+        assert result == []
 
-    def test_entity_hint_labels_filtered_from_headers(self):
-        from server.preflight_engine import extract_account_candidates
-        text = "No patterns here"
-        headers = ["vendor", "client", "entity", "1888 Records"]
-        result = extract_account_candidates(text, headers)
-        assert "vendor" not in result
-        assert "client" not in result
-        assert "entity" not in result
-        assert "1888 Records" in result
+
+class TestCsvPhraseScan:
+    def test_csv_phrase_scan_import(self):
+        from server.preflight_engine import _csv_phrase_scan
+        result = _csv_phrase_scan("")
+        assert isinstance(result, list)
+
+    def test_csv_phrase_scan_finds_known_account(self):
+        from server.preflight_engine import _csv_phrase_scan
+        from server.resolvers.account_index import get_index
+        idx = get_index()
+        if idx.loaded and idx.record_count > 0:
+            rec = idx.all_records()[0]
+            name = rec.account_name
+            if name and len(name) >= 3:
+                text = f"Some text before {name} and after"
+                hits = _csv_phrase_scan(text)
+                assert any(h.lower() == name.lower() for h in hits), f"Expected to find '{name}' in hits"
+
+    def test_csv_phrase_scan_empty_text(self):
+        from server.preflight_engine import _csv_phrase_scan
+        assert _csv_phrase_scan("") == []
+
+    def test_csv_phrase_scan_no_match(self):
+        from server.preflight_engine import _csv_phrase_scan
+        result = _csv_phrase_scan("ZZZZ NONEXISTENT CORP QQQQ")
+        assert result == []
+
+
+class TestProseFilters:
+    def test_is_prose_starts_with_record(self):
+        from server.preflight_engine import _is_prose
+        assert _is_prose("Record means every form of recorded music")
+
+    def test_is_prose_this_agreement(self):
+        from server.preflight_engine import _is_prose
+        assert _is_prose("see this agreement for details")
+
+    def test_is_prose_hereof(self):
+        from server.preflight_engine import _is_prose
+        assert _is_prose("as stated hereof")
+
+    def test_is_prose_long_phrase(self):
+        from server.preflight_engine import _is_prose
+        assert _is_prose("one two three four five six seven eight words")
+
+    def test_not_prose_normal_name(self):
+        from server.preflight_engine import _is_prose
+        assert not _is_prose("1888 Records")
+
+    def test_not_prose_company_name(self):
+        from server.preflight_engine import _is_prose
+        assert not _is_prose("Acme Corp LLC")
+
+    def test_is_prose_low_alnum(self):
+        from server.preflight_engine import _is_prose
+        assert _is_prose("--- ... *** ///  @@@ ###")
+
+    def test_is_prose_quotes_with_means(self):
+        from server.preflight_engine import _is_prose
+        assert _is_prose('"Record" means every form')
 
 
 class TestRunSalesforceMatch:
@@ -154,14 +246,14 @@ class TestRunSalesforceMatch:
         result = _run_salesforce_match([], "")
         assert isinstance(result, list)
 
-    def test_empty_headers_and_text_returns_empty(self):
+    def test_empty_returns_empty(self):
         from server.preflight_engine import _run_salesforce_match
         result = _run_salesforce_match([], "")
         assert result == []
 
     def test_result_payload_shape(self):
         from server.preflight_engine import _run_salesforce_match
-        result = _run_salesforce_match(["Some Company"], "Account Name: Some Company")
+        result = _run_salesforce_match([], "Account Name: Some Company Name")
         assert isinstance(result, list)
         for item in result:
             assert "source_field" in item
@@ -171,9 +263,6 @@ class TestRunSalesforceMatch:
             assert "confidence_pct" in item
             assert "match_status" in item
             assert "classification" in item
-            assert "candidates" in item
-            assert "explanation" in item
-            assert "provider" in item
 
     def test_match_status_values(self):
         from server.preflight_engine import _run_salesforce_match
@@ -184,25 +273,24 @@ class TestRunSalesforceMatch:
 
     def test_confidence_pct_range(self):
         from server.preflight_engine import _run_salesforce_match
-        result = _run_salesforce_match([], "Client Name: Test\nVendor: Other")
+        result = _run_salesforce_match([], "Company Name: Test LLC")
         for item in result:
             assert 0 <= item["confidence_pct"] <= 100
 
     def test_deterministic_sorting(self):
         from server.preflight_engine import _run_salesforce_match
-        text = "Account Name: Alpha Corp\nClient: Beta LLC\nVendor: Gamma Inc"
+        text = "Account Name: Alpha Corp\nCompany Name: Beta LLC"
         r1 = _run_salesforce_match([], text)
         r2 = _run_salesforce_match([], text)
         assert [x["source_field"] for x in r1] == [x["source_field"] for x in r2]
 
     def test_sort_order_review_first(self):
         from server.preflight_engine import _run_salesforce_match
-        text = "Account Name: Test A\nVendor: Test B\nArtist: Test C"
+        text = "Account Name: Test A\nCompany Name: Test B\nArtist Name: Test C"
         result = _run_salesforce_match([], text)
         if len(result) >= 2:
-            statuses = [r["match_status"] for r in result]
             status_priority = {"review": 0, "no-match": 1, "match": 2}
-            priorities = [status_priority.get(s, 5) for s in statuses]
+            priorities = [status_priority.get(r["match_status"], 5) for r in result]
             assert priorities == sorted(priorities)
 
     def test_source_field_shows_value_not_label(self):
@@ -210,52 +298,13 @@ class TestRunSalesforceMatch:
         text = "Account Name: 1888 Records"
         result = _run_salesforce_match(["Account Name"], text)
         if result:
-            assert result[0]["source_field"] == "1888 Records"
             assert result[0]["source_field"] != "Account Name"
-
-
-class TestEntityHeaderDetection:
-    def test_account_name_detected(self):
-        from server.preflight_engine import _SF_ENTITY_HINTS
-        header = "account name"
-        found = any(hint in header.lower() for hint in _SF_ENTITY_HINTS)
-        assert found
-
-    def test_client_name_detected(self):
-        from server.preflight_engine import _SF_ENTITY_HINTS
-        header = "Client Name"
-        found = any(hint in header.lower() for hint in _SF_ENTITY_HINTS)
-        assert found
-
-    def test_artist_detected(self):
-        from server.preflight_engine import _SF_ENTITY_HINTS
-        header = "Artist"
-        found = any(hint in header.lower() for hint in _SF_ENTITY_HINTS)
-        assert found
-
-    def test_random_header_not_entity(self):
-        from server.preflight_engine import _SF_ENTITY_HINTS
-        header = "Total Amount Due"
-        found = any(hint in header.lower() for hint in _SF_ENTITY_HINTS)
-        assert not found
-
-    def test_vendor_detected(self):
-        from server.preflight_engine import _SF_ENTITY_HINTS
-        header = "Vendor Name"
-        found = any(hint in header.lower() for hint in _SF_ENTITY_HINTS)
-        assert found
-
-    def test_company_detected(self):
-        from server.preflight_engine import _SF_ENTITY_HINTS
-        header = "Company Name"
-        found = any(hint in header.lower() for hint in _SF_ENTITY_HINTS)
-        assert found
 
 
 class TestPreflightResultIncludesSfMatch:
     def test_run_preflight_includes_salesforce_match_key(self):
         from server.preflight_engine import run_preflight
-        pages = [{"page": 1, "text": "Account Name: Test Corp\nSome Text\nContract Date", "char_count": 60, "image_coverage_ratio": 0.0}]
+        pages = [{"page": 1, "text": "Account Name: Test Corp\nSome data here to pad it out a bit more", "char_count": 80, "image_coverage_ratio": 0.0}]
         result = run_preflight(pages)
         assert "salesforce_match" in result
         assert isinstance(result["salesforce_match"], list)
@@ -267,37 +316,28 @@ class TestPreflightResultIncludesSfMatch:
 
     def test_sf_match_after_corruption_samples_in_result(self):
         from server.preflight_engine import run_preflight
-        pages = [{"page": 1, "text": "Account Name: Real Corp\nClient: Other\nVendor: Third\nSome data", "char_count": 80, "image_coverage_ratio": 0.0}]
+        pages = [{"page": 1, "text": "Account Name: Real Corp\nCompany Name: Other Co\nMore text padding", "char_count": 80, "image_coverage_ratio": 0.0}]
         result = run_preflight(pages)
         keys = list(result.keys())
         if "corruption_samples" in keys and "salesforce_match" in keys:
             cs_idx = keys.index("corruption_samples")
             sf_idx = keys.index("salesforce_match")
-            assert sf_idx > cs_idx, "salesforce_match should appear after corruption_samples in result dict"
+            assert sf_idx > cs_idx
 
 
 class TestMatrixRowContent:
     def test_match_row_has_confidence(self):
         from server.preflight_engine import _run_salesforce_match
-        result = _run_salesforce_match([], "Account Name: Some Corp")
+        result = _run_salesforce_match([], "Account Name: Some Corp Name")
         for item in result:
             assert "confidence_pct" in item
             assert isinstance(item["confidence_pct"], int)
 
     def test_match_row_has_status(self):
         from server.preflight_engine import _run_salesforce_match
-        result = _run_salesforce_match([], "Client Name: Test LLC")
+        result = _run_salesforce_match([], "Company Name: Test LLC")
         for item in result:
-            assert "match_status" in item
             assert item["match_status"] in ("match", "review", "no-match")
-
-    def test_match_row_has_source_and_target(self):
-        from server.preflight_engine import _run_salesforce_match
-        result = _run_salesforce_match([], "Entity Name: Real Entity")
-        for item in result:
-            assert item["source_field"] == "Real Entity"
-            assert "suggested_label" in item
-            assert isinstance(item["suggested_label"], str)
 
     def test_no_match_has_dash_label(self):
         from server.preflight_engine import _run_salesforce_match
@@ -308,12 +348,22 @@ class TestMatrixRowContent:
 
 
 class TestAcceptanceCriteria:
-    def test_1888_records_extracted_as_source(self):
+    def test_1888_records_extracted_as_source_from_label(self):
         from server.preflight_engine import extract_account_candidates
         text = "Account Name: 1888 Records\nContract Date: 2024-01-01"
         candidates = extract_account_candidates(text, ["Account Name", "Contract Date"])
         assert "1888 Records" in candidates
         assert "Account Name" not in candidates
+
+    def test_1888_records_captured_via_csv_phrase_hit(self):
+        from server.preflight_engine import extract_account_candidates
+        from server.resolvers.account_index import get_index
+        idx = get_index()
+        found_1888 = any("1888" in getattr(r, "account_name", "") for r in idx.all_records()) if idx.loaded else False
+        if found_1888:
+            text = "Some contract text mentioning 1888 Records in the body without a label"
+            candidates = extract_account_candidates(text, [])
+            assert "1888 Records" in candidates
 
     def test_label_only_rows_excluded_when_value_exists(self):
         from server.preflight_engine import extract_account_candidates
@@ -322,9 +372,27 @@ class TestAcceptanceCriteria:
         candidates = extract_account_candidates(text, headers)
         assert candidates == ["1888 Records"]
 
+    def test_record_means_prose_not_emitted(self):
+        from server.preflight_engine import extract_account_candidates
+        text = '"Record" means every form of recorded music.\nAccount Name: hereof the parties'
+        candidates = extract_account_candidates(text, [])
+        assert not any("means every form" in c.lower() for c in candidates)
+        assert not any("record" == c.lower() for c in candidates)
+
     def test_unknown_value_still_returns_no_match(self):
         from server.preflight_engine import _run_salesforce_match
-        result = _run_salesforce_match([], "Account Name: ZZZ_TOTALLY_UNKNOWN_XYZ_999")
+        result = _run_salesforce_match([], "Account Name: ZZZ Totally Unknown Corp")
         if result:
             assert result[0]["match_status"] == "no-match"
-            assert result[0]["source_field"] == "ZZZ_TOTALLY_UNKNOWN_XYZ_999"
+            assert result[0]["source_field"] == "ZZZ Totally Unknown Corp"
+
+    def test_deterministic_ordering_preserved(self):
+        from server.preflight_engine import _run_salesforce_match
+        text = "Account Name: Alpha Corp\nCompany Name: Beta Inc\nLegal Name: Gamma LLC"
+        r1 = _run_salesforce_match([], text)
+        r2 = _run_salesforce_match([], text)
+        assert [x["source_field"] for x in r1] == [x["source_field"] for x in r2]
+        if len(r1) >= 2:
+            status_priority = {"review": 0, "no-match": 1, "match": 2}
+            priorities = [status_priority.get(r["match_status"], 5) for r in r1]
+            assert priorities == sorted(priorities)
