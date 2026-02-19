@@ -358,12 +358,15 @@ def run_preflight(pages_data):
     full_text = "\n".join(pages_text)
     extracted_headers, low_signal_headers = _extract_candidate_headers(full_text)
 
+    sf_match = _run_salesforce_match(extracted_headers)
+
     return {
         "doc_mode": doc_mode,
         "gate_color": gate_color,
         "gate_reasons": gate_reasons,
         "decision_trace": decision_trace,
         "corruption_samples": corruption_samples,
+        "salesforce_match": sf_match,
         "page_classifications": page_results,
         "extracted_text": full_text[:50000],
         "extracted_headers": extracted_headers,
@@ -380,3 +383,82 @@ def run_preflight(pages_data):
             "mixed_pages": sum(1 for m in page_modes if m == "MIXED"),
         },
     }
+
+
+_SF_ENTITY_HINTS = [
+    "account name", "account", "client name", "client", "company name",
+    "company", "legal name", "legal entity", "entity name", "entity",
+    "artist", "artist name", "vendor", "vendor name", "counterparty",
+    "customer", "customer name", "payee", "payee name", "licensee",
+    "licensor", "party name",
+]
+
+
+def _run_salesforce_match(extracted_headers):
+    """Run Salesforce account resolver on extracted headers that look like entity fields.
+
+    Returns a list of match result dicts shaped for the matrix renderer:
+        [{ source_field, suggested_label, match_method, match_score,
+           confidence_pct, match_status, classification, candidates, explanation }]
+    """
+    try:
+        from server.resolvers.salesforce import resolve_account, is_resolver_enabled
+    except ImportError:
+        logger.debug("[PREFLIGHT-SF] salesforce resolver not available")
+        return []
+
+    if not is_resolver_enabled():
+        logger.debug("[PREFLIGHT-SF] resolver not enabled (index not loaded)")
+        return []
+
+    entity_headers = []
+    for h in extracted_headers:
+        h_lower = h.lower().strip()
+        for hint in _SF_ENTITY_HINTS:
+            if hint in h_lower or h_lower in hint:
+                entity_headers.append(h)
+                break
+
+    if not entity_headers and extracted_headers:
+        entity_headers = extracted_headers[:5]
+
+    results = []
+    for header in entity_headers:
+        res = resolve_account(header)
+        top_name = ""
+        if res.get("candidates"):
+            top_name = res["candidates"][0].get("account_name", "")
+
+        score = res.get("score", 0.0)
+        pct = round(score * 100)
+
+        if res["classification"] == "matched":
+            match_status = "match"
+            match_method = res["candidates"][0].get("match_tier", "exact") if res.get("candidates") else "exact"
+        elif res["classification"] == "ambiguous":
+            match_status = "review"
+            match_method = res["candidates"][0].get("match_tier", "fuzzy") if res.get("candidates") else "fuzzy"
+        else:
+            match_status = "no-match"
+            match_method = "none"
+
+        results.append({
+            "source_field": header,
+            "suggested_label": top_name or "\u2014",
+            "match_method": match_method,
+            "match_score": score,
+            "confidence_pct": pct,
+            "match_status": match_status,
+            "classification": res["classification"],
+            "candidates": res.get("candidates", []),
+            "explanation": res.get("explanation", ""),
+            "provider": res.get("provider", ""),
+        })
+
+    results.sort(key=lambda r: (
+        0 if r["match_status"] == "review" else 1 if r["match_status"] == "no-match" else 2,
+        -r["confidence_pct"],
+        r["source_field"].lower(),
+    ))
+
+    return results

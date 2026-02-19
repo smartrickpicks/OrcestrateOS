@@ -56093,6 +56093,8 @@ var P022_RuntimeValidation = {
 
     html += _pftlRenderCorruptionSamples(r);
 
+    html += _pftlRenderSfMatchSection(r);
+
     var m = r.metrics || {};
     html += '<div class="pftl-section">';
     html += '<div class="pftl-section-title">Key Metrics</div>';
@@ -56215,6 +56217,61 @@ var P022_RuntimeValidation = {
       html += '<td><span class="' + resultClass + '">' + t.result + '</span></td>';
       html += '</tr>';
     }
+    html += '</tbody></table></div></div>';
+    return html;
+  }
+
+  var PFTL_SECTION_ORDER = { encoding: 0, salesforce_match: 1, missing_required: 2, invalid_picklist: 3, metrics: 4, other: 5 };
+
+  function _pftlSectionPriority(sectionKey) {
+    return PFTL_SECTION_ORDER[sectionKey] != null ? PFTL_SECTION_ORDER[sectionKey] : PFTL_SECTION_ORDER.other;
+  }
+
+  function _pftlRenderSfMatchSection(r) {
+    var matches = r.salesforce_match || [];
+    if (matches.length === 0) return '';
+
+    var html = '<div class="pftl-section pftl-sf-match-section">';
+    html += '<div class="pftl-section-title">Salesforce Account Match</div>';
+    html += '<div class="sync-matrix-wrap"><table class="sync-matrix pftl-sf-table"><thead><tr>';
+    html += '<th>Source Text</th>';
+    html += '<th>Mapped Account</th>';
+    html += '<th>Match Status</th>';
+    html += '<th>Confidence</th>';
+    html += '<th>Evidence</th>';
+    html += '</tr></thead><tbody>';
+
+    for (var i = 0; i < matches.length; i++) {
+      var m = matches[i];
+      var statusLabel = m.match_status === 'match' ? 'Match' : m.match_status === 'review' ? 'Review' : 'No Match';
+      var pct = m.confidence_pct || 0;
+      var bucket = _smGetConfidenceBucket(pct);
+      var bucketLabel = bucket === 'high' ? 'HIGH' : bucket === 'med' ? 'MED' : bucket === 'low' ? 'LOW' : '\u2014';
+      var pctText = pct > 0 ? pct + '%' : '\u2014';
+
+      var evidenceChips = [];
+      if (m.match_method && m.match_method !== 'none') {
+        var tierLabels = { 'exact': 'Exact', 'token_overlap': 'Token Overlap', 'edit_distance': 'Edit Distance', 'fuzzy': 'Fuzzy' };
+        evidenceChips.push(tierLabels[m.match_method] || m.match_method);
+      }
+      if (m.provider) evidenceChips.push(m.provider);
+      if (m.classification) evidenceChips.push(m.classification);
+
+      html += '<tr>';
+      html += '<td class="sm-source" title="' + _pftlEsc(m.source_field) + '">' + _pftlEsc(m.source_field) + '</td>';
+      html += '<td class="sm-target" title="' + _pftlEsc(m.suggested_label || '') + '">' + _pftlEsc(m.suggested_label || '\u2014') + '</td>';
+      html += '<td><span class="sm-status-badge ' + m.match_status + '">' + statusLabel + '</span></td>';
+      html += '<td><span class="sm-confidence"><span class="sm-conf-pct">' + pctText + '</span>';
+      if (bucket !== 'none') html += ' <span class="sm-conf-bucket ' + bucket + '">' + bucketLabel + '</span>';
+      html += '</span></td>';
+      html += '<td><span class="sm-evidence-chips">';
+      for (var ci = 0; ci < evidenceChips.length; ci++) {
+        html += '<span class="sm-evidence-chip">' + _pftlEsc(evidenceChips[ci]) + '</span>';
+      }
+      html += '</span></td>';
+      html += '</tr>';
+    }
+
     html += '</tbody></table></div></div>';
     return html;
   }
