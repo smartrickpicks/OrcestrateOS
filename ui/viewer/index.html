@@ -1187,10 +1187,9 @@
     .srr-panel-left { flex: 0 0 380px; flex-shrink: 0; border-right: none; order: 3; transition: flex-basis 0.3s ease, opacity 0.3s ease; position: relative; overflow: hidden; }
     .srr-panel-left.collapsed { flex-basis: 0px; min-width: 0; overflow: hidden; opacity: 0; padding: 0; border: none; }
     .srr-panel-center { flex: 1; min-width: 300px; order: 2; }
-    .srr-panel-right { flex: 0 0 0px; flex-shrink: 0; border-left: none; order: 1; display: none; }
-    .srr-panel-right.collapsed { flex-basis: 0px; min-width: 0; overflow: hidden; opacity: 0; padding: 0; border: none; }
-    .srr-patch-expand-strip { display: none; writing-mode: vertical-rl; text-orientation: mixed; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 4px 0 0 4px; padding: 12px 6px; cursor: pointer; font-size: 0.75em; font-weight: 600; color: #1976d2; position: relative; order: 0; flex-shrink: 0; letter-spacing: 1px; }
-    .srr-patch-expand-strip:hover { background: #bbdefb; }
+    .srr-panel-right { display: none !important; width: 0 !important; flex: 0 0 0 !important; overflow: hidden !important; visibility: hidden !important; }
+    .srr-panel-right.collapsed { display: none !important; }
+    .srr-patch-expand-strip { display: none !important; }
     .srr-left-tabs { display: flex; flex-direction: column; gap: 2px; background: var(--bg-3); flex-shrink: 0; padding: 6px 3px; width: 36px; min-width: 36px; border-left: 1px solid var(--border-1); }
     .srr-left-tab { padding: 7px 0; font-size: 0.6em; font-weight: 700; color: var(--text-3); cursor: pointer; border: none; background: none; border-radius: 4px; transition: color 0.15s, background 0.15s; white-space: nowrap; text-align: center; line-height: 1.2; letter-spacing: 0.02em; }
     .srr-left-tab:hover { color: #555; background: var(--bg-4); }
@@ -1234,7 +1233,7 @@
     .srr-nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .srr-nav-pos { font-size: 0.75em; color: var(--text-3); white-space: nowrap; margin: 0 4px; }
     .srr-page-title-filename { font-size: 0.85em; font-weight: 400; color: #94a3b8; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 500px; display: inline-block; vertical-align: middle; }
-    .srr-file-action-bar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 0.82em; min-height: 36px; }
+    .srr-file-action-bar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--bg-2, #f8fafc); border-bottom: 1px solid #e2e8f0; font-size: 0.82em; min-height: 36px; }
     .srr-file-action-bar .file-action-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #334155; font-weight: 500; }
     .srr-file-action-bar .file-action-btn { padding: 4px 10px; border: 1px solid #cbd5e1; background: var(--bg-1); border-radius: 4px; cursor: pointer; font-size: 0.9em; color: #475569; display: flex; align-items: center; gap: 4px; transition: background 0.15s; }
     .srr-file-action-bar .file-action-btn:hover:not(:disabled) { background: #e2e8f0; }
@@ -1508,13 +1507,37 @@
     .srr-filter-chip.active { background: var(--accent-2); color: white; }
     
     /* v1.5.7: Field group headers for hinge-based grouping */
-    .srr-field-group-header { font-size: 0.75em; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 12px; margin-top: 6px; border-bottom: 2px solid var(--border-1); background: var(--bg-2); display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+    .srr-field-group-header { font-size: 0.75em; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 12px; margin-top: 6px; border-bottom: 2px solid var(--border-1); background: var(--bg-2); display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; cursor: pointer; user-select: none; transition: background 0.15s; }
     .srr-field-group-header:first-child { margin-top: 0; }
     /* v1.6.7: Color-coded group headers */
     .srr-field-group-header.group-primary { background: var(--ok-bg); border-bottom-color: #4caf50; color: var(--ok); }
     .srr-field-group-header.group-secondary { background: var(--bg-3); border-bottom-color: var(--accent-border); color: var(--accent-2); }
     .srr-field-group-header.group-other { background: var(--bg-2); border-bottom-color: #9e9e9e; color: #616161; }
     .srr-field-group-header.group-section { background: #f3e5f5; border-bottom-color: #7b1fa2; color: #6a1b9a; }
+    .srr-field-group-header:hover { filter: brightness(0.95); }
+    .srr-field-group-header.section-complete { border-bottom-color: #4caf50; }
+    .srr-section-chevron { font-size: 0.7em; width: 14px; text-align: center; flex-shrink: 0; transition: transform 0.2s; }
+    .srr-section-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .srr-section-status-pills { display: flex; gap: 4px; flex-shrink: 0; }
+    .srr-sec-pill { font-size: 0.8em; padding: 1px 6px; border-radius: 8px; font-weight: 500; line-height: 1.4; }
+    .srr-sec-pill.attention { background: #fff3e0; color: #e65100; }
+    .srr-sec-pill.verified { background: #e8f5e9; color: #2e7d32; }
+    .srr-sec-pill.rfi { background: #fff8e1; color: #f57f17; }
+    .srr-sec-pill.blocked { background: #ffebee; color: #c62828; }
+    .srr-section-body { transition: max-height 0.25s ease, opacity 0.2s ease; overflow: hidden; }
+    .srr-section-body.collapsed { max-height: 0 !important; opacity: 0; overflow: hidden; }
+    html[data-theme="dark"] .srr-sec-pill.attention { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    html[data-theme="dark"] .srr-sec-pill.verified { background: rgba(52,211,153,0.15); color: #34d399; }
+    html[data-theme="dark"] .srr-sec-pill.rfi { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    html[data-theme="dark"] .srr-sec-pill.blocked { background: rgba(251,113,133,0.15); color: #fb7185; }
+    html[data-theme="dark"] .srr-field-group-header.group-section { background: rgba(139,92,246,0.12); border-bottom-color: #8b5cf6; color: #c4b5fd; }
+    html[data-theme="dark"] .srr-file-action-bar { background: var(--bg-2); border-bottom-color: var(--border-1); }
+    html[data-theme="dark"] .srr-file-action-bar .file-action-name { color: var(--text-secondary); }
+    html[data-theme="dark"] .srr-top-bar { background: var(--bg-2); }
+    html[data-theme="dark"] .srr-glossary-entry:hover,
+    html[data-theme="dark"] .srr-glossary-entry.expanded { background: var(--bg-3); }
+    html[data-theme="dark"] .srr-section-info-modal-body .sim-text { color: var(--text-secondary); }
+    html[data-theme="dark"] .srr-section-info-modal-body .sim-list { color: var(--text-secondary); }
     .srr-section-desc { display: none; }
     .srr-group-count { font-weight: 400; color: #999; }
     
@@ -2106,6 +2129,34 @@
     .pftl-gate-badge.red { background: var(--bad-bg); color: var(--bad); border: 1px solid #ffcdd2; }
     .pftl-doc-mode { font-size: 0.85em; color: var(--text-2); font-weight: 500; }
     .pftl-section { margin-bottom: 16px; }
+    .opp-spine-section { border: 1px solid var(--border-1, #e0e0e0); border-radius: 8px; padding: 12px 14px; background: var(--bg-2, #fafafa); }
+    .opp-overall-badge { font-size: 0.72em; padding: 2px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .opp-badge-pass { background: rgba(46, 204, 113, 0.15); color: #27ae60; border: 1px solid rgba(46, 204, 113, 0.3); }
+    .opp-badge-review { background: rgba(241, 196, 15, 0.15); color: #d4a017; border: 1px solid rgba(241, 196, 15, 0.3); }
+    .opp-badge-fail { background: rgba(231, 76, 60, 0.15); color: #c0392b; border: 1px solid rgba(231, 76, 60, 0.3); }
+    .opp-spine-summary { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .opp-chip { font-size: 0.75em; padding: 3px 10px; border-radius: 12px; font-weight: 600; }
+    .opp-chip-pass { background: rgba(46, 204, 113, 0.12); color: #27ae60; }
+    .opp-chip-review { background: rgba(241, 196, 15, 0.12); color: #d4a017; }
+    .opp-chip-fail { background: rgba(231, 76, 60, 0.12); color: #c0392b; }
+    .opp-spine-table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+    .opp-spine-table th { text-align: left; padding: 6px 8px; border-bottom: 2px solid var(--border-1, #ddd); color: var(--text-2, #888); font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.3px; }
+    .opp-spine-table td { padding: 6px 8px; border-bottom: 1px solid var(--border-1, #eee); }
+    .opp-spine-table .opp-label { font-weight: 500; white-space: nowrap; }
+    .opp-spine-table .opp-value { font-family: var(--font-mono, monospace); font-size: 0.92em; }
+    .opp-spine-table .opp-reason { color: var(--text-2, #888); font-size: 0.92em; }
+    .opp-status-badge { font-size: 0.75em; padding: 2px 7px; border-radius: 3px; font-weight: 600; }
+    .opp-conf-badge { font-size: 0.72em; padding: 1px 6px; border-radius: 3px; background: var(--bg-3, #eee); color: var(--text-2, #666); font-weight: 600; margin-left: 4px; }
+    .opp-subtype-expand-row td { padding: 0 8px 8px 8px !important; border-bottom: 1px solid var(--border-1, #eee); }
+    .opp-subtype-details { margin: 0; }
+    .opp-subtype-toggle { cursor: pointer; font-size: 0.78em; color: var(--accent, #4a90d9); padding: 4px 0; user-select: none; }
+    .opp-subtype-toggle:hover { text-decoration: underline; }
+    .opp-subtype-candidates { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
+    .opp-subtype-card { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 5px 8px; border-radius: 5px; background: var(--bg-1, #fff); border: 1px solid var(--border-1, #e0e0e0); }
+    .opp-subtype-name { font-weight: 600; font-size: 0.85em; }
+    .opp-evidence-chips { display: inline-flex; gap: 4px; flex-wrap: wrap; margin-left: 4px; }
+    .opp-evidence-chip { font-size: 0.68em; padding: 1px 6px; border-radius: 3px; background: rgba(74, 144, 217, 0.1); color: var(--accent, #4a90d9); border: 1px solid rgba(74, 144, 217, 0.2); white-space: nowrap; }
+    .opp-analyst-note { font-size: 0.78em; color: var(--text-2, #888); font-style: italic; padding: 6px 0 2px; border-top: 1px dashed var(--border-1, #ddd); margin-top: 4px; }
     .pftl-section-title { font-size: 0.82em; font-weight: 600; color: var(--text-2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
     .pftl-reasons { list-style: none; padding: 0; margin: 0; }
     .pftl-reasons li { padding: 3px 0; font-size: 0.82em; color: var(--text-3); }
@@ -2214,18 +2265,32 @@
     .sync-run-btn { padding: 6px 16px; background: var(--accent-2); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 600; }
     .sync-run-btn:hover { background: #0d47a1; }
     .sync-run-btn:disabled { background: var(--border-2); cursor: not-allowed; }
-    .sync-group { margin-bottom: 14px; }
-    .sync-group-header { font-size: 0.82em; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border-1); }
-    .sync-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-1); border: 1px solid var(--border-1); border-radius: 6px; margin-bottom: 4px; font-size: 0.85em; }
-    .sync-row:hover { border-color: #90caf9; }
-    .sync-source { font-weight: 600; color: var(--text-2); min-width: 150px; flex-shrink: 0; }
-    .sync-arrow { color: #999; font-size: 0.9em; }
-    .sync-target { color: var(--accent-2); font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .sync-score { font-size: 0.75em; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
-    .sync-score.high { background: var(--ok-bg); color: var(--ok); }
-    .sync-score.medium { background: #fff8e1; color: #f57f17; }
-    .sync-score.low { background: var(--bad-bg); color: var(--bad); }
-    .sync-score.none { background: var(--bg-base); color: var(--text-3); }
+    .sync-matrix-wrap { overflow-x: auto; margin-top: 4px; }
+    .sync-matrix { width: 100%; border-collapse: collapse; font-size: 0.84em; }
+    .sync-matrix thead { position: sticky; top: 0; z-index: 2; }
+    .sync-matrix thead th { padding: 8px 10px; text-align: left; font-weight: 700; font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.5px; background: var(--table-head-bg, var(--bg-2)); color: var(--table-head-text, var(--text-3)); border-bottom: 2px solid var(--border-1); white-space: nowrap; }
+    .sync-matrix tbody td { padding: 7px 10px; border-bottom: 1px solid var(--border-1); vertical-align: middle; color: var(--text-2); }
+    .sync-matrix tbody tr { background: var(--table-row-bg, var(--bg-1)); }
+    .sync-matrix tbody tr:nth-child(even) { background: var(--table-row-alt, var(--bg-base, #fafafa)); }
+    .sync-matrix tbody tr:hover { background: var(--table-row-hover, #e3f2fd); }
+    .sync-matrix .sm-source { font-weight: 600; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sync-matrix .sm-target { color: var(--accent-2); font-weight: 500; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sm-status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 10px; font-size: 0.82em; font-weight: 600; white-space: nowrap; }
+    .sm-status-badge.match { background: var(--ok-bg); color: var(--ok); }
+    .sm-status-badge.review { background: #fff8e1; color: #e65100; }
+    .sm-status-badge.no-match { background: var(--bg-base, #f5f5f5); color: var(--text-3); }
+    .sm-confidence { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .sm-conf-pct { font-weight: 700; font-size: 0.95em; }
+    .sm-conf-bucket { font-size: 0.72em; padding: 1px 6px; border-radius: 8px; font-weight: 600; text-transform: uppercase; }
+    .sm-conf-bucket.high { background: var(--ok-bg); color: var(--ok); }
+    .sm-conf-bucket.med { background: #fff8e1; color: #f57f17; }
+    .sm-conf-bucket.low { background: var(--bad-bg); color: var(--bad); }
+    .sm-conf-bucket.none { background: var(--bg-base); color: var(--text-3); }
+    .sm-evidence-chips { display: flex; gap: 3px; flex-wrap: wrap; }
+    .sm-evidence-chip { font-size: 0.72em; padding: 1px 6px; border-radius: 6px; background: var(--chip-bg, #e8eaf6); color: var(--chip-text, #3949ab); border: 1px solid var(--chip-border, #c5cae9); white-space: nowrap; }
+    .sm-evidence-chip.chip-positive { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+    .sm-evidence-chip.chip-negative { background: #fbe9e7; color: #c62828; border-color: #ef9a9a; }
+    .sm-evidence-chip.chip-neutral { background: #fff3e0; color: #e65100; border-color: #ffcc80; }
     .sync-actions { display: flex; gap: 4px; flex-shrink: 0; }
     .sync-accept-btn { padding: 3px 10px; background: #4caf50; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: 600; }
     .sync-accept-btn:hover { background: var(--ok); }
@@ -2238,6 +2303,128 @@
     .sync-stats { display: flex; gap: 16px; margin-bottom: 12px; }
     .sync-stat { font-size: 0.82em; color: var(--text-3); }
     .sync-stat strong { color: var(--text-2); }
+    .sm-hidden-section { margin-top: 10px; }
+    .sm-hidden-toggle { background: none; border: 1px solid var(--border-1); border-radius: 6px; padding: 5px 12px; font-size: 0.8em; color: var(--text-3); cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .sm-hidden-toggle:hover { background: var(--bg-2); }
+    .sm-hidden-body { margin-top: 6px; }
+    .sm-hidden-body.collapsed { display: none; }
+    html[data-theme="dark"] .sync-matrix tbody tr:hover { background: var(--table-row-hover, rgba(96,165,250,0.08)); }
+    html[data-theme="dark"] .sm-status-badge.review { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    html[data-theme="dark"] .sm-status-badge.no-match { background: rgba(142,162,200,0.12); color: #8ea2c8; }
+    html[data-theme="dark"] .sm-evidence-chip { background: rgba(139,92,246,0.12); color: #c4b5fd; border-color: rgba(139,92,246,0.25); }
+    html[data-theme="dark"] .sm-evidence-chip.chip-positive { background: rgba(76,175,80,0.15); color: #81c784; border-color: rgba(76,175,80,0.3); }
+    html[data-theme="dark"] .sm-evidence-chip.chip-negative { background: rgba(244,67,54,0.15); color: #ef9a9a; border-color: rgba(244,67,54,0.3); }
+    html[data-theme="dark"] .sm-evidence-chip.chip-neutral { background: rgba(255,152,0,0.15); color: #ffcc80; border-color: rgba(255,152,0,0.3); }
+    html[data-theme="dark"] .sm-conf-bucket.med { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    html[data-theme="dark"] .sm-conf-bucket.low { background: rgba(251,113,133,0.15); color: #fb7185; }
+
+    .rs-story-container { margin-bottom: 16px; }
+    .rs-section { background: var(--bg-2, #f8f9fa); border: 1px solid var(--border-1, #e0e0e0); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
+    .rs-section-header { font-size: 0.78em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--accent-2, #5c6bc0); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .rs-entity-card { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-base, #fff); border: 1px solid var(--border-1, #e0e0e0); border-radius: 6px; margin-bottom: 6px; }
+    .rs-entity-card.rs-entity-legal { border-left: 3px solid var(--ok, #43a047); }
+    .rs-entity-card.rs-entity-counter { border-left: 3px solid var(--accent-2, #5c6bc0); }
+    .rs-entity-card.rs-entity-empty { border-left: 3px solid var(--text-3, #aaa); opacity: 0.7; }
+    .rs-entity-name { font-weight: 600; font-size: 0.92em; flex-grow: 1; }
+    .rs-entity-meta { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .rs-entity-conf { font-size: 0.82em; font-weight: 600; font-family: 'Courier New', monospace; }
+    .rs-entity-row { display: flex; align-items: center; gap: 8px; padding: 4px 12px; font-size: 0.85em; color: var(--text-2, #666); }
+    .rs-entity-row-label { font-weight: 600; min-width: 110px; flex-shrink: 0; }
+    .rs-assign-select { flex: 1; padding: 6px 10px; border: 1px solid var(--border-1, #ddd); border-radius: 6px; background: var(--bg-base, #fff); color: var(--text-1, #333); font-size: 0.88em; font-family: inherit; cursor: pointer; max-width: 360px; appearance: auto; }
+    .rs-assign-select:focus { outline: none; border-color: var(--accent-1, #1976d2); box-shadow: 0 0 0 2px rgba(25,118,210,0.15); }
+    .rs-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 10px; font-size: 0.72em; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
+    .rs-badge-legal { background: var(--ok-bg, #e8f5e9); color: var(--ok, #43a047); }
+    .rs-badge-counter { background: #e8eaf6; color: #3949ab; }
+    .rs-badge-multi { background: #ede7f6; color: #7b1fa2; }
+    .rs-badge-manual { background: #fff3e0; color: #e65100; }
+    .rs-reasoning-list { list-style: none; padding: 0; margin: 0; }
+    .rs-reasoning-item { display: flex; gap: 8px; padding: 5px 0; font-size: 0.85em; color: var(--text-1, #333); line-height: 1.4; border-bottom: 1px solid var(--border-1, #f0f0f0); }
+    .rs-reasoning-item:last-child { border-bottom: none; }
+    .rs-reasoning-num { font-weight: 700; color: var(--accent-2, #5c6bc0); min-width: 18px; flex-shrink: 0; }
+    .rs-agreement-type { font-size: 0.95em; font-weight: 600; color: var(--text-1, #333); text-transform: capitalize; }
+    .rs-agreement-source { font-size: 0.78em; color: var(--text-3, #aaa); margin-top: 2px; }
+    .rs-action-item { display: flex; gap: 8px; padding: 5px 0; font-size: 0.85em; color: var(--text-1, #333); line-height: 1.4; }
+    .rs-action-icon { flex-shrink: 0; font-size: 1em; }
+    .rs-action-icon.rs-ok { color: var(--ok, #43a047); }
+    .rs-action-icon.rs-warn { color: #e65100; }
+    .rs-action-icon.rs-alert { color: var(--bad, #c62828); }
+    .rs-table-toggle { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.82em; font-weight: 600; background: var(--bg-2, #f5f5f5); border: 1px solid var(--border-1, #ddd); border-radius: 6px; cursor: pointer; color: var(--text-2, #666); margin-bottom: 8px; }
+    .rs-table-toggle:hover { background: var(--bg-3, #eee); }
+    .rs-new-entry-banner { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #fff3e0; border: 1px solid #ffcc80; border-left: 4px solid #ff9800; border-radius: 8px; margin-bottom: 12px; }
+    .rs-new-entry-banner-icon { font-size: 1.3em; flex-shrink: 0; }
+    .rs-new-entry-banner-text { font-size: 0.88em; color: #e65100; line-height: 1.4; }
+    .rs-badge-new-entry { background: #ff9800; color: #fff; padding: 2px 10px; border-radius: 10px; font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    .rs-onboarding-card { background: var(--bg-base, #fff); border: 1px solid #ffcc80; border-left: 4px solid #ff9800; border-radius: 8px; padding: 14px 16px; margin-top: 10px; margin-bottom: 10px; }
+    .rs-onboarding-title { font-size: 0.82em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #e65100; margin-bottom: 10px; }
+    .rs-onboarding-row { display: flex; gap: 8px; padding: 4px 0; font-size: 0.85em; color: var(--text-1, #333); }
+    .rs-onboarding-row-label { font-weight: 600; min-width: 140px; flex-shrink: 0; color: var(--text-2, #666); }
+    .rs-onboarding-readonly { font-size: 0.78em; color: var(--text-3, #aaa); margin-top: 6px; font-style: italic; }
+    html[data-theme="dark"] .rs-new-entry-banner { background: rgba(255,152,0,0.1); border-color: rgba(255,152,0,0.3); border-left-color: #ff9800; }
+    html[data-theme="dark"] .rs-new-entry-banner-text { color: #ffcc80; }
+    html[data-theme="dark"] .rs-onboarding-card { background: var(--bg-1); border-color: rgba(255,152,0,0.3); border-left-color: #ff9800; }
+    html[data-theme="dark"] .rs-onboarding-title { color: #ffcc80; }
+    html[data-theme="dark"] .rs-onboarding-row { color: var(--text-1); }
+    html[data-theme="dark"] .rs-onboarding-row-label { color: var(--text-2); }
+    .rs-unresolved-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .rs-unresolved-chip { display: inline-block; padding: 3px 10px; font-size: 0.82em; background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; border-radius: 12px; font-weight: 500; }
+    html[data-theme="dark"] .rs-unresolved-chip { background: rgba(255,152,0,0.15); color: #ffcc80; border-color: rgba(255,152,0,0.3); }
+    .rs-manual-input-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-1, #e0e0e0); }
+    .rs-manual-input-label { display: block; font-size: 0.82em; font-weight: 700; color: var(--text-1, #333); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .rs-manual-input { width: 100%; padding: 8px 12px; font-size: 0.88em; border: 2px solid #ff9800; border-radius: 6px; background: var(--bg-base, #fff); color: var(--text-1, #333); box-sizing: border-box; }
+    .rs-manual-input:focus { outline: none; border-color: #e65100; box-shadow: 0 0 0 2px rgba(230,81,0,0.15); }
+    html[data-theme="dark"] .rs-manual-input { background: var(--bg-1, #1e1e1e); color: var(--text-1, #e0e0e0); border-color: #ff9800; }
+    html[data-theme="dark"] .rs-manual-input:focus { border-color: #ffcc80; box-shadow: 0 0 0 2px rgba(255,152,0,0.2); }
+    .rs-manual-status { font-size: 0.78em; margin-top: 6px; font-weight: 500; }
+    .rs-manual-status-empty { color: #e65100; }
+    .rs-manual-status-ok { color: #2e7d32; }
+    html[data-theme="dark"] .rs-manual-status-empty { color: #ffcc80; }
+    html[data-theme="dark"] .rs-manual-status-ok { color: #66bb6a; }
+    html[data-theme="dark"] .rs-manual-input-label { color: var(--text-1, #e0e0e0); }
+    html[data-theme="dark"] .rs-manual-input-section { border-top-color: var(--border-1, #444); }
+
+    html[data-theme="dark"] .rs-section { background: var(--bg-2); border-color: var(--border-1); }
+    html[data-theme="dark"] .rs-entity-card { background: var(--bg-1); border-color: var(--border-1); }
+    html[data-theme="dark"] .rs-entity-card.rs-entity-legal { border-left-color: #81c784; }
+    html[data-theme="dark"] .rs-entity-card.rs-entity-counter { border-left-color: #7c4dff; }
+    html[data-theme="dark"] .rs-badge-legal { background: rgba(76,175,80,0.15); color: #81c784; }
+    html[data-theme="dark"] .rs-badge-counter { background: rgba(139,92,246,0.15); color: #c4b5fd; }
+    html[data-theme="dark"] .rs-assign-select { background: var(--bg-1, #1e1e1e); color: var(--text-1, #e0e0e0); border-color: var(--border-1, #444); }
+    .rs-assign-warning { color: #e74c3c; font-size: 11px; margin-top: 4px; font-weight: 600; }
+    html[data-theme="dark"] .rs-assign-warning { color: #ff6b6b; }
+    html[data-theme="dark"] .rs-badge-multi { background: rgba(124,77,255,0.15); color: #b388ff; }
+    html[data-theme="dark"] .rs-badge-manual { background: rgba(255,152,0,0.15); color: #ffcc80; }
+    html[data-theme="dark"] .rs-reasoning-item { border-bottom-color: var(--border-1); color: var(--text-1); }
+    html[data-theme="dark"] .rs-reasoning-num { color: #7c4dff; }
+    html[data-theme="dark"] .rs-agreement-type { color: var(--text-1); }
+    html[data-theme="dark"] .rs-table-toggle { background: var(--bg-2); border-color: var(--border-1); color: var(--text-2); }
+    html[data-theme="dark"] .rs-table-toggle:hover { background: var(--bg-3); }
+
+    .patch-submit-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+    .patch-submit-modal { background: var(--bg-base, #fff); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); width: 480px; max-width: 95vw; max-height: 85vh; overflow-y: auto; padding: 24px; }
+    .patch-submit-modal-title { font-size: 1.1em; font-weight: 700; color: var(--text-1, #333); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .patch-submit-modal-section { margin-bottom: 16px; }
+    .patch-submit-modal-label { font-size: 0.82em; font-weight: 600; color: var(--text-2, #666); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+    .patch-submit-modal-obs { background: var(--bg-2, #f5f5f5); border: 1px solid var(--border-1, #e0e0e0); border-radius: 6px; padding: 10px 12px; font-size: 0.88em; color: var(--text-1, #333); line-height: 1.5; }
+    .patch-submit-modal-obs-row { display: flex; gap: 8px; padding: 3px 0; }
+    .patch-submit-modal-obs-key { font-weight: 600; color: var(--text-2, #888); min-width: 60px; flex-shrink: 0; }
+    .patch-submit-modal-textarea { width: 100%; min-height: 80px; padding: 10px 12px; border: 1px solid var(--border-1, #ddd); border-radius: 6px; font-size: 0.9em; font-family: inherit; resize: vertical; background: var(--bg-base, #fff); color: var(--text-1, #333); }
+    .patch-submit-modal-textarea:focus { outline: none; border-color: var(--accent-2, #5c6bc0); box-shadow: 0 0 0 2px rgba(92,107,192,0.15); }
+    .patch-submit-modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-1, #e0e0e0); }
+    .patch-submit-modal-btn { padding: 8px 20px; font-size: 0.88em; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; }
+    .patch-submit-modal-btn.primary { background: var(--accent-2, #5c6bc0); color: white; }
+    .patch-submit-modal-btn.primary:hover { opacity: 0.9; }
+    .patch-submit-modal-btn.secondary { background: var(--bg-3, #eee); color: var(--text-2, #666); }
+    .patch-submit-modal-btn.secondary:hover { background: var(--bg-4, #ddd); }
+    .patch-submit-modal-change-list { margin: 0; padding: 0 0 0 16px; font-size: 0.85em; }
+    .patch-submit-modal-change-list li { padding: 2px 0; color: var(--text-1, #333); }
+    .patch-submit-modal-badge { display: inline-flex; padding: 2px 8px; border-radius: 10px; font-size: 0.72em; font-weight: 600; text-transform: uppercase; }
+    .patch-submit-modal-badge.correction { background: var(--accent-2, #5c6bc0); color: white; }
+    .patch-submit-modal-badge.rfi { background: #ff9800; color: white; }
+    .patch-submit-modal-badge.blacklist { background: #f44336; color: white; }
+
+    html[data-theme="dark"] .patch-submit-modal { background: var(--bg-1); }
+    html[data-theme="dark"] .patch-submit-modal-obs { background: var(--bg-2); border-color: var(--border-1); }
+    html[data-theme="dark"] .patch-submit-modal-textarea { background: var(--bg-2); border-color: var(--border-1); color: var(--text-1); }
 
     /* Evidence Viewer — Layout: middle (viewer+details) | right (grid) */
     .ev-inline-wrapper { display: flex; gap: 0; width: 100%; height: calc(100vh - 280px); min-height: 500px; }
@@ -3422,7 +3609,7 @@
           <div id="audit-filter-presets" style="margin-bottom:10px;"></div>
           <div id="audit-full-body" style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
             <table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">
-              <thead style="background: #f5f5f5;">
+              <thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));">
                 <tr>
                   <th style="padding: 8px 10px; text-align: left; border-bottom: 1px solid #e0e0e0;">Timestamp</th>
                   <th style="padding: 8px 10px; text-align: left; border-bottom: 1px solid #e0e0e0;">Event</th>
@@ -3780,7 +3967,7 @@
             </div>
             <div class="queue-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
-                <thead style="background: #f5f5f5; border-bottom: 1px solid #e0e0e0;">
+                <thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5)); border-bottom: 1px solid #e0e0e0;">
                   <tr>
                     <th style="padding: 8px 12px;">Type</th>
                     <th style="padding: 8px 12px;">Record</th>
@@ -3804,7 +3991,7 @@
             </div>
             <div class="queue-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
-                <thead style="background: #f5f5f5; border-bottom: 1px solid #e0e0e0;">
+                <thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5)); border-bottom: 1px solid #e0e0e0;">
                   <tr>
                     <th style="padding: 8px 12px;">Type</th>
                     <th style="padding: 8px 12px;">Record</th>
@@ -4296,12 +4483,18 @@
             <div class="srr-panel-body" id="srr-field-list" style="padding: 0; flex: 1;">
               <div class="srr-empty-state">No fields loaded</div>
             </div>
-            </div>
-            <div class="srr-left-tab-body" id="srr-tab-patch" data-tab="patch">
-              <div id="srr-patch-tab-content" style="padding: 12px; display: flex; flex-direction: column; flex: 1; overflow-y: auto;">
-                <div class="srr-empty-state">Select a field and action to begin a patch.</div>
+
+            <div id="srr-patch-action-bar" style="padding: 8px 12px; border-top: 1px solid var(--border-1, #e0e0e0); background: var(--bg-2, #fafbfc); flex-shrink: 0;">
+              <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                <div class="srr-patch-type-chip correction active" data-type="correction" onclick="srrOnPatchTypeChange('correction')" style="cursor:pointer;font-size:0.78em;padding:4px 10px;">Correction</div>
+                <div class="srr-patch-type-chip blacklist" data-type="blacklist" onclick="srrOnPatchTypeChange('blacklist')" style="cursor:pointer;font-size:0.78em;padding:4px 10px;">Blacklist</div>
+                <div class="srr-patch-type-chip rfi" data-type="rfi" onclick="srrOnPatchTypeChange('rfi')" style="cursor:pointer;font-size:0.78em;padding:4px 10px;">RFI</div>
               </div>
+              <div id="srr-patch-action-summary" style="font-size:0.78em;color:var(--text-2,#888);margin-bottom:6px;">Select a field and make changes</div>
+              <button class="srr-btn srr-btn-primary" id="srr-submit-btn" onclick="srrSubmitPatchRequest()" style="width:100%;padding:8px 12px;font-size:0.85em;">Submit Patch Request</button>
             </div>
+            </div>
+
             <div class="srr-left-tab-body" id="srr-tab-glossary" data-tab="glossary">
               <div style="padding: 8px 12px;">
                 <input type="text" class="srr-glossary-search" id="srr-glossary-search" placeholder="Search glossary..." oninput="srrFilterGlossary()">
@@ -4314,7 +4507,6 @@
               </div>
               <div class="srr-left-tabs" id="srr-left-tabs">
                 <button class="srr-left-tab active" data-tab="editor" onclick="srrSwitchLeftTab('editor')" title="Editor">Edit</button>
-                <button class="srr-left-tab" data-tab="patch" onclick="srrSwitchLeftTab('patch')" title="Patch Studio">Patch</button>
                 <button class="srr-left-tab" data-tab="glossary" onclick="srrSwitchLeftTab('glossary')" title="Glossary">Info</button>
               </div>
             </div>
@@ -4528,94 +4720,6 @@
                 </div>
               </div>
 
-              <!-- Evidence Pack: Conditional sections based on Patch Type -->
-              <div style="font-size: 0.85em; font-weight: 600; color: #333; margin-bottom: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">Evidence Pack</div>
-              
-              <!-- Observation (Correction only) -->
-              <div class="srr-evidence-block" id="srr-observation-block">
-                <div class="srr-evidence-label">Observation <span class="srr-evidence-alias">(WHEN)</span></div>
-                <select class="srr-evidence-select" id="srr-observation-type" onchange="srrOnObservationChange()">
-                  <option value="">-- Select observation type --</option>
-                  <option value="incorrect_value">Incorrect Value</option>
-                  <option value="missing_value">Missing Value</option>
-                  <option value="formatting_issue">Formatting Issue</option>
-                  <option value="duplicate_entry">Duplicate Entry</option>
-                  <option value="inconsistent_data">Inconsistent Data</option>
-                  <option value="override_needed">Override Needed</option>
-                </select>
-              </div>
-              
-              <!-- Expected (Correction only) -->
-              <div class="srr-evidence-block" id="srr-expected-block">
-                <div class="srr-evidence-label">Expected <span class="srr-evidence-alias">(THEN)</span></div>
-                <select class="srr-evidence-select" id="srr-expected-type" onchange="srrOnExpectedChange()">
-                  <option value="">-- Select expected behavior --</option>
-                  <option value="correct_value">Use Correct Value</option>
-                  <option value="populate_field">Populate Empty Field</option>
-                  <option value="standardize_format">Standardize Format</option>
-                  <option value="remove_duplicate">Remove Duplicate</option>
-                  <option value="align_with_source">Align with Source Document</option>
-                  <option value="allow_override">Allow Override</option>
-                </select>
-              </div>
-              
-              <!-- Justification / Comment (all patch types) -->
-              <div class="srr-evidence-block" id="srr-justification-block">
-                <div class="srr-evidence-label" id="srr-justification-label">Justification <span class="srr-evidence-alias">(BECAUSE)</span></div>
-                <textarea class="srr-evidence-textarea" id="srr-justification" placeholder="Explain why this change/flag/question is necessary..." oninput="srrSaveEvidenceDraft()"></textarea>
-              </div>
-              
-              <!-- Repro (Correction only, when required) -->
-              <div class="srr-evidence-block" id="srr-repro-block">
-                <div class="srr-evidence-label">
-                  Repro Method
-                  <span id="srr-repro-required-marker" class="srr-repro-required">(required)</span>
-                </div>
-                <select class="srr-evidence-select" id="srr-repro-type" onchange="srrSaveEvidenceDraft(); srrUpdateReproFileVisibility();">
-                  <option value="">-- Select repro method --</option>
-                  <option value="breaks_salesforce_rule">System Pass Violation</option>
-                  <option value="breaks_qa_gate">Breaks QA Gate</option>
-                  <option value="resolver_mismatch">Resolver Mismatch</option>
-                  <option value="doc_evidence_mismatch">Doc Evidence Mismatch (attach file)</option>
-                </select>
-                <div class="srr-evidence-file-input" id="srr-repro-file-section" style="display:none;">
-                  <input type="file" id="srr-repro-file" accept=".pdf,.png,.jpg,.jpeg" onchange="srrHandleReproFile(this)">
-                  <span id="srr-repro-file-name" style="font-size: 0.8em; color: #666;"></span>
-                </div>
-              </div>
-
-              <!-- Replay Contract (v1.6.57: Correction/Blacklist required, RFI optional) -->
-              <div class="srr-evidence-block" id="srr-replay-contract-block" style="padding-top: 12px; border-top: 1px solid #e0e0e0; display: none;">
-                <div style="font-size: 0.85em; font-weight: 600; color: #333; margin-bottom: 8px;">Replay Contract</div>
-                <div class="srr-evidence-block" id="srr-replay-type-block">
-                  <div class="srr-evidence-label">Replay Type <span id="srr-replay-type-required" class="srr-repro-required">(required)</span></div>
-                  <select class="srr-evidence-select" id="srr-replay-type" onchange="srrSaveEvidenceDraft()">
-                    <option value="">-- Select replay type --</option>
-                    <option value="MANUAL">Manual</option>
-                    <option value="STUBBED">Stubbed</option>
-                    <option value="NA">N/A</option>
-                  </select>
-                </div>
-                <div class="srr-evidence-block" id="srr-replay-steps-block">
-                  <div class="srr-evidence-label">Replay Steps <span id="srr-replay-steps-required" class="srr-repro-required">(required)</span></div>
-                  <textarea class="srr-evidence-textarea" id="srr-replay-steps" placeholder="Describe the steps to replay this change..." oninput="srrSaveEvidenceDraft()"></textarea>
-                </div>
-                <div class="srr-evidence-block" id="srr-replay-expected-block">
-                  <div class="srr-evidence-label">Replay Expected Result <span id="srr-replay-expected-required" class="srr-repro-required">(required)</span></div>
-                  <textarea class="srr-evidence-textarea" id="srr-replay-expected-result" placeholder="What is the expected result of replaying?" oninput="srrSaveEvidenceDraft()"></textarea>
-                </div>
-              </div>
-
-              <!-- Spacer to push buttons lower -->
-              <div style="flex-grow: 1; min-height: 20px;"></div>
-              
-              <!-- Submit Section (positioned lower) -->
-              <div class="srr-patch-section" style="margin-top: auto; padding-top: 16px; border-top: 1px solid #e0e0e0;">
-                <div class="srr-actions">
-                  <button class="srr-btn srr-btn-secondary" onclick="srrSaveDraft()">Save Draft</button>
-                  <button class="srr-btn srr-btn-primary" id="srr-submit-btn" onclick="srrSubmitPatchRequest()">Submit Patch Request</button>
-                </div>
-              </div>
             </div><!-- end srr-tab-fields -->
             
             <!-- Patch Studio Content -->
@@ -5509,7 +5613,7 @@
             
             <div id="patch-queue-table-container" style="max-height: 400px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
-                <thead style="background: #f5f5f5; position: sticky; top: 0;">
+                <thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5)); position: sticky; top: 0;">
                   <tr>
                     <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Type</th>
                     <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Record ID</th>
@@ -5553,7 +5657,7 @@
           <!-- Compact Table -->
           <div id="patch-console-table-container" style="max-height: 300px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px;">
             <table id="patch-console-table" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
-              <thead style="background: #f5f5f5; position: sticky; top: 0;">
+              <thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5)); position: sticky; top: 0;">
                 <tr>
                   <th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 40px;"><input type="checkbox" id="patch-select-all" onchange="toggleSelectAllPatches(this.checked)"></th>
                   <th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">ID</th>
@@ -5721,7 +5825,7 @@
           </div>
           <div id="unknown-cols-table-container" style="overflow-x: auto;">
             <table class="grid-table" id="unknown-cols-table" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
-              <thead style="background: #f5f5f5;">
+              <thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));">
                 <tr>
                   <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Contract Section</th>
                   <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Original Name</th>
@@ -8032,7 +8136,7 @@
       } catch (e) {}
       var inputStyle = 'padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; width: 100%; box-sizing: border-box;';
       var html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">' +
-        '<thead style="background: #f5f5f5;"><tr>' +
+        '<thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));"><tr>' +
         '<th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 20%;">User</th>' +
         '<th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 28%;">Email</th>' +
         '<th style="padding: 10px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 16%;">Role</th>' +
@@ -8207,7 +8311,7 @@
       var isArch = TruthPack.isArchitect();
       var roleIds = ['architect', 'admin', 'verifier', 'analyst'];
       var html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">' +
-        '<thead style="background: #f5f5f5;"><tr>' +
+        '<thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));"><tr>' +
         '<th style="padding: 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Role ID</th>' +
         '<th style="padding: 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Display Name</th>' +
         '<th style="padding: 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Permissions</th>' +
@@ -8270,7 +8374,7 @@
         return;
       }
       var html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">' +
-        '<thead style="background: #f5f5f5;"><tr>' +
+        '<thead style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));"><tr>' +
         '<th style="padding: 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Invite ID</th>' +
         '<th style="padding: 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Role</th>' +
         '<th style="padding: 8px; text-align: center; border-bottom: 1px solid #e0e0e0;">Status</th>' +
@@ -9862,7 +9966,7 @@
         
         var html = '<div style="max-height: 400px; overflow-y: auto;">';
         html += '<table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">';
-        html += '<thead><tr style="background: #f5f5f5;">';
+        html += '<thead><tr style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));">';
         html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #ddd;">Contract ID</th>';
         html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #ddd;">File</th>';
         html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #ddd;">Source Batch</th>';
@@ -10174,7 +10278,7 @@
         html += '<summary style="padding:10px 14px; cursor:pointer; font-weight:600; background:#fafafa; border-radius:6px 6px 0 0; font-size:0.9em;">' + escapeHtml(sheetName) + ' <span style="color:#888; font-weight:400;">(' + sheetRefs.length + ' rows)</span></summary>';
         html += '<div style="max-height:300px; overflow-y:auto;">';
         html += '<table style="width:100%; border-collapse:collapse; font-size:0.8em;">';
-        html += '<thead><tr style="background:#f5f5f5;"><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Row</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Record ID</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Role &mdash; Type</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Status</th></tr></thead>';
+        html += '<thead><tr style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));"><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Row</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Record ID</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Role &mdash; Type</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Status</th></tr></thead>';
         html += '<tbody>';
         sheetRefs.forEach(function(ref) {
           var row = workbook.sheets[sheetName] && workbook.sheets[sheetName].rows[ref.row_index];
@@ -10788,7 +10892,7 @@
       html += '</div>';
       html += '<div style="max-height:250px; overflow-y:auto; border:1px solid #e0e0e0; border-radius:4px;">';
       html += '<table style="width:100%; border-collapse:collapse; font-size:0.8em;">';
-      html += '<thead><tr style="background:#f5f5f5;"><th style="padding:4px 8px; text-align:left;">Field</th><th style="padding:4px 8px; text-align:left;">Rule</th><th style="padding:4px 8px; text-align:left;">Confidence</th><th style="padding:4px 8px; text-align:left;">Why</th><th style="padding:4px 8px; text-align:left;">Hinge</th><th style="padding:4px 8px; text-align:left;">Status</th><th style="padding:4px 8px;">Actions</th><th style="padding:4px 8px; text-align:center;">Health</th></tr></thead>';
+      html += '<thead><tr style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));"><th style="padding:4px 8px; text-align:left;">Field</th><th style="padding:4px 8px; text-align:left;">Rule</th><th style="padding:4px 8px; text-align:left;">Confidence</th><th style="padding:4px 8px; text-align:left;">Why</th><th style="padding:4px 8px; text-align:left;">Hinge</th><th style="padding:4px 8px; text-align:left;">Status</th><th style="padding:4px 8px;">Actions</th><th style="padding:4px 8px; text-align:center;">Health</th></tr></thead>';
       html += '<tbody>';
       sorted.forEach(function(p) {
         var statusColor = p.status === 'pending' ? '#ff9800' : p.status === 'accepted' ? '#4caf50' : p.status === 'routed_to_patch' ? '#1565c0' : '#f44336';
@@ -14229,8 +14333,9 @@
         return t.from === fromStatus && t.to === toStatus;
       });
       if (!transition) return false;
-      if (role === 'Admin' && transition.roles.includes('Verifier')) return true;
-      return transition.roles.includes(role);
+      var normRole = role ? role.charAt(0).toUpperCase() + role.slice(1).toLowerCase() : '';
+      if (normRole === 'Admin' && transition.roles.includes('Verifier')) return true;
+      return transition.roles.includes(normRole);
     }
     
     function getAuditEventForTransition(fromStatus, toStatus) {
@@ -17602,6 +17707,81 @@
       }
     }
 
+    function _smGetMatchStatus(sug) {
+      if (!sug) return 'no-match';
+      var method = sug.match_method || 'none';
+      if (method === 'none') return 'no-match';
+      var pct = _smGetConfidencePct(sug);
+      if (pct >= 80) return 'match';
+      if (pct >= 40) return 'review';
+      return 'no-match';
+    }
+
+    function _smGetConfidencePct(sug) {
+      if (!sug) return 0;
+      if (sug.confidence_pct != null) return sug.confidence_pct;
+      if (sug.match_score > 0) return Math.round(sug.match_score * 100);
+      return 0;
+    }
+
+    function _smGetConfidenceBucket(pct) {
+      if (pct >= 80) return 'high';
+      if (pct >= 60) return 'med';
+      if (pct > 0) return 'low';
+      return 'none';
+    }
+
+    function _smStatusPriority(status) {
+      if (status === 'review') return 0;
+      if (status === 'no-match') return 1;
+      return 2;
+    }
+
+    function _smSortSuggestions(suggestions) {
+      var sorted = suggestions.slice();
+      sorted.sort(function(a, b) {
+        var sa = _smGetMatchStatus(a);
+        var sb = _smGetMatchStatus(b);
+        var pa = _smStatusPriority(sa);
+        var pb = _smStatusPriority(sb);
+        if (pa !== pb) return pa - pb;
+        var ca = _smGetConfidencePct(a);
+        var cb = _smGetConfidencePct(b);
+        if (ca !== cb) return cb - ca;
+        var na = (a.source_field || '').toLowerCase();
+        var nb = (b.source_field || '').toLowerCase();
+        return na < nb ? -1 : na > nb ? 1 : 0;
+      });
+      return sorted;
+    }
+
+    function _smGetEvidenceChips(sug) {
+      var chips = [];
+      var method = sug.match_method || 'none';
+      var methodLabels = {
+        'alias_exact': 'Alias', 'exact': 'Exact', 'phrase_fuzzy': 'Fuzzy',
+        'fuzzy': 'Fuzzy', 'token_overlap': 'Keyword', 'keyword': 'Keyword', 'none': ''
+      };
+      if (methodLabels[method]) chips.push(methodLabels[method]);
+      if (sug.match_reason) chips.push(sug.match_reason);
+      if (sug.glossary_category) chips.push(sug.glossary_category);
+      if (sug.body_source) chips.push('BODY');
+      return chips;
+    }
+
+    var _smHiddenExpanded = false;
+
+    function _smToggleHidden() {
+      _smHiddenExpanded = !_smHiddenExpanded;
+      var body = document.getElementById('sm-hidden-body');
+      var toggle = document.getElementById('sm-hidden-toggle');
+      if (body) body.className = 'sm-hidden-body' + (_smHiddenExpanded ? '' : ' collapsed');
+      if (toggle) {
+        var chevron = toggle.querySelector('.sm-hidden-chevron');
+        if (chevron) chevron.innerHTML = _smHiddenExpanded ? '&#9660;' : '&#9654;';
+      }
+    }
+
     function _syncRenderSuggestions() {
       var list = document.getElementById('sync-suggestions-list');
       var statsEl = document.getElementById('sync-stats');
@@ -17614,80 +17794,115 @@
         return;
       }
 
-      var groups = { exact: [], fuzzy: [], keyword: [], none: [] };
-      var methodGroupMap = {
-        'alias_exact': 'exact', 'exact': 'exact',
-        'phrase_fuzzy': 'fuzzy', 'fuzzy': 'fuzzy',
-        'token_overlap': 'keyword', 'keyword': 'keyword',
-        'none': 'none'
-      };
-      var counts = { total: suggestions.length, pending: 0, accepted: 0, rejected: 0 };
+      var counts = { total: suggestions.length, pending: 0, accepted: 0, rejected: 0, matchCount: 0, reviewCount: 0, noMatchCount: 0 };
       for (var i = 0; i < suggestions.length; i++) {
         var s = suggestions[i];
-        var method = s.match_method || 'none';
-        var groupKey = methodGroupMap[method] || 'none';
-        groups[groupKey].push(s);
         if (s.status === 'pending') counts.pending++;
         else if (s.status === 'accepted') counts.accepted++;
         else if (s.status === 'rejected') counts.rejected++;
+        var ms = _smGetMatchStatus(s);
+        if (ms === 'match') counts.matchCount++;
+        else if (ms === 'review') counts.reviewCount++;
+        else counts.noMatchCount++;
       }
 
       if (statsEl) {
         statsEl.style.display = 'flex';
         statsEl.innerHTML =
           '<div class="sync-stat"><strong>' + counts.total + '</strong> total</div>' +
-          '<div class="sync-stat"><strong>' + counts.pending + '</strong> pending</div>' +
+          '<div class="sync-stat" style="color: var(--ok, #2e7d32);"><strong>' + counts.matchCount + '</strong> matched</div>' +
+          '<div class="sync-stat" style="color: #e65100;"><strong>' + counts.reviewCount + '</strong> review</div>' +
+          '<div class="sync-stat" style="color: var(--text-3);"><strong>' + counts.noMatchCount + '</strong> no match</div>' +
           '<div class="sync-stat" style="color: #2e7d32;"><strong>' + counts.accepted + '</strong> accepted</div>' +
           '<div class="sync-stat" style="color: #c62828;"><strong>' + counts.rejected + '</strong> declined</div>';
       }
 
-      var groupLabels = {
-        exact: 'Exact Matches',
-        fuzzy: 'Fuzzy Matches',
-        keyword: 'Keyword Matches',
-        none: 'Unmatched Fields'
-      };
+      var sorted = _smSortSuggestions(suggestions);
 
-      var html = '';
-      var order = ['exact', 'fuzzy', 'keyword', 'none'];
-      for (var gi = 0; gi < order.length; gi++) {
-        var gKey = order[gi];
-        var items = groups[gKey];
-        if (!items || items.length === 0) continue;
-        html += '<div class="sync-group">';
-        html += '<div class="sync-group-header">' + groupLabels[gKey] + ' (' + items.length + ')</div>';
-        for (var si = 0; si < items.length; si++) {
-          var sug = items[si];
-          var pct = sug.confidence_pct != null ? sug.confidence_pct : (sug.match_score > 0 ? Math.round(sug.match_score * 100) : 0);
-          var scoreClass = pct >= 80 ? 'high' : pct >= 60 ? 'medium' : pct > 0 ? 'low' : 'none';
-          var scoreText = pct > 0 ? pct + '%' : '--';
-          var targetText = sug.suggested_label || sug.suggested_term_id || '(no match)';
+      var HIDDEN_THRESHOLD = 20;
+      var visibleRows = [];
+      var hiddenRows = [];
+      for (var vi = 0; vi < sorted.length; vi++) {
+        var pctV = _smGetConfidencePct(sorted[vi]);
+        var methodV = sorted[vi].match_method || 'none';
+        if (methodV === 'none' && pctV === 0 && sorted[vi].status !== 'accepted' && sorted[vi].status !== 'rejected') {
+          hiddenRows.push(sorted[vi]);
+        } else if (pctV < HIDDEN_THRESHOLD && methodV === 'none') {
+          hiddenRows.push(sorted[vi]);
+        } else {
+          visibleRows.push(sorted[vi]);
+        }
+      }
 
-          html += '<div class="sync-row" data-sug-id="' + sug.id + '">';
-          html += '<span class="sync-source">' + _escHtml(sug.source_field) + '</span>';
-          html += '<span class="sync-arrow">&rarr;</span>';
-          html += '<span class="sync-target">' + _escHtml(targetText) + '</span>';
-          html += '<span class="sync-score ' + scoreClass + '">' + scoreText + '</span>';
+      function buildTableHtml(rows) {
+        var h = '';
+        for (var ri = 0; ri < rows.length; ri++) {
+          var sug = rows[ri];
+          var pct = _smGetConfidencePct(sug);
+          var bucket = _smGetConfidenceBucket(pct);
+          var matchStatus = _smGetMatchStatus(sug);
+          var targetText = sug.suggested_label || sug.suggested_term_id || '\u2014';
+          var statusLabel = matchStatus === 'match' ? 'Match' : matchStatus === 'review' ? 'Review' : 'No Match';
+          var pctText = pct > 0 ? pct + '%' : '\u2014';
+          var bucketLabel = bucket === 'high' ? 'HIGH' : bucket === 'med' ? 'MED' : bucket === 'low' ? 'LOW' : '\u2014';
+          var chips = _smGetEvidenceChips(sug);
 
-          if (sug.match_method !== 'none') {
-            html += '<span class="sync-match-actions" style="display:flex;gap:3px;margin-right:4px;">';
-            html += '<button onclick="_syncShowMatches(\'' + sug.id + '\')" style="font-size:0.7em;padding:2px 6px;background:#fff8e1;border:1px solid #ffe082;border-radius:3px;cursor:pointer;color:#f57f17;" title="Highlight matched keywords in Reader">Show</button>';
-            html += '<button onclick="_syncClearMatches()" style="font-size:0.7em;padding:2px 6px;background:#f5f5f5;border:1px solid #ddd;border-radius:3px;cursor:pointer;color:#888;" title="Clear highlights">Clear</button>';
-            html += '</span>';
+          h += '<tr data-sug-id="' + sug.id + '">';
+          h += '<td class="sm-source" title="' + _escHtml(sug.source_field) + '">' + _escHtml(sug.source_field) + '</td>';
+          h += '<td class="sm-target" title="' + _escHtml(targetText) + '">' + _escHtml(targetText) + '</td>';
+          h += '<td><span class="sm-status-badge ' + matchStatus + '">' + statusLabel + '</span></td>';
+          h += '<td><span class="sm-confidence"><span class="sm-conf-pct">' + pctText + '</span>';
+          if (bucket !== 'none') h += ' <span class="sm-conf-bucket ' + bucket + '">' + bucketLabel + '</span>';
+          h += '</span></td>';
+          h += '<td><span class="sm-evidence-chips">';
+          for (var ci = 0; ci < chips.length; ci++) {
+            h += '<span class="sm-evidence-chip">' + _escHtml(chips[ci]) + '</span>';
           }
+          h += '</span></td>';
+          h += '<td>';
           if (sug.status === 'pending') {
-            html += '<div class="sync-actions">';
-            html += '<button class="sync-accept-btn" onclick="_syncAccept(\'' + sug.id + '\', ' + (sug.version || 1) + ')">Accept</button>';
-            html += '<button class="sync-reject-btn" onclick="_syncReject(\'' + sug.id + '\', ' + (sug.version || 1) + ')">Decline</button>';
-            html += '</div>';
+            h += '<div class="sync-actions">';
+            h += '<button class="sync-accept-btn" onclick="_syncAccept(\'' + sug.id + '\', ' + (sug.version || 1) + ')">Accept</button>';
+            h += '<button class="sync-reject-btn" onclick="_syncReject(\'' + sug.id + '\', ' + (sug.version || 1) + ')">Decline</button>';
+            if (sug.match_method !== 'none') {
+              h += '<button onclick="_syncShowMatches(\'' + sug.id + '\')" style="font-size:0.7em;padding:2px 6px;background:var(--chip-bg, #fff8e1);border:1px solid var(--chip-border, #ffe082);border-radius:3px;cursor:pointer;color:var(--chip-text, #f57f17);margin-left:2px;" title="Show in Reader">Show</button>';
+            }
+            h += '</div>';
           } else {
             var badgeLabel = sug.status === 'rejected' ? 'declined' : sug.status;
-            html += '<span class="sync-status-badge ' + sug.status + '">' + badgeLabel + '</span>';
+            h += '<span class="sync-status-badge ' + sug.status + '">' + badgeLabel + '</span>';
           }
-          html += '</div>';
+          h += '</td>';
+          h += '</tr>';
         }
-        html += '</div>';
+        return h;
       }
+
+      var html = '<div class="sync-matrix-wrap"><table class="sync-matrix"><thead><tr>';
+      html += '<th>Source Field</th>';
+      html += '<th>Suggested Canonical</th>';
+      html += '<th>Match Status</th>';
+      html += '<th>Confidence</th>';
+      html += '<th>Evidence / Reason</th>';
+      html += '<th>Actions</th>';
+      html += '</tr></thead><tbody>';
+      html += buildTableHtml(visibleRows);
+      html += '</tbody></table></div>';
+
+      if (hiddenRows.length > 0) {
+        html += '<div class="sm-hidden-section">';
+        html += '<button class="sm-hidden-toggle" id="sm-hidden-toggle" onclick="_smToggleHidden()">';
+        html += '<span class="sm-hidden-chevron">&#9654;</span> Hidden / Low-signal fields (' + hiddenRows.length + ')';
+        html += '</button>';
+        html += '<div class="sm-hidden-body collapsed" id="sm-hidden-body">';
+        html += '<div class="sync-matrix-wrap"><table class="sync-matrix"><thead><tr>';
+        html += '<th>Source Field</th><th>Suggested Canonical</th><th>Match Status</th><th>Confidence</th><th>Evidence / Reason</th><th>Actions</th>';
+        html += '</tr></thead><tbody>';
+        html += buildTableHtml(hiddenRows);
+        html += '</tbody></table></div>';
+        html += '</div></div>';
+      }
+
       list.innerHTML = html;
     }
 
@@ -22255,21 +22470,12 @@
       html += _gridDrawerEditTabHtml(ctx);
       html += '</div>';
 
-      html += '<div class="srr-left-tab-body' + (activeTab === 'patch' ? ' active' : '') + '" id="grid-drawer-tab-patch" data-tab="patch" style="flex-direction:column;">';
-      html += _gridDrawerPatchTabHtml(ctx);
-      html += '</div>';
-
       html += '<div class="srr-left-tab-body' + (activeTab === 'info' ? ' active' : '') + '" id="grid-drawer-tab-info" data-tab="info" style="flex-direction:column;">';
       html += _gridDrawerInfoTabHtml(ctx);
       html += '</div>';
 
       html += '<div class="srr-left-tabs" id="grid-drawer-tabs">';
       html += '<button class="srr-left-tab' + (activeTab === 'edit' ? ' active' : '') + '" data-tab="edit" onclick="_gridDrawerSwitchTab(\'edit\')" title="Edit Fields">Edit</button>';
-      html += '<button class="srr-left-tab' + (activeTab === 'patch' ? ' active' : '') + '" data-tab="patch" onclick="_gridDrawerSwitchTab(\'patch\')" title="Patch Studio" style="position:relative;">Patch';
-      if (editCount > 0) {
-        html += '<span id="grid-drawer-patch-badge" style="position:absolute;top:2px;right:2px;background:#c62828;color:#fff;font-size:0.6em;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1;">' + editCount + '</span>';
-      }
-      html += '</button>';
       html += '<button class="srr-left-tab' + (activeTab === 'info' ? ' active' : '') + '" data-tab="info" onclick="_gridDrawerSwitchTab(\'info\')" title="Info">Info</button>';
       html += '</div>';
 
@@ -22285,7 +22491,6 @@
       var tabs = document.querySelectorAll('#grid-drawer-tabs .srr-left-tab');
       var bodies = [
         document.getElementById('grid-drawer-tab-edit'),
-        document.getElementById('grid-drawer-tab-patch'),
         document.getElementById('grid-drawer-tab-info')
       ];
       for (var i = 0; i < tabs.length; i++) {
@@ -22303,12 +22508,6 @@
           bodies[j].className = 'srr-left-tab-body active';
         } else {
           bodies[j].className = 'srr-left-tab-body';
-        }
-      }
-      if (tabName === 'patch') {
-        var patchBody = document.getElementById('grid-drawer-tab-patch');
-        if (patchBody) {
-          patchBody.innerHTML = _gridDrawerPatchTabHtml(ctx);
         }
       }
     }
@@ -22469,112 +22668,17 @@
       }
       html += '</div>';
 
-      html += '<div style="font-size:0.85em;font-weight:600;color:#333;margin-bottom:12px;padding-top:12px;border-top:1px solid #e0e0e0;">Evidence Pack</div>';
-
-      if (patchType === 'correction') {
-        html += '<div class="srr-evidence-block">';
-        html += '<div class="srr-evidence-label">Observation <span class="srr-evidence-alias">(WHEN)</span></div>';
-        html += '<select class="srr-evidence-select" id="grid-drawer-observation" onchange="_gridDrawerSaveEvidence()">';
-        html += '<option value="">-- Select observation type --</option>';
-        html += '<option value="incorrect_value"' + (evDraft.observation === 'incorrect_value' ? ' selected' : '') + '>Incorrect Value</option>';
-        html += '<option value="missing_value"' + (evDraft.observation === 'missing_value' ? ' selected' : '') + '>Missing Value</option>';
-        html += '<option value="formatting_issue"' + (evDraft.observation === 'formatting_issue' ? ' selected' : '') + '>Formatting Issue</option>';
-        html += '<option value="duplicate_entry"' + (evDraft.observation === 'duplicate_entry' ? ' selected' : '') + '>Duplicate Entry</option>';
-        html += '<option value="inconsistent_data"' + (evDraft.observation === 'inconsistent_data' ? ' selected' : '') + '>Inconsistent Data</option>';
-        html += '<option value="override_needed"' + (evDraft.observation === 'override_needed' ? ' selected' : '') + '>Override Needed</option>';
-        html += '</select>';
-        html += '</div>';
-
-        html += '<div class="srr-evidence-block">';
-        html += '<div class="srr-evidence-label">Expected <span class="srr-evidence-alias">(THEN)</span></div>';
-        html += '<select class="srr-evidence-select" id="grid-drawer-expected" onchange="_gridDrawerSaveEvidence()">';
-        html += '<option value="">-- Select expected behavior --</option>';
-        html += '<option value="correct_value"' + (evDraft.expected === 'correct_value' ? ' selected' : '') + '>Use Correct Value</option>';
-        html += '<option value="populate_field"' + (evDraft.expected === 'populate_field' ? ' selected' : '') + '>Populate Empty Field</option>';
-        html += '<option value="standardize_format"' + (evDraft.expected === 'standardize_format' ? ' selected' : '') + '>Standardize Format</option>';
-        html += '<option value="remove_duplicate"' + (evDraft.expected === 'remove_duplicate' ? ' selected' : '') + '>Remove Duplicate</option>';
-        html += '<option value="align_with_source"' + (evDraft.expected === 'align_with_source' ? ' selected' : '') + '>Align with Source Document</option>';
-        html += '<option value="allow_override"' + (evDraft.expected === 'allow_override' ? ' selected' : '') + '>Allow Override</option>';
-        html += '</select>';
-        html += '</div>';
-      }
-
-      html += '<div class="srr-evidence-block">';
-      if (patchType === 'rfi') {
-        html += '<div class="srr-evidence-label">Question <span class="srr-evidence-alias">(ASK)</span></div>';
-        html += '<textarea class="srr-evidence-textarea" id="grid-drawer-justification" placeholder="What information do you need?" oninput="_gridDrawerSaveEvidence()">' + escapeHtml(evDraft.justification || '') + '</textarea>';
-      } else {
-        html += '<div class="srr-evidence-label">Justification <span class="srr-evidence-alias">(BECAUSE)</span></div>';
-        html += '<textarea class="srr-evidence-textarea" id="grid-drawer-justification" placeholder="Explain why this change/flag is necessary..." oninput="_gridDrawerSaveEvidence()">' + escapeHtml(evDraft.justification || '') + '</textarea>';
-      }
       html += '</div>';
 
-      if (patchType === 'correction') {
-        html += '<div class="srr-evidence-block">';
-        html += '<div class="srr-evidence-label">Repro Method <span class="srr-repro-required">(required)</span></div>';
-        html += '<select class="srr-evidence-select" id="grid-drawer-repro" onchange="_gridDrawerSaveEvidence(); _gridDrawerToggleReproFile();">';
-        html += '<option value="">-- Select repro method --</option>';
-        html += '<option value="breaks_salesforce_rule"' + (evDraft.repro === 'breaks_salesforce_rule' ? ' selected' : '') + '>System Pass Violation</option>';
-        html += '<option value="breaks_qa_gate"' + (evDraft.repro === 'breaks_qa_gate' ? ' selected' : '') + '>Breaks QA Gate</option>';
-        html += '<option value="resolver_mismatch"' + (evDraft.repro === 'resolver_mismatch' ? ' selected' : '') + '>Resolver Mismatch</option>';
-        html += '<option value="doc_evidence_mismatch"' + (evDraft.repro === 'doc_evidence_mismatch' ? ' selected' : '') + '>Doc Evidence Mismatch (attach file)</option>';
-        html += '</select>';
-        html += '<div id="grid-drawer-repro-file-section" style="margin-top:6px;display:' + (evDraft.repro === 'doc_evidence_mismatch' ? 'block' : 'none') + ';">';
-        html += '<input type="file" id="grid-drawer-repro-file" accept=".pdf,.png,.jpg,.jpeg" style="font-size:0.82em;">';
-        html += '</div>';
-        html += '</div>';
-      }
-
-      if (patchType === 'blacklist') {
-        html += '<div style="margin-bottom:16px;padding:10px;background:#fff3e0;border-radius:6px;border-left:3px solid #e65100;font-size:0.82em;color:#bf360c;">';
-        html += '<strong>Blacklist Subject:</strong> ';
-        if (ctx.focusField && pendingEdits.hasOwnProperty(ctx.focusField)) {
-          html += escapeHtml(ctx.focusField) + ' = ' + escapeHtml(pendingEdits[ctx.focusField]);
-        } else {
-          html += '(derived from selected field/value)';
-        }
-        html += '</div>';
-      }
-
-      html += '<div style="margin-bottom:16px;padding:8px 10px;background:#f8f9fa;border-radius:6px;font-size:0.8em;color:#999;display:flex;align-items:center;gap:8px;">';
-      html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
-      html += 'Assign user (future release)';
-      html += '</div>';
-
-      html += '</div>';
-
-      var submitLabel = 'Submit Correction';
-      if (patchType === 'blacklist') submitLabel = 'Submit Blacklist';
-      if (patchType === 'rfi') submitLabel = 'Send RFI';
-
-      html += '<div style="padding:12px 14px;border-top:1px solid #e0e0e0;display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;background:#fafbfc;">';
-      html += '<button onclick="_gridDrawerClearEdits()" style="padding:7px 16px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#475569;font-size:0.82em;font-weight:600;cursor:pointer;">Save Draft</button>';
-      html += '<button onclick="_gridDrawerSubmit()" style="padding:7px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#1e3a5f,#1565c0);color:#fff;font-size:0.82em;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(21,101,192,0.3);">' + submitLabel + '</button>';
+      html += '<div style="padding:12px 14px;border-top:1px solid #e0e0e0;display:flex;justify-content:center;flex-shrink:0;background:#fafbfc;">';
+      html += '<button onclick="_gridDrawerSubmit()" style="padding:9px 24px;border-radius:8px;border:none;background:linear-gradient(135deg,#1e3a5f,#1565c0);color:#fff;font-size:0.85em;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(21,101,192,0.3);width:100%;">Submit Patch Request</button>';
       html += '</div>';
 
       return html;
     }
 
-    function _gridDrawerSaveEvidence() {
-      var ctx = window._gridDrawerContext;
-      if (!ctx) return;
-      if (!ctx._evidenceDraft) ctx._evidenceDraft = {};
-      var obs = document.getElementById('grid-drawer-observation');
-      var exp = document.getElementById('grid-drawer-expected');
-      var just = document.getElementById('grid-drawer-justification');
-      var repro = document.getElementById('grid-drawer-repro');
-      if (obs) ctx._evidenceDraft.observation = obs.value;
-      if (exp) ctx._evidenceDraft.expected = exp.value;
-      if (just) ctx._evidenceDraft.justification = just.value;
-      if (repro) ctx._evidenceDraft.repro = repro.value;
-    }
-
-    function _gridDrawerToggleReproFile() {
-      var repro = document.getElementById('grid-drawer-repro');
-      var fileSection = document.getElementById('grid-drawer-repro-file-section');
-      if (!repro || !fileSection) return;
-      fileSection.style.display = (repro.value === 'doc_evidence_mismatch') ? 'block' : 'none';
-    }
+    function _gridDrawerSaveEvidence() {}
+    function _gridDrawerToggleReproFile() {}
 
     function _gridDrawerInfoTabHtml(ctx) {
       var fileMeta = ctx.fileMeta || {};
@@ -22676,33 +22780,19 @@
         }
       }
 
-      var badge = document.getElementById('grid-drawer-patch-badge');
-      var patchTabBtn = document.querySelector('#grid-drawer-tabs .srr-left-tab[data-tab="patch"]');
-      if (editCount > 0) {
-        if (badge) {
-          badge.textContent = String(editCount);
-        } else if (patchTabBtn) {
-          var span = document.createElement('span');
-          span.id = 'grid-drawer-patch-badge';
-          span.style.cssText = 'position:absolute;top:2px;right:2px;background:#c62828;color:#fff;font-size:0.6em;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1;';
-          span.textContent = String(editCount);
-          patchTabBtn.appendChild(span);
-        }
-      } else {
-        if (badge && badge.parentNode) badge.parentNode.removeChild(badge);
-      }
-
-      if (ctx._pendingEdits.hasOwnProperty(fk) && ctx._activeTab === 'edit') {
-        ctx._autoSwitchField = fk;
+      if (ctx._pendingEdits.hasOwnProperty(fk) && editCount > 0 && !window._gridModalOpenedForSession) {
         if (window._gridAutoSwitchTimer) clearTimeout(window._gridAutoSwitchTimer);
         window._gridAutoSwitchTimer = setTimeout(function() {
           var cx = window._gridDrawerContext;
-          if (cx && cx._autoSwitchField && Object.keys(cx._pendingEdits).length > 0 && cx._activeTab === 'edit') {
-            _gridDrawerSwitchTab('patch');
+          if (cx && Object.keys(cx._pendingEdits).length > 0 && !window._gridModalOpenedForSession) {
+            var activeEl = document.activeElement;
+            if (activeEl && activeEl.getAttribute && activeEl.getAttribute('data-field')) return;
+            window._gridModalOpenedForSession = true;
+            _gridDrawerOpenPatchModal();
           }
-          delete cx._autoSwitchField;
         }, 800);
       }
+
     }
 
     function _gridDrawerSearchFields() {
@@ -22721,6 +22811,8 @@
       ctx._editCommitted = false;
       ctx.patchType = null;
       ctx._activeTab = 'edit';
+      window._gridModalOpenedForSession = false;
+      if (window._gridAutoSwitchTimer) { clearTimeout(window._gridAutoSwitchTimer); window._gridAutoSwitchTimer = null; }
       var drawer = document.getElementById('grid-patch-drawer');
       if (drawer) _gridDrawerRender(drawer);
     }
@@ -22737,19 +22829,6 @@
           delete ctx._evidenceDraft.repro;
         }
       }
-      var chips = document.querySelectorAll('#grid-drawer-tab-patch .srr-patch-type-chip');
-      for (var i = 0; i < chips.length; i++) {
-        var chipType = chips[i].getAttribute('data-type');
-        if (chipType === type) {
-          chips[i].className = 'srr-patch-type-chip ' + chipType + ' active';
-        } else {
-          chips[i].className = 'srr-patch-type-chip ' + chipType;
-        }
-      }
-      var patchBody = document.getElementById('grid-drawer-tab-patch');
-      if (patchBody) {
-        patchBody.innerHTML = _gridDrawerPatchTabHtml(ctx);
-      }
     }
 
     function _gridCloseDrawer() {
@@ -22761,62 +22840,38 @@
         Components.PatchPanel.cancel('grid_drawer');
       }
       window._gridDrawerContext = null;
+      window._gridModalOpenedForSession = false;
+      if (window._gridAutoSwitchTimer) { clearTimeout(window._gridAutoSwitchTimer); window._gridAutoSwitchTimer = null; }
     }
 
-    function _gridDrawerSubmit() {
+    function _gridDrawerOpenPatchModal() {
       var ctx = window._gridDrawerContext;
-      if (!ctx) return;
-      _gridDrawerSaveEvidence();
-      Components.PatchPanel.submit('grid_drawer');
-      console.log('[PATCHSTUDIO-D12] submit_attempted', { source: 'grid_drawer', patchType: ctx.patchType || 'correction' });
+      if (!ctx) { showToast('No context available', 'warning'); return; }
       var patchType = ctx.patchType || 'correction';
-      var evDraft = ctx._evidenceDraft || {};
-      var justification = (document.getElementById('grid-drawer-justification') || {}).value || '';
       var pendingEdits = ctx._pendingEdits || {};
       var oldVals = window._gridDrawerOldValues || {};
       var changes = [];
       var editKeys = Object.keys(pendingEdits);
       for (var i = 0; i < editKeys.length; i++) {
         var fk = editKeys[i];
-        changes.push({ field: fk, from: oldVals[fk] || '', to: pendingEdits[fk] });
+        changes.push({ field: fk, label: fk, from: oldVals[fk] || '', to: pendingEdits[fk] });
       }
-      if (changes.length === 0 && patchType !== 'rfi') { console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'no_changes', source: 'grid_drawer' }); showToast('No changes entered', 'warning'); return; }
-      var author = currentMode ? currentMode.charAt(0).toUpperCase() + currentMode.slice(1) : 'Analyst';
-      var request = createPatchRequest({
-        type: patchType,
-        category: 'grid_patch',
-        author: author,
-        author_role: currentMode || 'analyst',
-        record_id: ctx.recordId,
-        dataset_id: ctx.sheetName,
-        contract_section: ctx.sheetName,
-        changes: changes,
-        justification: justification || (patchType === 'rfi' ? 'RFI from Grid Mode' : 'Patch from Grid Mode'),
-        summary: (patchType === 'rfi' ? 'RFI' : changes.length + ' field(s) patched') + ' via Grid Mode',
-        when: evDraft.observation || 'Grid Mode patch',
-        then: evDraft.expected || (changes.length > 0 ? changes.map(function(c) { return c.field + ': ' + c.from + ' -> ' + c.to; }).join('; ') : 'RFI request'),
-        repro_method: evDraft.repro || ''
-      });
-      if (request) {
-        var submitted = submitPatchRequest(request.request_id, author, currentMode || 'analyst');
-        if (submitted) {
-          console.log('[PATCHSTUDIO-D12] submit_succeeded', { source: 'grid_drawer', patchType: patchType, requestId: request.request_id });
-          showToast('Patch submitted: ' + request.request_id, 'success');
-          if (typeof renderPatchConsoleTable === 'function') renderPatchConsoleTable();
-          if (typeof updatePatchQueueCounts === 'function') updatePatchQueueCounts();
-          if (patchType === 'rfi' && ctx.focusField) {
-            var cells = document.querySelectorAll('tr[data-record-id="' + ctx.recordId + '"] td[data-gfield="' + ctx.focusField + '"]');
-            for (var ci = 0; ci < cells.length; ci++) {
-              cells[ci].style.background = '#fff3e0';
-              cells[ci].style.borderLeft = '2px solid #e65100';
-            }
-          }
-        } else {
-          showToast('Patch created but could not be submitted', 'warning');
-        }
-      } else {
-        showToast('Failed to create patch', 'error');
+      if (changes.length === 0 && patchType !== 'rfi') {
+        showToast('Make edits first, then submit', 'info');
+        return;
       }
+      srrState.patchType = patchType;
+      srrState.proposedChanges = {};
+      for (var j = 0; j < changes.length; j++) {
+        srrState.proposedChanges[changes[j].field] = changes[j];
+      }
+      srrState._gridDrawerSource = true;
+      srrState._gridDrawerCtx = ctx;
+      _patchModalOpen(patchType, changes, '');
+    }
+
+    function _gridDrawerSubmit() {
+      _gridDrawerOpenPatchModal();
       _gridCloseDrawer();
     }
 
@@ -23434,7 +23489,7 @@
       getDiffPreview: function() {
         if (this._changeBuffer.length === 0) return '<p style="color:#888; font-size:0.9em;">No pending changes.</p>';
         var html = '<table style="width:100%; border-collapse:collapse; font-size:0.82em;">';
-        html += '<thead><tr style="background:#f5f5f5;"><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Action</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Path</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Old</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">New</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Time</th></tr></thead><tbody>';
+        html += '<thead><tr style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));"><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Action</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Path</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Old</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">New</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Time</th></tr></thead><tbody>';
         this._changeBuffer.forEach(function(c) {
           var color = '#e8f5e9';
           if (c.action.indexOf('suppress') >= 0 || c.action.indexOf('remove') >= 0) color = '#ffebee';
@@ -24699,26 +24754,26 @@
       return EXPORT_STATUS_ENUM.IN_PROGRESS_ANALYST;
     }
 
-    function _buildExportFilename(baseName, status) {
+    function _normalizeExportStatus(status) {
+      var s = String(status || '').toLowerCase().replace(/\s+/g, '_');
+      if (s === 'verifier_done' || s === 'verifier-approved' || s === 'verifier_approved') return 'VERIFIER_DONE';
+      if (s === 'admin_final' || s === 'applied') return 'ADMIN_FINAL';
+      if (s === 'rejected') return 'REJECTED';
+      if (s === 'in_progress' || s === 'in_progress_analyst') return 'IN_PROGRESS_ANALYST';
+      return 'IN_PROGRESS_ANALYST';
+    }
+
+    function _buildExportFilename(baseName, status, workspaceName) {
       var now = new Date();
-      var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
-      var ts = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
-               'T' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds()) + 'Z';
-      var batchId = '';
-      if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.batch_id) {
-        batchId = IDENTITY_CONTEXT.batch_id;
-      }
-      if (!batchId) batchId = baseName || 'dataset';
-      batchId = batchId.replace(/\.xlsx$/i, '').replace(/\.xls$/i, '').replace(/\.csv$/i, '');
-      var actor = '';
-      if (typeof getCurrentUserName === 'function') {
-        actor = getCurrentUserName() || '';
-      }
-      if (!actor && typeof IDENTITY_CONTEXT !== 'undefined') {
-        actor = IDENTITY_CONTEXT.display_name || IDENTITY_CONTEXT.email || '';
-      }
-      actor = actor.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '').substring(0, 30) || 'user';
-      return batchId + '-' + actor + '-' + status + '-' + ts + '.xlsx';
+      var yyyy = now.getFullYear();
+      var mm = String(now.getMonth() + 1).padStart(2, '0');
+      var dd = String(now.getDate()).padStart(2, '0');
+      var HH = String(now.getHours()).padStart(2, '0');
+      var MM = String(now.getMinutes()).padStart(2, '0');
+      var safeBatch = String(baseName || 'dataset').replace(/[^\w\-]+/g, '_');
+      var safeWs = String(workspaceName || (typeof _getWorkspaceId === 'function' ? _getWorkspaceId() : 'workspace')).replace(/[^\w\-]+/g, '_');
+      var norm = _normalizeExportStatus(status);
+      return safeBatch + '__' + norm + '__' + yyyy + '-' + mm + '-' + dd + '_' + HH + '-' + MM + '__' + safeWs + '.xlsx';
     }
 
     var EXPORT_CELL_FILLS = {
@@ -27678,7 +27733,7 @@
         '</div></div>';
       if (mapEl) {
         var mapHtml = '<table style="width: 100%; border-collapse: collapse; font-size: 0.85em; margin-top: 8px;">';
-        mapHtml += '<thead><tr style="background: #f5f5f5;"><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #ddd;">Data Section</th><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #ddd;">Definitions Source</th><th style="padding: 6px 10px; text-align: right; border-bottom: 1px solid #ddd;">Fields</th></tr></thead><tbody>';
+        mapHtml += '<thead><tr style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));"><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #ddd;">Data Section</th><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #ddd;">Definitions Source</th><th style="padding: 6px 10px; text-align: right; border-bottom: 1px solid #ddd;">Fields</th></tr></thead><tbody>';
         var sortedSheets = Object.keys(sheetCounts).sort();
         for (var si = 0; si < sortedSheets.length; si++) {
           var sn = sortedSheets[si];
@@ -31152,7 +31207,6 @@
             sheet: srrState.currentSheetName || ''
           };
         }
-        srrSwitchLeftTab('patch');
         srrSyncProposedChanges();
         srrRenderPatchEditor();
         AuditTimeline.emit('PICKLIST_EXPAND_INITIATED', {
@@ -35568,7 +35622,7 @@
       if (_gridViewMode === 'grid' && typeof eiShowTab === 'function') {
         setTimeout(function() {
           var rightPanel = document.querySelector('.srr-panel-right');
-          if (rightPanel) rightPanel.style.display = '';
+          /* v2.57: right panel permanently hidden — patch submission uses modal */
           eiShowTab();
         }, 150);
       }
@@ -35832,7 +35886,7 @@
         actionsHtml += '</div>';
         
         var cardTitle = fieldSignalTips.length > 0 ? ' title="' + fieldSignalTips.join('; ').replace(/"/g, '&amp;quot;') + '"' : '';
-        var cardHtml = '<div class="' + cardClass + '"' + cardTitle + ' data-field="' + key + '">' +
+        var cardHtml = '<div class="' + cardClass + '"' + cardTitle + ' data-field="' + key + '" oncontextmenu="srrFieldContextMenu(event, \'' + key + '\')">' +
           '<div class="srr-field-card-header" onclick="srrSelectField(\'' + key + '\')">' +
             '<div style="flex:1;min-width:0;">' +
               '<div class="srr-field-card-label">' + label + labelSuffix + glossaryTooltipHtml + '</div>' +
@@ -35885,18 +35939,33 @@
           var groupTypeClass = group.type ? ' group-' + group.type : '';
           var _sectionKey = group.section_key || group.name.replace(/[^a-zA-Z0-9]/g, '_');
           var _todoInSection = groupFields.filter(function(k) { var s = srrState.fieldStates[k] || 'todo'; return s === 'todo'; }).length;
-          html += '<div class="srr-field-group-header' + groupTypeClass + '">';
-          html += '<span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + group.name + '</span>';
-          html += '<span class="srr-group-count">(' + groupFields.length + ')</span>';
+          var _verifiedInSection = groupFields.filter(function(k) { var s = srrState.fieldStates[k] || 'todo'; return s === 'verified'; }).length;
+          var _rfiInSection = groupFields.filter(function(k) { var s = srrState.fieldStates[k] || 'todo'; return s === 'rfi' || s === 'rfi_pending'; }).length;
+          var _blockedInSection = groupFields.filter(function(k) { var s = srrState.fieldStates[k] || 'todo'; return s === 'blocked'; }).length;
+          var _sectionComplete = (_todoInSection === 0 && groupFields.length > 0);
+          var _collapsedKey = 'srr_section_' + _sectionKey + '_collapsed';
+          var _isCollapsed = localStorage.getItem(_collapsedKey) === '1';
+          var _collapseClass = _isCollapsed ? ' collapsed' : '';
+
+          html += '<div class="srr-field-group-header' + groupTypeClass + _collapseClass + (_sectionComplete ? ' section-complete' : '') + '" data-section-key="' + _sectionKey + '" onclick="srrToggleSection(\'' + _sectionKey + '\', event)">';
+          html += '<span class="srr-section-chevron">' + (_isCollapsed ? '&#9654;' : '&#9660;') + '</span>';
+          html += '<span class="srr-section-title">' + group.name + '</span>';
+          html += '<span class="srr-section-status-pills">';
+          if (_todoInSection > 0) html += '<span class="srr-sec-pill attention">' + _todoInSection + ' todo</span>';
+          if (_verifiedInSection > 0) html += '<span class="srr-sec-pill verified">' + _verifiedInSection + ' &#10003;</span>';
+          if (_rfiInSection > 0) html += '<span class="srr-sec-pill rfi">' + _rfiInSection + ' RFI</span>';
+          if (_blockedInSection > 0) html += '<span class="srr-sec-pill blocked">' + _blockedInSection + ' &#9888;</span>';
+          html += '</span>';
           if (group.description || group.focus) {
-            html += '<button class="srr-section-info-icon" onclick="srrShowSectionInfo(\'' + _sectionKey.replace(/'/g, "\\'") + '\')" title="Section details">&#9432;</button>';
+            html += '<button class="srr-section-info-icon" onclick="event.stopPropagation(); srrShowSectionInfo(\'' + _sectionKey.replace(/'/g, "\\'") + '\')" title="Section details">&#9432;</button>';
           }
           if (_todoInSection > 0 && group.type === 'section') {
-            html += '<button class="srr-bulk-verify-btn" onclick="srrBulkVerifySection(\'' + _sectionKey + '\')" style="padding: 2px 8px; font-size: 0.7em; background: #4caf50; color: white; border: none; border-radius: 10px; cursor: pointer; text-transform: none; letter-spacing: 0; font-weight: 500; flex-shrink: 0;">Verify ' + _todoInSection + '</button>';
+            html += '<button class="srr-bulk-verify-btn" onclick="event.stopPropagation(); srrBulkVerifySection(\'' + _sectionKey + '\')" style="padding: 2px 8px; font-size: 0.7em; background: #4caf50; color: white; border: none; border-radius: 10px; cursor: pointer; text-transform: none; letter-spacing: 0; font-weight: 500; flex-shrink: 0;">Verify ' + _todoInSection + '</button>';
           }
           html += '</div>';
           if (!window._srrSectionInfoCache) window._srrSectionInfoCache = {};
           window._srrSectionInfoCache[_sectionKey] = { name: group.name, description: group.description || '', focus: group.focus || '', fields: groupFields.slice(), failures: group.failures || [] };
+          html += '<div class="srr-section-body' + (_isCollapsed ? ' collapsed' : '') + '" data-section-body="' + _sectionKey + '">';
         }
         
         var _curSection = (group.name && _sectionKey) ? _sectionKey : '';
@@ -35907,6 +35976,7 @@
           }
           html += cardHtml;
         });
+        if (group.name) html += '</div>';
       });
       
       // v1.6.60: System Metadata section for Verifier/Admin (collapsed by default)
@@ -36018,6 +36088,58 @@
         if (chip.dataset.filter === filter) chip.classList.add('active');
       });
       renderSrrFields(srrState.currentRecord);
+    }
+
+    function srrToggleSection(sectionKey, event) {
+      if (event && (event.target.closest('.srr-section-info-icon') || event.target.closest('.srr-bulk-verify-btn'))) return;
+      var key = 'srr_section_' + sectionKey + '_collapsed';
+      var header = document.querySelector('.srr-field-group-header[data-section-key="' + sectionKey + '"]');
+      var body = document.querySelector('.srr-section-body[data-section-body="' + sectionKey + '"]');
+      if (!header || !body) return;
+      var isNowCollapsed = !header.classList.contains('collapsed');
+      header.classList.toggle('collapsed');
+      body.classList.toggle('collapsed');
+      var chevron = header.querySelector('.srr-section-chevron');
+      if (chevron) chevron.innerHTML = isNowCollapsed ? '&#9654;' : '&#9660;';
+      localStorage.setItem(key, isNowCollapsed ? '1' : '0');
+    }
+
+    function srrFieldContextMenu(event, fieldKey) {
+      event.preventDefault();
+      event.stopPropagation();
+      var existing = document.getElementById('srr-field-ctx-menu');
+      if (existing) existing.remove();
+      if (srrState.isReadOnly) return;
+      var state = srrState.fieldStates[fieldKey] || 'todo';
+      var menu = document.createElement('div');
+      menu.id = 'srr-field-ctx-menu';
+      menu.className = 'context-menu';
+      menu.style.cssText = 'position:fixed;top:' + event.clientY + 'px;left:' + event.clientX + 'px;z-index:10000;min-width:160px;padding:4px 0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.15);';
+      var items = [];
+      if (state === 'todo') {
+        items.push({label: '&#10003; Verify', action: "srrVerifyField('" + fieldKey + "')"});
+        items.push({label: '&#9998; Request Info (RFI)', action: "srrRfiField('" + fieldKey + "')"});
+        items.push({label: '&#9873; Flag / Block', action: "srrBlacklistField('" + fieldKey + "')"});
+      } else {
+        items.push({label: '&#8634; Reset to TODO', action: "srrResetFieldState('" + fieldKey + "')"});
+      }
+      items.push({label: '&#128269; Select field', action: "srrSelectField('" + fieldKey + "')"});
+      items.forEach(function(it) {
+        var div = document.createElement('div');
+        div.className = 'context-menu-item';
+        div.style.cssText = 'padding:8px 16px;cursor:pointer;font-size:0.85em;';
+        div.innerHTML = it.label;
+        div.setAttribute('onclick', it.action + '; document.getElementById("srr-field-ctx-menu").remove();');
+        menu.appendChild(div);
+      });
+      document.body.appendChild(menu);
+      setTimeout(function() {
+        function dismissCtx(e) {
+          var m = document.getElementById('srr-field-ctx-menu');
+          if (m && !m.contains(e.target)) { m.remove(); document.removeEventListener('click', dismissCtx); }
+        }
+        document.addEventListener('click', dismissCtx);
+      }, 50);
     }
     
     // v1.4.20: Update filter chip counts
@@ -36147,7 +36269,8 @@
       srrUpdatePatchFormSections();
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditor();
-      _srrExpandPatchPanel();
+      var _blChanges = Object.values(srrState.proposedChanges);
+      _patchModalOpen('blacklist', _blChanges, srrState.patchDraft.justification || '');
     }
     
     // v1.4.20: Field action - RFI (question)
@@ -36180,7 +36303,8 @@
       srrUpdatePatchFormSections();
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditor();
-      _srrExpandPatchPanel();
+      var _rfiChanges = Object.values(srrState.proposedChanges);
+      _patchModalOpen('rfi', _rfiChanges, srrState.patchDraft.justification || '');
     }
     
     // v1.4.20: Reset field state to TODO
@@ -36395,6 +36519,20 @@
         console.log('[SRR] Field committed (locked):', fieldKey, 'from:', originalVal, 'to:', newValue);
         showToast('Field changed and locked: ' + fieldKey, 'success');
         scheduleAutosave();
+
+        if (!window._srrModalOpenedForSession) {
+          if (window._srrAutoModalTimer) clearTimeout(window._srrAutoModalTimer);
+          window._srrAutoModalTimer = setTimeout(function() {
+            if (window._srrModalOpenedForSession) return;
+            var activeEl = document.activeElement;
+            if (activeEl && activeEl.tagName === 'INPUT' && activeEl.closest && activeEl.closest('.srr-field-card')) return;
+            var changes = Object.values(srrState.proposedChanges);
+            if (changes.length > 0) {
+              window._srrModalOpenedForSession = true;
+              _patchModalOpen(srrState.patchType || 'correction', changes, srrState.patchDraft.justification || '');
+            }
+          }, 800);
+        }
       } else {
         srrState.editingField = null;
       }
@@ -36425,6 +36563,18 @@
       var countEl = document.getElementById('srr-change-count');
       var changes = Object.values(srrState.proposedChanges);
       var patchType = srrState.patchType;
+
+      var summaryEl = document.getElementById('srr-patch-action-summary');
+      if (summaryEl) {
+        var n = changes.length;
+        if (patchType === 'rfi' && srrState.rfiField) {
+          summaryEl.textContent = 'RFI: ' + (srrState.rfiField.label || srrState.rfiField.key || 'field');
+        } else if (n > 0) {
+          summaryEl.textContent = n + ' field change' + (n > 1 ? 's' : '') + ' ready to submit';
+        } else {
+          summaryEl.textContent = 'Select a field and make changes';
+        }
+      }
       
       if (!container) return;
       
@@ -37079,20 +37229,11 @@
     }
     
     function _srrExpandPatchPanel() {
-      if (!srrIsPatchOverlayOpen()) {
-        srrOpenPatchOverlay(srrState.patchType || 'correction');
-        console.log('[PATCHSTUDIO-D12] panel_opened', { source: 'srr_expand', patchType: srrState.patchType || 'correction' });
-      }
+      console.log('[PATCHSTUDIO-D12] panel_expand_noop — patch tab removed, modal used instead');
     }
     function _srrCollapsePatchPanel() {
-      srrClosePatchOverlay();
     }
     function _srrTogglePatchPanel() {
-      if (srrIsPatchOverlayOpen()) {
-        srrClosePatchOverlay();
-      } else {
-        srrOpenPatchOverlay(srrState.patchType || 'correction');
-      }
     }
     function _srrUpdateToggleBtn() {
       var _pp = document.querySelector('.srr-panel-right');
@@ -37116,9 +37257,7 @@
       for (var i = 0; i < bodies.length; i++) {
         bodies[i].classList.toggle('active', bodies[i].getAttribute('data-tab') === tabName);
       }
-      if (tabName === 'patch') {
-        srrMovePatchContentToTab();
-      }
+
       if (tabName === 'glossary' && !_srrGlossaryLoaded) {
         srrRenderGlossary();
       }
@@ -37126,25 +37265,14 @@
     }
 
     function srrMovePatchContentToTab() {
-      var patchTabContent = document.getElementById('srr-patch-tab-content');
-      var fieldsContent = document.getElementById('srr-tab-fields');
-      if (!patchTabContent || !fieldsContent) return;
-      if (fieldsContent.parentNode !== patchTabContent) {
-        patchTabContent.innerHTML = '';
-        patchTabContent.appendChild(fieldsContent);
-        fieldsContent.style.display = 'block';
-      }
     }
 
     function srrOpenPatchOverlay(actionType) {
-      srrSwitchLeftTab('patch');
-      srrMovePatchContentToTab();
-      console.log('[SRR] Patch Studio tab opened:', actionType);
+      console.log('[SRR] Patch overlay noop — modal flow active');
     }
 
     function srrClosePatchOverlay() {
-      srrSwitchLeftTab('editor');
-      console.log('[SRR] Returned to Editor tab');
+      console.log('[SRR] Close overlay noop — modal flow active');
     }
 
     function srrOpenTesterInOverlay() {
@@ -37159,7 +37287,7 @@
     }
 
     function srrIsPatchOverlayOpen() {
-      return _srrActiveLeftTab === 'patch';
+      return false;
     }
 
     function srrRenderGlossary() {
@@ -38789,11 +38917,8 @@
     
     // Handle patch type dropdown change
     function srrOnPatchTypeChange(newType) {
-      // v1.6.55: Set type first, then open overlay so title is correct
       srrState.patchType = newType;
       srrState.patchDraft.patch_type = newType;
-      _srrExpandPatchPanel();
-      // v1.5.2: If a field is selected, apply the action to that field
       if (srrPeSelectedField) {
         var fieldKey = srrPeSelectedField.key;
         var fieldLabel = srrPeSelectedField.label;
@@ -38803,21 +38928,14 @@
         console.log('[SRR] Patch type chip action:', newType, 'on field:', fieldKey);
         
         if (newType === 'rfi') {
-          // Same as srrRfiField
           srrState.rfiField = { key: fieldKey, label: fieldLabel, value: currentValue };
           srrState.fieldStates[fieldKey] = 'rfi_pending'; _cacheFieldState(srrState.currentRecordId, fieldKey, 'rfi_pending');
           showToast('RFI started for: ' + fieldLabel, 'info');
         } else if (newType === 'blacklist') {
-          // Same as srrBlacklistField
           srrState.fieldStates[fieldKey] = 'blocked'; _cacheFieldState(srrState.currentRecordId, fieldKey, 'blocked');
           srrState.patchDraft.blacklist_subject = fieldLabel + ': ' + (currentValue || '(empty)');
-          var subjectEl = document.getElementById('srr-blacklist-subject-value');
-          if (subjectEl) {
-            subjectEl.textContent = fieldLabel + ': ' + (currentValue || '(empty)');
-          }
           showToast('Blacklist flag set for: ' + fieldLabel, 'info');
         } else if (newType === 'correction') {
-          // Set up for correction / edit mode
           if (!srrState.proposedChanges[fieldKey]) {
             srrState.proposedChanges[fieldKey] = {
               field: fieldKey,
@@ -38831,11 +38949,14 @@
           showToast('Correction mode for: ' + fieldLabel, 'info');
         }
         
-        // Refresh Field Inspector
         renderSrrFields(srrState.currentRecord);
+        
+        if (newType === 'rfi' || newType === 'blacklist') {
+          var _changes = Object.values(srrState.proposedChanges);
+          _patchModalOpen(newType, _changes, srrState.patchDraft.justification || '');
+        }
       }
       
-      // Update patch type state
       srrState.patchType = newType;
       srrState.patchDraft.patch_type = newType;
       srrUpdatePatchFormSections();
@@ -38890,14 +39011,20 @@
     
     function srrSaveEvidenceDraft() {
       srrState.patchDraft.patch_type = srrState.patchType;
-      srrState.patchDraft.observation_type = document.getElementById('srr-observation-type').value;
-      srrState.patchDraft.expected_type = document.getElementById('srr-expected-type').value;
-      srrState.patchDraft.justification = document.getElementById('srr-justification').value;
-      srrState.patchDraft.repro_type = document.getElementById('srr-repro-type').value;
-      srrState.patchDraft.replay_type = document.getElementById('srr-replay-type') ? document.getElementById('srr-replay-type').value : '';
-      srrState.patchDraft.replay_steps = document.getElementById('srr-replay-steps') ? document.getElementById('srr-replay-steps').value : '';
-      srrState.patchDraft.replay_expected_result = document.getElementById('srr-replay-expected-result') ? document.getElementById('srr-replay-expected-result').value : '';
-      // RFI target: future feature — field not yet rendered (no current enforcement)
+      var obsEl = document.getElementById('srr-observation-type');
+      var expEl = document.getElementById('srr-expected-type');
+      var justEl = document.getElementById('srr-justification');
+      var reproEl = document.getElementById('srr-repro-type');
+      var replayEl = document.getElementById('srr-replay-type');
+      var replayStepsEl = document.getElementById('srr-replay-steps');
+      var replayExpEl = document.getElementById('srr-replay-expected-result');
+      if (obsEl) srrState.patchDraft.observation_type = obsEl.value;
+      if (expEl) srrState.patchDraft.expected_type = expEl.value;
+      if (justEl) srrState.patchDraft.justification = justEl.value;
+      if (reproEl) srrState.patchDraft.repro_type = reproEl.value;
+      if (replayEl) srrState.patchDraft.replay_type = replayEl.value;
+      if (replayStepsEl) srrState.patchDraft.replay_steps = replayStepsEl.value;
+      if (replayExpEl) srrState.patchDraft.replay_expected_result = replayExpEl.value;
       srrState.patchDraft.rfi_target = '';
       srrState.patchDraft.override_enabled = srrState.overrideEnabled;
     }
@@ -39034,25 +39161,11 @@
       var patchType = srrState.patchType;
       var changeCount = Object.keys(srrState.proposedChanges).length;
       var draft = srrState.patchDraft;
-      var justification = draft.justification;
 
-      // v1.6.46: Evidence Pack gate (sandbox mode bypasses)
-      if (!isDemoMode()) {
-        var evidenceGaps = srrCheckEvidenceGate(patchType, draft, changeCount, srrState.overrideEnabled);
-        if (evidenceGaps.length > 0) {
-          showToast('Missing requirements: ' + evidenceGaps.join(', '), 'warning');
-          console.log('[SRR] Submit blocked — evidence gaps:', evidenceGaps);
-          console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'evidence_gaps', gaps: evidenceGaps });
-          return;
-        }
-      }
-
-      // v1.6.46: Preflight gate (sandbox mode bypasses, RFIs bypass)
       if (!isDemoMode() && patchType !== 'rfi') {
         var preflightGaps = srrCheckPreflightGate();
         if (preflightGaps.length > 0) {
           showToast('Missing requirements: ' + preflightGaps.join(', '), 'warning');
-          console.log('[SRR] Submit blocked — preflight gaps:', preflightGaps);
           console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'preflight_gaps', gaps: preflightGaps });
           return;
         }
@@ -39062,27 +39175,179 @@
         var contractBlockers = srrCheckContractPreflightGate();
         if (contractBlockers.length > 0) {
           showToast('Contract has ' + contractBlockers.length + ' unresolved blocker(s): ' + contractBlockers.slice(0, 3).join('; ') + (contractBlockers.length > 3 ? ' (+' + (contractBlockers.length - 3) + ' more)' : ''), 'warning');
-          console.log('[SRR] Submit blocked — contract preflight blockers:', contractBlockers);
           console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'contract_blockers', count: contractBlockers.length });
           return;
         }
       }
-      
-      // v1.4.19: Build patch request based on type
+
+      var changes = Object.values(srrState.proposedChanges);
+      _patchModalOpen(patchType, changes, draft.justification || '');
+    }
+
+    function _patchModalOpen(patchType, changes, prefillJustification) {
+      var existing = document.getElementById('patch-submit-modal-root');
+      if (existing) existing.remove();
+
+      var overlay = document.createElement('div');
+      overlay.id = 'patch-submit-modal-root';
+      overlay.className = 'patch-submit-modal-overlay';
+
+      var typeLabel = patchType === 'correction' ? 'Correction' : (patchType === 'blacklist' ? 'Blacklist' : 'RFI');
+      var badgeClass = patchType || 'correction';
+
+      var changesHtml = '';
+      if (changes.length > 0) {
+        changesHtml = '<ul class="patch-submit-modal-change-list">';
+        changes.forEach(function(c) {
+          changesHtml += '<li><strong>' + _escHtml(c.label || c.field) + ':</strong> ' + _escHtml(c.from || '(empty)') + ' &rarr; ' + _escHtml(c.to || '(empty)') + '</li>';
+        });
+        changesHtml += '</ul>';
+      } else if (patchType === 'rfi') {
+        var rfiInfo = srrState.rfiField || {};
+        changesHtml = '<div style="padding:6px 0;font-size:0.9em;color:var(--text-1,#333);">';
+        changesHtml += '<strong>Field:</strong> ' + _escHtml(rfiInfo.label || rfiInfo.key || 'N/A');
+        if (rfiInfo.value) changesHtml += '<br><strong>Current Value:</strong> ' + _escHtml(String(rfiInfo.value));
+        changesHtml += '</div>';
+      } else if (patchType === 'blacklist') {
+        changesHtml = '<div style="padding:6px 0;font-size:0.9em;color:var(--text-1,#333);">' + _escHtml(srrState.patchDraft.blacklist_subject || 'No subject') + '</div>';
+      } else {
+        changesHtml = '<div style="color:var(--text-2,#888);font-size:0.9em;">No field changes</div>';
+      }
+
+      var draft = srrState.patchDraft || {};
+      var html = '<div class="patch-submit-modal-title">' +
+        '<span>Submit Patch Request</span>' +
+        '<span class="patch-submit-modal-badge ' + badgeClass + '">' + typeLabel + '</span></div>';
+
+      html += '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">' +
+        (patchType === 'rfi' ? 'RFI Target' : patchType === 'blacklist' ? 'Blacklist Subject' : 'Changes') +
+        '</div><div class="patch-submit-modal-obs">' + changesHtml + '</div></div>';
+
+      if (patchType === 'correction') {
+        html += '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Observation (WHEN)</div>' +
+          '<select class="patch-submit-modal-textarea" id="patch-modal-observation" style="min-height:auto;padding:8px 12px;">' +
+          '<option value="">-- Select observation type --</option>' +
+          '<option value="incorrect_value"' + (draft.observation_type === 'incorrect_value' ? ' selected' : '') + '>Incorrect Value</option>' +
+          '<option value="missing_value"' + (draft.observation_type === 'missing_value' ? ' selected' : '') + '>Missing Value</option>' +
+          '<option value="formatting_issue"' + (draft.observation_type === 'formatting_issue' ? ' selected' : '') + '>Formatting Issue</option>' +
+          '<option value="duplicate_entry"' + (draft.observation_type === 'duplicate_entry' ? ' selected' : '') + '>Duplicate Entry</option>' +
+          '<option value="inconsistent_data"' + (draft.observation_type === 'inconsistent_data' ? ' selected' : '') + '>Inconsistent Data</option>' +
+          '<option value="override_needed"' + (draft.observation_type === 'override_needed' ? ' selected' : '') + '>Override Needed</option>' +
+          '</select></div>';
+
+        html += '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Expected (THEN)</div>' +
+          '<select class="patch-submit-modal-textarea" id="patch-modal-expected" style="min-height:auto;padding:8px 12px;">' +
+          '<option value="">-- Select expected behavior --</option>' +
+          '<option value="correct_value"' + (draft.expected_type === 'correct_value' ? ' selected' : '') + '>Use Correct Value</option>' +
+          '<option value="populate_field"' + (draft.expected_type === 'populate_field' ? ' selected' : '') + '>Populate Empty Field</option>' +
+          '<option value="standardize_format"' + (draft.expected_type === 'standardize_format' ? ' selected' : '') + '>Standardize Format</option>' +
+          '<option value="remove_duplicate"' + (draft.expected_type === 'remove_duplicate' ? ' selected' : '') + '>Remove Duplicate</option>' +
+          '<option value="align_with_source"' + (draft.expected_type === 'align_with_source' ? ' selected' : '') + '>Align with Source Document</option>' +
+          '<option value="allow_override"' + (draft.expected_type === 'allow_override' ? ' selected' : '') + '>Allow Override</option>' +
+          '</select></div>';
+
+        html += '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Repro Method</div>' +
+          '<select class="patch-submit-modal-textarea" id="patch-modal-repro" style="min-height:auto;padding:8px 12px;">' +
+          '<option value="">-- Select repro method --</option>' +
+          '<option value="breaks_salesforce_rule"' + (draft.repro_type === 'breaks_salesforce_rule' ? ' selected' : '') + '>System Pass Violation</option>' +
+          '<option value="breaks_qa_gate"' + (draft.repro_type === 'breaks_qa_gate' ? ' selected' : '') + '>Breaks QA Gate</option>' +
+          '<option value="resolver_mismatch"' + (draft.repro_type === 'resolver_mismatch' ? ' selected' : '') + '>Resolver Mismatch</option>' +
+          '<option value="doc_evidence_mismatch"' + (draft.repro_type === 'doc_evidence_mismatch' ? ' selected' : '') + '>Doc Evidence Mismatch</option>' +
+          '</select></div>';
+      }
+
+      html += '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Justification (BECAUSE) <span style="color:var(--accent-2,#5c6bc0);font-weight:400;text-transform:none;">(required)</span></div>' +
+        '<textarea class="patch-submit-modal-textarea" id="patch-modal-justification" placeholder="Explain why this ' +
+        (patchType === 'rfi' ? 'clarification is needed' : patchType === 'blacklist' ? 'value should be blacklisted' : 'change is necessary') +
+        '...">' + _escHtml(prefillJustification) + '</textarea></div>';
+
+      html += '<div class="patch-submit-modal-footer">' +
+        '<button class="patch-submit-modal-btn secondary" onclick="_patchModalClose()">Cancel</button>' +
+        '<button class="patch-submit-modal-btn primary" id="patch-modal-confirm-btn" onclick="_patchModalConfirmSubmit()">Confirm Submit</button></div>';
+
+      var modal = document.createElement('div');
+      modal.className = 'patch-submit-modal';
+      modal.innerHTML = html;
+
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) _patchModalClose();
+      });
+
+      document.addEventListener('keydown', function _escHandler(e) {
+        if (e.key === 'Escape') { _patchModalClose(); document.removeEventListener('keydown', _escHandler); }
+      });
+
+      setTimeout(function() {
+        var ta = document.getElementById('patch-modal-justification');
+        if (ta) ta.focus();
+      }, 100);
+    }
+
+    function _patchModalClose() {
+      var el = document.getElementById('patch-submit-modal-root');
+      if (el) el.remove();
+      window._gridModalOpenedForSession = false;
+      window._srrModalOpenedForSession = false;
+    }
+
+    function _patchModalConfirmSubmit() {
+      var patchType = srrState.patchType || 'correction';
+      var ta = document.getElementById('patch-modal-justification');
+      var justification = ta ? ta.value.trim() : '';
+      if (!justification) {
+        showToast('Please provide a justification before submitting', 'warning');
+        if (ta) ta.focus();
+        return;
+      }
+
+      if (patchType === 'correction') {
+        var obsEl = document.getElementById('patch-modal-observation');
+        var expEl = document.getElementById('patch-modal-expected');
+        var reproEl = document.getElementById('patch-modal-repro');
+        if (obsEl) srrState.patchDraft.observation_type = obsEl.value;
+        if (expEl) srrState.patchDraft.expected_type = expEl.value;
+        if (reproEl) srrState.patchDraft.repro_type = reproEl.value;
+
+        if (!isDemoMode()) {
+          if (!srrState.patchDraft.observation_type) {
+            showToast('Please select an observation type', 'warning');
+            if (obsEl) obsEl.focus();
+            return;
+          }
+          if (!srrState.patchDraft.expected_type) {
+            showToast('Please select an expected behavior', 'warning');
+            if (expEl) expEl.focus();
+            return;
+          }
+        }
+      }
+
+      _patchModalClose();
+
+      srrState.patchDraft.justification = justification;
+      var justEl = document.getElementById('srr-justification');
+      if (justEl) justEl.value = justification;
+
+      _srrExecutePatchSubmit(justification);
+    }
+    function _srrExecutePatchSubmit(justification) {
+      var patchType = srrState.patchType;
+      var changeCount = Object.keys(srrState.proposedChanges).length;
       var changes = Object.values(srrState.proposedChanges);
       var changeSummary = changes.length > 0 ? changes.map(function(c) {
-        return c.label + ': ' + (c.from || '(empty)') + ' → ' + c.to;
+        return c.label + ': ' + (c.from || '(empty)') + ' \u2192 ' + c.to;
       }).join('; ') : '(no field changes)';
       
       var record = srrState.currentRecord || {};
-      var author = getCurrentUserName();  // v1.6.33: Use logged-in user
+      var author = getCurrentUserName();
       
-      // Determine action type based on patch type
       var actionType = patchType === 'correction' ? 'SET_VALUE' : (patchType === 'blacklist' ? 'BLACKLIST' : 'RFI');
       var whenText = patchType === 'correction' ? 'Field value is incorrect' : 
                      (patchType === 'blacklist' ? 'Value should be blacklisted' : 'Clarification needed');
       
-      // v1.5.2: Get stable record_id from record identity
       var recordId = (record._identity && record._identity.record_id) || record.record_id || record.contract_key || srrState.currentRecordKey;
       var datasetId = (record._identity && record._identity.dataset_id) || IDENTITY_CONTEXT.dataset_id || sessionState.fileName || 'default';
       
@@ -39098,7 +39363,6 @@
       var request = createPatchRequest({
         author: author,
         author_role: currentMode || 'Analyst',
-        // v1.5.2: Include record_id and dataset_id
         record_id: recordId,
         dataset_id: datasetId,
         tenant_id: IDENTITY_CONTEXT.tenant_id,
@@ -39133,12 +39397,9 @@
         role_simulation: getRoleSimAuditMeta()
       });
       
-      // Submit the patch request
       var submittedRequest = submitPatchRequest(request.request_id, author, currentMode || 'Analyst');
       
-      // v1.5.1: Create artifact in artifact store (primary)
       var fieldKey = changes.length > 0 ? changes[0].field : (srrState.rfiField ? srrState.rfiField.key : 'N/A');
-      // v1.5.2: Use stable recordId and datasetId from identity model
       var artifact = createArtifact({
         dataset_id: datasetId,
         record_id: recordId,
@@ -39169,11 +39430,9 @@
         }
       });
       
-      // v1.5.2: Add to verifier queue with proper identity fields
       addVerifierPayload({
         id: artifact.artifact_id,
         type: patchType,
-        // v1.5.2: Use stable record_id and include dataset_id + patch_request_id
         record_id: recordId,
         dataset_id: datasetId,
         patch_request_id: request.request_id,
@@ -39235,34 +39494,25 @@
         }
       }
 
-      // Update local state
       srrState.patchDraft.status = 'Submitted';
       
-      // Update field states based on patch type
       if (patchType === 'correction') {
-        // Correction: Set all modified fields to 'submitted' (clears from To Do)
-        Object.keys(srrState.proposedChanges).forEach(function(fieldKey) {
-          srrState.fieldStates[fieldKey] = 'submitted'; _cacheFieldState(srrState.currentRecordId, fieldKey, 'submitted');
+        Object.keys(srrState.proposedChanges).forEach(function(fk) {
+          srrState.fieldStates[fk] = 'submitted'; _cacheFieldState(srrState.currentRecordId, fk, 'submitted');
         });
       }
-      // v1.5.3 Fix: RFI submit should only clear the selected field, preserve other pending RFIs
       if (patchType === 'rfi') {
-        // Only change the selected field's state, not all rfi_pending fields
         var selectedField = srrState.selectedField || (srrState.rfiField && srrState.rfiField.key ? srrState.rfiField.key : null);
         if (selectedField && srrState.fieldStates[selectedField] === 'rfi_pending') {
           srrState.fieldStates[selectedField] = 'rfi'; _cacheFieldState(srrState.currentRecordId, selectedField, 'rfi');
         }
-        // If specific field from changes, use that
         if (changes.length === 1 && changes[0].field) {
           srrState.fieldStates[changes[0].field] = 'rfi';
         }
       }
-      // Blocked fields stay as 'blocked' (already set when Blacklist clicked)
       
-      // Re-render field list to reflect state changes
       renderSrrFields(srrState.currentRecord);
       
-      // Emit audit events (both uppercase canonical and lowercase alias)
       console.log('[SRR] PATCH_SUBMITTED (' + patchType + '):', request);
       AuditTimeline.emit('PATCH_SUBMITTED', {
         actor_id: author,
@@ -39283,33 +39533,27 @@
       
       console.log('[PATCHSTUDIO-D12] submit_succeeded', { source: 'record_inspector', patchType: patchType, recordId: recordId });
       
-      // Show appropriate toast based on patch type
       if (patchType === 'rfi') {
-        showToast('RFI sent — analyst handoff complete', 'success');
+        showToast('RFI sent \u2014 analyst handoff complete', 'success');
       } else if (patchType === 'blacklist') {
-        showToast('Blacklist submitted — visible in Patch Console', 'success');
+        showToast('Blacklist submitted \u2014 visible in Patch Console', 'success');
       } else {
-        showToast('Patch Request submitted — visible in Patch Console', 'success');
+        showToast('Patch Request submitted \u2014 visible in Patch Console', 'success');
       }
       
-      // Clear scope draft for this record
       var scopeKey = (recordId || '') + ':' + (srrState.currentSheetName || '');
       try { sessionStorage.removeItem('srr_studio_draft_' + scopeKey); } catch(e) {}
       
-      // Persist studio state and rerender
       if (typeof srrStudioPersist === 'function') srrStudioPersist();
       if (typeof srrStudioRender === 'function') srrStudioRender();
       
-      // Reset state after submission
       resetPatchEditorState();
       
-      // Close the patch overlay, returning to field inspector
       srrClosePatchOverlay();
       if (srrCheckAllFieldsCompleted()) {
-        setTimeout(function() { srrAutoAdvance('Patch submitted — all fields addressed'); }, 800);
+        setTimeout(function() { srrAutoAdvance('Patch submitted \u2014 all fields addressed'); }, 800);
       }
     }
-    
     function resetPatchEditorState() {
       // Reset patch draft in srrState
       srrState.patchDraft = {
@@ -39845,7 +40089,7 @@
       };
 
       var html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">';
-      html += '<thead><tr style="background: #f5f5f5;">';
+      html += '<thead><tr style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));">';
       html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">Time</th>';
       html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd;">Event</th>';
       html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd;">Actor</th>';
@@ -42677,7 +42921,7 @@
           html += '<div style="margin-bottom:12px;padding:8px 12px;background:#f0f4f8;border-radius:6px;font-size:0.85em;color:#555;">Glossary coverage: ' + cache.schema.standard_matched + ' / ' + cache.schema.standard_total + ' (' + gPct + '%)</div>';
           if (cache.schema._batch_mapped_items && cache.schema._batch_mapped_items.length > 0) {
             html += '<h4 style="margin:12px 0 8px;font-size:0.9em;color:#2e7d32;">Mapped Headers (' + cache.schema._batch_mapped_items.length + ')</h4>';
-            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;"><thead><tr style="background:#f5f5f5;"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Section</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Header</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Canonical Field</th></tr></thead><tbody>';
+            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;"><thead><tr style="background: var(--table-head-bg, var(--bg-2, #f5f5f5));"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Section</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Header</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Canonical Field</th></tr></thead><tbody>';
             cache.schema._batch_mapped_items.forEach(function(item) {
               html += '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.section + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.header + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;color:#2e7d32;">' + item.canonical + '</td></tr>';
             });
@@ -56370,6 +56614,12 @@ var P022_RuntimeValidation = {
 
     html += _pftlRenderCorruptionSamples(r);
 
+    html += _pftlRenderResolutionStory(r);
+
+    html += _pftlRenderOpportunitySpine(r);
+
+    html += _pftlRenderSfMatchSection(r);
+
     var m = r.metrics || {};
     html += '<div class="pftl-section">';
     html += '<div class="pftl-section-title">Key Metrics</div>';
@@ -56496,6 +56746,640 @@ var P022_RuntimeValidation = {
     return html;
   }
 
+  var PFTL_SECTION_ORDER = { encoding: 0, salesforce_match: 1, missing_required: 2, invalid_picklist: 3, metrics: 4, other: 5 };
+
+  function _pftlSectionPriority(sectionKey) {
+    return PFTL_SECTION_ORDER[sectionKey] != null ? PFTL_SECTION_ORDER[sectionKey] : PFTL_SECTION_ORDER.other;
+  }
+
+  var _PFTL_STOP_LABELS = {
+    'account name':1,'account name:':1,'account number':1,'account number:':1,
+    'account':1,'account:':1,'client name':1,'client name:':1,'client':1,
+    'client:':1,'company name':1,'company name:':1,'company':1,'company:':1,
+    'vendor name':1,'vendor name:':1,'vendor':1,'vendor:':1,'artist name':1,
+    'artist name:':1,'artist':1,'artist:':1,'entity name':1,'entity name:':1,
+    'entity':1,'entity:':1,'legal name':1,'legal name:':1,'legal entity':1,
+    'legal entity:':1,'counterparty':1,'counterparty:':1,'customer name':1,
+    'customer name:':1,'customer':1,'customer:':1,'payee name':1,'payee name:':1,
+    'payee':1,'payee:':1,'licensee':1,'licensee:':1,'licensor':1,'licensor:':1,
+    'party name':1,'party name:':1,'payments/accounting':1,'n/a':1,'na':1,
+    'none':1,'tbd':1,'unknown':1
+  };
+
+  var _PFTL_STRICT_LABEL_RE = /^\s*(?:Account\s*Name(?:_c|__c)?|Company\s*Name(?:_c|__c)?|Artist\s*Name(?:\s*\(pka\s+or\s+dba\))?|Legal\s*Name)\s*[:\-]\s*(.+?)\s*$/i;
+
+  var _PFTL_PROSE_STARTS = {'record':1,'records':1,'agreement':1,'whereas':1,'means':1,'term':1,'party':1,'parties':1,'shall':1,'includes':1,'including':1};
+  var _PFTL_PROSE_FRAGS = ['means every form of','this agreement','hereof','whereas','herein','hereunder','pursuant to','in connection with','notwithstanding'];
+  var _PFTL_GENERIC_TOKENS = {'record':1,'records':1,'account':1,'accounts':1,'company':1,'companies':1,'artist':1,'artists':1,'vendor':1,'vendors':1,'name':1,'entity':1};
+
+  function _pftlIsProse(val) {
+    var low = val.toLowerCase();
+    var tokens = low.split(/\s+/);
+    if (!tokens.length) return true;
+    if (_PFTL_PROSE_STARTS[tokens[0]]) return true;
+    for (var f = 0; f < _PFTL_PROSE_FRAGS.length; f++) {
+      if (low.indexOf(_PFTL_PROSE_FRAGS[f]) >= 0) return true;
+    }
+    if (tokens.length > 6) return true;
+    var hasQuotes = val.indexOf('"') >= 0 || val.indexOf('\u201c') >= 0 || val.indexOf('\u201d') >= 0;
+    var verbWords = {'means':1,'shall':1,'includes':1,'including':1,'agrees':1,'acknowledges':1};
+    if (hasQuotes) { for (var v = 0; v < tokens.length; v++) { if (verbWords[tokens[v]]) return true; } }
+    var alnum = 0; for (var a = 0; a < val.length; a++) { if (/[a-zA-Z0-9]/.test(val[a])) alnum++; }
+    if (val.length > 0 && alnum / val.length < 0.5) return true;
+    return false;
+  }
+
+  function _pftlIsValidValue(val) {
+    if (!val || val.length < 4) return false;
+    var tokens = val.split(/\s+/);
+    if (tokens.length === 1 && _PFTL_GENERIC_TOKENS[val.toLowerCase()]) return false;
+    if (_PFTL_STOP_LABELS[val.toLowerCase()]) return false;
+    if (_pftlIsProse(val)) return false;
+    return true;
+  }
+
+  function _pftlExtractAccountCandidates(extractedText, extractedHeaders) {
+    var candidates = [];
+    var seen = {};
+
+    var lines = (extractedText || '').split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].replace(/^\s+|\s+$/g, '');
+      if (!line) continue;
+      var m = _PFTL_STRICT_LABEL_RE.exec(line);
+      if (m) {
+        var val = m[1].replace(/^\s+|\s+$/g, '').replace(/\s+/g, ' ').replace(/[;:,]+$/, '').replace(/^\s+|\s+$/g, '');
+        if (_pftlIsValidValue(val) && !seen[val.toLowerCase()]) {
+          seen[val.toLowerCase()] = true;
+          candidates.push(val);
+        }
+      }
+    }
+    if (candidates.length > 0) return candidates;
+
+    var hdrs = extractedHeaders || [];
+    for (var h = 0; h < hdrs.length; h++) {
+      var normed = hdrs[h].replace(/^\s+|\s+$/g, '').replace(/\s+/g, ' ').replace(/[;:,]+$/, '').replace(/^\s+|\s+$/g, '');
+      if (!normed || seen[normed.toLowerCase()]) continue;
+      if (_PFTL_STOP_LABELS[normed.toLowerCase()]) continue;
+      if (_PFTL_GENERIC_TOKENS[normed.toLowerCase()]) continue;
+      if (_pftlIsProse(normed)) continue;
+      seen[normed.toLowerCase()] = true;
+      candidates.push(normed);
+    }
+    return candidates.slice(0, 10);
+  }
+
+
+  function _pftlRenderResolutionStory(r) {
+    var story = r.resolution_story;
+    if (!story) return '';
+
+    var html = '<div class="pftl-section rs-story-container">';
+    html += '<div class="pftl-section-title">Entity Resolution Story</div>';
+
+    if (story.new_entry_detected) {
+      html += '<div class="rs-new-entry-banner">';
+      html += '<span class="rs-new-entry-banner-icon">\u26A0</span>';
+      html += '<div>';
+      html += '<span class="rs-badge-new-entry">NEW ENTRY DETECTED</span>';
+      html += '<div class="rs-new-entry-banner-text">Legal entity resolved, but counterparty is not in Salesforce index.</div>';
+      html += '</div></div>';
+    }
+
+    html += _pftlRenderStoryWho(story, r);
+    html += _pftlRenderOnboardingCard(story);
+    html += _pftlRenderStoryWhy(story);
+    html += _pftlRenderStoryWhat(story);
+    html += _pftlRenderStoryAction(story);
+
+    html += '</div>';
+    return html;
+  }
+
+  function _pftlRenderOnboardingCard(story) {
+    if (!story.new_entry_detected) return '';
+    var unresolved = story.unresolved_counterparties || [];
+    var rec = story.onboarding_recommendation;
+    var html = '<div class="rs-onboarding-card">';
+    html += '<div class="rs-onboarding-title">Unresolved Counterparty</div>';
+
+    if (unresolved.length > 0) {
+      html += '<div class="rs-onboarding-row"><span class="rs-onboarding-row-label">Possible Matches:</span>';
+      html += '<div class="rs-unresolved-chips">';
+      for (var i = 0; i < unresolved.length; i++) {
+        html += '<span class="rs-unresolved-chip">' + _pftlEsc(unresolved[i]) + '</span>';
+      }
+      html += '</div></div>';
+    }
+
+    if (rec) {
+      if (rec.suggested_account_type) {
+        html += '<div class="rs-onboarding-row"><span class="rs-onboarding-row-label">Suggested Type:</span><span>' + _pftlEsc(rec.suggested_account_type) + '</span></div>';
+      }
+      if (rec.reason) {
+        html += '<div class="rs-onboarding-row"><span class="rs-onboarding-row-label">Reason:</span><span>' + _pftlEsc(rec.reason) + '</span></div>';
+      }
+    }
+
+    html += '<div class="rs-manual-input-section">';
+    html += '<label class="rs-manual-input-label" for="rs-manual-counterparty">Confirmed Counterparty (Manual)</label>';
+    html += '<input type="text" id="rs-manual-counterparty" class="rs-manual-input" placeholder="" oninput="pftlOnManualCounterpartyInput(this)" />';
+    html += '<div id="rs-manual-counterparty-status" class="rs-manual-status rs-manual-status-empty">Required — type the confirmed counterparty name to proceed.</div>';
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  window.pftlOnManualCounterpartyInput = function(el) {
+    var val = (el.value || '').trim();
+    var statusEl = document.getElementById('rs-manual-counterparty-status');
+    if (!statusEl) return;
+    if (val.length === 0) {
+      statusEl.className = 'rs-manual-status rs-manual-status-empty';
+      statusEl.textContent = 'Required — type the confirmed counterparty name to proceed.';
+    } else if (val.length < 3) {
+      statusEl.className = 'rs-manual-status rs-manual-status-empty';
+      statusEl.textContent = 'Name too short — enter the full entity name.';
+    } else {
+      statusEl.className = 'rs-manual-status rs-manual-status-ok';
+      statusEl.textContent = 'Confirmed: ' + val;
+    }
+    var assigns = _pftlGetAssignments();
+    assigns.manual_counterparty = val.length >= 3 ? val : null;
+    _pftlSaveAssignments();
+  };
+
+  var _pftlAssignmentsStore = {};
+  (function() {
+    try {
+      var saved = sessionStorage.getItem('_pftlAssignmentsStore');
+      if (saved) _pftlAssignmentsStore = JSON.parse(saved);
+    } catch(e) {}
+  })();
+  function _pftlGetRecordKey() {
+    try {
+      var sel = (typeof currentSelection !== 'undefined') ? currentSelection : null;
+      if (sel && sel.joinIdentity) {
+        return 'assign_' + (sel.joinIdentity.contractKey || '') + '_' + (sel.joinIdentity.fileName || '');
+      }
+    } catch(e) {}
+    return 'assign_default';
+  }
+  function _pftlGetAssignments() {
+    var key = _pftlGetRecordKey();
+    if (!_pftlAssignmentsStore[key]) _pftlAssignmentsStore[key] = { legal_entity: null, counterparty: null };
+    return _pftlAssignmentsStore[key];
+  }
+  function _pftlSaveAssignments() {
+    try { sessionStorage.setItem('_pftlAssignmentsStore', JSON.stringify(_pftlAssignmentsStore)); } catch(e) {}
+  }
+
+  function _pftlBuildCandidatePool(story, r) {
+    var pool = [];
+    var seen = {};
+    var sfRows = (r && r.salesforce_match) ? r.salesforce_match : [];
+    for (var i = 0; i < sfRows.length; i++) {
+      var row = sfRows[i];
+      if (!row.visible && row.visible !== undefined) continue;
+      var name = row.suggested_label && row.suggested_label !== '\u2014' ? row.suggested_label : row.source_field;
+      if (!name || seen[name.toLowerCase()]) continue;
+      seen[name.toLowerCase()] = true;
+      var confRaw = row.match_score ? Math.round(row.match_score * 100) : 0;
+      pool.push({
+        name: name,
+        source_field: row.source_field || name,
+        confidence: row.match_score || 0,
+        match_status: row.match_status || 'no-match',
+        identity_confidence_pct: row.identity_confidence_pct != null ? row.identity_confidence_pct : confRaw,
+        context_risk_penalty_pct: row.context_risk_penalty_pct || 0,
+        final_confidence_pct: row.final_confidence_pct != null ? row.final_confidence_pct : confRaw,
+      });
+    }
+    var le = story.legal_entity_account;
+    if (le && !seen[le.name.toLowerCase()]) {
+      seen[le.name.toLowerCase()] = true;
+      pool.push({
+        name: le.name, source_field: le.name,
+        confidence: le.confidence || 0, match_status: le.match_status || 'no-match',
+        identity_confidence_pct: le.identity_confidence_pct, context_risk_penalty_pct: le.context_risk_penalty_pct || 0,
+        final_confidence_pct: le.final_confidence_pct,
+      });
+    }
+    var cps = story.counterparties || [];
+    for (var j = 0; j < cps.length; j++) {
+      if (!seen[cps[j].name.toLowerCase()]) {
+        seen[cps[j].name.toLowerCase()] = true;
+        pool.push({
+          name: cps[j].name, source_field: cps[j].name,
+          confidence: cps[j].confidence || 0, match_status: cps[j].match_status || 'no-match',
+          identity_confidence_pct: cps[j].identity_confidence_pct, context_risk_penalty_pct: cps[j].context_risk_penalty_pct || 0,
+          final_confidence_pct: cps[j].final_confidence_pct,
+        });
+      }
+    }
+    pool.sort(function(a, b) { return b.confidence - a.confidence; });
+    return pool;
+  }
+
+  function _pftlRenderEntityCard(entity, role) {
+    if (!entity) {
+      return '<div class="rs-entity-card rs-entity-empty"><span class="rs-entity-name" style="font-style:italic;color:var(--text-3,#aaa);">\u2014 not assigned \u2014</span></div>';
+    }
+    var confRaw = entity.confidence ? Math.round(entity.confidence * 100) : 0;
+    var identPct = entity.identity_confidence_pct != null ? entity.identity_confidence_pct : confRaw;
+    var penPct = entity.context_risk_penalty_pct || 0;
+    var finalPct = entity.final_confidence_pct != null ? entity.final_confidence_pct : confRaw;
+    var confDisplay = finalPct > 0 ? finalPct + '%' : '\u2014';
+    var statusLabel = entity.match_status === 'match' ? 'Match' : entity.match_status === 'review' ? 'Review' : 'No Match';
+    var cardClass = role === 'legal_entity' ? 'rs-entity-legal' : 'rs-entity-counter';
+    var badgeClass = role === 'legal_entity' ? 'rs-badge-legal' : 'rs-badge-counter';
+    var badgeText = role === 'legal_entity' ? 'Legal Entity' : 'Counterparty';
+    var html = '<div class="rs-entity-card ' + cardClass + '">';
+    html += '<span class="rs-entity-name">' + _pftlEsc(entity.name) + '</span>';
+    html += '<span class="rs-entity-meta">';
+    html += '<span class="rs-badge ' + badgeClass + '">' + badgeText + '</span>';
+    html += '<span class="sm-status-badge ' + (entity.match_status || '') + '">' + statusLabel + '</span>';
+    html += '<span class="rs-entity-conf">' + confDisplay + '</span>';
+    if (penPct > 0) html += '<span style="font-size:0.72em;color:var(--text-3,#999);margin-left:4px;">Identity ' + identPct + '% \u2022 Risk \u2212' + penPct + '%</span>';
+    html += '</span></div>';
+    return html;
+  }
+
+  function _pftlRenderStoryWho(story, r) {
+    var pool = _pftlBuildCandidatePool(story, r);
+    var le = story.legal_entity_account;
+    var cps = story.counterparties || [];
+    var assigns = _pftlGetAssignments();
+    var defaultLe = assigns.legal_entity || (le ? le.name : '');
+    var defaultCp = assigns.counterparty || (cps.length > 0 ? cps[0].name : '');
+    if (!assigns.legal_entity && le) { assigns.legal_entity = le.name; _pftlSaveAssignments(); }
+    if (!assigns.counterparty && cps.length > 0) { assigns.counterparty = cps[0].name; _pftlSaveAssignments(); }
+
+    var html = '<div class="rs-section" id="rs-section-who">';
+    html += '<div class="rs-section-header"><span class="rs-section-icon">A.</span> Who We Think This Is</div>';
+
+    html += '<div class="rs-assign-row" style="margin-bottom:10px;">';
+    html += '<label class="rs-assign-label" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">';
+    html += '<span class="rs-badge rs-badge-legal" style="min-width:100px;text-align:center;">Legal Entity</span>';
+    html += '<select id="rs-assign-legal" class="rs-assign-select" onchange="pftlOnAssignChange(\'legal_entity\')">';
+    html += '<option value="">\u2014 Select Legal Entity \u2014</option>';
+    for (var i = 0; i < pool.length; i++) {
+      var sel = pool[i].name === defaultLe ? ' selected' : '';
+      var pctLabel = pool[i].final_confidence_pct != null ? ' (' + pool[i].final_confidence_pct + '%)' : '';
+      html += '<option value="' + _pftlEsc(pool[i].name) + '"' + sel + '>' + _pftlEsc(pool[i].name) + pctLabel + '</option>';
+    }
+    html += '</select></label>';
+    html += '<div id="rs-card-legal">';
+    var leEntity = null;
+    for (var k = 0; k < pool.length; k++) { if (pool[k].name === defaultLe) { leEntity = pool[k]; break; } }
+    html += _pftlRenderEntityCard(leEntity, 'legal_entity');
+    html += '</div></div>';
+
+    html += '<div class="rs-assign-row">';
+    html += '<label class="rs-assign-label" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">';
+    html += '<span class="rs-badge rs-badge-counter" style="min-width:100px;text-align:center;">Counterparty</span>';
+    html += '<select id="rs-assign-counter" class="rs-assign-select" onchange="pftlOnAssignChange(\'counterparty\')">';
+    html += '<option value="">\u2014 Select Counterparty \u2014</option>';
+    for (var j = 0; j < pool.length; j++) {
+      var sel2 = pool[j].name === defaultCp ? ' selected' : '';
+      var pctLabel2 = pool[j].final_confidence_pct != null ? ' (' + pool[j].final_confidence_pct + '%)' : '';
+      html += '<option value="' + _pftlEsc(pool[j].name) + '"' + sel2 + '>' + _pftlEsc(pool[j].name) + pctLabel2 + '</option>';
+    }
+    html += '</select></label>';
+    html += '<div id="rs-card-counter">';
+    var cpEntity = null;
+    for (var m = 0; m < pool.length; m++) { if (pool[m].name === defaultCp) { cpEntity = pool[m]; break; } }
+    html += _pftlRenderEntityCard(cpEntity, 'counterparty');
+    html += '</div></div>';
+
+    if (story.requires_manual_confirmation) {
+      html += '<div style="margin-top:8px;"><span class="rs-badge rs-badge-manual">Manual Confirmation Required</span></div>';
+    }
+
+    html += '</div>';
+
+    window._pftlCandidatePool = pool;
+    window._pftlCurrentRecordKey = _pftlGetRecordKey();
+
+    return html;
+  }
+
+  window.pftlOnAssignChange = function(role) {
+    var selectId = role === 'legal_entity' ? 'rs-assign-legal' : 'rs-assign-counter';
+    var cardId = role === 'legal_entity' ? 'rs-card-legal' : 'rs-card-counter';
+    var otherRole = role === 'legal_entity' ? 'counterparty' : 'legal_entity';
+    var otherSelectId = role === 'legal_entity' ? 'rs-assign-counter' : 'rs-assign-legal';
+    var sel = document.getElementById(selectId);
+    var cardWrap = document.getElementById(cardId);
+    if (!sel || !cardWrap) return;
+    var chosen = sel.value;
+
+    var otherSel = document.getElementById(otherSelectId);
+    var otherVal = otherSel ? otherSel.value : '';
+    if (chosen && chosen === otherVal) {
+      var warnId = 'rs-assign-warn-' + role;
+      var existing = document.getElementById(warnId);
+      if (!existing) {
+        var warn = document.createElement('div');
+        warn.id = warnId;
+        warn.className = 'rs-assign-warning';
+        warn.textContent = 'Cannot assign same entity to both Legal Entity (CMG-side) and Counterparty (external).';
+        sel.parentNode.appendChild(warn);
+      }
+      var assigns = _pftlGetAssignments();
+      sel.value = assigns[role] || '';
+      console.log('[RS-ASSIGN] BLOCKED duplicate: ' + chosen + ' already assigned as ' + otherRole);
+      return;
+    }
+
+    var warns = document.querySelectorAll('.rs-assign-warning');
+    for (var w = 0; w < warns.length; w++) warns[w].remove();
+
+    var assigns = _pftlGetAssignments();
+    assigns[role] = chosen;
+    _pftlSaveAssignments();
+    var pool = window._pftlCandidatePool || [];
+    var entity = null;
+    for (var i = 0; i < pool.length; i++) {
+      if (pool[i].name === chosen) { entity = pool[i]; break; }
+    }
+    cardWrap.innerHTML = _pftlRenderEntityCard(entity, role);
+    console.log('[RS-ASSIGN] ' + role + ' = ' + (chosen || '(none)'));
+  };
+
+  function _pftlRenderStoryWhy(story) {
+    var steps = story.reasoning_steps || [];
+    if (steps.length === 0) return '';
+
+    var html = '<div class="rs-section">';
+    html += '<div class="rs-section-header"><span class="rs-section-icon">B.</span> Why We Think That</div>';
+    html += '<div class="rs-reasoning-list">';
+    for (var i = 0; i < steps.length; i++) {
+      html += '<div class="rs-reasoning-item">';
+      html += '<span class="rs-reasoning-num">' + (i + 1) + '.</span>';
+      html += '<span>' + _pftlEsc(steps[i]) + '</span>';
+      html += '</div>';
+    }
+    html += '</div></div>';
+    return html;
+  }
+
+  function _pftlRenderStoryWhat(story) {
+    var agType = story.agreement_type_guess || 'unknown';
+    var html = '<div class="rs-section">';
+    html += '<div class="rs-section-header"><span class="rs-section-icon">C.</span> What This Agreement Appears To Be</div>';
+    html += '<div class="rs-agreement-type">' + _pftlEsc(agType === 'unknown' ? 'Unknown Agreement Type' : agType.charAt(0).toUpperCase() + agType.slice(1) + ' Agreement') + '</div>';
+    html += '<div class="rs-agreement-source">(inferred from title + body keywords)</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function _pftlRenderStoryAction(story) {
+    var actions = story.analyst_actions || [];
+    if (actions.length === 0) return '';
+
+    var html = '<div class="rs-section">';
+    html += '<div class="rs-section-header"><span class="rs-section-icon">D.</span> What Needs Analyst Action</div>';
+    for (var i = 0; i < actions.length; i++) {
+      var act = actions[i];
+      var iconClass = 'rs-ok';
+      var iconChar = '\u2713';
+      if (act.indexOf('confirm') >= 0 || act.indexOf('review') >= 0 || act.indexOf('Review') >= 0 || act.indexOf('Confirm') >= 0) {
+        iconClass = 'rs-warn';
+        iconChar = '\u26A0';
+      }
+      if (act.indexOf('Manual') >= 0 || act.indexOf('manual') >= 0) {
+        iconClass = 'rs-alert';
+        iconChar = '\u2716';
+      }
+      if (act.indexOf('no action required') >= 0) {
+        iconClass = 'rs-ok';
+        iconChar = '\u2713';
+      }
+      html += '<div class="rs-action-item">';
+      html += '<span class="rs-action-icon ' + iconClass + '">' + iconChar + '</span>';
+      html += '<span>' + _pftlEsc(act) + '</span>';
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  var _PFTL_CHIP_LABELS = {
+    'name_exact': 'Name Exact', 'name_fuzzy': 'Name Fuzzy',
+    'address_partial': 'Address Partial', 'address_verified': 'Address Verified',
+    'account_context': 'Account Context', 'service_context_penalty': 'Service Penalty',
+    'city_match': 'City Match', 'zip_match': 'ZIP Match'
+  };
+  var _PFTL_CHIP_CLASSES = {
+    'name_exact': 'chip-positive', 'name_fuzzy': 'chip-neutral',
+    'address_partial': 'chip-neutral', 'address_verified': 'chip-positive',
+    'account_context': 'chip-positive', 'service_context_penalty': 'chip-negative',
+    'city_match': 'chip-positive', 'zip_match': 'chip-positive'
+  };
+
+
+  function _pftlRenderOpportunitySpine(r) {
+    var spine = r.opportunity_spine;
+    if (!spine) return '';
+
+    var checks = spine.checks || [];
+    var summary = spine.summary || {};
+    var overall = spine.status || 'review';
+
+    var html = '<div class="pftl-section opp-spine-section">';
+    html += '<div class="pftl-section-title" style="display:flex;align-items:center;gap:8px;">Opportunity Spine';
+    var overallClass = overall === 'pass' ? 'opp-badge-pass' : overall === 'fail' ? 'opp-badge-fail' : 'opp-badge-review';
+    html += ' <span class="opp-overall-badge ' + overallClass + '">' + overall.toUpperCase() + '</span>';
+    html += '</div>';
+
+    html += '<div class="opp-spine-summary">';
+    if (summary.passed > 0) html += '<span class="opp-chip opp-chip-pass">' + summary.passed + ' Passed</span>';
+    if (summary.review > 0) html += '<span class="opp-chip opp-chip-review">' + summary.review + ' Review</span>';
+    if (summary.failed > 0) html += '<span class="opp-chip opp-chip-fail">' + summary.failed + ' Failed</span>';
+    html += '</div>';
+
+    html += '<table class="opp-spine-table"><thead><tr>';
+    html += '<th>Check</th><th>Status</th><th>Value</th><th>Reason</th>';
+    html += '</tr></thead><tbody>';
+
+    for (var i = 0; i < checks.length; i++) {
+      var ck = checks[i];
+      var st = ck.status || 'fail';
+      var badgeClass = st === 'pass' ? 'opp-badge-pass' : st === 'fail' ? 'opp-badge-fail' : 'opp-badge-review';
+      html += '<tr>';
+      html += '<td class="opp-label">' + _pftlEsc(ck.label || ck.code) + '</td>';
+      html += '<td><span class="opp-status-badge ' + badgeClass + '">' + st.toUpperCase() + '</span></td>';
+      var valueCell = ck.value ? _pftlEsc(String(ck.value)) : '\u2014';
+      if (ck.code === 'OPP_CONTRACT_SUBTYPE' && ck.confidence) {
+        valueCell += ' <span class="opp-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
+      }
+      html += '<td class="opp-value">' + valueCell + '</td>';
+      html += '<td class="opp-reason">' + (ck.reason ? _pftlEsc(ck.reason) : '') + '</td>';
+      html += '</tr>';
+
+      if (ck.code === 'OPP_CONTRACT_SUBTYPE' && ck.candidates && ck.candidates.length > 0) {
+        html += '<tr class="opp-subtype-expand-row"><td colspan="4">';
+        html += '<details class="opp-subtype-details">';
+        html += '<summary class="opp-subtype-toggle">Show subtype candidates (' + ck.candidates.length + ')</summary>';
+        html += '<div class="opp-subtype-candidates">';
+        for (var j = 0; j < ck.candidates.length; j++) {
+          var cand = ck.candidates[j];
+          var candBadge = j === 0 ? 'opp-badge-pass' : 'opp-badge-review';
+          html += '<div class="opp-subtype-card">';
+          html += '<span class="opp-subtype-name">' + _pftlEsc(cand.value) + '</span>';
+          html += ' <span class="opp-conf-badge ' + candBadge + '">' + Math.round(cand.confidence * 100) + '%</span>';
+          if (cand.evidence && cand.evidence.length > 0) {
+            html += '<span class="opp-evidence-chips">';
+            for (var e = 0; e < cand.evidence.length; e++) {
+              html += '<span class="opp-evidence-chip">' + _pftlEsc(cand.evidence[e]) + '</span>';
+            }
+            html += '</span>';
+          }
+          html += '</div>';
+        }
+        if (ck.status === 'review') {
+          html += '<div class="opp-analyst-note">Multiple plausible subtypes detected \u2014 analyst confirmation required.</div>';
+        }
+        html += '</div></details>';
+        html += '</td></tr>';
+      }
+    }
+
+    html += '</tbody></table></div>';
+    return html;
+  }
+  function _pftlRenderSfMatchSection(r) {
+    var matches = r.salesforce_match || [];
+    if (matches.length === 0) return '';
+
+    var hasStory = !!(r.resolution_story);
+    var visible = [];
+    var hidden = [];
+    for (var k = 0; k < matches.length; k++) {
+      if (matches[k].visible === false) hidden.push(matches[k]);
+      else visible.push(matches[k]);
+    }
+
+    var html = '';
+    if (hasStory) {
+      html += '<div class="pftl-section pftl-sf-match-section">';
+      html += '<button class="rs-table-toggle" onclick="pftlToggleSfTable()">';
+      html += '<span id="pftl-sf-table-arrow" style="font-size:0.9em;">&#9654;</span>';
+      html += '<span id="pftl-sf-table-label">Show Full Match Table</span>';
+      html += '</button>';
+      html += '<div id="pftl-sf-table-wrap" style="display:none;">';
+    } else {
+      html += '<div class="pftl-section pftl-sf-match-section">';
+    }
+    html += '<div class="pftl-section-title" style="display:flex;align-items:center;gap:8px;">Salesforce Account Match';
+    if (visible.length > 1) html += ' <span style="font-weight:400;font-size:0.85em;opacity:0.7;">(' + visible.length + ' accounts)</span>';
+    html += ' <button onclick="pftlToggleSfDebug()" style="margin-left:auto;font-size:0.72em;padding:2px 8px;border:1px solid var(--border-1,#ddd);border-radius:4px;background:var(--bg-2,#f5f5f5);color:var(--text-2,#888);cursor:pointer;">Debug</button>';
+    html += '</div>';
+    html += '<div class="sync-matrix-wrap"><table class="sync-matrix pftl-sf-table"><thead><tr>';
+    html += '<th>Source Text</th>';
+    html += '<th>Mapped Account</th>';
+    html += '<th>Match Status</th>';
+    html += '<th>Confidence <span style="font-weight:400;font-size:0.72em;opacity:0.6;">(Identity / Final)</span></th>';
+    html += '<th>Evidence</th>';
+    html += '</tr></thead><tbody>';
+
+    for (var i = 0; i < visible.length; i++) {
+      html += _pftlRenderSfRow(visible[i], false);
+    }
+
+    html += '</tbody></table></div>';
+
+    if (hidden.length > 0) {
+      html += '<details class="pftl-hidden-bucket" style="margin-top:8px;">';
+      html += '<summary style="cursor:pointer;font-size:0.82em;color:var(--text-2,#888);padding:4px 0;">';
+      html += hidden.length + ' low-signal candidate' + (hidden.length > 1 ? 's' : '') + ' hidden (service mentions / weak evidence)';
+      html += '</summary>';
+      html += '<div class="sync-matrix-wrap" style="margin-top:4px;"><table class="sync-matrix pftl-sf-table"><tbody>';
+      for (var j = 0; j < hidden.length; j++) {
+        html += _pftlRenderSfRow(hidden[j], true);
+      }
+      html += '</tbody></table></div></details>';
+    }
+
+    if (hasStory) {
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  window.pftlToggleSfTable = function() {
+    var wrap = document.getElementById('pftl-sf-table-wrap');
+    var arrow = document.getElementById('pftl-sf-table-arrow');
+    var label = document.getElementById('pftl-sf-table-label');
+    if (!wrap) return;
+    var isVisible = wrap.style.display !== 'none';
+    wrap.style.display = isVisible ? 'none' : 'block';
+    if (arrow) arrow.innerHTML = isVisible ? '&#9654;' : '&#9660;';
+    if (label) label.textContent = isVisible ? 'Show Full Match Table' : 'Hide Full Match Table';
+  };
+
+  function _pftlRenderSfRow(m, isHidden) {
+    var statusLabel = m.match_status === 'match' ? 'Match' : m.match_status === 'review' ? 'Review' : 'No Match';
+    var identPct = m.identity_confidence_pct != null ? m.identity_confidence_pct : (m.confidence_pct || 0);
+    var finalPct = m.final_confidence_pct != null ? m.final_confidence_pct : (m.confidence_pct || 0);
+    var ctxPenPct = m.context_risk_penalty_pct || 0;
+    var pct = finalPct;
+    var bucket = _smGetConfidenceBucket(identPct);
+    var bucketLabel = bucket === 'high' ? 'HIGH' : bucket === 'med' ? 'MED' : bucket === 'low' ? 'LOW' : '\u2014';
+    var pctText = identPct > 0 ? identPct + '%' : '\u2014';
+
+    var chips = m.evidence_chips || [];
+    if (chips.length === 0) {
+      if (m.match_method && m.match_method !== 'none') {
+        var tierLabels = { 'exact': 'Exact', 'token_overlap': 'Token Overlap', 'edit_distance': 'Edit Distance', 'fuzzy': 'Fuzzy' };
+        chips.push(tierLabels[m.match_method] || m.match_method);
+      }
+    }
+
+    var rowClass = isHidden ? ' style="opacity:0.6;"' : '';
+    var html = '<tr' + rowClass + '>';
+    html += '<td class="sm-source" title="' + _pftlEsc(m.source_field) + '">' + _pftlEsc(m.source_field) + '</td>';
+    html += '<td class="sm-target" title="' + _pftlEsc(m.suggested_label || '') + '">' + _pftlEsc(m.suggested_label || '\u2014') + '</td>';
+    html += '<td><span class="sm-status-badge ' + m.match_status + '">' + statusLabel + '</span></td>';
+    html += '<td><span class="sm-confidence">';
+    html += '<div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.78em;color:var(--text-2,#888);">Identity:</span> <span class="sm-conf-pct">' + (identPct > 0 ? identPct + '%' : '\u2014') + '</span>';
+    if (bucket !== 'none') html += ' <span class="sm-conf-bucket ' + bucket + '">' + bucketLabel + '</span>';
+    html += '</div>';
+    html += '<div style="display:flex;align-items:center;gap:4px;margin-top:2px;"><span style="font-size:0.78em;color:var(--text-2,#888);">Final:</span> <span style="font-weight:600;font-size:0.9em;">' + (finalPct > 0 ? finalPct + '%' : '\u2014') + '</span>';
+    if (ctxPenPct > 0) html += ' <span style="font-size:0.72em;padding:1px 6px;border-radius:8px;background:rgba(251,113,133,0.12);color:var(--bad,#e53935);font-weight:600;">Risk \u2212' + ctxPenPct + '%</span>';
+    html += '</div>';
+    html += '</span></td>';
+    html += '<td><span class="sm-evidence-chips">';
+    for (var ci = 0; ci < chips.length; ci++) {
+      var chipKey = chips[ci];
+      var chipLabel = _PFTL_CHIP_LABELS[chipKey] || chipKey;
+      var chipClass = _PFTL_CHIP_CLASSES[chipKey] || '';
+      html += '<span class="sm-evidence-chip ' + chipClass + '">' + _pftlEsc(chipLabel) + '</span>';
+    }
+    html += '</span></td>';
+    html += '</tr>';
+    var bd = m.scoring_breakdown || {};
+    var srcType = m.source_type || '';
+    var detailParts = [];
+    if (srcType) detailParts.push('source: ' + srcType);
+    if (m.recital_party_hit) detailParts.push('recital_party_hit: true');
+    if (bd.name_evidence !== undefined) detailParts.push('name: ' + (bd.name_evidence || 0).toFixed(3));
+    if (bd.address_evidence !== undefined) detailParts.push('addr: ' + (bd.address_evidence || 0).toFixed(3));
+    if (bd.account_context_evidence !== undefined) detailParts.push('ctx: ' + (bd.account_context_evidence || 0).toFixed(3));
+    if (bd.service_context_penalty !== undefined && bd.service_context_penalty > 0) detailParts.push('svc_pen: -' + (bd.service_context_penalty || 0).toFixed(3));
+    if (detailParts.length > 0) {
+      html += '<tr class="pftl-sf-debug-row" style="display:none;"' + rowClass + '>';
+      html += '<td colspan="5" style="font-size:0.78em;color:var(--text-2,#888);padding:2px 8px;font-family:monospace;">';
+      html += _pftlEsc(detailParts.join(' | '));
+      html += '</td></tr>';
+    }
+    return html;
+  }
+
   function _pftlRenderCorruptionSamples(r) {
     var samples = r.corruption_samples || [];
     if (samples.length === 0) return '';
@@ -56564,6 +57448,13 @@ var P022_RuntimeValidation = {
     _pftlState.result._action_ts = new Date().toISOString();
     if (typeof showToast === 'function') showToast('Escalated to OCR — re-extraction recommended', 'info');
     _pftlRender();
+  };
+
+  window.pftlToggleSfDebug = function() {
+    var rows = document.querySelectorAll('.pftl-sf-debug-row');
+    for (var i = 0; i < rows.length; i++) {
+      rows[i].style.display = rows[i].style.display === 'none' ? '' : 'none';
+    }
   };
 
   window.pftlToggleRaw = function() {
