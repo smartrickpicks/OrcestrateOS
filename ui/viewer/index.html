@@ -2287,6 +2287,33 @@
     html[data-theme="dark"] .rs-table-toggle { background: var(--bg-2); border-color: var(--border-1); color: var(--text-2); }
     html[data-theme="dark"] .rs-table-toggle:hover { background: var(--bg-3); }
 
+    .patch-submit-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+    .patch-submit-modal { background: var(--bg-base, #fff); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); width: 480px; max-width: 95vw; max-height: 85vh; overflow-y: auto; padding: 24px; }
+    .patch-submit-modal-title { font-size: 1.1em; font-weight: 700; color: var(--text-1, #333); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .patch-submit-modal-section { margin-bottom: 16px; }
+    .patch-submit-modal-label { font-size: 0.82em; font-weight: 600; color: var(--text-2, #666); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+    .patch-submit-modal-obs { background: var(--bg-2, #f5f5f5); border: 1px solid var(--border-1, #e0e0e0); border-radius: 6px; padding: 10px 12px; font-size: 0.88em; color: var(--text-1, #333); line-height: 1.5; }
+    .patch-submit-modal-obs-row { display: flex; gap: 8px; padding: 3px 0; }
+    .patch-submit-modal-obs-key { font-weight: 600; color: var(--text-2, #888); min-width: 60px; flex-shrink: 0; }
+    .patch-submit-modal-textarea { width: 100%; min-height: 80px; padding: 10px 12px; border: 1px solid var(--border-1, #ddd); border-radius: 6px; font-size: 0.9em; font-family: inherit; resize: vertical; background: var(--bg-base, #fff); color: var(--text-1, #333); }
+    .patch-submit-modal-textarea:focus { outline: none; border-color: var(--accent-2, #5c6bc0); box-shadow: 0 0 0 2px rgba(92,107,192,0.15); }
+    .patch-submit-modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-1, #e0e0e0); }
+    .patch-submit-modal-btn { padding: 8px 20px; font-size: 0.88em; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; }
+    .patch-submit-modal-btn.primary { background: var(--accent-2, #5c6bc0); color: white; }
+    .patch-submit-modal-btn.primary:hover { opacity: 0.9; }
+    .patch-submit-modal-btn.secondary { background: var(--bg-3, #eee); color: var(--text-2, #666); }
+    .patch-submit-modal-btn.secondary:hover { background: var(--bg-4, #ddd); }
+    .patch-submit-modal-change-list { margin: 0; padding: 0 0 0 16px; font-size: 0.85em; }
+    .patch-submit-modal-change-list li { padding: 2px 0; color: var(--text-1, #333); }
+    .patch-submit-modal-badge { display: inline-flex; padding: 2px 8px; border-radius: 10px; font-size: 0.72em; font-weight: 600; text-transform: uppercase; }
+    .patch-submit-modal-badge.correction { background: var(--accent-2, #5c6bc0); color: white; }
+    .patch-submit-modal-badge.rfi { background: #ff9800; color: white; }
+    .patch-submit-modal-badge.blacklist { background: #f44336; color: white; }
+
+    html[data-theme="dark"] .patch-submit-modal { background: var(--bg-1); }
+    html[data-theme="dark"] .patch-submit-modal-obs { background: var(--bg-2); border-color: var(--border-1); }
+    html[data-theme="dark"] .patch-submit-modal-textarea { background: var(--bg-2); border-color: var(--border-1); color: var(--text-1); }
+
     /* Evidence Viewer — Layout: middle (viewer+details) | right (grid) */
     .ev-inline-wrapper { display: flex; gap: 0; width: 100%; height: calc(100vh - 280px); min-height: 500px; }
     #ev-middle-column { flex: 0 0 48%; max-width: 55%; display: none; flex-direction: column; background: var(--bg-2); border-right: 2px solid var(--border-1); overflow: hidden; }
@@ -14258,8 +14285,9 @@
         return t.from === fromStatus && t.to === toStatus;
       });
       if (!transition) return false;
-      if (role === 'Admin' && transition.roles.includes('Verifier')) return true;
-      return transition.roles.includes(role);
+      var normRole = role ? role.charAt(0).toUpperCase() + role.slice(1).toLowerCase() : '';
+      if (normRole === 'Admin' && transition.roles.includes('Verifier')) return true;
+      return transition.roles.includes(normRole);
     }
     
     function getAuditEventForTransition(fromStatus, toStatus) {
@@ -38808,25 +38836,20 @@
       var patchType = srrState.patchType;
       var changeCount = Object.keys(srrState.proposedChanges).length;
       var draft = srrState.patchDraft;
-      var justification = draft.justification;
 
-      // v1.6.46: Evidence Pack gate (sandbox mode bypasses)
       if (!isDemoMode()) {
         var evidenceGaps = srrCheckEvidenceGate(patchType, draft, changeCount, srrState.overrideEnabled);
         if (evidenceGaps.length > 0) {
           showToast('Missing requirements: ' + evidenceGaps.join(', '), 'warning');
-          console.log('[SRR] Submit blocked — evidence gaps:', evidenceGaps);
           console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'evidence_gaps', gaps: evidenceGaps });
           return;
         }
       }
 
-      // v1.6.46: Preflight gate (sandbox mode bypasses, RFIs bypass)
       if (!isDemoMode() && patchType !== 'rfi') {
         var preflightGaps = srrCheckPreflightGate();
         if (preflightGaps.length > 0) {
           showToast('Missing requirements: ' + preflightGaps.join(', '), 'warning');
-          console.log('[SRR] Submit blocked — preflight gaps:', preflightGaps);
           console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'preflight_gaps', gaps: preflightGaps });
           return;
         }
@@ -38836,27 +38859,112 @@
         var contractBlockers = srrCheckContractPreflightGate();
         if (contractBlockers.length > 0) {
           showToast('Contract has ' + contractBlockers.length + ' unresolved blocker(s): ' + contractBlockers.slice(0, 3).join('; ') + (contractBlockers.length > 3 ? ' (+' + (contractBlockers.length - 3) + ' more)' : ''), 'warning');
-          console.log('[SRR] Submit blocked — contract preflight blockers:', contractBlockers);
           console.log('[PATCHSTUDIO-D12] submit_blocked', { reason: 'contract_blockers', count: contractBlockers.length });
           return;
         }
       }
-      
-      // v1.4.19: Build patch request based on type
+
+      var changes = Object.values(srrState.proposedChanges);
+      _patchModalOpen(patchType, changes, draft.justification || '');
+    }
+
+    function _patchModalOpen(patchType, changes, prefillJustification) {
+      var existing = document.getElementById('patch-submit-modal-root');
+      if (existing) existing.remove();
+
+      var overlay = document.createElement('div');
+      overlay.id = 'patch-submit-modal-root';
+      overlay.className = 'patch-submit-modal-overlay';
+
+      var typeLabel = patchType === 'correction' ? 'Correction' : (patchType === 'blacklist' ? 'Blacklist' : 'RFI');
+      var badgeClass = patchType || 'correction';
+
+      var obsHtml = '';
+      if (changes.length > 0) {
+        obsHtml = '<ul class="patch-submit-modal-change-list">';
+        changes.forEach(function(c) {
+          var fromVal = c.from || '(empty)';
+          var toVal = c.to || '(empty)';
+          obsHtml += '<li><strong>' + _escHtml(c.label || c.field) + ':</strong> ' + _escHtml(fromVal) + ' &rarr; ' + _escHtml(toVal) + '</li>';
+        });
+        obsHtml += '</ul>';
+      } else if (patchType === 'rfi') {
+        obsHtml = '<div style="color:var(--text-2,#888);font-size:0.9em;">Clarification request — no field changes</div>';
+      } else {
+        obsHtml = '<div style="color:var(--text-2,#888);font-size:0.9em;">No field changes</div>';
+      }
+
+      var obsTypeText = '';
+      if (patchType === 'correction' && srrState.patchDraft.observation_type) {
+        var obsMap = {incorrect_value:'Incorrect Value',missing_value:'Missing Value',formatting_issue:'Formatting Issue',duplicate_entry:'Duplicate Entry',inconsistent_data:'Inconsistent Data',override_needed:'Override Needed'};
+        obsTypeText = obsMap[srrState.patchDraft.observation_type] || srrState.patchDraft.observation_type;
+      }
+
+      var modal = document.createElement('div');
+      modal.className = 'patch-submit-modal';
+      modal.innerHTML = '<div class="patch-submit-modal-title">' +
+        '<span>Submit Patch Request</span>' +
+        '<span class="patch-submit-modal-badge ' + badgeClass + '">' + typeLabel + '</span>' +
+        '</div>' +
+        (obsTypeText ? '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Observation</div><div class="patch-submit-modal-obs">' + _escHtml(obsTypeText) + '</div></div>' : '') +
+        '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Changes</div><div class="patch-submit-modal-obs">' + obsHtml + '</div></div>' +
+        '<div class="patch-submit-modal-section"><div class="patch-submit-modal-label">Justification <span style="color:var(--accent-2,#5c6bc0);font-weight:400;text-transform:none;">(required)</span></div>' +
+        '<textarea class="patch-submit-modal-textarea" id="patch-modal-justification" placeholder="Explain why this change is necessary...">' + _escHtml(prefillJustification) + '</textarea></div>' +
+        '<div class="patch-submit-modal-footer">' +
+        '<button class="patch-submit-modal-btn secondary" onclick="_patchModalClose()">Cancel</button>' +
+        '<button class="patch-submit-modal-btn primary" id="patch-modal-confirm-btn" onclick="_patchModalConfirmSubmit()">Confirm Submit</button>' +
+        '</div>';
+
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) _patchModalClose();
+      });
+
+      setTimeout(function() {
+        var ta = document.getElementById('patch-modal-justification');
+        if (ta) ta.focus();
+      }, 100);
+    }
+
+    function _patchModalClose() {
+      var el = document.getElementById('patch-submit-modal-root');
+      if (el) el.remove();
+    }
+
+    function _patchModalConfirmSubmit() {
+      var ta = document.getElementById('patch-modal-justification');
+      var justification = ta ? ta.value.trim() : '';
+      if (!justification) {
+        showToast('Please provide a justification before submitting', 'warning');
+        if (ta) ta.focus();
+        return;
+      }
+      _patchModalClose();
+
+      srrState.patchDraft.justification = justification;
+      var justEl = document.getElementById('srr-justification');
+      if (justEl) justEl.value = justification;
+
+      _srrExecutePatchSubmit(justification);
+    }
+
+    function _srrExecutePatchSubmit(justification) {
+      var patchType = srrState.patchType;
+      var changeCount = Object.keys(srrState.proposedChanges).length;
       var changes = Object.values(srrState.proposedChanges);
       var changeSummary = changes.length > 0 ? changes.map(function(c) {
-        return c.label + ': ' + (c.from || '(empty)') + ' → ' + c.to;
+        return c.label + ': ' + (c.from || '(empty)') + ' \u2192 ' + c.to;
       }).join('; ') : '(no field changes)';
       
       var record = srrState.currentRecord || {};
-      var author = getCurrentUserName();  // v1.6.33: Use logged-in user
+      var author = getCurrentUserName();
       
-      // Determine action type based on patch type
       var actionType = patchType === 'correction' ? 'SET_VALUE' : (patchType === 'blacklist' ? 'BLACKLIST' : 'RFI');
       var whenText = patchType === 'correction' ? 'Field value is incorrect' : 
                      (patchType === 'blacklist' ? 'Value should be blacklisted' : 'Clarification needed');
       
-      // v1.5.2: Get stable record_id from record identity
       var recordId = (record._identity && record._identity.record_id) || record.record_id || record.contract_key || srrState.currentRecordKey;
       var datasetId = (record._identity && record._identity.dataset_id) || IDENTITY_CONTEXT.dataset_id || sessionState.fileName || 'default';
       
@@ -38872,7 +38980,6 @@
       var request = createPatchRequest({
         author: author,
         author_role: currentMode || 'Analyst',
-        // v1.5.2: Include record_id and dataset_id
         record_id: recordId,
         dataset_id: datasetId,
         tenant_id: IDENTITY_CONTEXT.tenant_id,
@@ -38907,12 +39014,9 @@
         role_simulation: getRoleSimAuditMeta()
       });
       
-      // Submit the patch request
       var submittedRequest = submitPatchRequest(request.request_id, author, currentMode || 'Analyst');
       
-      // v1.5.1: Create artifact in artifact store (primary)
       var fieldKey = changes.length > 0 ? changes[0].field : (srrState.rfiField ? srrState.rfiField.key : 'N/A');
-      // v1.5.2: Use stable recordId and datasetId from identity model
       var artifact = createArtifact({
         dataset_id: datasetId,
         record_id: recordId,
@@ -38943,11 +39047,9 @@
         }
       });
       
-      // v1.5.2: Add to verifier queue with proper identity fields
       addVerifierPayload({
         id: artifact.artifact_id,
         type: patchType,
-        // v1.5.2: Use stable record_id and include dataset_id + patch_request_id
         record_id: recordId,
         dataset_id: datasetId,
         patch_request_id: request.request_id,
@@ -39009,34 +39111,25 @@
         }
       }
 
-      // Update local state
       srrState.patchDraft.status = 'Submitted';
       
-      // Update field states based on patch type
       if (patchType === 'correction') {
-        // Correction: Set all modified fields to 'submitted' (clears from To Do)
-        Object.keys(srrState.proposedChanges).forEach(function(fieldKey) {
-          srrState.fieldStates[fieldKey] = 'submitted'; _cacheFieldState(srrState.currentRecordId, fieldKey, 'submitted');
+        Object.keys(srrState.proposedChanges).forEach(function(fk) {
+          srrState.fieldStates[fk] = 'submitted'; _cacheFieldState(srrState.currentRecordId, fk, 'submitted');
         });
       }
-      // v1.5.3 Fix: RFI submit should only clear the selected field, preserve other pending RFIs
       if (patchType === 'rfi') {
-        // Only change the selected field's state, not all rfi_pending fields
         var selectedField = srrState.selectedField || (srrState.rfiField && srrState.rfiField.key ? srrState.rfiField.key : null);
         if (selectedField && srrState.fieldStates[selectedField] === 'rfi_pending') {
           srrState.fieldStates[selectedField] = 'rfi'; _cacheFieldState(srrState.currentRecordId, selectedField, 'rfi');
         }
-        // If specific field from changes, use that
         if (changes.length === 1 && changes[0].field) {
           srrState.fieldStates[changes[0].field] = 'rfi';
         }
       }
-      // Blocked fields stay as 'blocked' (already set when Blacklist clicked)
       
-      // Re-render field list to reflect state changes
       renderSrrFields(srrState.currentRecord);
       
-      // Emit audit events (both uppercase canonical and lowercase alias)
       console.log('[SRR] PATCH_SUBMITTED (' + patchType + '):', request);
       AuditTimeline.emit('PATCH_SUBMITTED', {
         actor_id: author,
@@ -39057,33 +39150,27 @@
       
       console.log('[PATCHSTUDIO-D12] submit_succeeded', { source: 'record_inspector', patchType: patchType, recordId: recordId });
       
-      // Show appropriate toast based on patch type
       if (patchType === 'rfi') {
-        showToast('RFI sent — analyst handoff complete', 'success');
+        showToast('RFI sent \u2014 analyst handoff complete', 'success');
       } else if (patchType === 'blacklist') {
-        showToast('Blacklist submitted — visible in Patch Console', 'success');
+        showToast('Blacklist submitted \u2014 visible in Patch Console', 'success');
       } else {
-        showToast('Patch Request submitted — visible in Patch Console', 'success');
+        showToast('Patch Request submitted \u2014 visible in Patch Console', 'success');
       }
       
-      // Clear scope draft for this record
       var scopeKey = (recordId || '') + ':' + (srrState.currentSheetName || '');
       try { sessionStorage.removeItem('srr_studio_draft_' + scopeKey); } catch(e) {}
       
-      // Persist studio state and rerender
       if (typeof srrStudioPersist === 'function') srrStudioPersist();
       if (typeof srrStudioRender === 'function') srrStudioRender();
       
-      // Reset state after submission
       resetPatchEditorState();
       
-      // Close the patch overlay, returning to field inspector
       srrClosePatchOverlay();
       if (srrCheckAllFieldsCompleted()) {
-        setTimeout(function() { srrAutoAdvance('Patch submitted — all fields addressed'); }, 800);
+        setTimeout(function() { srrAutoAdvance('Patch submitted \u2014 all fields addressed'); }, 800);
       }
     }
-    
     function resetPatchEditorState() {
       // Reset patch draft in srrState
       srrState.patchDraft = {
