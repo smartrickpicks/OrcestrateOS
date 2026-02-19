@@ -14298,6 +14298,7 @@
           requests: patchRequestsStore.requests
         };
         localStorage.setItem(PATCH_REQUESTS_STORAGE_KEY, JSON.stringify(data));
+        if (typeof _invalidatePendingPatchCache === 'function') _invalidatePendingPatchCache();
         return true;
       } catch (e) {
         console.error('Failed to save patch requests:', e);
@@ -28283,6 +28284,11 @@
               if (_norm.display !== String(val)) val = _norm.display;
               var _normTooltip = (_norm.tooltip || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
               
+              var _ppatch = _getPendingPatchForCell(recordId, col);
+              if (_ppatch && _ppatch.new_value !== null && _ppatch.new_value !== undefined) {
+                val = String(_ppatch.new_value);
+              }
+
               var isFirstCol = (col === gridState.visibleColumns[0]);
               var isFileNameCol = col.toLowerCase().includes('file_name');
               var cellContent = String(val);
@@ -28308,7 +28314,7 @@
               var cellClass = isStatusCol ? statusClass : '';
               // v1.6.2: Apply signal-based cell coloring (v1.6.18: pass record)
               var cellStyle = getGridCellStyle(recordId, col, r);
-              var changeInfo = getCellChangeInfo(recordId, col, r); var titlePrefix = changeInfo && CHANGE_TYPE_STYLES[changeInfo.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo.type].label + '] ' : ''; if (!titlePrefix && typeof _getAddrCorrectionTooltip === 'function') { var _acTipP1c = _getAddrCorrectionTooltip(recordId, col); if (_acTipP1c) titlePrefix = _acTipP1c; } var _fullTitle = (_normTooltip ? _normTooltip + ' | ' : '') + titlePrefix + String(val).replace(/"/g, '&quot;'); var _frozenCls = isFirstCol ? ' grid-col-frozen' : ''; return '<td class="' + cellClass + ' truncated' + _frozenCls + '" data-gfield="' + col + '" style="' + cellStyle + '" title="' + _fullTitle + '">' + cellContent + '</td>';
+              var changeInfo = getCellChangeInfo(recordId, col, r); var titlePrefix = changeInfo && CHANGE_TYPE_STYLES[changeInfo.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo.type].label + '] ' : ''; if (_ppatch) { titlePrefix = '[Pending ' + (_ppatch.type === 'rfi' ? 'RFI' : 'Correction') + '] '; } else if (!titlePrefix && typeof _getAddrCorrectionTooltip === 'function') { var _acTipP1c = _getAddrCorrectionTooltip(recordId, col); if (_acTipP1c) titlePrefix = _acTipP1c; } var _fullTitle = (_normTooltip ? _normTooltip + ' | ' : '') + titlePrefix + String(val).replace(/"/g, '&quot;'); var _frozenCls = isFirstCol ? ' grid-col-frozen' : ''; return '<td class="' + cellClass + ' truncated' + _frozenCls + '" data-gfield="' + col + '" style="' + cellStyle + '" title="' + _fullTitle + '">' + cellContent + '</td>';
             }).join('') +
             '</tr>';
         }).join('');
@@ -34677,11 +34683,54 @@
       return { display: s, tooltip: '' };
     }
 
+    var _PENDING_PATCH_STATUSES = { 'Draft': true, 'Submitted': true, 'Needs_Clarification': true, 'Verifier_Responded': true };
+    var _pendingPatchCache = { _ver: 0 };
+
+    function _rebuildPendingPatchCache() {
+      var ver = (typeof patchRequestsStore !== 'undefined' && patchRequestsStore.requests) ? patchRequestsStore.requests.length : 0;
+      if (_pendingPatchCache._ver === ver && _pendingPatchCache._built) return;
+      _pendingPatchCache = { _ver: ver, _built: true };
+      if (!patchRequestsStore || !patchRequestsStore.requests) return;
+      for (var i = 0; i < patchRequestsStore.requests.length; i++) {
+        var pr = patchRequestsStore.requests[i];
+        if (!_PENDING_PATCH_STATUSES[pr.status]) continue;
+        var rid = pr.record_id || (pr.scope && pr.scope.record_id) || '';
+        if (!rid) continue;
+        var changes = pr.proposed_changes || [];
+        for (var j = 0; j < changes.length; j++) {
+          var ch = changes[j];
+          if (!ch.field) continue;
+          var nk = normalizeFieldKey(ch.field);
+          var key = rid + '::' + nk;
+          if (!_pendingPatchCache[key]) {
+            _pendingPatchCache[key] = { new_value: ch.new_value, old_value: ch.old_value, type: pr.type || 'correction', status: pr.status, request_id: pr.request_id };
+          }
+        }
+      }
+    }
+
+    function _getPendingPatchForCell(recordId, fieldKey) {
+      if (typeof currentMode === 'undefined' || (currentMode !== 'analyst' && currentMode !== 'Analyst')) return null;
+      _rebuildPendingPatchCache();
+      var nk = normalizeFieldKey(fieldKey);
+      return _pendingPatchCache[recordId + '::' + nk] || null;
+    }
+
+    function _invalidatePendingPatchCache() {
+      _pendingPatchCache = { _ver: 0 };
+    }
+
     function getGridCellStyle(recordId, fieldKey, record) {
+      var normKey = normalizeFieldKey(fieldKey);
+
+      var pendingPatch = _getPendingPatchForCell(recordId, fieldKey);
+      if (pendingPatch) {
+        return 'background: #FFF3E0; border-left: 3px solid #e65100;';
+      }
+
       if (window._gridVerifiedCells && window._gridVerifiedCells[recordId] && window._gridVerifiedCells[recordId][fieldKey]) {
         return 'background:#e8f5e9;border-left:2px solid #4caf50;';
       }
-      var normKey = normalizeFieldKey(fieldKey);
 
       var fieldState = _getFieldState(recordId, normKey);
       if (fieldState === 'blacklist') return 'background: #ffebee; border-left: 3px solid #c62828;';
