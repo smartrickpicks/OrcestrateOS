@@ -1324,3 +1324,113 @@ class TestResolutionStoryInPreflight:
         r2 = run_preflight(pages)
         assert r1["resolution_story"]["agreement_type_guess"] == r2["resolution_story"]["agreement_type_guess"]
         assert r1["resolution_story"]["requires_manual_confirmation"] == r2["resolution_story"]["requires_manual_confirmation"]
+
+
+class TestNewEntryDetection:
+    def _make_row(self, source_field, match_status="review", confidence=0.50,
+                  source_type="strict_label_value", candidates=None, visible=True,
+                  suggested_label=None):
+        return {
+            "source_field": source_field,
+            "suggested_label": suggested_label or source_field,
+            "match_method": "exact",
+            "match_score": confidence,
+            "name_score": confidence,
+            "confidence_pct": round(confidence * 100),
+            "match_status": match_status,
+            "classification": "matched" if match_status == "match" else "ambiguous",
+            "candidates": candidates or [],
+            "explanation": "",
+            "provider": "cmg_csv_v1",
+            "evidence_chips": [],
+            "scoring_breakdown": {"name_evidence": confidence * 0.55},
+            "visible": visible,
+            "source_type": source_type,
+            "label_value_hit": source_type == "strict_label_value",
+            "recital_party_hit": False,
+        }
+
+    def test_new_entry_detected_unresolved_party(self):
+        from server.preflight_engine import build_resolution_story
+        sf = [
+            self._make_row("Ostereo Limited", match_status="match", confidence=0.92,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division"}]),
+        ]
+        text = "Distribution Agreement\nBETWEEN:\nOstereo Limited\nand\nRK Entertainments Ltd\n\nSome body text here."
+        story = build_resolution_story(sf, text)
+        assert story["new_entry_detected"] is True
+        assert "RK Entertainments Ltd" in story["unresolved_counterparties"]
+        assert any("Create Account" in a for a in story["analyst_actions"])
+        assert story["requires_manual_confirmation"] is True
+
+    def test_new_entry_onboarding_recommendation(self):
+        from server.preflight_engine import build_resolution_story
+        sf = [
+            self._make_row("Ostereo Limited", match_status="match", confidence=0.92,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division"}]),
+        ]
+        text = "Distribution Agreement\nBETWEEN:\nOstereo Limited\nand\nRK Entertainments Ltd\n\nBody."
+        story = build_resolution_story(sf, text)
+        rec = story["onboarding_recommendation"]
+        assert rec is not None
+        assert rec["suggested_account_name"] == "RK Entertainments Ltd"
+        assert rec["suggested_account_type"] == "Record Label"
+        assert rec["reason"] is not None
+
+    def test_no_new_entry_when_counterparty_matched(self):
+        from server.preflight_engine import build_resolution_story
+        sf = [
+            self._make_row("Ostereo Limited", match_status="match", confidence=0.92,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division"}]),
+            self._make_row("1888 Records", match_status="match", confidence=0.85),
+        ]
+        text = "Distribution Agreement\nBETWEEN:\nOstereo Limited\nand\n1888 Records\n\nBody."
+        story = build_resolution_story(sf, text)
+        assert story["new_entry_detected"] is False
+        assert story["unresolved_counterparties"] == []
+        assert story["onboarding_recommendation"] is None
+
+    def test_borne_suppression_no_regression(self):
+        from server.preflight_engine import build_resolution_story
+        sf = [
+            self._make_row("Ostereo Limited", match_status="match", confidence=0.92,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division"}]),
+            self._make_row("Sony Music", match_status="no-match", confidence=0.10),
+        ]
+        text = "Distribution Agreement\nBETWEEN:\nOstereo Limited\nand\nSony Music\n\nBody."
+        story = build_resolution_story(sf, text)
+        assert story["new_entry_detected"] is False
+        assert "Sony Music" not in story.get("unresolved_counterparties", [])
+
+    def test_new_entry_fields_present_in_empty_story(self):
+        from server.preflight_engine import build_resolution_story
+        story = build_resolution_story([], "Some text")
+        assert "new_entry_detected" in story
+        assert story["new_entry_detected"] is False
+        assert "unresolved_counterparties" in story
+        assert story["unresolved_counterparties"] == []
+        assert "onboarding_recommendation" in story
+        assert story["onboarding_recommendation"] is None
+
+    def test_artist_type_when_no_company_markers(self):
+        from server.preflight_engine import build_resolution_story
+        sf = [
+            self._make_row("Ostereo Limited", match_status="match", confidence=0.92,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division"}]),
+        ]
+        text = "Recording Agreement\nBETWEEN:\nOstereo Limited\nand\nJohn Smith\n\nBody text."
+        story = build_resolution_story(sf, text)
+        assert story["new_entry_detected"] is True
+        rec = story["onboarding_recommendation"]
+        assert rec is not None
+        assert rec["suggested_account_type"] == "Artist"
+
+    def test_reasoning_includes_new_entry_step(self):
+        from server.preflight_engine import build_resolution_story
+        sf = [
+            self._make_row("Ostereo Limited", match_status="match", confidence=0.92,
+                           candidates=[{"account_name": "Ostereo Limited", "type": "Division"}]),
+        ]
+        text = "Distribution Agreement\nBETWEEN:\nOstereo Limited\nand\nRK Entertainments Ltd\n\nBody."
+        story = build_resolution_story(sf, text)
+        assert any("new entry detected" in s for s in story["reasoning_steps"])

@@ -669,6 +669,62 @@ def _guess_agreement_type(full_text):
     return best_type
 
 
+_PARTY_ZONE_RE = re.compile(
+    r'(?:(?:BETWEEN|between|By and Between|BY AND BETWEEN|PARTIES|parties)\s*[:\-]?\s*\n?)'
+    r'((?:.*\n){1,10})',
+    re.MULTILINE,
+)
+
+_COMPANY_MARKERS = re.compile(
+    r'\b(?:ltd|limited|inc|incorporated|llc|corp|corporation|gmbh|plc|pty|s\.a\.|sa|bv|ag)\b',
+    re.IGNORECASE,
+)
+
+
+def _extract_recital_parties(full_text):
+    if not full_text:
+        return []
+    parties = []
+    seen = set()
+    for m in _PARTY_ZONE_RE.finditer(full_text):
+        block = m.group(1)
+        for line in block.split("\n"):
+            line = line.strip().strip("()").strip()
+            line = re.sub(r'^\d+[\.\)]\s*', '', line)
+            line = re.sub(r'\s*\(.*?\)\s*$', '', line).strip()
+            line = re.sub(r'^(and|AND|&)\s*', '', line).strip()
+            if not line or len(line) < 3 or len(line) > 120:
+                continue
+            if line.lower() in ("and", "or", "by", "between"):
+                continue
+            if line.lower().startswith(("hereinafter", "the ", "this ", "whereas")):
+                continue
+            norm = line.lower().strip()
+            if norm not in seen:
+                seen.add(norm)
+                parties.append(line)
+    return parties
+
+
+def _build_onboarding_recommendation(name, agreement_type):
+    if not name:
+        return None
+    has_company_marker = bool(_COMPANY_MARKERS.search(name))
+    if agreement_type == "distribution" and has_company_marker:
+        acct_type = "Record Label"
+    elif has_company_marker:
+        acct_type = "Company"
+    else:
+        acct_type = "Artist"
+
+    return {
+        "suggested_account_name": name,
+        "suggested_account_type": acct_type,
+        "suggested_contact_name": None,
+        "reason": f"Extracted from contract party block but not found in Salesforce account index.",
+    }
+
+
 def build_resolution_story(sf_match_results, full_text):
     if not sf_match_results:
         return {
@@ -681,6 +737,9 @@ def build_resolution_story(sf_match_results, full_text):
             "analyst_actions": ["Manual lookup required — no automatic resolution available."],
             "requires_manual_confirmation": True,
             "recital_parties": [],
+            "new_entry_detected": False,
+            "unresolved_counterparties": [],
+            "onboarding_recommendation": None,
         }
 
     try:
@@ -807,6 +866,51 @@ def build_resolution_story(sf_match_results, full_text):
 
     agreement_type = _guess_agreement_type(full_text)
 
+    recital_parties = _extract_recital_parties(full_text)
+
+    new_entry_detected = False
+    unresolved_counterparties = []
+    onboarding_recommendation = None
+
+    if legal_entity is not None and recital_parties:
+        resolved_names_lower = set()
+        if legal_entity:
+            resolved_names_lower.add(legal_entity["name"].lower())
+        for cp in counterparties:
+            resolved_names_lower.add(cp["name"].lower())
+        for sf_row in sf_match_results:
+            if sf_row.get("visible", True):
+                resolved_names_lower.add(sf_row.get("source_field", "").lower())
+                sl = sf_row.get("suggested_label", "")
+                if sl and sl != "\u2014":
+                    resolved_names_lower.add(sl.lower())
+
+        for party_name in recital_parties:
+            party_lower = party_name.lower()
+            if party_lower in _CMG_KNOWN_ALIASES:
+                continue
+            is_resolved = False
+            for rn in resolved_names_lower:
+                if party_lower == rn or party_lower in rn or rn in party_lower:
+                    is_resolved = True
+                    break
+            if not is_resolved:
+                unresolved_counterparties.append(party_name)
+
+        if unresolved_counterparties and not counterparties:
+            new_entry_detected = True
+            first_unresolved = unresolved_counterparties[0]
+            onboarding_recommendation = _build_onboarding_recommendation(
+                first_unresolved, agreement_type
+            )
+            reasoning.append(
+                f'Party "{first_unresolved}" found in contract party block but not matched in Salesforce index — new entry detected.'
+            )
+            actions.append(
+                "New counterparty not found in Salesforce index. Create Account + Contact before proceeding."
+            )
+            requires_manual = True
+
     return {
         "legal_entity_account": legal_entity,
         "counterparties": counterparties,
@@ -816,7 +920,10 @@ def build_resolution_story(sf_match_results, full_text):
         "reasoning_steps": reasoning,
         "analyst_actions": actions,
         "requires_manual_confirmation": requires_manual,
-        "recital_parties": [],
+        "recital_parties": recital_parties,
+        "new_entry_detected": new_entry_detected,
+        "unresolved_counterparties": unresolved_counterparties,
+        "onboarding_recommendation": onboarding_recommendation,
     }
 
 

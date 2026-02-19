@@ -2271,6 +2271,21 @@
     .rs-action-icon.rs-alert { color: var(--bad, #c62828); }
     .rs-table-toggle { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.82em; font-weight: 600; background: var(--bg-2, #f5f5f5); border: 1px solid var(--border-1, #ddd); border-radius: 6px; cursor: pointer; color: var(--text-2, #666); margin-bottom: 8px; }
     .rs-table-toggle:hover { background: var(--bg-3, #eee); }
+    .rs-new-entry-banner { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #fff3e0; border: 1px solid #ffcc80; border-left: 4px solid #ff9800; border-radius: 8px; margin-bottom: 12px; }
+    .rs-new-entry-banner-icon { font-size: 1.3em; flex-shrink: 0; }
+    .rs-new-entry-banner-text { font-size: 0.88em; color: #e65100; line-height: 1.4; }
+    .rs-badge-new-entry { background: #ff9800; color: #fff; padding: 2px 10px; border-radius: 10px; font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    .rs-onboarding-card { background: var(--bg-base, #fff); border: 1px solid #ffcc80; border-left: 4px solid #ff9800; border-radius: 8px; padding: 14px 16px; margin-top: 10px; margin-bottom: 10px; }
+    .rs-onboarding-title { font-size: 0.82em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #e65100; margin-bottom: 10px; }
+    .rs-onboarding-row { display: flex; gap: 8px; padding: 4px 0; font-size: 0.85em; color: var(--text-1, #333); }
+    .rs-onboarding-row-label { font-weight: 600; min-width: 140px; flex-shrink: 0; color: var(--text-2, #666); }
+    .rs-onboarding-readonly { font-size: 0.78em; color: var(--text-3, #aaa); margin-top: 6px; font-style: italic; }
+    html[data-theme="dark"] .rs-new-entry-banner { background: rgba(255,152,0,0.1); border-color: rgba(255,152,0,0.3); border-left-color: #ff9800; }
+    html[data-theme="dark"] .rs-new-entry-banner-text { color: #ffcc80; }
+    html[data-theme="dark"] .rs-onboarding-card { background: var(--bg-1); border-color: rgba(255,152,0,0.3); border-left-color: #ff9800; }
+    html[data-theme="dark"] .rs-onboarding-title { color: #ffcc80; }
+    html[data-theme="dark"] .rs-onboarding-row { color: var(--text-1); }
+    html[data-theme="dark"] .rs-onboarding-row-label { color: var(--text-2); }
 
     html[data-theme="dark"] .rs-section { background: var(--bg-2); border-color: var(--border-1); }
     html[data-theme="dark"] .rs-entity-card { background: var(--bg-1); border-color: var(--border-1); }
@@ -56271,11 +56286,43 @@ var P022_RuntimeValidation = {
     var html = '<div class="pftl-section rs-story-container">';
     html += '<div class="pftl-section-title">Entity Resolution Story</div>';
 
+    if (story.new_entry_detected) {
+      html += '<div class="rs-new-entry-banner">';
+      html += '<span class="rs-new-entry-banner-icon">\u26A0</span>';
+      html += '<div>';
+      html += '<span class="rs-badge-new-entry">NEW ENTRY DETECTED</span>';
+      html += '<div class="rs-new-entry-banner-text">Legal entity resolved, but counterparty is not in Salesforce index.</div>';
+      html += '</div></div>';
+    }
+
     html += _pftlRenderStoryWho(story);
+    html += _pftlRenderOnboardingCard(story);
     html += _pftlRenderStoryWhy(story);
     html += _pftlRenderStoryWhat(story);
     html += _pftlRenderStoryAction(story);
 
+    html += '</div>';
+    return html;
+  }
+
+  function _pftlRenderOnboardingCard(story) {
+    if (!story.new_entry_detected || !story.onboarding_recommendation) return '';
+    var rec = story.onboarding_recommendation;
+    var html = '<div class="rs-onboarding-card">';
+    html += '<div class="rs-onboarding-title">Recommended Onboarding</div>';
+    if (rec.suggested_account_name) {
+      html += '<div class="rs-onboarding-row"><span class="rs-onboarding-row-label">Account Name:</span><span>' + _pftlEsc(rec.suggested_account_name) + '</span></div>';
+    }
+    if (rec.suggested_account_type) {
+      html += '<div class="rs-onboarding-row"><span class="rs-onboarding-row-label">Account Type:</span><span>' + _pftlEsc(rec.suggested_account_type) + '</span></div>';
+    }
+    if (rec.suggested_contact_name) {
+      html += '<div class="rs-onboarding-row"><span class="rs-onboarding-row-label">Contact Name:</span><span>' + _pftlEsc(rec.suggested_contact_name) + '</span></div>';
+    }
+    if (rec.reason) {
+      html += '<div class="rs-onboarding-row"><span class="rs-onboarding-row-label">Reason:</span><span>' + _pftlEsc(rec.reason) + '</span></div>';
+    }
+    html += '<div class="rs-onboarding-readonly">Read-only preview — account creation not yet available.</div>';
     html += '</div>';
     return html;
   }
