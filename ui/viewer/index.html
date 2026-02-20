@@ -2344,8 +2344,10 @@
     .rs-new-entry-banner-icon { font-size: 1.3em; flex-shrink: 0; }
     .rs-new-entry-banner-text { font-size: 0.88em; color: #e65100; line-height: 1.4; }
     .rs-badge-new-entry { background: #ff9800; color: #fff; padding: 2px 10px; border-radius: 10px; font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
-    .rs-onboarding-card { background: var(--bg-base, #fff); border: 1px solid #ffcc80; border-left: 4px solid #ff9800; border-radius: 8px; padding: 14px 16px; margin-top: 10px; margin-bottom: 10px; }
-    .rs-onboarding-title { font-size: 0.82em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #e65100; margin-bottom: 10px; }
+    .rs-onboarding-card { background: var(--bg-base, #fff); border: 1px solid #ffcc80; border-left: 4px solid #ff9800; border-radius: 8px; padding: 8px 12px; margin-top: 10px; margin-bottom: 10px; }
+    .rs-onboarding-title { font-size: 0.82em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #e65100; margin-bottom: 10px; cursor: pointer; list-style: none; }
+    .rs-onboarding-title::-webkit-details-marker { display: none; }
+    .rs-onboarding-body { padding-top: 4px; }
     .rs-onboarding-row { display: flex; gap: 8px; padding: 4px 0; font-size: 0.85em; color: var(--text-1, #333); }
     .rs-onboarding-row-label { font-weight: 600; min-width: 140px; flex-shrink: 0; color: var(--text-2, #666); }
     .rs-onboarding-readonly { font-size: 0.78em; color: var(--text-3, #aaa); margin-top: 6px; font-style: italic; }
@@ -14450,7 +14452,7 @@
           snapshot.contract_classification = pftlResult.contract_classification || null;
           snapshot.analyst_assignments = pftlResult.analyst_assignments || null;
           snapshot.new_entry_detected = !!(
-            (pftlResult.resolution_story && pftlResult.resolution_story.new_entry_detected === true) ||
+            (typeof _pftlHasNewEntrySignal === 'function' && _pftlHasNewEntrySignal(pftlResult.resolution_story)) ||
             (pftlResult.contract_classification && pftlResult.contract_classification.new_entry_detected === true)
           );
           return snapshot;
@@ -14460,7 +14462,7 @@
           snapshot.contract_classification = _pfGateState.result.contract_classification || null;
           snapshot.analyst_assignments = null;
           snapshot.new_entry_detected = !!(
-            (_pfGateState.result.resolution_story && _pfGateState.result.resolution_story.new_entry_detected === true) ||
+            (typeof _pftlHasNewEntrySignal === 'function' && _pftlHasNewEntrySignal(_pfGateState.result.resolution_story)) ||
             (_pfGateState.result.contract_classification && _pfGateState.result.contract_classification.new_entry_detected === true)
           );
           return snapshot;
@@ -56484,14 +56486,23 @@ var P022_RuntimeValidation = {
   }
 
 
+  function _pftlHasNewEntrySignal(story) {
+    if (!story) return false;
+    if (story.new_entry_detected === true) return true;
+    if (Array.isArray(story.unresolved_counterparties) && story.unresolved_counterparties.length > 0) return true;
+    if (Array.isArray(story.counterparties) && story.counterparties.length === 0) return true;
+    return false;
+  }
+
   function _pftlRenderResolutionStory(r) {
     var story = r.resolution_story;
     if (!story) return '';
+    var newEntryDetected = _pftlHasNewEntrySignal(story);
 
     var html = '<div class="pftl-section rs-story-container">';
     html += '<div class="pftl-section-title">Entity Resolution Story</div>';
 
-    if (story.new_entry_detected) {
+    if (newEntryDetected) {
       html += '<div class="rs-new-entry-banner">';
       html += '<span class="rs-new-entry-banner-icon">\u26A0</span>';
       html += '<div>';
@@ -56500,8 +56511,8 @@ var P022_RuntimeValidation = {
       html += '</div></div>';
     }
 
-    html += _pftlRenderStoryWho(story, r);
-    html += _pftlRenderOnboardingCard(story);
+    html += _pftlRenderStoryWho(story, r, newEntryDetected);
+    html += _pftlRenderOnboardingCard(story, newEntryDetected);
     html += _pftlRenderStoryWhy(story);
     html += _pftlRenderStoryWhat(story);
     html += _pftlRenderStoryAction(story);
@@ -56510,11 +56521,12 @@ var P022_RuntimeValidation = {
     return html;
   }
 
-  function _pftlRenderOnboardingCard(story) {
-    if (!story.new_entry_detected) return '';
+  function _pftlRenderOnboardingCard(story, newEntryDetected) {
+    if (!newEntryDetected) return '';
     var unresolved = story.unresolved_counterparties || [];
     var rec = story.onboarding_recommendation;
-    var html = '<div class="rs-onboarding-card">';
+    var html = '<details class="rs-onboarding-card"><summary class="rs-onboarding-title">Unresolved Counterparty Workflow</summary>';
+    html += '<div class="rs-onboarding-body">';
     html += '<div class="rs-onboarding-title">Unresolved Counterparty</div>';
 
     if (unresolved.length > 0) {
@@ -56535,32 +56547,28 @@ var P022_RuntimeValidation = {
       }
     }
 
-    html += '<div class="rs-manual-input-section">';
-    html += '<label class="rs-manual-input-label" for="rs-manual-counterparty">Confirmed Counterparty (Manual)</label>';
-    html += '<input type="text" id="rs-manual-counterparty" class="rs-manual-input" placeholder="" oninput="pftlOnManualCounterpartyInput(this)" />';
-    html += '<div id="rs-manual-counterparty-status" class="rs-manual-status rs-manual-status-empty">Required — type the confirmed counterparty name to proceed.</div>';
-    html += '</div>';
-
-    html += '</div>';
+    html += '</div></details>';
     return html;
   }
 
   window.pftlOnManualCounterpartyInput = function(el) {
     var val = (el.value || '').trim();
     var statusEl = document.getElementById('rs-manual-counterparty-status');
-    if (!statusEl) return;
-    if (val.length === 0) {
-      statusEl.className = 'rs-manual-status rs-manual-status-empty';
-      statusEl.textContent = 'Required — type the confirmed counterparty name to proceed.';
-    } else if (val.length < 3) {
-      statusEl.className = 'rs-manual-status rs-manual-status-empty';
-      statusEl.textContent = 'Name too short — enter the full entity name.';
-    } else {
-      statusEl.className = 'rs-manual-status rs-manual-status-ok';
-      statusEl.textContent = 'Confirmed: ' + val;
+    if (statusEl) {
+      if (val.length === 0) {
+        statusEl.className = 'rs-manual-status rs-manual-status-empty';
+        statusEl.textContent = 'Required — type the confirmed counterparty name to proceed.';
+      } else if (val.length < 3) {
+        statusEl.className = 'rs-manual-status rs-manual-status-empty';
+        statusEl.textContent = 'Name too short — enter the full entity name.';
+      } else {
+        statusEl.className = 'rs-manual-status rs-manual-status-ok';
+        statusEl.textContent = 'Confirmed: ' + val;
+      }
     }
     var assigns = _pftlGetAssignments();
     assigns.manual_counterparty = val.length >= 3 ? val : null;
+    if (assigns.manual_counterparty) assigns.counterparty = assigns.manual_counterparty;
     _pftlSaveAssignments();
   };
 
@@ -56859,15 +56867,16 @@ var P022_RuntimeValidation = {
     return html;
   }
 
-  function _pftlRenderStoryWho(story, r) {
+  function _pftlRenderStoryWho(story, r, newEntryDetected) {
     var pool = _pftlBuildCandidatePool(story, r);
     var le = story.legal_entity_account;
     var cps = story.counterparties || [];
     var assigns = _pftlGetAssignments();
     var defaultLe = assigns.legal_entity || (le ? le.name : '');
-    var defaultCp = assigns.counterparty || (cps.length > 0 ? cps[0].name : '');
+    var defaultCp = assigns.counterparty || (cps.length > 0 ? cps[0].name : (assigns.manual_counterparty || ''));
     if (!assigns.legal_entity && le) { assigns.legal_entity = le.name; _pftlSaveAssignments(); }
     if (!assigns.counterparty && cps.length > 0) { assigns.counterparty = cps[0].name; _pftlSaveAssignments(); }
+    var showCreateCounterparty = newEntryDetected || cps.length === 0;
 
     var html = '<div class="rs-section" id="rs-section-who">';
     html += '<div class="rs-section-header"><span class="rs-section-icon">A.</span> Who We Think This Is</div>';
@@ -56899,12 +56908,32 @@ var P022_RuntimeValidation = {
       var pctLabel2 = pool[j].final_confidence_pct != null ? ' (' + pool[j].final_confidence_pct + '%)' : '';
       html += '<option value="' + _pftlEsc(pool[j].name) + '"' + sel2 + '>' + _pftlEsc(pool[j].name) + pctLabel2 + '</option>';
     }
+    if (showCreateCounterparty) {
+      var createSel = (defaultCp && pool.every(function(p) { return p.name !== defaultCp; })) ? ' selected' : '';
+      html += '<option value="__create_new__"' + createSel + '>+ Create New Counterparty…</option>';
+    }
     html += '</select></label>';
     html += '<div id="rs-card-counter">';
     var cpEntity = null;
     for (var m = 0; m < pool.length; m++) { if (pool[m].name === defaultCp) { cpEntity = pool[m]; break; } }
-    html += _pftlRenderEntityCard(cpEntity, 'counterparty');
+    if (cpEntity) {
+      html += _pftlRenderEntityCard(cpEntity, 'counterparty');
+    } else if (assigns.manual_counterparty) {
+      html += '<div class="rs-entity-card rs-entity-counter"><span class="rs-entity-name">' + _pftlEsc(assigns.manual_counterparty) + '</span><span class="rs-entity-meta"><span class="rs-badge rs-badge-counter">Counterparty</span><span class="rs-badge rs-badge-manual">Manual</span></span></div>';
+    } else {
+      html += _pftlRenderEntityCard(cpEntity, 'counterparty');
+    }
     html += '</div></div>';
+    if (showCreateCounterparty) {
+      var manualPrefill = _pftlEsc(assigns.manual_counterparty || '');
+      var manualVisible = (assigns.manual_counterparty || defaultCp === '__create_new__') ? '' : ' style="display:none;"';
+      html += '<div id="rs-manual-counterparty-inline"' + manualVisible + '>';
+      html += '<div class="rs-manual-input-section">';
+      html += '<label class="rs-manual-input-label" for="rs-manual-counterparty-inline-input">Create Counterparty (Manual)</label>';
+      html += '<input type="text" id="rs-manual-counterparty-inline-input" class="rs-manual-input" value="' + manualPrefill + '" oninput="pftlOnManualCounterpartyInput(this)" />';
+      html += '<div id="rs-manual-counterparty-status" class="rs-manual-status ' + (assigns.manual_counterparty ? 'rs-manual-status-ok' : 'rs-manual-status-empty') + '">' + (assigns.manual_counterparty ? ('Confirmed: ' + manualPrefill) : 'Required — type the confirmed counterparty name to proceed.') + '</div>';
+      html += '</div></div>';
+    }
 
     if (story.requires_manual_confirmation) {
       html += '<div style="margin-top:8px;"><span class="rs-badge rs-badge-manual">Manual Confirmation Required</span></div>';
@@ -56950,8 +56979,19 @@ var P022_RuntimeValidation = {
     for (var w = 0; w < warns.length; w++) warns[w].remove();
 
     var assigns = _pftlGetAssignments();
+    if (role === 'counterparty' && chosen === '__create_new__') {
+      assigns.counterparty = null;
+      _pftlSaveAssignments();
+      var inline = document.getElementById('rs-manual-counterparty-inline');
+      if (inline) inline.style.display = '';
+      cardWrap.innerHTML = '<div class="rs-entity-card rs-entity-empty"><span class="rs-entity-name" style="font-style:italic;color:var(--text-3,#aaa);">Manual counterparty required</span></div>';
+      return;
+    }
     assigns[role] = chosen;
+    if (role === 'counterparty' && chosen) assigns.manual_counterparty = null;
     _pftlSaveAssignments();
+    var inlinePanel = document.getElementById('rs-manual-counterparty-inline');
+    if (inlinePanel && role === 'counterparty') inlinePanel.style.display = 'none';
     var pool = window._pftlCandidatePool || [];
     var entity = null;
     for (var i = 0; i < pool.length; i++) {
