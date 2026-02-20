@@ -27128,7 +27128,7 @@
       cgDownloadContractMd();
     }
 
-    var _cgPageState = { lastOutput: '', lastFileName: '' };
+    var _cgPageState = { lastOutput: '', lastFileName: '', lastMeta: null };
 
     function _cgPageSetStatus(msg, level) {
       var el = document.getElementById('cg-page-status');
@@ -27137,6 +27137,181 @@
       el.textContent = msg || '';
       el.style.background = level === 'success' ? '#e8f5e9' : level === 'warn' ? '#fff3e0' : level === 'error' ? '#ffebee' : '#e3f2fd';
       el.style.color = level === 'success' ? '#2e7d32' : level === 'warn' ? '#e65100' : level === 'error' ? '#c62828' : '#1565c0';
+    }
+
+    var _cgTemplatePackRegistry = {
+      ostereo: {
+        pack_id: 'ostereo_global_standard_v1',
+        version: '1.0.0-pilot',
+        available: {
+          distribution: true,
+          distribution_sync: true,
+          schedule: true,
+          amendment: true,
+          master: true,
+          add_on: true,
+          termination: true
+        }
+      },
+      global_default: {
+        pack_id: 'cmg_global_default_v1',
+        version: '1.0.0-pilot',
+        available: {
+          distribution: true,
+          distribution_sync: true,
+          schedule: true,
+          amendment: true,
+          master: true,
+          add_on: true,
+          termination: true
+        }
+      }
+    };
+
+    function _cgNorm(v) { return _cgSafeText(v).toLowerCase(); }
+    function _cgIsOstereoEntity(entityName) { return _cgNorm(entityName).indexOf('ostereo') >= 0; }
+
+    function _cgTemplateKeyFromContractType(contractType) {
+      var n = _cgNorm(contractType);
+      if (!n) return 'unknown';
+      if (n.indexOf('distribution') >= 0 && n.indexOf('sync') >= 0) return 'distribution_sync';
+      if (n.indexOf('distribution') >= 0) return 'distribution';
+      if (n.indexOf('termination') >= 0) return 'termination';
+      if (n.indexOf('amendment') >= 0) return 'amendment';
+      if (n.indexOf('schedule') >= 0) return 'schedule';
+      if (n.indexOf('add on') >= 0 || n.indexOf('add-on') >= 0 || n.indexOf('addon') >= 0) return 'add_on';
+      if (n.indexOf('master') >= 0) return 'master';
+      return 'unknown';
+    }
+
+    function _cgResolveTemplateMeta(entityName, contractType) {
+      var isOstereo = _cgIsOstereoEntity(entityName);
+      var key = _cgTemplateKeyFromContractType(contractType);
+      var pack = isOstereo ? _cgTemplatePackRegistry.ostereo : _cgTemplatePackRegistry.global_default;
+      var available = !!(pack && pack.available && pack.available[key]);
+      var fallbackUsed = false;
+
+      if (!available && !isOstereo) {
+        var fallback = _cgTemplatePackRegistry.global_default;
+        if (fallback && fallback.available && fallback.available[key]) {
+          pack = fallback;
+          available = true;
+          fallbackUsed = true;
+        }
+      }
+
+      return {
+        key: key,
+        available: available,
+        status_code: available ? 'AVAILABLE' : 'NO_ENTITY_TEMPLATE_AVAILABLE',
+        pack_id: (pack && pack.pack_id) || '',
+        pack_version: (pack && pack.version) || '',
+        fallback_used: fallbackUsed
+      };
+    }
+
+    function _cgBuildContractText(sheetName, row, rowIdx) {
+      var canonicalFields = _cgGetCanonicalFieldsForSheet(sheetName);
+      var checks = _cgComputeIngestionChecks(row, sheetName, canonicalFields);
+
+      var agreementName = _cgResolveRecordName(row) || ('Contract ' + (rowIdx + 1));
+      var effectiveDate = _cgFindValueByHint(row, ['effective_date', 'effective date', 'start_date', 'execution_date']);
+      var partyA = _cgFindValueByHint(row, ['company_name', 'account_name', 'legal_name']);
+      var partyB = _cgFindValueByHint(row, ['artist_name', 'payee', 'contact_name']);
+      var territory = _cgFindValueByHint(row, ['territory']);
+      var term = _cgFindValueByHint(row, ['term', 'duration', 'end_date', 'expiry']);
+      var compensation = _cgFindValueByHint(row, ['fee', 'royalty', 'rate', 'amount', 'payment']);
+      var legalEntity = _cgFindValueByHint(row, ['legal_entity', 'business_unit', 'legal entity']) || 'Unknown';
+      var contractType = _cgFindValueByHint(row, ['contract_type', 'document_type', 'agreement_type', 'contract_subtype']) || 'Unknown';
+      var tmpl = _cgResolveTemplateMeta(legalEntity, contractType);
+      var gate = (window._pfGateState && window._pfGateState.result && window._pfGateState.result.gate_color) || '';
+      var highRiskFamilies = [
+        'Liability / Indemnity',
+        'Governing Law / Jurisdiction / Disputes',
+        'IP Ownership / License / Assignment',
+        'Term / Termination',
+        'Financial Obligations (payment, rates, recoupment, audit)'
+      ];
+
+      var lines = [];
+      lines.push('# Orchestrate OS Canonical Contract Draft');
+      lines.push('');
+      lines.push('- **Generated At:** ' + new Date().toISOString());
+      lines.push('- **Contract Section:** ' + sheetName);
+      lines.push('- **Source Row:** ' + (rowIdx + 1));
+      lines.push('- **Source Of Truth:** reconstructed_json');
+      if (gate) lines.push('- **Preflight Health Score:** ' + gate);
+      lines.push('');
+      lines.push('## Intake Check Summary');
+      lines.push('- Missing Required Fields: **' + checks.missingRequired.length + '**');
+      lines.push('- Invalid Picklist Values: **' + checks.invalidPicklists.length + '**');
+      lines.push('- Unknown Columns In Row: **' + checks.unknownColumns.length + '**');
+      if (checks.missingRequired.length > 0) lines.push('- Missing Fields: ' + checks.missingRequired.join(', '));
+      if (checks.invalidPicklists.length > 0) {
+        for (var ip = 0; ip < checks.invalidPicklists.length; ip++) {
+          lines.push('- Invalid picklist: ' + checks.invalidPicklists[ip].field + ' = "' + checks.invalidPicklists[ip].value + '"');
+        }
+      }
+      lines.push('');
+      lines.push('## Reconstruction Governance');
+      lines.push('- **Legal Entity:** ' + legalEntity);
+      lines.push('- **Contract Type:** ' + contractType);
+      lines.push('- **Template Pack:** ' + (tmpl.pack_id || '[TO_BE_DEFINED]') + ' @ ' + (tmpl.pack_version || '[TO_BE_DEFINED]'));
+      lines.push('- **Template Key:** ' + tmpl.key);
+      lines.push('- **Template Resolution:** ' + tmpl.status_code);
+      if (tmpl.fallback_used) lines.push('- **Fallback:** global_default');
+      if (tmpl.status_code === 'NO_ENTITY_TEMPLATE_AVAILABLE' && _cgIsOstereoEntity(legalEntity)) {
+        lines.push('- **Entity Policy:** `NO_ENTITY_TEMPLATE_AVAILABLE` (Ostereo no-silent-fallback enforced).');
+      }
+      lines.push('');
+      lines.push('## Generated Contract Text');
+      lines.push('- **Agreement Title:** ' + (agreementName || '[TO_BE_DEFINED]'));
+      lines.push('- **Effective Date:** ' + (effectiveDate || '[TO_BE_DEFINED]'));
+      lines.push('- **Party A:** ' + (partyA || '[TO_BE_DEFINED]'));
+      lines.push('- **Party B:** ' + (partyB || '[TO_BE_DEFINED]'));
+      lines.push('');
+      lines.push('### 1. Scope');
+      lines.push('The parties agree to perform services and obligations as captured in the canonical record for this contract section.');
+      lines.push('');
+      lines.push('### 2. Territory');
+      lines.push(territory || '[TO_BE_DEFINED]');
+      lines.push('');
+      lines.push('### 3. Term');
+      lines.push(term || '[TO_BE_DEFINED]');
+      lines.push('');
+      lines.push('### 4. Compensation');
+      lines.push(compensation || '[TO_BE_DEFINED]');
+      lines.push('');
+      lines.push('### 5. Data Integrity');
+      lines.push('This draft is generated from canonical schema-mapped fields in admin sandbox mode.');
+      lines.push('');
+      lines.push('## High-Risk Clause Review Checklist (Ostereo V1)');
+      for (var hr = 0; hr < highRiskFamilies.length; hr++) lines.push('- [ ] ' + highRiskFamilies[hr]);
+      lines.push('- [ ] Reviewer decision recorded (`ACCEPTED` / `MODIFIED_AND_ACCEPTED` / `REJECTED`)');
+      lines.push('');
+      lines.push('## Canonical Field Snapshot');
+      if (canonicalFields.length === 0) {
+        lines.push('(No canonical field metadata loaded for this section.)');
+      } else {
+        for (var cf = 0; cf < canonicalFields.length; cf++) {
+          var meta = canonicalFields[cf];
+          var v = _cgSafeText(row[meta.field_key]);
+          var label = meta.field_label || meta.field_key;
+          lines.push('- **' + label + '** (`' + meta.field_key + '`): ' + (v || '(empty)'));
+        }
+      }
+
+      return {
+        text: lines.join('\n'),
+        meta: {
+          legal_entity: legalEntity,
+          contract_type: contractType,
+          template_key: tmpl.key,
+          template_status_code: tmpl.status_code,
+          template_available: tmpl.available,
+          requires_high_risk_review: true
+        }
+      };
     }
 
     function cgPageInit(forceRefresh) {
@@ -27212,12 +27387,18 @@
         _cgPageSetStatus('Record not found.', 'error');
         return;
       }
-      var text = _cgBuildContractText(sheetName, row, rowIdx);
+      var build = _cgBuildContractText(sheetName, row, rowIdx);
+      var text = (build && build.text) ? build.text : String(build || '');
       out.value = text;
       _cgPageState.lastOutput = text;
+      _cgPageState.lastMeta = (build && build.meta) ? build.meta : null;
       var recName = _cgResolveRecordName(row) || ('row_' + (rowIdx + 1));
       _cgPageState.lastFileName = sheetName.replace(/\s+/g, '_') + '_' + recName.replace(/[^a-zA-Z0-9_-]/g, '_') + '.md';
-      _cgPageSetStatus('Generated ' + text.split('\n').length + ' lines.', 'success');
+      if (_cgPageState.lastMeta && _cgPageState.lastMeta.template_status_code === 'NO_ENTITY_TEMPLATE_AVAILABLE') {
+        _cgPageSetStatus('Generated ' + text.split('\n').length + ' lines. Template status: NO_ENTITY_TEMPLATE_AVAILABLE.', 'warn');
+      } else {
+        _cgPageSetStatus('Generated ' + text.split('\n').length + ' lines.', 'success');
+      }
     }
 
     function cgPageDownload() {
@@ -39191,8 +39372,11 @@
         return ['Document preflight is YELLOW — must Accept Risk or Generate Copy'];
       }
       if (gate === 'RED') {
-        if (window._pfGateState.actionTaken === 'generate_copy' || window._pfGateState.actionTaken === 'escalate_ocr') return [];
-        return ['Document preflight is RED — must Generate Copy'];
+        var hasCopy = (window._pfGateState.actionTaken === 'generate_copy' || window._pfGateState.actionTaken === 'escalate_ocr' || window._pfGateState.actionTaken === 'override_red');
+        var hasOverride = !!(window._pfGateState.redOverride && window._pfGateState.redOverride.approved);
+        if (!hasCopy) return ['Document preflight is RED — must Generate Copy'];
+        if (!hasOverride) return ['Document preflight is RED — reconstruction requested, but red override is required'];
+        return [];
       }
       return ['Unknown preflight gate state'];
     }
@@ -54928,6 +55112,7 @@ var P022_RuntimeValidation = {
     running: false,
     result: null,
     actionTaken: null,
+    redOverride: null,
     adminOnly: true
   };
 
@@ -54936,8 +55121,13 @@ var P022_RuntimeValidation = {
   function _pfGateActionLabel(action) {
     if (action === 'accept_risk') return 'Accept Risk';
     if (action === 'generate_copy') return 'Generate Copy';
+    if (action === 'override_red') return 'Record RED Override';
     if (action === 'escalate_ocr') return 'Escalate OCR';
     return action || 'Action';
+  }
+
+  function _pfGateEsc(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   function _pfGateGetCurrentContext() {
@@ -55088,8 +55278,16 @@ var P022_RuntimeValidation = {
           html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'generate_copy\')">Generate Copy</button>';
         }
       } else if (gate === 'RED') {
-        if (_pfGateState.actionTaken === 'generate_copy' || _pfGateState.actionTaken === 'escalate_ocr') {
-          html += '<span style="font-size:0.82em;color:#c62828;font-weight:500;">Reconstruction copy requested.</span>';
+        var hasCopyAction = (_pfGateState.actionTaken === 'generate_copy' || _pfGateState.actionTaken === 'escalate_ocr' || _pfGateState.actionTaken === 'override_red');
+        var hasRedOverride = !!(_pfGateState.redOverride && _pfGateState.redOverride.approved);
+        if (hasCopyAction && hasRedOverride) {
+          html += '<span style="font-size:0.82em;color:#2e7d32;font-weight:500;">RED override recorded. Preflight unblock complete.</span>';
+          if (_pfGateState.redOverride.reason) {
+            html += '<span style="display:block;font-size:0.76em;color:#546e7a;margin-top:4px;">Reason: ' + _pfGateEsc(_pfGateState.redOverride.reason) + '</span>';
+          }
+        } else if (hasCopyAction) {
+          html += '<button class="pf-gate-btn accept" onclick="pfGateRecordRedOverride()">Record RED Override</button>';
+          html += '<span style="display:block;font-size:0.78em;color:#c62828;margin-top:6px;">Reconstruction requested. RED override still required.</span>';
         } else {
           html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'generate_copy\')">Generate Copy</button>';
           html += '<span style="font-size:0.78em;color:#999;margin-left:8px;">Document quality too low for submission.</span>';
@@ -55115,6 +55313,7 @@ var P022_RuntimeValidation = {
     _pfGateState.running = true;
     _pfGateState.result = null;
     _pfGateState.actionTaken = null;
+    _pfGateState.redOverride = null;
     pfGateRenderPanel();
 
     var headers = {};
@@ -55148,6 +55347,7 @@ var P022_RuntimeValidation = {
     .then(function(data) {
       _pfGateState.running = false;
       _pfGateState.result = data.data || data;
+      _pfGateState.redOverride = (_pfGateState.result && _pfGateState.result.red_override) || null;
       console.log('[PREFLIGHT-GATE] run complete:', _pfGateState.result.gate_color, _pfGateState.result.doc_mode);
       pfGateRenderPanel();
       if (typeof showToast === 'function') {
@@ -55165,7 +55365,7 @@ var P022_RuntimeValidation = {
     });
   };
 
-  window.pfGateAction = function(action) {
+  window.pfGateAction = function(action, extraPayload) {
     var headers = {};
     if (typeof _syncHeaders === 'function') {
       headers = _syncHeaders();
@@ -55178,6 +55378,10 @@ var P022_RuntimeValidation = {
 
     var docId = (_pfGateState.result && _pfGateState.result.doc_id) || '';
     var body = { doc_id: docId, action: action };
+    if (extraPayload && typeof extraPayload === 'object') {
+      var keys = Object.keys(extraPayload);
+      for (var ei = 0; ei < keys.length; ei++) body[keys[ei]] = extraPayload[keys[ei]];
+    }
 
     var baseUrl = window.location.origin;
     fetch(baseUrl + '/api/preflight/action', {
@@ -55194,14 +55398,17 @@ var P022_RuntimeValidation = {
       return resp.json();
     })
     .then(function(data) {
-      _pfGateState.actionTaken = action;
-      if (data.data && data.data.patch_metadata) {
-        _pfGateState.patchMetadata = data.data.patch_metadata;
+      var payload = data.data || {};
+      _pfGateState.actionTaken = payload.action || action;
+      if (payload.patch_metadata) {
+        _pfGateState.patchMetadata = payload.patch_metadata;
       }
+      if (payload.red_override) _pfGateState.redOverride = payload.red_override;
       console.log('[PREFLIGHT-GATE] action complete:', action);
       pfGateRenderPanel();
       if (typeof showToast === 'function') {
         if (action === 'accept_risk') showToast('Risk accepted — submission unlocked', 'info');
+        else if (action === 'override_red') showToast('RED override recorded.', 'success');
         else showToast(_pfGateActionLabel(action) + ' requested', 'info');
       }
       if (action === 'generate_copy' || action === 'escalate_ocr') {
@@ -55212,6 +55419,20 @@ var P022_RuntimeValidation = {
       console.error('[PREFLIGHT-GATE] action error:', err);
       if (typeof showToast === 'function') showToast('Action failed: ' + err.message, 'error');
     });
+  };
+
+  window.pfGateRecordRedOverride = function() {
+    if (!_pfGateState.result || _pfGateState.result.gate_color !== 'RED') {
+      if (typeof showToast === 'function') showToast('RED override is only available for RED preflight.', 'warning');
+      return;
+    }
+    var reason = window.prompt('Enter RED override reason (required):', '');
+    reason = (reason || '').trim();
+    if (!reason) {
+      if (typeof showToast === 'function') showToast('RED override reason is required.', 'warning');
+      return;
+    }
+    pfGateAction('override_red', { reason: reason });
   };
 
   function _pfGateGetRole() {
@@ -55304,6 +55525,7 @@ var P022_RuntimeValidation = {
     _pfGateState.running = true;
     _pfGateState.result = null;
     _pfGateState.actionTaken = null;
+    _pfGateState.redOverride = null;
     if (typeof showToast === 'function') showToast('Running preflight on ' + file.name + '...', 'info');
 
     var panel = document.getElementById('pf-gate-panel');
@@ -55354,6 +55576,7 @@ var P022_RuntimeValidation = {
         _pfGateState.running = false;
         _pfGateState.result = result;
         _pfGateState.actionTaken = null;
+        _pfGateState.redOverride = (result && result.red_override) || null;
         if (typeof pfGateRenderPanel === 'function') pfGateRenderPanel();
         var gateColor = (result.gate_color || 'GREEN').toUpperCase();
         if (gateColor === 'GREEN') {

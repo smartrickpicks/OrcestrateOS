@@ -4,7 +4,7 @@ Preflight API routes for Orchestrate OS.
 POST /api/preflight/run     - Run preflight analysis on a document (URL)
 POST /api/preflight/upload  - Run preflight on uploaded PDF (base64, internal/Test Lab)
 GET  /api/preflight/{doc_id} - Read cached preflight result
-POST /api/preflight/action  - Accept Risk / Generate Copy (internal)
+POST /api/preflight/action  - Accept Risk / Generate Copy / RED Override (internal)
 GET  /api/preflight/export  - Export cached preflight state as prep_export_v0 JSON (minimal)
 POST /api/preflight/export  - Export with client-side OGC/evaluation/operator state merged
 
@@ -367,6 +367,7 @@ def _build_export_payload(cached, ws_id, doc_id, ck, client_state=None):
         "action_timestamp": cached.get("action_timestamp"),
         "action_actor": cached.get("action_actor"),
         "action_health_score": cached.get("action_health_score"),
+        "red_override": cached.get("red_override"),
         "materialized": cached.get("materialized", False),
         "timestamp": cached.get("timestamp"),
     }
@@ -395,6 +396,7 @@ def _build_export_payload(cached, ws_id, doc_id, ck, client_state=None):
         "timestamp": op_client.get("timestamp") or cached.get("action_timestamp"),
         "actor": op_client.get("actor") or cached.get("action_actor"),
         "health_score": op_client.get("health_score") or cached.get("action_health_score"),
+        "red_override": op_client.get("red_override") or cached.get("red_override"),
         "notes": op_client.get("notes"),
         "escalation_metadata": op_client.get("escalation_metadata"),
     }
@@ -575,7 +577,7 @@ async def preflight_action(
     request: Request,
     auth=Depends(require_auth(AuthClass.EITHER)),
 ):
-    """Handle Accept Risk / Generate Copy actions."""
+    """Handle Accept Risk / Generate Copy / RED override actions."""
     if isinstance(auth, JSONResponse):
         return auth
 
@@ -601,6 +603,7 @@ async def preflight_action(
 
     doc_id = body.get("doc_id", "").strip()
     action = body.get("action", "").strip()
+    reason = body.get("reason", "").strip()
     patch_id = body.get("patch_id", "").strip()
 
     if not doc_id or not action:
@@ -609,10 +612,10 @@ async def preflight_action(
             content=error_envelope("VALIDATION_ERROR", "doc_id and action are required"),
         )
 
-    if action not in ("accept_risk", "generate_copy", "escalate_ocr"):
+    if action not in ("accept_risk", "generate_copy", "escalate_ocr", "override_red"):
         return JSONResponse(
             status_code=400,
-            content=error_envelope("VALIDATION_ERROR", "action must be 'accept_risk', 'generate_copy', or 'escalate_ocr'"),
+            content=error_envelope("VALIDATION_ERROR", "action must be 'accept_risk', 'generate_copy', 'escalate_ocr', or 'override_red'"),
         )
 
     ck = _cache_key(ws_id, doc_id)
@@ -630,6 +633,23 @@ async def preflight_action(
             status_code=400,
             content=error_envelope("GATE_BLOCKED", "Cannot accept risk on RED gate. Must generate copy."),
         )
+    if action == "override_red":
+        if gate != "RED":
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("GATE_BLOCKED", "RED override is only valid on RED gate."),
+            )
+        if not reason:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "reason is required for override_red"),
+            )
+        prior_action = cached.get("action_taken")
+        if prior_action not in ("generate_copy", "escalate_ocr", "override_red"):
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("GATE_BLOCKED", "Must request generate_copy before override_red."),
+            )
 
     result = {
         "doc_id": doc_id,
@@ -640,10 +660,27 @@ async def preflight_action(
         "actor_id": auth.user_id,
     }
 
-    cached["action_taken"] = action
-    cached["action_timestamp"] = result["timestamp"]
-    cached["action_actor"] = auth.user_id
-    cached["action_health_score"] = health_score
+    if action == "override_red":
+        red_override = {
+            "approved": True,
+            "reason": reason,
+            "timestamp": result["timestamp"],
+            "actor_id": auth.user_id,
+        }
+        cached["red_override"] = red_override
+        result["red_override"] = red_override
+        if not cached.get("action_taken"):
+            cached["action_taken"] = action
+            cached["action_timestamp"] = result["timestamp"]
+            cached["action_actor"] = auth.user_id
+            cached["action_health_score"] = health_score
+    else:
+        cached["action_taken"] = action
+        cached["action_timestamp"] = result["timestamp"]
+        cached["action_actor"] = auth.user_id
+        cached["action_health_score"] = health_score
+        if "red_override" in cached:
+            result["red_override"] = cached.get("red_override")
 
     if patch_id:
         evidence_pack_id = generate_id("evp_")
@@ -656,6 +693,7 @@ async def preflight_action(
                 "doc_mode": cached.get("doc_mode"),
                 "action": action,
                 "metrics": cached.get("metrics"),
+                "red_override": cached.get("red_override"),
             },
             "system_evidence_pack_id": evidence_pack_id,
         }
@@ -664,5 +702,8 @@ async def preflight_action(
         logger.info("[PREFLIGHT] action=%s doc=%s patch=%s evp=%s", action, doc_id, patch_id, evidence_pack_id)
     else:
         logger.info("[PREFLIGHT] action=%s doc=%s (no patch, cache-only)", action, doc_id)
+
+    if action != "override_red" and cached.get("red_override") is not None:
+        result["red_override"] = cached.get("red_override")
 
     return JSONResponse(status_code=200, content=envelope(result))
