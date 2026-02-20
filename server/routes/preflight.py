@@ -366,6 +366,7 @@ def _build_export_payload(cached, ws_id, doc_id, ck, client_state=None):
         "action_taken": cached.get("action_taken"),
         "action_timestamp": cached.get("action_timestamp"),
         "action_actor": cached.get("action_actor"),
+        "action_health_score": cached.get("action_health_score"),
         "materialized": cached.get("materialized", False),
         "timestamp": cached.get("timestamp"),
     }
@@ -393,6 +394,7 @@ def _build_export_payload(cached, ws_id, doc_id, ck, client_state=None):
         "action": op_client.get("action") or cached.get("action_taken"),
         "timestamp": op_client.get("timestamp") or cached.get("action_timestamp"),
         "actor": op_client.get("actor") or cached.get("action_actor"),
+        "health_score": op_client.get("health_score") or cached.get("action_health_score"),
         "notes": op_client.get("notes"),
         "escalation_metadata": op_client.get("escalation_metadata"),
     }
@@ -622,6 +624,7 @@ async def preflight_action(
         )
 
     gate = cached.get("gate_color", "RED")
+    health_score = cached.get("health_score") or gate
     if action == "accept_risk" and gate == "RED":
         return JSONResponse(
             status_code=400,
@@ -632,6 +635,7 @@ async def preflight_action(
         "doc_id": doc_id,
         "action": action,
         "gate_color": gate,
+        "health_score": health_score,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "actor_id": auth.user_id,
     }
@@ -639,6 +643,7 @@ async def preflight_action(
     cached["action_taken"] = action
     cached["action_timestamp"] = result["timestamp"]
     cached["action_actor"] = auth.user_id
+    cached["action_health_score"] = health_score
 
     if patch_id:
         evidence_pack_id = generate_id("evp_")
@@ -647,6 +652,7 @@ async def preflight_action(
             "preflight_summary": {
                 "doc_id": doc_id,
                 "gate_color": gate,
+                "health_score": health_score,
                 "doc_mode": cached.get("doc_mode"),
                 "action": action,
                 "metrics": cached.get("metrics"),
