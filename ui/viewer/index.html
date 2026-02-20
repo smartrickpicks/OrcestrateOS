@@ -5480,6 +5480,27 @@
               <div style="color: #999; font-size: 0.85em; font-style: italic;">Load a dataset to see available contract sections.</div>
             </div>
           </div>
+          <div class="admin-section" id="admin-contract-generator-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 10px; font-size: 1.1em; color: #333;">Contract Generator (Sandbox)</h3>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 14px;">Generate a canonical contract draft from ingested records and schema checks. Output is plain text for testing.</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+              <div style="min-width: 240px; flex: 1;">
+                <label style="display: block; font-size: 0.78em; color: #666; margin-bottom: 4px;">Contract Section</label>
+                <select id="cg-sheet-select" onchange="cgRefreshRows()" style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85em;"></select>
+              </div>
+              <div style="min-width: 280px; flex: 2;">
+                <label style="display: block; font-size: 0.78em; color: #666; margin-bottom: 4px;">Record</label>
+                <select id="cg-row-select" style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85em;"></select>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+              <button class="toolbar-btn" onclick="cgInitContractGenerator(true)">Refresh</button>
+              <button class="toolbar-btn" onclick="cgGenerateContract()" style="background: #1976d2; color: white;">Generate Text</button>
+              <button class="toolbar-btn" onclick="cgDownloadContractTxt()" style="background: #2e7d32; color: white;">Download .txt</button>
+            </div>
+            <div id="cg-status" style="display: none; margin-bottom: 10px; padding: 8px 10px; border-radius: 6px; font-size: 0.82em;"></div>
+            <textarea id="cg-output-preview" readonly placeholder="Generated contract text will appear here..." style="width: 100%; min-height: 220px; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.82em; font-family: 'Courier New', monospace; box-sizing: border-box; resize: vertical;"></textarea>
+          </div>
         <div class="admin-section" id="batch-merge-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
   <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Merge Batches <span class="info-icon" title="Merge two or more existing batches into a single governance container. Contract IDs remain stable. Tenant rules do NOT auto-inherit.">&#9432;</span></h3>
   <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Combine source batches into a single merged batch. Source batch lineage is preserved read-only. Tenant rules require explicit promotion.</p>
@@ -21848,7 +21869,10 @@
             } else {
               drawerCtx._activeTab = 'edit';
             }
-            if (typeof _gridDrawerRender === 'function') _gridDrawerRender(drawerCtx);
+            if (typeof _gridDrawerRender === 'function') _gridDrawerRender(document.getElementById('grid-patch-drawer'));
+            if (action === 'rfi') {
+              _gridDrawerOpenPatchModal();
+            }
             console.log('[GRID-CONTEXT][P0] patch_preload_success', {
               type: action, record_id: panelResult.context.record_id,
               field_key: panelResult.context.field_key, old_value: panelResult.context.old_value,
@@ -22362,16 +22386,8 @@
       }
 
       if (ctx._pendingEdits.hasOwnProperty(fk) && editCount > 0 && !window._gridModalOpenedForSession) {
-        if (window._gridAutoSwitchTimer) clearTimeout(window._gridAutoSwitchTimer);
-        window._gridAutoSwitchTimer = setTimeout(function() {
-          var cx = window._gridDrawerContext;
-          if (cx && Object.keys(cx._pendingEdits).length > 0 && !window._gridModalOpenedForSession) {
-            var activeEl = document.activeElement;
-            if (activeEl && activeEl.getAttribute && activeEl.getAttribute('data-field')) return;
-            window._gridModalOpenedForSession = true;
-            _gridDrawerOpenPatchModal();
-          }
-        }, 800);
+        window._gridModalOpenedForSession = true;
+        _gridDrawerOpenPatchModal();
       }
 
     }
@@ -22428,6 +22444,7 @@
     function _gridDrawerOpenPatchModal() {
       var ctx = window._gridDrawerContext;
       if (!ctx) { showToast('No context available', 'warning'); return; }
+      window._gridModalOpenedForSession = true;
       var patchType = ctx.patchType || 'correction';
       var pendingEdits = ctx._pendingEdits || {};
       var oldVals = window._gridDrawerOldValues || {};
@@ -26643,6 +26660,9 @@
           if (typeof pftlInit === 'function') pftlInit();
         }
       }
+      if (tabName === 'governance' && typeof cgInitContractGenerator === 'function') {
+        cgInitContractGenerator();
+      }
       
       console.log('[Admin] Switched to tab:', tabName);
 
@@ -26691,6 +26711,319 @@
       setBatchAddEnabled(sheetName, enabled);
       renderBatchAddAdminToggles();
       showToast('Batch Add ' + (enabled ? 'enabled' : 'disabled') + ' for ' + sheetName, 'success');
+    }
+
+    var _cgState = {
+      lastOutput: '',
+      lastFileName: 'contract_draft.txt'
+    };
+
+    function _cgSetStatus(msg, type) {
+      var el = document.getElementById('cg-status');
+      if (!el) return;
+      if (!msg) {
+        el.style.display = 'none';
+        el.textContent = '';
+        return;
+      }
+      var bg = '#e3f2fd';
+      var fg = '#1565c0';
+      var border = '#bbdefb';
+      if (type === 'error') {
+        bg = '#ffebee'; fg = '#c62828'; border = '#ffcdd2';
+      } else if (type === 'warn') {
+        bg = '#fff3e0'; fg = '#e65100'; border = '#ffe0b2';
+      } else if (type === 'success') {
+        bg = '#e8f5e9'; fg = '#2e7d32'; border = '#c8e6c9';
+      }
+      el.style.display = 'block';
+      el.style.background = bg;
+      el.style.color = fg;
+      el.style.border = '1px solid ' + border;
+      el.textContent = msg;
+    }
+
+    function _cgInSandboxMode() {
+      return (typeof isDemoMode === 'function') ? !!isDemoMode() : false;
+    }
+
+    function _cgSafeText(v) {
+      if (v === null || v === undefined) return '';
+      return String(v).trim();
+    }
+
+    function _cgResolveRecordName(row) {
+      if (!row) return '';
+      var keys = [
+        'Contract_Name_c', 'Contract_Name__c', 'Contract_Name', 'contract_name',
+        'Account_Name_c', 'Account_Name__c', 'Account_Name', 'account_name',
+        'Artist_Name_pka_or_dba_c', 'Artist_Name__c', 'Artist_Name',
+        'Company_Name_c', 'Company_Name__c', 'Company_Name',
+        'Name', 'name', 'record_id', 'contract_key'
+      ];
+      for (var i = 0; i < keys.length; i++) {
+        var val = _cgSafeText(row[keys[i]]);
+        if (val) return val;
+      }
+      return '';
+    }
+
+    function _cgGetDataSheetNames() {
+      var sheets = [];
+      if (typeof getDataSheets === 'function') {
+        sheets = getDataSheets() || [];
+      } else if (typeof workbook !== 'undefined' && workbook && workbook.sheets) {
+        sheets = Object.keys(workbook.sheets);
+      }
+      sheets = sheets || [];
+      return sheets.filter(function(name) {
+        if (!name) return false;
+        if (typeof isMetaSheet === 'function' && isMetaSheet(name)) return false;
+        if (typeof isReferenceSheet === 'function' && isReferenceSheet(name)) return false;
+        return true;
+      });
+    }
+
+    function cgInitContractGenerator(forceRefresh) {
+      var sectionEl = document.getElementById('admin-contract-generator-section');
+      if (!sectionEl) return;
+      var isSandbox = _cgInSandboxMode();
+      sectionEl.style.opacity = isSandbox ? '1' : '0.6';
+      var disable = !isSandbox;
+      var controls = sectionEl.querySelectorAll('select,button');
+      for (var ci = 0; ci < controls.length; ci++) controls[ci].disabled = disable;
+      if (!isSandbox) {
+        _cgSetStatus('Contract Generator is sandbox-only. Switch Admin Environment to Sandbox to test.', 'warn');
+        var out = document.getElementById('cg-output-preview');
+        if (out) out.value = '';
+        _cgState.lastOutput = '';
+        return;
+      }
+
+      var sheetSel = document.getElementById('cg-sheet-select');
+      var rowSel = document.getElementById('cg-row-select');
+      if (!sheetSel || !rowSel) return;
+
+      var currentSheet = sheetSel.value || '';
+      var sheets = _cgGetDataSheetNames();
+      if (forceRefresh || sheetSel.options.length === 0) {
+        var html = '';
+        for (var i = 0; i < sheets.length; i++) {
+          var sn = sheets[i];
+          html += '<option value="' + escapeHtml(sn) + '">' + escapeHtml(sn) + '</option>';
+        }
+        sheetSel.innerHTML = html || '<option value="">No contract sections loaded</option>';
+      }
+
+      if (currentSheet) {
+        for (var si = 0; si < sheetSel.options.length; si++) {
+          if (sheetSel.options[si].value === currentSheet) {
+            sheetSel.selectedIndex = si;
+            break;
+          }
+        }
+      }
+      cgRefreshRows();
+      _cgSetStatus('Ready. Select a record and click Generate Text.', 'success');
+    }
+
+    function cgRefreshRows() {
+      var rowSel = document.getElementById('cg-row-select');
+      var sheetSel = document.getElementById('cg-sheet-select');
+      if (!rowSel || !sheetSel) return;
+      var sheetName = sheetSel.value;
+      if (!sheetName || !workbook || !workbook.sheets || !workbook.sheets[sheetName]) {
+        rowSel.innerHTML = '<option value="">No records</option>';
+        return;
+      }
+      var rows = workbook.sheets[sheetName].rows || [];
+      if (rows.length === 0) {
+        rowSel.innerHTML = '<option value="">No records</option>';
+        return;
+      }
+      var html = '';
+      for (var i = 0; i < rows.length; i++) {
+        var rn = _cgResolveRecordName(rows[i]) || ('Row ' + (i + 1));
+        html += '<option value="' + i + '">' + escapeHtml((i + 1) + ' - ' + rn) + '</option>';
+      }
+      rowSel.innerHTML = html;
+    }
+
+    function _cgGetCanonicalFieldsForSheet(sheetName) {
+      if (!rulesBundleCache || !rulesBundleCache.fieldMeta || !rulesBundleCache.fieldMeta.fields) return [];
+      var all = rulesBundleCache.fieldMeta.fields;
+      var out = [];
+      var fallback = [];
+      for (var i = 0; i < all.length; i++) {
+        var f = all[i];
+        if ((f.sheet || '') === sheetName) out.push(f);
+        else if (!f.sheet) fallback.push(f);
+      }
+      return out.length > 0 ? out : fallback;
+    }
+
+    function _cgIsEmptyLike(v) {
+      var s = _cgSafeText(v).toLowerCase();
+      return s === '' || s === 'n/a' || s === 'na' || s === 'null' || s === 'none' || s === '-';
+    }
+
+    function _cgComputeIngestionChecks(row, sheetName, canonicalFields) {
+      var missingRequired = [];
+      var invalidPicklists = [];
+      var canonicalKeys = {};
+      var normalizer = (typeof normalizeFieldKey === 'function') ? normalizeFieldKey : function(v) { return String(v || '').toLowerCase(); };
+      for (var i = 0; i < canonicalFields.length; i++) {
+        var f = canonicalFields[i];
+        canonicalKeys[normalizer(f.field_key)] = true;
+        var val = row[f.field_key];
+        if (f.requiredness === 'required' && _cgIsEmptyLike(val)) {
+          missingRequired.push(f.field_key);
+        }
+        if (f.picklist === true && f.options && f.options.length > 0 && !_cgIsEmptyLike(val)) {
+          var norm = _cgSafeText(val).toLowerCase();
+          var ok = false;
+          for (var oi = 0; oi < f.options.length; oi++) {
+            if (_cgSafeText(f.options[oi]).toLowerCase() === norm) { ok = true; break; }
+          }
+          if (!ok) invalidPicklists.push({ field: f.field_key, value: _cgSafeText(val) });
+        }
+      }
+
+      var unknownCols = [];
+      var keys = Object.keys(row || {});
+      for (var ki = 0; ki < keys.length; ki++) {
+        var k = keys[ki];
+        if (k.charAt(0) === '_') continue;
+        if (typeof _gridIsMetaField === 'function' && _gridIsMetaField(k)) continue;
+        if (!canonicalKeys[normalizer(k)]) unknownCols.push(k);
+      }
+
+      return {
+        missingRequired: missingRequired,
+        invalidPicklists: invalidPicklists,
+        unknownColumns: unknownCols,
+        sheetName: sheetName
+      };
+    }
+
+    function _cgFindValueByHint(row, hints) {
+      var keys = Object.keys(row || {});
+      for (var hi = 0; hi < hints.length; hi++) {
+        var hint = hints[hi];
+        for (var i = 0; i < keys.length; i++) {
+          var k = keys[i];
+          if (k.toLowerCase().indexOf(hint) >= 0) {
+            var val = _cgSafeText(row[k]);
+            if (val) return val;
+          }
+        }
+      }
+      return '';
+    }
+
+    function cgGenerateContract() {
+      if (!_cgInSandboxMode()) {
+        _cgSetStatus('Sandbox mode required for Contract Generator.', 'warn');
+        return;
+      }
+      var sheetSel = document.getElementById('cg-sheet-select');
+      var rowSel = document.getElementById('cg-row-select');
+      var outEl = document.getElementById('cg-output-preview');
+      if (!sheetSel || !rowSel || !outEl) return;
+      var sheetName = sheetSel.value;
+      var rowIdx = parseInt(rowSel.value || '-1', 10);
+      if (!sheetName || isNaN(rowIdx) || rowIdx < 0) {
+        _cgSetStatus('Select a contract section and record first.', 'warn');
+        return;
+      }
+      if (!workbook || !workbook.sheets || !workbook.sheets[sheetName] || !workbook.sheets[sheetName].rows[rowIdx]) {
+        _cgSetStatus('Selected record is no longer available.', 'error');
+        return;
+      }
+      var row = workbook.sheets[sheetName].rows[rowIdx];
+      var canonicalFields = _cgGetCanonicalFieldsForSheet(sheetName);
+      var checks = _cgComputeIngestionChecks(row, sheetName, canonicalFields);
+
+      var agreementName = _cgResolveRecordName(row) || ('Contract ' + (rowIdx + 1));
+      var effectiveDate = _cgFindValueByHint(row, ['effective_date', 'effective date', 'start_date', 'execution_date']);
+      var partyA = _cgFindValueByHint(row, ['company_name', 'account_name', 'legal_name']);
+      var partyB = _cgFindValueByHint(row, ['artist_name', 'payee', 'contact_name']);
+      var territory = _cgFindValueByHint(row, ['territory']);
+      var term = _cgFindValueByHint(row, ['term', 'duration', 'end_date', 'expiry']);
+      var compensation = _cgFindValueByHint(row, ['fee', 'royalty', 'rate', 'amount', 'payment']);
+
+      var lines = [];
+      lines.push('ORCHESTRATE OS - CANONICAL CONTRACT DRAFT');
+      lines.push('Generated At: ' + new Date().toISOString());
+      lines.push('Contract Section: ' + sheetName);
+      lines.push('Source Row: ' + (rowIdx + 1));
+      lines.push('');
+      lines.push('=== INTAKE CHECK SUMMARY ===');
+      lines.push('Missing Required Fields: ' + checks.missingRequired.length);
+      lines.push('Invalid Picklist Values: ' + checks.invalidPicklists.length);
+      lines.push('Unknown Columns In Row: ' + checks.unknownColumns.length);
+      if (checks.missingRequired.length > 0) lines.push('- Missing: ' + checks.missingRequired.join(', '));
+      if (checks.invalidPicklists.length > 0) {
+        for (var ip = 0; ip < checks.invalidPicklists.length; ip++) {
+          lines.push('- Invalid picklist: ' + checks.invalidPicklists[ip].field + ' = "' + checks.invalidPicklists[ip].value + '"');
+        }
+      }
+      lines.push('');
+      lines.push('=== GENERATED CONTRACT TEXT ===');
+      lines.push('Agreement Title: ' + (agreementName || '[TO_BE_DEFINED]'));
+      lines.push('Effective Date: ' + (effectiveDate || '[TO_BE_DEFINED]'));
+      lines.push('Party A: ' + (partyA || '[TO_BE_DEFINED]'));
+      lines.push('Party B: ' + (partyB || '[TO_BE_DEFINED]'));
+      lines.push('');
+      lines.push('1. Scope');
+      lines.push('The parties agree to perform services and obligations as captured in the canonical record for this contract section.');
+      lines.push('');
+      lines.push('2. Territory');
+      lines.push(territory || '[TO_BE_DEFINED]');
+      lines.push('');
+      lines.push('3. Term');
+      lines.push(term || '[TO_BE_DEFINED]');
+      lines.push('');
+      lines.push('4. Compensation');
+      lines.push(compensation || '[TO_BE_DEFINED]');
+      lines.push('');
+      lines.push('5. Data Integrity');
+      lines.push('This draft is generated from canonical schema-mapped fields and is intended for sandbox testing only.');
+      lines.push('');
+      lines.push('=== CANONICAL FIELD SNAPSHOT ===');
+      if (canonicalFields.length === 0) {
+        lines.push('(No canonical field metadata loaded for this section.)');
+      } else {
+        for (var cf = 0; cf < canonicalFields.length; cf++) {
+          var meta = canonicalFields[cf];
+          var v = _cgSafeText(row[meta.field_key]);
+          var label = meta.field_label || meta.field_key;
+          lines.push(label + ' [' + meta.field_key + ']: ' + (v || '(empty)'));
+        }
+      }
+
+      var output = lines.join('\n');
+      outEl.value = output;
+      _cgState.lastOutput = output;
+      _cgState.lastFileName = (sheetName + '_row_' + (rowIdx + 1) + '_contract_draft.txt').replace(/[^a-zA-Z0-9_.-]/g, '_');
+      _cgSetStatus('Contract draft generated. Download the .txt file to test output.', 'success');
+    }
+
+    function cgDownloadContractTxt() {
+      if (!_cgState.lastOutput) {
+        _cgSetStatus('Generate contract text first.', 'warn');
+        return;
+      }
+      var blob = new Blob([_cgState.lastOutput], { type: 'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = _cgState.lastFileName || 'contract_draft.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      _cgSetStatus('Downloaded ' + a.download, 'success');
     }
     
     // ========== ADMIN QUEUE RENDERING (v1.5.1) ==========
@@ -35970,12 +36303,12 @@
           srrCommitEdit(fieldKey, select.value);
         });
         select.addEventListener('blur', function() {
-          // Small delay to allow change event to fire first
+          // Allow change handlers to flush first, then commit immediately.
           setTimeout(function() {
             if (srrState.editingField === fieldKey) {
               srrCommitEdit(fieldKey, select.value);
             }
-          }, 150);
+          }, 0);
         });
       } else {
         // Regular text input
@@ -36054,17 +36387,11 @@
         scheduleAutosave();
 
         if (!window._srrModalOpenedForSession) {
-          if (window._srrAutoModalTimer) clearTimeout(window._srrAutoModalTimer);
-          window._srrAutoModalTimer = setTimeout(function() {
-            if (window._srrModalOpenedForSession) return;
-            var activeEl = document.activeElement;
-            if (activeEl && activeEl.tagName === 'INPUT' && activeEl.closest && activeEl.closest('.srr-field-card')) return;
-            var changes = Object.values(srrState.proposedChanges);
-            if (changes.length > 0) {
-              window._srrModalOpenedForSession = true;
-              _patchModalOpen(srrState.patchType || 'correction', changes, srrState.patchDraft.justification || '');
-            }
-          }, 800);
+          var changes = Object.values(srrState.proposedChanges);
+          if (changes.length > 0) {
+            window._srrModalOpenedForSession = true;
+            _patchModalOpen(srrState.patchType || 'correction', changes, srrState.patchDraft.justification || '');
+          }
         }
       } else {
         srrState.editingField = null;
@@ -38718,6 +39045,7 @@
     function _patchModalOpen(patchType, changes, prefillJustification) {
       var existing = document.getElementById('patch-submit-modal-root');
       if (existing) existing.remove();
+      window._srrModalOpenedForSession = true;
 
       var overlay = document.createElement('div');
       overlay.id = 'patch-submit-modal-root';
@@ -47429,6 +47757,7 @@
       console.log('[EnvMode] Set to:', mode, 'by', loggedInRole);
       applyDemoControlsVisibility();
       if (typeof toolbarPdfPreflightInitVisibility === 'function') toolbarPdfPreflightInitVisibility();
+      if (typeof cgInitContractGenerator === 'function') cgInitContractGenerator(true);
     }
     
     function updateEnvModeUI() {
@@ -47502,6 +47831,7 @@
         sandboxBtn.style.borderColor = isPlayground ? '#4caf50' : '#ccc';
       }
       if (typeof syncPeopleEnvToggle === 'function') syncPeopleEnvToggle();
+      if (typeof cgInitContractGenerator === 'function' && currentAdminTab === 'governance') cgInitContractGenerator();
     }
 
     // Record Drawer functions
