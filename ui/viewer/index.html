@@ -2043,6 +2043,19 @@
     .pf-gate-btn.accept:hover { background: #ffa000; }
     .pf-gate-btn.escalate { background: var(--bad); color: white; }
     .pf-gate-btn.escalate:hover { background: var(--danger); }
+    .pf-gate-btn.generate-copy { background: #6a1b9a; color: white; }
+    .pf-gate-btn.generate-copy:hover { background: #7b1fa2; }
+    .pf-gate-btn.reconstruct { background: #00695c; color: white; }
+    .pf-gate-btn.reconstruct:hover { background: #00796b; }
+    .pf-gate-btn.override-red { background: #b71c1c; color: white; }
+    .pf-gate-btn.override-red:hover { background: #c62828; }
+    .pf-gate-step { display: flex; align-items: center; gap: 6px; font-size: 0.78em; margin-top: 4px; }
+    .pf-gate-step .step-done { color: #2e7d32; font-weight: 600; }
+    .pf-gate-step .step-pending { color: #999; }
+    .pf-gate-step .step-icon { font-size: 1.1em; }
+    .cgb-gate-panel { border: 1px solid var(--border-1, #e0e0e0); border-radius: 8px; padding: 10px; margin-top: 10px; background: var(--bg-2, #fafafa); }
+    .cgb-gate-panel h4 { margin: 0 0 8px; font-size: 0.88em; color: var(--text-2, #455a64); }
+    .cgb-gate-step-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
     .pf-admin-note { font-size: 0.75em; color: var(--text-3); font-style: italic; margin-top: 6px; }
     .pftl-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; }
     .pftl-modal { background: var(--bg-1); border-radius: 12px; width: 90vw; max-width: 960px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
@@ -6321,6 +6334,7 @@
               </div>
               <div id="cgb-preflight-summary" style="border:1px solid #e0e0e0; border-radius:6px; padding:10px; font-size:0.8em; color:#455a64; background:#fafafa;"></div>
             </div>
+            <div class="cgb-gate-panel" id="cgb-gate-status"></div>
             <div style="display:flex; gap:8px; flex-wrap: wrap; margin-bottom: 12px;">
               <button class="toolbar-btn" onclick="cgbAutoFillFromRecord()">Auto Fill</button>
               <button class="toolbar-btn" onclick="cgbGenerateFromBuilder()" style="background:#1976d2; color:white;">Generate Preview</button>
@@ -39180,14 +39194,21 @@
       if (window._pfGateState.adminOnly) return [];
       if (!window._pfGateState.result) return ['Document preflight not run'];
       var gate = window._pfGateState.result.gate_color;
+      var st = window._pfGateState;
       if (gate === 'GREEN') return [];
       if (gate === 'YELLOW') {
-        if (window._pfGateState.actionTaken === 'accept_risk' || window._pfGateState.actionTaken === 'escalate_ocr') return [];
-        return ['Document preflight is YELLOW — must Accept Risk or Escalate OCR'];
+        if (st.actionTaken === 'accept_risk') return [];
+        if (st.generateCopyDone && st.reconstructionCompleteDone) return [];
+        if (st.generateCopyDone && !st.reconstructionCompleteDone) return ['YELLOW: Generate Copy requested — complete reconstruction review'];
+        return ['Document preflight is YELLOW — Accept Risk or Generate Copy required'];
       }
       if (gate === 'RED') {
-        if (window._pfGateState.actionTaken === 'escalate_ocr') return [];
-        return ['Document preflight is RED — must Escalate to OCR'];
+        if (st.generateCopyDone && st.reconstructionCompleteDone && st.overrideRedDone) return [];
+        var missing = [];
+        if (!st.generateCopyDone) missing.push('Generate Copy');
+        if (!st.reconstructionCompleteDone) missing.push('Reconstruction Review');
+        if (!st.overrideRedDone) missing.push('RED Override');
+        return ['RED gate: Still need — ' + missing.join(', ')];
       }
       return ['Unknown preflight gate state'];
     }
@@ -49090,6 +49111,7 @@
       if (!cgbState.initialized) cgbAutoFillFromRecord();
       else cgbGenerateFromBuilder();
       cgbState.initialized = true;
+      if (typeof cgbRenderGateStatus === 'function') cgbRenderGateStatus();
     }
 
     function cgbRefreshRows() {
@@ -49500,7 +49522,114 @@
       URL.revokeObjectURL(url);
       showToast('Downloaded ' + a.download, 'success');
     }
-    
+
+    window.cgPageMarkReconstructionComplete = function() {
+      if (!window._pfGateState) {
+        if (typeof showToast === 'function') showToast('Preflight gate not initialized', 'warning');
+        return;
+      }
+      if (!window._pfGateState.generateCopyDone) {
+        if (typeof showToast === 'function') showToast('Must request Generate Copy before marking reconstruction complete', 'warning');
+        return;
+      }
+      var decisions = [];
+      var sections = cgbState.sections || {};
+      var govFields = cgbState.governedFieldValues || {};
+      Object.keys(sections).forEach(function(key) {
+        var val = sections[key] || '';
+        if (val.trim()) {
+          decisions.push({ section: key, status: 'REVIEWED', note: val.substring(0, 200) });
+        }
+      });
+      Object.keys(govFields).forEach(function(key) {
+        var val = govFields[key];
+        if (val && val.toString().trim()) {
+          decisions.push({ field: key, status: 'CONFIRMED', value: val.toString().substring(0, 100) });
+        }
+      });
+      if (decisions.length === 0) {
+        decisions.push({ section: 'general', status: 'REVIEWED', note: 'Builder review completed' });
+      }
+      var fallbackNote = '';
+      var templateType = cgbState.templateType || '';
+      if (templateType === 'NO_ENTITY_TEMPLATE_AVAILABLE' || !templateType) {
+        fallbackNote = 'No entity template available — manual review completed for ' + (cgbState.whoWhere.counterpartyName || 'unknown party');
+      }
+      var reconstructionReview = {
+        decisions: decisions,
+        reviewed_at: new Date().toISOString(),
+        reviewer: (typeof _eiGetUserId === 'function' ? _eiGetUserId() : 'unknown'),
+        template_type: templateType,
+        counterparty: cgbState.whoWhere.counterpartyName || '',
+        legal_entity: cgbState.legalEntity || ''
+      };
+      if (fallbackNote) reconstructionReview.fallback_note = fallbackNote;
+      pfGateAction('reconstruction_complete', { reconstruction_review: reconstructionReview })
+        .then(function() {
+          cgbRenderGateStatus();
+        })
+        .catch(function(err) {
+          console.error('[CGB] reconstruction_complete failed:', err);
+        });
+    };
+
+    window.cgbRenderGateStatus = function() {
+      var wrap = document.getElementById('cgb-gate-status');
+      if (!wrap) return;
+      var st = window._pfGateState;
+      if (!st || !st.result) {
+        wrap.innerHTML = '<div style="font-size:0.8em;color:#999;">No preflight result. Run preflight from the Evidence Viewer first.</div>';
+        return;
+      }
+      var gate = st.result.gate_color || 'GREEN';
+      var html = '<h4>Gate: <span style="color:' + (gate === 'GREEN' ? '#2e7d32' : gate === 'YELLOW' ? '#f57f17' : '#c62828') + ';">' + gate + '</span></h4>';
+      html += '<div class="cgb-gate-step-list">';
+      if (gate === 'GREEN') {
+        html += '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">All checks passed</span></div>';
+      } else if (gate === 'YELLOW') {
+        if (st.actionTaken === 'accept_risk') {
+          html += '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">Risk Accepted — Unlocked</span></div>';
+        } else {
+          html += _cgbGateStepHtml('Generate Copy', st.generateCopyDone);
+          html += _cgbGateStepHtml('Reconstruction Complete', st.reconstructionCompleteDone);
+          var yellowUnlocked = st.generateCopyDone && st.reconstructionCompleteDone;
+          if (yellowUnlocked) {
+            html += '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">Submission Unlocked</span></div>';
+          }
+        }
+      } else if (gate === 'RED') {
+        html += _cgbGateStepHtml('Generate Copy', st.generateCopyDone);
+        html += _cgbGateStepHtml('Reconstruction Complete', st.reconstructionCompleteDone);
+        html += _cgbGateStepHtml('RED Override', st.overrideRedDone);
+        var redUnlocked = st.generateCopyDone && st.reconstructionCompleteDone && st.overrideRedDone;
+        if (redUnlocked) {
+          html += '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">Submission Unlocked</span></div>';
+        }
+      }
+      html += '</div>';
+      html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">';
+      if (gate === 'YELLOW' && !st.actionTaken && !st.generateCopyDone) {
+        html += '<button class="pf-gate-btn accept" onclick="pfGateAction(\x27accept_risk\x27).then(function(){cgbRenderGateStatus()})">Accept Risk</button>';
+        html += '<button class="pf-gate-btn generate-copy" onclick="pfGateAction(\x27generate_copy\x27).then(function(){cgbRenderGateStatus()})">Generate Copy</button>';
+      }
+      if (gate === 'RED' && !st.generateCopyDone) {
+        html += '<button class="pf-gate-btn generate-copy" onclick="pfGateAction(\x27generate_copy\x27).then(function(){cgbRenderGateStatus()})">Generate Copy</button>';
+      }
+      if (gate !== 'GREEN' && st.generateCopyDone && !st.reconstructionCompleteDone) {
+        html += '<button class="pf-gate-btn reconstruct" onclick="cgPageMarkReconstructionComplete()">Mark Reconstruction Complete</button>';
+      }
+      if (gate === 'RED' && st.generateCopyDone && st.reconstructionCompleteDone && !st.overrideRedDone) {
+        html += '<button class="pf-gate-btn override-red" onclick="pfGateAction(\x27override_red\x27).then(function(){cgbRenderGateStatus()})">Record RED Override</button>';
+      }
+      html += '</div>';
+      wrap.innerHTML = html;
+    };
+
+    function _cgbGateStepHtml(label, done) {
+      if (done) return '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">' + label + '</span></div>';
+      return '<div class="pf-gate-step"><span class="step-icon step-pending">&#9675;</span><span class="step-pending">' + label + '</span></div>';
+    }
+
     function closeConfigFlows() {
       document.getElementById('config-flows-drawer').classList.remove('active');
       masterEditMode = false;
@@ -56030,7 +56159,11 @@ var P022_RuntimeValidation = {
     running: false,
     result: null,
     actionTaken: null,
-    adminOnly: true
+    adminOnly: true,
+    generateCopyDone: false,
+    reconstructionCompleteDone: false,
+    overrideRedDone: false,
+    reconstructionReview: null
   };
 
   window._pfGateState = _pfGateState;
@@ -56110,22 +56243,44 @@ var P022_RuntimeValidation = {
       }
 
       var gate = r.gate_color || 'GREEN';
-      html += '<div class="pf-gate-actions">';
+      html += '<div class="pf-gate-actions" style="flex-direction:column;">';
       if (gate === 'GREEN') {
         html += '<span style="font-size:0.82em;color:#2e7d32;font-weight:500;">All checks passed. Ready to submit.</span>';
       } else if (gate === 'YELLOW') {
-        if (_pfGateState.actionTaken) {
-          html += '<span style="font-size:0.82em;color:#f57f17;font-weight:500;">Risk accepted. Submission unlocked.</span>';
+        var yrUnlocked = _pfGateState.actionTaken === 'accept_risk' || (_pfGateState.generateCopyDone && _pfGateState.reconstructionCompleteDone);
+        if (yrUnlocked) {
+          var yrMethod = _pfGateState.actionTaken === 'accept_risk' ? 'Risk accepted' : 'Reconstruction complete';
+          html += '<span style="font-size:0.82em;color:#2e7d32;font-weight:500;">' + yrMethod + '. Submission unlocked.</span>';
+        } else if (_pfGateState.generateCopyDone && !_pfGateState.reconstructionCompleteDone) {
+          html += '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">Generate Copy requested</span></div>';
+          html += '<div style="display:flex;gap:8px;margin-top:6px;">';
+          html += '<button class="pf-gate-btn reconstruct" onclick="cgPageMarkReconstructionComplete()">Mark Reconstruction Complete</button>';
+          html += '</div>';
         } else {
+          html += '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
           html += '<button class="pf-gate-btn accept" onclick="pfGateAction(\'accept_risk\')">Accept Risk</button>';
-          html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'escalate_ocr\')">Escalate to OCR</button>';
+          html += '<button class="pf-gate-btn generate-copy" onclick="pfGateAction(\'generate_copy\')">Generate Copy</button>';
+          html += '</div>';
+          html += '<div style="font-size:0.74em;color:#888;margin-top:4px;">Accept Risk unlocks immediately. Generate Copy requires reconstruction review.</div>';
         }
       } else if (gate === 'RED') {
-        if (_pfGateState.actionTaken === 'escalate_ocr') {
-          html += '<span style="font-size:0.82em;color:#c62828;font-weight:500;">OCR escalation requested.</span>';
+        if (_pfGateState.generateCopyDone && _pfGateState.reconstructionCompleteDone && _pfGateState.overrideRedDone) {
+          html += '<span style="font-size:0.82em;color:#c62828;font-weight:500;">RED override applied. Submission unlocked.</span>';
+        } else if (_pfGateState.generateCopyDone && _pfGateState.reconstructionCompleteDone && !_pfGateState.overrideRedDone) {
+          html += '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">Generate Copy</span></div>';
+          html += '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">Reconstruction Complete</span></div>';
+          html += '<div style="display:flex;gap:8px;margin-top:6px;">';
+          html += '<button class="pf-gate-btn override-red" onclick="pfGateAction(\'override_red\')">Record RED Override</button>';
+          html += '</div>';
+        } else if (_pfGateState.generateCopyDone && !_pfGateState.reconstructionCompleteDone) {
+          html += '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">Generate Copy requested</span></div>';
+          html += '<div style="display:flex;gap:8px;margin-top:6px;">';
+          html += '<button class="pf-gate-btn reconstruct" onclick="cgPageMarkReconstructionComplete()">Mark Reconstruction Complete</button>';
+          html += '</div>';
+          html += '<div style="font-size:0.74em;color:#999;margin-top:4px;">After reconstruction: RED override required.</div>';
         } else {
-          html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'escalate_ocr\')">Escalate to OCR</button>';
-          html += '<span style="font-size:0.78em;color:#999;margin-left:8px;">Document quality too low for submission.</span>';
+          html += '<button class="pf-gate-btn generate-copy" onclick="pfGateAction(\'generate_copy\')">Generate Copy</button>';
+          html += '<div style="font-size:0.74em;color:#999;margin-top:4px;">RED gate: Generate Copy + Reconstruction + Override required.</div>';
         }
       }
       html += '</div>';
@@ -56148,6 +56303,10 @@ var P022_RuntimeValidation = {
     _pfGateState.running = true;
     _pfGateState.result = null;
     _pfGateState.actionTaken = null;
+    _pfGateState.generateCopyDone = false;
+    _pfGateState.reconstructionCompleteDone = false;
+    _pfGateState.overrideRedDone = false;
+    _pfGateState.reconstructionReview = null;
     pfGateRenderPanel();
 
     var headers = {};
@@ -56198,49 +56357,72 @@ var P022_RuntimeValidation = {
     });
   };
 
-  window.pfGateAction = function(action) {
-    var headers = {};
-    if (typeof _syncHeaders === 'function') {
-      headers = _syncHeaders();
-    } else {
-      headers = { 'Content-Type': 'application/json' };
-      var wsId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : '';
-      if (wsId) headers['X-Workspace-Id'] = wsId;
-      if (typeof _authToken !== 'undefined' && _authToken) headers['Authorization'] = 'Bearer ' + _authToken;
-    }
+  window.pfGateAction = function(action, extraPayload) {
+    return new Promise(function(resolve, reject) {
+      var headers = {};
+      if (typeof _syncHeaders === 'function') {
+        headers = _syncHeaders();
+      } else {
+        headers = { 'Content-Type': 'application/json' };
+        var wsId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : '';
+        if (wsId) headers['X-Workspace-Id'] = wsId;
+        if (typeof _authToken !== 'undefined' && _authToken) headers['Authorization'] = 'Bearer ' + _authToken;
+      }
 
-    var docId = (_pfGateState.result && _pfGateState.result.doc_id) || '';
-    var body = { doc_id: docId, action: action };
+      var docId = (_pfGateState.result && _pfGateState.result.doc_id) || '';
+      var body = { doc_id: docId, action: action };
+      if (extraPayload && typeof extraPayload === 'object') {
+        Object.keys(extraPayload).forEach(function(k) { body[k] = extraPayload[k]; });
+      }
 
-    var baseUrl = window.location.origin;
-    fetch(baseUrl + '/api/preflight/action', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(body)
-    })
-    .then(function(resp) {
-      if (!resp.ok) {
-        return resp.json().then(function(err) {
-          throw new Error((err.error && err.error.message) || 'HTTP ' + resp.status);
+      var baseUrl = window.location.origin;
+      fetch(baseUrl + '/api/preflight/action', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(body)
+      })
+      .then(function(resp) {
+        if (!resp.ok) {
+          return resp.json().then(function(err) {
+            throw new Error((err.error && err.error.message) || 'HTTP ' + resp.status);
+          });
+        }
+        return resp.json();
+      })
+      .then(function(data) {
+        _pfGateState.actionTaken = action;
+        if (data.data && data.data.patch_metadata) {
+          _pfGateState.patchMetadata = data.data.patch_metadata;
+        }
+        if (action === 'generate_copy') _pfGateState.generateCopyDone = true;
+        if (action === 'reconstruction_complete') {
+          _pfGateState.reconstructionCompleteDone = true;
+          if (extraPayload && extraPayload.reconstruction_review) {
+            _pfGateState.reconstructionReview = extraPayload.reconstruction_review;
+          }
+        }
+        if (action === 'override_red') _pfGateState.overrideRedDone = true;
+        console.log('[PREFLIGHT-GATE] action complete:', action, 'state:', {
+          generateCopy: _pfGateState.generateCopyDone,
+          reconstruction: _pfGateState.reconstructionCompleteDone,
+          overrideRed: _pfGateState.overrideRedDone
         });
-      }
-      return resp.json();
-    })
-    .then(function(data) {
-      _pfGateState.actionTaken = action;
-      if (data.data && data.data.patch_metadata) {
-        _pfGateState.patchMetadata = data.data.patch_metadata;
-      }
-      console.log('[PREFLIGHT-GATE] action complete:', action);
-      pfGateRenderPanel();
-      if (typeof showToast === 'function') {
-        if (action === 'accept_risk') showToast('Risk accepted — submission unlocked', 'info');
-        else showToast('OCR escalation requested', 'info');
-      }
-    })
-    .catch(function(err) {
-      console.error('[PREFLIGHT-GATE] action error:', err);
-      if (typeof showToast === 'function') showToast('Action failed: ' + err.message, 'error');
+        pfGateRenderPanel();
+        if (typeof cgbRenderGateStatus === 'function') cgbRenderGateStatus();
+        if (typeof showToast === 'function') {
+          if (action === 'accept_risk') showToast('Risk accepted — submission unlocked', 'info');
+          else if (action === 'generate_copy') showToast('Generate copy requested — complete reconstruction review to proceed', 'info');
+          else if (action === 'reconstruction_complete') showToast('Reconstruction review marked complete', 'success');
+          else if (action === 'override_red') showToast('RED override recorded — submission unlocked', 'warning');
+          else if (action === 'escalate_ocr') showToast('OCR escalation requested', 'info');
+        }
+        resolve(data);
+      })
+      .catch(function(err) {
+        console.error('[PREFLIGHT-GATE] action error:', err);
+        if (typeof showToast === 'function') showToast('Action failed: ' + err.message, 'error');
+        reject(err);
+      });
     });
   };
 
