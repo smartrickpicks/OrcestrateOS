@@ -362,6 +362,7 @@ def run_preflight(pages_data):
     resolution_story = build_resolution_story(sf_match, full_text)
     opportunity_spine = build_opportunity_spine(full_text, resolution_story)
     schedule_structure = build_schedule_structure(full_text, resolution_story, opportunity_spine)
+    financials_readiness = build_financials_readiness(full_text, opportunity_spine, schedule_structure)
 
     return {
         "doc_mode": doc_mode,
@@ -373,6 +374,7 @@ def run_preflight(pages_data):
         "resolution_story": resolution_story,
         "opportunity_spine": opportunity_spine,
         "schedule_structure": schedule_structure,
+        "financials_readiness": financials_readiness,
         "page_classifications": page_results,
         "extracted_text": full_text[:50000],
         "extracted_headers": extracted_headers,
@@ -1296,6 +1298,123 @@ def build_schedule_structure(full_text, resolution_story, opportunity_spine):
     review = sum(1 for c in checks if c["status"] == "review")
     failed = sum(1 for c in checks if c["status"] == "fail")
     has_critical_fail = any(c["status"] == "fail" and c["code"] in _SCH_CRITICAL_CHECKS for c in checks)
+
+    if has_critical_fail:
+        overall = "fail"
+    elif failed > 0 or review > 0:
+        overall = "review"
+    else:
+        overall = "pass"
+
+    return {
+        "status": overall,
+        "checks": checks,
+        "summary": {"passed": passed, "review": review, "failed": failed},
+    }
+
+
+_FIN_REVENUE_MODEL_KEYWORDS = [
+    "revenue share", "revenue split", "net receipts", "gross receipts", "royalty",
+    "for digital distribution", "for synch licenses", "sync revenue", "synch revenue",
+]
+
+_FIN_PAYMENT_TIMING_KEYWORDS = [
+    "within", "days", "payment", "payable", "invoice", "statement", "quarterly", "monthly",
+]
+
+_FIN_THRESHOLD_KEYWORDS = [
+    "threshold", "recoup", "minimum guarantee", "mg", "streams", "trigger", "milestone",
+]
+
+
+def _extract_fin_revenue_model(full_text):
+    if not full_text:
+        return {"status": "fail", "confidence": 0.0, "value": None, "reason": "No text available"}
+    text = full_text.lower()
+    hits = [k for k in _FIN_REVENUE_MODEL_KEYWORDS if k in text]
+    if len(hits) >= 2:
+        return {"status": "pass", "confidence": 0.85, "value": "Revenue model detected", "reason": f"Revenue-share language detected ({len(hits)} hits)", "evidence": hits[:5]}
+    if len(hits) == 1:
+        return {"status": "review", "confidence": 0.55, "value": "Partial revenue model", "reason": "Single revenue marker detected; verify financial rows", "evidence": hits}
+    return {"status": "fail", "confidence": 0.0, "value": None, "reason": "No revenue model markers detected", "evidence": []}
+
+
+def _extract_fin_split_signals(full_text):
+    if not full_text:
+        return {"status": "fail", "confidence": 0.0, "value": None, "reason": "No text available"}
+    pct_matches = re.findall(r'(\d{1,3})\s*%', full_text)
+    valid = []
+    for p in pct_matches:
+        try:
+            n = int(p)
+        except ValueError:
+            continue
+        if 1 <= n <= 100:
+            valid.append(n)
+    if len(valid) >= 2:
+        shown = ", ".join(f"{v}%" for v in valid[:4])
+        return {"status": "pass", "confidence": 0.9, "value": shown, "reason": f"Multiple split percentages detected ({len(valid)})", "splits": valid[:10]}
+    if len(valid) == 1:
+        return {"status": "review", "confidence": 0.6, "value": f"{valid[0]}%", "reason": "Single split percentage detected; verify additional financial terms", "splits": valid}
+    return {"status": "fail", "confidence": 0.0, "value": None, "reason": "No split percentages detected", "splits": []}
+
+
+def _extract_fin_payment_timing(full_text):
+    if not full_text:
+        return {"status": "fail", "confidence": 0.0, "value": None, "reason": "No text available"}
+    text = full_text.lower()
+    hits = [k for k in _FIN_PAYMENT_TIMING_KEYWORDS if k in text]
+    day_matches = re.findall(r'within\s+(\d{1,3})\s+days', text)
+    if day_matches:
+        return {"status": "pass", "confidence": 0.85, "value": f"within {day_matches[0]} days", "reason": "Payment timing clause detected", "evidence": [f"within {d} days" for d in day_matches[:3]]}
+    if len(hits) >= 2:
+        return {"status": "review", "confidence": 0.55, "value": "Timing language present", "reason": "Payment/statement language found without explicit day window", "evidence": hits[:5]}
+    return {"status": "review", "confidence": 0.35, "value": None, "reason": "No explicit payment timing detected", "evidence": []}
+
+
+def _extract_fin_thresholds(full_text):
+    if not full_text:
+        return {"status": "review", "confidence": 0.0, "value": None, "reason": "No text available"}
+    text = full_text.lower()
+    hits = [k for k in _FIN_THRESHOLD_KEYWORDS if k in text]
+    if len(hits) >= 2:
+        return {"status": "pass", "confidence": 0.8, "value": "Threshold/recoup terms detected", "reason": f"Threshold markers found ({len(hits)} hits)", "evidence": hits[:5]}
+    if len(hits) == 1:
+        return {"status": "review", "confidence": 0.5, "value": hits[0], "reason": "Single threshold marker detected; verify if Financial threshold row is needed", "evidence": hits}
+    return {"status": "review", "confidence": 0.3, "value": None, "reason": "No threshold/recoup markers detected", "evidence": []}
+
+
+def _check_financials_alignment(opportunity_spine, schedule_structure):
+    ctype = (_opp_check_value(opportunity_spine, "OPP_CONTRACT_TYPE") or "").lower()
+    sch_type = None
+    if schedule_structure:
+        for ck in schedule_structure.get("checks", []):
+            if ck.get("code") == "SCH_TYPE":
+                sch_type = (ck.get("value") or "").lower()
+                break
+    if "distribution" in ctype and sch_type and "distro" in sch_type:
+        return {"status": "pass", "confidence": 0.8, "value": "Distribution + schedule aligned", "reason": "Contract type and schedule type imply financial split rows are expected"}
+    if "termination" in ctype:
+        return {"status": "review", "confidence": 0.5, "value": "Termination flow", "reason": "Financial rows may be limited to final settlement terms"}
+    return {"status": "review", "confidence": 0.45, "value": "Partial alignment", "reason": "Verify Financial rows against selected opportunity subtype and schedule type"}
+
+
+_FIN_CRITICAL_CHECKS = {"FIN_REVENUE_MODEL", "FIN_SPLIT_SIGNALS"}
+
+
+def build_financials_readiness(full_text, opportunity_spine, schedule_structure):
+    checks = [
+        {"code": "FIN_REVENUE_MODEL", "label": "Revenue Model", **_extract_fin_revenue_model(full_text)},
+        {"code": "FIN_SPLIT_SIGNALS", "label": "Split Signals", **_extract_fin_split_signals(full_text)},
+        {"code": "FIN_PAYMENT_TIMING", "label": "Payment Timing", **_extract_fin_payment_timing(full_text)},
+        {"code": "FIN_THRESHOLDS", "label": "Threshold/Recoup Signals", **_extract_fin_thresholds(full_text)},
+        {"code": "FIN_ALIGNMENT", "label": "Opportunity/Schedule Alignment", **_check_financials_alignment(opportunity_spine, schedule_structure)},
+    ]
+
+    passed = sum(1 for c in checks if c["status"] == "pass")
+    review = sum(1 for c in checks if c["status"] == "review")
+    failed = sum(1 for c in checks if c["status"] == "fail")
+    has_critical_fail = any(c["status"] == "fail" and c["code"] in _FIN_CRITICAL_CHECKS for c in checks)
 
     if has_critical_fail:
         overall = "fail"
