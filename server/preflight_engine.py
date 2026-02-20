@@ -24,6 +24,8 @@ import hashlib
 import logging
 import re
 
+from server.preflight_rules import classify_contract, get_expected_schedule_types, get_schedule_type_priority
+
 logger = logging.getLogger(__name__)
 
 PAGE_CHARS_MIN_SEARCHABLE = 50
@@ -364,6 +366,8 @@ def run_preflight(pages_data):
     schedule_structure = build_schedule_structure(full_text, resolution_story, opportunity_spine)
     financials_readiness = build_financials_readiness(full_text, opportunity_spine, schedule_structure)
     v2_addons_readiness = build_v2_addons_readiness(full_text, opportunity_spine)
+    contract_type_val = _opp_check_value(opportunity_spine, "OPP_CONTRACT_TYPE")
+    contract_classification = classify_contract(contract_type_val, full_text)
 
     return {
         "doc_mode": doc_mode,
@@ -377,6 +381,7 @@ def run_preflight(pages_data):
         "schedule_structure": schedule_structure,
         "financials_readiness": financials_readiness,
         "v2_addons_readiness": v2_addons_readiness,
+        "contract_classification": contract_classification,
         "page_classifications": page_results,
         "extracted_text": full_text[:50000],
         "extracted_headers": extracted_headers,
@@ -1022,6 +1027,15 @@ _SCHEDULE_TYPE_KEYWORDS = {
     ],
 }
 
+_SCHEDULE_TYPE_RAW_TO_DISPLAY = {
+    "distro_sync_existing_masters": "Distro & Sync - Existing Masters",
+    "catalog_acquisition_masters": "Catalog Acquisition - Masters",
+    "termination_schedule": "Termination Schedule",
+    "general_schedule": "General Schedule",
+}
+
+_SCHEDULE_TYPE_DISPLAY_TO_RAW = {v: k for k, v in _SCHEDULE_TYPE_RAW_TO_DISPLAY.items()}
+
 _OWNERSHIP_KEYWORDS = [
     "master ownership", "composition ownership", "asset owner",
     "acquired", "ownership split", "split", "rights ownership",
@@ -1078,7 +1092,7 @@ def _extract_schedule_presence(full_text, opportunity_spine):
     return {"status": "fail", "confidence": 0.0, "value": None, "reason": "No schedule/exhibit markers detected"}
 
 
-def _extract_schedule_type(full_text):
+def _extract_schedule_type(full_text, contract_type_value=None):
     if not full_text:
         return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available", "candidates": []}
 
@@ -1111,7 +1125,29 @@ def _extract_schedule_type(full_text):
             scores[stype] = round(min(best + bonus, 1.0), 4)
             evidence_map[stype] = hits
 
-    ranked = sorted(scores.items(), key=lambda x: (-x[1], x[0]))
+    expected_raw = get_expected_schedule_types(contract_type_value) if contract_type_value else []
+    expected_display = [_SCHEDULE_TYPE_RAW_TO_DISPLAY.get(v, v) for v in expected_raw]
+    priority_raw = get_schedule_type_priority()
+    priority_display = [_SCHEDULE_TYPE_RAW_TO_DISPLAY.get(v, v) for v in priority_raw]
+
+    specific_types = [s for s in scores if s != "General Schedule"]
+    if specific_types and "General Schedule" in scores:
+        best_specific_score = max(scores[s] for s in specific_types)
+        if best_specific_score >= scores["General Schedule"]:
+            del scores["General Schedule"]
+            evidence_map.pop("General Schedule", None)
+        elif expected_display:
+            expected_with_scores = [s for s in specific_types if s in expected_display and scores[s] > 0]
+            if expected_with_scores:
+                del scores["General Schedule"]
+                evidence_map.pop("General Schedule", None)
+
+    def _rank_key(item):
+        val, conf = item
+        priority_idx = priority_display.index(val) if val in priority_display else len(priority_display)
+        return (-conf, priority_idx, val)
+
+    ranked = sorted(scores.items(), key=_rank_key)
     candidates = [
         {"value": val, "confidence": round(conf, 2), "evidence": evidence_map.get(val, [])}
         for val, conf in ranked if conf >= _SUBTYPE_CANDIDATE_THRESHOLD
@@ -1273,7 +1309,8 @@ _SCH_CRITICAL_CHECKS = {"SCH_PRESENCE", "SCH_ROLE_ALIGNMENT"}
 
 
 def build_schedule_structure(full_text, resolution_story, opportunity_spine):
-    schedule_type = _extract_schedule_type(full_text)
+    contract_type_val = _opp_check_value(opportunity_spine, "OPP_CONTRACT_TYPE")
+    schedule_type = _extract_schedule_type(full_text, contract_type_val)
     expected = _expected_schedule_from_opportunity(opportunity_spine)
     if expected and schedule_type.get("value") == "General Schedule":
         schedule_type = dict(schedule_type)

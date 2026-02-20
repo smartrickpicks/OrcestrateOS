@@ -1,0 +1,109 @@
+{
+  "_version": "1.0",
+  "_description": "Deterministic contract classification rules. Source of truth for contract_category, expected_schedule_types, and termination_flavor.",
+  "categories": {
+    "distribution": {
+      "label": "Distribution",
+      "match_keywords_title": ["distribution agreement", "distribution deal", "distribution contract"],
+      "match_keywords_body": ["distribution agreement", "distribution", "digital distribution"],
+      "expected_schedule_types": ["catalog_acquisition_masters", "distro_sync_existing_masters"],
+      "termination_flavor": null,
+      "subtypes_allowed": ["Distribution", "Sync", "CMA", "CPA", "CMA/CPA", "Distribution w/ CMA and CPA", "Distro CMA", "Label Ventures", "Profit Participation Agreement"]
+    },
+    "license": {
+      "label": "License",
+      "match_keywords_title": ["license agreement", "licensing agreement", "licence agreement"],
+      "match_keywords_body": ["license agreement", "licensing agreement", "licence agreement", "license", "exclusive license"],
+      "expected_schedule_types": ["catalog_acquisition_masters", "general_schedule"],
+      "termination_flavor": null,
+      "subtypes_allowed": ["Licensing Agreement", "Sync", "Pub Admin", "Co-Pub", "Side Artist"]
+    },
+    "recording": {
+      "label": "Recording",
+      "match_keywords_title": ["recording agreement", "recording contract"],
+      "match_keywords_body": ["recording agreement", "recording contract", "recording"],
+      "expected_schedule_types": ["general_schedule"],
+      "termination_flavor": null,
+      "subtypes_allowed": ["Distribution", "Label Ventures", "Profit Participation Agreement", "Side Artist"]
+    },
+    "publishing": {
+      "label": "Publishing",
+      "match_keywords_title": ["publishing agreement", "publishing contract", "publishing deal"],
+      "match_keywords_body": ["publishing agreement", "publishing contract", "publishing"],
+      "expected_schedule_types": ["general_schedule"],
+      "termination_flavor": null,
+      "subtypes_allowed": ["Pub Admin", "Co-Pub", "CMA", "CPA", "CMA/CPA"]
+    },
+    "management": {
+      "label": "Management",
+      "match_keywords_title": ["management agreement", "management contract"],
+      "match_keywords_body": ["management agreement", "management contract", "management"],
+      "expected_schedule_types": ["general_schedule"],
+      "termination_flavor": null,
+      "subtypes_allowed": ["Label Ventures", "Other"]
+    },
+    "service": {
+      "label": "Service",
+      "match_keywords_title": ["service agreement", "services agreement", "service contract"],
+      "match_keywords_body": ["service agreement", "services agreement", "service contract"],
+      "expected_schedule_types": ["general_schedule"],
+      "termination_flavor": null,
+      "subtypes_allowed": ["Label Ventures", "Other"]
+    },
+    "amendment": {
+      "label": "Amendment",
+      "match_keywords_title": ["amendment", "addendum", "modification agreement"],
+      "match_keywords_body": ["amendment", "addendum", "modification agreement"],
+      "expected_schedule_types": [],
+      "termination_flavor": null,
+      "subtypes_allowed": ["LE Revision", "Assignment", "Other"]
+    },
+    "termination": {
+      "label": "Termination",
+      "match_keywords_title": ["termination agreement", "termination notice", "notice of termination"],
+      "match_keywords_body": ["termination agreement", "termination notice", "termination"],
+      "expected_schedule_types": ["termination_schedule"],
+      "termination_flavors": {
+        "mutual": {
+          "keywords": ["mutual termination", "mutually agree to terminate", "by mutual agreement", "mutual consent"],
+          "label": "Mutual Termination"
+        },
+        "for_cause": {
+          "keywords": ["for cause", "material breach", "breach of", "failure to cure", "default", "uncured breach"],
+          "label": "Termination for Cause"
+        },
+        "convenience": {
+          "keywords": ["for convenience", "without cause", "at will", "upon notice", "30 days notice", "60 days notice", "90 days notice", "thirty days", "sixty days", "ninety days"],
+          "label": "Termination for Convenience"
+        },
+        "expiry": {
+          "keywords": ["expiration", "expiry", "natural expiry", "end of term", "term expiration", "non-renewal"],
+          "label": "Termination by Expiry"
+        },
+        "reversion": {
+          "keywords": ["rights reversion", "reversion of rights", "revert", "rights shall revert", "catalogue reversion"],
+          "label": "Reversion of Rights"
+        }
+      },
+      "subtypes_allowed": ["Assignment", "LE Revision", "Other"]
+    }
+  },
+  "schedule_type_priority": [
+    "distro_sync_existing_masters",
+    "catalog_acquisition_masters",
+    "termination_schedule",
+    "general_schedule"
+  ],
+  "schema_locked_subtypes": [
+    "Distribution", "Sync", "Licensing Agreement", "Pub Admin", "Co-Pub",
+    "CMA", "CPA", "CMA/CPA", "Distribution w/ CMA and CPA", "Distro CMA",
+    "Label Ventures", "Profit Participation Agreement", "Side Artist",
+    "Assignment", "LE Revision", "Other"
+  ],
+  "schema_locked_schedule_types": [
+    "distro_sync_existing_masters",
+    "catalog_acquisition_masters",
+    "termination_schedule",
+    "general_schedule"
+  ]
+}

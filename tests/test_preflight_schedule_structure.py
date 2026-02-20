@@ -47,6 +47,17 @@ class TestScheduleType:
         assert r["status"] in ("review", "pass")
         assert len(r["candidates"]) >= 1
 
+    def test_schedule_type_prefers_specific_over_general_by_rules(self):
+        text = (
+            "Distribution Agreement\n"
+            "Schedule / Exhibit terms are referenced.\n"
+            "For Digital Distribution and for Synch licenses."
+        )
+        r = _extract_schedule_type(text, "distribution")
+        cand_vals = [c["value"] for c in r["candidates"]]
+        assert "Distro & Sync - Existing Masters" in cand_vals
+        assert "General Schedule" not in cand_vals
+
 
 class TestScheduleSignals:
     def test_ownership_signals_pass(self):
@@ -126,6 +137,7 @@ class TestBuildScheduleStructure:
         pages = [{"text": "Distribution Agreement\nSchedule 1\nMaster ownership\nTerritory: Worldwide", "char_count": 120, "image_coverage_ratio": 0.0, "page": 1}]
         result = run_preflight(pages)
         assert "schedule_structure" in result
+        assert "contract_classification" in result
         sch = result["schedule_structure"]
         assert "status" in sch
         assert "checks" in sch
