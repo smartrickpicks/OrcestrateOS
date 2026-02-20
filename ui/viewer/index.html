@@ -2392,9 +2392,20 @@
     html[data-theme="dark"] .rs-manual-input:focus { border-color: #ffcc80; box-shadow: 0 0 0 2px rgba(255,152,0,0.2); }
     .rs-manual-status { font-size: 0.78em; margin-top: 6px; font-weight: 500; }
     .rs-manual-status-empty { color: #e65100; }
+    .rs-manual-status-pending { color: #1565c0; }
     .rs-manual-status-ok { color: #2e7d32; }
+    .pftl-focus-fold { border: 1px solid var(--border-1, #e0e0e0); border-radius: 8px; background: var(--bg-2, #f8f9fa); margin: 10px 0; }
+    .pftl-focus-fold > summary { cursor: pointer; list-style: none; font-size: 0.84em; font-weight: 700; color: var(--text-2, #666); padding: 10px 12px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .pftl-focus-fold > summary::-webkit-details-marker { display: none; }
+    .pftl-focus-fold > summary::before { content: '\25B6'; display: inline-block; margin-right: 8px; transition: transform 0.15s ease; font-size: 0.8em; }
+    .pftl-focus-fold[open] > summary::before { transform: rotate(90deg); }
+    .pftl-focus-fold > .pftl-section,
+    .pftl-focus-fold > .pftl-suggestions-section { margin: 0 10px 10px 10px; }
     html[data-theme="dark"] .rs-manual-status-empty { color: #ffcc80; }
+    html[data-theme="dark"] .rs-manual-status-pending { color: #90caf9; }
     html[data-theme="dark"] .rs-manual-status-ok { color: #66bb6a; }
+    html[data-theme="dark"] .pftl-focus-fold { background: var(--bg-2); border-color: var(--border-1); }
+    html[data-theme="dark"] .pftl-focus-fold > summary { color: var(--text-2); }
     html[data-theme="dark"] .rs-manual-input-label { color: var(--text-1, #e0e0e0); }
     html[data-theme="dark"] .rs-manual-input-section { border-top-color: var(--border-1, #444); }
 
@@ -58042,7 +58053,10 @@ var P022_RuntimeValidation = {
 
     if (_pftlState.result) {
       html += _pftlRenderReport(_pftlState.result);
+      html += '<details class="pftl-focus-fold">';
+      html += '<summary>Field Suggestions (advanced)</summary>';
       html += '<div class="pftl-suggestions-section"><div id="pftl-suggestions-container"></div></div>';
+      html += '</details>';
     }
 
     html += '</div>';
@@ -58088,7 +58102,7 @@ var P022_RuntimeValidation = {
       html += '</ul></div>';
     }
 
-    html += _pftlRenderCorruptionSamples(r);
+    html += _pftlFoldSection('Encoding Details', _pftlRenderCorruptionSamples(r), false);
 
     html += _pftlRenderResolutionStory(r);
 
@@ -58104,18 +58118,19 @@ var P022_RuntimeValidation = {
     html += _pftlRenderHealthScore(r);
     html += _pftlRenderSfMatchSection(r);
 
+    var diag = '';
     var m = r.metrics || {};
-    html += '<div class="pftl-section">';
-    html += '<div class="pftl-section-title">Key Metrics</div>';
-    html += '<div class="pftl-metrics-grid">';
-    html += _pftlMetricCard(m.total_pages, 'Page Count');
-    html += _pftlMetricCard(_pftlFmt(m.avg_chars_per_page, 1), 'Avg Chars/Page');
-    html += _pftlMetricCard(_pftlFmt(m.replacement_char_ratio, 6), 'Replacement Char Ratio');
-    html += _pftlMetricCard(_pftlFmt(m.control_char_ratio, 6), 'Control Char Ratio');
-    html += _pftlMetricCard(_pftlFmt(m.mojibake_ratio, 6), 'Mojibake Ratio');
-    html += _pftlMetricCard(m.searchable_pages, 'Searchable Pages');
-    html += _pftlMetricCard(m.scanned_pages, 'Scanned Pages');
-    html += _pftlMetricCard(m.mixed_pages, 'Mixed Pages');
+    diag += '<div class="pftl-section">';
+    diag += '<div class="pftl-section-title">Key Metrics</div>';
+    diag += '<div class="pftl-metrics-grid">';
+    diag += _pftlMetricCard(m.total_pages, 'Page Count');
+    diag += _pftlMetricCard(_pftlFmt(m.avg_chars_per_page, 1), 'Avg Chars/Page');
+    diag += _pftlMetricCard(_pftlFmt(m.replacement_char_ratio, 6), 'Replacement Char Ratio');
+    diag += _pftlMetricCard(_pftlFmt(m.control_char_ratio, 6), 'Control Char Ratio');
+    diag += _pftlMetricCard(_pftlFmt(m.mojibake_ratio, 6), 'Mojibake Ratio');
+    diag += _pftlMetricCard(m.searchable_pages, 'Searchable Pages');
+    diag += _pftlMetricCard(m.scanned_pages, 'Scanned Pages');
+    diag += _pftlMetricCard(m.mixed_pages, 'Mixed Pages');
     var sparseRatio = 0;
     if (m.total_pages > 0) {
       var pc = r.page_classifications || [];
@@ -58125,47 +58140,48 @@ var P022_RuntimeValidation = {
       }
       sparseRatio = sparseCount / m.total_pages;
     }
-    html += _pftlMetricCard(_pftlFmt(sparseRatio, 2), 'Sparse Page Ratio');
-    html += '</div></div>';
+    diag += _pftlMetricCard(_pftlFmt(sparseRatio, 2), 'Sparse Page Ratio');
+    diag += '</div></div>';
 
-    html += _pftlRenderDecisionTrace(r);
+    diag += _pftlRenderDecisionTrace(r);
 
     var pages = r.page_classifications || [];
     if (pages.length > 0) {
-      html += '<div class="pftl-section">';
-      html += '<div class="pftl-section-title">Per-Page Breakdown (' + pages.length + ' pages)</div>';
-      html += '<div style="max-height:300px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px;">';
-      html += '<table class="pftl-table">';
-      html += '<thead><tr><th>Page</th><th>Chars</th><th>Image Ratio</th><th>Mode</th><th>Dimensions</th></tr></thead>';
-      html += '<tbody>';
+      diag += '<div class="pftl-section">';
+      diag += '<div class="pftl-section-title">Per-Page Breakdown (' + pages.length + ' pages)</div>';
+      diag += '<div style="max-height:300px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px;">';
+      diag += '<table class="pftl-table">';
+      diag += '<thead><tr><th>Page</th><th>Chars</th><th>Image Ratio</th><th>Mode</th><th>Dimensions</th></tr></thead>';
+      diag += '<tbody>';
       for (var p = 0; p < pages.length; p++) {
         var pg = pages[p];
         var modeClass = (pg.mode || '').toLowerCase();
-        html += '<tr>';
-        html += '<td>' + pg.page + '</td>';
-        html += '<td>' + (pg.char_count || 0) + '</td>';
-        html += '<td>' + _pftlFmt(pg.image_coverage_ratio, 4) + '</td>';
-        html += '<td><span class="pftl-page-mode ' + modeClass + '">' + (pg.mode || 'UNKNOWN') + '</span></td>';
+        diag += '<tr>';
+        diag += '<td>' + pg.page + '</td>';
+        diag += '<td>' + (pg.char_count || 0) + '</td>';
+        diag += '<td>' + _pftlFmt(pg.image_coverage_ratio, 4) + '</td>';
+        diag += '<td><span class="pftl-page-mode ' + modeClass + '">' + (pg.mode || 'UNKNOWN') + '</span></td>';
         var dims = (pg.page_width || 0) + ' x ' + (pg.page_height || 0);
-        html += '<td style="font-size:0.85em;color:#888;">' + dims + '</td>';
-        html += '</tr>';
+        diag += '<td style="font-size:0.85em;color:#888;">' + dims + '</td>';
+        diag += '</tr>';
       }
-      html += '</tbody></table></div></div>';
+      diag += '</tbody></table></div></div>';
     }
 
-    html += '<div class="pftl-section">';
-    html += '<div class="pftl-section-title">Persistence Status</div>';
-    html += '<div class="pftl-persistence">';
-    html += _pftlPersRow('doc_materialized', r.materialized === true ? 'Yes' : 'No');
-    html += _pftlPersRow('cache_written', 'Yes');
-    html += _pftlPersRow('fk_bound_writes_skipped', r.materialized === true ? 'No' : 'Yes');
-    html += _pftlPersRow('skip_reason', r.materialized === true ? 'N/A (materialized)' : 'No patch_id provided (Test Lab is read-only)');
-    html += '</div></div>';
+    diag += '<div class="pftl-section">';
+    diag += '<div class="pftl-section-title">Persistence Status</div>';
+    diag += '<div class="pftl-persistence">';
+    diag += _pftlPersRow('doc_materialized', r.materialized === true ? 'Yes' : 'No');
+    diag += _pftlPersRow('cache_written', 'Yes');
+    diag += _pftlPersRow('fk_bound_writes_skipped', r.materialized === true ? 'No' : 'Yes');
+    diag += _pftlPersRow('skip_reason', r.materialized === true ? 'N/A (materialized)' : 'No patch_id provided (Test Lab is read-only)');
+    diag += '</div></div>';
 
-    html += '<div class="pftl-section">';
-    html += '<button class="pftl-raw-toggle" onclick="pftlToggleRaw()">Show Raw JSON Response</button>';
-    html += '<pre class="pftl-raw-content" id="pftl-raw-json">' + _pftlEsc(JSON.stringify(r, null, 2)) + '</pre>';
-    html += '</div>';
+    diag += '<div class="pftl-section">';
+    diag += '<button class="pftl-raw-toggle" onclick="pftlToggleRaw()">Show Raw JSON Response</button>';
+    diag += '<pre class="pftl-raw-content" id="pftl-raw-json">' + _pftlEsc(JSON.stringify(r, null, 2)) + '</pre>';
+    diag += '</div>';
+    html += _pftlFoldSection('Diagnostics (advanced)', diag, false);
 
     html += '</div>';
     return html;
@@ -58203,6 +58219,16 @@ var P022_RuntimeValidation = {
       msg += '. Review the decision trace and corruption samples below before proceeding.';
     }
     return '<div class="pftl-why-gate">' + _pftlEsc(msg) + '</div>';
+  }
+
+  function _pftlFoldSection(title, innerHtml, isOpen) {
+    if (!innerHtml) return '';
+    var openAttr = isOpen ? ' open' : '';
+    var html = '<details class="pftl-focus-fold"' + openAttr + '>';
+    html += '<summary>' + _pftlEsc(title) + '</summary>';
+    html += innerHtml;
+    html += '</details>';
+    return html;
   }
 
   function _pftlRenderDecisionTrace(r) {
@@ -58366,33 +58392,59 @@ var P022_RuntimeValidation = {
       }
     }
 
+    var assigns = _pftlGetAssignments();
+    var manualValue = assigns.manual_counterparty || '';
+    var statusClass = 'rs-manual-status rs-manual-status-empty';
+    var statusText = 'Required — type the confirmed counterparty name, then click Confirm.';
+    if (manualValue && manualValue.length >= 3) {
+      statusClass = 'rs-manual-status rs-manual-status-ok';
+      statusText = 'Confirmed: ' + manualValue;
+    }
+
     html += '<div class="rs-manual-input-section">';
     html += '<label class="rs-manual-input-label" for="rs-manual-counterparty">Confirmed Counterparty (Manual)</label>';
-    html += '<input type="text" id="rs-manual-counterparty" class="rs-manual-input" placeholder="" oninput="pftlOnManualCounterpartyInput(this)" />';
-    html += '<div id="rs-manual-counterparty-status" class="rs-manual-status rs-manual-status-empty">Required — type the confirmed counterparty name to proceed.</div>';
+    html += '<div style="display:flex;gap:8px;align-items:center;">';
+    html += '<input type="text" id="rs-manual-counterparty" class="rs-manual-input" value="' + _pftlEsc(manualValue) + '" oninput="pftlOnManualCounterpartyDraft(this)" />';
+    html += '<button type="button" class="pftl-btn reset" onclick="pftlConfirmManualCounterparty()">Confirm</button>';
+    html += '</div>';
+    html += '<div id="rs-manual-counterparty-status" class="' + statusClass + '">' + _pftlEsc(statusText) + '</div>';
     html += '</div>';
 
     html += '</div>';
     return html;
   }
 
-  window.pftlOnManualCounterpartyInput = function(el) {
+  window.pftlOnManualCounterpartyDraft = function(el) {
     var val = (el.value || '').trim();
     var statusEl = document.getElementById('rs-manual-counterparty-status');
     if (!statusEl) return;
     if (val.length === 0) {
       statusEl.className = 'rs-manual-status rs-manual-status-empty';
-      statusEl.textContent = 'Required — type the confirmed counterparty name to proceed.';
+      statusEl.textContent = 'Required — type the confirmed counterparty name, then click Confirm.';
     } else if (val.length < 3) {
       statusEl.className = 'rs-manual-status rs-manual-status-empty';
       statusEl.textContent = 'Name too short — enter the full entity name.';
     } else {
-      statusEl.className = 'rs-manual-status rs-manual-status-ok';
-      statusEl.textContent = 'Confirmed: ' + val;
+      statusEl.className = 'rs-manual-status rs-manual-status-pending';
+      statusEl.textContent = 'Ready to confirm: ' + val;
+    }
+  };
+
+  window.pftlConfirmManualCounterparty = function() {
+    var input = document.getElementById('rs-manual-counterparty');
+    var statusEl = document.getElementById('rs-manual-counterparty-status');
+    if (!input || !statusEl) return;
+    var val = (input.value || '').trim();
+    if (val.length < 3) {
+      statusEl.className = 'rs-manual-status rs-manual-status-empty';
+      statusEl.textContent = 'Name too short — enter the full entity name.';
+      return;
     }
     var assigns = _pftlGetAssignments();
-    assigns.manual_counterparty = val.length >= 3 ? val : null;
+    assigns.manual_counterparty = val;
     _pftlSaveAssignments();
+    statusEl.className = 'rs-manual-status rs-manual-status-ok';
+    statusEl.textContent = 'Confirmed: ' + val;
   };
 
   var _pftlAssignmentsStore = {};
