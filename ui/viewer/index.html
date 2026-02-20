@@ -5136,6 +5136,12 @@
               </div>
             </div>
 
+            <!-- Preflight Context (hidden when absent) -->
+            <div class="vr-section" id="vr-preflight-context-section" style="margin-top: 16px; display: none;">
+              <div class="vr-section-header"><span class="icon">🔬</span> Preflight Context</div>
+              <div class="vr-author-info" id="vr-preflight-context-body"></div>
+            </div>
+
             <!-- Revision History -->
             <div class="vr-section" style="margin-top: 16px;">
               <div class="vr-section-header"><span class="icon">📜</span> Revision History</div>
@@ -15344,13 +15350,15 @@
           '</div>';
       }
 
-      // Preflight context snapshot
-      if (request.preflight_context) {
+      // Preflight context snapshot (only show when source is populated)
+      if (request.preflight_context && request.preflight_context.source) {
         var pfc = request.preflight_context || {};
         var cc = pfc.contract_classification || {};
         var aa = pfc.analyst_assignments || {};
         var subtypeList = (aa.opportunity_subtypes || []).join(', ') || '—';
-        var scheduleList = (aa.schedule_types || []).join(', ') || '—';
+        var scheduleList = (aa.schedule_types || []).map(function(v) {
+          return (typeof _schTypeLabel === 'function') ? _schTypeLabel(v) : v;
+        }).join(', ') || '—';
         html += '<div style="margin-bottom: 20px; border-top: 1px solid #e0e0e0; padding-top: 15px;">' +
           '<h4 style="margin: 0 0 10px 0; font-size: 0.9em; text-transform: uppercase; color: #1565c0;">Preflight Context</h4>' +
           '<table style="width: 100%; font-size: 0.9em;">' +
@@ -46372,6 +46380,43 @@
       vrUpdateStateBadge();
       vrUpdateActionButtons();
       vrRenderDecisionSummary();
+      vrRenderPreflightContext(payload);
+    }
+
+    function vrRenderPreflightContext(payload) {
+      var section = document.getElementById('vr-preflight-context-section');
+      var body = document.getElementById('vr-preflight-context-body');
+      if (!section || !body) return;
+
+      var pfc = null;
+      if (payload && payload.patch_request && payload.patch_request.preflight_context && payload.patch_request.preflight_context.source) {
+        pfc = payload.patch_request.preflight_context;
+      }
+      if (!pfc) {
+        section.style.display = 'none';
+        body.innerHTML = '';
+        return;
+      }
+
+      section.style.display = '';
+      var cc = pfc.contract_classification || {};
+      var aa = pfc.analyst_assignments || {};
+      var subtypes = (aa.opportunity_subtypes || []);
+      var schedTypes = (aa.schedule_types || []).map(function(v) {
+        return (typeof _schTypeLabel === 'function') ? _schTypeLabel(v) : v;
+      });
+      var subtypeStr = subtypes.length > 0 ? subtypes.join(', ') : '—';
+      var schedStr = schedTypes.length > 0 ? schedTypes.join(', ') : '—';
+
+      var html = '';
+      html += '<div><span class="vr-author-label">Contract Category:</span> <span class="vr-author-value">' + escapeHtml(cc.contract_category || 'n/a') + '</span></div>';
+      html += '<div><span class="vr-author-label">Selected Subtypes:</span> <span class="vr-author-value">' + escapeHtml(subtypeStr) + '</span></div>';
+      html += '<div><span class="vr-author-label">Schedule Types:</span> <span class="vr-author-value">' + escapeHtml(schedStr) + '</span></div>';
+      if (aa.manual_counterparty) {
+        html += '<div><span class="vr-author-label">Manual Counterparty:</span> <span class="vr-author-value">' + escapeHtml(aa.manual_counterparty) + '</span></div>';
+      }
+      html += '<div style="margin-top: 4px;"><span class="vr-author-label">Source:</span> <span class="vr-author-value" style="font-style: italic;">' + escapeHtml(pfc.source || 'n/a') + '</span></div>';
+      body.innerHTML = html;
     }
     
     function vrOpenSingleRowReview() {
@@ -57027,6 +57072,22 @@ var P022_RuntimeValidation = {
   }
   function _pftlSaveAssignments() {
     try { sessionStorage.setItem('_pftlAssignmentsStore', JSON.stringify(_pftlAssignmentsStore)); } catch(e) {}
+  }
+
+  function _pftlBuildResultForExport() {
+    if (!_pftlState.result) return null;
+    var r = _pftlState.result;
+    var assigns = _pftlGetAssignments();
+    return {
+      contract_classification: r.contract_classification || null,
+      analyst_assignments: {
+        opportunity_subtypes: (assigns.opportunity_subtypes && assigns.opportunity_subtypes.length > 0) ? assigns.opportunity_subtypes : [],
+        schedule_types: (assigns.schedule_types && assigns.schedule_types.length > 0) ? assigns.schedule_types : [],
+        legal_entity: assigns.legal_entity || null,
+        counterparty: assigns.counterparty || null,
+        manual_counterparty: assigns.manual_counterparty || null
+      }
+    };
   }
 
   var _OPP_SUBTYPE_OPTIONS = [
