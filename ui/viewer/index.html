@@ -56972,6 +56972,19 @@ var P022_RuntimeValidation = {
     "Profit Participation Agreement", "Pub Admin", "Sync", "Side Artist", "Assignment", "Other"
   ];
 
+  window.pftlToggleSchType = function(value, checked) {
+    var assigns = _pftlGetAssignments();
+    if (!assigns.schedule_types) assigns.schedule_types = [];
+    var vals = assigns.schedule_types;
+    if (checked) {
+      if (vals.indexOf(value) < 0) vals.push(value);
+    } else {
+      vals = vals.filter(function(v) { return v !== value; });
+    }
+    assigns.schedule_types = vals;
+    _pftlSaveAssignments();
+  };
+
   window.pftlToggleOppSubtype = function(name, checked) {
     var assigns = _pftlGetAssignments();
     var vals = assigns.opportunity_subtypes || [];
@@ -57348,8 +57361,8 @@ var P022_RuntimeValidation = {
   }
 
   var _SCH_TYPE_LABELS = {
-    'distro_sync_existing_masters': 'Distro & Sync (Existing Masters)',
-    'catalog_acquisition_masters': 'Catalog Acquisition (Masters)',
+    'distro_sync_existing_masters': 'Distro & Sync - Existing Masters',
+    'catalog_acquisition_masters': 'Catalog Acquisition - Masters',
     'termination_schedule': 'Termination Schedule',
     'general_schedule': 'General Schedule'
   };
@@ -57406,13 +57419,21 @@ var P022_RuntimeValidation = {
       html += '</tr>';
 
       if (ck.code === 'SCH_TYPE' && ck.candidates && ck.candidates.length > 0) {
+        var schAssigns = _pftlGetAssignments();
+        if (!schAssigns.schedule_types) schAssigns.schedule_types = [];
+        if (schAssigns.schedule_types.length === 0 && ck.value) {
+          schAssigns.schedule_types = [ck.value];
+          _pftlSaveAssignments();
+        }
         html += '<tr class="sch-candidates-row"><td colspan="4">';
         html += '<details>';
         html += '<summary class="sch-candidates-toggle">Show schedule type candidates (' + ck.candidates.length + ')</summary>';
         html += '<div class="sch-candidates-list">';
         for (var j = 0; j < ck.candidates.length; j++) {
           var cand = ck.candidates[j];
+          var schChecked = (schAssigns.schedule_types || []).indexOf(cand.value) >= 0 ? ' checked' : '';
           html += '<div class="sch-candidate-card">';
+          html += '<input type="checkbox" id="sch-type-cb-' + j + '" value="' + _pftlEsc(cand.value) + '"' + schChecked + ' onchange="pftlToggleSchType(this.value, this.checked)">';
           html += '<span class="sch-candidate-name">' + _pftlEsc(_schTypeLabel(cand.value)) + '</span>';
           html += '<span class="sch-conf-badge">' + Math.round((cand.confidence || 0) * 100) + '%</span>';
           if (cand.evidence && cand.evidence.length > 0) {
