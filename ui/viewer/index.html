@@ -14430,9 +14430,41 @@
         because: intentStructured.because || ''
       };
     }
+
+    function _buildPreflightContextSnapshot() {
+      var snapshot = {
+        record_key: null,
+        source: null,
+        contract_classification: null,
+        analyst_assignments: null,
+        captured_at_utc: new Date().toISOString()
+      };
+      try {
+        if (typeof _pftlGetRecordKey === 'function') {
+          snapshot.record_key = _pftlGetRecordKey();
+        }
+        var pftlResult = (typeof _pftlBuildResultForExport === 'function') ? _pftlBuildResultForExport() : null;
+        if (pftlResult) {
+          snapshot.source = 'preflight_test_lab';
+          snapshot.contract_classification = pftlResult.contract_classification || null;
+          snapshot.analyst_assignments = pftlResult.analyst_assignments || null;
+          return snapshot;
+        }
+        if (typeof _pfGateState !== 'undefined' && _pfGateState && _pfGateState.result) {
+          snapshot.source = 'preflight_gate';
+          snapshot.contract_classification = _pfGateState.result.contract_classification || null;
+          snapshot.analyst_assignments = null;
+          return snapshot;
+        }
+      } catch (e) {
+        console.warn('[PatchRequest] preflight context snapshot failed:', e);
+      }
+      return snapshot;
+    }
     
     function createPatchRequest(options) {
       var now = new Date().toISOString();
+      var preflightContext = _buildPreflightContextSnapshot();
       
       var intentStructured = {
         target_field: options.target_field || (options.sheet && options.field ? options.sheet + '.' + options.field : null),
@@ -14505,6 +14537,7 @@
           preflight_results: null,
           checklist_status: {}
         },
+        preflight_context: preflightContext,
         thread: options.thread || [],
         review_notes: '',
         clarification_questions: [],
@@ -14517,7 +14550,16 @@
             actor: options.author || 'Unknown',
             role: options.author_role || currentMode || 'Analyst',
             event: 'PATCH_REQUEST_CREATED',
-            details: null
+            details: (function() {
+              var cc = (preflightContext && preflightContext.contract_classification) || {};
+              var aa = (preflightContext && preflightContext.analyst_assignments) || {};
+              var subtypeCount = Array.isArray(aa.opportunity_subtypes) ? aa.opportunity_subtypes.length : 0;
+              var scheduleCount = Array.isArray(aa.schedule_types) ? aa.schedule_types.length : 0;
+              return 'preflight_source=' + (preflightContext.source || 'none') +
+                '; category=' + (cc.contract_category || 'n/a') +
+                '; subtype_count=' + subtypeCount +
+                '; schedule_count=' + scheduleCount;
+            })()
           }
         ],
         history: [
@@ -14929,6 +14971,7 @@
             record_identity: r.record_identity,
             target_scope: r.target_scope,
             proposed_change: r.proposed_change,
+            preflight_context: r.preflight_context || null,
             author: r.author,
             created_at_utc: r.created_at_utc
           };
@@ -14947,6 +14990,7 @@
             request_id: r.request_id,
             target: r.target_scope.target,
             patch_payload_json: r.kiwi_return.patch_payload_json,
+            preflight_context: r.preflight_context || null,
             suggested_files: getSuggestedFilesForTarget(r.target_scope.target),
             changelog_entry: generateChangelogEntry(r),
             pr_summary_markdown: generatePRSummary(r)
@@ -15248,6 +15292,25 @@
         html += '<div style="margin-bottom: 20px;">' +
           '<h4 style="margin: 0 0 10px 0; font-size: 0.9em; text-transform: uppercase; color: #333;">Rationale</h4>' +
           '<p style="margin: 0; font-size: 0.9em; color: #555;">' + escapeHtml(request.proposed_change.rationale) + '</p>' +
+          '</div>';
+      }
+
+      // Preflight context snapshot
+      if (request.preflight_context) {
+        var pfc = request.preflight_context || {};
+        var cc = pfc.contract_classification || {};
+        var aa = pfc.analyst_assignments || {};
+        var subtypeList = (aa.opportunity_subtypes || []).join(', ') || '—';
+        var scheduleList = (aa.schedule_types || []).join(', ') || '—';
+        html += '<div style="margin-bottom: 20px; border-top: 1px solid #e0e0e0; padding-top: 15px;">' +
+          '<h4 style="margin: 0 0 10px 0; font-size: 0.9em; text-transform: uppercase; color: #1565c0;">Preflight Context</h4>' +
+          '<table style="width: 100%; font-size: 0.9em;">' +
+          '<tr><td style="padding: 4px 0; color: #666; width: 170px;">Source</td><td>' + escapeHtml(pfc.source || 'n/a') + '</td></tr>' +
+          '<tr><td style="padding: 4px 0; color: #666;">Contract Category</td><td>' + escapeHtml(cc.contract_category || 'n/a') + '</td></tr>' +
+          '<tr><td style="padding: 4px 0; color: #666;">Selected Subtypes</td><td>' + escapeHtml(subtypeList) + '</td></tr>' +
+          '<tr><td style="padding: 4px 0; color: #666;">Selected Schedule Types</td><td>' + escapeHtml(scheduleList) + '</td></tr>' +
+          (aa.manual_counterparty ? ('<tr><td style="padding: 4px 0; color: #666;">Manual Counterparty</td><td>' + escapeHtml(aa.manual_counterparty) + '</td></tr>') : '') +
+          '</table>' +
           '</div>';
       }
       
