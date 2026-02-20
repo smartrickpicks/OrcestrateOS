@@ -2132,20 +2132,6 @@
     .sch-value { font-family: var(--font-mono, monospace); font-size: 0.92em; }
     .sch-reason { color: var(--text-2, #888); font-size: 0.92em; }
     .sch-status-badge { font-size: 0.75em; padding: 2px 7px; border-radius: 3px; font-weight: 600; }
-    .pftl-status-editor { position: relative; display: inline-flex; align-items: center; gap: 5px; }
-    .pftl-status-edit-btn { border: 1px solid var(--border-1, #ddd); background: var(--bg-1, #fff); color: var(--text-2, #666); border-radius: 4px; font-size: 0.7em; padding: 1px 6px; cursor: pointer; }
-    .pftl-status-edit-btn:hover { background: var(--bg-2, #f5f5f5); }
-    .pftl-status-overridden { font-size: 0.68em; background: #ede7f6; color: #5e35b1; border-radius: 8px; padding: 1px 6px; font-weight: 700; text-transform: uppercase; }
-    .pftl-status-menu { position: absolute; top: 22px; left: 0; z-index: 50; min-width: 200px; background: var(--bg-1, #fff); border: 1px solid var(--border-1, #ddd); border-radius: 8px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14); padding: 8px; display: none; }
-    .pftl-status-menu.open { display: block; }
-    .pftl-status-menu-title { font-size: 0.72em; color: var(--text-3, #888); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
-    .pftl-status-menu-actions { display: flex; gap: 4px; flex-wrap: wrap; }
-    .pftl-status-menu-actions button { border: 1px solid var(--border-1, #ddd); background: var(--bg-2, #f5f5f5); color: var(--text-2, #666); border-radius: 6px; font-size: 0.74em; padding: 3px 8px; cursor: pointer; font-weight: 600; }
-    .pftl-status-menu-actions button:hover { opacity: 0.92; }
-    .pftl-status-menu-actions .is-pass { background: rgba(46, 204, 113, 0.15); color: #27ae60; border-color: rgba(46, 204, 113, 0.35); }
-    .pftl-status-menu-actions .is-review { background: rgba(241, 196, 15, 0.15); color: #d4a017; border-color: rgba(241, 196, 15, 0.35); }
-    .pftl-status-menu-actions .is-fail { background: rgba(231, 76, 60, 0.15); color: #c0392b; border-color: rgba(231, 76, 60, 0.35); }
-    .pftl-status-menu-actions .is-clear { background: var(--bg-1, #fff); color: #777; }
     .sch-conf-badge { font-size: 0.72em; padding: 1px 6px; border-radius: 3px; background: var(--bg-3, #eee); color: var(--text-2, #666); font-weight: 600; margin-left: 4px; }
     .sch-candidates-row td { padding: 0 8px 8px 8px !important; border-bottom: 1px solid var(--border-1, #eee); }
     .sch-candidates-toggle { cursor: pointer; font-size: 0.78em; color: var(--accent, #4a90d9); padding: 4px 0; user-select: none; }
@@ -2373,23 +2359,9 @@
     html[data-theme="dark"] .rs-manual-input:focus { border-color: #ffcc80; box-shadow: 0 0 0 2px rgba(255,152,0,0.2); }
     .rs-manual-status { font-size: 0.78em; margin-top: 6px; font-weight: 500; }
     .rs-manual-status-empty { color: #e65100; }
-    .rs-manual-status-pending { color: #1565c0; }
     .rs-manual-status-ok { color: #2e7d32; }
-    .pftl-focus-fold { border: 1px solid var(--border-1, #e0e0e0); border-radius: 8px; background: var(--bg-2, #f8f9fa); margin: 10px 0; }
-    .pftl-focus-fold > summary { cursor: pointer; list-style: none; font-size: 0.84em; font-weight: 700; color: var(--text-2, #666); padding: 10px 12px; text-transform: uppercase; letter-spacing: 0.3px; }
-    .pftl-focus-fold > summary::-webkit-details-marker { display: none; }
-    .pftl-focus-fold > summary::before { content: '\25B6'; display: inline-block; margin-right: 8px; transition: transform 0.15s ease; font-size: 0.8em; }
-    .pftl-focus-fold[open] > summary::before { transform: rotate(90deg); }
-    .pftl-focus-fold > .pftl-section,
-    .pftl-focus-fold > .pftl-suggestions-section { margin: 0 10px 10px 10px; }
     html[data-theme="dark"] .rs-manual-status-empty { color: #ffcc80; }
-    html[data-theme="dark"] .rs-manual-status-pending { color: #90caf9; }
     html[data-theme="dark"] .rs-manual-status-ok { color: #66bb6a; }
-    html[data-theme="dark"] .pftl-status-edit-btn { background: var(--bg-1); color: var(--text-2); border-color: var(--border-1); }
-    html[data-theme="dark"] .pftl-status-menu { background: var(--bg-1); border-color: var(--border-1); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35); }
-    html[data-theme="dark"] .pftl-status-overridden { background: rgba(139, 92, 246, 0.18); color: #c4b5fd; }
-    html[data-theme="dark"] .pftl-focus-fold { background: var(--bg-2); border-color: var(--border-1); }
-    html[data-theme="dark"] .pftl-focus-fold > summary { color: var(--text-2); }
     html[data-theme="dark"] .rs-manual-input-label { color: var(--text-1, #e0e0e0); }
     html[data-theme="dark"] .rs-manual-input-section { border-top-color: var(--border-1, #444); }
 
@@ -3413,7 +3385,7 @@
             <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
             <span class="nav-label">Admin Panel</span>
           </a>
-          <a class="nav-item admin-only" id="nav-contract-generator" data-page="contract-generator" href="#" onclick="openContractGeneratorEntry(); return false;" title="Contract Generator">
+          <a class="nav-item admin-only" data-page="contract-generator" id="nav-contract-generator" href="#/contract-generator" onclick="openContractGeneratorEntry(); return false;" title="Contract Generator">
             <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="12" y1="2" x2="12" y2="22"/></svg></span>
             <span class="nav-label">Contract Generator</span>
           </a>
@@ -4567,7 +4539,7 @@
                     <div style="flex: 1;">
                       <div style="font-weight: 600; margin-bottom: 4px;" id="mojibake-gate-title"></div>
                       <div style="font-size: 0.88em; margin-bottom: 8px;" id="mojibake-gate-msg"></div>
-                      <button id="mojibake-gate-escalate-btn" onclick="mojibakeGateGenerateCopy()" style="padding: 6px 14px; font-size: 0.85em; background: #e65100; color: white; border: none; border-radius: 4px; cursor: pointer;">Generate Copy</button>
+                      <button id="mojibake-gate-escalate-btn" onclick="mojibakeGateEscalate()" style="padding: 6px 14px; font-size: 0.85em; background: #e65100; color: white; border: none; border-radius: 4px; cursor: pointer;">Escalate OCR</button>
                       <span id="mojibake-gate-escalate-status" style="display: none; margin-left: 10px; font-size: 0.85em;"></span>
                     </div>
                   </div>
@@ -5164,12 +5136,6 @@
               </div>
             </div>
 
-            <!-- Preflight Context (hidden when absent) -->
-            <div class="vr-section" id="vr-preflight-context-section" style="margin-top: 16px; display: none;">
-              <div class="vr-section-header"><span class="icon">🔬</span> Preflight Context</div>
-              <div class="vr-author-info" id="vr-preflight-context-body"></div>
-            </div>
-
             <!-- Revision History -->
             <div class="vr-section" style="margin-top: 16px;">
               <div class="vr-section-header"><span class="icon">📜</span> Revision History</div>
@@ -5432,43 +5398,6 @@
           <div class="aa-hold-modal-actions">
             <button class="aa-action-btn" style="background: #e0e0e0; color: #333;" onclick="aaHoldCancel()">Cancel</button>
             <button class="aa-action-btn hold" onclick="aaHoldSubmit()">Place on Hold</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- CONTRACT GENERATOR PAGE (Standalone) -->
-      <div class="page" id="page-contract-generator" style="display:none;">
-        <div class="page-header">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="margin:0;">&lt;/&gt; Contract Generator</h2>
-            <div id="cg-page-sandbox-bar" style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: var(--bg-secondary, #f5f5f5); border-radius: 6px; border: 1px solid var(--border-color, #e0e0e0);">
-              <span style="font-size: 0.82em; color: var(--text-secondary, #666);">Sandbox Mode:</span>
-              <span id="cg-page-sandbox-status" style="font-size: 0.82em; font-weight: 600; color: #f57c00;">Checking...</span>
-            </div>
-          </div>
-        </div>
-        <div style="max-width: 900px; margin: 20px auto; padding: 0 20px;">
-          <div style="background: var(--bg-primary, white); padding: 24px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid var(--border-color, #e0e0e0);">
-            <p style="font-size: 0.88em; color: var(--text-secondary, #666); margin: 0 0 18px;">Generate a canonical contract draft from ingested records and schema checks. Requires sandbox/demo mode.</p>
-            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;">
-              <div style="min-width: 240px; flex: 1;">
-                <label style="display: block; font-size: 0.8em; color: var(--text-secondary, #666); margin-bottom: 4px;">Contract Section</label>
-                <select id="cg-page-sheet-select" onchange="cgPageRefreshRows()" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border-color, #ddd); border-radius: 6px; font-size: 0.88em; background: var(--bg-primary, white); color: var(--text-primary, #333);"></select>
-              </div>
-              <div style="min-width: 280px; flex: 2;">
-                <label style="display: block; font-size: 0.8em; color: var(--text-secondary, #666); margin-bottom: 4px;">Record</label>
-                <select id="cg-page-row-select" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border-color, #ddd); border-radius: 6px; font-size: 0.88em; background: var(--bg-primary, white); color: var(--text-primary, #333);"></select>
-              </div>
-            </div>
-            <div style="display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;">
-              <button class="toolbar-btn" onclick="cgPageInit(true)">Refresh</button>
-              <button class="toolbar-btn" onclick="cgPageGenerate()" style="background: #1976d2; color: white;">Generate Text</button>
-              <button class="toolbar-btn" onclick="cgPageDownload()" style="background: #2e7d32; color: white;">Download .md</button>
-              <button class="toolbar-btn" onclick="cgPageMarkReconstructionComplete()" style="background: #6a1b9a; color: white;">Mark Reconstruction Complete</button>
-            </div>
-            <div id="cg-page-status" style="display: none; margin-bottom: 10px; padding: 8px 10px; border-radius: 6px; font-size: 0.85em;"></div>
-            <div id="cg-page-review-panel" style="display:none; margin-bottom: 12px; padding: 10px 12px; border: 1px solid var(--border-color, #e0e0e0); border-radius: 6px; background: var(--bg-secondary, #f8f9fb);"></div>
-            <textarea id="cg-page-output" readonly placeholder="Generated contract text will appear here..." style="width: 100%; min-height: 320px; padding: 12px 14px; border: 1px solid var(--border-color, #ddd); border-radius: 6px; font-size: 0.85em; font-family: 'Courier New', monospace; box-sizing: border-box; resize: vertical; background: var(--bg-primary, #fafafa); color: var(--text-primary, #333);"></textarea>
           </div>
         </div>
       </div>
@@ -6264,6 +6193,199 @@
 
         <div style="margin-top: 12px; text-align: right; font-size: 0.75em; color: #aaa;">PAGE: ADMIN-PANEL | BUILD v1.6.49</div>
       </div><!-- end page-admin -->
+
+      <div class="page" id="page-contract-generator">
+        <div class="page-header">
+          <h2>Contract Generator</h2>
+          <p class="page-desc">Admin-only generator tool. Build contract sections from canonical schema data with live preview and Markdown export.</p>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(420px, 1fr) minmax(420px, 1fr); gap: 16px; align-items: start;">
+          <section style="background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.06);">
+            <h3 style="margin: 0 0 12px; font-size: 1.02em; color: #263238;">Builder</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+              <button id="cgb-start-new-btn" class="toolbar-btn" onclick="cgbStartNewSession()" style="background:#1976d2; color:#fff;">Create New</button>
+              <button class="toolbar-btn" onclick="cgbLoadPastSession()">Past Contracts</button>
+            </div>
+            <div style="border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin-bottom:10px; background:#fafafa;">
+              <h4 style="margin:0 0 8px; font-size:0.9em;">Who &amp; Where From</h4>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <div>
+                  <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Counterparty Account</label>
+                  <div style="position:relative;">
+                    <input id="cgb-counterparty-name" autocomplete="off" placeholder="Search accounts (or choose Create New)..." onfocus="cgbOpenCounterpartyPicker()" oninput="cgbOnCounterpartyInput(this.value)" onkeydown="cgbOnCounterpartyKeydown(event)" onblur="cgbOnCounterpartyBlur()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                    <div id="cgb-counterparty-dropdown" style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:20; max-height:260px; overflow:auto; border:1px solid #cfd8dc; border-radius:6px; background:#fff; box-shadow:0 8px 18px rgba(0,0,0,0.12);" onscroll="cgbOnCounterpartyScroll()"></div>
+                  </div>
+                </div>
+                <div>
+                  <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Party Type</label>
+                  <select id="cgb-party-type" onchange="cgbOnWhoWhereChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                    <option value="">Select type</option>
+                    <option value="artist">Artist</option>
+                    <option value="label">Label</option>
+                    <option value="producer">Producer</option>
+                    <option value="publisher">Publisher</option>
+                    <option value="company">Company</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Legal Entity (Batch Resolver)</label>
+                  <select id="cgb-business-unit" onchange="cgbOnWhoWhereChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+                </div>
+                <div>
+                  <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Counterparty Status</label>
+                  <div id="cgb-counterparty-status" style="padding:8px; border:1px solid #ddd; border-radius:6px; background:#fff; font-size:0.8em; color:#546e7a;">Not set</div>
+                </div>
+              </div>
+            </div>
+            <div style="border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin-bottom:10px; background:#fafafa;">
+              <h4 style="margin:0 0 8px; font-size:0.9em;">Catalog Source &amp; Scope</h4>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <div>
+                  <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Source Type</label>
+                  <select id="cgb-catalog-source-type" onchange="cgbOnCatalogSourceChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                    <option value="manual">Manual</option>
+                    <option value="spotify">Spotify</option>
+                    <option value="youtube">YouTube</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Scope</label>
+                  <select id="cgb-catalog-scope" onchange="cgbOnCatalogSourceChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                    <option value="BACK_CATALOG_EXISTING">Back Catalog Existing</option>
+                    <option value="SPECIFIC_RELEASES">Specific Releases</option>
+                    <option value="NEW_FUTURE">New/Future</option>
+                  </select>
+                </div>
+                <div style="grid-column:1 / span 2;">
+                  <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Source URL / Handle</label>
+                  <input id="cgb-catalog-source-ref" placeholder="Spotify artist URL, YouTube channel URL, or manual note..." oninput="cgbOnCatalogSourceChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                </div>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(2, minmax(160px, 1fr)); gap: 10px; margin-bottom: 10px;">
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Legal Entity</label>
+                <select id="cgb-legal-entity" onchange="cgbOnMetaChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                  <option value="Create Music Group">Create Music Group</option>
+                  <option value="Create Music Group Distribution">Create Music Group Distribution</option>
+                  <option value="Create Music Group Publishing">Create Music Group Publishing</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Template Type</label>
+                <select id="cgb-template-type" onchange="cgbOnMetaChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                  <option value="distribution_sync">Distribution + Sync</option>
+                  <option value="master_license">Master License</option>
+                  <option value="services">Services Agreement</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Seed Contract Section</label>
+                <select id="cgb-sheet-select" onchange="cgbRefreshRows()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Seed Source Record</label>
+                <select id="cgb-row-select" onchange="cgbOnRowChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(3, minmax(140px, 1fr)); gap: 10px; margin-bottom: 10px;">
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Contract Type</label>
+                <select id="cgb-contract-type" onchange="cgbOnWorkflowChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Opportunity</label>
+                <select id="cgb-opportunity-select" onchange="cgbOnWorkflowChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Schedule</label>
+                <select id="cgb-schedule-select" onchange="cgbOnWorkflowChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Catalog</label>
+                <select id="cgb-catalog-select" onchange="cgbOnWorkflowChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Schedule Catalog</label>
+                <select id="cgb-schedule-catalog-select" onchange="cgbOnWorkflowChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">V2 Add Ons</label>
+                <select id="cgb-v2addons-select" multiple onchange="cgbOnWorkflowChange()" style="width:100%; min-height:72px; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(2, minmax(200px, 1fr)); gap: 10px; margin-bottom: 10px;">
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Accounts (multi)</label>
+                <select id="cgb-accounts-select" multiple onchange="cgbOnWorkflowChange()" style="width:100%; min-height:92px; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+              <div id="cgb-preflight-summary" style="border:1px solid #e0e0e0; border-radius:6px; padding:10px; font-size:0.8em; color:#455a64; background:#fafafa;"></div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap: wrap; margin-bottom: 12px;">
+              <button class="toolbar-btn" onclick="cgbAutoFillFromRecord()">Auto Fill</button>
+              <button class="toolbar-btn" onclick="cgbGenerateFromBuilder()" style="background:#1976d2; color:white;">Generate Preview</button>
+              <button class="toolbar-btn" onclick="cgbDownloadMarkdown()" style="background:#2e7d32; color:white;">Download .md</button>
+            </div>
+            <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+              <span style="font-size:0.74em; color:#607d8b; font-weight:600;">Terms Modeling:</span>
+              <button class="toolbar-btn" onclick="cgbSetTermsTab('schedules')">Schedules</button>
+              <button class="toolbar-btn" onclick="cgbSetTermsTab('schedule_catalog')">Schedule Catalog</button>
+              <button class="toolbar-btn" onclick="cgbSetTermsTab('financials')">Financials</button>
+              <button class="toolbar-btn" onclick="cgbSetTermsTab('addons')">Add Ons</button>
+            </div>
+            <div id="cgb-terms-hint" style="margin-bottom:12px; padding:8px 10px; border:1px dashed #cfd8dc; border-radius:6px; font-size:0.8em; color:#546e7a; background:#fafafa;"></div>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+                <h4 style="margin:0 0 6px; font-size:0.9em;">Accounts</h4>
+                <textarea id="cgb-sec-accounts" oninput="cgbOnSectionInput()" style="width:100%; min-height:56px; border:1px solid #ddd; border-radius:6px; padding:8px;"></textarea>
+              </div>
+              <div style="border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+                <h4 style="margin:0 0 6px; font-size:0.9em;">Opportunity</h4>
+                <textarea id="cgb-sec-opportunity" oninput="cgbOnSectionInput()" style="width:100%; min-height:56px; border:1px solid #ddd; border-radius:6px; padding:8px;"></textarea>
+              </div>
+              <div style="border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+                <h4 style="margin:0 0 6px; font-size:0.9em;">Financials</h4>
+                <textarea id="cgb-sec-financials" oninput="cgbOnSectionInput()" style="width:100%; min-height:56px; border:1px solid #ddd; border-radius:6px; padding:8px;"></textarea>
+              </div>
+              <div style="border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+                <h4 style="margin:0 0 6px; font-size:0.9em;">Schedule</h4>
+                <textarea id="cgb-sec-schedule" oninput="cgbOnSectionInput()" style="width:100%; min-height:56px; border:1px solid #ddd; border-radius:6px; padding:8px;"></textarea>
+              </div>
+            </div>
+
+            <div style="margin-top:12px; border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+              <h4 style="margin:0 0 8px; font-size:0.9em;">Governed Fields (Schema + Picklists)</h4>
+              <div id="cgb-governed-fields-wrap"></div>
+            </div>
+
+            <div style="margin-top:12px; border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                <h4 style="margin:0; font-size:0.9em;">Contract Line Items</h4>
+                <button class="toolbar-btn" onclick="cgbAddLineItem()">Add Line Item</button>
+              </div>
+              <div id="cgb-lineitems-wrap"></div>
+            </div>
+
+            <div style="margin-top:12px; border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                <h4 style="margin:0; font-size:0.9em;">Catalog Line Items</h4>
+                <button class="toolbar-btn" onclick="cgbAddCatalogItem()">Add Catalog Item</button>
+              </div>
+              <div id="cgb-catalog-wrap"></div>
+            </div>
+          </section>
+
+          <section style="background: #0f172a; border-radius: 10px; padding: 14px; color: #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.18);">
+            <h3 style="margin:0 0 10px; font-size:1.02em; color:#bfdbfe;">Live Contract Preview</h3>
+            <div id="cgb-preview-embed" style="background:#1f2937; border-left:4px solid #60a5fa; border-radius:8px; padding:12px; margin-bottom:12px;"></div>
+            <label style="display:block; font-size:0.78em; color:#93c5fd; margin-bottom:4px;">Generated Markdown</label>
+            <textarea id="cgb-markdown-output" readonly style="width:100%; min-height:240px; border:1px solid #334155; background:#111827; color:#d1d5db; border-radius:6px; padding:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace; font-size:0.8em;"></textarea>
+            <label style="display:block; font-size:0.78em; color:#93c5fd; margin:8px 0 4px;">Clause Annotation Map (JSON)</label>
+            <textarea id="cgb-annotation-output" readonly style="width:100%; min-height:150px; border:1px solid #334155; background:#111827; color:#d1d5db; border-radius:6px; padding:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace; font-size:0.78em;"></textarea>
+          </section>
+        </div>
+      </div><!-- end page-contract-generator -->
 
     </main><!-- end main-content -->
   </div><!-- end app-layout -->
@@ -14515,41 +14637,9 @@
         because: intentStructured.because || ''
       };
     }
-
-    function _buildPreflightContextSnapshot() {
-      var snapshot = {
-        record_key: null,
-        source: null,
-        contract_classification: null,
-        analyst_assignments: null,
-        captured_at_utc: new Date().toISOString()
-      };
-      try {
-        if (typeof _pftlGetRecordKey === 'function') {
-          snapshot.record_key = _pftlGetRecordKey();
-        }
-        var pftlResult = (typeof _pftlBuildResultForExport === 'function') ? _pftlBuildResultForExport() : null;
-        if (pftlResult) {
-          snapshot.source = 'preflight_test_lab';
-          snapshot.contract_classification = pftlResult.contract_classification || null;
-          snapshot.analyst_assignments = pftlResult.analyst_assignments || null;
-          return snapshot;
-        }
-        if (typeof _pfGateState !== 'undefined' && _pfGateState && _pfGateState.result) {
-          snapshot.source = 'preflight_gate';
-          snapshot.contract_classification = _pfGateState.result.contract_classification || null;
-          snapshot.analyst_assignments = null;
-          return snapshot;
-        }
-      } catch (e) {
-        console.warn('[PatchRequest] preflight context snapshot failed:', e);
-      }
-      return snapshot;
-    }
     
     function createPatchRequest(options) {
       var now = new Date().toISOString();
-      var preflightContext = _buildPreflightContextSnapshot();
       
       var intentStructured = {
         target_field: options.target_field || (options.sheet && options.field ? options.sheet + '.' + options.field : null),
@@ -14622,7 +14712,6 @@
           preflight_results: null,
           checklist_status: {}
         },
-        preflight_context: preflightContext,
         thread: options.thread || [],
         review_notes: '',
         clarification_questions: [],
@@ -14635,16 +14724,7 @@
             actor: options.author || 'Unknown',
             role: options.author_role || currentMode || 'Analyst',
             event: 'PATCH_REQUEST_CREATED',
-            details: (function() {
-              var cc = (preflightContext && preflightContext.contract_classification) || {};
-              var aa = (preflightContext && preflightContext.analyst_assignments) || {};
-              var subtypeCount = Array.isArray(aa.opportunity_subtypes) ? aa.opportunity_subtypes.length : 0;
-              var scheduleCount = Array.isArray(aa.schedule_types) ? aa.schedule_types.length : 0;
-              return 'preflight_source=' + (preflightContext.source || 'none') +
-                '; category=' + (cc.contract_category || 'n/a') +
-                '; subtype_count=' + subtypeCount +
-                '; schedule_count=' + scheduleCount;
-            })()
+            details: null
           }
         ],
         history: [
@@ -15056,7 +15136,6 @@
             record_identity: r.record_identity,
             target_scope: r.target_scope,
             proposed_change: r.proposed_change,
-            preflight_context: r.preflight_context || null,
             author: r.author,
             created_at_utc: r.created_at_utc
           };
@@ -15075,7 +15154,6 @@
             request_id: r.request_id,
             target: r.target_scope.target,
             patch_payload_json: r.kiwi_return.patch_payload_json,
-            preflight_context: r.preflight_context || null,
             suggested_files: getSuggestedFilesForTarget(r.target_scope.target),
             changelog_entry: generateChangelogEntry(r),
             pr_summary_markdown: generatePRSummary(r)
@@ -15377,27 +15455,6 @@
         html += '<div style="margin-bottom: 20px;">' +
           '<h4 style="margin: 0 0 10px 0; font-size: 0.9em; text-transform: uppercase; color: #333;">Rationale</h4>' +
           '<p style="margin: 0; font-size: 0.9em; color: #555;">' + escapeHtml(request.proposed_change.rationale) + '</p>' +
-          '</div>';
-      }
-
-      // Preflight context snapshot (only show when source is populated)
-      if (request.preflight_context && request.preflight_context.source) {
-        var pfc = request.preflight_context || {};
-        var cc = pfc.contract_classification || {};
-        var aa = pfc.analyst_assignments || {};
-        var subtypeList = (aa.opportunity_subtypes || []).join(', ') || '—';
-        var scheduleList = (aa.schedule_types || []).map(function(v) {
-          return (typeof _schTypeLabel === 'function') ? _schTypeLabel(v) : v;
-        }).join(', ') || '—';
-        html += '<div style="margin-bottom: 20px; border-top: 1px solid #e0e0e0; padding-top: 15px;">' +
-          '<h4 style="margin: 0 0 10px 0; font-size: 0.9em; text-transform: uppercase; color: #1565c0;">Preflight Context</h4>' +
-          '<table style="width: 100%; font-size: 0.9em;">' +
-          '<tr><td style="padding: 4px 0; color: #666; width: 170px;">Source</td><td>' + escapeHtml(pfc.source || 'n/a') + '</td></tr>' +
-          '<tr><td style="padding: 4px 0; color: #666;">Contract Category</td><td>' + escapeHtml(cc.contract_category || 'n/a') + '</td></tr>' +
-          '<tr><td style="padding: 4px 0; color: #666;">Selected Subtypes</td><td>' + escapeHtml(subtypeList) + '</td></tr>' +
-          '<tr><td style="padding: 4px 0; color: #666;">Selected Schedule Types</td><td>' + escapeHtml(scheduleList) + '</td></tr>' +
-          (aa.manual_counterparty ? ('<tr><td style="padding: 4px 0; color: #666;">Manual Counterparty</td><td>' + escapeHtml(aa.manual_counterparty) + '</td></tr>') : '') +
-          '</table>' +
           '</div>';
       }
       
@@ -19493,7 +19550,7 @@
       var statusEl = document.getElementById('mojibake-gate-escalate-status');
       btn.style.display = '';
       btn.disabled = false;
-      btn.textContent = 'Generate Copy';
+      btn.textContent = 'Escalate OCR';
       statusEl.style.display = 'none';
 
       if (config.disableReader && pdfContainer) {
@@ -19509,34 +19566,51 @@
       _mojibakeGateState.qualityFlag = null;
     }
 
-    function mojibakeGateGenerateCopy() {
+    function mojibakeGateEscalate() {
+      if (!_mojibakeGateState.documentId || _mojibakeGateState.escalationPending) return;
+      _mojibakeGateState.escalationPending = true;
+
       var btn = document.getElementById('mojibake-gate-escalate-btn');
       var statusEl = document.getElementById('mojibake-gate-escalate-status');
-      if (btn) {
-        btn.disabled = true;
-        btn.textContent = 'Opening...';
-      }
-      if (statusEl) {
-        statusEl.textContent = 'Launching Contract Generator reconstruction flow...';
-        statusEl.style.display = 'inline';
-        statusEl.style.color = '#1565c0';
-      }
-      if (typeof preflightOpenContractGenerator === 'function') {
-        preflightOpenContractGenerator('mojibake_gate');
-      } else if (typeof openContractGeneratorEntry === 'function') {
-        openContractGeneratorEntry();
-      }
-      if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      var apiBase = window.API_BASE || '/api/v2.5';
+      fetch(apiBase + '/documents/' + _mojibakeGateState.documentId + '/ocr-escalations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (window._authToken || '') },
+        body: JSON.stringify({ escalation_type: 'ocr_reprocess', quality_flag: _mojibakeGateState.qualityFlag })
+      })
+      .then(function(r) { return r.json().then(function(d) { return { status: r.status, data: d }; }); })
+      .then(function(res) {
+        if (res.status === 200) {
+          btn.textContent = 'Already Escalated';
+          statusEl.textContent = 'A pending escalation already exists for this document.';
+          statusEl.style.display = 'inline';
+          statusEl.style.color = '#1565c0';
+        } else if (res.status === 201) {
+          btn.textContent = 'Escalated';
+          statusEl.textContent = 'OCR escalation submitted successfully.';
+          statusEl.style.display = 'inline';
+          statusEl.style.color = '#2e7d32';
+        } else {
+          btn.textContent = 'Escalate OCR';
+          btn.disabled = false;
+          _mojibakeGateState.escalationPending = false;
+          statusEl.textContent = 'Error: ' + (res.data.error ? res.data.error.message : 'Unknown error');
+          statusEl.style.display = 'inline';
+          statusEl.style.color = '#c62828';
+        }
+      })
+      .catch(function(err) {
+        btn.textContent = 'Escalate OCR';
         btn.disabled = false;
-        btn.textContent = 'Generate Copy';
-      }
-      if (statusEl) {
-        statusEl.textContent = 'Contract Generator opened. Generate canonical copy and continue review.';
+        _mojibakeGateState.escalationPending = false;
+        statusEl.textContent = 'Network error: ' + err.message;
         statusEl.style.display = 'inline';
-        statusEl.style.color = '#2e7d32';
-      }
+        statusEl.style.color = '#c62828';
+      });
     }
-    function mojibakeGateEscalate() { mojibakeGateGenerateCopy(); }
     // ========== END MOJIBAKE GATE UI ==========
 
     // ========== READER/PDF TOGGLE (Evidence Viewer v2.51 Phase 5 - EVIDENCE-23) ==========
@@ -25718,8 +25792,9 @@
         restrictedReason = 'The Admin Panel is only available to users with the Admin role.';
         adminTab = null;
       }
-      if (page === 'contract-generator' && currentMode !== 'admin' && currentMode !== 'architect') {
-        restrictedReason = 'Contract Generator is only available to Admins.';
+      if (page === 'contract-generator' && currentMode !== 'admin') {
+        console.log('[Navigate] Contract Generator page requires admin mode');
+        restrictedReason = 'Contract Generator is only available to users with the Admin role.';
       }
       if (page === 'review' && currentMode !== 'verifier' && currentMode !== 'admin') {
         console.log('[Navigate] Review page requires verifier/admin mode');
@@ -25868,6 +25943,9 @@
           switchAdminTab(adminTab);
         }
       }
+      if (page === 'contract-generator') {
+        setTimeout(function() { if (typeof cgbInitPage === 'function') cgbInitPage(); }, 0);
+      }
       
       // v1.5.1: Show/hide Patch Tester tab based on role when entering SSR
       if (page === 'row') {
@@ -25918,10 +25996,6 @@
         setTimeout(function() { if (typeof vorgLoadData === 'function') vorgLoadData(); }, 0);
       }
       
-      if (page === 'contract-generator') {
-        setTimeout(function() { if (typeof cgPageInit === 'function') cgPageInit(false); }, 60);
-      }
-
       // Update hash (include tab for admin deep-links, preserve grid query params)
       if (page === 'admin' && adminTab && adminTab !== 'governance') {
         window.location.hash = '#/admin/' + adminTab;
@@ -27157,392 +27231,7 @@
     function cgDownloadContractTxt() {
       cgDownloadContractMd();
     }
-
-    var _cgPageState = { lastOutput: '', lastFileName: '', lastMeta: null, reviewDecisions: [], fallbackNote: '' };
-
-    function _cgPageSetStatus(msg, level) {
-      var el = document.getElementById('cg-page-status');
-      if (!el) return;
-      el.style.display = msg ? 'block' : 'none';
-      el.textContent = msg || '';
-      el.style.background = level === 'success' ? '#e8f5e9' : level === 'warn' ? '#fff3e0' : level === 'error' ? '#ffebee' : '#e3f2fd';
-      el.style.color = level === 'success' ? '#2e7d32' : level === 'warn' ? '#e65100' : level === 'error' ? '#c62828' : '#1565c0';
-    }
-
-    var _cgTemplatePackRegistry = {
-      ostereo: {
-        pack_id: 'ostereo_global_standard_v1',
-        version: '1.0.0-pilot',
-        available: {
-          distribution: true,
-          distribution_sync: true,
-          schedule: true,
-          amendment: true,
-          master: true,
-          add_on: true,
-          termination: true
-        }
-      },
-      global_default: {
-        pack_id: 'cmg_global_default_v1',
-        version: '1.0.0-pilot',
-        available: {
-          distribution: true,
-          distribution_sync: true,
-          schedule: true,
-          amendment: true,
-          master: true,
-          add_on: true,
-          termination: true
-        }
-      }
-    };
-
-    function _cgNorm(v) { return _cgSafeText(v).toLowerCase(); }
-    function _cgIsOstereoEntity(entityName) { return _cgNorm(entityName).indexOf('ostereo') >= 0; }
-
-    function _cgTemplateKeyFromContractType(contractType) {
-      var n = _cgNorm(contractType);
-      if (!n) return 'unknown';
-      if (n.indexOf('distribution') >= 0 && n.indexOf('sync') >= 0) return 'distribution_sync';
-      if (n.indexOf('distribution') >= 0) return 'distribution';
-      if (n.indexOf('termination') >= 0) return 'termination';
-      if (n.indexOf('amendment') >= 0) return 'amendment';
-      if (n.indexOf('schedule') >= 0) return 'schedule';
-      if (n.indexOf('add on') >= 0 || n.indexOf('add-on') >= 0 || n.indexOf('addon') >= 0) return 'add_on';
-      if (n.indexOf('master') >= 0) return 'master';
-      return 'unknown';
-    }
-
-    function _cgResolveTemplateMeta(entityName, contractType) {
-      var isOstereo = _cgIsOstereoEntity(entityName);
-      var key = _cgTemplateKeyFromContractType(contractType);
-      var pack = isOstereo ? _cgTemplatePackRegistry.ostereo : _cgTemplatePackRegistry.global_default;
-      var available = !!(pack && pack.available && pack.available[key]);
-      var fallbackUsed = false;
-
-      if (!available && !isOstereo) {
-        var fallback = _cgTemplatePackRegistry.global_default;
-        if (fallback && fallback.available && fallback.available[key]) {
-          pack = fallback;
-          available = true;
-          fallbackUsed = true;
-        }
-      }
-
-      return {
-        key: key,
-        available: available,
-        status_code: available ? 'AVAILABLE' : 'NO_ENTITY_TEMPLATE_AVAILABLE',
-        pack_id: (pack && pack.pack_id) || '',
-        pack_version: (pack && pack.version) || '',
-        fallback_used: fallbackUsed
-      };
-    }
-
-    function _cgBuildContractText(sheetName, row, rowIdx) {
-      var canonicalFields = _cgGetCanonicalFieldsForSheet(sheetName);
-      var checks = _cgComputeIngestionChecks(row, sheetName, canonicalFields);
-
-      var agreementName = _cgResolveRecordName(row) || ('Contract ' + (rowIdx + 1));
-      var effectiveDate = _cgFindValueByHint(row, ['effective_date', 'effective date', 'start_date', 'execution_date']);
-      var partyA = _cgFindValueByHint(row, ['company_name', 'account_name', 'legal_name']);
-      var partyB = _cgFindValueByHint(row, ['artist_name', 'payee', 'contact_name']);
-      var territory = _cgFindValueByHint(row, ['territory']);
-      var term = _cgFindValueByHint(row, ['term', 'duration', 'end_date', 'expiry']);
-      var compensation = _cgFindValueByHint(row, ['fee', 'royalty', 'rate', 'amount', 'payment']);
-      var legalEntity = _cgFindValueByHint(row, ['legal_entity', 'business_unit', 'legal entity']) || 'Unknown';
-      var contractType = _cgFindValueByHint(row, ['contract_type', 'document_type', 'agreement_type', 'contract_subtype']) || 'Unknown';
-      var tmpl = _cgResolveTemplateMeta(legalEntity, contractType);
-      var gate = (window._pfGateState && window._pfGateState.result && window._pfGateState.result.gate_color) || '';
-      var highRiskFamilies = [
-        'Liability / Indemnity',
-        'Governing Law / Jurisdiction / Disputes',
-        'IP Ownership / License / Assignment',
-        'Term / Termination',
-        'Financial Obligations (payment, rates, recoupment, audit)'
-      ];
-
-      var lines = [];
-      lines.push('# Orchestrate OS Canonical Contract Draft');
-      lines.push('');
-      lines.push('- **Generated At:** ' + new Date().toISOString());
-      lines.push('- **Contract Section:** ' + sheetName);
-      lines.push('- **Source Row:** ' + (rowIdx + 1));
-      lines.push('- **Source Of Truth:** reconstructed_json');
-      if (gate) lines.push('- **Preflight Health Score:** ' + gate);
-      lines.push('');
-      lines.push('## Intake Check Summary');
-      lines.push('- Missing Required Fields: **' + checks.missingRequired.length + '**');
-      lines.push('- Invalid Picklist Values: **' + checks.invalidPicklists.length + '**');
-      lines.push('- Unknown Columns In Row: **' + checks.unknownColumns.length + '**');
-      if (checks.missingRequired.length > 0) lines.push('- Missing Fields: ' + checks.missingRequired.join(', '));
-      if (checks.invalidPicklists.length > 0) {
-        for (var ip = 0; ip < checks.invalidPicklists.length; ip++) {
-          lines.push('- Invalid picklist: ' + checks.invalidPicklists[ip].field + ' = "' + checks.invalidPicklists[ip].value + '"');
-        }
-      }
-      lines.push('');
-      lines.push('## Reconstruction Governance');
-      lines.push('- **Legal Entity:** ' + legalEntity);
-      lines.push('- **Contract Type:** ' + contractType);
-      lines.push('- **Template Pack:** ' + (tmpl.pack_id || '[TO_BE_DEFINED]') + ' @ ' + (tmpl.pack_version || '[TO_BE_DEFINED]'));
-      lines.push('- **Template Key:** ' + tmpl.key);
-      lines.push('- **Template Resolution:** ' + tmpl.status_code);
-      if (tmpl.fallback_used) lines.push('- **Fallback:** global_default');
-      if (tmpl.status_code === 'NO_ENTITY_TEMPLATE_AVAILABLE' && _cgIsOstereoEntity(legalEntity)) {
-        lines.push('- **Entity Policy:** `NO_ENTITY_TEMPLATE_AVAILABLE` (Ostereo no-silent-fallback enforced).');
-      }
-      lines.push('');
-      lines.push('## Generated Contract Text');
-      lines.push('- **Agreement Title:** ' + (agreementName || '[TO_BE_DEFINED]'));
-      lines.push('- **Effective Date:** ' + (effectiveDate || '[TO_BE_DEFINED]'));
-      lines.push('- **Party A:** ' + (partyA || '[TO_BE_DEFINED]'));
-      lines.push('- **Party B:** ' + (partyB || '[TO_BE_DEFINED]'));
-      lines.push('');
-      lines.push('### 1. Scope');
-      lines.push('The parties agree to perform services and obligations as captured in the canonical record for this contract section.');
-      lines.push('');
-      lines.push('### 2. Territory');
-      lines.push(territory || '[TO_BE_DEFINED]');
-      lines.push('');
-      lines.push('### 3. Term');
-      lines.push(term || '[TO_BE_DEFINED]');
-      lines.push('');
-      lines.push('### 4. Compensation');
-      lines.push(compensation || '[TO_BE_DEFINED]');
-      lines.push('');
-      lines.push('### 5. Data Integrity');
-      lines.push('This draft is generated from canonical schema-mapped fields in admin sandbox mode.');
-      lines.push('');
-      lines.push('## High-Risk Clause Review Checklist (Ostereo V1)');
-      for (var hr = 0; hr < highRiskFamilies.length; hr++) lines.push('- [ ] ' + highRiskFamilies[hr]);
-      lines.push('- [ ] Reviewer decision recorded (`ACCEPTED` / `MODIFIED_AND_ACCEPTED` / `REJECTED`)');
-      lines.push('');
-      lines.push('## Canonical Field Snapshot');
-      if (canonicalFields.length === 0) {
-        lines.push('(No canonical field metadata loaded for this section.)');
-      } else {
-        for (var cf = 0; cf < canonicalFields.length; cf++) {
-          var meta = canonicalFields[cf];
-          var v = _cgSafeText(row[meta.field_key]);
-          var label = meta.field_label || meta.field_key;
-          lines.push('- **' + label + '** (`' + meta.field_key + '`): ' + (v || '(empty)'));
-        }
-      }
-
-      return {
-        text: lines.join('\n'),
-        meta: {
-          legal_entity: legalEntity,
-          contract_type: contractType,
-          template_key: tmpl.key,
-          template_status_code: tmpl.status_code,
-          template_available: tmpl.available,
-          requires_high_risk_review: true,
-          high_risk_families: highRiskFamilies
-        }
-      };
-    }
-
-    function cgPageRenderReviewPanel() {
-      var panel = document.getElementById('cg-page-review-panel');
-      if (!panel) return;
-      var meta = _cgPageState.lastMeta;
-      if (!meta || !meta.requires_high_risk_review) {
-        panel.style.display = 'none';
-        panel.innerHTML = '';
-        return;
-      }
-      var families = meta.high_risk_families || [];
-      if (!_cgPageState.reviewDecisions || _cgPageState.reviewDecisions.length !== families.length) {
-        _cgPageState.reviewDecisions = [];
-        for (var i = 0; i < families.length; i++) _cgPageState.reviewDecisions.push('PENDING');
-      }
-      var html = '<div style="font-size:0.82em;font-weight:700;color:#263238;margin-bottom:8px;">High-Risk Clause Review</div>';
-      for (var fi = 0; fi < families.length; fi++) {
-        html += '<div style="display:grid;grid-template-columns:minmax(220px,1fr) minmax(180px,220px);gap:8px;align-items:center;margin-bottom:6px;">';
-        html += '<div style="font-size:0.8em;color:#455a64;">' + _pfGateEsc(families[fi]) + '</div>';
-        html += '<select onchange="cgPageSetRiskDecision(' + fi + ', this.value)" style="padding:6px;border:1px solid #cfd8dc;border-radius:4px;font-size:0.8em;">';
-        html += '<option value="PENDING"' + (_cgPageState.reviewDecisions[fi] === 'PENDING' ? ' selected' : '') + '>PENDING</option>';
-        html += '<option value="ACCEPTED"' + (_cgPageState.reviewDecisions[fi] === 'ACCEPTED' ? ' selected' : '') + '>ACCEPTED</option>';
-        html += '<option value="MODIFIED_AND_ACCEPTED"' + (_cgPageState.reviewDecisions[fi] === 'MODIFIED_AND_ACCEPTED' ? ' selected' : '') + '>MODIFIED_AND_ACCEPTED</option>';
-        html += '<option value="REJECTED"' + (_cgPageState.reviewDecisions[fi] === 'REJECTED' ? ' selected' : '') + '>REJECTED</option>';
-        html += '</select></div>';
-      }
-      if (meta.template_status_code === 'NO_ENTITY_TEMPLATE_AVAILABLE') {
-        html += '<div style="margin-top:8px;">';
-        html += '<label style="display:block;font-size:0.78em;color:#455a64;margin-bottom:4px;">Fallback Note (required when no Ostereo template exists)</label>';
-        html += '<textarea onchange="cgPageSetFallbackNote(this.value)" style="width:100%;min-height:64px;padding:8px;border:1px solid #cfd8dc;border-radius:4px;font-size:0.8em;">' + _pfGateEsc(_cgPageState.fallbackNote || '') + '</textarea>';
-        html += '</div>';
-      }
-      panel.innerHTML = html;
-      panel.style.display = 'block';
-    }
-
-    function cgPageSetRiskDecision(idx, val) {
-      if (!_cgPageState.reviewDecisions) _cgPageState.reviewDecisions = [];
-      _cgPageState.reviewDecisions[idx] = val || 'PENDING';
-    }
-
-    function cgPageSetFallbackNote(val) {
-      _cgPageState.fallbackNote = String(val || '').trim();
-    }
-
-    function cgPageMarkReconstructionComplete() {
-      if (!_cgPageState.lastMeta) {
-        _cgPageSetStatus('Generate contract text first.', 'warn');
-        return;
-      }
-      var fam = _cgPageState.lastMeta.high_risk_families || [];
-      for (var i = 0; i < fam.length; i++) {
-        if ((_cgPageState.reviewDecisions[i] || 'PENDING') === 'PENDING') {
-          _cgPageSetStatus('All high-risk clauses need review decisions before completion.', 'warn');
-          return;
-        }
-      }
-      if (_cgPageState.lastMeta.template_status_code === 'NO_ENTITY_TEMPLATE_AVAILABLE' && !_cgPageState.fallbackNote) {
-        _cgPageSetStatus('Fallback note is required for NO_ENTITY_TEMPLATE_AVAILABLE.', 'warn');
-        return;
-      }
-      var decisions = [];
-      for (var di = 0; di < fam.length; di++) {
-        decisions.push({
-          clause_family: fam[di],
-          decision: _cgPageState.reviewDecisions[di] || 'PENDING'
-        });
-      }
-      var payload = {
-        reconstruction_review: {
-          source: 'contract_generator',
-          legal_entity: _cgPageState.lastMeta.legal_entity || '',
-          contract_type: _cgPageState.lastMeta.contract_type || '',
-          template_status_code: _cgPageState.lastMeta.template_status_code || '',
-          decisions: decisions,
-          fallback_note: _cgPageState.fallbackNote || '',
-          completed_at: new Date().toISOString()
-        }
-      };
-      if (typeof pfGateAction !== 'function') {
-        _cgPageSetStatus('Preflight action handler unavailable.', 'error');
-        return;
-      }
-      pfGateAction('reconstruction_complete', payload)
-        .then(function() {
-          _cgPageSetStatus('Reconstruction review submitted to preflight gate.', 'success');
-        })
-        .catch(function() {
-          _cgPageSetStatus('Failed to submit reconstruction review.', 'error');
-        });
-    }
-
-    function cgPageInit(forceRefresh) {
-      var sandboxEl = document.getElementById('cg-page-sandbox-status');
-      var isSandbox = _cgInSandboxMode();
-      if (sandboxEl) {
-        sandboxEl.textContent = isSandbox ? 'Active' : 'Inactive';
-        sandboxEl.style.color = isSandbox ? '#2e7d32' : '#c62828';
-      }
-      var sheetSel = document.getElementById('cg-page-sheet-select');
-      var rowSel = document.getElementById('cg-page-row-select');
-      if (!sheetSel || !rowSel) return;
-
-      var controls = document.querySelectorAll('#page-contract-generator select, #page-contract-generator button');
-      for (var ci = 0; ci < controls.length; ci++) controls[ci].disabled = !isSandbox;
-
-      if (!isSandbox) {
-        _cgPageSetStatus('Sandbox mode required. Enable Demo Mode from the login page or Admin sandbox toggle to use Contract Generator.', 'warn');
-        return;
-      }
-      _cgPageSetStatus('', '');
-
-      var sheets = _cgGetDataSheetNames();
-      if (forceRefresh || sheetSel.options.length === 0) {
-        var html = '';
-        for (var si = 0; si < sheets.length; si++) {
-          html += '<option value="' + _pftlEsc(sheets[si]) + '">' + _pftlEsc(sheets[si]) + '</option>';
-        }
-        sheetSel.innerHTML = html;
-      }
-      cgPageRefreshRows();
-    }
-
-    function cgPageRefreshRows() {
-      var sheetSel = document.getElementById('cg-page-sheet-select');
-      var rowSel = document.getElementById('cg-page-row-select');
-      if (!sheetSel || !rowSel) return;
-      var sheetName = sheetSel.value;
-      if (!sheetName || !window.workbookData || !window.workbookData[sheetName]) {
-        rowSel.innerHTML = '<option value="">No records</option>';
-        return;
-      }
-      var rows = window.workbookData[sheetName];
-      var html = '';
-      for (var ri = 0; ri < rows.length; ri++) {
-        var label = _cgResolveRecordName(rows[ri]) || ('Row ' + (ri + 1));
-        html += '<option value="' + ri + '">' + _pftlEsc(label) + '</option>';
-      }
-      rowSel.innerHTML = html;
-    }
-
-    function cgPageGenerate() {
-      if (!_cgInSandboxMode()) {
-        _cgPageSetStatus('Sandbox mode required.', 'warn');
-        return;
-      }
-      var sheetSel = document.getElementById('cg-page-sheet-select');
-      var rowSel = document.getElementById('cg-page-row-select');
-      var out = document.getElementById('cg-page-output');
-      if (!sheetSel || !rowSel || !out) return;
-      var sheetName = sheetSel.value;
-      var rowIdx = parseInt(rowSel.value, 10);
-      if (!sheetName || isNaN(rowIdx)) {
-        _cgPageSetStatus('Select a section and record first.', 'warn');
-        return;
-      }
-      if (!window.workbookData || !window.workbookData[sheetName]) {
-        _cgPageSetStatus('No data for selected section.', 'error');
-        return;
-      }
-      var row = window.workbookData[sheetName][rowIdx];
-      if (!row) {
-        _cgPageSetStatus('Record not found.', 'error');
-        return;
-      }
-      var build = _cgBuildContractText(sheetName, row, rowIdx);
-      var text = (build && build.text) ? build.text : String(build || '');
-      out.value = text;
-      _cgPageState.lastOutput = text;
-      _cgPageState.lastMeta = (build && build.meta) ? build.meta : null;
-      _cgPageState.reviewDecisions = [];
-      _cgPageState.fallbackNote = '';
-      var recName = _cgResolveRecordName(row) || ('row_' + (rowIdx + 1));
-      _cgPageState.lastFileName = sheetName.replace(/\s+/g, '_') + '_' + recName.replace(/[^a-zA-Z0-9_-]/g, '_') + '.md';
-      if (_cgPageState.lastMeta && _cgPageState.lastMeta.template_status_code === 'NO_ENTITY_TEMPLATE_AVAILABLE') {
-        _cgPageSetStatus('Generated ' + text.split('\n').length + ' lines. Template status: NO_ENTITY_TEMPLATE_AVAILABLE.', 'warn');
-      } else {
-        _cgPageSetStatus('Generated ' + text.split('\n').length + ' lines.', 'success');
-      }
-      cgPageRenderReviewPanel();
-    }
-
-    function cgPageDownload() {
-      if (!_cgPageState.lastOutput) {
-        _cgPageSetStatus('Generate contract text first.', 'warn');
-        return;
-      }
-      var blob = new Blob([_cgPageState.lastOutput], { type: 'text/markdown;charset=utf-8' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = _cgPageState.lastFileName || 'contract_draft.md';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      _cgPageSetStatus('Downloaded ' + a.download, 'success');
-    }
-
+    
     // ========== ADMIN QUEUE RENDERING (v1.5.1) ==========
     function renderAdminQueue() {
       var items = getPatchQueue();
@@ -39491,22 +39180,14 @@
       if (window._pfGateState.adminOnly) return [];
       if (!window._pfGateState.result) return ['Document preflight not run'];
       var gate = window._pfGateState.result.gate_color;
-      var reviewComplete = !!(window._pfGateState.reconstructionReview && window._pfGateState.reconstructionReview.completed);
       if (gate === 'GREEN') return [];
       if (gate === 'YELLOW') {
-        if (window._pfGateState.actionTaken === 'accept_risk') return [];
-        var hasCopyPathYellow = (window._pfGateState.actionTaken === 'generate_copy' || window._pfGateState.actionTaken === 'escalate_ocr' || !!window._pfGateState.reconstructionReview);
-        if (hasCopyPathYellow && reviewComplete) return [];
-        if (hasCopyPathYellow && !reviewComplete) return ['Document preflight is YELLOW — reconstruction review must be marked complete'];
-        return ['Document preflight is YELLOW — must Accept Risk or Generate Copy'];
+        if (window._pfGateState.actionTaken === 'accept_risk' || window._pfGateState.actionTaken === 'escalate_ocr') return [];
+        return ['Document preflight is YELLOW — must Accept Risk or Escalate OCR'];
       }
       if (gate === 'RED') {
-        var hasCopy = (window._pfGateState.actionTaken === 'generate_copy' || window._pfGateState.actionTaken === 'escalate_ocr' || window._pfGateState.actionTaken === 'override_red' || !!window._pfGateState.reconstructionReview);
-        var hasOverride = !!(window._pfGateState.redOverride && window._pfGateState.redOverride.approved);
-        if (!hasCopy) return ['Document preflight is RED — must Generate Copy'];
-        if (!reviewComplete) return ['Document preflight is RED — reconstruction review must be marked complete'];
-        if (!hasOverride) return ['Document preflight is RED — reconstruction requested, but red override is required'];
-        return [];
+        if (window._pfGateState.actionTaken === 'escalate_ocr') return [];
+        return ['Document preflight is RED — must Escalate to OCR'];
       }
       return ['Unknown preflight gate state'];
     }
@@ -46677,43 +46358,6 @@
       vrUpdateStateBadge();
       vrUpdateActionButtons();
       vrRenderDecisionSummary();
-      vrRenderPreflightContext(payload);
-    }
-
-    function vrRenderPreflightContext(payload) {
-      var section = document.getElementById('vr-preflight-context-section');
-      var body = document.getElementById('vr-preflight-context-body');
-      if (!section || !body) return;
-
-      var pfc = null;
-      if (payload && payload.patch_request && payload.patch_request.preflight_context && payload.patch_request.preflight_context.source) {
-        pfc = payload.patch_request.preflight_context;
-      }
-      if (!pfc) {
-        section.style.display = 'none';
-        body.innerHTML = '';
-        return;
-      }
-
-      section.style.display = '';
-      var cc = pfc.contract_classification || {};
-      var aa = pfc.analyst_assignments || {};
-      var subtypes = (aa.opportunity_subtypes || []);
-      var schedTypes = (aa.schedule_types || []).map(function(v) {
-        return (typeof _schTypeLabel === 'function') ? _schTypeLabel(v) : v;
-      });
-      var subtypeStr = subtypes.length > 0 ? subtypes.join(', ') : '—';
-      var schedStr = schedTypes.length > 0 ? schedTypes.join(', ') : '—';
-
-      var html = '';
-      html += '<div><span class="vr-author-label">Contract Category:</span> <span class="vr-author-value">' + escapeHtml(cc.contract_category || 'n/a') + '</span></div>';
-      html += '<div><span class="vr-author-label">Selected Subtypes:</span> <span class="vr-author-value">' + escapeHtml(subtypeStr) + '</span></div>';
-      html += '<div><span class="vr-author-label">Schedule Types:</span> <span class="vr-author-value">' + escapeHtml(schedStr) + '</span></div>';
-      if (aa.manual_counterparty) {
-        html += '<div><span class="vr-author-label">Manual Counterparty:</span> <span class="vr-author-value">' + escapeHtml(aa.manual_counterparty) + '</span></div>';
-      }
-      html += '<div style="margin-top: 4px;"><span class="vr-author-label">Source:</span> <span class="vr-author-value" style="font-style: italic;">' + escapeHtml(pfc.source || 'n/a') + '</span></div>';
-      body.innerHTML = html;
     }
     
     function vrOpenSingleRowReview() {
@@ -48705,12 +48349,1156 @@
     }
 
     function openContractGeneratorEntry() {
-      if (currentMode !== 'admin' && currentMode !== 'architect') {
-        showToast('Contract Generator is available in Admin mode.', 'warning');
+      if (currentMode !== 'admin') {
+        showToast('Contract Generator is available in Admin Panel.', 'warning');
         return;
       }
       navigateTo('contract-generator');
-      setTimeout(function() { cgPageInit(false); }, 60);
+      setTimeout(function() {
+        if (typeof cgbInitPage === 'function') cgbInitPage(true);
+      }, 80);
+    }
+
+    var cgbState = {
+      initialized: false,
+      sessionMode: 'new',
+      pastSessions: [],
+      currentPastId: '',
+      termsTab: 'schedules',
+      legalEntity: 'Create Music Group',
+      templateType: 'distribution_sync',
+      whoWhere: {
+        counterpartyName: '',
+        counterpartyResolved: false,
+        partyType: '',
+        businessUnit: ''
+      },
+      resolver: {
+        legalEntities: [],
+        accountsByEntity: {}
+      },
+      counterpartyPicker: {
+        open: false,
+        filtered: [],
+        renderCount: 0,
+        activeIndex: -1
+      },
+      catalogSource: {
+        sourceType: 'manual',
+        scope: 'BACK_CATALOG_EXISTING',
+        sourceRef: ''
+      },
+      seed: { sheet: '', rowIndex: 0 },
+      sheetMap: { accounts: '', opportunity: '', financials: '', schedule: '', scheduleCatalog: '', catalog: '', v2addons: '' },
+      workflow: {
+        contractType: '',
+        accounts: [],
+        opportunity: '',
+        schedule: '',
+        catalog: '',
+        scheduleCatalog: '',
+        v2addons: []
+      },
+      sections: { accounts: '', opportunity: '', financials: '', schedule: '' },
+      lineItems: [],
+      catalogItems: [],
+      formValues: {},
+      preflight: { missingRequired: 0, invalidPicklist: 0, unknownColumns: 0, blockers: [] },
+      markdown: '',
+      outputFileName: 'contract_generator_draft.md'
+    };
+
+    var CGB_PAST_SESSIONS_KEY = 'contract_generator_past_sessions_v1';
+
+    function cgbSafe(v) { return (v === null || v === undefined) ? '' : String(v).trim(); }
+    function cgbNorm(v) { return cgbSafe(v).toLowerCase(); }
+    function cgbNormKey(v) { return (typeof normalizeFieldKey === 'function') ? normalizeFieldKey(v || '') : cgbNorm(v).replace(/[^a-z0-9]/g, '_'); }
+    function cgbFormKey(sheet, fieldKey) { return sheet + '::' + fieldKey; }
+    function cgbJsEsc(str) { return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+
+    function cgbGetSheetNames() {
+      var names = [];
+      if (typeof getDataSheets === 'function') names = getDataSheets() || [];
+      else if (workbook && workbook.sheets) names = Object.keys(workbook.sheets);
+      return (names || []).filter(function(name) {
+        if (!name) return false;
+        if (typeof isMetaSheet === 'function' && isMetaSheet(name)) return false;
+        if (typeof isReferenceSheet === 'function' && isReferenceSheet(name)) return false;
+        return true;
+      });
+    }
+
+    function cgbGetRows(sheetName) {
+      if (!sheetName || !workbook || !workbook.sheets || !workbook.sheets[sheetName]) return [];
+      var rows = workbook.sheets[sheetName].rows || [];
+      return Array.isArray(rows) ? rows : [];
+    }
+
+    function cgbGetRow(sheetName, idx) {
+      var rows = cgbGetRows(sheetName);
+      var i = parseInt(idx, 10);
+      if (!rows.length || isNaN(i) || i < 0 || i >= rows.length) return null;
+      return rows[i];
+    }
+
+    function cgbFindValue(row, hints) {
+      if (!row) return '';
+      var keys = Object.keys(row || {});
+      var i, j;
+      for (i = 0; i < hints.length; i++) {
+        var hint = cgbNorm(hints[i]);
+        for (j = 0; j < keys.length; j++) {
+          if (cgbNorm(keys[j]).indexOf(hint) >= 0) {
+            var v = cgbSafe(row[keys[j]]);
+            if (v) return v;
+          }
+        }
+      }
+      return '';
+    }
+
+    function cgbFindExactFieldValue(row, candidates) {
+      if (!row) return '';
+      var keys = Object.keys(row || {});
+      var normalized = {};
+      for (var i = 0; i < keys.length; i++) normalized[cgbNormKey(keys[i])] = keys[i];
+      for (var j = 0; j < candidates.length; j++) {
+        var key = normalized[cgbNormKey(candidates[j])];
+        if (key) {
+          var v = cgbSafe(row[key]);
+          if (v) return v;
+        }
+      }
+      return '';
+    }
+
+    function cgbExtractLegalEntity(row) {
+      var direct = cgbFindExactFieldValue(row, [
+        'Legal_Entity__c', 'Legal_Entity_c', 'Legal_Entity',
+        'legal_entity', 'Business_Unit__c', 'Business_Unit_c', 'business_unit'
+      ]);
+      if (direct) return direct;
+      return cgbFindValue(row, ['legal entity', 'business unit', 'entity']);
+    }
+
+    function cgbExtractAccountName(row) {
+      var direct = cgbFindExactFieldValue(row, [
+        'Account_Name__c', 'Account_Name_c', 'Account_Name',
+        'account_name', 'Company_Name__c', 'Company_Name_c', 'Company_Name',
+        'company_name', 'Legal_Name__c', 'Legal_Name_c', 'Legal_Name'
+      ]);
+      if (direct) return direct;
+      return cgbFindValue(row, ['account_name', 'company_name', 'legal_name', 'counterparty']);
+    }
+
+    function cgbBuildBatchResolverIndex() {
+      var index = {};
+      var sheets = cgbGetSheetNames();
+      for (var si = 0; si < sheets.length; si++) {
+        var rows = cgbGetRows(sheets[si]);
+        for (var ri = 0; ri < rows.length; ri++) {
+          var row = rows[ri];
+          var entity = cgbExtractLegalEntity(row);
+          var acct = cgbExtractAccountName(row);
+          if (!entity || !acct) continue;
+          if (!index[entity]) index[entity] = {};
+          index[entity][cgbNorm(acct)] = acct;
+        }
+      }
+      var entities = Object.keys(index).sort(function(a, b) { return a.localeCompare(b); });
+      var byEntity = {};
+      for (var i = 0; i < entities.length; i++) {
+        var names = Object.keys(index[entities[i]]).map(function(k) { return index[entities[i]][k]; });
+        names.sort(function(a, b) { return a.localeCompare(b); });
+        byEntity[entities[i]] = names;
+      }
+      cgbState.resolver.legalEntities = entities;
+      cgbState.resolver.accountsByEntity = byEntity;
+    }
+
+    function cgbDescribeRow(row, idx) {
+      if (!row) return 'Row ' + (idx + 1);
+      var id = cgbFindValue(row, ['contract_key', 'contract_id', 'record_id', 'name', 'file_name']);
+      return id || ('Row ' + (idx + 1));
+    }
+
+    function cgbRowValue(row, fieldKey) {
+      if (!row || !fieldKey) return '';
+      if (row[fieldKey] !== undefined) return row[fieldKey];
+      var target = cgbNormKey(fieldKey);
+      var keys = Object.keys(row);
+      for (var i = 0; i < keys.length; i++) {
+        if (cgbNormKey(keys[i]) === target) return row[keys[i]];
+      }
+      return '';
+    }
+
+    function cgbTemplateDefaults(templateType) {
+      if (templateType === 'master_license') {
+        return {
+          accounts: 'The Licensor and Licensee are parties to this Master License agreement.',
+          opportunity: 'Opportunity scope includes master-use rights in approved channels and territories.',
+          financials: 'Fees, royalties, and recoupment terms follow the negotiated schedule.',
+          schedule: 'The agreement term begins at effectiveness and ends per stated duration or termination rights.'
+        };
+      }
+      if (templateType === 'services') {
+        return {
+          accounts: 'The service provider and client execute this Services agreement.',
+          opportunity: 'Opportunity scope includes service deliverables and approval milestones.',
+          financials: 'Compensation includes fees and payments due under milestone acceptance.',
+          schedule: 'Delivery, review, and final acceptance follow the agreed timeline.'
+        };
+      }
+      return {
+        accounts: 'Create Music Group and counterparties execute this Distribution + Sync agreement.',
+        opportunity: 'Opportunity scope includes distribution and synchronization usage rights.',
+        financials: 'Financial rights include advances, splits, and settlement cadence.',
+        schedule: 'Schedule defines effective date, term, and optional renewal windows.'
+      };
+    }
+
+    function cgbDefaultLineItem() { return { item: 'Distribution + Sync', subtype: 'Standard', split: '50/50', notes: '' }; }
+    function cgbDefaultCatalogItem() { return { title: 'Untitled Work', isrc: '', usage: 'Digital', term: '12 months' }; }
+
+    function cgbFieldMetaFields() {
+      if (!rulesBundleCache || !rulesBundleCache.fieldMeta || !Array.isArray(rulesBundleCache.fieldMeta.fields)) return [];
+      return rulesBundleCache.fieldMeta.fields;
+    }
+
+    function cgbFieldsForSheet(sheetName) {
+      var fields = cgbFieldMetaFields();
+      var scoped = fields.filter(function(f) { return (f.sheet || '') === sheetName; });
+      if (scoped.length) return scoped;
+      return fields.filter(function(f) { return !f.sheet; });
+    }
+
+    function cgbPicklistOptions(fieldMeta) {
+      var opts = [];
+      if (fieldMeta && Array.isArray(fieldMeta.options)) opts = fieldMeta.options.slice();
+      if ((!opts || !opts.length) && fieldMeta && Array.isArray(fieldMeta.picklist)) opts = fieldMeta.picklist.slice();
+      return (opts || []).map(function(v) { return cgbSafe(v); }).filter(Boolean);
+    }
+
+    function cgbIsPicklist(fieldMeta) {
+      var rf = cgbNorm(fieldMeta && fieldMeta.return_format);
+      return cgbPicklistOptions(fieldMeta).length > 0 || rf.indexOf('picklist') >= 0 || rf.indexOf('dropdown') >= 0;
+    }
+
+    function cgbGuessSheetMap() {
+      var names = cgbGetSheetNames();
+      var map = { accounts: '', opportunity: '', financials: '', schedule: '', scheduleCatalog: '', catalog: '', v2addons: '' };
+      for (var i = 0; i < names.length; i++) {
+        var n = cgbNorm(names[i]);
+        if (!map.accounts && n.indexOf('account') >= 0) map.accounts = names[i];
+        if (!map.opportunity && n.indexOf('opportunit') >= 0) map.opportunity = names[i];
+        if (!map.financials && (n.indexOf('financial') >= 0 || n.indexOf('finance') >= 0)) map.financials = names[i];
+        if (!map.scheduleCatalog && n.indexOf('schedule') >= 0 && n.indexOf('catalog') >= 0) map.scheduleCatalog = names[i];
+        if (!map.schedule && n.indexOf('schedule') >= 0 && n.indexOf('catalog') === -1) map.schedule = names[i];
+        if (!map.catalog && n.indexOf('catalog') >= 0 && n.indexOf('schedule') === -1) map.catalog = names[i];
+        if (!map.v2addons && (n.indexOf('v2') >= 0 || n.indexOf('add on') >= 0 || n.indexOf('addon') >= 0)) map.v2addons = names[i];
+      }
+      cgbState.sheetMap = map;
+    }
+
+    function cgbSelectValues(selectId) {
+      var el = document.getElementById(selectId);
+      if (!el) return [];
+      var out = [];
+      for (var i = 0; i < el.options.length; i++) if (el.options[i].selected) out.push(el.options[i].value);
+      return out;
+    }
+
+    function cgbSetSelectValues(selectId, vals) {
+      var el = document.getElementById(selectId);
+      if (!el) return;
+      var target = vals || [];
+      for (var i = 0; i < el.options.length; i++) el.options[i].selected = target.indexOf(el.options[i].value) >= 0;
+    }
+
+    function cgbCloneState() {
+      return JSON.parse(JSON.stringify(cgbState));
+    }
+
+    function cgbLoadPastSessions() {
+      try {
+        cgbState.pastSessions = JSON.parse(localStorage.getItem(CGB_PAST_SESSIONS_KEY) || '[]');
+        if (!Array.isArray(cgbState.pastSessions)) cgbState.pastSessions = [];
+      } catch (e) {
+        cgbState.pastSessions = [];
+      }
+    }
+
+    function cgbSaveCurrentSession() {
+      cgbLoadPastSessions();
+      var id = cgbState.currentPastId || ('cg_' + Date.now());
+      var name = (cgbState.whoWhere.counterpartyName || 'Untitled Counterparty') + ' - ' + (new Date().toLocaleString());
+      var snapshot = cgbCloneState();
+      snapshot.currentPastId = id;
+      var existingIdx = -1;
+      for (var i = 0; i < cgbState.pastSessions.length; i++) {
+        if (cgbState.pastSessions[i].id === id) { existingIdx = i; break; }
+      }
+      var payload = { id: id, name: name, updated_at: new Date().toISOString(), state: snapshot };
+      if (existingIdx >= 0) cgbState.pastSessions[existingIdx] = payload;
+      else cgbState.pastSessions.unshift(payload);
+      localStorage.setItem(CGB_PAST_SESSIONS_KEY, JSON.stringify(cgbState.pastSessions.slice(0, 30)));
+      cgbState.currentPastId = id;
+      return id;
+    }
+
+    function cgbStartNewSession() {
+      cgbState.sessionMode = 'new';
+      cgbState.currentPastId = '';
+      cgbState.whoWhere = { counterpartyName: '', counterpartyResolved: false, partyType: '', businessUnit: '' };
+      cgbState.catalogSource = { sourceType: 'manual', scope: 'BACK_CATALOG_EXISTING', sourceRef: '' };
+      cgbState.formValues = {};
+      cgbState.lineItems = [];
+      cgbState.catalogItems = [];
+      cgbState.preflight = { missingRequired: 0, invalidPicklist: 0, unknownColumns: 0, blockers: [] };
+      cgbSyncWhoWhereInputs();
+      cgbSyncCatalogSourceInputs();
+      cgbAutoFillFromRecord();
+      showToast('Started new contract session.', 'success');
+    }
+
+    function cgbLoadPastSession() {
+      cgbLoadPastSessions();
+      if (!cgbState.pastSessions.length) {
+        showToast('No past contract sessions found.', 'warning');
+        return;
+      }
+      var item = cgbState.pastSessions[0];
+      if (!item || !item.state) return;
+      var keepSheets = cgbGetSheetNames();
+      var restored = item.state;
+      cgbState = Object.assign(cgbState, restored);
+      cgbState.sessionMode = 'past';
+      cgbState.currentPastId = item.id;
+      // Guard against stale sheet mappings.
+      Object.keys(cgbState.sheetMap || {}).forEach(function(k) {
+        if (keepSheets.indexOf(cgbState.sheetMap[k]) === -1) cgbState.sheetMap[k] = '';
+      });
+      cgbSyncWhoWhereInputs();
+      cgbSyncCatalogSourceInputs();
+      cgbInitPage(true);
+      showToast('Loaded past session: ' + item.name, 'info');
+    }
+
+    function cgbSyncWhoWhereInputs() {
+      var cp = document.getElementById('cgb-counterparty-name');
+      var pt = document.getElementById('cgb-party-type');
+      var bu = document.getElementById('cgb-business-unit');
+      cgbEnsureCounterpartyPickerState();
+      if (cp) cp.value = cgbState.whoWhere.counterpartyName || '';
+      if (pt) pt.value = cgbState.whoWhere.partyType || '';
+      cgbPopulateLegalEntityOptions();
+      if (bu) bu.value = cgbState.whoWhere.businessUnit || '';
+      if (document.activeElement !== cp) cgbState.counterpartyPicker.open = false;
+      cgbSyncCounterpartyPicker(false);
+      cgbRenderCounterpartyStatus();
+    }
+
+    function cgbPopulateLegalEntityOptions() {
+      var bu = document.getElementById('cgb-business-unit');
+      if (!bu) return;
+      var entities = cgbState.resolver.legalEntities || [];
+      var html = '<option value="">Select Legal Entity</option>';
+      for (var i = 0; i < entities.length; i++) {
+        var selected = entities[i] === cgbState.whoWhere.businessUnit ? ' selected' : '';
+        html += '<option value="' + escapeHtml(entities[i]) + '"' + selected + '>' + escapeHtml(entities[i]) + '</option>';
+      }
+      bu.innerHTML = html;
+    }
+
+    function cgbCounterpartyAccountsForEntity() {
+      var entity = cgbState.whoWhere.businessUnit || '';
+      if (!entity) return [];
+      return cgbState.resolver.accountsByEntity[entity] || [];
+    }
+
+    function cgbEnsureCounterpartyPickerState() {
+      if (!cgbState.counterpartyPicker) {
+        cgbState.counterpartyPicker = { open: false, filtered: [], renderCount: 0, activeIndex: -1 };
+      }
+    }
+
+    function cgbSyncCounterpartyPicker(keepActive) {
+      cgbEnsureCounterpartyPickerState();
+      var typed = cgbNorm(cgbState.whoWhere.counterpartyName || '');
+      var accounts = cgbCounterpartyAccountsForEntity();
+      var filtered = [];
+      if (!typed) {
+        filtered = accounts.slice();
+      } else {
+        for (var i = 0; i < accounts.length; i++) {
+          if (cgbNorm(accounts[i]).indexOf(typed) >= 0) filtered.push(accounts[i]);
+        }
+      }
+      cgbState.counterpartyPicker.filtered = filtered;
+      if (!keepActive) cgbState.counterpartyPicker.activeIndex = -1;
+      cgbState.counterpartyPicker.renderCount = Math.min(filtered.length, 120);
+      cgbRenderCounterpartyDropdown();
+    }
+
+    function cgbRenderCounterpartyDropdown() {
+      cgbEnsureCounterpartyPickerState();
+      var dd = document.getElementById('cgb-counterparty-dropdown');
+      if (!dd) return;
+      if (!cgbState.counterpartyPicker.open) {
+        dd.style.display = 'none';
+        return;
+      }
+      var html = '';
+      var entity = cgbState.whoWhere.businessUnit || '';
+      if (!entity) {
+        html = '<div style="padding:8px 10px; font-size:0.78em; color:#607d8b;">Select Legal Entity first.</div>';
+      } else {
+        var active = cgbState.counterpartyPicker.activeIndex;
+        html += cgbCounterpartyOptionHtml(0, '+ Create New Counterparty…', true, active === 0);
+        var limit = Math.min(cgbState.counterpartyPicker.filtered.length, cgbState.counterpartyPicker.renderCount || 120);
+        for (var i = 0; i < limit; i++) {
+          html += cgbCounterpartyOptionHtml(i + 1, cgbState.counterpartyPicker.filtered[i], false, active === (i + 1));
+        }
+        if (!cgbState.counterpartyPicker.filtered.length) {
+          html += '<div style="padding:8px 10px; font-size:0.78em; color:#607d8b;">No matching accounts for this legal entity.</div>';
+        } else if (limit < cgbState.counterpartyPicker.filtered.length) {
+          html += '<div style="padding:7px 10px; font-size:0.72em; color:#78909c; border-top:1px solid #eceff1;">Scroll to load more (' + (cgbState.counterpartyPicker.filtered.length - limit) + ' remaining)</div>';
+        }
+      }
+      dd.innerHTML = html;
+      dd.style.display = 'block';
+    }
+
+    function cgbCounterpartyOptionHtml(index, label, isCreateNew, isActive) {
+      var bg = isActive ? '#e3f2fd' : '#fff';
+      var color = isCreateNew ? '#1565c0' : '#263238';
+      var weight = isCreateNew ? '600' : '400';
+      var createAttr = isCreateNew ? 'true' : 'false';
+      return '<div role="option" data-index="' + index + '" data-create-new="' + createAttr + '" onmousedown="cgbPickCounterpartyOption(' + index + ')" style="padding:8px 10px; border-bottom:1px solid #f1f4f6; background:' + bg + '; color:' + color + '; font-weight:' + weight + '; cursor:pointer; font-size:0.82em;">' + escapeHtml(label) + '</div>';
+    }
+
+    function cgbOpenCounterpartyPicker() {
+      cgbEnsureCounterpartyPickerState();
+      cgbState.counterpartyPicker.open = true;
+      cgbSyncCounterpartyPicker(false);
+    }
+
+    function cgbCloseCounterpartyPicker() {
+      cgbEnsureCounterpartyPickerState();
+      cgbState.counterpartyPicker.open = false;
+      cgbRenderCounterpartyDropdown();
+    }
+
+    function cgbOnCounterpartyBlur() {
+      setTimeout(function() { cgbCloseCounterpartyPicker(); }, 120);
+    }
+
+    function cgbPickCounterpartyOption(index) {
+      cgbEnsureCounterpartyPickerState();
+      if (index === 0) {
+        cgbState.whoWhere.counterpartyResolved = false;
+      } else {
+        var acct = cgbState.counterpartyPicker.filtered[index - 1] || '';
+        cgbState.whoWhere.counterpartyName = acct;
+        cgbState.whoWhere.counterpartyResolved = !!acct;
+      }
+      var cp = document.getElementById('cgb-counterparty-name');
+      if (cp) cp.value = cgbState.whoWhere.counterpartyName || '';
+      cgbCloseCounterpartyPicker();
+      cgbRenderCounterpartyStatus();
+      cgbComputePreflight();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbOnCounterpartyScroll() {
+      cgbEnsureCounterpartyPickerState();
+      var dd = document.getElementById('cgb-counterparty-dropdown');
+      if (!dd || !cgbState.counterpartyPicker.open) return;
+      if ((dd.scrollTop + dd.clientHeight) < (dd.scrollHeight - 24)) return;
+      var total = cgbState.counterpartyPicker.filtered.length;
+      var next = Math.min(total, (cgbState.counterpartyPicker.renderCount || 120) + 120);
+      if (next !== cgbState.counterpartyPicker.renderCount) {
+        cgbState.counterpartyPicker.renderCount = next;
+        cgbRenderCounterpartyDropdown();
+      }
+    }
+
+    function cgbOnCounterpartyKeydown(ev) {
+      cgbEnsureCounterpartyPickerState();
+      var key = ev && ev.key ? ev.key : '';
+      if (key === 'Tab') return;
+      if (!cgbState.counterpartyPicker.open && (key === 'ArrowDown' || key === 'ArrowUp' || key === 'Enter')) {
+        cgbOpenCounterpartyPicker();
+      }
+      var max = cgbState.counterpartyPicker.renderCount || 0;
+      var listSize = Math.max(1, max + 1);
+      if (key === 'ArrowDown') {
+        ev.preventDefault();
+        cgbState.counterpartyPicker.activeIndex = Math.min(listSize - 1, cgbState.counterpartyPicker.activeIndex + 1);
+        cgbRenderCounterpartyDropdown();
+      } else if (key === 'ArrowUp') {
+        ev.preventDefault();
+        cgbState.counterpartyPicker.activeIndex = Math.max(0, cgbState.counterpartyPicker.activeIndex - 1);
+        cgbRenderCounterpartyDropdown();
+      } else if (key === 'Enter') {
+        if (cgbState.counterpartyPicker.activeIndex >= 0) {
+          ev.preventDefault();
+          cgbPickCounterpartyOption(cgbState.counterpartyPicker.activeIndex);
+        }
+      } else if (key === 'Escape') {
+        cgbCloseCounterpartyPicker();
+      }
+    }
+
+    function cgbSyncCatalogSourceInputs() {
+      var st = document.getElementById('cgb-catalog-source-type');
+      var sc = document.getElementById('cgb-catalog-scope');
+      var sr = document.getElementById('cgb-catalog-source-ref');
+      if (st) st.value = cgbState.catalogSource.sourceType || 'manual';
+      if (sc) sc.value = cgbState.catalogSource.scope || 'BACK_CATALOG_EXISTING';
+      if (sr) sr.value = cgbState.catalogSource.sourceRef || '';
+      cgbRenderTermsHint();
+    }
+
+    function cgbRenderCounterpartyStatus() {
+      var el = document.getElementById('cgb-counterparty-status');
+      if (!el) return;
+      if (!cgbState.whoWhere.businessUnit) {
+        el.textContent = 'Select Legal Entity first';
+        el.style.color = '#546e7a';
+        return;
+      }
+      if (!cgbState.whoWhere.counterpartyName) {
+        el.textContent = 'Choose existing account or Create New';
+        el.style.color = '#546e7a';
+        return;
+      }
+      if (cgbState.whoWhere.counterpartyResolved) {
+        el.textContent = 'Matched existing account in selected legal entity';
+        el.style.color = '#2e7d32';
+      } else {
+        el.textContent = 'Will create new counterparty under selected legal entity';
+        el.style.color = '#ef6c00';
+      }
+    }
+
+    function cgbOnCounterpartyInput(value) {
+      cgbState.whoWhere.counterpartyName = cgbSafe(value);
+      cgbState.whoWhere.counterpartyResolved = false;
+      var target = cgbNorm(cgbState.whoWhere.counterpartyName);
+      var accounts = cgbCounterpartyAccountsForEntity();
+      for (var i = 0; i < accounts.length; i++) {
+        if (target && cgbNorm(accounts[i]) === target) { cgbState.whoWhere.counterpartyResolved = true; break; }
+      }
+      cgbEnsureCounterpartyPickerState();
+      cgbState.counterpartyPicker.open = true;
+      cgbSyncCounterpartyPicker(false);
+      cgbRenderCounterpartyStatus();
+      cgbComputePreflight();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbOnWhoWhereChange() {
+      cgbState.whoWhere.partyType = (document.getElementById('cgb-party-type') || {}).value || '';
+      cgbState.whoWhere.businessUnit = (document.getElementById('cgb-business-unit') || {}).value || '';
+      cgbState.whoWhere.counterpartyResolved = false;
+      cgbSyncCounterpartyPicker(false);
+      if (cgbState.whoWhere.counterpartyName) {
+        var target = cgbNorm(cgbState.whoWhere.counterpartyName);
+        var accounts = cgbCounterpartyAccountsForEntity();
+        for (var i = 0; i < accounts.length; i++) {
+          if (target && cgbNorm(accounts[i]) === target) { cgbState.whoWhere.counterpartyResolved = true; break; }
+        }
+      }
+      cgbRenderCounterpartyStatus();
+      cgbComputePreflight();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbOnCatalogSourceChange() {
+      cgbState.catalogSource.sourceType = (document.getElementById('cgb-catalog-source-type') || {}).value || 'manual';
+      cgbState.catalogSource.scope = (document.getElementById('cgb-catalog-scope') || {}).value || 'BACK_CATALOG_EXISTING';
+      cgbState.catalogSource.sourceRef = (document.getElementById('cgb-catalog-source-ref') || {}).value || '';
+      cgbRenderTermsHint();
+      cgbComputePreflight();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbSetTermsTab(tabName) {
+      cgbState.termsTab = tabName || 'schedules';
+      cgbRenderTermsHint();
+    }
+
+    function cgbRenderTermsHint() {
+      var el = document.getElementById('cgb-terms-hint');
+      if (!el) return;
+      var hints = {
+        schedules: 'Schedules tab: define effective windows, term, and territory control for the selected contract type.',
+        schedule_catalog: 'Schedule Catalog tab: map scoped assets (catalog items) to active schedules.',
+        financials: 'Financials tab: encode advances, splits, recoupability, and rights payments.',
+        addons: 'Add Ons tab: side-car rights (options, merch, first negotiation, matching).'
+      };
+      var scopeTxt = cgbState.catalogSource.scope ? (' Scope: ' + cgbState.catalogSource.scope + '.') : '';
+      el.textContent = (hints[cgbState.termsTab] || hints.schedules) + scopeTxt;
+    }
+
+    function cgbBuildAnnotationMap() {
+      return {
+        session_mode: cgbState.sessionMode,
+        contract_profile: 'back_catalog_distribution_sync_youtube_cpa',
+        who_where: {
+          counterparty_name: cgbState.whoWhere.counterpartyName || '',
+          counterparty_resolved: !!cgbState.whoWhere.counterpartyResolved,
+          party_type: cgbState.whoWhere.partyType || '',
+          legal_entity_resolver: cgbState.whoWhere.businessUnit || '',
+          author_legal_entity: cgbState.legalEntity || ''
+        },
+        catalog_source: cgbState.catalogSource,
+        clause_map: {
+          entity_opportunity_resolution: ['Accounts.*', 'Opportunity.*'],
+          asset_catalog_synchronization: ['Schedule.*', 'Schedule Catalog.*', 'Catalog.*'],
+          financial_rights_modeling: ['Financials.*', 'V2 Add Ons.*']
+        },
+        preflight: cgbState.preflight
+      };
+    }
+
+    function cgbPopulateSeedSelectors(forceRefresh) {
+      var sheetSel = document.getElementById('cgb-sheet-select');
+      var rowSel = document.getElementById('cgb-row-select');
+      if (!sheetSel || !rowSel) return;
+      var sheets = cgbGetSheetNames();
+      if (!sheets.length) {
+        sheetSel.innerHTML = '<option value="">No dataset loaded</option>';
+        rowSel.innerHTML = '<option value="">No records</option>';
+        return;
+      }
+      if (!cgbState.seed.sheet || sheets.indexOf(cgbState.seed.sheet) === -1 || forceRefresh) cgbState.seed.sheet = sheets[0];
+      var shHtml = '';
+      for (var i = 0; i < sheets.length; i++) shHtml += '<option value="' + escapeHtml(sheets[i]) + '"' + (sheets[i] === cgbState.seed.sheet ? ' selected' : '') + '>' + escapeHtml(sheets[i]) + '</option>';
+      sheetSel.innerHTML = shHtml;
+      var rows = cgbGetRows(cgbState.seed.sheet);
+      if (!rows.length) {
+        rowSel.innerHTML = '<option value="">No records</option>';
+        return;
+      }
+      if (cgbState.seed.rowIndex < 0 || cgbState.seed.rowIndex >= rows.length) cgbState.seed.rowIndex = 0;
+      var rHtml = '';
+      for (var ri = 0; ri < rows.length; ri++) rHtml += '<option value="' + ri + '"' + (ri === cgbState.seed.rowIndex ? ' selected' : '') + '>' + escapeHtml((ri + 1) + ' - ' + cgbDescribeRow(rows[ri], ri)) + '</option>';
+      rowSel.innerHTML = rHtml;
+    }
+
+    function cgbPopulateWorkflowSelectors() {
+      var fields = cgbFieldMetaFields();
+      var contractTypeSel = document.getElementById('cgb-contract-type');
+      if (contractTypeSel) {
+        var opts = [];
+        fields.forEach(function(f) {
+          var fk = cgbNorm(f.field_key);
+          if (fk.indexOf('document_type') >= 0 || fk.indexOf('contract_type') >= 0 || fk.indexOf('agreement_type') >= 0) {
+            opts = opts.concat(cgbPicklistOptions(f));
+          }
+        });
+        var uniq = {};
+        opts = opts.filter(function(v) { if (uniq[cgbNorm(v)]) return false; uniq[cgbNorm(v)] = true; return true; });
+        if (!opts.length) opts = ['Distribution + Sync', 'Master License', 'Services'];
+        var html = '<option value="">Select type</option>';
+        for (var i = 0; i < opts.length; i++) html += '<option value="' + escapeHtml(opts[i]) + '"' + (opts[i] === cgbState.workflow.contractType ? ' selected' : '') + '>' + escapeHtml(opts[i]) + '</option>';
+        contractTypeSel.innerHTML = html;
+      }
+
+      function buildSingleSelect(id, sheetName, selectedIdx, label) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var rows = cgbGetRows(sheetName);
+        if (!rows.length) {
+          el.innerHTML = '<option value="">No ' + label + ' rows</option>';
+          return;
+        }
+        var html = '<option value="">Select ' + label + '</option>';
+        for (var i = 0; i < rows.length; i++) html += '<option value="' + i + '"' + (String(i) === String(selectedIdx) ? ' selected' : '') + '>' + escapeHtml(cgbDescribeRow(rows[i], i)) + '</option>';
+        el.innerHTML = html;
+      }
+      buildSingleSelect('cgb-opportunity-select', cgbState.sheetMap.opportunity, cgbState.workflow.opportunity, 'opportunity');
+      buildSingleSelect('cgb-schedule-select', cgbState.sheetMap.schedule, cgbState.workflow.schedule, 'schedule');
+      buildSingleSelect('cgb-catalog-select', cgbState.sheetMap.catalog, cgbState.workflow.catalog, 'catalog');
+      buildSingleSelect('cgb-schedule-catalog-select', cgbState.sheetMap.scheduleCatalog, cgbState.workflow.scheduleCatalog, 'schedule catalog');
+
+      function buildMultiSelect(id, sheetName, selectedVals, label) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var rows = cgbGetRows(sheetName);
+        if (!rows.length) {
+          el.innerHTML = '<option value="">No ' + label + ' rows</option>';
+          return;
+        }
+        var html = '';
+        for (var i = 0; i < rows.length; i++) html += '<option value="' + i + '"' + (selectedVals.indexOf(String(i)) >= 0 ? ' selected' : '') + '>' + escapeHtml(cgbDescribeRow(rows[i], i)) + '</option>';
+        el.innerHTML = html;
+      }
+      buildMultiSelect('cgb-accounts-select', cgbState.sheetMap.accounts, cgbState.workflow.accounts, 'account');
+      buildMultiSelect('cgb-v2addons-select', cgbState.sheetMap.v2addons, cgbState.workflow.v2addons, 'V2 add-on');
+    }
+
+    function cgbReadWorkflowSelections() {
+      var typeSel = document.getElementById('cgb-contract-type');
+      cgbState.workflow.contractType = typeSel ? typeSel.value : cgbState.workflow.contractType;
+      cgbState.workflow.accounts = cgbSelectValues('cgb-accounts-select');
+      cgbState.workflow.opportunity = (document.getElementById('cgb-opportunity-select') || {}).value || '';
+      cgbState.workflow.schedule = (document.getElementById('cgb-schedule-select') || {}).value || '';
+      cgbState.workflow.catalog = (document.getElementById('cgb-catalog-select') || {}).value || '';
+      cgbState.workflow.scheduleCatalog = (document.getElementById('cgb-schedule-catalog-select') || {}).value || '';
+      cgbState.workflow.v2addons = cgbSelectValues('cgb-v2addons-select');
+    }
+
+    function cgbCurrentSeedRow() { return cgbGetRow(cgbState.seed.sheet, cgbState.seed.rowIndex); }
+
+    function cgbSelectedRowsBySheet() {
+      var map = {};
+      function add(sheet, idx) {
+        if (!sheet || idx === '' || idx === null || idx === undefined) return;
+        var row = cgbGetRow(sheet, idx);
+        if (!row) return;
+        if (!map[sheet]) map[sheet] = [];
+        map[sheet].push({ idx: parseInt(idx, 10), row: row });
+      }
+      if (cgbState.seed.sheet) add(cgbState.seed.sheet, cgbState.seed.rowIndex);
+      cgbState.workflow.accounts.forEach(function(v) { add(cgbState.sheetMap.accounts, v); });
+      add(cgbState.sheetMap.opportunity, cgbState.workflow.opportunity);
+      add(cgbState.sheetMap.schedule, cgbState.workflow.schedule);
+      add(cgbState.sheetMap.catalog, cgbState.workflow.catalog);
+      add(cgbState.sheetMap.scheduleCatalog, cgbState.workflow.scheduleCatalog);
+      cgbState.workflow.v2addons.forEach(function(v) { add(cgbState.sheetMap.v2addons, v); });
+      return map;
+    }
+
+    function cgbInitPage(forceRefresh) {
+      var page = document.getElementById('page-contract-generator');
+      if (!page) return;
+      cgbLoadPastSessions();
+      cgbBuildBatchResolverIndex();
+      var legalSel = document.getElementById('cgb-legal-entity');
+      var typeSel = document.getElementById('cgb-template-type');
+      if (legalSel) legalSel.value = cgbState.legalEntity;
+      if (typeSel) typeSel.value = cgbState.templateType;
+      cgbSyncWhoWhereInputs();
+      cgbSyncCatalogSourceInputs();
+      cgbGuessSheetMap();
+      cgbPopulateSeedSelectors(forceRefresh);
+      cgbPopulateWorkflowSelectors();
+      if (!cgbState.initialized) cgbAutoFillFromRecord();
+      else cgbGenerateFromBuilder();
+      cgbState.initialized = true;
+    }
+
+    function cgbRefreshRows() {
+      var sheetSel = document.getElementById('cgb-sheet-select');
+      var rowSel = document.getElementById('cgb-row-select');
+      if (sheetSel) cgbState.seed.sheet = sheetSel.value || '';
+      var idx = rowSel ? parseInt(rowSel.value || '0', 10) : 0;
+      cgbState.seed.rowIndex = isNaN(idx) ? 0 : idx;
+      cgbPopulateSeedSelectors(false);
+      cgbAutoFillFromRecord();
+    }
+
+    function cgbOnRowChange() {
+      var rowSel = document.getElementById('cgb-row-select');
+      var idx = rowSel ? parseInt(rowSel.value || '0', 10) : 0;
+      cgbState.seed.rowIndex = isNaN(idx) ? 0 : idx;
+      cgbAutoFillFromRecord();
+    }
+
+    function cgbOnMetaChange() {
+      var legalSel = document.getElementById('cgb-legal-entity');
+      var typeSel = document.getElementById('cgb-template-type');
+      if (legalSel) cgbState.legalEntity = legalSel.value || cgbState.legalEntity;
+      if (typeSel) cgbState.templateType = typeSel.value || cgbState.templateType;
+      cgbAutoFillFromRecord();
+    }
+
+    function cgbOnWorkflowChange() {
+      cgbReadWorkflowSelections();
+      cgbAutoFillFromRecord();
+    }
+
+    function cgbAutoFillFromRecord() {
+      cgbReadWorkflowSelections();
+      if ((!cgbState.workflow.accounts || !cgbState.workflow.accounts.length) && cgbGetRows(cgbState.sheetMap.accounts).length) cgbState.workflow.accounts = ['0'];
+      if (!cgbState.workflow.opportunity && cgbGetRows(cgbState.sheetMap.opportunity).length) cgbState.workflow.opportunity = '0';
+      if (!cgbState.workflow.schedule && cgbGetRows(cgbState.sheetMap.schedule).length) cgbState.workflow.schedule = '0';
+      if (!cgbState.workflow.catalog && cgbGetRows(cgbState.sheetMap.catalog).length) cgbState.workflow.catalog = '0';
+      if (!cgbState.workflow.scheduleCatalog && cgbGetRows(cgbState.sheetMap.scheduleCatalog).length) cgbState.workflow.scheduleCatalog = '0';
+      cgbPopulateWorkflowSelectors();
+      var seedRow = cgbCurrentSeedRow();
+      var defaults = cgbTemplateDefaults(cgbState.templateType);
+      var selectedRows = cgbSelectedRowsBySheet();
+      var accountNames = [];
+      (selectedRows[cgbState.sheetMap.accounts] || []).forEach(function(it) {
+        var nm = cgbFindValue(it.row, ['account_name', 'company_name', 'legal_name', 'artist_name']);
+        if (nm) accountNames.push(nm);
+      });
+      if (!accountNames.length) {
+        var seedNm = cgbFindValue(seedRow, ['account_name', 'company_name', 'legal_name']);
+        if (seedNm) accountNames.push(seedNm);
+      }
+      if (!cgbState.whoWhere.counterpartyName && accountNames.length) {
+        cgbState.whoWhere.counterpartyName = accountNames[0];
+      }
+      if (accountNames.length && cgbNorm(cgbState.whoWhere.counterpartyName) === cgbNorm(accountNames[0])) {
+        cgbState.whoWhere.counterpartyResolved = true;
+      }
+      cgbSyncWhoWhereInputs();
+      var oppRow = cgbGetRow(cgbState.sheetMap.opportunity, cgbState.workflow.opportunity);
+      var scheduleRow = cgbGetRow(cgbState.sheetMap.schedule, cgbState.workflow.schedule);
+      var catalogRow = cgbGetRow(cgbState.sheetMap.catalog, cgbState.workflow.catalog);
+      var contractType = cgbState.workflow.contractType || cgbFindValue(seedRow, ['document_type', 'contract_type', 'agreement_type']) || cgbState.templateType.replace(/_/g, ' ');
+      cgbState.workflow.contractType = contractType;
+      var contractTypeSel = document.getElementById('cgb-contract-type');
+      if (contractTypeSel && contractTypeSel.value !== contractType) contractTypeSel.value = contractType;
+
+      var territory = cgbFindValue(oppRow || seedRow, ['territory', 'region']) || 'Global';
+      var term = cgbFindValue(scheduleRow || seedRow, ['term', 'duration', 'effective_date', 'end_date']) || '[TO_BE_DEFINED]';
+      var split = cgbFindValue(seedRow, ['split', 'percentage', 'royalty', 'rate']) || '[TO_BE_DEFINED]';
+      cgbState.sections.accounts = cgbState.legalEntity + ' contracts with ' + (accountNames.length ? accountNames.join(', ') : '[TO_BE_DEFINED]') + '.';
+      cgbState.sections.opportunity = defaults.opportunity + ' Contract Type: ' + contractType + '. Territory: ' + territory + '.';
+      cgbState.sections.financials = defaults.financials + ' Current split/advance marker: ' + split + '.';
+      cgbState.sections.schedule = defaults.schedule + ' Term marker: ' + term + '.';
+
+      var workTitle = cgbFindValue(catalogRow || seedRow, ['title', 'record', 'track', 'contract_name']) || 'Primary Work';
+      cgbState.lineItems = [{ item: contractType, subtype: cgbState.templateType, split: split, notes: 'Linked account scope: ' + (accountNames[0] || 'TBD') }];
+      cgbState.catalogItems = [{ title: workTitle, isrc: cgbFindValue(catalogRow || seedRow, ['isrc']), usage: 'Digital', term: term }];
+
+      cgbAutofillGovernedFields(selectedRows);
+      cgbRenderEditorFromState();
+      cgbRenderGovernedFields();
+      cgbComputePreflight();
+      cgbGenerateFromBuilder();
+      cgbSaveCurrentSession();
+    }
+
+    function cgbAutofillGovernedFields(selectedRowsBySheet) {
+      var selected = selectedRowsBySheet || cgbSelectedRowsBySheet();
+      var sheets = Object.keys(selected);
+      for (var si = 0; si < sheets.length; si++) {
+        var sheet = sheets[si];
+        var rowObj = selected[sheet] && selected[sheet][0];
+        if (!rowObj || !rowObj.row) continue;
+        var fields = cgbFieldsForSheet(sheet);
+        for (var fi = 0; fi < fields.length; fi++) {
+          var fk = fields[fi].field_key;
+          if (!fk) continue;
+          var key = cgbFormKey(sheet, fk);
+          if (!cgbState.formValues.hasOwnProperty(key) || cgbState.formValues[key] === '') {
+            cgbState.formValues[key] = cgbSafe(cgbRowValue(rowObj.row, fk));
+          }
+        }
+      }
+    }
+
+    function cgbRenderEditorFromState() {
+      var secA = document.getElementById('cgb-sec-accounts');
+      var secO = document.getElementById('cgb-sec-opportunity');
+      var secF = document.getElementById('cgb-sec-financials');
+      var secS = document.getElementById('cgb-sec-schedule');
+      if (secA) secA.value = cgbState.sections.accounts || '';
+      if (secO) secO.value = cgbState.sections.opportunity || '';
+      if (secF) secF.value = cgbState.sections.financials || '';
+      if (secS) secS.value = cgbState.sections.schedule || '';
+      cgbRenderLineItems();
+      cgbRenderCatalogItems();
+    }
+
+    function cgbSyncSectionsFromInputs() {
+      cgbState.sections.accounts = (document.getElementById('cgb-sec-accounts') || {}).value || '';
+      cgbState.sections.opportunity = (document.getElementById('cgb-sec-opportunity') || {}).value || '';
+      cgbState.sections.financials = (document.getElementById('cgb-sec-financials') || {}).value || '';
+      cgbState.sections.schedule = (document.getElementById('cgb-sec-schedule') || {}).value || '';
+    }
+
+    function cgbOnSectionInput() {
+      cgbSyncSectionsFromInputs();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbRenderGovernedFields() {
+      var wrap = document.getElementById('cgb-governed-fields-wrap');
+      if (!wrap) return;
+      var selectedRows = cgbSelectedRowsBySheet();
+      var sheets = Object.keys(selectedRows);
+      if (!sheets.length) {
+        wrap.innerHTML = '<div style="font-size:0.82em; color:#777;">Select workflow rows to load governed schema fields.</div>';
+        return;
+      }
+      var html = '';
+      for (var si = 0; si < sheets.length; si++) {
+        var sheet = sheets[si];
+        var fields = cgbFieldsForSheet(sheet);
+        if (!fields.length) continue;
+        html += '<div style="border:1px solid #eceff1; border-radius:6px; margin-bottom:8px; padding:8px;">';
+        html += '<div style="font-size:0.82em; font-weight:700; color:#37474f; margin-bottom:6px;">' + escapeHtml(sheet) + '</div>';
+        for (var fi = 0; fi < fields.length; fi++) {
+          var fm = fields[fi];
+          var fk = fm.field_key || '';
+          if (!fk) continue;
+          var key = cgbFormKey(sheet, fk);
+          var val = cgbState.formValues[key] || '';
+          var required = (fm.requiredness === 'required') ? ' <span style="color:#c62828">*</span>' : '';
+          html += '<div style="display:grid; grid-template-columns: minmax(180px, 1fr) minmax(220px, 2fr); gap:8px; align-items:center; margin-bottom:6px;">';
+          html += '<label style="font-size:0.78em; color:#455a64;">' + escapeHtml(fm.field_label || fk) + required + '<div style="font-size:0.7em; color:#90a4ae;">' + escapeHtml(fk) + '</div></label>';
+          if (cgbIsPicklist(fm)) {
+            var opts = cgbPicklistOptions(fm);
+            html += '<select onchange="cgbOnGovernedFieldChange(\'' + cgbJsEsc(sheet) + '\', \'' + cgbJsEsc(fk) + '\', this.value)" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:4px;">';
+            html += '<option value="">[TO_BE_DEFINED]</option>';
+            for (var oi = 0; oi < opts.length; oi++) {
+              var selected = cgbNorm(opts[oi]) === cgbNorm(val) ? ' selected' : '';
+              html += '<option value="' + escapeHtml(opts[oi]) + '"' + selected + '>' + escapeHtml(opts[oi]) + '</option>';
+            }
+            html += '</select>';
+          } else {
+            html += '<input value="' + escapeHtml(val) + '" onchange="cgbOnGovernedFieldChange(\'' + cgbJsEsc(sheet) + '\', \'' + cgbJsEsc(fk) + '\', this.value)" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:4px;">';
+          }
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+      wrap.innerHTML = html || '<div style="font-size:0.82em; color:#777;">No governed fields found for selected sections.</div>';
+    }
+
+    function cgbOnGovernedFieldChange(sheet, fieldKey, value) {
+      cgbState.formValues[cgbFormKey(sheet, fieldKey)] = cgbSafe(value);
+      cgbComputePreflight();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbComputePreflight() {
+      var selected = cgbSelectedRowsBySheet();
+      var sheets = Object.keys(selected);
+      var missing = 0;
+      var invalid = 0;
+      var unknown = 0;
+      var blockers = [];
+      var si, ri, fi, ki;
+      for (si = 0; si < sheets.length; si++) {
+        var sheet = sheets[si];
+        var fields = cgbFieldsForSheet(sheet);
+        var canonical = {};
+        for (fi = 0; fi < fields.length; fi++) canonical[cgbNormKey(fields[fi].field_key)] = true;
+        var rows = selected[sheet] || [];
+        for (ri = 0; ri < rows.length; ri++) {
+          var row = rows[ri].row || {};
+          var keys = Object.keys(row);
+          for (fi = 0; fi < fields.length; fi++) {
+            var fm = fields[fi];
+            var fk = fm.field_key;
+            if (!fk) continue;
+            var val = cgbState.formValues[cgbFormKey(sheet, fk)];
+            if (val === undefined || val === '') val = cgbSafe(cgbRowValue(row, fk));
+            if (fm.requiredness === 'required' && (!val || (typeof isBlankValue === 'function' && isBlankValue(val)))) missing++;
+            if (cgbIsPicklist(fm) && val && !(typeof isBlankValue === 'function' && isBlankValue(val))) {
+              var opts = cgbPicklistOptions(fm).map(function(v) { return cgbNorm(v); });
+              if (opts.length && opts.indexOf(cgbNorm(val)) === -1) invalid++;
+            }
+          }
+          for (ki = 0; ki < keys.length; ki++) {
+            var k = keys[ki];
+            if (!k || k.charAt(0) === '_') continue;
+            if (typeof _gridIsMetaField === 'function' && _gridIsMetaField(k)) continue;
+            if (!canonical[cgbNormKey(k)]) unknown++;
+          }
+        }
+      }
+      if (!cgbState.legalEntity) blockers.push('Missing Legal Entity');
+      if (!cgbState.workflow.contractType) blockers.push('Missing Contract Type');
+      if (!cgbState.workflow.accounts || !cgbState.workflow.accounts.length) blockers.push('Missing Counterparty Account');
+      if (!cgbState.whoWhere.counterpartyName) blockers.push('Missing Counterparty Name');
+      if (!cgbState.whoWhere.partyType) blockers.push('Missing Party Type');
+      if (!cgbState.whoWhere.businessUnit) blockers.push('Missing Legal Entity');
+      if (cgbState.sheetMap.financials && !cgbGetRows(cgbState.sheetMap.financials).length) blockers.push('Financial rows unavailable');
+      cgbState.preflight = { missingRequired: missing, invalidPicklist: invalid, unknownColumns: unknown, blockers: blockers };
+      var el = document.getElementById('cgb-preflight-summary');
+      if (el) {
+        var hasHardBlocker = blockers.length > 0 || missing > 0;
+        var color = hasHardBlocker ? '#c62828' : (invalid > 0 || unknown > 0 ? '#ef6c00' : '#2e7d32');
+        var btText = blockers.length ? blockers.join('; ') : 'No hard blockers';
+        el.innerHTML = '<div style="font-weight:700; color:' + color + '; margin-bottom:4px;">Stage 1: Preflight Gate</div>' +
+          '<div>Hard Blockers: ' + blockers.length + '</div>' +
+          '<div>Missing Required: ' + missing + '</div>' +
+          '<div>Invalid Picklists: ' + invalid + '</div>' +
+          '<div>Unknown Columns: ' + unknown + '</div>' +
+          '<div style="margin-top:4px; color:#607d8b;">' + escapeHtml(btText) + '</div>';
+      }
+    }
+
+    function cgbRenderLineItems() {
+      var wrap = document.getElementById('cgb-lineitems-wrap');
+      if (!wrap) return;
+      var rows = cgbState.lineItems || [];
+      if (!rows.length) {
+        wrap.innerHTML = '<div style="font-size:0.82em; color:#777;">No line items yet.</div>';
+        return;
+      }
+      var html = '<table style="width:100%; border-collapse:collapse; font-size:0.8em;"><thead><tr><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Item</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Subtype</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Split</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Notes</th><th style="border-bottom:1px solid #ddd; padding:6px;"></th></tr></thead><tbody>';
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        html += '<tr><td style="padding:4px;"><input value="' + escapeHtml(r.item || '') + '" onchange="cgbUpdateLineItem(' + i + ', \'item\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.subtype || '') + '" onchange="cgbUpdateLineItem(' + i + ', \'subtype\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.split || '') + '" onchange="cgbUpdateLineItem(' + i + ', \'split\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.notes || '') + '" onchange="cgbUpdateLineItem(' + i + ', \'notes\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px; text-align:right;"><button class="toolbar-btn" onclick="cgbRemoveLineItem(' + i + ')">Remove</button></td></tr>';
+      }
+      wrap.innerHTML = html + '</tbody></table>';
+    }
+
+    function cgbRenderCatalogItems() {
+      var wrap = document.getElementById('cgb-catalog-wrap');
+      if (!wrap) return;
+      var rows = cgbState.catalogItems || [];
+      if (!rows.length) {
+        wrap.innerHTML = '<div style="font-size:0.82em; color:#777;">No catalog items yet.</div>';
+        return;
+      }
+      var html = '<table style="width:100%; border-collapse:collapse; font-size:0.8em;"><thead><tr><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Title</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">ISRC</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Usage</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Term</th><th style="border-bottom:1px solid #ddd; padding:6px;"></th></tr></thead><tbody>';
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        html += '<tr><td style="padding:4px;"><input value="' + escapeHtml(r.title || '') + '" onchange="cgbUpdateCatalogItem(' + i + ', \'title\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.isrc || '') + '" onchange="cgbUpdateCatalogItem(' + i + ', \'isrc\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.usage || '') + '" onchange="cgbUpdateCatalogItem(' + i + ', \'usage\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.term || '') + '" onchange="cgbUpdateCatalogItem(' + i + ', \'term\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px; text-align:right;"><button class="toolbar-btn" onclick="cgbRemoveCatalogItem(' + i + ')">Remove</button></td></tr>';
+      }
+      wrap.innerHTML = html + '</tbody></table>';
+    }
+
+    function cgbAddLineItem() { cgbState.lineItems.push(cgbDefaultLineItem()); cgbRenderLineItems(); cgbGenerateFromBuilder(); }
+    function cgbRemoveLineItem(idx) { cgbState.lineItems.splice(idx, 1); cgbRenderLineItems(); cgbGenerateFromBuilder(); }
+    function cgbUpdateLineItem(idx, field, value) { if (cgbState.lineItems[idx]) { cgbState.lineItems[idx][field] = value || ''; cgbGenerateFromBuilder(); } }
+    function cgbAddCatalogItem() { cgbState.catalogItems.push(cgbDefaultCatalogItem()); cgbRenderCatalogItems(); cgbGenerateFromBuilder(); }
+    function cgbRemoveCatalogItem(idx) { cgbState.catalogItems.splice(idx, 1); cgbRenderCatalogItems(); cgbGenerateFromBuilder(); }
+    function cgbUpdateCatalogItem(idx, field, value) { if (cgbState.catalogItems[idx]) { cgbState.catalogItems[idx][field] = value || ''; cgbGenerateFromBuilder(); } }
+
+    function cgbBuildMarkdown() {
+      var seedRow = cgbCurrentSeedRow();
+      var contractName = cgbFindValue(seedRow, ['contract_name', 'record', 'title', 'contract_key']) || 'Generated Contract';
+      var md = [];
+      md.push('# Contract: ' + contractName);
+      md.push('');
+      md.push('- **Profile:** back_catalog_distribution_sync_youtube_cpa');
+      md.push('- **Author:** ' + cgbState.legalEntity);
+      md.push('- **Template:** ' + cgbState.templateType.replace(/_/g, ' '));
+      md.push('- **Contract Type:** ' + (cgbState.workflow.contractType || '[TO_BE_DEFINED]'));
+      md.push('- **Seed Source:** ' + (cgbState.seed.sheet || 'n/a') + ' / row ' + (cgbState.seed.rowIndex + 1));
+      md.push('- **Session Mode:** ' + cgbState.sessionMode);
+      md.push('- **Generated At:** ' + new Date().toISOString());
+      md.push('');
+      md.push('## Who & Where From');
+      md.push('- Counterparty: ' + (cgbState.whoWhere.counterpartyName || '[TO_BE_DEFINED]'));
+      md.push('- Party Type: ' + (cgbState.whoWhere.partyType || '[TO_BE_DEFINED]'));
+      md.push('- Legal Entity: ' + (cgbState.whoWhere.businessUnit || '[TO_BE_DEFINED]'));
+      md.push('- Counterparty Resolution: ' + (cgbState.whoWhere.counterpartyResolved ? 'matched_existing' : 'draft_create'));
+      md.push('');
+      md.push('## Catalog Source & Scope');
+      md.push('- Source Type: ' + (cgbState.catalogSource.sourceType || 'manual'));
+      md.push('- Scope: ' + (cgbState.catalogSource.scope || '[TO_BE_DEFINED]'));
+      md.push('- Source Ref: ' + (cgbState.catalogSource.sourceRef || '[TO_BE_DEFINED]'));
+      md.push('');
+      md.push('## Stage 1: Preflight Gate');
+      md.push('- Hard Blockers: ' + cgbState.preflight.blockers.length);
+      md.push('- Missing Required: ' + cgbState.preflight.missingRequired);
+      md.push('- Invalid Picklists: ' + cgbState.preflight.invalidPicklist);
+      md.push('- Unknown Columns: ' + cgbState.preflight.unknownColumns);
+      if (cgbState.preflight.blockers.length) md.push('- Blocker Reasons: ' + cgbState.preflight.blockers.join('; '));
+      md.push('');
+      md.push('## Stage 2: 6-Phase Workflow');
+      md.push('- Active Terms Tab: ' + cgbState.termsTab);
+      md.push('### Entity & Opportunity Resolution');
+      md.push(cgbState.sections.accounts || '[TO_BE_DEFINED]');
+      md.push(cgbState.sections.opportunity || '[TO_BE_DEFINED]');
+      md.push('');
+      md.push('### Asset & Catalog Synchronization');
+      md.push(cgbState.sections.schedule || '[TO_BE_DEFINED]');
+      md.push('');
+      md.push('### Financial & Rights Modeling');
+      md.push(cgbState.sections.financials || '[TO_BE_DEFINED]');
+      md.push('');
+      md.push('## Contract Line Items');
+      if (!cgbState.lineItems.length) md.push('- [TO_BE_DEFINED]');
+      for (var i = 0; i < cgbState.lineItems.length; i++) {
+        var li = cgbState.lineItems[i];
+        md.push('- **' + (li.item || 'Item') + '** | subtype: ' + (li.subtype || 'n/a') + ' | split: ' + (li.split || 'n/a') + ' | notes: ' + (li.notes || 'n/a'));
+      }
+      md.push('');
+      md.push('## Catalog Line Items');
+      if (!cgbState.catalogItems.length) md.push('- [TO_BE_DEFINED]');
+      for (var j = 0; j < cgbState.catalogItems.length; j++) {
+        var ci = cgbState.catalogItems[j];
+        md.push('- **' + (ci.title || 'Title') + '** | ISRC: ' + (ci.isrc || 'n/a') + ' | usage: ' + (ci.usage || 'n/a') + ' | term: ' + (ci.term || 'n/a'));
+      }
+      md.push('');
+      md.push('## Governed Field Values');
+      var keys = Object.keys(cgbState.formValues).sort();
+      if (!keys.length) md.push('- [TO_BE_DEFINED]');
+      for (var k = 0; k < keys.length; k++) {
+        var parts = keys[k].split('::');
+        md.push('- **' + parts[0] + '.' + parts[1] + '**: ' + (cgbState.formValues[keys[k]] || '[TO_BE_DEFINED]'));
+      }
+      return md.join('\n');
+    }
+
+    function cgbRenderPreview() {
+      var embed = document.getElementById('cgb-preview-embed');
+      if (!embed) return;
+      var seedRow = cgbCurrentSeedRow();
+      var contractName = cgbFindValue(seedRow, ['contract_name', 'record', 'title', 'contract_key']) || 'Generated Contract';
+      var html = '';
+      html += '<div style="font-size:0.78em; color:#9ca3af; margin-bottom:4px;">' + escapeHtml(cgbState.legalEntity) + ' authored this contract</div>';
+      html += '<div style="font-size:1.05em; font-weight:700; color:#f8fafc; margin-bottom:8px;">Contract: ' + escapeHtml(contractName) + '</div>';
+      html += '<div style="font-size:0.8em; color:#d1d5db; margin-bottom:6px;"><strong>Counterparty:</strong> ' + escapeHtml(cgbState.whoWhere.counterpartyName || '[TO_BE_DEFINED]') + ' | <strong>Party Type:</strong> ' + escapeHtml(cgbState.whoWhere.partyType || '[TO_BE_DEFINED]') + ' | <strong>Legal Entity:</strong> ' + escapeHtml(cgbState.whoWhere.businessUnit || '[TO_BE_DEFINED]') + '</div>';
+      html += '<div style="font-size:0.8em; color:#d1d5db; margin-bottom:6px;"><strong>Catalog Source:</strong> ' + escapeHtml(cgbState.catalogSource.sourceType || 'manual') + ' | <strong>Scope:</strong> ' + escapeHtml(cgbState.catalogSource.scope || '[TO_BE_DEFINED]') + '</div>';
+      html += '<div style="font-size:0.82em; color:#d1d5db; margin-bottom:8px;"><strong>Stage 1: Preflight Gate</strong> | blockers: ' + cgbState.preflight.blockers.length + ' | missing: ' + cgbState.preflight.missingRequired + '</div>';
+      html += '<div style="font-size:0.82em; line-height:1.5; color:#d1d5db;">';
+      html += '<strong>Entity & Opportunity Resolution</strong><br>' + escapeHtml(cgbState.sections.accounts || '[TO_BE_DEFINED]') + '<br>' + escapeHtml(cgbState.sections.opportunity || '[TO_BE_DEFINED]') + '<br><br>';
+      html += '<strong>Asset & Catalog Synchronization</strong><br>' + escapeHtml(cgbState.sections.schedule || '[TO_BE_DEFINED]') + '<br><br>';
+      html += '<strong>Financial & Rights Modeling</strong><br>' + escapeHtml(cgbState.sections.financials || '[TO_BE_DEFINED]') + '<br><br>';
+      html += '<strong>Contract Line Items</strong><br>';
+      if (!cgbState.lineItems.length) html += '- [TO_BE_DEFINED]<br>';
+      cgbState.lineItems.forEach(function(li) { html += '- ' + escapeHtml(li.item || 'Item') + ' (' + escapeHtml(li.subtype || 'n/a') + '), split ' + escapeHtml(li.split || 'n/a') + '<br>'; });
+      html += '<br><strong>Catalog Line Items</strong><br>';
+      if (!cgbState.catalogItems.length) html += '- [TO_BE_DEFINED]<br>';
+      cgbState.catalogItems.forEach(function(ci) { html += '- ' + escapeHtml(ci.title || 'Title') + ' (ISRC: ' + escapeHtml(ci.isrc || 'n/a') + ')<br>'; });
+      html += '</div>';
+      embed.innerHTML = html;
+    }
+
+    function cgbGenerateFromBuilder() {
+      cgbSyncSectionsFromInputs();
+      var md = cgbBuildMarkdown();
+      cgbState.markdown = md;
+      var output = document.getElementById('cgb-markdown-output');
+      if (output) output.value = md;
+      var annotation = document.getElementById('cgb-annotation-output');
+      if (annotation) annotation.value = JSON.stringify(cgbBuildAnnotationMap(), null, 2);
+      cgbState.outputFileName = ((cgbState.seed.sheet || 'contract') + '_row_' + (cgbState.seed.rowIndex + 1) + '_generated_contract.md').replace(/[^a-zA-Z0-9_.-]/g, '_');
+      cgbRenderPreview();
+      cgbSaveCurrentSession();
+    }
+
+    function cgbDownloadMarkdown() {
+      if (!cgbState.markdown) cgbGenerateFromBuilder();
+      if (!cgbState.markdown) {
+        showToast('Generate the contract first.', 'warning');
+        return;
+      }
+      var blob = new Blob([cgbState.markdown], { type: 'text/markdown;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = cgbState.outputFileName || 'generated_contract.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Downloaded ' + a.download, 'success');
     }
     
     function closeConfigFlows() {
@@ -55242,85 +56030,10 @@ var P022_RuntimeValidation = {
     running: false,
     result: null,
     actionTaken: null,
-    redOverride: null,
-    reconstructionReview: null,
     adminOnly: true
   };
 
   window._pfGateState = _pfGateState;
-
-  function _pfGateActionLabel(action) {
-    if (action === 'accept_risk') return 'Accept Risk';
-    if (action === 'generate_copy') return 'Generate Copy';
-    if (action === 'override_red') return 'Record RED Override';
-    if (action === 'reconstruction_complete') return 'Reconstruction Complete';
-    if (action === 'escalate_ocr') return 'Escalate OCR';
-    return action || 'Action';
-  }
-
-  function _pfGateEsc(str) {
-    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  function _pfGateGetCurrentContext() {
-    var sheetName = '';
-    var rowIndex = -1;
-    var recordKey = '';
-    if (typeof srrState !== 'undefined') {
-      sheetName = srrState.currentSheetName || srrState.currentSheet || '';
-      var idx = parseInt(srrState.currentRowIndex, 10);
-      rowIndex = isNaN(idx) ? -1 : idx;
-      recordKey = srrState.currentRecordKey || '';
-    }
-    return {
-      sheetName: sheetName,
-      rowIndex: rowIndex,
-      recordKey: recordKey
-    };
-  }
-
-  function _pfGateSeedContractGenerator(context) {
-    var sheetSel = document.getElementById('cg-page-sheet-select');
-    var rowSel = document.getElementById('cg-page-row-select');
-    if (!sheetSel || !rowSel) return false;
-    var seeded = false;
-    var ctx = context || {};
-    if (ctx.sheetName) {
-      for (var si = 0; si < sheetSel.options.length; si++) {
-        if (sheetSel.options[si].value === ctx.sheetName) {
-          sheetSel.value = ctx.sheetName;
-          seeded = true;
-          break;
-        }
-      }
-      if (typeof cgPageRefreshRows === 'function') cgPageRefreshRows();
-    }
-    if (ctx.rowIndex >= 0 && rowSel.options && rowSel.options.length > ctx.rowIndex) {
-      rowSel.value = String(ctx.rowIndex);
-      seeded = true;
-    }
-    return seeded;
-  }
-
-  window.preflightOpenContractGenerator = function(sourceTag) {
-    var role = _pfGateGetRole();
-    if (role !== 'admin' && role !== 'architect') {
-      if (typeof showToast === 'function') showToast('Generate Copy requires Admin mode.', 'warning');
-      return;
-    }
-    var context = _pfGateGetCurrentContext();
-    navigateTo('contract-generator');
-    setTimeout(function() {
-      if (typeof cgPageInit === 'function') cgPageInit(false);
-      var seeded = _pfGateSeedContractGenerator(context);
-      if (seeded && typeof cgPageGenerate === 'function') cgPageGenerate();
-      if (typeof showToast === 'function') {
-        if (seeded) showToast('Opened Contract Generator with current record context.', 'success');
-        else showToast('Opened Contract Generator. Select section/record and generate copy.', 'info');
-      }
-      console.log('[PREFLIGHT-GATE] generate_copy_opened source=' + (sourceTag || 'unknown') + ' seeded=' + seeded);
-    }, 90);
-  };
 
   window.pfGateInit = function() {
     _pfGateState.enabled = true;
@@ -55401,35 +56114,17 @@ var P022_RuntimeValidation = {
       if (gate === 'GREEN') {
         html += '<span style="font-size:0.82em;color:#2e7d32;font-weight:500;">All checks passed. Ready to submit.</span>';
       } else if (gate === 'YELLOW') {
-        if (_pfGateState.actionTaken === 'accept_risk') {
+        if (_pfGateState.actionTaken) {
           html += '<span style="font-size:0.82em;color:#f57f17;font-weight:500;">Risk accepted. Submission unlocked.</span>';
-        } else if (_pfGateState.actionTaken === 'generate_copy' || _pfGateState.actionTaken === 'escalate_ocr') {
-          var yellowReviewDone = !!(_pfGateState.reconstructionReview && _pfGateState.reconstructionReview.completed);
-          if (yellowReviewDone) {
-            html += '<span style="font-size:0.82em;color:#2e7d32;font-weight:500;">Reconstruction review complete. Submission unlocked.</span>';
-          } else {
-            html += '<span style="font-size:0.82em;color:#1565c0;font-weight:500;">Reconstruction copy requested. Mark reconstruction complete in Contract Generator.</span>';
-          }
         } else {
           html += '<button class="pf-gate-btn accept" onclick="pfGateAction(\'accept_risk\')">Accept Risk</button>';
-          html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'generate_copy\')">Generate Copy</button>';
+          html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'escalate_ocr\')">Escalate to OCR</button>';
         }
       } else if (gate === 'RED') {
-        var hasCopyAction = (_pfGateState.actionTaken === 'generate_copy' || _pfGateState.actionTaken === 'escalate_ocr' || _pfGateState.actionTaken === 'override_red' || !!_pfGateState.reconstructionReview);
-        var hasRedOverride = !!(_pfGateState.redOverride && _pfGateState.redOverride.approved);
-        var hasReview = !!(_pfGateState.reconstructionReview && _pfGateState.reconstructionReview.completed);
-        if (hasCopyAction && hasRedOverride && hasReview) {
-          html += '<span style="font-size:0.82em;color:#2e7d32;font-weight:500;">RED override recorded. Preflight unblock complete.</span>';
-          if (_pfGateState.redOverride.reason) {
-            html += '<span style="display:block;font-size:0.76em;color:#546e7a;margin-top:4px;">Reason: ' + _pfGateEsc(_pfGateState.redOverride.reason) + '</span>';
-          }
-        } else if (hasCopyAction && !hasReview) {
-          html += '<span style="display:block;font-size:0.78em;color:#c62828;">Mark reconstruction complete in Contract Generator before RED override can unblock submission.</span>';
-        } else if (hasCopyAction) {
-          html += '<button class="pf-gate-btn accept" onclick="pfGateRecordRedOverride()">Record RED Override</button>';
-          html += '<span style="display:block;font-size:0.78em;color:#c62828;margin-top:6px;">Reconstruction requested. RED override still required.</span>';
+        if (_pfGateState.actionTaken === 'escalate_ocr') {
+          html += '<span style="font-size:0.82em;color:#c62828;font-weight:500;">OCR escalation requested.</span>';
         } else {
-          html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'generate_copy\')">Generate Copy</button>';
+          html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'escalate_ocr\')">Escalate to OCR</button>';
           html += '<span style="font-size:0.78em;color:#999;margin-left:8px;">Document quality too low for submission.</span>';
         }
       }
@@ -55453,8 +56148,6 @@ var P022_RuntimeValidation = {
     _pfGateState.running = true;
     _pfGateState.result = null;
     _pfGateState.actionTaken = null;
-    _pfGateState.redOverride = null;
-    _pfGateState.reconstructionReview = null;
     pfGateRenderPanel();
 
     var headers = {};
@@ -55488,8 +56181,6 @@ var P022_RuntimeValidation = {
     .then(function(data) {
       _pfGateState.running = false;
       _pfGateState.result = data.data || data;
-      _pfGateState.redOverride = (_pfGateState.result && _pfGateState.result.red_override) || null;
-      _pfGateState.reconstructionReview = (_pfGateState.result && _pfGateState.result.reconstruction_review) || null;
       console.log('[PREFLIGHT-GATE] run complete:', _pfGateState.result.gate_color, _pfGateState.result.doc_mode);
       pfGateRenderPanel();
       if (typeof showToast === 'function') {
@@ -55507,7 +56198,7 @@ var P022_RuntimeValidation = {
     });
   };
 
-  window.pfGateAction = function(action, extraPayload) {
+  window.pfGateAction = function(action) {
     var headers = {};
     if (typeof _syncHeaders === 'function') {
       headers = _syncHeaders();
@@ -55520,13 +56211,9 @@ var P022_RuntimeValidation = {
 
     var docId = (_pfGateState.result && _pfGateState.result.doc_id) || '';
     var body = { doc_id: docId, action: action };
-    if (extraPayload && typeof extraPayload === 'object') {
-      var keys = Object.keys(extraPayload);
-      for (var ei = 0; ei < keys.length; ei++) body[keys[ei]] = extraPayload[keys[ei]];
-    }
 
     var baseUrl = window.location.origin;
-    return fetch(baseUrl + '/api/preflight/action', {
+    fetch(baseUrl + '/api/preflight/action', {
       method: 'POST',
       headers: headers,
       body: JSON.stringify(body)
@@ -55540,49 +56227,21 @@ var P022_RuntimeValidation = {
       return resp.json();
     })
     .then(function(data) {
-      var payload = data.data || {};
-      if (action === 'reconstruction_complete') {
-        _pfGateState.reconstructionReview = payload.reconstruction_review || body.reconstruction_review || { completed: true };
-      } else {
-        _pfGateState.actionTaken = payload.action || action;
+      _pfGateState.actionTaken = action;
+      if (data.data && data.data.patch_metadata) {
+        _pfGateState.patchMetadata = data.data.patch_metadata;
       }
-      if (payload.patch_metadata) {
-        _pfGateState.patchMetadata = payload.patch_metadata;
-      }
-      if (payload.red_override) _pfGateState.redOverride = payload.red_override;
-      if (payload.reconstruction_review) _pfGateState.reconstructionReview = payload.reconstruction_review;
       console.log('[PREFLIGHT-GATE] action complete:', action);
       pfGateRenderPanel();
       if (typeof showToast === 'function') {
         if (action === 'accept_risk') showToast('Risk accepted — submission unlocked', 'info');
-        else if (action === 'override_red') showToast('RED override recorded.', 'success');
-        else if (action === 'reconstruction_complete') showToast('Reconstruction review marked complete.', 'success');
-        else showToast(_pfGateActionLabel(action) + ' requested', 'info');
+        else showToast('OCR escalation requested', 'info');
       }
-      if (action === 'generate_copy' || action === 'escalate_ocr') {
-        preflightOpenContractGenerator('pf_gate');
-      }
-      return payload;
     })
     .catch(function(err) {
       console.error('[PREFLIGHT-GATE] action error:', err);
       if (typeof showToast === 'function') showToast('Action failed: ' + err.message, 'error');
-      throw err;
     });
-  };
-
-  window.pfGateRecordRedOverride = function() {
-    if (!_pfGateState.result || _pfGateState.result.gate_color !== 'RED') {
-      if (typeof showToast === 'function') showToast('RED override is only available for RED preflight.', 'warning');
-      return;
-    }
-    var reason = window.prompt('Enter RED override reason (required):', '');
-    reason = (reason || '').trim();
-    if (!reason) {
-      if (typeof showToast === 'function') showToast('RED override reason is required.', 'warning');
-      return;
-    }
-    pfGateAction('override_red', { reason: reason });
   };
 
   function _pfGateGetRole() {
@@ -55675,8 +56334,6 @@ var P022_RuntimeValidation = {
     _pfGateState.running = true;
     _pfGateState.result = null;
     _pfGateState.actionTaken = null;
-    _pfGateState.redOverride = null;
-    _pfGateState.reconstructionReview = null;
     if (typeof showToast === 'function') showToast('Running preflight on ' + file.name + '...', 'info');
 
     var panel = document.getElementById('pf-gate-panel');
@@ -55727,8 +56384,6 @@ var P022_RuntimeValidation = {
         _pfGateState.running = false;
         _pfGateState.result = result;
         _pfGateState.actionTaken = null;
-        _pfGateState.redOverride = (result && result.red_override) || null;
-        _pfGateState.reconstructionReview = (result && result.reconstruction_review) || null;
         if (typeof pfGateRenderPanel === 'function') pfGateRenderPanel();
         var gateColor = (result.gate_color || 'GREEN').toUpperCase();
         if (gateColor === 'GREEN') {
@@ -55988,9 +56643,9 @@ var P022_RuntimeValidation = {
         html += '<button class="prep-sim-btn continue" onclick="window._prepSimAction(\'CONTINUE\')">Continue</button>';
       } else if (gate === 'YELLOW') {
         html += '<button class="prep-sim-btn accept" onclick="window._prepSimAction(\'ACCEPT_RISK\')">Accept Risk</button>';
-        html += '<button class="prep-sim-btn escalate" onclick="window._prepSimAction(\'GENERATE_COPY\')">Generate Copy</button>';
+        html += '<button class="prep-sim-btn escalate" onclick="window._prepSimAction(\'ESCALATE_OCR\')">Escalate OCR</button>';
       } else {
-        html += '<button class="prep-sim-btn escalate" onclick="window._prepSimAction(\'GENERATE_COPY\')">Generate Copy</button>';
+        html += '<button class="prep-sim-btn escalate" onclick="window._prepSimAction(\'ESCALATE_OCR\')">Escalate OCR</button>';
         html += '<button class="prep-sim-btn cancel" onclick="window._prepSimAction(\'CANCEL\')">Cancel</button>';
       }
     }
@@ -56019,17 +56674,16 @@ var P022_RuntimeValidation = {
           body: JSON.stringify({ doc_id: docId, action: 'accept_risk' })
         }).then(function(r) { return r.json(); }).catch(function(e) { console.warn('[PREP-SIM] accept_risk API error:', e); });
       }
-    } else if (action === 'GENERATE_COPY' || action === 'ESCALATE_OCR') {
-      preflightSyncState.pipeline = 'preflight_reconstruction_requested';
+    } else if (action === 'ESCALATE_OCR') {
+      preflightSyncState.pipeline = 'preflight_escalated';
       var docId2 = preflightSyncState.activeDocId || (typeof _pfGateGetDocId === 'function' ? _pfGateGetDocId() : '');
       if (docId2) {
         fetch('/api/preflight/action', {
           method: 'POST',
           headers: _prepSimGetHeaders(),
-          body: JSON.stringify({ doc_id: docId2, action: 'generate_copy' })
-        }).then(function(r) { return r.json(); }).catch(function(e) { console.warn('[PREP-SIM] generate_copy API error:', e); });
+          body: JSON.stringify({ doc_id: docId2, action: 'escalate_ocr' })
+        }).then(function(r) { return r.json(); }).catch(function(e) { console.warn('[PREP-SIM] escalate_ocr API error:', e); });
       }
-      if (typeof preflightOpenContractGenerator === 'function') preflightOpenContractGenerator('prep_sim');
     } else if (action === 'CANCEL') {
       preflightSyncState.pipeline = 'preflight_cancelled';
     }
@@ -57132,10 +57786,7 @@ var P022_RuntimeValidation = {
 
     if (_pftlState.result) {
       html += _pftlRenderReport(_pftlState.result);
-      html += '<details class="pftl-focus-fold">';
-      html += '<summary>Field Suggestions (advanced)</summary>';
       html += '<div class="pftl-suggestions-section"><div id="pftl-suggestions-container"></div></div>';
-      html += '</details>';
     }
 
     html += '</div>';
@@ -57181,7 +57832,7 @@ var P022_RuntimeValidation = {
       html += '</ul></div>';
     }
 
-    html += _pftlFoldSection('Encoding Details', _pftlRenderCorruptionSamples(r), false);
+    html += _pftlRenderCorruptionSamples(r);
 
     html += _pftlRenderResolutionStory(r);
 
@@ -57191,19 +57842,18 @@ var P022_RuntimeValidation = {
 
     html += _pftlRenderSfMatchSection(r);
 
-    var diag = '';
     var m = r.metrics || {};
-    diag += '<div class="pftl-section">';
-    diag += '<div class="pftl-section-title">Key Metrics</div>';
-    diag += '<div class="pftl-metrics-grid">';
-    diag += _pftlMetricCard(m.total_pages, 'Page Count');
-    diag += _pftlMetricCard(_pftlFmt(m.avg_chars_per_page, 1), 'Avg Chars/Page');
-    diag += _pftlMetricCard(_pftlFmt(m.replacement_char_ratio, 6), 'Replacement Char Ratio');
-    diag += _pftlMetricCard(_pftlFmt(m.control_char_ratio, 6), 'Control Char Ratio');
-    diag += _pftlMetricCard(_pftlFmt(m.mojibake_ratio, 6), 'Mojibake Ratio');
-    diag += _pftlMetricCard(m.searchable_pages, 'Searchable Pages');
-    diag += _pftlMetricCard(m.scanned_pages, 'Scanned Pages');
-    diag += _pftlMetricCard(m.mixed_pages, 'Mixed Pages');
+    html += '<div class="pftl-section">';
+    html += '<div class="pftl-section-title">Key Metrics</div>';
+    html += '<div class="pftl-metrics-grid">';
+    html += _pftlMetricCard(m.total_pages, 'Page Count');
+    html += _pftlMetricCard(_pftlFmt(m.avg_chars_per_page, 1), 'Avg Chars/Page');
+    html += _pftlMetricCard(_pftlFmt(m.replacement_char_ratio, 6), 'Replacement Char Ratio');
+    html += _pftlMetricCard(_pftlFmt(m.control_char_ratio, 6), 'Control Char Ratio');
+    html += _pftlMetricCard(_pftlFmt(m.mojibake_ratio, 6), 'Mojibake Ratio');
+    html += _pftlMetricCard(m.searchable_pages, 'Searchable Pages');
+    html += _pftlMetricCard(m.scanned_pages, 'Scanned Pages');
+    html += _pftlMetricCard(m.mixed_pages, 'Mixed Pages');
     var sparseRatio = 0;
     if (m.total_pages > 0) {
       var pc = r.page_classifications || [];
@@ -57213,48 +57863,47 @@ var P022_RuntimeValidation = {
       }
       sparseRatio = sparseCount / m.total_pages;
     }
-    diag += _pftlMetricCard(_pftlFmt(sparseRatio, 2), 'Sparse Page Ratio');
-    diag += '</div></div>';
+    html += _pftlMetricCard(_pftlFmt(sparseRatio, 2), 'Sparse Page Ratio');
+    html += '</div></div>';
 
-    diag += _pftlRenderDecisionTrace(r);
+    html += _pftlRenderDecisionTrace(r);
 
     var pages = r.page_classifications || [];
     if (pages.length > 0) {
-      diag += '<div class="pftl-section">';
-      diag += '<div class="pftl-section-title">Per-Page Breakdown (' + pages.length + ' pages)</div>';
-      diag += '<div style="max-height:300px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px;">';
-      diag += '<table class="pftl-table">';
-      diag += '<thead><tr><th>Page</th><th>Chars</th><th>Image Ratio</th><th>Mode</th><th>Dimensions</th></tr></thead>';
-      diag += '<tbody>';
+      html += '<div class="pftl-section">';
+      html += '<div class="pftl-section-title">Per-Page Breakdown (' + pages.length + ' pages)</div>';
+      html += '<div style="max-height:300px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px;">';
+      html += '<table class="pftl-table">';
+      html += '<thead><tr><th>Page</th><th>Chars</th><th>Image Ratio</th><th>Mode</th><th>Dimensions</th></tr></thead>';
+      html += '<tbody>';
       for (var p = 0; p < pages.length; p++) {
         var pg = pages[p];
         var modeClass = (pg.mode || '').toLowerCase();
-        diag += '<tr>';
-        diag += '<td>' + pg.page + '</td>';
-        diag += '<td>' + (pg.char_count || 0) + '</td>';
-        diag += '<td>' + _pftlFmt(pg.image_coverage_ratio, 4) + '</td>';
-        diag += '<td><span class="pftl-page-mode ' + modeClass + '">' + (pg.mode || 'UNKNOWN') + '</span></td>';
+        html += '<tr>';
+        html += '<td>' + pg.page + '</td>';
+        html += '<td>' + (pg.char_count || 0) + '</td>';
+        html += '<td>' + _pftlFmt(pg.image_coverage_ratio, 4) + '</td>';
+        html += '<td><span class="pftl-page-mode ' + modeClass + '">' + (pg.mode || 'UNKNOWN') + '</span></td>';
         var dims = (pg.page_width || 0) + ' x ' + (pg.page_height || 0);
-        diag += '<td style="font-size:0.85em;color:#888;">' + dims + '</td>';
-        diag += '</tr>';
+        html += '<td style="font-size:0.85em;color:#888;">' + dims + '</td>';
+        html += '</tr>';
       }
-      diag += '</tbody></table></div></div>';
+      html += '</tbody></table></div></div>';
     }
 
-    diag += '<div class="pftl-section">';
-    diag += '<div class="pftl-section-title">Persistence Status</div>';
-    diag += '<div class="pftl-persistence">';
-    diag += _pftlPersRow('doc_materialized', r.materialized === true ? 'Yes' : 'No');
-    diag += _pftlPersRow('cache_written', 'Yes');
-    diag += _pftlPersRow('fk_bound_writes_skipped', r.materialized === true ? 'No' : 'Yes');
-    diag += _pftlPersRow('skip_reason', r.materialized === true ? 'N/A (materialized)' : 'No patch_id provided (Test Lab is read-only)');
-    diag += '</div></div>';
+    html += '<div class="pftl-section">';
+    html += '<div class="pftl-section-title">Persistence Status</div>';
+    html += '<div class="pftl-persistence">';
+    html += _pftlPersRow('doc_materialized', r.materialized === true ? 'Yes' : 'No');
+    html += _pftlPersRow('cache_written', 'Yes');
+    html += _pftlPersRow('fk_bound_writes_skipped', r.materialized === true ? 'No' : 'Yes');
+    html += _pftlPersRow('skip_reason', r.materialized === true ? 'N/A (materialized)' : 'No patch_id provided (Test Lab is read-only)');
+    html += '</div></div>';
 
-    diag += '<div class="pftl-section">';
-    diag += '<button class="pftl-raw-toggle" onclick="pftlToggleRaw()">Show Raw JSON Response</button>';
-    diag += '<pre class="pftl-raw-content" id="pftl-raw-json">' + _pftlEsc(JSON.stringify(r, null, 2)) + '</pre>';
-    diag += '</div>';
-    html += _pftlFoldSection('Diagnostics (advanced)', diag, false);
+    html += '<div class="pftl-section">';
+    html += '<button class="pftl-raw-toggle" onclick="pftlToggleRaw()">Show Raw JSON Response</button>';
+    html += '<pre class="pftl-raw-content" id="pftl-raw-json">' + _pftlEsc(JSON.stringify(r, null, 2)) + '</pre>';
+    html += '</div>';
 
     html += '</div>';
     return html;
@@ -57292,16 +57941,6 @@ var P022_RuntimeValidation = {
       msg += '. Review the decision trace and corruption samples below before proceeding.';
     }
     return '<div class="pftl-why-gate">' + _pftlEsc(msg) + '</div>';
-  }
-
-  function _pftlFoldSection(title, innerHtml, isOpen) {
-    if (!innerHtml) return '';
-    var openAttr = isOpen ? ' open' : '';
-    var html = '<details class="pftl-focus-fold"' + openAttr + '>';
-    html += '<summary>' + _pftlEsc(title) + '</summary>';
-    html += innerHtml;
-    html += '</details>';
-    return html;
   }
 
   function _pftlRenderDecisionTrace(r) {
@@ -57465,59 +58104,33 @@ var P022_RuntimeValidation = {
       }
     }
 
-    var assigns = _pftlGetAssignments();
-    var manualValue = assigns.manual_counterparty || '';
-    var statusClass = 'rs-manual-status rs-manual-status-empty';
-    var statusText = 'Required — type the confirmed counterparty name, then click Confirm.';
-    if (manualValue && manualValue.length >= 3) {
-      statusClass = 'rs-manual-status rs-manual-status-ok';
-      statusText = 'Confirmed: ' + manualValue;
-    }
-
     html += '<div class="rs-manual-input-section">';
     html += '<label class="rs-manual-input-label" for="rs-manual-counterparty">Confirmed Counterparty (Manual)</label>';
-    html += '<div style="display:flex;gap:8px;align-items:center;">';
-    html += '<input type="text" id="rs-manual-counterparty" class="rs-manual-input" value="' + _pftlEsc(manualValue) + '" oninput="pftlOnManualCounterpartyDraft(this)" />';
-    html += '<button type="button" class="pftl-btn reset" onclick="pftlConfirmManualCounterparty()">Confirm</button>';
-    html += '</div>';
-    html += '<div id="rs-manual-counterparty-status" class="' + statusClass + '">' + _pftlEsc(statusText) + '</div>';
+    html += '<input type="text" id="rs-manual-counterparty" class="rs-manual-input" placeholder="" oninput="pftlOnManualCounterpartyInput(this)" />';
+    html += '<div id="rs-manual-counterparty-status" class="rs-manual-status rs-manual-status-empty">Required — type the confirmed counterparty name to proceed.</div>';
     html += '</div>';
 
     html += '</div>';
     return html;
   }
 
-  window.pftlOnManualCounterpartyDraft = function(el) {
+  window.pftlOnManualCounterpartyInput = function(el) {
     var val = (el.value || '').trim();
     var statusEl = document.getElementById('rs-manual-counterparty-status');
     if (!statusEl) return;
     if (val.length === 0) {
       statusEl.className = 'rs-manual-status rs-manual-status-empty';
-      statusEl.textContent = 'Required — type the confirmed counterparty name, then click Confirm.';
+      statusEl.textContent = 'Required — type the confirmed counterparty name to proceed.';
     } else if (val.length < 3) {
       statusEl.className = 'rs-manual-status rs-manual-status-empty';
       statusEl.textContent = 'Name too short — enter the full entity name.';
     } else {
-      statusEl.className = 'rs-manual-status rs-manual-status-pending';
-      statusEl.textContent = 'Ready to confirm: ' + val;
-    }
-  };
-
-  window.pftlConfirmManualCounterparty = function() {
-    var input = document.getElementById('rs-manual-counterparty');
-    var statusEl = document.getElementById('rs-manual-counterparty-status');
-    if (!input || !statusEl) return;
-    var val = (input.value || '').trim();
-    if (val.length < 3) {
-      statusEl.className = 'rs-manual-status rs-manual-status-empty';
-      statusEl.textContent = 'Name too short — enter the full entity name.';
-      return;
+      statusEl.className = 'rs-manual-status rs-manual-status-ok';
+      statusEl.textContent = 'Confirmed: ' + val;
     }
     var assigns = _pftlGetAssignments();
-    assigns.manual_counterparty = val;
+    assigns.manual_counterparty = val.length >= 3 ? val : null;
     _pftlSaveAssignments();
-    statusEl.className = 'rs-manual-status rs-manual-status-ok';
-    statusEl.textContent = 'Confirmed: ' + val;
   };
 
   var _pftlAssignmentsStore = {};
@@ -57538,30 +58151,12 @@ var P022_RuntimeValidation = {
   }
   function _pftlGetAssignments() {
     var key = _pftlGetRecordKey();
-    if (!_pftlAssignmentsStore[key]) _pftlAssignmentsStore[key] = { legal_entity: null, counterparty: null, opportunity_subtypes: [], check_overrides: {} };
+    if (!_pftlAssignmentsStore[key]) _pftlAssignmentsStore[key] = { legal_entity: null, counterparty: null, opportunity_subtypes: [] };
     if (!_pftlAssignmentsStore[key].opportunity_subtypes) _pftlAssignmentsStore[key].opportunity_subtypes = [];
-    if (!_pftlAssignmentsStore[key].check_overrides) _pftlAssignmentsStore[key].check_overrides = {};
     return _pftlAssignmentsStore[key];
   }
   function _pftlSaveAssignments() {
     try { sessionStorage.setItem('_pftlAssignmentsStore', JSON.stringify(_pftlAssignmentsStore)); } catch(e) {}
-  }
-
-  function _pftlBuildResultForExport() {
-    if (!_pftlState.result) return null;
-    var r = _pftlState.result;
-    var assigns = _pftlGetAssignments();
-    return {
-      contract_classification: r.contract_classification || null,
-      analyst_assignments: {
-        opportunity_subtypes: (assigns.opportunity_subtypes && assigns.opportunity_subtypes.length > 0) ? assigns.opportunity_subtypes : [],
-        schedule_types: (assigns.schedule_types && assigns.schedule_types.length > 0) ? assigns.schedule_types : [],
-        legal_entity: assigns.legal_entity || null,
-        counterparty: assigns.counterparty || null,
-        manual_counterparty: assigns.manual_counterparty || null,
-        check_overrides: assigns.check_overrides || {}
-      }
-    };
   }
 
   var _OPP_SUBTYPE_OPTIONS = [
@@ -57569,19 +58164,6 @@ var P022_RuntimeValidation = {
     "Distro CMA", "Label Ventures", "LE Revision", "Licensing Agreement",
     "Profit Participation Agreement", "Pub Admin", "Sync", "Side Artist", "Assignment", "Other"
   ];
-
-  window.pftlToggleSchType = function(value, checked) {
-    var assigns = _pftlGetAssignments();
-    if (!assigns.schedule_types) assigns.schedule_types = [];
-    var vals = assigns.schedule_types;
-    if (checked) {
-      if (vals.indexOf(value) < 0) vals.push(value);
-    } else {
-      vals = vals.filter(function(v) { return v !== value; });
-    }
-    assigns.schedule_types = vals;
-    _pftlSaveAssignments();
-  };
 
   window.pftlToggleOppSubtype = function(name, checked) {
     var assigns = _pftlGetAssignments();
@@ -57610,78 +58192,6 @@ var P022_RuntimeValidation = {
     if (out) out.textContent = assigns.opportunity_subtypes.join(', ');
     var cb = document.getElementById('opp-subtype-cb-' + name.replace(/[^a-z0-9]+/gi, '_'));
     if (cb) cb.checked = true;
-  };
-
-  function _pftlOverrideKey(scope, code) {
-    return scope + '::' + code;
-  }
-
-  function _pftlGetCheckOverride(scope, code) {
-    var assigns = _pftlGetAssignments();
-    var key = _pftlOverrideKey(scope, code);
-    return (assigns.check_overrides || {})[key] || null;
-  }
-
-  function _pftlGetEffectiveCheckStatus(scope, code, baseStatus) {
-    var ov = _pftlGetCheckOverride(scope, code);
-    return ov && ov.status ? ov.status : baseStatus;
-  }
-
-  function _pftlStatusBadgeClass(prefix, status) {
-    if (status === 'pass') return prefix + '-badge-pass';
-    if (status === 'review') return prefix + '-badge-review';
-    return prefix + '-badge-fail';
-  }
-
-  function _pftlRenderCheckStatusEditor(prefix, scope, code, baseStatus, rowIx) {
-    var effective = _pftlGetEffectiveCheckStatus(scope, code, baseStatus);
-    var overridden = effective !== baseStatus;
-    var badgeClass = _pftlStatusBadgeClass(prefix, effective);
-    var menuId = 'pftl-status-menu-' + _pftlSimpleHash(scope + '|' + code + '|' + rowIx);
-    var html = '<div class="pftl-status-editor">';
-    html += '<span class="' + prefix + '-status-badge ' + badgeClass + '">' + _pftlEsc(String(effective || '').toUpperCase()) + '</span>';
-    if (overridden) html += '<span class="pftl-status-overridden">OVERRIDE</span>';
-    html += '<button type="button" class="pftl-status-edit-btn" onclick="pftlToggleCheckStatusMenu(\'' + _pftlEsc(menuId) + '\')">Edit</button>';
-    html += '<div id="' + _pftlEsc(menuId) + '" class="pftl-status-menu">';
-    html += '<div class="pftl-status-menu-title">Override status</div>';
-    html += '<div class="pftl-status-menu-actions">';
-    html += '<button class="is-pass" type="button" onclick="pftlApplyCheckOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'pass\')">Pass</button>';
-    html += '<button class="is-review" type="button" onclick="pftlApplyCheckOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'review\')">Review</button>';
-    html += '<button class="is-fail" type="button" onclick="pftlApplyCheckOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'fail\')">Fail</button>';
-    if (overridden) {
-      html += '<button class="is-clear" type="button" onclick="pftlClearCheckOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\')">Clear</button>';
-    }
-    html += '</div></div></div>';
-    return html;
-  }
-
-  window.pftlToggleCheckStatusMenu = function(menuId) {
-    var menus = document.querySelectorAll('.pftl-status-menu');
-    for (var i = 0; i < menus.length; i++) {
-      if (menus[i].id !== menuId) menus[i].classList.remove('open');
-    }
-    var el = document.getElementById(menuId);
-    if (!el) return;
-    el.classList.toggle('open');
-  };
-
-  window.pftlApplyCheckOverride = function(scope, code, status) {
-    var assigns = _pftlGetAssignments();
-    if (!assigns.check_overrides) assigns.check_overrides = {};
-    assigns.check_overrides[_pftlOverrideKey(scope, code)] = {
-      status: status,
-      ts: new Date().toISOString()
-    };
-    _pftlSaveAssignments();
-    _pftlRender();
-  };
-
-  window.pftlClearCheckOverride = function(scope, code) {
-    var assigns = _pftlGetAssignments();
-    if (!assigns.check_overrides) assigns.check_overrides = {};
-    delete assigns.check_overrides[_pftlOverrideKey(scope, code)];
-    _pftlSaveAssignments();
-    _pftlRender();
   };
 
   function _pftlBuildCandidatePool(story, r) {
@@ -57955,34 +58465,23 @@ var P022_RuntimeValidation = {
     for (var i = 0; i < checks.length; i++) {
       var ck = checks[i];
       var st = ck.status || 'fail';
-      var effectiveStatus = _pftlGetEffectiveCheckStatus('opportunity_spine', ck.code, st);
+      var badgeClass = st === 'pass' ? 'opp-badge-pass' : st === 'fail' ? 'opp-badge-fail' : 'opp-badge-review';
       html += '<tr>';
       html += '<td class="opp-label">' + _pftlEsc(ck.label || ck.code) + '</td>';
-      html += '<td>' + _pftlRenderCheckStatusEditor('opp', 'opportunity_spine', ck.code, st, i) + '</td>';
+      html += '<td><span class="opp-status-badge ' + badgeClass + '">' + st.toUpperCase() + '</span></td>';
       var valueCell = ck.value ? _pftlEsc(String(ck.value)) : '\u2014';
       if (ck.code === 'OPP_CONTRACT_SUBTYPE' && ck.confidence) {
         valueCell += ' <span class="opp-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
       }
       html += '<td class="opp-value">' + valueCell + '</td>';
-      var oppReason = ck.reason || '';
-      if (effectiveStatus !== st) oppReason = 'Analyst override \u2192 ' + String(effectiveStatus || '').toUpperCase() + (oppReason ? '. ' + oppReason : '');
-      html += '<td class="opp-reason">' + (oppReason ? _pftlEsc(oppReason) : '') + '</td>';
+      html += '<td class="opp-reason">' + (ck.reason ? _pftlEsc(ck.reason) : '') + '</td>';
       html += '</tr>';
 
       if (ck.code === 'OPP_CONTRACT_SUBTYPE' && ck.candidates && ck.candidates.length > 0) {
         var assigns = _pftlGetAssignments();
-        var canonicalValues = _OPP_SUBTYPE_OPTIONS.slice();
         if (!assigns.opportunity_subtypes || assigns.opportunity_subtypes.length === 0) {
           assigns.opportunity_subtypes = ck.candidates.map(function(c) { return c.value; }).slice(0, 2);
           _pftlSaveAssignments();
-        } else {
-          var cleaned = assigns.opportunity_subtypes.filter(function(v) {
-            return canonicalValues.indexOf(v) >= 0;
-          });
-          if (cleaned.length !== assigns.opportunity_subtypes.length) {
-            assigns.opportunity_subtypes = cleaned.length > 0 ? cleaned : ck.candidates.map(function(c) { return c.value; }).slice(0, 2);
-            _pftlSaveAssignments();
-          }
         }
         html += '<tr class="opp-subtype-expand-row"><td colspan="4">';
         html += '<details class="opp-subtype-details">';
@@ -58032,18 +58531,6 @@ var P022_RuntimeValidation = {
     return html;
   }
 
-  var _SCH_TYPE_LABELS = {
-    'distro_sync_existing_masters': 'Distro & Sync - Existing Masters',
-    'catalog_acquisition_masters': 'Catalog Acquisition - Masters',
-    'termination_schedule': 'Termination Schedule',
-    'general_schedule': 'General Schedule'
-  };
-
-  function _schTypeLabel(val) {
-    if (!val) return val;
-    return _SCH_TYPE_LABELS[val] || val.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
-  }
-
   function _pftlRenderScheduleStructure(r) {
     var sch = r.schedule_structure;
     if (!sch) return '';
@@ -58071,43 +58558,27 @@ var P022_RuntimeValidation = {
     for (var i = 0; i < checks.length; i++) {
       var ck = checks[i];
       var st = ck.status || 'fail';
-      var effectiveStatus = _pftlGetEffectiveCheckStatus('schedule_structure', ck.code, st);
+      var badgeClass = st === 'pass' ? 'sch-badge-pass' : st === 'fail' ? 'sch-badge-fail' : 'sch-badge-review';
       html += '<tr>';
       html += '<td class="sch-label">' + _pftlEsc(ck.label || ck.code) + '</td>';
-      html += '<td>' + _pftlRenderCheckStatusEditor('sch', 'schedule_structure', ck.code, st, i) + '</td>';
-      var displayVal = ck.value;
-      if (ck.code === 'SCH_TYPE' && displayVal) displayVal = _schTypeLabel(displayVal);
-      var valueCell = displayVal ? _pftlEsc(String(displayVal)) : '\u2014';
+      html += '<td><span class="sch-status-badge ' + badgeClass + '">' + st.toUpperCase() + '</span></td>';
+      var valueCell = ck.value ? _pftlEsc(String(ck.value)) : '\u2014';
       if (ck.confidence) {
         valueCell += ' <span class="sch-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
       }
       html += '<td class="sch-value">' + valueCell + '</td>';
-      var reasonText = ck.reason || '';
-      if (ck.code === 'SCH_TYPE' && ck.value && reasonText) {
-        reasonText = reasonText.replace(new RegExp("'" + ck.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "'", 'g'), "'" + _schTypeLabel(ck.value) + "'");
-        reasonText = reasonText.replace(new RegExp('\\(' + ck.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '(' + _schTypeLabel(ck.value));
-      }
-      if (effectiveStatus !== st) reasonText = 'Analyst override \u2192 ' + String(effectiveStatus || '').toUpperCase() + (reasonText ? '. ' + reasonText : '');
-      html += '<td class="sch-reason">' + (reasonText ? _pftlEsc(reasonText) : '') + '</td>';
+      html += '<td class="sch-reason">' + (ck.reason ? _pftlEsc(ck.reason) : '') + '</td>';
       html += '</tr>';
 
       if (ck.code === 'SCH_TYPE' && ck.candidates && ck.candidates.length > 0) {
-        var schAssigns = _pftlGetAssignments();
-        if (!schAssigns.schedule_types) schAssigns.schedule_types = [];
-        if (schAssigns.schedule_types.length === 0 && ck.value) {
-          schAssigns.schedule_types = [ck.value];
-          _pftlSaveAssignments();
-        }
         html += '<tr class="sch-candidates-row"><td colspan="4">';
         html += '<details>';
         html += '<summary class="sch-candidates-toggle">Show schedule type candidates (' + ck.candidates.length + ')</summary>';
         html += '<div class="sch-candidates-list">';
         for (var j = 0; j < ck.candidates.length; j++) {
           var cand = ck.candidates[j];
-          var schChecked = (schAssigns.schedule_types || []).indexOf(cand.value) >= 0 ? ' checked' : '';
           html += '<div class="sch-candidate-card">';
-          html += '<input type="checkbox" id="sch-type-cb-' + j + '" value="' + _pftlEsc(cand.value) + '"' + schChecked + ' onchange="pftlToggleSchType(this.value, this.checked)">';
-          html += '<span class="sch-candidate-name">' + _pftlEsc(_schTypeLabel(cand.value)) + '</span>';
+          html += '<span class="sch-candidate-name">' + _pftlEsc(cand.value) + '</span>';
           html += '<span class="sch-conf-badge">' + Math.round((cand.confidence || 0) * 100) + '%</span>';
           if (cand.evidence && cand.evidence.length > 0) {
             for (var e = 0; e < cand.evidence.length; e++) {
@@ -58296,7 +58767,7 @@ var P022_RuntimeValidation = {
       html += '<span style="color:#2e7d32;font-size:0.85em;font-weight:500;">All checks passed — no action needed.</span>';
     } else {
       html += '<button class="pftl-action-btn accept-risk" onclick="pftlAcceptRisk()">Accept Risk</button>';
-      html += '<button class="pftl-action-btn escalate-ocr" onclick="pftlGenerateCopy()">Generate Copy</button>';
+      html += '<button class="pftl-action-btn escalate-ocr" onclick="pftlEscalateOcr()">Escalate OCR</button>';
       if (!isMaterialized) {
         html += '<span class="pftl-footer-note">Document not materialized — action will be deferred until patch submission.</span>';
       }
@@ -58314,16 +58785,14 @@ var P022_RuntimeValidation = {
     _pftlRender();
   };
 
-  window.pftlGenerateCopy = function() {
+  window.pftlEscalateOcr = function() {
     if (!_pftlState.result) return;
-    _pftlState.result._action = 'generate_copy';
+    _pftlState.result._action = 'escalate_ocr';
     _pftlState.result._action_by = _pftlGetRole();
     _pftlState.result._action_ts = new Date().toISOString();
-    if (typeof preflightOpenContractGenerator === 'function') preflightOpenContractGenerator('preflight_test_lab');
-    if (typeof showToast === 'function') showToast('Generate Copy selected — continue in Contract Generator', 'info');
+    if (typeof showToast === 'function') showToast('Escalated to OCR — re-extraction recommended', 'info');
     _pftlRender();
   };
-  window.pftlEscalateOcr = function() { window.pftlGenerateCopy(); };
 
   window.pftlToggleSfDebug = function() {
     var rows = document.querySelectorAll('.pftl-sf-debug-row');
