@@ -1028,6 +1028,29 @@ _LIFECYCLE_KEYWORDS = [
     "effective date", "delivery date", "commencement",
 ]
 
+_SCHEDULE_SCHEMA_REQUIREMENTS = {
+    "Distro & Sync - Existing Masters": [
+        {"field": "Schedule.RecordType", "keywords": ["distro", "sync", "distribution and sync"], "required": True},
+        {"field": "ScheduleCatalog.Master_Ownership__c", "keywords": ["master ownership", "master rights"], "required": True},
+        {"field": "ScheduleCatalog.Asset_Owner__c", "keywords": ["asset owner", "owned by"], "required": True},
+        {"field": "Financials.Revenue_Share__c", "keywords": ["% of revenue", "revenue share", "synch revenue", "sync revenue"], "required": True},
+    ],
+    "Catalog Acquisition - Masters": [
+        {"field": "ScheduleCatalog.Acquired__c", "keywords": ["acquired", "acquisition", "purchase"], "required": True},
+        {"field": "Financials.Amount__c", "keywords": ["purchase price", "consideration", "amount"], "required": True},
+        {"field": "ScheduleCatalog.Offboard_Date__c", "keywords": ["offboard", "termination"], "required": False},
+    ],
+    "Termination Schedule": [
+        {"field": "Opportunity.Termination_Date__c", "keywords": ["termination date", "effective termination"], "required": True},
+        {"field": "ScheduleCatalog.Offboard_Date__c", "keywords": ["offboard date", "remove from exploitation"], "required": True},
+        {"field": "ScheduleCatalog.Actual_Termination_Date__c", "keywords": ["actual termination date"], "required": True},
+    ],
+    "General Schedule": [
+        {"field": "Schedule.RecordType", "keywords": ["schedule", "exhibit"], "required": True},
+        {"field": "ScheduleCatalog.Catalog__c", "keywords": ["catalog", "recordings", "titles"], "required": False},
+    ],
+}
+
 
 def _opp_check_value(opportunity_spine, check_code):
     if not opportunity_spine:
@@ -1184,6 +1207,64 @@ def _check_schedule_role_alignment(resolution_story):
     return {"status": "fail", "confidence": 0.2, "value": "No legal entity", "reason": "No legal entity resolved for schedule alignment"}
 
 
+def _extract_schedule_schema_mapping(full_text, schedule_type_value, expected_schedule_type):
+    if not full_text:
+        return {
+            "status": "fail",
+            "confidence": 0.0,
+            "value": "No schedule schema signals",
+            "reason": "No text available",
+            "details": [],
+        }
+
+    selected_type = expected_schedule_type or schedule_type_value or "General Schedule"
+    reqs = _SCHEDULE_SCHEMA_REQUIREMENTS.get(selected_type) or _SCHEDULE_SCHEMA_REQUIREMENTS["General Schedule"]
+    text_lower = full_text.lower()
+
+    details = []
+    required_total = 0
+    required_hits = 0
+
+    for req in reqs:
+        matched = [kw for kw in req["keywords"] if kw in text_lower]
+        is_required = bool(req.get("required"))
+        if is_required:
+            required_total += 1
+            if matched:
+                required_hits += 1
+        details.append(
+            {
+                "field": req["field"],
+                "required": is_required,
+                "status": "pass" if matched else ("review" if not is_required else "fail"),
+                "evidence": matched[:4],
+            }
+        )
+
+    ratio = (required_hits / required_total) if required_total else 0.0
+    if selected_type == "General Schedule" and ratio >= 0.75:
+        status = "review"
+        reason = f"Only generic schedule markers found ({required_hits}/{required_total}); map to concrete schedule type before submit"
+    elif ratio >= 0.75:
+        status = "pass"
+        reason = f"Schedule schema mapping aligned ({required_hits}/{required_total} required signals found)"
+    elif ratio >= 0.40:
+        status = "review"
+        reason = f"Partial schedule schema mapping ({required_hits}/{required_total} required signals found)"
+    else:
+        status = "fail"
+        reason = f"Missing required schedule schema signals ({required_hits}/{required_total} found)"
+
+    return {
+        "status": status,
+        "confidence": round(ratio, 2),
+        "value": f"{required_hits}/{required_total} required fields signaled",
+        "reason": reason,
+        "details": details,
+        "schedule_type_basis": selected_type,
+    }
+
+
 _SCH_CRITICAL_CHECKS = {"SCH_PRESENCE", "SCH_ROLE_ALIGNMENT"}
 
 
@@ -1201,6 +1282,11 @@ def build_schedule_structure(full_text, resolution_story, opportunity_spine):
     checks = [
         {"code": "SCH_PRESENCE", "label": "Schedule Presence", **_extract_schedule_presence(full_text, opportunity_spine)},
         {"code": "SCH_TYPE", "label": "Schedule Type", **schedule_type},
+        {
+            "code": "SCH_SCHEMA_MAPPING",
+            "label": "Schedule Schema Mapping",
+            **_extract_schedule_schema_mapping(full_text, schedule_type.get("value"), expected),
+        },
         {"code": "SCH_OWNERSHIP", "label": "Ownership Signals", **_extract_ownership_signals(full_text)},
         {"code": "SCH_LIFECYCLE", "label": "Lifecycle Signals", **_extract_lifecycle_signals(full_text)},
         {"code": "SCH_ROLE_ALIGNMENT", "label": "Role Alignment", **_check_schedule_role_alignment(resolution_story)},

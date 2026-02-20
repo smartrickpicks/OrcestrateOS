@@ -6,6 +6,7 @@ from server.preflight_engine import (
     _extract_ownership_signals,
     _extract_lifecycle_signals,
     _check_schedule_role_alignment,
+    _extract_schedule_schema_mapping,
     build_schedule_structure,
     build_opportunity_spine,
     run_preflight,
@@ -79,6 +80,25 @@ class TestScheduleRoleAlignment:
         assert r["status"] == "review"
 
 
+class TestScheduleSchemaMapping:
+    def test_schema_mapping_pass_for_distro_sync(self):
+        text = (
+            "For Digital Distribution, including download and streaming of Records. "
+            "For Synch licenses: Seventy Percent (70%) of Synch Revenue. "
+            "Master ownership remains with asset owner."
+        )
+        r = _extract_schedule_schema_mapping(text, "Distro & Sync - Existing Masters", "Distro & Sync - Existing Masters")
+        assert r["status"] in ("pass", "review")
+        assert r["schedule_type_basis"] == "Distro & Sync - Existing Masters"
+        assert r["details"]
+
+    def test_schema_mapping_fail_when_no_signals(self):
+        text = "This document references general terms with no schedule field cues."
+        r = _extract_schedule_schema_mapping(text, "General Schedule", None)
+        assert r["status"] in ("fail", "review")
+        assert "required fields signaled" in r["value"]
+
+
 class TestBuildScheduleStructure:
     def test_build_schedule_structure_shape(self):
         text = "Distribution Agreement\nSchedule 1\nMaster ownership\nEffective date: 01/01/2024"
@@ -93,10 +113,11 @@ class TestBuildScheduleStructure:
         assert "status" in r
         assert "checks" in r
         assert "summary" in r
-        assert len(r["checks"]) == 5
+        assert len(r["checks"]) == 6
         codes = [c["code"] for c in r["checks"]]
         assert "SCH_PRESENCE" in codes
         assert "SCH_TYPE" in codes
+        assert "SCH_SCHEMA_MAPPING" in codes
         assert "SCH_OWNERSHIP" in codes
         assert "SCH_LIFECYCLE" in codes
         assert "SCH_ROLE_ALIGNMENT" in codes
