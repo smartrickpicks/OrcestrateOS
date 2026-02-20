@@ -3385,7 +3385,7 @@
             <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
             <span class="nav-label">Admin Panel</span>
           </a>
-          <a class="nav-item admin-only" id="nav-contract-generator" href="#" onclick="openContractGeneratorEntry(); return false;" title="Contract Generator">
+          <a class="nav-item admin-only" data-page="contract-generator" id="nav-contract-generator" href="#/contract-generator" onclick="openContractGeneratorEntry(); return false;" title="Contract Generator">
             <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="12" y1="2" x2="12" y2="22"/></svg></span>
             <span class="nav-label">Contract Generator</span>
           </a>
@@ -6193,6 +6193,91 @@
 
         <div style="margin-top: 12px; text-align: right; font-size: 0.75em; color: #aaa;">PAGE: ADMIN-PANEL | BUILD v1.6.49</div>
       </div><!-- end page-admin -->
+
+      <div class="page" id="page-contract-generator">
+        <div class="page-header">
+          <h2>Contract Generator</h2>
+          <p class="page-desc">Admin-only generator tool. Build contract sections from canonical schema data with live preview and Markdown export.</p>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(420px, 1fr) minmax(420px, 1fr); gap: 16px; align-items: start;">
+          <section style="background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.06);">
+            <h3 style="margin: 0 0 12px; font-size: 1.02em; color: #263238;">Builder</h3>
+            <div style="display:grid; grid-template-columns: repeat(2, minmax(160px, 1fr)); gap: 10px; margin-bottom: 10px;">
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Legal Entity</label>
+                <select id="cgb-legal-entity" onchange="cgbOnMetaChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                  <option value="Create Music Group">Create Music Group</option>
+                  <option value="Create Music Group Distribution">Create Music Group Distribution</option>
+                  <option value="Create Music Group Publishing">Create Music Group Publishing</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Template Type</label>
+                <select id="cgb-template-type" onchange="cgbOnMetaChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                  <option value="distribution_sync">Distribution + Sync</option>
+                  <option value="master_license">Master License</option>
+                  <option value="services">Services Agreement</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Contract Section</label>
+                <select id="cgb-sheet-select" onchange="cgbRefreshRows()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Source Record</label>
+                <select id="cgb-row-select" onchange="cgbOnRowChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap: wrap; margin-bottom: 12px;">
+              <button class="toolbar-btn" onclick="cgbAutoFillFromRecord()">Auto Fill</button>
+              <button class="toolbar-btn" onclick="cgbGenerateFromBuilder()" style="background:#1976d2; color:white;">Generate Preview</button>
+              <button class="toolbar-btn" onclick="cgbDownloadMarkdown()" style="background:#2e7d32; color:white;">Download .md</button>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+                <h4 style="margin:0 0 6px; font-size:0.9em;">Accounts</h4>
+                <textarea id="cgb-sec-accounts" oninput="cgbOnSectionInput()" style="width:100%; min-height:56px; border:1px solid #ddd; border-radius:6px; padding:8px;"></textarea>
+              </div>
+              <div style="border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+                <h4 style="margin:0 0 6px; font-size:0.9em;">Opportunity</h4>
+                <textarea id="cgb-sec-opportunity" oninput="cgbOnSectionInput()" style="width:100%; min-height:56px; border:1px solid #ddd; border-radius:6px; padding:8px;"></textarea>
+              </div>
+              <div style="border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+                <h4 style="margin:0 0 6px; font-size:0.9em;">Financials</h4>
+                <textarea id="cgb-sec-financials" oninput="cgbOnSectionInput()" style="width:100%; min-height:56px; border:1px solid #ddd; border-radius:6px; padding:8px;"></textarea>
+              </div>
+              <div style="border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+                <h4 style="margin:0 0 6px; font-size:0.9em;">Schedule</h4>
+                <textarea id="cgb-sec-schedule" oninput="cgbOnSectionInput()" style="width:100%; min-height:56px; border:1px solid #ddd; border-radius:6px; padding:8px;"></textarea>
+              </div>
+            </div>
+
+            <div style="margin-top:12px; border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                <h4 style="margin:0; font-size:0.9em;">Contract Line Items</h4>
+                <button class="toolbar-btn" onclick="cgbAddLineItem()">Add Line Item</button>
+              </div>
+              <div id="cgb-lineitems-wrap"></div>
+            </div>
+
+            <div style="margin-top:12px; border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                <h4 style="margin:0; font-size:0.9em;">Catalog Line Items</h4>
+                <button class="toolbar-btn" onclick="cgbAddCatalogItem()">Add Catalog Item</button>
+              </div>
+              <div id="cgb-catalog-wrap"></div>
+            </div>
+          </section>
+
+          <section style="background: #0f172a; border-radius: 10px; padding: 14px; color: #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.18);">
+            <h3 style="margin:0 0 10px; font-size:1.02em; color:#bfdbfe;">Live Contract Preview</h3>
+            <div id="cgb-preview-embed" style="background:#1f2937; border-left:4px solid #60a5fa; border-radius:8px; padding:12px; margin-bottom:12px;"></div>
+            <label style="display:block; font-size:0.78em; color:#93c5fd; margin-bottom:4px;">Generated Markdown</label>
+            <textarea id="cgb-markdown-output" readonly style="width:100%; min-height:240px; border:1px solid #334155; background:#111827; color:#d1d5db; border-radius:6px; padding:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace; font-size:0.8em;"></textarea>
+          </section>
+        </div>
+      </div><!-- end page-contract-generator -->
 
     </main><!-- end main-content -->
   </div><!-- end app-layout -->
@@ -25535,7 +25620,7 @@
       options = options || {};
       // Loader is now a drawer, not a page - redirect loader requests to triage
       if (page === 'loader') page = 'triage';
-      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-org', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'row', 'restricted'];
+      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-org', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'contract-generator', 'row', 'restricted'];
       var _basePage = page.split('/')[0];
       if (_basePage === 'row') {
         if (_srrCurrentPage !== 'row') {
@@ -25598,6 +25683,10 @@
         console.log('[Navigate] Admin page requires admin mode');
         restrictedReason = 'The Admin Panel is only available to users with the Admin role.';
         adminTab = null;
+      }
+      if (page === 'contract-generator' && currentMode !== 'admin') {
+        console.log('[Navigate] Contract Generator page requires admin mode');
+        restrictedReason = 'Contract Generator is only available to users with the Admin role.';
       }
       if (page === 'review' && currentMode !== 'verifier' && currentMode !== 'admin') {
         console.log('[Navigate] Review page requires verifier/admin mode');
@@ -25745,6 +25834,9 @@
         if (adminTab) {
           switchAdminTab(adminTab);
         }
+      }
+      if (page === 'contract-generator') {
+        setTimeout(function() { if (typeof cgbInitPage === 'function') cgbInitPage(); }, 0);
       }
       
       // v1.5.1: Show/hide Patch Tester tab based on role when entering SSR
@@ -48149,17 +48241,426 @@
     }
 
     function openContractGeneratorEntry() {
-      if (currentMode !== 'admin' && currentMode !== 'architect') {
+      if (currentMode !== 'admin') {
         showToast('Contract Generator is available in Admin Panel.', 'warning');
         return;
       }
-      navigateTo('admin/governance');
+      navigateTo('contract-generator');
       setTimeout(function() {
-        if (typeof switchAdminTab === 'function') switchAdminTab('governance');
-        if (typeof cgInitContractGenerator === 'function') cgInitContractGenerator(true);
-        var panel = document.getElementById('admin-contract-generator-section');
-        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (typeof cgbInitPage === 'function') cgbInitPage(true);
       }, 80);
+    }
+
+    var cgbState = {
+      initialized: false,
+      legalEntity: 'Create Music Group',
+      templateType: 'distribution_sync',
+      sheetName: '',
+      rowIndex: 0,
+      sections: {
+        accounts: '',
+        opportunity: '',
+        financials: '',
+        schedule: ''
+      },
+      lineItems: [],
+      catalogItems: [],
+      markdown: '',
+      outputFileName: 'contract_generator_draft.md'
+    };
+
+    function cgbGetSheetNames() {
+      var names = [];
+      if (typeof getDataSheets === 'function') names = getDataSheets() || [];
+      else if (typeof workbook !== 'undefined' && workbook && workbook.sheets) names = Object.keys(workbook.sheets);
+      names = names || [];
+      return names.filter(function(name) {
+        if (!name) return false;
+        if (typeof isMetaSheet === 'function' && isMetaSheet(name)) return false;
+        if (typeof isReferenceSheet === 'function' && isReferenceSheet(name)) return false;
+        return true;
+      });
+    }
+
+    function cgbGetRows(sheetName) {
+      if (!sheetName || !workbook || !workbook.sheets || !workbook.sheets[sheetName]) return [];
+      var rows = workbook.sheets[sheetName].rows;
+      return Array.isArray(rows) ? rows : [];
+    }
+
+    function cgbCurrentRow() {
+      var rows = cgbGetRows(cgbState.sheetName);
+      if (!rows.length) return null;
+      if (cgbState.rowIndex < 0 || cgbState.rowIndex >= rows.length) cgbState.rowIndex = 0;
+      return rows[cgbState.rowIndex] || null;
+    }
+
+    function cgbSafe(v) {
+      if (v === null || v === undefined) return '';
+      return String(v).trim();
+    }
+
+    function cgbFindValue(row, hints) {
+      if (!row) return '';
+      var keys = Object.keys(row);
+      for (var i = 0; i < hints.length; i++) {
+        var hint = String(hints[i] || '').toLowerCase();
+        for (var j = 0; j < keys.length; j++) {
+          var k = keys[j];
+          if (k.toLowerCase().indexOf(hint) >= 0) {
+            var val = cgbSafe(row[k]);
+            if (val) return val;
+          }
+        }
+      }
+      return '';
+    }
+
+    function cgbTemplateDefaults(templateType) {
+      if (templateType === 'master_license') {
+        return {
+          accounts: 'The Licensor and Licensee are the parties to this Master License agreement.',
+          opportunity: 'The licensed opportunity includes master-use rights for approved channels and campaign windows.',
+          financials: 'Fee and royalty structures apply according to the negotiated split and payment schedule.',
+          schedule: 'The term begins on the effective date and continues until expiration or termination under this agreement.'
+        };
+      }
+      if (templateType === 'services') {
+        return {
+          accounts: 'The service provider and client are bound by this services agreement.',
+          opportunity: 'The opportunity covers delivery of scoped services and performance milestones.',
+          financials: 'Fees are payable per agreed milestones with applicable taxes and withholdings.',
+          schedule: 'Service term and milestone deadlines follow the agreed project schedule.'
+        };
+      }
+      return {
+        accounts: 'Create Music Group and the contracting counterparty enter this Distribution + Sync agreement.',
+        opportunity: 'The opportunity covers distribution and synchronization usage rights per approved territories and channels.',
+        financials: 'Revenue split and fee terms follow the negotiated percentages and settlement cadence.',
+        schedule: 'Effective date, term duration, and renewal windows apply as set out in this agreement.'
+      };
+    }
+
+    function cgbDefaultLineItem() {
+      return { item: 'Distribution + Sync', subtype: 'Standard', split: '50/50', notes: '' };
+    }
+
+    function cgbDefaultCatalogItem() {
+      return { title: 'Untitled Work', isrc: '', usage: 'Digital', term: '12 months' };
+    }
+
+    function cgbDescribeRow(row, idx) {
+      var id = cgbFindValue(row, ['contract_key', 'contract_id', 'record_id', 'name']);
+      return id || ('Row ' + (idx + 1));
+    }
+
+    function cgbInitPage(forceRefresh) {
+      var page = document.getElementById('page-contract-generator');
+      if (!page) return;
+      var sheetSel = document.getElementById('cgb-sheet-select');
+      var rowSel = document.getElementById('cgb-row-select');
+      if (!sheetSel || !rowSel) return;
+
+      var sheets = cgbGetSheetNames();
+      if (!sheets.length) {
+        sheetSel.innerHTML = '<option value="">No dataset loaded</option>';
+        rowSel.innerHTML = '<option value="">No records</option>';
+        cgbState.sections = cgbTemplateDefaults(cgbState.templateType);
+        cgbRenderEditorFromState();
+        cgbGenerateFromBuilder();
+        return;
+      }
+
+      if (forceRefresh || !cgbState.sheetName || sheets.indexOf(cgbState.sheetName) === -1) cgbState.sheetName = sheets[0];
+      var html = '';
+      for (var i = 0; i < sheets.length; i++) {
+        var selected = sheets[i] === cgbState.sheetName ? ' selected' : '';
+        html += '<option value="' + escapeHtml(sheets[i]) + '"' + selected + '>' + escapeHtml(sheets[i]) + '</option>';
+      }
+      sheetSel.innerHTML = html;
+
+      var legalSel = document.getElementById('cgb-legal-entity');
+      if (legalSel) legalSel.value = cgbState.legalEntity;
+      var typeSel = document.getElementById('cgb-template-type');
+      if (typeSel) typeSel.value = cgbState.templateType;
+
+      cgbRefreshRows();
+      if (!cgbState.initialized) {
+        cgbAutoFillFromRecord();
+      } else {
+        cgbRenderEditorFromState();
+        cgbGenerateFromBuilder();
+      }
+      cgbState.initialized = true;
+    }
+
+    function cgbRefreshRows() {
+      var sheetSel = document.getElementById('cgb-sheet-select');
+      var rowSel = document.getElementById('cgb-row-select');
+      if (!sheetSel || !rowSel) return;
+      cgbState.sheetName = sheetSel.value || cgbState.sheetName;
+      var rows = cgbGetRows(cgbState.sheetName);
+      if (!rows.length) {
+        rowSel.innerHTML = '<option value="">No records</option>';
+        return;
+      }
+      if (cgbState.rowIndex < 0 || cgbState.rowIndex >= rows.length) cgbState.rowIndex = 0;
+      var html = '';
+      for (var i = 0; i < rows.length; i++) {
+        var selected = i === cgbState.rowIndex ? ' selected' : '';
+        html += '<option value="' + i + '"' + selected + '>' + escapeHtml((i + 1) + ' - ' + cgbDescribeRow(rows[i], i)) + '</option>';
+      }
+      rowSel.innerHTML = html;
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbOnRowChange() {
+      var rowSel = document.getElementById('cgb-row-select');
+      if (!rowSel) return;
+      var idx = parseInt(rowSel.value || '0', 10);
+      cgbState.rowIndex = isNaN(idx) ? 0 : idx;
+      cgbAutoFillFromRecord();
+    }
+
+    function cgbOnMetaChange() {
+      var legalSel = document.getElementById('cgb-legal-entity');
+      var typeSel = document.getElementById('cgb-template-type');
+      if (legalSel) cgbState.legalEntity = legalSel.value || 'Create Music Group';
+      if (typeSel) cgbState.templateType = typeSel.value || 'distribution_sync';
+      cgbAutoFillFromRecord();
+    }
+
+    function cgbAutoFillFromRecord() {
+      var row = cgbCurrentRow();
+      var defaults = cgbTemplateDefaults(cgbState.templateType);
+      var company = cgbFindValue(row, ['account_name', 'company_name', 'label_name', 'entity_name']) || 'Counterparty';
+      var artist = cgbFindValue(row, ['artist_name', 'payee', 'contact_name']) || 'Artist/Payee';
+      var docType = cgbFindValue(row, ['document_type', 'contract_type', 'opportunity_type']) || cgbState.templateType.replace(/_/g, ' ');
+      var split = cgbFindValue(row, ['split', 'percentage', 'royalty', 'rate']) || 'TBD';
+      var term = cgbFindValue(row, ['term', 'duration', 'effective_date', 'end_date']) || 'TBD';
+      var territory = cgbFindValue(row, ['territory', 'region']) || 'Global';
+
+      cgbState.sections.accounts = cgbState.legalEntity + ' and ' + company + ' are the contracting parties. Primary artist/payee: ' + artist + '.';
+      cgbState.sections.opportunity = defaults.opportunity + ' Contract type: ' + docType + '. Territory: ' + territory + '.';
+      cgbState.sections.financials = defaults.financials + ' Current split/fee marker: ' + split + '.';
+      cgbState.sections.schedule = defaults.schedule + ' Current term marker: ' + term + '.';
+
+      var primaryWork = cgbFindValue(row, ['record', 'title', 'track', 'contract_name']) || 'Primary Work';
+      cgbState.lineItems = [{ item: docType, subtype: cgbState.templateType, split: split, notes: 'Linked to ' + primaryWork }];
+      cgbState.catalogItems = [{ title: primaryWork, isrc: cgbFindValue(row, ['isrc']), usage: 'Digital', term: term }];
+
+      cgbRenderEditorFromState();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbRenderEditorFromState() {
+      var secA = document.getElementById('cgb-sec-accounts');
+      var secO = document.getElementById('cgb-sec-opportunity');
+      var secF = document.getElementById('cgb-sec-financials');
+      var secS = document.getElementById('cgb-sec-schedule');
+      if (secA) secA.value = cgbState.sections.accounts || '';
+      if (secO) secO.value = cgbState.sections.opportunity || '';
+      if (secF) secF.value = cgbState.sections.financials || '';
+      if (secS) secS.value = cgbState.sections.schedule || '';
+      cgbRenderLineItems();
+      cgbRenderCatalogItems();
+    }
+
+    function cgbSyncSectionsFromInputs() {
+      var secA = document.getElementById('cgb-sec-accounts');
+      var secO = document.getElementById('cgb-sec-opportunity');
+      var secF = document.getElementById('cgb-sec-financials');
+      var secS = document.getElementById('cgb-sec-schedule');
+      cgbState.sections.accounts = secA ? secA.value : '';
+      cgbState.sections.opportunity = secO ? secO.value : '';
+      cgbState.sections.financials = secF ? secF.value : '';
+      cgbState.sections.schedule = secS ? secS.value : '';
+    }
+
+    function cgbOnSectionInput() {
+      cgbSyncSectionsFromInputs();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbRenderLineItems() {
+      var wrap = document.getElementById('cgb-lineitems-wrap');
+      if (!wrap) return;
+      var rows = cgbState.lineItems || [];
+      if (!rows.length) {
+        wrap.innerHTML = '<div style="font-size:0.82em; color:#777;">No line items yet.</div>';
+        return;
+      }
+      var html = '<table style="width:100%; border-collapse:collapse; font-size:0.8em;">' +
+        '<thead><tr><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Item</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Subtype</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Split</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Notes</th><th style="border-bottom:1px solid #ddd; padding:6px;"></th></tr></thead><tbody>';
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        html += '<tr>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.item || '') + '" onchange="cgbUpdateLineItem(' + i + ', \'item\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.subtype || '') + '" onchange="cgbUpdateLineItem(' + i + ', \'subtype\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.split || '') + '" onchange="cgbUpdateLineItem(' + i + ', \'split\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.notes || '') + '" onchange="cgbUpdateLineItem(' + i + ', \'notes\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px; text-align:right;"><button class="toolbar-btn" onclick="cgbRemoveLineItem(' + i + ')">Remove</button></td>' +
+          '</tr>';
+      }
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    }
+
+    function cgbRenderCatalogItems() {
+      var wrap = document.getElementById('cgb-catalog-wrap');
+      if (!wrap) return;
+      var rows = cgbState.catalogItems || [];
+      if (!rows.length) {
+        wrap.innerHTML = '<div style="font-size:0.82em; color:#777;">No catalog items yet.</div>';
+        return;
+      }
+      var html = '<table style="width:100%; border-collapse:collapse; font-size:0.8em;">' +
+        '<thead><tr><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Title</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">ISRC</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Usage</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Term</th><th style="border-bottom:1px solid #ddd; padding:6px;"></th></tr></thead><tbody>';
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        html += '<tr>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.title || '') + '" onchange="cgbUpdateCatalogItem(' + i + ', \'title\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.isrc || '') + '" onchange="cgbUpdateCatalogItem(' + i + ', \'isrc\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.usage || '') + '" onchange="cgbUpdateCatalogItem(' + i + ', \'usage\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.term || '') + '" onchange="cgbUpdateCatalogItem(' + i + ', \'term\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px; text-align:right;"><button class="toolbar-btn" onclick="cgbRemoveCatalogItem(' + i + ')">Remove</button></td>' +
+          '</tr>';
+      }
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    }
+
+    function cgbAddLineItem() {
+      cgbState.lineItems.push(cgbDefaultLineItem());
+      cgbRenderLineItems();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbRemoveLineItem(idx) {
+      cgbState.lineItems.splice(idx, 1);
+      cgbRenderLineItems();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbUpdateLineItem(idx, field, value) {
+      if (!cgbState.lineItems[idx]) return;
+      cgbState.lineItems[idx][field] = value || '';
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbAddCatalogItem() {
+      cgbState.catalogItems.push(cgbDefaultCatalogItem());
+      cgbRenderCatalogItems();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbRemoveCatalogItem(idx) {
+      cgbState.catalogItems.splice(idx, 1);
+      cgbRenderCatalogItems();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbUpdateCatalogItem(idx, field, value) {
+      if (!cgbState.catalogItems[idx]) return;
+      cgbState.catalogItems[idx][field] = value || '';
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbBuildMarkdown() {
+      var row = cgbCurrentRow();
+      var contractName = cgbFindValue(row, ['contract_name', 'record', 'title', 'contract_key']) || 'Generated Contract';
+      var sourceRef = cgbState.sheetName + ' / row ' + (cgbState.rowIndex + 1);
+      var md = [];
+      md.push('# Contract: ' + contractName);
+      md.push('');
+      md.push('- **Author:** ' + cgbState.legalEntity);
+      md.push('- **Template:** ' + cgbState.templateType.replace(/_/g, ' '));
+      md.push('- **Source:** ' + sourceRef);
+      md.push('- **Generated At:** ' + new Date().toISOString());
+      md.push('');
+      md.push('## Accounts');
+      md.push(cgbState.sections.accounts || '[TO_BE_DEFINED]');
+      md.push('');
+      md.push('## Opportunity');
+      md.push(cgbState.sections.opportunity || '[TO_BE_DEFINED]');
+      md.push('');
+      md.push('## Financials');
+      md.push(cgbState.sections.financials || '[TO_BE_DEFINED]');
+      md.push('');
+      md.push('## Schedule');
+      md.push(cgbState.sections.schedule || '[TO_BE_DEFINED]');
+      md.push('');
+      md.push('## Contract Line Items');
+      if (!cgbState.lineItems.length) md.push('- [TO_BE_DEFINED]');
+      for (var i = 0; i < cgbState.lineItems.length; i++) {
+        var li = cgbState.lineItems[i];
+        md.push('- **' + (li.item || 'Item') + '** | subtype: ' + (li.subtype || 'n/a') + ' | split: ' + (li.split || 'n/a') + ' | notes: ' + (li.notes || 'n/a'));
+      }
+      md.push('');
+      md.push('## Catalog Line Items');
+      if (!cgbState.catalogItems.length) md.push('- [TO_BE_DEFINED]');
+      for (var j = 0; j < cgbState.catalogItems.length; j++) {
+        var ci = cgbState.catalogItems[j];
+        md.push('- **' + (ci.title || 'Title') + '** | ISRC: ' + (ci.isrc || 'n/a') + ' | usage: ' + (ci.usage || 'n/a') + ' | term: ' + (ci.term || 'n/a'));
+      }
+      return md.join('\n');
+    }
+
+    function cgbRenderPreview() {
+      var embed = document.getElementById('cgb-preview-embed');
+      if (!embed) return;
+      var row = cgbCurrentRow();
+      var contractName = cgbFindValue(row, ['contract_name', 'record', 'title', 'contract_key']) || 'Generated Contract';
+      var html = '';
+      html += '<div style="font-size:0.78em; color:#9ca3af; margin-bottom:4px;">' + escapeHtml(cgbState.legalEntity) + ' authored this contract</div>';
+      html += '<div style="font-size:1.05em; font-weight:700; color:#f8fafc; margin-bottom:8px;">Contract: ' + escapeHtml(contractName) + '</div>';
+      html += '<div style="font-size:0.9em; margin-bottom:8px; color:#d1d5db;">' + escapeHtml(cgbState.sections.accounts || '[TO_BE_DEFINED]') + '</div>';
+      html += '<div style="font-size:0.82em; line-height:1.5; color:#d1d5db;">';
+      html += '<strong>Opportunity</strong><br>' + escapeHtml(cgbState.sections.opportunity || '[TO_BE_DEFINED]') + '<br><br>';
+      html += '<strong>Financials</strong><br>' + escapeHtml(cgbState.sections.financials || '[TO_BE_DEFINED]') + '<br><br>';
+      html += '<strong>Schedule</strong><br>' + escapeHtml(cgbState.sections.schedule || '[TO_BE_DEFINED]') + '<br><br>';
+      html += '<strong>Contract Line Items</strong><br>';
+      if (!cgbState.lineItems.length) html += '- [TO_BE_DEFINED]<br>';
+      for (var i = 0; i < cgbState.lineItems.length; i++) {
+        var li = cgbState.lineItems[i];
+        html += '- ' + escapeHtml(li.item || 'Item') + ' (' + escapeHtml(li.subtype || 'n/a') + '), split ' + escapeHtml(li.split || 'n/a') + '<br>';
+      }
+      html += '<br><strong>Catalog Line Items</strong><br>';
+      if (!cgbState.catalogItems.length) html += '- [TO_BE_DEFINED]<br>';
+      for (var j = 0; j < cgbState.catalogItems.length; j++) {
+        var ci = cgbState.catalogItems[j];
+        html += '- ' + escapeHtml(ci.title || 'Title') + ' (ISRC: ' + escapeHtml(ci.isrc || 'n/a') + ')<br>';
+      }
+      html += '</div>';
+      embed.innerHTML = html;
+    }
+
+    function cgbGenerateFromBuilder() {
+      cgbSyncSectionsFromInputs();
+      var md = cgbBuildMarkdown();
+      cgbState.markdown = md;
+      var output = document.getElementById('cgb-markdown-output');
+      if (output) output.value = md;
+      cgbState.outputFileName = ((cgbState.sheetName || 'contract') + '_row_' + (cgbState.rowIndex + 1) + '_generated_contract.md').replace(/[^a-zA-Z0-9_.-]/g, '_');
+      cgbRenderPreview();
+    }
+
+    function cgbDownloadMarkdown() {
+      if (!cgbState.markdown) cgbGenerateFromBuilder();
+      if (!cgbState.markdown) {
+        showToast('Generate the contract first.', 'warning');
+        return;
+      }
+      var blob = new Blob([cgbState.markdown], { type: 'text/markdown;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = cgbState.outputFileName || 'generated_contract.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Downloaded ' + a.download, 'success');
     }
     
     function closeConfigFlows() {
