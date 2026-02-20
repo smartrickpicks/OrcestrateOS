@@ -4,7 +4,7 @@ Preflight API routes for Orchestrate OS.
 POST /api/preflight/run     - Run preflight analysis on a document (URL)
 POST /api/preflight/upload  - Run preflight on uploaded PDF (base64, internal/Test Lab)
 GET  /api/preflight/{doc_id} - Read cached preflight result
-POST /api/preflight/action  - Accept Risk / Escalate OCR (internal)
+POST /api/preflight/action  - Accept Risk / Generate Copy (internal)
 GET  /api/preflight/export  - Export cached preflight state as prep_export_v0 JSON (minimal)
 POST /api/preflight/export  - Export with client-side OGC/evaluation/operator state merged
 
@@ -573,7 +573,7 @@ async def preflight_action(
     request: Request,
     auth=Depends(require_auth(AuthClass.EITHER)),
 ):
-    """Handle Accept Risk or Escalate OCR actions."""
+    """Handle Accept Risk / Generate Copy actions."""
     if isinstance(auth, JSONResponse):
         return auth
 
@@ -607,10 +607,10 @@ async def preflight_action(
             content=error_envelope("VALIDATION_ERROR", "doc_id and action are required"),
         )
 
-    if action not in ("accept_risk", "escalate_ocr"):
+    if action not in ("accept_risk", "generate_copy", "escalate_ocr"):
         return JSONResponse(
             status_code=400,
-            content=error_envelope("VALIDATION_ERROR", "action must be 'accept_risk' or 'escalate_ocr'"),
+            content=error_envelope("VALIDATION_ERROR", "action must be 'accept_risk', 'generate_copy', or 'escalate_ocr'"),
         )
 
     ck = _cache_key(ws_id, doc_id)
@@ -625,7 +625,7 @@ async def preflight_action(
     if action == "accept_risk" and gate == "RED":
         return JSONResponse(
             status_code=400,
-            content=error_envelope("GATE_BLOCKED", "Cannot accept risk on RED gate. Must escalate to OCR."),
+            content=error_envelope("GATE_BLOCKED", "Cannot accept risk on RED gate. Must generate copy."),
         )
 
     result = {

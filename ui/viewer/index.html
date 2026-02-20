@@ -4539,7 +4539,7 @@
                     <div style="flex: 1;">
                       <div style="font-weight: 600; margin-bottom: 4px;" id="mojibake-gate-title"></div>
                       <div style="font-size: 0.88em; margin-bottom: 8px;" id="mojibake-gate-msg"></div>
-                      <button id="mojibake-gate-escalate-btn" onclick="mojibakeGateEscalate()" style="padding: 6px 14px; font-size: 0.85em; background: #e65100; color: white; border: none; border-radius: 4px; cursor: pointer;">Escalate OCR</button>
+                      <button id="mojibake-gate-escalate-btn" onclick="mojibakeGateGenerateCopy()" style="padding: 6px 14px; font-size: 0.85em; background: #e65100; color: white; border: none; border-radius: 4px; cursor: pointer;">Generate Copy</button>
                       <span id="mojibake-gate-escalate-status" style="display: none; margin-left: 10px; font-size: 0.85em;"></span>
                     </div>
                   </div>
@@ -19463,7 +19463,7 @@
       var statusEl = document.getElementById('mojibake-gate-escalate-status');
       btn.style.display = '';
       btn.disabled = false;
-      btn.textContent = 'Escalate OCR';
+      btn.textContent = 'Generate Copy';
       statusEl.style.display = 'none';
 
       if (config.disableReader && pdfContainer) {
@@ -19479,51 +19479,34 @@
       _mojibakeGateState.qualityFlag = null;
     }
 
-    function mojibakeGateEscalate() {
-      if (!_mojibakeGateState.documentId || _mojibakeGateState.escalationPending) return;
-      _mojibakeGateState.escalationPending = true;
-
+    function mojibakeGateGenerateCopy() {
       var btn = document.getElementById('mojibake-gate-escalate-btn');
       var statusEl = document.getElementById('mojibake-gate-escalate-status');
-      btn.disabled = true;
-      btn.textContent = 'Submitting...';
-
-      var apiBase = window.API_BASE || '/api/v2.5';
-      fetch(apiBase + '/documents/' + _mojibakeGateState.documentId + '/ocr-escalations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (window._authToken || '') },
-        body: JSON.stringify({ escalation_type: 'ocr_reprocess', quality_flag: _mojibakeGateState.qualityFlag })
-      })
-      .then(function(r) { return r.json().then(function(d) { return { status: r.status, data: d }; }); })
-      .then(function(res) {
-        if (res.status === 200) {
-          btn.textContent = 'Already Escalated';
-          statusEl.textContent = 'A pending escalation already exists for this document.';
-          statusEl.style.display = 'inline';
-          statusEl.style.color = '#1565c0';
-        } else if (res.status === 201) {
-          btn.textContent = 'Escalated';
-          statusEl.textContent = 'OCR escalation submitted successfully.';
-          statusEl.style.display = 'inline';
-          statusEl.style.color = '#2e7d32';
-        } else {
-          btn.textContent = 'Escalate OCR';
-          btn.disabled = false;
-          _mojibakeGateState.escalationPending = false;
-          statusEl.textContent = 'Error: ' + (res.data.error ? res.data.error.message : 'Unknown error');
-          statusEl.style.display = 'inline';
-          statusEl.style.color = '#c62828';
-        }
-      })
-      .catch(function(err) {
-        btn.textContent = 'Escalate OCR';
-        btn.disabled = false;
-        _mojibakeGateState.escalationPending = false;
-        statusEl.textContent = 'Network error: ' + err.message;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Opening...';
+      }
+      if (statusEl) {
+        statusEl.textContent = 'Launching Contract Generator reconstruction flow...';
         statusEl.style.display = 'inline';
-        statusEl.style.color = '#c62828';
-      });
+        statusEl.style.color = '#1565c0';
+      }
+      if (typeof preflightOpenContractGenerator === 'function') {
+        preflightOpenContractGenerator('mojibake_gate');
+      } else if (typeof openContractGeneratorEntry === 'function') {
+        openContractGeneratorEntry();
+      }
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Generate Copy';
+      }
+      if (statusEl) {
+        statusEl.textContent = 'Contract Generator opened. Generate canonical copy and continue review.';
+        statusEl.style.display = 'inline';
+        statusEl.style.color = '#2e7d32';
+      }
     }
+    function mojibakeGateEscalate() { mojibakeGateGenerateCopy(); }
     // ========== END MOJIBAKE GATE UI ==========
 
     // ========== READER/PDF TOGGLE (Evidence Viewer v2.51 Phase 5 - EVIDENCE-23) ==========
@@ -39204,12 +39187,12 @@
       var gate = window._pfGateState.result.gate_color;
       if (gate === 'GREEN') return [];
       if (gate === 'YELLOW') {
-        if (window._pfGateState.actionTaken === 'accept_risk' || window._pfGateState.actionTaken === 'escalate_ocr') return [];
-        return ['Document preflight is YELLOW — must Accept Risk or Escalate OCR'];
+        if (window._pfGateState.actionTaken === 'accept_risk' || window._pfGateState.actionTaken === 'generate_copy' || window._pfGateState.actionTaken === 'escalate_ocr') return [];
+        return ['Document preflight is YELLOW — must Accept Risk or Generate Copy'];
       }
       if (gate === 'RED') {
-        if (window._pfGateState.actionTaken === 'escalate_ocr') return [];
-        return ['Document preflight is RED — must Escalate to OCR'];
+        if (window._pfGateState.actionTaken === 'generate_copy' || window._pfGateState.actionTaken === 'escalate_ocr') return [];
+        return ['Document preflight is RED — must Generate Copy'];
       }
       return ['Unknown preflight gate state'];
     }
@@ -54950,6 +54933,73 @@ var P022_RuntimeValidation = {
 
   window._pfGateState = _pfGateState;
 
+  function _pfGateActionLabel(action) {
+    if (action === 'accept_risk') return 'Accept Risk';
+    if (action === 'generate_copy') return 'Generate Copy';
+    if (action === 'escalate_ocr') return 'Escalate OCR';
+    return action || 'Action';
+  }
+
+  function _pfGateGetCurrentContext() {
+    var sheetName = '';
+    var rowIndex = -1;
+    var recordKey = '';
+    if (typeof srrState !== 'undefined') {
+      sheetName = srrState.currentSheetName || srrState.currentSheet || '';
+      var idx = parseInt(srrState.currentRowIndex, 10);
+      rowIndex = isNaN(idx) ? -1 : idx;
+      recordKey = srrState.currentRecordKey || '';
+    }
+    return {
+      sheetName: sheetName,
+      rowIndex: rowIndex,
+      recordKey: recordKey
+    };
+  }
+
+  function _pfGateSeedContractGenerator(context) {
+    var sheetSel = document.getElementById('cg-page-sheet-select');
+    var rowSel = document.getElementById('cg-page-row-select');
+    if (!sheetSel || !rowSel) return false;
+    var seeded = false;
+    var ctx = context || {};
+    if (ctx.sheetName) {
+      for (var si = 0; si < sheetSel.options.length; si++) {
+        if (sheetSel.options[si].value === ctx.sheetName) {
+          sheetSel.value = ctx.sheetName;
+          seeded = true;
+          break;
+        }
+      }
+      if (typeof cgPageRefreshRows === 'function') cgPageRefreshRows();
+    }
+    if (ctx.rowIndex >= 0 && rowSel.options && rowSel.options.length > ctx.rowIndex) {
+      rowSel.value = String(ctx.rowIndex);
+      seeded = true;
+    }
+    return seeded;
+  }
+
+  window.preflightOpenContractGenerator = function(sourceTag) {
+    var role = _pfGateGetRole();
+    if (role !== 'admin' && role !== 'architect') {
+      if (typeof showToast === 'function') showToast('Generate Copy requires Admin mode.', 'warning');
+      return;
+    }
+    var context = _pfGateGetCurrentContext();
+    navigateTo('contract-generator');
+    setTimeout(function() {
+      if (typeof cgPageInit === 'function') cgPageInit(false);
+      var seeded = _pfGateSeedContractGenerator(context);
+      if (seeded && typeof cgPageGenerate === 'function') cgPageGenerate();
+      if (typeof showToast === 'function') {
+        if (seeded) showToast('Opened Contract Generator with current record context.', 'success');
+        else showToast('Opened Contract Generator. Select section/record and generate copy.', 'info');
+      }
+      console.log('[PREFLIGHT-GATE] generate_copy_opened source=' + (sourceTag || 'unknown') + ' seeded=' + seeded);
+    }, 90);
+  };
+
   window.pfGateInit = function() {
     _pfGateState.enabled = true;
     var tabBtn = document.getElementById('pf-gate-tab-btn');
@@ -55029,17 +55079,19 @@ var P022_RuntimeValidation = {
       if (gate === 'GREEN') {
         html += '<span style="font-size:0.82em;color:#2e7d32;font-weight:500;">All checks passed. Ready to submit.</span>';
       } else if (gate === 'YELLOW') {
-        if (_pfGateState.actionTaken) {
+        if (_pfGateState.actionTaken === 'accept_risk') {
           html += '<span style="font-size:0.82em;color:#f57f17;font-weight:500;">Risk accepted. Submission unlocked.</span>';
+        } else if (_pfGateState.actionTaken === 'generate_copy' || _pfGateState.actionTaken === 'escalate_ocr') {
+          html += '<span style="font-size:0.82em;color:#1565c0;font-weight:500;">Reconstruction copy requested. Continue in Contract Generator.</span>';
         } else {
           html += '<button class="pf-gate-btn accept" onclick="pfGateAction(\'accept_risk\')">Accept Risk</button>';
-          html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'escalate_ocr\')">Escalate to OCR</button>';
+          html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'generate_copy\')">Generate Copy</button>';
         }
       } else if (gate === 'RED') {
-        if (_pfGateState.actionTaken === 'escalate_ocr') {
-          html += '<span style="font-size:0.82em;color:#c62828;font-weight:500;">OCR escalation requested.</span>';
+        if (_pfGateState.actionTaken === 'generate_copy' || _pfGateState.actionTaken === 'escalate_ocr') {
+          html += '<span style="font-size:0.82em;color:#c62828;font-weight:500;">Reconstruction copy requested.</span>';
         } else {
-          html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'escalate_ocr\')">Escalate to OCR</button>';
+          html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'generate_copy\')">Generate Copy</button>';
           html += '<span style="font-size:0.78em;color:#999;margin-left:8px;">Document quality too low for submission.</span>';
         }
       }
@@ -55150,7 +55202,10 @@ var P022_RuntimeValidation = {
       pfGateRenderPanel();
       if (typeof showToast === 'function') {
         if (action === 'accept_risk') showToast('Risk accepted — submission unlocked', 'info');
-        else showToast('OCR escalation requested', 'info');
+        else showToast(_pfGateActionLabel(action) + ' requested', 'info');
+      }
+      if (action === 'generate_copy' || action === 'escalate_ocr') {
+        preflightOpenContractGenerator('pf_gate');
       }
     })
     .catch(function(err) {
@@ -55558,9 +55613,9 @@ var P022_RuntimeValidation = {
         html += '<button class="prep-sim-btn continue" onclick="window._prepSimAction(\'CONTINUE\')">Continue</button>';
       } else if (gate === 'YELLOW') {
         html += '<button class="prep-sim-btn accept" onclick="window._prepSimAction(\'ACCEPT_RISK\')">Accept Risk</button>';
-        html += '<button class="prep-sim-btn escalate" onclick="window._prepSimAction(\'ESCALATE_OCR\')">Escalate OCR</button>';
+        html += '<button class="prep-sim-btn escalate" onclick="window._prepSimAction(\'GENERATE_COPY\')">Generate Copy</button>';
       } else {
-        html += '<button class="prep-sim-btn escalate" onclick="window._prepSimAction(\'ESCALATE_OCR\')">Escalate OCR</button>';
+        html += '<button class="prep-sim-btn escalate" onclick="window._prepSimAction(\'GENERATE_COPY\')">Generate Copy</button>';
         html += '<button class="prep-sim-btn cancel" onclick="window._prepSimAction(\'CANCEL\')">Cancel</button>';
       }
     }
@@ -55589,16 +55644,17 @@ var P022_RuntimeValidation = {
           body: JSON.stringify({ doc_id: docId, action: 'accept_risk' })
         }).then(function(r) { return r.json(); }).catch(function(e) { console.warn('[PREP-SIM] accept_risk API error:', e); });
       }
-    } else if (action === 'ESCALATE_OCR') {
-      preflightSyncState.pipeline = 'preflight_escalated';
+    } else if (action === 'GENERATE_COPY' || action === 'ESCALATE_OCR') {
+      preflightSyncState.pipeline = 'preflight_reconstruction_requested';
       var docId2 = preflightSyncState.activeDocId || (typeof _pfGateGetDocId === 'function' ? _pfGateGetDocId() : '');
       if (docId2) {
         fetch('/api/preflight/action', {
           method: 'POST',
           headers: _prepSimGetHeaders(),
-          body: JSON.stringify({ doc_id: docId2, action: 'escalate_ocr' })
-        }).then(function(r) { return r.json(); }).catch(function(e) { console.warn('[PREP-SIM] escalate_ocr API error:', e); });
+          body: JSON.stringify({ doc_id: docId2, action: 'generate_copy' })
+        }).then(function(r) { return r.json(); }).catch(function(e) { console.warn('[PREP-SIM] generate_copy API error:', e); });
       }
+      if (typeof preflightOpenContractGenerator === 'function') preflightOpenContractGenerator('prep_sim');
     } else if (action === 'CANCEL') {
       preflightSyncState.pipeline = 'preflight_cancelled';
     }
@@ -57747,7 +57803,7 @@ var P022_RuntimeValidation = {
       html += '<span style="color:#2e7d32;font-size:0.85em;font-weight:500;">All checks passed — no action needed.</span>';
     } else {
       html += '<button class="pftl-action-btn accept-risk" onclick="pftlAcceptRisk()">Accept Risk</button>';
-      html += '<button class="pftl-action-btn escalate-ocr" onclick="pftlEscalateOcr()">Escalate OCR</button>';
+      html += '<button class="pftl-action-btn escalate-ocr" onclick="pftlGenerateCopy()">Generate Copy</button>';
       if (!isMaterialized) {
         html += '<span class="pftl-footer-note">Document not materialized — action will be deferred until patch submission.</span>';
       }
@@ -57765,14 +57821,16 @@ var P022_RuntimeValidation = {
     _pftlRender();
   };
 
-  window.pftlEscalateOcr = function() {
+  window.pftlGenerateCopy = function() {
     if (!_pftlState.result) return;
-    _pftlState.result._action = 'escalate_ocr';
+    _pftlState.result._action = 'generate_copy';
     _pftlState.result._action_by = _pftlGetRole();
     _pftlState.result._action_ts = new Date().toISOString();
-    if (typeof showToast === 'function') showToast('Escalated to OCR — re-extraction recommended', 'info');
+    if (typeof preflightOpenContractGenerator === 'function') preflightOpenContractGenerator('preflight_test_lab');
+    if (typeof showToast === 'function') showToast('Generate Copy selected — continue in Contract Generator', 'info');
     _pftlRender();
   };
+  window.pftlEscalateOcr = function() { window.pftlGenerateCopy(); };
 
   window.pftlToggleSfDebug = function() {
     var rows = document.querySelectorAll('.pftl-sf-debug-row');
