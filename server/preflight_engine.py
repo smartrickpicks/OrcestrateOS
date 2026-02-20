@@ -363,6 +363,7 @@ def run_preflight(pages_data):
     opportunity_spine = build_opportunity_spine(full_text, resolution_story)
     schedule_structure = build_schedule_structure(full_text, resolution_story, opportunity_spine)
     financials_readiness = build_financials_readiness(full_text, opportunity_spine, schedule_structure)
+    v2_addons_readiness = build_v2_addons_readiness(full_text, opportunity_spine)
 
     return {
         "doc_mode": doc_mode,
@@ -375,6 +376,7 @@ def run_preflight(pages_data):
         "opportunity_spine": opportunity_spine,
         "schedule_structure": schedule_structure,
         "financials_readiness": financials_readiness,
+        "v2_addons_readiness": v2_addons_readiness,
         "page_classifications": page_results,
         "extracted_text": full_text[:50000],
         "extracted_headers": extracted_headers,
@@ -1423,6 +1425,126 @@ def build_financials_readiness(full_text, opportunity_spine, schedule_structure)
     else:
         overall = "pass"
 
+    return {
+        "status": overall,
+        "checks": checks,
+        "summary": {"passed": passed, "review": review, "failed": failed},
+    }
+
+
+_ADDON_OPTION_KEYWORDS = [
+    "option period", "option term", "option rights", "additional option", "option to renew",
+]
+_ADDON_MERCH_KEYWORDS = [
+    "merchandising", "merch rights", "merchandise", "manufacture and sell merchandise",
+]
+_ADDON_PITCHING_KEYWORDS = [
+    "pitching rights", "right to pitch", "sync representation", "placement services", "music supervision",
+]
+_ADDON_NEGOTIATION_KEYWORDS = [
+    "first negotiation", "matching rights", "right of first refusal", "exclusive negotiation period",
+]
+_ADDON_WINDOW_KEYWORDS = [
+    "days", "business days", "notice period", "exercise notice", "matching period", "term",
+]
+_ADDON_ECONOMIC_KEYWORDS = [
+    "fee", "split", "%", "commission", "consideration",
+]
+
+
+def _extract_addon_options(full_text):
+    if not full_text:
+        return {"status": "review", "confidence": 0.0, "value": None, "reason": "No text available", "evidence": []}
+    text = full_text.lower()
+    hits = [k for k in _ADDON_OPTION_KEYWORDS if k in text]
+    if len(hits) >= 1:
+        return {"status": "pass", "confidence": 0.8, "value": "Option rights detected", "reason": "Option language detected", "evidence": hits[:5]}
+    return {"status": "review", "confidence": 0.35, "value": None, "reason": "No option-right language detected", "evidence": []}
+
+
+def _extract_addon_merch_pitching(full_text):
+    if not full_text:
+        return {"status": "review", "confidence": 0.0, "value": None, "reason": "No text available", "evidence": []}
+    text = full_text.lower()
+    merch_hits = [k for k in _ADDON_MERCH_KEYWORDS if k in text]
+    pitch_hits = [k for k in _ADDON_PITCHING_KEYWORDS if k in text]
+    evidence = (merch_hits + pitch_hits)[:6]
+    if merch_hits or pitch_hits:
+        label = []
+        if merch_hits:
+            label.append("Merch")
+        if pitch_hits:
+            label.append("Pitching")
+        return {"status": "pass", "confidence": 0.8, "value": " + ".join(label), "reason": "Add-on service rights detected", "evidence": evidence}
+    return {"status": "review", "confidence": 0.3, "value": None, "reason": "No merch/pitching add-on markers detected", "evidence": []}
+
+
+def _extract_addon_negotiation_rights(full_text):
+    if not full_text:
+        return {"status": "review", "confidence": 0.0, "value": None, "reason": "No text available", "evidence": []}
+    text = full_text.lower()
+    hits = [k for k in _ADDON_NEGOTIATION_KEYWORDS if k in text]
+    if len(hits) >= 1:
+        return {"status": "pass", "confidence": 0.75, "value": "Negotiation/matching rights detected", "reason": "First-negotiation/matching language detected", "evidence": hits[:5]}
+    return {"status": "review", "confidence": 0.35, "value": None, "reason": "No first-negotiation/matching markers detected", "evidence": []}
+
+
+def _extract_addon_windows(full_text):
+    if not full_text:
+        return {"status": "review", "confidence": 0.0, "value": None, "reason": "No text available", "evidence": []}
+    text = full_text.lower()
+    explicit_day_windows = re.findall(r'(\d{1,3})\s+(?:business\s+)?days', text)
+    hits = [k for k in _ADDON_WINDOW_KEYWORDS if k in text]
+    if explicit_day_windows:
+        return {
+            "status": "pass",
+            "confidence": 0.8,
+            "value": ", ".join(f"{d} days" for d in explicit_day_windows[:3]),
+            "reason": "Explicit add-on timing windows detected",
+            "evidence": [f"{d} days" for d in explicit_day_windows[:4]],
+        }
+    if len(hits) >= 2:
+        return {"status": "review", "confidence": 0.55, "value": "Timing windows likely present", "reason": "Timing-language found without explicit numeric window", "evidence": hits[:5]}
+    return {"status": "review", "confidence": 0.3, "value": None, "reason": "No add-on timing window markers detected", "evidence": []}
+
+
+def _extract_addon_economics(full_text):
+    if not full_text:
+        return {"status": "review", "confidence": 0.0, "value": None, "reason": "No text available", "evidence": []}
+    text = full_text.lower()
+    pct = re.findall(r'(\d{1,3})\s*%', text)
+    econ_hits = [k for k in _ADDON_ECONOMIC_KEYWORDS if k in text]
+    if pct:
+        return {"status": "pass", "confidence": 0.75, "value": ", ".join(f"{p}%" for p in pct[:4]), "reason": "Economic terms detected for add-ons", "evidence": [f"{p}%" for p in pct[:6]]}
+    if len(econ_hits) >= 2:
+        return {"status": "review", "confidence": 0.5, "value": "Economic terms present", "reason": "Fee/split language detected without explicit percentages", "evidence": econ_hits[:5]}
+    return {"status": "review", "confidence": 0.3, "value": None, "reason": "No add-on economic markers detected", "evidence": []}
+
+
+def _check_addon_expectedness(opportunity_spine):
+    ctype = (_opp_check_value(opportunity_spine, "OPP_CONTRACT_TYPE") or "").lower()
+    subtype = (_opp_check_value(opportunity_spine, "OPP_CONTRACT_SUBTYPE") or "").lower()
+    if "termination" in ctype:
+        return {"status": "review", "confidence": 0.4, "value": "Termination flow", "reason": "V2 Add-ons may be absent in pure termination agreements"}
+    if "distribution" in ctype or "sync" in subtype or "label" in subtype:
+        return {"status": "pass", "confidence": 0.75, "value": "Add-ons relevant", "reason": "Contract type suggests optional add-ons should be checked"}
+    return {"status": "review", "confidence": 0.45, "value": "Optional", "reason": "Add-ons may be optional for this contract class"}
+
+
+def build_v2_addons_readiness(full_text, opportunity_spine):
+    checks = [
+        {"code": "ADDON_OPTIONS", "label": "Option Rights", **_extract_addon_options(full_text)},
+        {"code": "ADDON_MERCH_PITCH", "label": "Merch/Pitching Rights", **_extract_addon_merch_pitching(full_text)},
+        {"code": "ADDON_NEGOTIATION", "label": "Negotiation/Matching Rights", **_extract_addon_negotiation_rights(full_text)},
+        {"code": "ADDON_WINDOWS", "label": "Notice/Exercise Windows", **_extract_addon_windows(full_text)},
+        {"code": "ADDON_ECONOMICS", "label": "Add-on Economics", **_extract_addon_economics(full_text)},
+        {"code": "ADDON_EXPECTEDNESS", "label": "Opportunity Relevance", **_check_addon_expectedness(opportunity_spine)},
+    ]
+
+    passed = sum(1 for c in checks if c["status"] == "pass")
+    review = sum(1 for c in checks if c["status"] == "review")
+    failed = sum(1 for c in checks if c["status"] == "fail")
+    overall = "pass" if (failed == 0 and review == 0) else ("review" if failed == 0 else "fail")
     return {
         "status": overall,
         "checks": checks,
