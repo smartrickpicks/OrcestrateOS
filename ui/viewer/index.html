@@ -3385,7 +3385,7 @@
             <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
             <span class="nav-label">Admin Panel</span>
           </a>
-          <a class="nav-item admin-only" id="nav-contract-generator" href="#" onclick="openContractGeneratorEntry(); return false;" title="Contract Generator">
+          <a class="nav-item admin-only" id="nav-contract-generator" data-page="contract-generator" href="#" onclick="openContractGeneratorEntry(); return false;" title="Contract Generator">
             <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="12" y1="2" x2="12" y2="22"/></svg></span>
             <span class="nav-label">Contract Generator</span>
           </a>
@@ -5398,6 +5398,41 @@
           <div class="aa-hold-modal-actions">
             <button class="aa-action-btn" style="background: #e0e0e0; color: #333;" onclick="aaHoldCancel()">Cancel</button>
             <button class="aa-action-btn hold" onclick="aaHoldSubmit()">Place on Hold</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTRACT GENERATOR PAGE (Standalone) -->
+      <div class="page" id="page-contract-generator" style="display:none;">
+        <div class="page-header">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin:0;">&lt;/&gt; Contract Generator</h2>
+            <div id="cg-page-sandbox-bar" style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: var(--bg-secondary, #f5f5f5); border-radius: 6px; border: 1px solid var(--border-color, #e0e0e0);">
+              <span style="font-size: 0.82em; color: var(--text-secondary, #666);">Sandbox Mode:</span>
+              <span id="cg-page-sandbox-status" style="font-size: 0.82em; font-weight: 600; color: #f57c00;">Checking...</span>
+            </div>
+          </div>
+        </div>
+        <div style="max-width: 900px; margin: 20px auto; padding: 0 20px;">
+          <div style="background: var(--bg-primary, white); padding: 24px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid var(--border-color, #e0e0e0);">
+            <p style="font-size: 0.88em; color: var(--text-secondary, #666); margin: 0 0 18px;">Generate a canonical contract draft from ingested records and schema checks. Requires sandbox/demo mode.</p>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;">
+              <div style="min-width: 240px; flex: 1;">
+                <label style="display: block; font-size: 0.8em; color: var(--text-secondary, #666); margin-bottom: 4px;">Contract Section</label>
+                <select id="cg-page-sheet-select" onchange="cgPageRefreshRows()" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border-color, #ddd); border-radius: 6px; font-size: 0.88em; background: var(--bg-primary, white); color: var(--text-primary, #333);"></select>
+              </div>
+              <div style="min-width: 280px; flex: 2;">
+                <label style="display: block; font-size: 0.8em; color: var(--text-secondary, #666); margin-bottom: 4px;">Record</label>
+                <select id="cg-page-row-select" style="width: 100%; padding: 8px 10px; border: 1px solid var(--border-color, #ddd); border-radius: 6px; font-size: 0.88em; background: var(--bg-primary, white); color: var(--text-primary, #333);"></select>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;">
+              <button class="toolbar-btn" onclick="cgPageInit(true)">Refresh</button>
+              <button class="toolbar-btn" onclick="cgPageGenerate()" style="background: #1976d2; color: white;">Generate Text</button>
+              <button class="toolbar-btn" onclick="cgPageDownload()" style="background: #2e7d32; color: white;">Download .md</button>
+            </div>
+            <div id="cg-page-status" style="display: none; margin-bottom: 10px; padding: 8px 10px; border-radius: 6px; font-size: 0.85em;"></div>
+            <textarea id="cg-page-output" readonly placeholder="Generated contract text will appear here..." style="width: 100%; min-height: 320px; padding: 12px 14px; border: 1px solid var(--border-color, #ddd); border-radius: 6px; font-size: 0.85em; font-family: 'Courier New', monospace; box-sizing: border-box; resize: vertical; background: var(--bg-primary, #fafafa); color: var(--text-primary, #333);"></textarea>
           </div>
         </div>
       </div>
@@ -25535,7 +25570,7 @@
       options = options || {};
       // Loader is now a drawer, not a page - redirect loader requests to triage
       if (page === 'loader') page = 'triage';
-      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-org', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'row', 'restricted'];
+      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-org', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'contract-generator', 'row', 'restricted'];
       var _basePage = page.split('/')[0];
       if (_basePage === 'row') {
         if (_srrCurrentPage !== 'row') {
@@ -25598,6 +25633,9 @@
         console.log('[Navigate] Admin page requires admin mode');
         restrictedReason = 'The Admin Panel is only available to users with the Admin role.';
         adminTab = null;
+      }
+      if (page === 'contract-generator' && currentMode !== 'admin' && currentMode !== 'architect') {
+        restrictedReason = 'Contract Generator is only available to Admins.';
       }
       if (page === 'review' && currentMode !== 'verifier' && currentMode !== 'admin') {
         console.log('[Navigate] Review page requires verifier/admin mode');
@@ -25796,6 +25834,10 @@
         setTimeout(function() { if (typeof vorgLoadData === 'function') vorgLoadData(); }, 0);
       }
       
+      if (page === 'contract-generator') {
+        setTimeout(function() { if (typeof cgPageInit === 'function') cgPageInit(false); }, 60);
+      }
+
       // Update hash (include tab for admin deep-links, preserve grid query params)
       if (page === 'admin' && adminTab && adminTab !== 'governance') {
         window.location.hash = '#/admin/' + adminTab;
@@ -27031,7 +27073,116 @@
     function cgDownloadContractTxt() {
       cgDownloadContractMd();
     }
-    
+
+    var _cgPageState = { lastOutput: '', lastFileName: '' };
+
+    function _cgPageSetStatus(msg, level) {
+      var el = document.getElementById('cg-page-status');
+      if (!el) return;
+      el.style.display = msg ? 'block' : 'none';
+      el.textContent = msg || '';
+      el.style.background = level === 'success' ? '#e8f5e9' : level === 'warn' ? '#fff3e0' : level === 'error' ? '#ffebee' : '#e3f2fd';
+      el.style.color = level === 'success' ? '#2e7d32' : level === 'warn' ? '#e65100' : level === 'error' ? '#c62828' : '#1565c0';
+    }
+
+    function cgPageInit(forceRefresh) {
+      var sandboxEl = document.getElementById('cg-page-sandbox-status');
+      var isSandbox = _cgInSandboxMode();
+      if (sandboxEl) {
+        sandboxEl.textContent = isSandbox ? 'Active' : 'Inactive';
+        sandboxEl.style.color = isSandbox ? '#2e7d32' : '#c62828';
+      }
+      var sheetSel = document.getElementById('cg-page-sheet-select');
+      var rowSel = document.getElementById('cg-page-row-select');
+      if (!sheetSel || !rowSel) return;
+
+      var controls = document.querySelectorAll('#page-contract-generator select, #page-contract-generator button');
+      for (var ci = 0; ci < controls.length; ci++) controls[ci].disabled = !isSandbox;
+
+      if (!isSandbox) {
+        _cgPageSetStatus('Sandbox mode required. Enable Demo Mode from the login page or Admin sandbox toggle to use Contract Generator.', 'warn');
+        return;
+      }
+      _cgPageSetStatus('', '');
+
+      var sheets = _cgGetDataSheetNames();
+      if (forceRefresh || sheetSel.options.length === 0) {
+        var html = '';
+        for (var si = 0; si < sheets.length; si++) {
+          html += '<option value="' + _pftlEsc(sheets[si]) + '">' + _pftlEsc(sheets[si]) + '</option>';
+        }
+        sheetSel.innerHTML = html;
+      }
+      cgPageRefreshRows();
+    }
+
+    function cgPageRefreshRows() {
+      var sheetSel = document.getElementById('cg-page-sheet-select');
+      var rowSel = document.getElementById('cg-page-row-select');
+      if (!sheetSel || !rowSel) return;
+      var sheetName = sheetSel.value;
+      if (!sheetName || !window.workbookData || !window.workbookData[sheetName]) {
+        rowSel.innerHTML = '<option value="">No records</option>';
+        return;
+      }
+      var rows = window.workbookData[sheetName];
+      var html = '';
+      for (var ri = 0; ri < rows.length; ri++) {
+        var label = _cgResolveRecordName(rows[ri]) || ('Row ' + (ri + 1));
+        html += '<option value="' + ri + '">' + _pftlEsc(label) + '</option>';
+      }
+      rowSel.innerHTML = html;
+    }
+
+    function cgPageGenerate() {
+      if (!_cgInSandboxMode()) {
+        _cgPageSetStatus('Sandbox mode required.', 'warn');
+        return;
+      }
+      var sheetSel = document.getElementById('cg-page-sheet-select');
+      var rowSel = document.getElementById('cg-page-row-select');
+      var out = document.getElementById('cg-page-output');
+      if (!sheetSel || !rowSel || !out) return;
+      var sheetName = sheetSel.value;
+      var rowIdx = parseInt(rowSel.value, 10);
+      if (!sheetName || isNaN(rowIdx)) {
+        _cgPageSetStatus('Select a section and record first.', 'warn');
+        return;
+      }
+      if (!window.workbookData || !window.workbookData[sheetName]) {
+        _cgPageSetStatus('No data for selected section.', 'error');
+        return;
+      }
+      var row = window.workbookData[sheetName][rowIdx];
+      if (!row) {
+        _cgPageSetStatus('Record not found.', 'error');
+        return;
+      }
+      var text = _cgBuildContractText(sheetName, row, rowIdx);
+      out.value = text;
+      _cgPageState.lastOutput = text;
+      var recName = _cgResolveRecordName(row) || ('row_' + (rowIdx + 1));
+      _cgPageState.lastFileName = sheetName.replace(/\s+/g, '_') + '_' + recName.replace(/[^a-zA-Z0-9_-]/g, '_') + '.md';
+      _cgPageSetStatus('Generated ' + text.split('\n').length + ' lines.', 'success');
+    }
+
+    function cgPageDownload() {
+      if (!_cgPageState.lastOutput) {
+        _cgPageSetStatus('Generate contract text first.', 'warn');
+        return;
+      }
+      var blob = new Blob([_cgPageState.lastOutput], { type: 'text/markdown;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = _cgPageState.lastFileName || 'contract_draft.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      _cgPageSetStatus('Downloaded ' + a.download, 'success');
+    }
+
     // ========== ADMIN QUEUE RENDERING (v1.5.1) ==========
     function renderAdminQueue() {
       var items = getPatchQueue();
@@ -48150,16 +48301,11 @@
 
     function openContractGeneratorEntry() {
       if (currentMode !== 'admin' && currentMode !== 'architect') {
-        showToast('Contract Generator is available in Admin Panel.', 'warning');
+        showToast('Contract Generator is available in Admin mode.', 'warning');
         return;
       }
-      navigateTo('admin/governance');
-      setTimeout(function() {
-        if (typeof switchAdminTab === 'function') switchAdminTab('governance');
-        if (typeof cgInitContractGenerator === 'function') cgInitContractGenerator(true);
-        var panel = document.getElementById('admin-contract-generator-section');
-        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 80);
+      navigateTo('contract-generator');
+      setTimeout(function() { cgPageInit(false); }, 60);
     }
     
     function closeConfigFlows() {
