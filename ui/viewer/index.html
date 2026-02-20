@@ -14435,6 +14435,7 @@
       var snapshot = {
         record_key: null,
         source: null,
+        new_entry_detected: false,
         contract_classification: null,
         analyst_assignments: null,
         captured_at_utc: new Date().toISOString()
@@ -14448,12 +14449,20 @@
           snapshot.source = 'preflight_test_lab';
           snapshot.contract_classification = pftlResult.contract_classification || null;
           snapshot.analyst_assignments = pftlResult.analyst_assignments || null;
+          snapshot.new_entry_detected = !!(
+            (pftlResult.resolution_story && pftlResult.resolution_story.new_entry_detected === true) ||
+            (pftlResult.contract_classification && pftlResult.contract_classification.new_entry_detected === true)
+          );
           return snapshot;
         }
         if (typeof _pfGateState !== 'undefined' && _pfGateState && _pfGateState.result) {
           snapshot.source = 'preflight_gate';
           snapshot.contract_classification = _pfGateState.result.contract_classification || null;
           snapshot.analyst_assignments = null;
+          snapshot.new_entry_detected = !!(
+            (_pfGateState.result.resolution_story && _pfGateState.result.resolution_story.new_entry_detected === true) ||
+            (_pfGateState.result.contract_classification && _pfGateState.result.contract_classification.new_entry_detected === true)
+          );
           return snapshot;
         }
       } catch (e) {
@@ -14461,10 +14470,29 @@
       }
       return snapshot;
     }
+
+    function _isNewEntryDetected(preflightContext) {
+      if (!preflightContext) return false;
+      if (preflightContext.new_entry_detected === true) return true;
+      if (preflightContext.contract_classification && preflightContext.contract_classification.new_entry_detected === true) return true;
+      return false;
+    }
+
+    function _requiresManualCounterparty(preflightContext) {
+      if (!_isNewEntryDetected(preflightContext)) return false;
+      var aa = (preflightContext && preflightContext.analyst_assignments) || {};
+      var val = (aa.manual_counterparty || '').trim();
+      return val.length < 3;
+    }
     
     function createPatchRequest(options) {
       var now = new Date().toISOString();
       var preflightContext = _buildPreflightContextSnapshot();
+      if (_requiresManualCounterparty(preflightContext)) {
+        showToast('Manual counterparty is required before submitting this patch.', 'warning');
+        console.log('[PatchRequest] blocked: missing manual_counterparty for new-entry contract');
+        return null;
+      }
       
       var intentStructured = {
         target_field: options.target_field || (options.sheet && options.field ? options.sheet + '.' + options.field : null),
@@ -14554,7 +14582,9 @@
               var cc = (preflightContext && preflightContext.contract_classification) || {};
               var aa = (preflightContext && preflightContext.analyst_assignments) || {};
               var subtypeCount = Array.isArray(aa.opportunity_subtypes) ? aa.opportunity_subtypes.length : 0;
-              var scheduleCount = Array.isArray(aa.schedule_types) ? aa.schedule_types.length : 0;
+              var scheduleCount = Array.isArray(aa.schedule_types_raw)
+                ? aa.schedule_types_raw.length
+                : (Array.isArray(aa.schedule_types) ? aa.schedule_types.length : 0);
               return 'preflight_source=' + (preflightContext.source || 'none') +
                 '; category=' + (cc.contract_category || 'n/a') +
                 '; subtype_count=' + subtypeCount +
@@ -15301,7 +15331,7 @@
         var cc = pfc.contract_classification || {};
         var aa = pfc.analyst_assignments || {};
         var subtypeList = (aa.opportunity_subtypes || []).join(', ') || '—';
-        var scheduleList = (aa.schedule_types || []).join(', ') || '—';
+        var scheduleList = (aa.schedule_types_label || aa.schedule_types || []).join(', ') || '—';
         html += '<div style="margin-bottom: 20px; border-top: 1px solid #e0e0e0; padding-top: 15px;">' +
           '<h4 style="margin: 0 0 10px 0; font-size: 0.9em; text-transform: uppercase; color: #1565c0;">Preflight Context</h4>' +
           '<table style="width: 100%; font-size: 0.9em;">' +
@@ -22629,6 +22659,10 @@
         author_role: author,
         linked_comment_id: commentId
       });
+      if (!patchRequest || !patchRequest.request_id) {
+        showToast('Patch request blocked. Complete required preflight fields and try again.', 'warning');
+        return;
+      }
       elevateToRequest(commentId, patchRequest.request_id, author, author);
       
       closeElevateToPatchModal();
@@ -38997,6 +39031,10 @@
         rationale: changeSummary,
         role_simulation: getRoleSimAuditMeta()
       });
+      if (!request || !request.request_id) {
+        showToast('Patch request blocked. Complete required preflight fields and try again.', 'warning');
+        return;
+      }
       
       var submittedRequest = submitPatchRequest(request.request_id, author, currentMode || 'Analyst');
       
@@ -49718,6 +49756,10 @@
         replay_steps: draft.evidence.replay_steps || '',
         replay_expected_result: draft.evidence.replay_expected_result || ''
       });
+      if (!request || !request.request_id) {
+        showToast('Patch request blocked. Complete required preflight fields and try again.', 'warning');
+        return;
+      }
       
       var submittedRequest = submitPatchRequest(request.request_id, author, currentMode || 'Analyst');
       
@@ -56540,9 +56582,10 @@ var P022_RuntimeValidation = {
   }
   function _pftlGetAssignments() {
     var key = _pftlGetRecordKey();
-    if (!_pftlAssignmentsStore[key]) _pftlAssignmentsStore[key] = { legal_entity: null, counterparty: null, opportunity_subtypes: [], schedule_types: [] };
+    if (!_pftlAssignmentsStore[key]) _pftlAssignmentsStore[key] = { legal_entity: null, counterparty: null, opportunity_subtypes: [], schedule_types: [], schedule_types_raw: [] };
     if (!_pftlAssignmentsStore[key].opportunity_subtypes) _pftlAssignmentsStore[key].opportunity_subtypes = [];
     if (!_pftlAssignmentsStore[key].schedule_types) _pftlAssignmentsStore[key].schedule_types = [];
+    if (!_pftlAssignmentsStore[key].schedule_types_raw) _pftlAssignmentsStore[key].schedule_types_raw = [];
     return _pftlAssignmentsStore[key];
   }
   function _pftlSaveAssignments() {
@@ -56552,13 +56595,20 @@ var P022_RuntimeValidation = {
 
   function _pftlBuildAnalystAssignmentsPayload() {
     var assigns = _pftlGetAssignments();
+    var normalizedSchedule = _pftlNormalizeScheduleTypes(
+      (assigns.schedule_types_raw && assigns.schedule_types_raw.length > 0)
+        ? assigns.schedule_types_raw
+        : (assigns.schedule_types || [])
+    );
     return {
       record_key: _pftlGetRecordKey(),
       legal_entity: assigns.legal_entity || null,
       counterparty: assigns.counterparty || null,
       manual_counterparty: assigns.manual_counterparty || null,
       opportunity_subtypes: (assigns.opportunity_subtypes || []).slice(),
-      schedule_types: (assigns.schedule_types || []).slice(),
+      schedule_types: normalizedSchedule.label.slice(),
+      schedule_types_raw: normalizedSchedule.raw.slice(),
+      schedule_types_label: normalizedSchedule.label.slice(),
       updated_at: new Date().toISOString()
     };
   }
@@ -56573,7 +56623,8 @@ var P022_RuntimeValidation = {
       out.contract_classification = {};
     }
     out.contract_classification.analyst_selected_subtypes = analystAssignments.opportunity_subtypes.slice();
-    out.contract_classification.analyst_selected_schedule_types = analystAssignments.schedule_types.slice();
+    out.contract_classification.analyst_selected_schedule_types = analystAssignments.schedule_types_label.slice();
+    out.contract_classification.analyst_selected_schedule_types_raw = analystAssignments.schedule_types_raw.slice();
     if (analystAssignments.manual_counterparty) {
       out.contract_classification.analyst_confirmed_counterparty = analystAssignments.manual_counterparty;
     }
@@ -56601,6 +56652,70 @@ var P022_RuntimeValidation = {
     "Termination Schedule",
     "Uncrossed Schedule"
   ];
+
+  var _SCHEDULE_TYPE_LABEL_BY_RAW = {
+    'distro_sync_existing_masters': 'Distro & Sync - Existing Masters',
+    'front_catalog_remixes': 'Front Catalog + Remixes',
+    'ownership': 'Ownership',
+    'schedule_1_catalog_acquisition_masters': 'Schedule 1 - Catalog Acquisition - Masters',
+    'schedule_2_catalog_acquisition_compositions': 'Schedule 2 - Catalog Acquisition - Compositions',
+    'shiloh_existing_non_shiloh_recordings': 'Shiloh - Existing Non Shiloh Recordings',
+    'termination_schedule': 'Termination Schedule',
+    'uncrossed_schedule': 'Uncrossed Schedule',
+    'general_schedule': 'General Schedule'
+  };
+  var _SCHEDULE_TYPE_RAW_BY_LABEL = {};
+  (function() {
+    for (var raw in _SCHEDULE_TYPE_LABEL_BY_RAW) {
+      if (_SCHEDULE_TYPE_LABEL_BY_RAW.hasOwnProperty(raw)) {
+        _SCHEDULE_TYPE_RAW_BY_LABEL[_SCHEDULE_TYPE_LABEL_BY_RAW[raw].toLowerCase()] = raw;
+      }
+    }
+    for (var i = 0; i < _SCHEDULE_TYPE_OPTIONS.length; i++) {
+      var label = _SCHEDULE_TYPE_OPTIONS[i];
+      if (!_SCHEDULE_TYPE_RAW_BY_LABEL[label.toLowerCase()]) {
+        _SCHEDULE_TYPE_RAW_BY_LABEL[label.toLowerCase()] = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+      }
+    }
+  })();
+
+  function _pftlScheduleTypeToLabel(value) {
+    var v = String(value || '').trim();
+    if (!v) return '';
+    if (_SCHEDULE_TYPE_LABEL_BY_RAW[v]) return _SCHEDULE_TYPE_LABEL_BY_RAW[v];
+    if (_SCHEDULE_TYPE_RAW_BY_LABEL[v.toLowerCase()]) {
+      var rawFromLabel = _SCHEDULE_TYPE_RAW_BY_LABEL[v.toLowerCase()];
+      return _SCHEDULE_TYPE_LABEL_BY_RAW[rawFromLabel] || v;
+    }
+    if (v.indexOf('_') >= 0) {
+      return v.replace(/_/g, ' ').replace(/\b\w/g, function(ch) { return ch.toUpperCase(); });
+    }
+    return v;
+  }
+
+  function _pftlScheduleTypeToRaw(value) {
+    var v = String(value || '').trim();
+    if (!v) return '';
+    if (_SCHEDULE_TYPE_LABEL_BY_RAW[v]) return v;
+    var mapped = _SCHEDULE_TYPE_RAW_BY_LABEL[v.toLowerCase()];
+    if (mapped) return mapped;
+    return v.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  }
+
+  function _pftlNormalizeScheduleTypes(values) {
+    var inVals = Array.isArray(values) ? values : [];
+    var outRaw = [];
+    var outLabel = [];
+    var seenRaw = {};
+    for (var i = 0; i < inVals.length; i++) {
+      var raw = _pftlScheduleTypeToRaw(inVals[i]);
+      if (!raw || seenRaw[raw]) continue;
+      seenRaw[raw] = true;
+      outRaw.push(raw);
+      outLabel.push(_pftlScheduleTypeToLabel(raw));
+    }
+    return { raw: outRaw, label: outLabel };
+  }
 
   window.pftlToggleOppSubtype = function(name, checked) {
     var assigns = _pftlGetAssignments();
@@ -56633,16 +56748,22 @@ var P022_RuntimeValidation = {
 
   window.pftlToggleScheduleType = function(name, checked) {
     var assigns = _pftlGetAssignments();
-    var vals = assigns.schedule_types || [];
-    if (checked) {
-      if (vals.indexOf(name) < 0) vals.push(name);
-    } else {
-      vals = vals.filter(function(v) { return v !== name; });
+    var currentRaw = (assigns.schedule_types_raw || []).slice();
+    if (currentRaw.length === 0 && (assigns.schedule_types || []).length > 0) {
+      currentRaw = _pftlNormalizeScheduleTypes(assigns.schedule_types).raw;
     }
-    assigns.schedule_types = vals;
+    var rawName = _pftlScheduleTypeToRaw(name);
+    if (checked) {
+      if (currentRaw.indexOf(rawName) < 0) currentRaw.push(rawName);
+    } else {
+      currentRaw = currentRaw.filter(function(v) { return v !== rawName; });
+    }
+    var normalized = _pftlNormalizeScheduleTypes(currentRaw);
+    assigns.schedule_types_raw = normalized.raw;
+    assigns.schedule_types = normalized.label;
     _pftlSaveAssignments();
     var out = document.getElementById('sch-type-selected');
-    if (out) out.textContent = vals.length ? vals.join(', ') : 'none';
+    if (out) out.textContent = normalized.label.length ? normalized.label.join(', ') : 'none';
   };
 
   window.pftlAddScheduleTypeOption = function() {
@@ -56651,12 +56772,19 @@ var P022_RuntimeValidation = {
     var name = sel.value;
     if (!name) return;
     var assigns = _pftlGetAssignments();
-    if (!assigns.schedule_types) assigns.schedule_types = [];
-    if (assigns.schedule_types.indexOf(name) < 0) assigns.schedule_types.push(name);
+    var currentRaw = (assigns.schedule_types_raw || []).slice();
+    if (currentRaw.length === 0 && (assigns.schedule_types || []).length > 0) {
+      currentRaw = _pftlNormalizeScheduleTypes(assigns.schedule_types).raw;
+    }
+    var rawName = _pftlScheduleTypeToRaw(name);
+    if (currentRaw.indexOf(rawName) < 0) currentRaw.push(rawName);
+    var normalized = _pftlNormalizeScheduleTypes(currentRaw);
+    assigns.schedule_types_raw = normalized.raw;
+    assigns.schedule_types = normalized.label;
     _pftlSaveAssignments();
     var out = document.getElementById('sch-type-selected');
-    if (out) out.textContent = assigns.schedule_types.join(', ');
-    var cb = document.getElementById('sch-type-cb-' + name.replace(/[^a-z0-9]+/gi, '_'));
+    if (out) out.textContent = normalized.label.join(', ');
+    var cb = document.getElementById('sch-type-cb-' + rawName.replace(/[^a-z0-9]+/gi, '_'));
     if (cb) cb.checked = true;
   };
 
@@ -57038,23 +57166,36 @@ var P022_RuntimeValidation = {
 
       if (ck.code === 'SCH_TYPE' && ck.candidates && ck.candidates.length > 0) {
         var assignsSch = _pftlGetAssignments();
-        if (!assignsSch.schedule_types || assignsSch.schedule_types.length === 0) {
-          assignsSch.schedule_types = ck.candidates.map(function(c) { return c.value; }).slice(0, 1);
+        if (
+          (!assignsSch.schedule_types_raw || assignsSch.schedule_types_raw.length === 0) &&
+          (!assignsSch.schedule_types || assignsSch.schedule_types.length === 0)
+        ) {
+          var defaultRaw = ck.candidates.map(function(c) { return _pftlScheduleTypeToRaw(c.value); }).slice(0, 1);
+          var defaultNorm = _pftlNormalizeScheduleTypes(defaultRaw);
+          assignsSch.schedule_types_raw = defaultNorm.raw;
+          assignsSch.schedule_types = defaultNorm.label;
           _pftlSaveAssignments();
         }
+        var selectedRaw = (assignsSch.schedule_types_raw || []).slice();
+        if (selectedRaw.length === 0 && (assignsSch.schedule_types || []).length > 0) {
+          selectedRaw = _pftlNormalizeScheduleTypes(assignsSch.schedule_types).raw;
+        }
+        var selectedLabel = _pftlNormalizeScheduleTypes(selectedRaw).label;
         html += '<tr class="sch-candidates-row"><td colspan="4">';
         html += '<details>';
         html += '<summary class="sch-candidates-toggle">Show schedule type candidates (' + ck.candidates.length + ')</summary>';
         html += '<div class="sch-candidates-list">';
         for (var j = 0; j < ck.candidates.length; j++) {
           var cand = ck.candidates[j];
-          var cbId = 'sch-type-cb-' + String(cand.value).replace(/[^a-z0-9]+/gi, '_');
-          var checked = (assignsSch.schedule_types || []).indexOf(cand.value) >= 0 ? ' checked' : '';
+          var candRaw = _pftlScheduleTypeToRaw(cand.value);
+          var candLabel = _pftlScheduleTypeToLabel(candRaw);
+          var cbId = 'sch-type-cb-' + String(candRaw).replace(/[^a-z0-9]+/gi, '_');
+          var checked = selectedRaw.indexOf(candRaw) >= 0 ? ' checked' : '';
           html += '<div class="sch-candidate-card">';
           html += '<label class="sch-type-check" for="' + cbId + '">';
-          html += '<input id="' + cbId + '" type="checkbox"' + checked + ' onchange="pftlToggleScheduleType(\'' + _pftlEsc(cand.value) + '\', this.checked)" />';
+          html += '<input id="' + cbId + '" type="checkbox"' + checked + ' onchange="pftlToggleScheduleType(\'' + _pftlEsc(candRaw) + '\', this.checked)" />';
           html += '</label>';
-          html += '<span class="sch-candidate-name">' + _pftlEsc(cand.value) + '</span>';
+          html += '<span class="sch-candidate-name">' + _pftlEsc(candLabel) + '</span>';
           html += '<span class="sch-conf-badge">' + Math.round((cand.confidence || 0) * 100) + '%</span>';
           if (cand.evidence && cand.evidence.length > 0) {
             for (var e = 0; e < cand.evidence.length; e++) {
@@ -57064,7 +57205,7 @@ var P022_RuntimeValidation = {
           html += '</div>';
         }
         html += '<div class="sch-type-selector">';
-        html += '<div class="sch-type-selected">Selected schedule types: <strong id="sch-type-selected">' + _pftlEsc((assignsSch.schedule_types || []).join(', ') || 'none') + '</strong></div>';
+        html += '<div class="sch-type-selected">Selected schedule types: <strong id="sch-type-selected">' + _pftlEsc(selectedLabel.join(', ') || 'none') + '</strong></div>';
         html += '<div class="sch-type-manual">';
         html += '<select id="sch-type-manual">';
         html += '<option value="">Add schedule type…</option>';
