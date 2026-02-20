@@ -10,6 +10,7 @@ from server.ulid import generate_id
 from server.api_v25 import envelope, collection_envelope, error_envelope
 from server.auth import AuthClass, require_auth
 from server.audit import emit_audit_event
+from server.contract_health_runtime import decorate_contract_health
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v2.5")
@@ -80,7 +81,7 @@ def list_contracts(
         if has_more:
             rows = rows[:limit]
 
-        items = [_row_to_dict(r, CONTRACT_COLUMNS) for r in rows]
+        items = [decorate_contract_health(_row_to_dict(r, CONTRACT_COLUMNS)) for r in rows]
         next_cursor = items[-1]["id"] if items and has_more else None
 
         return collection_envelope(items, cursor=next_cursor, has_more=has_more, limit=limit)
@@ -170,7 +171,7 @@ def create_contract(
 
         return JSONResponse(
             status_code=201,
-            content=envelope(_row_to_dict(row, CONTRACT_COLUMNS)),
+            content=envelope(decorate_contract_health(_row_to_dict(row, CONTRACT_COLUMNS))),
         )
     except Exception as e:
         logger.error("create_contract error: %s", e)
@@ -202,7 +203,7 @@ def get_contract(
                 status_code=404,
                 content=error_envelope("NOT_FOUND", "Contract not found: %s" % ctr_id),
             )
-        return envelope(_row_to_dict(row, CONTRACT_COLUMNS))
+        return envelope(decorate_contract_health(_row_to_dict(row, CONTRACT_COLUMNS)))
     except Exception as e:
         logger.error("get_contract error: %s", e)
         conn.rollback()
@@ -336,7 +337,7 @@ def update_contract(
                 detail={"fields": list(updates.keys()), "new_version": version + 1},
             )
         conn.commit()
-        return envelope(_row_to_dict(updated, CONTRACT_COLUMNS))
+        return envelope(decorate_contract_health(_row_to_dict(updated, CONTRACT_COLUMNS)))
     except Exception as e:
         logger.error("update_contract error: %s", e)
         conn.rollback()
