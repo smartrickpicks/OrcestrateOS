@@ -37,7 +37,7 @@ class TestScheduleType:
         text = "Distro & Sync - Existing Masters\nSchedule 1"
         r = _extract_schedule_type(text)
         assert r["status"] in ("pass", "review")
-        assert r["value"] == "distro_sync_existing_masters"
+        assert r["value"] == "Distro & Sync - Existing Masters"
         assert len(r["candidates"]) >= 1
 
     def test_schedule_type_ambiguous_review(self):
@@ -109,3 +109,17 @@ class TestBuildScheduleStructure:
         assert "status" in sch
         assert "checks" in sch
         assert "summary" in sch
+
+    def test_generic_schedule_is_reweighted_by_opportunity_subtype(self):
+        text = "Distribution Agreement\nSchedule\nExhibit\nFor Digital Distribution ... For Synch licenses ..."
+        story = {
+            "legal_entity_account": {"name": "Ostereo Limited"},
+            "counterparties": [{"name": "RK Entertainments"}],
+            "unresolved_counterparties": [],
+            "requires_manual_confirmation": False,
+        }
+        opp = build_opportunity_spine(text, story)
+        r = build_schedule_structure(text, story, opp)
+        sch_type = next(c for c in r["checks"] if c["code"] == "SCH_TYPE")
+        cand_vals = [c["value"] for c in sch_type.get("candidates", [])]
+        assert "Distro & Sync - Existing Masters" in cand_vals

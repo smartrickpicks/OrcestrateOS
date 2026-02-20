@@ -838,6 +838,22 @@ def _extract_contract_subtype(full_text):
             })
     candidates = [c for c in candidates if c["confidence"] > 0]
 
+    # Calibration: for distro+sync contracts, avoid surfacing Licensing Agreement
+    # from generic "exclusive rights" wording unless explicit license-agreement
+    # phrasing is present.
+    cand_by_val = {c.get("value"): c for c in candidates}
+    dist_c = cand_by_val.get("Distribution")
+    sync_c = cand_by_val.get("Sync")
+    lic_c = cand_by_val.get("Licensing Agreement")
+    if dist_c and sync_c and lic_c:
+        lic_evidence = [str(e).lower() for e in (lic_c.get("evidence") or [])]
+        has_explicit_license_phrase = any(
+            ("licensing agreement" in ev) or ("license agreement" in ev) or ("licence agreement" in ev)
+            for ev in lic_evidence
+        )
+        if not has_explicit_license_phrase:
+            candidates = [c for c in candidates if c.get("value") != "Licensing Agreement"]
+
     if not candidates:
         return {
             "status": "review", "confidence": 0.3, "value": None,
@@ -982,22 +998,22 @@ def build_opportunity_spine(full_text, resolution_story):
 
 
 _SCHEDULE_TYPE_KEYWORDS = {
-    "distro_sync_existing_masters": [
+    "Distro & Sync - Existing Masters": [
         "distro & sync", "distribution and sync", "distro and sync",
         "existing masters", "master exploitation", "digital exploitation",
         "for digital distribution", "download and streaming of records",
         "for synch licenses", "for sync licenses", "synch licenses", "synch license",
         "synch revenue", "sync revenue",
     ],
-    "catalog_acquisition_masters": [
+    "Catalog Acquisition - Masters": [
         "catalog acquisition", "acquisition schedule", "schedule 1",
         "schedule i", "masters acquisition",
     ],
-    "termination_schedule": [
+    "Termination Schedule": [
         "termination schedule", "termination notice", "offboard",
         "actual termination date", "termination date",
     ],
-    "general_schedule": [
+    "General Schedule": [
         "schedule", "exhibit", "appendix", "annex",
     ],
 }
@@ -1091,6 +1107,46 @@ def _extract_schedule_type(full_text):
     return {"status": "review", "confidence": top["confidence"], "value": top["value"], "reason": f"Multiple schedule types detected — analyst confirmation required ({alts})", "candidates": candidates}
 
 
+def _opportunity_subtype_values(opportunity_spine):
+    vals = []
+    if not opportunity_spine:
+        return vals
+    for ck in opportunity_spine.get("checks", []):
+        if ck.get("code") == "OPP_CONTRACT_SUBTYPE":
+            if ck.get("value"):
+                vals.append(str(ck.get("value")))
+            for cand in ck.get("candidates", []) or []:
+                v = cand.get("value")
+                if v:
+                    vals.append(str(v))
+            break
+    # dedupe preserve order
+    out = []
+    seen = set()
+    for v in vals:
+        k = v.lower().strip()
+        if k and k not in seen:
+            seen.add(k)
+            out.append(v)
+    return out
+
+
+def _expected_schedule_from_opportunity(opportunity_spine):
+    subtype_vals = " | ".join(v.lower() for v in _opportunity_subtype_values(opportunity_spine))
+    ctype = (_opp_check_value(opportunity_spine, "OPP_CONTRACT_TYPE") or "").lower()
+    if "termination" in ctype:
+        return "Termination Schedule"
+    has_distribution = ("distribution" in subtype_vals) or ("distribution" in ctype)
+    has_sync = "sync" in subtype_vals or "synch" in subtype_vals
+    if has_distribution and has_sync:
+        return "Distro & Sync - Existing Masters"
+    if has_distribution:
+        return "Distro & Sync - Existing Masters"
+    if "acquisition" in subtype_vals:
+        return "Catalog Acquisition - Masters"
+    return None
+
+
 def _extract_ownership_signals(full_text):
     if not full_text:
         return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
@@ -1132,9 +1188,19 @@ _SCH_CRITICAL_CHECKS = {"SCH_PRESENCE", "SCH_ROLE_ALIGNMENT"}
 
 
 def build_schedule_structure(full_text, resolution_story, opportunity_spine):
+    schedule_type = _extract_schedule_type(full_text)
+    expected = _expected_schedule_from_opportunity(opportunity_spine)
+    if expected and schedule_type.get("value") == "General Schedule":
+        schedule_type = dict(schedule_type)
+        schedule_type["status"] = "review"
+        schedule_type["reason"] = f"Generic schedule marker found; Opportunity subtype context suggests '{expected}'"
+        existing_vals = {c.get("value") for c in (schedule_type.get("candidates") or [])}
+        if expected not in existing_vals:
+            schedule_type["candidates"] = [{"value": expected, "confidence": max(0.45, schedule_type.get("confidence", 0)), "evidence": ["opportunity subtype context"]}] + (schedule_type.get("candidates") or [])
+
     checks = [
         {"code": "SCH_PRESENCE", "label": "Schedule Presence", **_extract_schedule_presence(full_text, opportunity_spine)},
-        {"code": "SCH_TYPE", "label": "Schedule Type", **_extract_schedule_type(full_text)},
+        {"code": "SCH_TYPE", "label": "Schedule Type", **schedule_type},
         {"code": "SCH_OWNERSHIP", "label": "Ownership Signals", **_extract_ownership_signals(full_text)},
         {"code": "SCH_LIFECYCLE", "label": "Lifecycle Signals", **_extract_lifecycle_signals(full_text)},
         {"code": "SCH_ROLE_ALIGNMENT", "label": "Role Alignment", **_check_schedule_role_alignment(resolution_story)},

@@ -142,6 +142,19 @@ class TestContractSubtype:
         assert len(result["candidates"]) >= 2
         assert result["candidates"][0]["confidence"] > result["candidates"][1]["confidence"]
 
+    def test_distro_sync_suppresses_weak_licensing_candidate(self):
+        text = (
+            "Distribution Agreement\n"
+            "For Digital Distribution, including download and streaming of Records.\n"
+            "For Synch licenses: Seventy Percent (70%) of Synch Revenue.\n"
+            "exclusive rights language appears in the body."
+        )
+        result = _extract_contract_subtype(text)
+        cand_values = [c["value"] for c in result["candidates"]]
+        assert "Distribution" in cand_values
+        assert "Sync" in cand_values
+        assert "Licensing Agreement" not in cand_values
+
 
 class TestEffectiveDate:
     def test_standard_date_format(self):

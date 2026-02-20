@@ -2140,6 +2140,13 @@
     .sch-candidate-card { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 5px 8px; border-radius: 5px; background: var(--bg-1, #fff); border: 1px solid var(--border-1, #e0e0e0); }
     .sch-candidate-name { font-weight: 600; font-size: 0.85em; }
     .sch-evidence-chip { font-size: 0.68em; padding: 1px 6px; border-radius: 3px; background: rgba(74, 144, 217, 0.1); color: var(--accent, #4a90d9); border: 1px solid rgba(74, 144, 217, 0.2); white-space: nowrap; }
+    .sch-type-selector { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-1, #ddd); }
+    .sch-type-selected { font-size: 0.78em; color: var(--text-2, #888); margin-bottom: 6px; }
+    .sch-type-checks { display: flex; flex-wrap: wrap; gap: 8px 10px; margin-bottom: 6px; }
+    .sch-type-check { display: inline-flex; align-items: center; gap: 5px; font-size: 0.8em; }
+    .sch-type-manual { display: flex; gap: 6px; align-items: center; }
+    .sch-type-manual select { padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border-1, #ddd); font-size: 0.78em; background: var(--bg-1); color: var(--text-2); }
+    .sch-type-manual button { padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-1, #ddd); font-size: 0.76em; background: var(--bg-2); color: var(--text-2); cursor: pointer; }
     .pftl-section-title { font-size: 0.82em; font-weight: 600; color: var(--text-2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
     .pftl-reasons { list-style: none; padding: 0; margin: 0; }
     .pftl-reasons li { padding: 3px 0; font-size: 0.82em; color: var(--text-3); }
@@ -55027,7 +55034,10 @@ var P022_RuntimeValidation = {
   };
 
   function _prepSimBuildExportPayload() {
-    var result = (typeof _pfGateState !== 'undefined' && _pfGateState.result) ? _pfGateState.result : null;
+    var result = _pftlBuildResultForExport();
+    if (!result && typeof _pfGateState !== 'undefined' && _pfGateState.result) {
+      result = _pfGateState.result;
+    }
     var m = result ? (result.metrics || {}) : {};
     var pages = result ? (result.page_classifications || []) : [];
     pages.sort(function(a, b) { return (a.page || 0) - (b.page || 0); });
@@ -55057,6 +55067,8 @@ var P022_RuntimeValidation = {
       preflight: {
         doc_mode: result ? result.doc_mode : null,
         recommended_gate: result ? result.gate_color : null,
+        contract_classification: result ? (result.contract_classification || null) : null,
+        analyst_assignments: result ? (result.analyst_assignments || null) : null,
         reason_codes: result ? (result.gate_reasons || []) : [],
         metrics: m,
         page_summaries: pages,
@@ -55246,6 +55258,7 @@ var P022_RuntimeValidation = {
     _pftlState.running = false;
     _pftlState.elapsed = 0;
     _pftlState.file = null;
+    _pftlSyncAssignmentsIntoResult();
     _pftlRender();
     var overlay = document.getElementById('pftl-overlay');
     if (overlay) overlay.style.display = '';
@@ -55305,11 +55318,12 @@ var P022_RuntimeValidation = {
 
   window.pftlDownload = function() {
     if (!_pftlState.result) return;
-    var json = JSON.stringify(_pftlState.result, null, 2);
+    var exportResult = _pftlBuildResultForExport();
+    var json = JSON.stringify(exportResult, null, 2);
     var blob = new Blob([json], { type: 'application/json' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    var docId = (_pftlState.result.doc_id || 'preflight').replace(/[^a-zA-Z0-9_-]/g, '_');
+    var docId = ((exportResult && exportResult.doc_id) || 'preflight').replace(/[^a-zA-Z0-9_-]/g, '_');
     a.download = 'preflight_report_' + docId + '.json';
     document.body.appendChild(a);
     a.click();
@@ -55414,6 +55428,7 @@ var P022_RuntimeValidation = {
     _pftlSugState.error = null;
     _pftlSugState.showText = false;
     _pftlSugState.highlightKeywords = [];
+    _pftlSyncAssignmentsIntoResult();
     try {
       _pftlRender();
     } catch (renderErr) {
@@ -56462,18 +56477,66 @@ var P022_RuntimeValidation = {
   }
   function _pftlGetAssignments() {
     var key = _pftlGetRecordKey();
-    if (!_pftlAssignmentsStore[key]) _pftlAssignmentsStore[key] = { legal_entity: null, counterparty: null, opportunity_subtypes: [] };
+    if (!_pftlAssignmentsStore[key]) _pftlAssignmentsStore[key] = { legal_entity: null, counterparty: null, opportunity_subtypes: [], schedule_types: [] };
     if (!_pftlAssignmentsStore[key].opportunity_subtypes) _pftlAssignmentsStore[key].opportunity_subtypes = [];
+    if (!_pftlAssignmentsStore[key].schedule_types) _pftlAssignmentsStore[key].schedule_types = [];
     return _pftlAssignmentsStore[key];
   }
   function _pftlSaveAssignments() {
     try { sessionStorage.setItem('_pftlAssignmentsStore', JSON.stringify(_pftlAssignmentsStore)); } catch(e) {}
+    _pftlSyncAssignmentsIntoResult();
+  }
+
+  function _pftlBuildAnalystAssignmentsPayload() {
+    var assigns = _pftlGetAssignments();
+    return {
+      record_key: _pftlGetRecordKey(),
+      legal_entity: assigns.legal_entity || null,
+      counterparty: assigns.counterparty || null,
+      manual_counterparty: assigns.manual_counterparty || null,
+      opportunity_subtypes: (assigns.opportunity_subtypes || []).slice(),
+      schedule_types: (assigns.schedule_types || []).slice(),
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  function _pftlBuildResultForExport() {
+    if (!_pftlState.result) return null;
+    var out = JSON.parse(JSON.stringify(_pftlState.result));
+    var analystAssignments = _pftlBuildAnalystAssignmentsPayload();
+    out.analyst_assignments = analystAssignments;
+
+    if (!out.contract_classification || typeof out.contract_classification !== 'object') {
+      out.contract_classification = {};
+    }
+    out.contract_classification.analyst_selected_subtypes = analystAssignments.opportunity_subtypes.slice();
+    out.contract_classification.analyst_selected_schedule_types = analystAssignments.schedule_types.slice();
+    if (analystAssignments.manual_counterparty) {
+      out.contract_classification.analyst_confirmed_counterparty = analystAssignments.manual_counterparty;
+    }
+    return out;
+  }
+
+  function _pftlSyncAssignmentsIntoResult() {
+    var merged = _pftlBuildResultForExport();
+    if (merged) _pftlState.result = merged;
   }
 
   var _OPP_SUBTYPE_OPTIONS = [
     "CMA", "CMA/CPA", "Co-Pub", "CPA", "Distribution", "Distribution w/ CMA and CPA",
     "Distro CMA", "Label Ventures", "LE Revision", "Licensing Agreement",
     "Profit Participation Agreement", "Pub Admin", "Sync", "Side Artist", "Assignment", "Other"
+  ];
+
+  var _SCHEDULE_TYPE_OPTIONS = [
+    "Distro & Sync - Existing Masters",
+    "Front Catalog + Remixes",
+    "Ownership",
+    "Schedule 1 - Catalog Acquisition - Masters",
+    "Schedule 2 - Catalog Acquisition - Compositions",
+    "Shiloh - Existing Non Shiloh Recordings",
+    "Termination Schedule",
+    "Uncrossed Schedule"
   ];
 
   window.pftlToggleOppSubtype = function(name, checked) {
@@ -56502,6 +56565,35 @@ var P022_RuntimeValidation = {
     var out = document.getElementById('opp-subtype-selected');
     if (out) out.textContent = assigns.opportunity_subtypes.join(', ');
     var cb = document.getElementById('opp-subtype-cb-' + name.replace(/[^a-z0-9]+/gi, '_'));
+    if (cb) cb.checked = true;
+  };
+
+  window.pftlToggleScheduleType = function(name, checked) {
+    var assigns = _pftlGetAssignments();
+    var vals = assigns.schedule_types || [];
+    if (checked) {
+      if (vals.indexOf(name) < 0) vals.push(name);
+    } else {
+      vals = vals.filter(function(v) { return v !== name; });
+    }
+    assigns.schedule_types = vals;
+    _pftlSaveAssignments();
+    var out = document.getElementById('sch-type-selected');
+    if (out) out.textContent = vals.length ? vals.join(', ') : 'none';
+  };
+
+  window.pftlAddScheduleTypeOption = function() {
+    var sel = document.getElementById('sch-type-manual');
+    if (!sel) return;
+    var name = sel.value;
+    if (!name) return;
+    var assigns = _pftlGetAssignments();
+    if (!assigns.schedule_types) assigns.schedule_types = [];
+    if (assigns.schedule_types.indexOf(name) < 0) assigns.schedule_types.push(name);
+    _pftlSaveAssignments();
+    var out = document.getElementById('sch-type-selected');
+    if (out) out.textContent = assigns.schedule_types.join(', ');
+    var cb = document.getElementById('sch-type-cb-' + name.replace(/[^a-z0-9]+/gi, '_'));
     if (cb) cb.checked = true;
   };
 
@@ -56882,13 +56974,23 @@ var P022_RuntimeValidation = {
       html += '</tr>';
 
       if (ck.code === 'SCH_TYPE' && ck.candidates && ck.candidates.length > 0) {
+        var assignsSch = _pftlGetAssignments();
+        if (!assignsSch.schedule_types || assignsSch.schedule_types.length === 0) {
+          assignsSch.schedule_types = ck.candidates.map(function(c) { return c.value; }).slice(0, 1);
+          _pftlSaveAssignments();
+        }
         html += '<tr class="sch-candidates-row"><td colspan="4">';
         html += '<details>';
         html += '<summary class="sch-candidates-toggle">Show schedule type candidates (' + ck.candidates.length + ')</summary>';
         html += '<div class="sch-candidates-list">';
         for (var j = 0; j < ck.candidates.length; j++) {
           var cand = ck.candidates[j];
+          var cbId = 'sch-type-cb-' + String(cand.value).replace(/[^a-z0-9]+/gi, '_');
+          var checked = (assignsSch.schedule_types || []).indexOf(cand.value) >= 0 ? ' checked' : '';
           html += '<div class="sch-candidate-card">';
+          html += '<label class="sch-type-check" for="' + cbId + '">';
+          html += '<input id="' + cbId + '" type="checkbox"' + checked + ' onchange="pftlToggleScheduleType(\'' + _pftlEsc(cand.value) + '\', this.checked)" />';
+          html += '</label>';
           html += '<span class="sch-candidate-name">' + _pftlEsc(cand.value) + '</span>';
           html += '<span class="sch-conf-badge">' + Math.round((cand.confidence || 0) * 100) + '%</span>';
           if (cand.evidence && cand.evidence.length > 0) {
@@ -56898,6 +57000,17 @@ var P022_RuntimeValidation = {
           }
           html += '</div>';
         }
+        html += '<div class="sch-type-selector">';
+        html += '<div class="sch-type-selected">Selected schedule types: <strong id="sch-type-selected">' + _pftlEsc((assignsSch.schedule_types || []).join(', ') || 'none') + '</strong></div>';
+        html += '<div class="sch-type-manual">';
+        html += '<select id="sch-type-manual">';
+        html += '<option value="">Add schedule type…</option>';
+        for (var si = 0; si < _SCHEDULE_TYPE_OPTIONS.length; si++) {
+          html += '<option value="' + _pftlEsc(_SCHEDULE_TYPE_OPTIONS[si]) + '">' + _pftlEsc(_SCHEDULE_TYPE_OPTIONS[si]) + '</option>';
+        }
+        html += '</select>';
+        html += '<button type="button" onclick="pftlAddScheduleTypeOption()">Add</button>';
+        html += '</div></div>';
         html += '</div></details></td></tr>';
       }
     }
