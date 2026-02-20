@@ -5436,8 +5436,10 @@
               <button class="toolbar-btn" onclick="cgPageInit(true)">Refresh</button>
               <button class="toolbar-btn" onclick="cgPageGenerate()" style="background: #1976d2; color: white;">Generate Text</button>
               <button class="toolbar-btn" onclick="cgPageDownload()" style="background: #2e7d32; color: white;">Download .md</button>
+              <button class="toolbar-btn" onclick="cgPageMarkReconstructionComplete()" style="background: #6a1b9a; color: white;">Mark Reconstruction Complete</button>
             </div>
             <div id="cg-page-status" style="display: none; margin-bottom: 10px; padding: 8px 10px; border-radius: 6px; font-size: 0.85em;"></div>
+            <div id="cg-page-review-panel" style="display:none; margin-bottom: 12px; padding: 10px 12px; border: 1px solid var(--border-color, #e0e0e0); border-radius: 6px; background: var(--bg-secondary, #f8f9fb);"></div>
             <textarea id="cg-page-output" readonly placeholder="Generated contract text will appear here..." style="width: 100%; min-height: 320px; padding: 12px 14px; border: 1px solid var(--border-color, #ddd); border-radius: 6px; font-size: 0.85em; font-family: 'Courier New', monospace; box-sizing: border-box; resize: vertical; background: var(--bg-primary, #fafafa); color: var(--text-primary, #333);"></textarea>
           </div>
         </div>
@@ -27128,7 +27130,7 @@
       cgDownloadContractMd();
     }
 
-    var _cgPageState = { lastOutput: '', lastFileName: '', lastMeta: null };
+    var _cgPageState = { lastOutput: '', lastFileName: '', lastMeta: null, reviewDecisions: [], fallbackNote: '' };
 
     function _cgPageSetStatus(msg, level) {
       var el = document.getElementById('cg-page-status');
@@ -27309,9 +27311,101 @@
           template_key: tmpl.key,
           template_status_code: tmpl.status_code,
           template_available: tmpl.available,
-          requires_high_risk_review: true
+          requires_high_risk_review: true,
+          high_risk_families: highRiskFamilies
         }
       };
+    }
+
+    function cgPageRenderReviewPanel() {
+      var panel = document.getElementById('cg-page-review-panel');
+      if (!panel) return;
+      var meta = _cgPageState.lastMeta;
+      if (!meta || !meta.requires_high_risk_review) {
+        panel.style.display = 'none';
+        panel.innerHTML = '';
+        return;
+      }
+      var families = meta.high_risk_families || [];
+      if (!_cgPageState.reviewDecisions || _cgPageState.reviewDecisions.length !== families.length) {
+        _cgPageState.reviewDecisions = [];
+        for (var i = 0; i < families.length; i++) _cgPageState.reviewDecisions.push('PENDING');
+      }
+      var html = '<div style="font-size:0.82em;font-weight:700;color:#263238;margin-bottom:8px;">High-Risk Clause Review</div>';
+      for (var fi = 0; fi < families.length; fi++) {
+        html += '<div style="display:grid;grid-template-columns:minmax(220px,1fr) minmax(180px,220px);gap:8px;align-items:center;margin-bottom:6px;">';
+        html += '<div style="font-size:0.8em;color:#455a64;">' + _pfGateEsc(families[fi]) + '</div>';
+        html += '<select onchange="cgPageSetRiskDecision(' + fi + ', this.value)" style="padding:6px;border:1px solid #cfd8dc;border-radius:4px;font-size:0.8em;">';
+        html += '<option value="PENDING"' + (_cgPageState.reviewDecisions[fi] === 'PENDING' ? ' selected' : '') + '>PENDING</option>';
+        html += '<option value="ACCEPTED"' + (_cgPageState.reviewDecisions[fi] === 'ACCEPTED' ? ' selected' : '') + '>ACCEPTED</option>';
+        html += '<option value="MODIFIED_AND_ACCEPTED"' + (_cgPageState.reviewDecisions[fi] === 'MODIFIED_AND_ACCEPTED' ? ' selected' : '') + '>MODIFIED_AND_ACCEPTED</option>';
+        html += '<option value="REJECTED"' + (_cgPageState.reviewDecisions[fi] === 'REJECTED' ? ' selected' : '') + '>REJECTED</option>';
+        html += '</select></div>';
+      }
+      if (meta.template_status_code === 'NO_ENTITY_TEMPLATE_AVAILABLE') {
+        html += '<div style="margin-top:8px;">';
+        html += '<label style="display:block;font-size:0.78em;color:#455a64;margin-bottom:4px;">Fallback Note (required when no Ostereo template exists)</label>';
+        html += '<textarea onchange="cgPageSetFallbackNote(this.value)" style="width:100%;min-height:64px;padding:8px;border:1px solid #cfd8dc;border-radius:4px;font-size:0.8em;">' + _pfGateEsc(_cgPageState.fallbackNote || '') + '</textarea>';
+        html += '</div>';
+      }
+      panel.innerHTML = html;
+      panel.style.display = 'block';
+    }
+
+    function cgPageSetRiskDecision(idx, val) {
+      if (!_cgPageState.reviewDecisions) _cgPageState.reviewDecisions = [];
+      _cgPageState.reviewDecisions[idx] = val || 'PENDING';
+    }
+
+    function cgPageSetFallbackNote(val) {
+      _cgPageState.fallbackNote = String(val || '').trim();
+    }
+
+    function cgPageMarkReconstructionComplete() {
+      if (!_cgPageState.lastMeta) {
+        _cgPageSetStatus('Generate contract text first.', 'warn');
+        return;
+      }
+      var fam = _cgPageState.lastMeta.high_risk_families || [];
+      for (var i = 0; i < fam.length; i++) {
+        if ((_cgPageState.reviewDecisions[i] || 'PENDING') === 'PENDING') {
+          _cgPageSetStatus('All high-risk clauses need review decisions before completion.', 'warn');
+          return;
+        }
+      }
+      if (_cgPageState.lastMeta.template_status_code === 'NO_ENTITY_TEMPLATE_AVAILABLE' && !_cgPageState.fallbackNote) {
+        _cgPageSetStatus('Fallback note is required for NO_ENTITY_TEMPLATE_AVAILABLE.', 'warn');
+        return;
+      }
+      var decisions = [];
+      for (var di = 0; di < fam.length; di++) {
+        decisions.push({
+          clause_family: fam[di],
+          decision: _cgPageState.reviewDecisions[di] || 'PENDING'
+        });
+      }
+      var payload = {
+        reconstruction_review: {
+          source: 'contract_generator',
+          legal_entity: _cgPageState.lastMeta.legal_entity || '',
+          contract_type: _cgPageState.lastMeta.contract_type || '',
+          template_status_code: _cgPageState.lastMeta.template_status_code || '',
+          decisions: decisions,
+          fallback_note: _cgPageState.fallbackNote || '',
+          completed_at: new Date().toISOString()
+        }
+      };
+      if (typeof pfGateAction !== 'function') {
+        _cgPageSetStatus('Preflight action handler unavailable.', 'error');
+        return;
+      }
+      pfGateAction('reconstruction_complete', payload)
+        .then(function() {
+          _cgPageSetStatus('Reconstruction review submitted to preflight gate.', 'success');
+        })
+        .catch(function() {
+          _cgPageSetStatus('Failed to submit reconstruction review.', 'error');
+        });
     }
 
     function cgPageInit(forceRefresh) {
@@ -27392,6 +27486,8 @@
       out.value = text;
       _cgPageState.lastOutput = text;
       _cgPageState.lastMeta = (build && build.meta) ? build.meta : null;
+      _cgPageState.reviewDecisions = [];
+      _cgPageState.fallbackNote = '';
       var recName = _cgResolveRecordName(row) || ('row_' + (rowIdx + 1));
       _cgPageState.lastFileName = sheetName.replace(/\s+/g, '_') + '_' + recName.replace(/[^a-zA-Z0-9_-]/g, '_') + '.md';
       if (_cgPageState.lastMeta && _cgPageState.lastMeta.template_status_code === 'NO_ENTITY_TEMPLATE_AVAILABLE') {
@@ -27399,6 +27495,7 @@
       } else {
         _cgPageSetStatus('Generated ' + text.split('\n').length + ' lines.', 'success');
       }
+      cgPageRenderReviewPanel();
     }
 
     function cgPageDownload() {
@@ -39366,15 +39463,20 @@
       if (window._pfGateState.adminOnly) return [];
       if (!window._pfGateState.result) return ['Document preflight not run'];
       var gate = window._pfGateState.result.gate_color;
+      var reviewComplete = !!(window._pfGateState.reconstructionReview && window._pfGateState.reconstructionReview.completed);
       if (gate === 'GREEN') return [];
       if (gate === 'YELLOW') {
-        if (window._pfGateState.actionTaken === 'accept_risk' || window._pfGateState.actionTaken === 'generate_copy' || window._pfGateState.actionTaken === 'escalate_ocr') return [];
+        if (window._pfGateState.actionTaken === 'accept_risk') return [];
+        var hasCopyPathYellow = (window._pfGateState.actionTaken === 'generate_copy' || window._pfGateState.actionTaken === 'escalate_ocr' || !!window._pfGateState.reconstructionReview);
+        if (hasCopyPathYellow && reviewComplete) return [];
+        if (hasCopyPathYellow && !reviewComplete) return ['Document preflight is YELLOW — reconstruction review must be marked complete'];
         return ['Document preflight is YELLOW — must Accept Risk or Generate Copy'];
       }
       if (gate === 'RED') {
-        var hasCopy = (window._pfGateState.actionTaken === 'generate_copy' || window._pfGateState.actionTaken === 'escalate_ocr' || window._pfGateState.actionTaken === 'override_red');
+        var hasCopy = (window._pfGateState.actionTaken === 'generate_copy' || window._pfGateState.actionTaken === 'escalate_ocr' || window._pfGateState.actionTaken === 'override_red' || !!window._pfGateState.reconstructionReview);
         var hasOverride = !!(window._pfGateState.redOverride && window._pfGateState.redOverride.approved);
         if (!hasCopy) return ['Document preflight is RED — must Generate Copy'];
+        if (!reviewComplete) return ['Document preflight is RED — reconstruction review must be marked complete'];
         if (!hasOverride) return ['Document preflight is RED — reconstruction requested, but red override is required'];
         return [];
       }
@@ -55113,6 +55215,7 @@ var P022_RuntimeValidation = {
     result: null,
     actionTaken: null,
     redOverride: null,
+    reconstructionReview: null,
     adminOnly: true
   };
 
@@ -55122,6 +55225,7 @@ var P022_RuntimeValidation = {
     if (action === 'accept_risk') return 'Accept Risk';
     if (action === 'generate_copy') return 'Generate Copy';
     if (action === 'override_red') return 'Record RED Override';
+    if (action === 'reconstruction_complete') return 'Reconstruction Complete';
     if (action === 'escalate_ocr') return 'Escalate OCR';
     return action || 'Action';
   }
@@ -55272,19 +55376,27 @@ var P022_RuntimeValidation = {
         if (_pfGateState.actionTaken === 'accept_risk') {
           html += '<span style="font-size:0.82em;color:#f57f17;font-weight:500;">Risk accepted. Submission unlocked.</span>';
         } else if (_pfGateState.actionTaken === 'generate_copy' || _pfGateState.actionTaken === 'escalate_ocr') {
-          html += '<span style="font-size:0.82em;color:#1565c0;font-weight:500;">Reconstruction copy requested. Continue in Contract Generator.</span>';
+          var yellowReviewDone = !!(_pfGateState.reconstructionReview && _pfGateState.reconstructionReview.completed);
+          if (yellowReviewDone) {
+            html += '<span style="font-size:0.82em;color:#2e7d32;font-weight:500;">Reconstruction review complete. Submission unlocked.</span>';
+          } else {
+            html += '<span style="font-size:0.82em;color:#1565c0;font-weight:500;">Reconstruction copy requested. Mark reconstruction complete in Contract Generator.</span>';
+          }
         } else {
           html += '<button class="pf-gate-btn accept" onclick="pfGateAction(\'accept_risk\')">Accept Risk</button>';
           html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'generate_copy\')">Generate Copy</button>';
         }
       } else if (gate === 'RED') {
-        var hasCopyAction = (_pfGateState.actionTaken === 'generate_copy' || _pfGateState.actionTaken === 'escalate_ocr' || _pfGateState.actionTaken === 'override_red');
+        var hasCopyAction = (_pfGateState.actionTaken === 'generate_copy' || _pfGateState.actionTaken === 'escalate_ocr' || _pfGateState.actionTaken === 'override_red' || !!_pfGateState.reconstructionReview);
         var hasRedOverride = !!(_pfGateState.redOverride && _pfGateState.redOverride.approved);
-        if (hasCopyAction && hasRedOverride) {
+        var hasReview = !!(_pfGateState.reconstructionReview && _pfGateState.reconstructionReview.completed);
+        if (hasCopyAction && hasRedOverride && hasReview) {
           html += '<span style="font-size:0.82em;color:#2e7d32;font-weight:500;">RED override recorded. Preflight unblock complete.</span>';
           if (_pfGateState.redOverride.reason) {
             html += '<span style="display:block;font-size:0.76em;color:#546e7a;margin-top:4px;">Reason: ' + _pfGateEsc(_pfGateState.redOverride.reason) + '</span>';
           }
+        } else if (hasCopyAction && !hasReview) {
+          html += '<span style="display:block;font-size:0.78em;color:#c62828;">Mark reconstruction complete in Contract Generator before RED override can unblock submission.</span>';
         } else if (hasCopyAction) {
           html += '<button class="pf-gate-btn accept" onclick="pfGateRecordRedOverride()">Record RED Override</button>';
           html += '<span style="display:block;font-size:0.78em;color:#c62828;margin-top:6px;">Reconstruction requested. RED override still required.</span>';
@@ -55314,6 +55426,7 @@ var P022_RuntimeValidation = {
     _pfGateState.result = null;
     _pfGateState.actionTaken = null;
     _pfGateState.redOverride = null;
+    _pfGateState.reconstructionReview = null;
     pfGateRenderPanel();
 
     var headers = {};
@@ -55348,6 +55461,7 @@ var P022_RuntimeValidation = {
       _pfGateState.running = false;
       _pfGateState.result = data.data || data;
       _pfGateState.redOverride = (_pfGateState.result && _pfGateState.result.red_override) || null;
+      _pfGateState.reconstructionReview = (_pfGateState.result && _pfGateState.result.reconstruction_review) || null;
       console.log('[PREFLIGHT-GATE] run complete:', _pfGateState.result.gate_color, _pfGateState.result.doc_mode);
       pfGateRenderPanel();
       if (typeof showToast === 'function') {
@@ -55384,7 +55498,7 @@ var P022_RuntimeValidation = {
     }
 
     var baseUrl = window.location.origin;
-    fetch(baseUrl + '/api/preflight/action', {
+    return fetch(baseUrl + '/api/preflight/action', {
       method: 'POST',
       headers: headers,
       body: JSON.stringify(body)
@@ -55399,25 +55513,33 @@ var P022_RuntimeValidation = {
     })
     .then(function(data) {
       var payload = data.data || {};
-      _pfGateState.actionTaken = payload.action || action;
+      if (action === 'reconstruction_complete') {
+        _pfGateState.reconstructionReview = payload.reconstruction_review || body.reconstruction_review || { completed: true };
+      } else {
+        _pfGateState.actionTaken = payload.action || action;
+      }
       if (payload.patch_metadata) {
         _pfGateState.patchMetadata = payload.patch_metadata;
       }
       if (payload.red_override) _pfGateState.redOverride = payload.red_override;
+      if (payload.reconstruction_review) _pfGateState.reconstructionReview = payload.reconstruction_review;
       console.log('[PREFLIGHT-GATE] action complete:', action);
       pfGateRenderPanel();
       if (typeof showToast === 'function') {
         if (action === 'accept_risk') showToast('Risk accepted — submission unlocked', 'info');
         else if (action === 'override_red') showToast('RED override recorded.', 'success');
+        else if (action === 'reconstruction_complete') showToast('Reconstruction review marked complete.', 'success');
         else showToast(_pfGateActionLabel(action) + ' requested', 'info');
       }
       if (action === 'generate_copy' || action === 'escalate_ocr') {
         preflightOpenContractGenerator('pf_gate');
       }
+      return payload;
     })
     .catch(function(err) {
       console.error('[PREFLIGHT-GATE] action error:', err);
       if (typeof showToast === 'function') showToast('Action failed: ' + err.message, 'error');
+      throw err;
     });
   };
 
@@ -55526,6 +55648,7 @@ var P022_RuntimeValidation = {
     _pfGateState.result = null;
     _pfGateState.actionTaken = null;
     _pfGateState.redOverride = null;
+    _pfGateState.reconstructionReview = null;
     if (typeof showToast === 'function') showToast('Running preflight on ' + file.name + '...', 'info');
 
     var panel = document.getElementById('pf-gate-panel');
@@ -55577,6 +55700,7 @@ var P022_RuntimeValidation = {
         _pfGateState.result = result;
         _pfGateState.actionTaken = null;
         _pfGateState.redOverride = (result && result.red_override) || null;
+        _pfGateState.reconstructionReview = (result && result.reconstruction_review) || null;
         if (typeof pfGateRenderPanel === 'function') pfGateRenderPanel();
         var gateColor = (result.gate_color || 'GREEN').toUpperCase();
         if (gateColor === 'GREEN') {
