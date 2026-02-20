@@ -5496,7 +5496,7 @@
             <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
               <button class="toolbar-btn" onclick="cgInitContractGenerator(true)">Refresh</button>
               <button class="toolbar-btn" onclick="cgGenerateContract()" style="background: #1976d2; color: white;">Generate Text</button>
-              <button class="toolbar-btn" onclick="cgDownloadContractTxt()" style="background: #2e7d32; color: white;">Download .txt</button>
+              <button class="toolbar-btn" onclick="cgDownloadContractMd()" style="background: #2e7d32; color: white;">Download .md</button>
             </div>
             <div id="cg-status" style="display: none; margin-bottom: 10px; padding: 8px 10px; border-radius: 6px; font-size: 0.82em;"></div>
             <textarea id="cg-output-preview" readonly placeholder="Generated contract text will appear here..." style="width: 100%; min-height: 220px; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.82em; font-family: 'Courier New', monospace; box-sizing: border-box; resize: vertical;"></textarea>
@@ -26715,7 +26715,7 @@
 
     var _cgState = {
       lastOutput: '',
-      lastFileName: 'contract_draft.txt'
+      lastFileName: 'contract_draft.md'
     };
 
     function _cgSetStatus(msg, type) {
@@ -26953,44 +26953,45 @@
       var compensation = _cgFindValueByHint(row, ['fee', 'royalty', 'rate', 'amount', 'payment']);
 
       var lines = [];
-      lines.push('ORCHESTRATE OS - CANONICAL CONTRACT DRAFT');
-      lines.push('Generated At: ' + new Date().toISOString());
-      lines.push('Contract Section: ' + sheetName);
-      lines.push('Source Row: ' + (rowIdx + 1));
+      lines.push('# Orchestrate OS Canonical Contract Draft');
       lines.push('');
-      lines.push('=== INTAKE CHECK SUMMARY ===');
-      lines.push('Missing Required Fields: ' + checks.missingRequired.length);
-      lines.push('Invalid Picklist Values: ' + checks.invalidPicklists.length);
-      lines.push('Unknown Columns In Row: ' + checks.unknownColumns.length);
-      if (checks.missingRequired.length > 0) lines.push('- Missing: ' + checks.missingRequired.join(', '));
+      lines.push('- **Generated At:** ' + new Date().toISOString());
+      lines.push('- **Contract Section:** ' + sheetName);
+      lines.push('- **Source Row:** ' + (rowIdx + 1));
+      lines.push('');
+      lines.push('## Intake Check Summary');
+      lines.push('- Missing Required Fields: **' + checks.missingRequired.length + '**');
+      lines.push('- Invalid Picklist Values: **' + checks.invalidPicklists.length + '**');
+      lines.push('- Unknown Columns In Row: **' + checks.unknownColumns.length + '**');
+      if (checks.missingRequired.length > 0) lines.push('- Missing Fields: ' + checks.missingRequired.join(', '));
       if (checks.invalidPicklists.length > 0) {
         for (var ip = 0; ip < checks.invalidPicklists.length; ip++) {
           lines.push('- Invalid picklist: ' + checks.invalidPicklists[ip].field + ' = "' + checks.invalidPicklists[ip].value + '"');
         }
       }
       lines.push('');
-      lines.push('=== GENERATED CONTRACT TEXT ===');
-      lines.push('Agreement Title: ' + (agreementName || '[TO_BE_DEFINED]'));
-      lines.push('Effective Date: ' + (effectiveDate || '[TO_BE_DEFINED]'));
-      lines.push('Party A: ' + (partyA || '[TO_BE_DEFINED]'));
-      lines.push('Party B: ' + (partyB || '[TO_BE_DEFINED]'));
+      lines.push('## Generated Contract Text');
+      lines.push('- **Agreement Title:** ' + (agreementName || '[TO_BE_DEFINED]'));
+      lines.push('- **Effective Date:** ' + (effectiveDate || '[TO_BE_DEFINED]'));
+      lines.push('- **Party A:** ' + (partyA || '[TO_BE_DEFINED]'));
+      lines.push('- **Party B:** ' + (partyB || '[TO_BE_DEFINED]'));
       lines.push('');
-      lines.push('1. Scope');
+      lines.push('### 1. Scope');
       lines.push('The parties agree to perform services and obligations as captured in the canonical record for this contract section.');
       lines.push('');
-      lines.push('2. Territory');
+      lines.push('### 2. Territory');
       lines.push(territory || '[TO_BE_DEFINED]');
       lines.push('');
-      lines.push('3. Term');
+      lines.push('### 3. Term');
       lines.push(term || '[TO_BE_DEFINED]');
       lines.push('');
-      lines.push('4. Compensation');
+      lines.push('### 4. Compensation');
       lines.push(compensation || '[TO_BE_DEFINED]');
       lines.push('');
-      lines.push('5. Data Integrity');
+      lines.push('### 5. Data Integrity');
       lines.push('This draft is generated from canonical schema-mapped fields and is intended for sandbox testing only.');
       lines.push('');
-      lines.push('=== CANONICAL FIELD SNAPSHOT ===');
+      lines.push('## Canonical Field Snapshot');
       if (canonicalFields.length === 0) {
         lines.push('(No canonical field metadata loaded for this section.)');
       } else {
@@ -26998,32 +26999,37 @@
           var meta = canonicalFields[cf];
           var v = _cgSafeText(row[meta.field_key]);
           var label = meta.field_label || meta.field_key;
-          lines.push(label + ' [' + meta.field_key + ']: ' + (v || '(empty)'));
+          lines.push('- **' + label + '** (`' + meta.field_key + '`): ' + (v || '(empty)'));
         }
       }
 
       var output = lines.join('\n');
       outEl.value = output;
       _cgState.lastOutput = output;
-      _cgState.lastFileName = (sheetName + '_row_' + (rowIdx + 1) + '_contract_draft.txt').replace(/[^a-zA-Z0-9_.-]/g, '_');
-      _cgSetStatus('Contract draft generated. Download the .txt file to test output.', 'success');
+      _cgState.lastFileName = (sheetName + '_row_' + (rowIdx + 1) + '_contract_draft.md').replace(/[^a-zA-Z0-9_.-]/g, '_');
+      _cgSetStatus('Contract draft generated. Download the .md file to test output.', 'success');
     }
 
-    function cgDownloadContractTxt() {
+    function cgDownloadContractMd() {
       if (!_cgState.lastOutput) {
         _cgSetStatus('Generate contract text first.', 'warn');
         return;
       }
-      var blob = new Blob([_cgState.lastOutput], { type: 'text/plain;charset=utf-8' });
+      var blob = new Blob([_cgState.lastOutput], { type: 'text/markdown;charset=utf-8' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
       a.href = url;
-      a.download = _cgState.lastFileName || 'contract_draft.txt';
+      a.download = _cgState.lastFileName || 'contract_draft.md';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       _cgSetStatus('Downloaded ' + a.download, 'success');
+    }
+
+    // Backward-compatible alias for old button handlers.
+    function cgDownloadContractTxt() {
+      cgDownloadContractMd();
     }
     
     // ========== ADMIN QUEUE RENDERING (v1.5.1) ==========
