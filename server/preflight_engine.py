@@ -24,6 +24,8 @@ import hashlib
 import logging
 import re
 
+from server.preflight_rules import classify_contract, get_expected_schedule_types, get_schedule_type_priority
+
 logger = logging.getLogger(__name__)
 
 PAGE_CHARS_MIN_SEARCHABLE = 50
@@ -363,6 +365,9 @@ def run_preflight(pages_data):
     opportunity_spine = build_opportunity_spine(full_text, resolution_story)
     schedule_structure = build_schedule_structure(full_text, resolution_story, opportunity_spine)
 
+    contract_type_val = _opp_check_value(opportunity_spine, "OPP_CONTRACT_TYPE")
+    contract_classification = classify_contract(contract_type_val, full_text)
+
     return {
         "doc_mode": doc_mode,
         "gate_color": gate_color,
@@ -373,6 +378,7 @@ def run_preflight(pages_data):
         "resolution_story": resolution_story,
         "opportunity_spine": opportunity_spine,
         "schedule_structure": schedule_structure,
+        "contract_classification": contract_classification,
         "page_classifications": page_results,
         "extracted_text": full_text[:50000],
         "extracted_headers": extracted_headers,
@@ -1035,7 +1041,7 @@ def _extract_schedule_presence(full_text, opportunity_spine):
     return {"status": "fail", "confidence": 0.0, "value": None, "reason": "No schedule/exhibit markers detected"}
 
 
-def _extract_schedule_type(full_text):
+def _extract_schedule_type(full_text, contract_type_value=None):
     if not full_text:
         return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available", "candidates": []}
 
@@ -1068,7 +1074,27 @@ def _extract_schedule_type(full_text):
             scores[stype] = round(min(best + bonus, 1.0), 4)
             evidence_map[stype] = hits
 
-    ranked = sorted(scores.items(), key=lambda x: (-x[1], x[0]))
+    expected = get_expected_schedule_types(contract_type_value) if contract_type_value else []
+    priority_order = get_schedule_type_priority()
+
+    specific_types = [s for s in scores if s != "general_schedule"]
+    if specific_types and "general_schedule" in scores:
+        best_specific_score = max(scores[s] for s in specific_types)
+        if best_specific_score >= scores["general_schedule"]:
+            del scores["general_schedule"]
+            evidence_map.pop("general_schedule", None)
+        elif expected:
+            expected_with_scores = [s for s in specific_types if s in expected and scores[s] > 0]
+            if expected_with_scores:
+                del scores["general_schedule"]
+                evidence_map.pop("general_schedule", None)
+
+    def _rank_key(item):
+        val, conf = item
+        priority_idx = priority_order.index(val) if val in priority_order else len(priority_order)
+        return (-conf, priority_idx, val)
+
+    ranked = sorted(scores.items(), key=_rank_key)
     candidates = [
         {"value": val, "confidence": round(conf, 2), "evidence": evidence_map.get(val, [])}
         for val, conf in ranked if conf >= _SUBTYPE_CANDIDATE_THRESHOLD
@@ -1132,9 +1158,10 @@ _SCH_CRITICAL_CHECKS = {"SCH_PRESENCE", "SCH_ROLE_ALIGNMENT"}
 
 
 def build_schedule_structure(full_text, resolution_story, opportunity_spine):
+    contract_type_val = _opp_check_value(opportunity_spine, "OPP_CONTRACT_TYPE")
     checks = [
         {"code": "SCH_PRESENCE", "label": "Schedule Presence", **_extract_schedule_presence(full_text, opportunity_spine)},
-        {"code": "SCH_TYPE", "label": "Schedule Type", **_extract_schedule_type(full_text)},
+        {"code": "SCH_TYPE", "label": "Schedule Type", **_extract_schedule_type(full_text, contract_type_val)},
         {"code": "SCH_OWNERSHIP", "label": "Ownership Signals", **_extract_ownership_signals(full_text)},
         {"code": "SCH_LIFECYCLE", "label": "Lifecycle Signals", **_extract_lifecycle_signals(full_text)},
         {"code": "SCH_ROLE_ALIGNMENT", "label": "Role Alignment", **_check_schedule_role_alignment(resolution_story)},

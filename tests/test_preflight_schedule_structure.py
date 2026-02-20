@@ -10,6 +10,7 @@ from server.preflight_engine import (
     build_opportunity_spine,
     run_preflight,
 )
+from server.preflight_rules import classify_contract
 
 
 class TestSchedulePresence:
@@ -109,3 +110,73 @@ class TestBuildScheduleStructure:
         assert "status" in sch
         assert "checks" in sch
         assert "summary" in sch
+
+
+class TestDistroSyncScheduleType:
+    def test_distro_sync_suppresses_general_schedule(self):
+        text = "Distribution Agreement\nDistro & Sync - Existing Masters\nSchedule 1\nfor digital distribution and synch licenses"
+        r = _extract_schedule_type(text, contract_type_value="distribution")
+        assert r["value"] == "distro_sync_existing_masters"
+        cand_values = [c["value"] for c in r["candidates"]]
+        assert "general_schedule" not in cand_values
+
+    def test_distro_sync_with_catalog_acquisition(self):
+        text = "Distribution Agreement\nSchedule 1 catalog acquisition\nDistro & Sync for existing masters"
+        r = _extract_schedule_type(text, contract_type_value="distribution")
+        assert r["value"] in ("distro_sync_existing_masters", "catalog_acquisition_masters")
+        assert len(r["candidates"]) >= 2
+        cand_values = [c["value"] for c in r["candidates"]]
+        assert "general_schedule" not in cand_values
+
+    def test_general_schedule_kept_when_no_specific(self):
+        text = "Service Agreement\nSchedule A - Service Terms\nExhibit 1"
+        r = _extract_schedule_type(text, contract_type_value="service")
+        assert r["value"] == "general_schedule"
+
+    def test_no_contract_type_general_still_suppressed_when_specific_wins(self):
+        text = "Distro & Sync for existing masters\nSchedule 1\nDigital distribution and synch revenue"
+        r = _extract_schedule_type(text)
+        assert r["value"] == "distro_sync_existing_masters"
+
+    def test_schedule_type_priority_ordering(self):
+        text = "Distribution Agreement\nDistro & Sync for existing masters\nSchedule 1 catalog acquisition\nAppendix"
+        r = _extract_schedule_type(text, contract_type_value="distribution")
+        assert r["candidates"][0]["value"] in ("distro_sync_existing_masters", "catalog_acquisition_masters")
+        cand_values = [c["value"] for c in r["candidates"]]
+        assert "general_schedule" not in cand_values
+
+
+class TestTerminationScheduleType:
+    def test_termination_schedule_type(self):
+        text = "Termination Agreement\nTermination schedule attached.\nActual termination date: March 1, 2025.\nOffboard procedures."
+        r = _extract_schedule_type(text, contract_type_value="termination")
+        assert r["value"] == "termination_schedule"
+
+    def test_termination_flavor_mutual_in_preflight(self):
+        pages = [{"text": "Termination Agreement\n\nThe parties mutually agree to terminate.\nMutual termination by mutual agreement.\nTermination schedule attached.\nActual termination date: March 1, 2025.", "char_count": 150, "image_coverage_ratio": 0.0, "page": 1}]
+        result = run_preflight(pages)
+        cc = result["contract_classification"]
+        assert cc["termination_flavor"] == "mutual"
+        assert cc["termination_flavor_label"] == "Mutual Termination"
+        sch = result["schedule_structure"]
+        sch_type = next(c for c in sch["checks"] if c["code"] == "SCH_TYPE")
+        assert sch_type["value"] == "termination_schedule"
+
+    def test_termination_flavor_for_cause_in_preflight(self):
+        pages = [{"text": "Termination Agreement\n\nDue to material breach and failure to cure.\nTermination notice effective immediately.\nTermination schedule.", "char_count": 130, "image_coverage_ratio": 0.0, "page": 1}]
+        result = run_preflight(pages)
+        cc = result["contract_classification"]
+        assert cc["termination_flavor"] == "for_cause"
+
+    def test_build_schedule_structure_passes_contract_type(self):
+        text = "Distribution Agreement\nDistro & Sync for existing masters\nSchedule 1 catalog acquisition\nMaster ownership\nEffective date"
+        story = {
+            "legal_entity_account": {"name": "Ostereo Limited"},
+            "counterparties": [{"name": "1888 Records"}],
+            "unresolved_counterparties": [],
+        }
+        opp = build_opportunity_spine(text, story)
+        r = build_schedule_structure(text, story, opp)
+        sch_type = next(c for c in r["checks"] if c["code"] == "SCH_TYPE")
+        assert sch_type["value"] != "general_schedule"
+        assert sch_type["value"] in ("distro_sync_existing_masters", "catalog_acquisition_masters")

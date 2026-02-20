@@ -9,7 +9,9 @@ from server.preflight_engine import (
     _extract_term,
     _extract_territory,
     _check_role_linkage,
+    run_preflight,
 )
+from server.preflight_rules import classify_contract, is_subtype_allowed, get_expected_schedule_types
 
 
 class TestContractType:
@@ -423,7 +425,6 @@ Term of 5 years. Territory: Worldwide.
         assert result["summary"]["failed"] >= 2
 
     def test_run_preflight_includes_opportunity_spine(self):
-        from server.preflight_engine import run_preflight
         pages = [{"text": "Distribution Agreement\nEffective date: January 1, 2024.\nTerritory: Worldwide.\nTerm of 3 years.", "char_count": 100, "image_coverage_ratio": 0.0, "page": 1}]
         result = run_preflight(pages)
         assert "opportunity_spine" in result
@@ -432,3 +433,123 @@ Term of 5 years. Territory: Worldwide.
         assert "checks" in spine
         assert "summary" in spine
         assert len(spine["checks"]) == 6
+
+
+class TestContractClassification:
+    def test_distribution_classification(self):
+        r = classify_contract("distribution", "Distribution Agreement\nDigital distribution for worldwide release.")
+        assert r["contract_category"] == "Distribution"
+        assert "distro_sync_existing_masters" in r["expected_schedule_types"] or "catalog_acquisition_masters" in r["expected_schedule_types"]
+        assert r["termination_flavor"] is None
+
+    def test_termination_mutual(self):
+        text = "Termination Agreement\n\nThe parties mutually agree to terminate the prior agreement by mutual agreement."
+        r = classify_contract("termination", text)
+        assert r["contract_category"] == "Termination"
+        assert r["termination_flavor"] == "mutual"
+        assert r["termination_flavor_label"] == "Mutual Termination"
+        assert len(r["termination_flavor_evidence"]) >= 1
+
+    def test_termination_for_cause(self):
+        text = "Termination Agreement\n\nDue to material breach of the terms and failure to cure within 30 days."
+        r = classify_contract("termination", text)
+        assert r["contract_category"] == "Termination"
+        assert r["termination_flavor"] == "for_cause"
+        assert r["termination_flavor_label"] == "Termination for Cause"
+
+    def test_termination_convenience(self):
+        text = "Termination Agreement\n\nParty A terminates for convenience upon 90 days notice."
+        r = classify_contract("termination", text)
+        assert r["contract_category"] == "Termination"
+        assert r["termination_flavor"] == "convenience"
+
+    def test_termination_expiry(self):
+        text = "Termination Agreement\n\nThe agreement terminates upon natural expiry and non-renewal of the term."
+        r = classify_contract("termination", text)
+        assert r["contract_category"] == "Termination"
+        assert r["termination_flavor"] == "expiry"
+
+    def test_termination_reversion(self):
+        text = "Termination Agreement\n\nAll rights shall revert to the artist upon reversion of rights per the catalogue reversion clause."
+        r = classify_contract("termination", text)
+        assert r["contract_category"] == "Termination"
+        assert r["termination_flavor"] == "reversion"
+
+    def test_no_termination_flavor_for_distribution(self):
+        r = classify_contract("distribution", "Distribution Agreement content.")
+        assert r["termination_flavor"] is None
+        assert r["termination_flavor_evidence"] == []
+
+    def test_unknown_contract_type(self):
+        r = classify_contract(None, "Some text")
+        assert r["contract_category"] is None
+        assert r["expected_schedule_types"] == []
+
+    def test_license_classification(self):
+        r = classify_contract("license", "License Agreement text.")
+        assert r["contract_category"] == "License"
+        assert "catalog_acquisition_masters" in r["expected_schedule_types"]
+
+    def test_amendment_classification(self):
+        r = classify_contract("amendment", "Amendment text.")
+        assert r["contract_category"] == "Amendment"
+        assert r["expected_schedule_types"] == []
+
+    def test_classification_in_run_preflight(self):
+        pages = [{"text": "Distribution Agreement\nDigital distribution agreement for worldwide release.\nEffective date: January 1, 2024.\nTerm of 3 years.\nTerritory: Worldwide.", "char_count": 150, "image_coverage_ratio": 0.0, "page": 1}]
+        result = run_preflight(pages)
+        assert "contract_classification" in result
+        cc = result["contract_classification"]
+        assert cc["contract_category"] == "Distribution"
+        assert isinstance(cc["expected_schedule_types"], list)
+        assert cc["category_rule_version"] == "1.0"
+
+    def test_termination_classification_in_run_preflight(self):
+        pages = [{"text": "Termination Agreement\n\nThe parties mutually agree to terminate.\nMutual termination by mutual agreement.", "char_count": 100, "image_coverage_ratio": 0.0, "page": 1}]
+        result = run_preflight(pages)
+        cc = result["contract_classification"]
+        assert cc["contract_category"] == "Termination"
+        assert cc["termination_flavor"] == "mutual"
+
+
+class TestSubtypeAllowedByRules:
+    def test_distribution_allows_sync(self):
+        assert is_subtype_allowed("distribution", "Sync") is True
+
+    def test_distribution_allows_distribution(self):
+        assert is_subtype_allowed("distribution", "Distribution") is True
+
+    def test_distribution_blocks_pub_admin(self):
+        assert is_subtype_allowed("distribution", "Pub Admin") is False
+
+    def test_license_allows_sync(self):
+        assert is_subtype_allowed("license", "Sync") is True
+
+    def test_license_blocks_cma(self):
+        assert is_subtype_allowed("license", "CMA") is False
+
+    def test_unknown_type_allows_anything(self):
+        assert is_subtype_allowed("xyz_unknown", "Distribution") is True
+
+    def test_none_type_allows_anything(self):
+        assert is_subtype_allowed(None, "Distribution") is True
+
+
+class TestDistributionSyncSubtype:
+    def test_distribution_sync_combo_detected(self):
+        text = "Distribution Agreement\n\nThis covers digital distribution and sync licensing rights.\nThe synchronization fees apply.\nDistro & Sync for existing masters."
+        result = _extract_contract_subtype(text)
+        cand_values = [c["value"] for c in result["candidates"]]
+        assert "Distribution" in cand_values
+        assert "Sync" in cand_values
+
+    def test_distro_sync_contract_type(self):
+        text = "Distro & Sync Agreement\n\nDigital distribution and sync licensing."
+        result = _extract_contract_type(text)
+        assert result["status"] == "pass"
+        assert result["value"] == "distribution"
+
+    def test_expected_schedule_for_distribution(self):
+        expected = get_expected_schedule_types("distribution")
+        assert "distro_sync_existing_masters" in expected
+        assert "catalog_acquisition_masters" in expected
