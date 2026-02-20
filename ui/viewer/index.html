@@ -57140,9 +57140,18 @@ var P022_RuntimeValidation = {
 
       if (ck.code === 'OPP_CONTRACT_SUBTYPE' && ck.candidates && ck.candidates.length > 0) {
         var assigns = _pftlGetAssignments();
+        var canonicalValues = _OPP_SUBTYPE_OPTIONS.slice();
         if (!assigns.opportunity_subtypes || assigns.opportunity_subtypes.length === 0) {
           assigns.opportunity_subtypes = ck.candidates.map(function(c) { return c.value; }).slice(0, 2);
           _pftlSaveAssignments();
+        } else {
+          var cleaned = assigns.opportunity_subtypes.filter(function(v) {
+            return canonicalValues.indexOf(v) >= 0;
+          });
+          if (cleaned.length !== assigns.opportunity_subtypes.length) {
+            assigns.opportunity_subtypes = cleaned.length > 0 ? cleaned : ck.candidates.map(function(c) { return c.value; }).slice(0, 2);
+            _pftlSaveAssignments();
+          }
         }
         html += '<tr class="opp-subtype-expand-row"><td colspan="4">';
         html += '<details class="opp-subtype-details">';
@@ -57192,6 +57201,18 @@ var P022_RuntimeValidation = {
     return html;
   }
 
+  var _SCH_TYPE_LABELS = {
+    'distro_sync_existing_masters': 'Distro & Sync (Existing Masters)',
+    'catalog_acquisition_masters': 'Catalog Acquisition (Masters)',
+    'termination_schedule': 'Termination Schedule',
+    'general_schedule': 'General Schedule'
+  };
+
+  function _schTypeLabel(val) {
+    if (!val) return val;
+    return _SCH_TYPE_LABELS[val] || val.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+  }
+
   function _pftlRenderScheduleStructure(r) {
     var sch = r.schedule_structure;
     if (!sch) return '';
@@ -57223,12 +57244,19 @@ var P022_RuntimeValidation = {
       html += '<tr>';
       html += '<td class="sch-label">' + _pftlEsc(ck.label || ck.code) + '</td>';
       html += '<td><span class="sch-status-badge ' + badgeClass + '">' + st.toUpperCase() + '</span></td>';
-      var valueCell = ck.value ? _pftlEsc(String(ck.value)) : '\u2014';
+      var displayVal = ck.value;
+      if (ck.code === 'SCH_TYPE' && displayVal) displayVal = _schTypeLabel(displayVal);
+      var valueCell = displayVal ? _pftlEsc(String(displayVal)) : '\u2014';
       if (ck.confidence) {
         valueCell += ' <span class="sch-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
       }
       html += '<td class="sch-value">' + valueCell + '</td>';
-      html += '<td class="sch-reason">' + (ck.reason ? _pftlEsc(ck.reason) : '') + '</td>';
+      var reasonText = ck.reason || '';
+      if (ck.code === 'SCH_TYPE' && ck.value && reasonText) {
+        reasonText = reasonText.replace(new RegExp("'" + ck.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "'", 'g'), "'" + _schTypeLabel(ck.value) + "'");
+        reasonText = reasonText.replace(new RegExp('\\(' + ck.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '(' + _schTypeLabel(ck.value));
+      }
+      html += '<td class="sch-reason">' + (reasonText ? _pftlEsc(reasonText) : '') + '</td>';
       html += '</tr>';
 
       if (ck.code === 'SCH_TYPE' && ck.candidates && ck.candidates.length > 0) {
@@ -57239,7 +57267,7 @@ var P022_RuntimeValidation = {
         for (var j = 0; j < ck.candidates.length; j++) {
           var cand = ck.candidates[j];
           html += '<div class="sch-candidate-card">';
-          html += '<span class="sch-candidate-name">' + _pftlEsc(cand.value) + '</span>';
+          html += '<span class="sch-candidate-name">' + _pftlEsc(_schTypeLabel(cand.value)) + '</span>';
           html += '<span class="sch-conf-badge">' + Math.round((cand.confidence || 0) * 100) + '%</span>';
           if (cand.evidence && cand.evidence.length > 0) {
             for (var e = 0; e < cand.evidence.length; e++) {
