@@ -1,24 +1,27 @@
 # V3 Implementation Baseline (Current Branch State)
 
-Branch: `fix/preflight-contractgen-stabilization`
+Branch: `codex/v3-unified-workspace-handoff`
+Source baseline branch: `origin/fix/preflight-contractgen-stabilization`
 
-## Already Stabilized in `ui/viewer/index.html`
-- PTL/Contract Generator merge conflicts resolved.
-- PTL footer action wiring verified:
+## Important Note
+This branch is intended for V3 planning/handoff first. Stabilization items must be verified against the live branch head before implementation begins.
+
+## Stabilization Verification Checklist (Run Before V3 Code Work)
+- Confirm PTL footer action wiring:
   - Open Contract Generator
   - Save Comment Draft
   - Submit Comment
   - Submit Correction
-- `createPatchRequest` includes `preflight_context`.
-- Kiwi export includes `preflight_context` (single field, no duplicate key).
-- `pftlOpenContractGenerator` routes through preflight seeding path.
-- Preflight seed preservation guard added to avoid autofill overwriting seeded state.
-- Status override no longer allows direct `pass` action.
-- Value override now captures required evidence note.
-- Findings context includes override evidence fields.
+- Confirm `createPatchRequest` includes `preflight_context`.
+- Confirm Kiwi export includes `preflight_context` exactly once.
+- Confirm `pftlOpenContractGenerator` seeds Contract Generator from PTL context.
+- Confirm no unresolved merge markers in `ui/viewer/index.html`.
+- Confirm behavior/policy checks:
+  - status override policy,
+  - value override evidence capture,
+  - preflight seed persistence behavior.
 
 ## Intended Starting Point for Claude Planning
-- Treat stabilization as complete baseline unless new evidence shows regression.
-- Focus planning on V3 feature additions and phased migration strategy.
+- First output must include an explicit stabilization verification section with findings.
+- Then propose V3 feature additions and phased migration strategy.
 - Preserve existing patch/audit architecture while introducing `Record Inspector V2 (Beta)` workflow.
-
