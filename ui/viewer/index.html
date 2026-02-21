@@ -48732,9 +48732,10 @@
       var story = preflightResult.resolution_story || {};
       var classification = preflightResult.contract_classification || {};
       var spine = preflightResult.opportunity_spine || {};
-<<<<<<< HEAD
       var scheduleStructure = preflightResult.schedule_structure || {};
       var assignments = (preflightExport && preflightExport.analyst_assignments) ? preflightExport.analyst_assignments : {};
+      var exportCtx = preflightExport || {};
+      var assignCtx = exportCtx.analyst_assignments || {};
       var statusOverrides = assignments.check_overrides || {};
       var valueOverrides = assignments.check_value_overrides || {};
       function overrideKey(scope, code) { return scope + '::' + code; }
@@ -48767,15 +48768,10 @@
         for (var i = 0; i < checks.length; i++) if (checks[i] && checks[i].code === code) return checks[i];
         return null;
       }
-=======
-      var exportCtx = preflightExport || {};
-      var assignCtx = exportCtx.analyst_assignments || {};
->>>>>>> b412b38 (Add preflight overrides and full context to contract generator)
 
       cgbStartNewSession();
 
       var legal = story.legal_entity_account;
-<<<<<<< HEAD
       var chosenLegal = (assignments.legal_entity && String(assignments.legal_entity).trim()) || (legal && legal.name) || '';
       if (chosenLegal) {
         cgbState.legalEntity = chosenLegal;
@@ -48793,16 +48789,6 @@
         cgbState.whoWhere.counterpartyResolved = true;
       } else if (counterparties.length > 0) {
         cgbState.whoWhere.counterpartyName = counterparties[0].name || '';
-=======
-      if (assignCtx.legal_entity) {
-        cgbState.legalEntity = assignCtx.legal_entity;
-      } else if (legal && legal.name) {
-        cgbState.legalEntity = legal.name;
-      }
-
-      if (assignCtx.counterparty) {
-        cgbState.whoWhere.counterpartyName = assignCtx.counterparty;
->>>>>>> b412b38 (Add preflight overrides and full context to contract generator)
         cgbState.whoWhere.counterpartyResolved = true;
       } else {
         var counterparties = story.counterparties || [];
@@ -48829,22 +48815,11 @@
         else cgbState.templateType = cat;
       }
 
-<<<<<<< HEAD
       var checks = spine.checks || [];
       for (var i = 0; i < checks.length; i++) {
         if (checks[i].code === 'OPP_CONTRACT_TYPE') {
           var oppType = effectiveValue('opportunity_spine', checks[i]);
           if (oppType) cgbState.workflow.contractType = oppType;
-=======
-      var checkOverrides = assignCtx.check_overrides || {};
-      var checkValueOverrides = assignCtx.check_value_overrides || {};
-
-      var oppChecks = spine.checks || [];
-      for (var i = 0; i < oppChecks.length; i++) {
-        var oppCk = oppChecks[i];
-        if (oppCk.code === 'OPP_CONTRACT_TYPE' && oppCk.value) {
-          cgbState.workflow.contractType = oppCk.value;
->>>>>>> b412b38 (Add preflight overrides and full context to contract generator)
         }
       }
       var schTypeCheck = findCheck(scheduleStructure, 'SCH_TYPE');
@@ -48864,24 +48839,13 @@
       var addonModule = preflightResult.addons_readiness || {};
       var schedModule = preflightResult.schedule_structure || {};
 
-      function effectiveStatus(scope, code, base) {
-        var key = scope + '::' + code;
-        var ov = checkOverrides[key];
-        return (ov && ov.status) ? ov.status : base;
-      }
-      function effectiveValue(scope, code, base) {
-        var key = scope + '::' + code;
-        var ov = checkValueOverrides[key];
-        return (ov && ov.value !== undefined && ov.value !== null) ? ov.value : base;
-      }
-
       function applySectionOverrides(module, scope) {
         if (!module || !module.checks) return module;
         var out = JSON.parse(JSON.stringify(module));
         for (var j = 0; j < out.checks.length; j++) {
           var c = out.checks[j];
-          c.effective_status = effectiveStatus(scope, c.code, c.status);
-          c.effective_value = effectiveValue(scope, c.code, c.value);
+          c.effective_status = effectiveStatus(scope, c);
+          c.effective_value = effectiveValue(scope, c);
         }
         return out;
       }
@@ -48889,26 +48853,16 @@
       cgbState.preflightSeed = {
         gate_color: preflightResult.gate_color,
         health_score: preflightResult.health_score,
-<<<<<<< HEAD
         source_doc_id: preflightResult.doc_id || null,
         analyst_assignments: assignments,
         check_overrides: statusOverrides,
         check_value_overrides: valueOverrides,
         opportunity_spine: preflightResult.opportunity_spine || null,
-        schedule_structure: preflightResult.schedule_structure || null,
-        financials_readiness: preflightResult.financials_readiness,
-        addons_readiness: preflightResult.addons_readiness,
-        export_context: preflightExport || null,
-=======
-        doc_id: preflightResult.doc_id || null,
-        assignments: assignCtx,
-        opportunity_spine: spine,
         schedule_structure: applySectionOverrides(schedModule, 'schedule_structure'),
         financials_readiness: applySectionOverrides(finModule, 'financials_readiness'),
         addons_readiness: applySectionOverrides(addonModule, 'addons_readiness'),
         contract_classification: classification,
-        export_context: exportCtx,
->>>>>>> b412b38 (Add preflight overrides and full context to contract generator)
+        export_context: preflightExport || null,
         seeded_at: new Date().toISOString()
       };
 
@@ -59256,7 +59210,6 @@ var P022_RuntimeValidation = {
   function _pftlRunUpload(file) {
     var reader = new FileReader();
     reader.onload = function(e) {
-<<<<<<< HEAD
       var dataUrl = e.target.result || '';
       var comma = dataUrl.indexOf(',');
       var base64 = comma >= 0 ? dataUrl.substring(comma + 1) : '';
@@ -59264,10 +59217,6 @@ var P022_RuntimeValidation = {
         _pftlOnError(new Error('Failed to encode PDF for upload'));
         return;
       }
-=======
-      var dataUrl = e.target.result;
-      var base64 = dataUrl.split(',')[1] || '';
->>>>>>> 4467913 (Improve file upload handling and add request timeouts)
 
       var hashStr = file.name + '|' + file.size + '|' + file.lastModified;
       var docId = 'upload_' + _pftlSimpleHash(hashStr);
@@ -60838,67 +60787,6 @@ var P022_RuntimeValidation = {
     }
   };
 
-  function _pftlGetCheckValueOverride(scope, code) {
-    var assigns = _pftlGetAssignments();
-    if (!assigns.check_value_overrides) assigns.check_value_overrides = {};
-    var key = _pftlOverrideKey(scope, code);
-    return assigns.check_value_overrides[key] || null;
-  }
-
-  function _pftlGetEffectiveCheckValue(scope, code, baseValue) {
-    var ov = _pftlGetCheckValueOverride(scope, code);
-    return ov && ov.value !== undefined && ov.value !== null ? ov.value : baseValue;
-  }
-
-  function _pftlGetCheckValueOptions(scope, code) {
-    var scopeOpts = _PFTL_CHECK_VALUE_OPTIONS[scope];
-    if (!scopeOpts) return null;
-    return scopeOpts[code] || null;
-  }
-
-  function _pftlRenderCheckValueEditor(scope, code, baseValue, rowIx) {
-    var options = _pftlGetCheckValueOptions(scope, code);
-    if (!options) return '';
-    var effectiveValue = _pftlGetEffectiveCheckValue(scope, code, baseValue);
-    var overridden = effectiveValue !== baseValue;
-    var menuId = 'pftl-val-menu-' + _pftlSimpleHash(scope + '|' + code + '|v|' + rowIx);
-    var html = '<div class="pftl-value-editor" style="display:inline-flex;align-items:center;gap:4px;">';
-    if (overridden) html += '<span class="pftl-status-overridden" style="font-size:0.7em;">VAL OVERRIDE</span>';
-    html += '<button type="button" class="pftl-status-edit-btn" style="font-size:0.75em;" onclick="pftlToggleCheckStatusMenu(\'' + _pftlEsc(menuId) + '\')">&#9660;</button>';
-    html += '<div id="' + _pftlEsc(menuId) + '" class="pftl-status-menu" style="min-width:160px;">';
-    html += '<div class="pftl-status-menu-title">Override value</div>';
-    html += '<div class="pftl-status-menu-actions" style="flex-direction:column;">';
-    for (var i = 0; i < options.length; i++) {
-      var label = (scope === 'schedule_structure' && code === 'SCH_TYPE') ? _schTypeLabel(options[i]) : options[i];
-      var sel = (effectiveValue === options[i]) ? ' style="font-weight:bold;text-decoration:underline;"' : '';
-      html += '<button type="button"' + sel + ' onclick="pftlApplyCheckValueOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'' + _pftlEsc(options[i]) + '\')">' + _pftlEsc(label) + '</button>';
-    }
-    if (overridden) {
-      html += '<button type="button" class="is-clear" onclick="pftlClearCheckValueOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\')">Clear Override</button>';
-    }
-    html += '</div></div></div>';
-    return html;
-  }
-
-  window.pftlApplyCheckValueOverride = function(scope, code, value) {
-    var assigns = _pftlGetAssignments();
-    if (!assigns.check_value_overrides) assigns.check_value_overrides = {};
-    assigns.check_value_overrides[_pftlOverrideKey(scope, code)] = {
-      value: value,
-      ts: new Date().toISOString()
-    };
-    _pftlSaveAssignments();
-    _pftlRender();
-  };
-
-  window.pftlClearCheckValueOverride = function(scope, code) {
-    var assigns = _pftlGetAssignments();
-    if (!assigns.check_value_overrides) assigns.check_value_overrides = {};
-    delete assigns.check_value_overrides[_pftlOverrideKey(scope, code)];
-    _pftlSaveAssignments();
-    _pftlRender();
-  };
-
   function _pftlBuildCandidatePool(story, r) {
     var pool = [];
     var seen = {};
@@ -61287,7 +61175,6 @@ var P022_RuntimeValidation = {
       html += '<tr>';
       html += '<td class="sch-label">' + _pftlEsc(ck.label || ck.code) + '</td>';
       html += '<td>' + _pftlRenderCheckStatusEditor('sch', 'schedule_structure', ck.code, st, i) + '</td>';
-<<<<<<< HEAD
       var displayVal = _pftlGetEffectiveCheckValue('schedule_structure', ck.code, ck.value);
       if (ck.code === 'SCH_TYPE' && displayVal) displayVal = _schTypeLabel(displayVal);
       var valueCell = displayVal ? _pftlEsc(String(displayVal)) : '\u2014';
@@ -61295,16 +61182,6 @@ var P022_RuntimeValidation = {
         valueCell += ' <span class="sch-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
       }
       valueCell += _pftlRenderCheckValueEditor('schedule_structure', ck);
-=======
-      var displayVal = ck.value;
-      var effectiveValue = _pftlGetEffectiveCheckValue('schedule_structure', ck.code, displayVal);
-      if (ck.code === 'SCH_TYPE' && effectiveValue) effectiveValue = _schTypeLabel(effectiveValue);
-      var valueCell = effectiveValue ? _pftlEsc(String(effectiveValue)) : '\u2014';
-      if (ck.confidence) {
-        valueCell += ' <span class="sch-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
-      }
-      valueCell += _pftlRenderCheckValueEditor('schedule_structure', ck.code, ck.value, i);
->>>>>>> b412b38 (Add preflight overrides and full context to contract generator)
       html += '<td class="sch-value">' + valueCell + '</td>';
       var reasonText = ck.reason || '';
       if (ck.code === 'SCH_TYPE' && ck.value && reasonText) {
@@ -61372,7 +61249,6 @@ var P022_RuntimeValidation = {
       html += '<tr>';
       html += '<td class="sch-label">' + _pftlEsc(ck.label || ck.code) + '</td>';
       html += '<td>' + _pftlRenderCheckStatusEditor('sch', 'financials_readiness', ck.code, st, i) + '</td>';
-<<<<<<< HEAD
       var effectiveVal = _pftlGetEffectiveCheckValue('financials_readiness', ck.code, ck.value);
       var valueCell = effectiveVal ? _pftlEsc(String(effectiveVal)) : '\u2014';
       if (ck.confidence) {
@@ -61385,18 +61261,6 @@ var P022_RuntimeValidation = {
       var finOverride = _pftlGetCheckOverride('financials_readiness', ck.code);
       if (finOverride && finOverride.comment) finReason += (finReason ? ' ' : '') + '(Comment: ' + finOverride.comment + ')';
       html += '<td class="sch-reason">' + (finReason ? _pftlEsc(finReason) : '') + '</td>';
-=======
-      var effectiveValue = _pftlGetEffectiveCheckValue('financials_readiness', ck.code, ck.value);
-      var valueCell = effectiveValue ? _pftlEsc(String(effectiveValue)) : '\u2014';
-      if (ck.confidence) {
-        valueCell += ' <span class="sch-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
-      }
-      valueCell += _pftlRenderCheckValueEditor('financials_readiness', ck.code, ck.value, i);
-      html += '<td class="sch-value">' + valueCell + '</td>';
-      var reasonText = ck.reason || '';
-      if (effectiveStatus !== st) reasonText = 'Analyst override \u2192 ' + String(effectiveStatus || '').toUpperCase() + (reasonText ? '. ' + reasonText : '');
-      html += '<td class="sch-reason">' + (reasonText ? _pftlEsc(reasonText) : '') + '</td>';
->>>>>>> b412b38 (Add preflight overrides and full context to contract generator)
       html += '</tr>';
     }
 
@@ -61434,7 +61298,6 @@ var P022_RuntimeValidation = {
       html += '<tr>';
       html += '<td class="sch-label">' + _pftlEsc(ck.label || ck.code) + '</td>';
       html += '<td>' + _pftlRenderCheckStatusEditor('sch', 'addons_readiness', ck.code, st, i) + '</td>';
-<<<<<<< HEAD
       var effectiveVal = _pftlGetEffectiveCheckValue('addons_readiness', ck.code, ck.value);
       var valueCell = effectiveVal ? _pftlEsc(String(effectiveVal)) : '\u2014';
       if (ck.confidence) {
@@ -61447,18 +61310,6 @@ var P022_RuntimeValidation = {
       var addonOverride = _pftlGetCheckOverride('addons_readiness', ck.code);
       if (addonOverride && addonOverride.comment) addonReason += (addonReason ? ' ' : '') + '(Comment: ' + addonOverride.comment + ')';
       html += '<td class="sch-reason">' + (addonReason ? _pftlEsc(addonReason) : '') + '</td>';
-=======
-      var effectiveValue = _pftlGetEffectiveCheckValue('addons_readiness', ck.code, ck.value);
-      var valueCell = effectiveValue ? _pftlEsc(String(effectiveValue)) : '\u2014';
-      if (ck.confidence) {
-        valueCell += ' <span class="sch-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
-      }
-      valueCell += _pftlRenderCheckValueEditor('addons_readiness', ck.code, ck.value, i);
-      html += '<td class="sch-value">' + valueCell + '</td>';
-      var reasonText = ck.reason || '';
-      if (effectiveStatus !== st) reasonText = 'Analyst override \u2192 ' + String(effectiveStatus || '').toUpperCase() + (reasonText ? '. ' + reasonText : '');
-      html += '<td class="sch-reason">' + (reasonText ? _pftlEsc(reasonText) : '') + '</td>';
->>>>>>> b412b38 (Add preflight overrides and full context to contract generator)
       html += '</tr>';
     }
 
@@ -61824,17 +61675,10 @@ var P022_RuntimeValidation = {
 
   window.pftlOpenContractGenerator = function() {
     if (!_pftlState.result) return;
-<<<<<<< HEAD
-      if (typeof cgbSeedFromPreflight === 'function') {
-        cgbSeedFromPreflight(_pftlState.result, _pftlBuildResultForExport());
-        return;
-      }
-=======
     if (typeof cgbSeedFromPreflight === 'function') {
       cgbSeedFromPreflight(_pftlState.result, _pftlBuildResultForExport());
       return;
     }
->>>>>>> b412b38 (Add preflight overrides and full context to contract generator)
     if (typeof openContractGeneratorEntry === 'function') {
       openContractGeneratorEntry();
     }
