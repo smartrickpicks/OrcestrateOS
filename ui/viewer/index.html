@@ -58307,20 +58307,20 @@ var P022_RuntimeValidation = {
   function _pftlRunUpload(file) {
     var reader = new FileReader();
     reader.onload = function(e) {
-      var arrayBuffer = e.target.result;
-      var bytes = new Uint8Array(arrayBuffer);
-      var binary = '';
-      for (var i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
+      var dataUrl = e.target.result || '';
+      var comma = dataUrl.indexOf(',');
+      var base64 = comma >= 0 ? dataUrl.substring(comma + 1) : '';
+      if (!base64) {
+        _pftlOnError(new Error('Failed to encode PDF for upload'));
+        return;
       }
-      var base64 = btoa(binary);
 
       var hashStr = file.name + '|' + file.size + '|' + file.lastModified;
       var docId = 'upload_' + _pftlSimpleHash(hashStr);
 
       var headers = _pftlGetHeaders();
       var baseUrl = window.location.origin;
-      fetch(baseUrl + '/api/preflight/upload', {
+      _pftlFetchWithTimeout(baseUrl + '/api/preflight/upload', {
         method: 'POST',
         headers: headers,
         body: JSON.stringify({
@@ -58328,7 +58328,7 @@ var P022_RuntimeValidation = {
           filename: file.name,
           doc_id: docId
         })
-      })
+      }, 120000)
       .then(function(resp) { return _pftlHandleResponse(resp); })
       .then(function(data) { _pftlOnSuccess(data); })
       .catch(function(err) { _pftlOnError(err); });
@@ -58336,20 +58336,32 @@ var P022_RuntimeValidation = {
     reader.onerror = function() {
       _pftlOnError(new Error('Failed to read file'));
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsDataURL(file);
   }
 
   function _pftlRunUrl(url) {
     var headers = _pftlGetHeaders();
     var baseUrl = window.location.origin;
-    fetch(baseUrl + '/api/preflight/run', {
+    _pftlFetchWithTimeout(baseUrl + '/api/preflight/run', {
       method: 'POST',
       headers: headers,
       body: JSON.stringify({ file_url: url })
-    })
+    }, 120000)
     .then(function(resp) { return _pftlHandleResponse(resp); })
     .then(function(data) { _pftlOnSuccess(data); })
     .catch(function(err) { _pftlOnError(err); });
+  }
+
+  function _pftlFetchWithTimeout(url, options, timeoutMs) {
+    var ms = timeoutMs || 120000;
+    if (typeof AbortController === 'undefined') return fetch(url, options);
+    var controller = new AbortController();
+    var timer = setTimeout(function() { controller.abort(); }, ms);
+    var opts = options || {};
+    opts.signal = controller.signal;
+    return fetch(url, opts).finally(function() {
+      clearTimeout(timer);
+    });
   }
 
   function _pftlHandleResponse(resp) {
@@ -58988,7 +59000,11 @@ var P022_RuntimeValidation = {
     if (err.message === '__forbidden__') return;
     _pftlState.running = false;
     _pftlStopTimer();
-    _pftlState.error = err.message || 'Unknown error';
+    if (err && err.name === 'AbortError') {
+      _pftlState.error = 'Preflight timed out after 120s. Retry or use a smaller PDF.';
+    } else {
+      _pftlState.error = err.message || 'Unknown error';
+    }
     _pftlRender();
     console.error('[PFTL] error:', err);
   }
