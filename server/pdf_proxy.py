@@ -66,6 +66,7 @@ from server.routes.suggestions import router as suggestions_router
 from server.routes.glossary import router as glossary_router
 from server.routes.preflight import router as preflight_router
 from server.routes.operations_queue import router as operations_queue_router
+from server.routes.resolver_feed import router as resolver_feed_router
 from server.feature_flags import is_enabled, EVIDENCE_INSPECTOR, is_preflight_enabled, is_ops_view_db_read, is_ops_view_db_write
 import logging as _logging
 
@@ -130,6 +131,7 @@ app.include_router(suggestions_router)
 app.include_router(glossary_router)
 app.include_router(preflight_router)
 app.include_router(operations_queue_router)
+app.include_router(resolver_feed_router)
 
 PROJECT_ROOT = Path(__file__).parent.parent
 

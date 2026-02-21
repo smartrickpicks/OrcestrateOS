@@ -48659,6 +48659,22 @@
           index[entity][cgbNorm(acct)] = acct;
         }
       }
+      var resolverAccounts = cgbGetResolverRows('accounts');
+      for (var ra = 0; ra < resolverAccounts.length; ra++) {
+        var rrow = resolverAccounts[ra];
+        var rEntity = cgbExtractLegalEntity(rrow);
+        var rAcct = rrow['Account Name'] || rrow['_display_name'] || '';
+        if (rEntity && rAcct) {
+          if (!index[rEntity]) index[rEntity] = {};
+          index[rEntity][cgbNorm(rAcct)] = rAcct;
+        } else if (rAcct && !rEntity) {
+          var fallbackEntity = rrow['Legal_Name__c'] || rrow['Company_Name__c'] || rAcct;
+          if (fallbackEntity) {
+            if (!index[fallbackEntity]) index[fallbackEntity] = {};
+            index[fallbackEntity][cgbNorm(rAcct)] = rAcct;
+          }
+        }
+      }
       var entities = Object.keys(index).sort(function(a, b) { return a.localeCompare(b); });
       if (!entities.length && cgbState.legalEntity) entities.push(cgbState.legalEntity);
       var byEntity = {};
@@ -48669,6 +48685,67 @@
       }
       cgbState.resolver.legalEntities = entities;
       cgbState.resolver.accountsByEntity = byEntity;
+    }
+
+    var _cgbResolverCache = { accounts: null, loading: false, callbacks: [] };
+
+    function cgbFetchResolverAccounts(callback) {
+      if (_cgbResolverCache.accounts) { if (callback) callback(_cgbResolverCache.accounts); return; }
+      if (_cgbResolverCache.loading) { if (callback) _cgbResolverCache.callbacks.push(callback); return; }
+      _cgbResolverCache.loading = true;
+      if (callback) _cgbResolverCache.callbacks.push(callback);
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', '/api/v2.5/resolver/accounts?limit=2000', true);
+      xhr.onload = function() {
+        _cgbResolverCache.loading = false;
+        var data = [];
+        try {
+          var resp = JSON.parse(xhr.responseText);
+          if (resp && resp.loaded && Array.isArray(resp.data)) data = resp.data;
+        } catch (e) {}
+        _cgbResolverCache.accounts = data;
+        var cbs = _cgbResolverCache.callbacks.splice(0);
+        for (var i = 0; i < cbs.length; i++) cbs[i](data);
+      };
+      xhr.onerror = function() {
+        _cgbResolverCache.loading = false;
+        _cgbResolverCache.accounts = [];
+        var cbs = _cgbResolverCache.callbacks.splice(0);
+        for (var i = 0; i < cbs.length; i++) cbs[i]([]);
+      };
+      xhr.send();
+    }
+
+    function cgbResolverAccountToRow(rec) {
+      return {
+        'Account Name': rec.account_name || rec.display_name || '',
+        'Account_Name__c': rec.account_name || '',
+        'Type': rec.type || '',
+        'Account_Id__c': rec.account_id || '',
+        'Id': rec.account_id || rec.id_18 || '',
+        '18 Digit ID': rec.id_18 || '',
+        'LE ID': rec.le_id || '',
+        'Artist Name (pka or dba)': rec.artist_name || '',
+        'Company_Name__c': rec.company_name || '',
+        'Legal_Name__c': rec.legal_name || '',
+        '_source': 'salesforce_resolver',
+        '_display_name': rec.display_name || rec.account_name || ''
+      };
+    }
+
+    function cgbGetResolverRows(objectType) {
+      if (objectType === 'account' || objectType === 'accounts') {
+        var cached = _cgbResolverCache.accounts;
+        if (cached && cached.length) return cached.map(cgbResolverAccountToRow);
+      }
+      return [];
+    }
+
+    function cgbHasResolverData(objectType) {
+      if (objectType === 'account' || objectType === 'accounts') {
+        return _cgbResolverCache.accounts && _cgbResolverCache.accounts.length > 0;
+      }
+      return false;
     }
 
     function cgbExtractRecordId(row) {
@@ -49258,6 +49335,24 @@
 
     function cgbBuildAnnotationMap() {
       function buildRef(sheetName, idx, objectType) {
+        var idxStr = String(idx || '');
+        if (idxStr.indexOf('sf:') === 0) {
+          var ri = parseInt(idxStr.replace('sf:', ''), 10);
+          var resolverType = (objectType === 'account') ? 'accounts' : objectType;
+          var resolverRows = cgbGetResolverRows(resolverType);
+          if (!isNaN(ri) && ri >= 0 && ri < resolverRows.length) {
+            var row = resolverRows[ri];
+            return {
+              object_type: objectType,
+              sheet: '_resolver_' + resolverType,
+              row_index: ri,
+              record_id: row['Id'] || row['Account_Id__c'] || '',
+              record_label: cgbDescribeRow(row, ri, objectType),
+              source: 'salesforce_resolver'
+            };
+          }
+          return null;
+        }
         if (!sheetName || idx === '' || idx === null || idx === undefined) return null;
         var row = cgbGetRow(sheetName, idx);
         if (!row) return null;
@@ -49348,14 +49443,22 @@
       function buildSingleSelect(id, sheetName, selectedIdx, label) {
         var el = document.getElementById(id);
         if (!el) return;
-        var rows = cgbGetRows(sheetName);
+        var resolverType = label;
+        var resolverRows = cgbGetResolverRows(resolverType);
+        var rows = resolverRows.length ? resolverRows : cgbGetRows(sheetName);
+        var isResolver = resolverRows.length > 0;
         if (!rows.length) {
           el.innerHTML = '<option value="">No Salesforce records available for this selector in current context.</option>';
           return;
         }
         var html = '<option value="">Select ' + label + '</option>';
-        for (var i = 0; i < rows.length; i++) html += '<option value="' + i + '"' + (String(i) === String(selectedIdx) ? ' selected' : '') + '>' + escapeHtml(cgbDescribeRow(rows[i], i, label)) + '</option>';
+        for (var i = 0; i < rows.length; i++) {
+          var val = isResolver ? 'sf:' + i : String(i);
+          html += '<option value="' + val + '"' + (val === String(selectedIdx) ? ' selected' : '') + '>' + escapeHtml(cgbDescribeRow(rows[i], i, label)) + '</option>';
+        }
         el.innerHTML = html;
+        if (isResolver) el.setAttribute('data-source', 'salesforce_resolver');
+        else el.removeAttribute('data-source');
       }
       buildSingleSelect('cgb-opportunity-select', cgbState.sheetMap.opportunity, cgbState.workflow.opportunity, 'opportunity');
       buildSingleSelect('cgb-schedule-select', cgbState.sheetMap.schedule, cgbState.workflow.schedule, 'schedule');
@@ -49365,14 +49468,19 @@
       function buildMultiSelect(id, sheetName, selectedVals, label) {
         var el = document.getElementById(id);
         if (!el) return;
-        var rows = cgbGetRows(sheetName);
+        var resolverType = (label === 'account') ? 'accounts' : (label === 'V2 add-on') ? 'v2addons' : label;
+        var resolverRows = cgbGetResolverRows(resolverType);
+        var rows = resolverRows.length ? resolverRows : cgbGetRows(sheetName);
+        var isResolver = resolverRows.length > 0;
         if (!rows.length) {
           el.innerHTML = '<option value="">No Salesforce records available for this selector in current context.</option>';
           return;
         }
         var html = '';
-        for (var i = 0; i < rows.length; i++) html += '<option value="' + i + '"' + (selectedVals.indexOf(String(i)) >= 0 ? ' selected' : '') + '>' + escapeHtml(cgbDescribeRow(rows[i], i, label)) + '</option>';
+        for (var i = 0; i < rows.length; i++) html += '<option value="' + (isResolver ? 'sf:' + i : i) + '"' + (selectedVals.indexOf(String(isResolver ? 'sf:' + i : i)) >= 0 ? ' selected' : '') + '>' + escapeHtml(cgbDescribeRow(rows[i], i, label)) + '</option>';
         el.innerHTML = html;
+        if (isResolver) el.setAttribute('data-source', 'salesforce_resolver');
+        else el.removeAttribute('data-source');
       }
       buildMultiSelect('cgb-accounts-select', cgbState.sheetMap.accounts, cgbState.workflow.accounts, 'account');
       buildMultiSelect('cgb-v2addons-select', cgbState.sheetMap.v2addons, cgbState.workflow.v2addons, 'V2 add-on');
@@ -49393,7 +49501,19 @@
 
     function cgbSelectedRowsBySheet() {
       var map = {};
-      function add(sheet, idx) {
+      function addResolverRow(objectType, val) {
+        if (!val || String(val).indexOf('sf:') !== 0) return false;
+        var ri = parseInt(String(val).replace('sf:', ''), 10);
+        var resolverRows = cgbGetResolverRows(objectType);
+        if (isNaN(ri) || ri < 0 || ri >= resolverRows.length) return false;
+        var sheet = '_resolver_' + objectType;
+        if (!map[sheet]) map[sheet] = [];
+        map[sheet].push({ idx: ri, row: resolverRows[ri], source: 'salesforce_resolver' });
+        return true;
+      }
+      function add(sheet, idx, objectType) {
+        if (!idx && idx !== 0) return;
+        if (String(idx).indexOf('sf:') === 0 && objectType && addResolverRow(objectType, idx)) return;
         if (!sheet || idx === '' || idx === null || idx === undefined) return;
         var row = cgbGetRow(sheet, idx);
         if (!row) return;
@@ -49401,12 +49521,12 @@
         map[sheet].push({ idx: parseInt(idx, 10), row: row });
       }
       if (cgbState.seed.sheet) add(cgbState.seed.sheet, cgbState.seed.rowIndex);
-      cgbState.workflow.accounts.forEach(function(v) { add(cgbState.sheetMap.accounts, v); });
-      add(cgbState.sheetMap.opportunity, cgbState.workflow.opportunity);
-      add(cgbState.sheetMap.schedule, cgbState.workflow.schedule);
-      add(cgbState.sheetMap.catalog, cgbState.workflow.catalog);
-      add(cgbState.sheetMap.scheduleCatalog, cgbState.workflow.scheduleCatalog);
-      cgbState.workflow.v2addons.forEach(function(v) { add(cgbState.sheetMap.v2addons, v); });
+      cgbState.workflow.accounts.forEach(function(v) { add(cgbState.sheetMap.accounts, v, 'accounts'); });
+      add(cgbState.sheetMap.opportunity, cgbState.workflow.opportunity, 'opportunity');
+      add(cgbState.sheetMap.schedule, cgbState.workflow.schedule, 'schedule');
+      add(cgbState.sheetMap.catalog, cgbState.workflow.catalog, 'catalog');
+      add(cgbState.sheetMap.scheduleCatalog, cgbState.workflow.scheduleCatalog, 'scheduleCatalog');
+      cgbState.workflow.v2addons.forEach(function(v) { add(cgbState.sheetMap.v2addons, v, 'v2addons'); });
       return map;
     }
 
@@ -49415,6 +49535,10 @@
       if (!page) return;
       cgbLoadPastSessions();
       cgbBuildBatchResolverIndex();
+      cgbFetchResolverAccounts(function() {
+        cgbPopulateWorkflowSelectors();
+        cgbBuildBatchResolverIndex();
+      });
       var legalSel = document.getElementById('cgb-legal-entity');
       var typeSel = document.getElementById('cgb-template-type');
       if (legalSel) legalSel.value = cgbState.legalEntity;
