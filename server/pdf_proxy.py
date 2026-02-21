@@ -67,7 +67,7 @@ from server.routes.glossary import router as glossary_router
 from server.routes.preflight import router as preflight_router
 from server.routes.operations_queue import router as operations_queue_router
 from server.routes.resolver_feed import router as resolver_feed_router
-from server.feature_flags import is_enabled, EVIDENCE_INSPECTOR, is_preflight_enabled, is_ops_view_db_read, is_ops_view_db_write
+from server.feature_flags import is_enabled, EVIDENCE_INSPECTOR, is_preflight_enabled, is_ops_view_db_read, is_ops_view_db_write, is_workspace_v2_enabled, is_workspace_v2_default
 import logging as _logging
 
 @app.on_event("startup")
@@ -100,6 +100,8 @@ def get_feature_flags():
             "PREFLIGHT_GATE_SYNC": is_preflight_enabled(),
             "OPS_VIEW_DB_READ": is_ops_view_db_read(),
             "OPS_VIEW_DB_WRITE": is_ops_view_db_write(),
+            "RECORD_INSPECTOR_V2": is_workspace_v2_enabled(),
+            "RECORD_INSPECTOR_V2_DEFAULT": is_workspace_v2_default(),
         }
     }
 

@@ -3459,6 +3459,10 @@
             <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="12" y1="2" x2="12" y2="22"/></svg></span>
             <span class="nav-label">Contract Generator</span>
           </a>
+          <a class="nav-item" data-page="record-inspector-v2" id="nav-record-inspector-v2" href="#/record-inspector-v2" title="Workspace V2 (Beta)" style="display:none;">
+            <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/></svg></span>
+            <span class="nav-label">Workspace V2</span>
+          </a>
         </div>
 
       </div>
@@ -6474,6 +6478,61 @@
         </div>
       </div><!-- end page-contract-generator -->
 
+      <!-- ========== RECORD INSPECTOR V2 (BETA) WORKSPACE ========== -->
+      <div class="page" id="page-record-inspector-v2" style="display:none;">
+        <div style="display:flex; flex-direction:column; height:100%; min-height:0;">
+          <!-- Workspace V2 Top Bar -->
+          <div id="wsv2-topbar" style="display:flex; align-items:center; gap:12px; padding:12px 20px; border-bottom:1px solid var(--border-1); background:var(--bg-1);">
+            <button class="toolbar-btn" onclick="navigateTo('triage')" style="padding:6px 12px; font-size:0.85em;">← Back</button>
+            <h2 style="margin:0; font-size:1.1em; font-weight:600; color:var(--text-1);">Record Inspector V2 <span style="font-size:0.7em; background:#e3f2fd; color:#1565c0; padding:2px 8px; border-radius:4px; margin-left:6px;">Beta</span></h2>
+            <div id="wsv2-record-identity" style="flex:1; font-size:0.85em; color:var(--text-3);"></div>
+            <div id="wsv2-gate-badge" style="font-size:0.8em; font-weight:600; padding:4px 10px; border-radius:4px;"></div>
+          </div>
+
+          <!-- Workspace V2 Main Content: Editor + Evidence -->
+          <div id="wsv2-body" style="display:flex; flex:1; min-height:0; overflow:hidden;">
+            <!-- Left Panel: Section Editor -->
+            <div id="wsv2-editor-panel" style="flex:1; overflow-y:auto; padding:16px 20px; border-right:1px solid var(--border-1);">
+              <!-- Green attestation control -->
+              <div id="wsv2-green-attestation" style="display:none; margin-bottom:16px; padding:12px 16px; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:8px;">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.9em;">
+                  <input type="checkbox" id="wsv2-attest-checkbox" onchange="_wsv2OnAttestChange(this.checked)">
+                  <span style="font-weight:600; color:#2e7d32;">I reviewed all sections</span>
+                </label>
+                <p style="margin:6px 0 0; font-size:0.8em; color:#558b2f;">Manual attestation required before proceeding with green-gate contracts.</p>
+              </div>
+
+              <!-- Section check groups -->
+              <div id="wsv2-sections-container"></div>
+
+              <!-- Unmap/Alias controls (Phase 3) -->
+              <div id="wsv2-mapping-controls" style="display:none;"></div>
+
+              <!-- Clause Composer (Phase 4) -->
+              <div id="wsv2-clause-composer" style="display:none;"></div>
+
+              <!-- Counterparty Create (Phase 5) -->
+              <div id="wsv2-counterparty-section" style="display:none;"></div>
+
+              <!-- Footer Actions -->
+              <div id="wsv2-footer" style="margin-top:20px; padding:16px 0; border-top:1px solid var(--border-1); display:flex; gap:10px; flex-wrap:wrap;">
+                <button id="wsv2-btn-save-draft" class="pftl-action-btn" style="background:#455a64;color:#fff;" onclick="_wsv2SaveDraft()" disabled>Save Draft</button>
+                <button id="wsv2-btn-submit" class="pftl-action-btn" style="background:#2e7d32;color:#fff;" onclick="_wsv2SubmitPatch()" disabled>Submit Correction</button>
+                <span id="wsv2-footer-status" style="font-size:0.82em; color:#999; align-self:center;"></span>
+              </div>
+            </div>
+
+            <!-- Right Panel: Evidence/PDF Viewer -->
+            <div id="wsv2-evidence-panel" style="flex:1; overflow-y:auto; padding:16px; background:var(--bg-base);">
+              <div id="wsv2-evidence-header" style="margin-bottom:12px; font-weight:600; font-size:0.9em; color:var(--text-2);">Evidence Context</div>
+              <div id="wsv2-evidence-content" style="font-size:0.85em; color:var(--text-3);">
+                <p style="color:#999;">Open a contract from the Preflight Test Lab to see evidence context here.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- end page-record-inspector-v2 -->
+
     </main><!-- end main-content -->
   </div><!-- end app-layout -->
 
@@ -8229,29 +8288,36 @@
       architect: {
         role_id: 'architect',
         display_name: 'Architect',
-        permissions: ['admin_access', 'truth_pack', 'calibration', 'role_edit', 'invite_manage', 'config_manage', 'baseline_promote', 'baseline_rollback'],
+        permissions: ['admin_access', 'truth_pack', 'calibration', 'role_edit', 'invite_manage', 'config_manage', 'baseline_promote', 'baseline_rollback', 'ingestion_edit', 'ingestion_unmap', 'ingestion_alias', 'ingestion_override', 'generation_compose', 'generation_preview', 'generation_draft'],
         active: true,
         editable_by_architect: true
       },
       admin: {
         role_id: 'admin',
         display_name: 'Admin',
-        permissions: ['admin_access', 'config_manage', 'baseline_rollback', 'user_manage'],
+        permissions: ['admin_access', 'config_manage', 'baseline_rollback', 'user_manage', 'ingestion_edit', 'ingestion_unmap', 'ingestion_alias', 'ingestion_override', 'generation_compose', 'generation_preview', 'generation_draft'],
         active: true,
         editable_by_architect: true
       },
       verifier: {
         role_id: 'verifier',
         display_name: 'Verifier',
-        permissions: ['review_access', 'patch_verify'],
+        permissions: ['review_access', 'patch_verify', 'ingestion_edit', 'generation_preview'],
         active: true,
         editable_by_architect: true
       },
       analyst: {
         role_id: 'analyst',
         display_name: 'Analyst',
-        permissions: ['triage_access', 'patch_create', 'srr_access'],
+        permissions: ['triage_access', 'patch_create', 'srr_access', 'ingestion_edit', 'ingestion_unmap', 'ingestion_alias', 'ingestion_override'],
         active: true,
+        editable_by_architect: true
+      },
+      contract_author: {
+        role_id: 'contract_author',
+        display_name: 'Contract Author',
+        permissions: ['generation_compose', 'generation_preview', 'generation_draft'],
+        active: false,
         editable_by_architect: true
       }
     };
@@ -15229,8 +15295,7 @@
             created_at_utc: r.created_at_utc,
             patch_kind: r.patch_kind || null,
             status: r.status || null,
-            evidence_pack: r.evidence_pack || null,
-            preflight_context: r.preflight_context || null
+            evidence_pack: r.evidence_pack || null
           };
         })
       }, null, 2);
@@ -25821,7 +25886,7 @@
       options = options || {};
       // Loader is now a drawer, not a page - redirect loader requests to triage
       if (page === 'loader') page = 'triage';
-      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-org', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'contract-generator', 'row', 'restricted'];
+      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-org', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'contract-generator', 'record-inspector-v2', 'row', 'restricted'];
       var _basePage = page.split('/')[0];
       if (_basePage === 'row') {
         if (_srrCurrentPage !== 'row') {
@@ -25888,6 +25953,12 @@
       if (page === 'contract-generator' && currentMode !== 'admin') {
         console.log('[Navigate] Contract Generator page requires admin mode');
         restrictedReason = 'Contract Generator is only available to users with the Admin role.';
+      }
+      if (page === 'record-inspector-v2') {
+        if (!FEATURE_FLAGS.RECORD_INSPECTOR_V2) {
+          console.log('[Navigate] Record Inspector V2 requires RECORD_INSPECTOR_V2 feature flag');
+          restrictedReason = 'Record Inspector V2 (Beta) is not enabled. Contact your administrator.';
+        }
       }
       if (page === 'review' && currentMode !== 'verifier' && currentMode !== 'admin') {
         console.log('[Navigate] Review page requires verifier/admin mode');
@@ -26038,6 +26109,9 @@
       }
       if (page === 'contract-generator') {
         setTimeout(function() { if (typeof cgbInitPage === 'function') cgbInitPage(); }, 0);
+      }
+      if (page === 'record-inspector-v2') {
+        setTimeout(function() { if (typeof _wsv2InitPage === 'function') _wsv2InitPage(); }, 0);
       }
       
       // v1.5.1: Show/hide Patch Tester tab based on role when entering SSR
@@ -27772,7 +27846,10 @@
     // Feature Flags (V1 defaults)
     var FEATURE_FLAGS = {
       connectors_enabled: false,  // V1: offline-first, no connectors
-      PREFLIGHT_GATE_SYNC: false
+      PREFLIGHT_GATE_SYNC: false,
+      RECORD_INSPECTOR_V2: false,  // V3: Unified workspace (Record Inspector V2 Beta)
+      RECORD_INSPECTOR_V2_DEFAULT: false,  // V3: Make workspace the default PTL edit target
+      RECORD_INSPECTOR_V2_LEGACY_HIDDEN: false  // V3.1+: Hide legacy nav items after cutover
     };
     
     // Data Source Panel - unified entry point (v1.5.0)
@@ -41618,7 +41695,19 @@
         _opsViewFlags.dbRead = !!(d && d.data && d.data.OPS_VIEW_DB_READ);
         _opsViewFlags.dbWrite = !!(d && d.data && d.data.OPS_VIEW_DB_WRITE);
         _opsViewFlags.loaded = true;
-        console.log('[OpsView] Feature flags loaded:', _opsViewFlags);
+        // V3: Sync workspace feature flags from server
+        if (d && d.data) {
+          if (d.data.RECORD_INSPECTOR_V2 === true) FEATURE_FLAGS.RECORD_INSPECTOR_V2 = true;
+          if (d.data.RECORD_INSPECTOR_V2_DEFAULT === true) FEATURE_FLAGS.RECORD_INSPECTOR_V2_DEFAULT = true;
+          // V3: Show/hide workspace nav item based on flag
+          var wsNav = document.getElementById('nav-record-inspector-v2');
+          if (wsNav) wsNav.style.display = FEATURE_FLAGS.RECORD_INSPECTOR_V2 ? '' : 'none';
+          // V3: Activate contract_author role when workspace V2 is enabled
+          if (FEATURE_FLAGS.RECORD_INSPECTOR_V2 && typeof ROLE_REGISTRY !== 'undefined' && ROLE_REGISTRY.contract_author) {
+            ROLE_REGISTRY.contract_author.active = true;
+          }
+        }
+        console.log('[OpsView] Feature flags loaded:', _opsViewFlags, 'V3:', FEATURE_FLAGS.RECORD_INSPECTOR_V2);
         if (_opsViewFlags.dbRead) opsDbHydrateQueue();
       }).catch(function(e) { console.warn('[OpsView] Feature flag fetch failed, staying localStorage-only:', e); });
     })();
@@ -61581,6 +61670,9 @@ var P022_RuntimeValidation = {
       html += '<span style="color:#999;font-size:0.85em;">Admin-only. Actions are restricted.</span>';
     } else {
       html += '<button class="pftl-action-btn" style="background:#1565c0;color:#fff;" onclick="pftlOpenContractGenerator()">Open Contract Generator</button>';
+      if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.RECORD_INSPECTOR_V2) {
+        html += '<button class="pftl-action-btn" style="background:#0d47a1;color:#fff;" onclick="pftlOpenWorkspaceV2()">Edit in Workspace</button>';
+      }
       html += '<button class="pftl-action-btn" style="background:#455a64;color:#fff;" onclick="pftlSubmitFromLab(\'comment\', true)">Save Comment Draft</button>';
       html += '<button class="pftl-action-btn" style="background:#5d4037;color:#fff;" onclick="pftlSubmitFromLab(\'comment\', false)">Submit Comment</button>';
       html += '<button class="pftl-action-btn" style="background:#2e7d32;color:#fff;" onclick="pftlSubmitFromLab(\'correction\', false)"' + (submitState.allowCorrection ? '' : ' disabled') + '>Submit Correction</button>';
@@ -61857,6 +61949,824 @@ var P022_RuntimeValidation = {
   }
 })();
 </script>
+
+<!-- ========== RECORD INSPECTOR V2 (BETA) WORKSPACE ENGINE ========== -->
+<script>
+(function() {
+  'use strict';
+
+  // ===== WSV2 STATE =====
+  var _wsv2State = {
+    initialized: false,
+    context: null,           // PTL deep-link context payload
+    attestChecked: false,    // Green manual attestation
+    edits: [],               // Proposed field edits with reasons
+    unmappedExtractions: [], // Phase 3: unmapped highlights
+    aliases: [],             // Phase 3: created aliases
+    clauseSelections: {},    // Phase 4: clause inclusion state
+    counterpartyForm: null,  // Phase 5: new counterparty data
+    permissionDomain: null   // Phase 6: current permission domain context
+  };
+
+  // Store context on window for cross-module access
+  window._workspaceV2Context = null;
+
+  // ===== AUDIT HELPERS =====
+  function _wsv2Audit(eventType, detail) {
+    detail = detail || {};
+    detail.at_utc = new Date().toISOString();
+    detail.actor = (typeof currentMode !== 'undefined') ? currentMode : 'unknown';
+    detail.role = detail.actor;
+    if (_wsv2State.context) {
+      detail.record_key = _wsv2State.context.record_key || '';
+      detail.scope = _wsv2State.context.scope || '';
+      detail.check_code = _wsv2State.context.check_code || '';
+    }
+    if (typeof AuditTimeline !== 'undefined' && AuditTimeline.emit) {
+      AuditTimeline.emit(eventType, detail);
+    }
+    console.log('[WSV2] Audit:', eventType, detail);
+  }
+
+  // ===== PERMISSION HELPERS (Phase 6) =====
+  var WSV2_PERMISSIONS = {
+    ingestion: ['ingestion_edit', 'ingestion_unmap', 'ingestion_alias', 'ingestion_override'],
+    generation: ['generation_compose', 'generation_preview', 'generation_draft']
+  };
+
+  function _wsv2HasPerm(perm) {
+    var role = (typeof currentMode !== 'undefined') ? currentMode : 'analyst';
+    // Admin/architect always have full permissions
+    if (role === 'admin' || role === 'architect') return true;
+    if (typeof hasPermission === 'function') return hasPermission(role, perm);
+    // Fallback: analyst gets ingestion, contract_author gets generation
+    if (role === 'analyst') return WSV2_PERMISSIONS.ingestion.indexOf(perm) >= 0 || perm === 'patch_create';
+    if (role === 'contract_author') return WSV2_PERMISSIONS.generation.indexOf(perm) >= 0;
+    return false;
+  }
+
+  // ===== PAGE INIT (called by navigateTo) =====
+  window._wsv2InitPage = function() {
+    var ctx = window._workspaceV2Context;
+    if (ctx) {
+      _wsv2State.context = ctx;
+      _wsv2State.initialized = true;
+      _wsv2RenderWorkspace();
+    } else {
+      // No context — show placeholder
+      var container = document.getElementById('wsv2-sections-container');
+      if (container) container.innerHTML = '<p style="color:#999; font-size:0.9em;">No context loaded. Open a contract from the Preflight Test Lab and click "Edit in Workspace" to begin.</p>';
+    }
+  };
+
+  // ===== PTL DEEP-LINK (Phase 1) =====
+  window.pftlOpenWorkspaceV2 = function(scope, checkCode) {
+    if (typeof _pftlState === 'undefined' || !_pftlState.result) {
+      if (typeof showToast === 'function') showToast('No preflight result available.', 'warning');
+      return;
+    }
+    var r = _pftlState.result;
+    var assigns = (typeof _pftlGetAssignments === 'function') ? _pftlGetAssignments() : {};
+    var findings = (typeof _pftlCollectCheckFindings === 'function') ? _pftlCollectCheckFindings(r) : [];
+
+    // Build context payload per spec
+    var ctx = {
+      record_key: (typeof _pftlGetRecordKey === 'function') ? _pftlGetRecordKey() : '',
+      doc_id: r.doc_id || '',
+      scope: scope || '',
+      check_code: checkCode || '',
+      check_label: '',
+      base_status: '',
+      effective_status: '',
+      base_value: '',
+      effective_value: '',
+      gate_color: r.gate_color || 'UNKNOWN',
+      health_score: r.health_score || null,
+      preflight_result: r,
+      assignments: assigns,
+      findings: findings,
+      preflight_context: (typeof _pftlBuildPreflightContext === 'function') ? _pftlBuildPreflightContext('workspace') : null
+    };
+
+    // Find specific check details if scope + checkCode provided
+    if (scope && checkCode) {
+      var sectionData = r[scope] || {};
+      var checks = sectionData.checks || [];
+      for (var i = 0; i < checks.length; i++) {
+        if (checks[i].code === checkCode) {
+          ctx.check_label = checks[i].label || checkCode;
+          ctx.base_status = checks[i].status || '';
+          ctx.base_value = checks[i].value || '';
+          // Get effective values from overrides
+          if (typeof _pftlGetEffectiveCheckStatus === 'function') {
+            ctx.effective_status = _pftlGetEffectiveCheckStatus(scope, checkCode, ctx.base_status);
+          }
+          if (typeof _pftlGetEffectiveCheckValue === 'function') {
+            ctx.effective_value = _pftlGetEffectiveCheckValue(scope, checkCode, ctx.base_value);
+          }
+          break;
+        }
+      }
+    }
+
+    window._workspaceV2Context = ctx;
+    _wsv2State.context = ctx;
+    _wsv2State.edits = [];
+    _wsv2State.attestChecked = false;
+    _wsv2State.unmappedExtractions = [];
+    _wsv2State.aliases = [];
+    _wsv2State.clauseSelections = {};
+
+    _wsv2Audit('PTL_EDIT_OPENED', { scope: scope, check_code: checkCode, gate_color: ctx.gate_color });
+
+    if (typeof navigateTo === 'function') navigateTo('record-inspector-v2');
+  };
+
+  // ===== WORKSPACE RENDERING (Phase 2) =====
+  function _wsv2RenderWorkspace() {
+    var ctx = _wsv2State.context;
+    if (!ctx) return;
+
+    // Top bar
+    var identEl = document.getElementById('wsv2-record-identity');
+    if (identEl) identEl.textContent = ctx.record_key ? ('Record: ' + ctx.record_key) : '';
+
+    var badgeEl = document.getElementById('wsv2-gate-badge');
+    if (badgeEl) {
+      var gc = (ctx.gate_color || 'UNKNOWN').toUpperCase();
+      badgeEl.textContent = gc;
+      badgeEl.style.background = gc === 'GREEN' ? '#e8f5e9' : gc === 'YELLOW' ? '#fff8e1' : gc === 'RED' ? '#ffebee' : '#f5f5f5';
+      badgeEl.style.color = gc === 'GREEN' ? '#2e7d32' : gc === 'YELLOW' ? '#f57f17' : gc === 'RED' ? '#c62828' : '#666';
+    }
+
+    // Green attestation
+    var attestEl = document.getElementById('wsv2-green-attestation');
+    if (attestEl) attestEl.style.display = (ctx.gate_color === 'GREEN') ? 'block' : 'none';
+
+    // Render section checks
+    _wsv2RenderSections();
+
+    // Evidence panel
+    _wsv2RenderEvidence();
+
+    // Mapping controls (Phase 3)
+    _wsv2RenderMappingControls();
+
+    // Clause composer (Phase 4)
+    _wsv2RenderClauseComposer();
+
+    // Counterparty section (Phase 5)
+    _wsv2RenderCounterpartySection();
+
+    // Update footer state
+    _wsv2UpdateFooter();
+  }
+
+  function _wsv2RenderSections() {
+    var ctx = _wsv2State.context;
+    var container = document.getElementById('wsv2-sections-container');
+    if (!container || !ctx || !ctx.preflight_result) return;
+
+    var r = ctx.preflight_result;
+    var groups = [
+      { key: 'opportunity_spine', label: 'Opportunity Spine' },
+      { key: 'schedule_structure', label: 'Schedule Structure' },
+      { key: 'financials_readiness', label: 'Financials Readiness' },
+      { key: 'addons_readiness', label: 'V2 Add-ons Readiness' }
+    ];
+
+    var html = '';
+    for (var gi = 0; gi < groups.length; gi++) {
+      var g = groups[gi];
+      var section = r[g.key] || {};
+      var checks = section.checks || [];
+      var isTargeted = (ctx.scope === g.key);
+
+      html += '<div class="wsv2-section' + (isTargeted ? ' wsv2-section-targeted' : '') + '" style="margin-bottom:16px; padding:14px 16px; border:1px solid ' + (isTargeted ? '#1976d2' : 'var(--border-1)') + '; border-radius:8px; background:' + (isTargeted ? '#e3f2fd' : 'var(--bg-1)') + ';">';
+      html += '<h3 style="margin:0 0 10px; font-size:0.95em; font-weight:600; color:' + (isTargeted ? '#1565c0' : 'var(--text-1)') + ';">' + _wsv2Esc(g.label);
+      if (section.gate) html += ' <span style="font-size:0.75em; padding:2px 6px; border-radius:3px; background:' + _wsv2GateColor(section.gate) + '; color:#fff;">' + _wsv2Esc(section.gate) + '</span>';
+      html += '</h3>';
+
+      if (!checks.length) {
+        html += '<p style="color:#999; font-size:0.82em;">No checks in this section.</p>';
+      } else {
+        html += '<table style="width:100%; border-collapse:collapse; font-size:0.82em;">';
+        html += '<thead><tr style="border-bottom:1px solid var(--border-1);">';
+        html += '<th style="text-align:left; padding:6px 8px;">Check</th>';
+        html += '<th style="text-align:left; padding:6px 8px;">Status</th>';
+        html += '<th style="text-align:left; padding:6px 8px;">Value</th>';
+        html += '<th style="text-align:center; padding:6px 8px;">Action</th>';
+        html += '</tr></thead><tbody>';
+
+        for (var ci = 0; ci < checks.length; ci++) {
+          var ck = checks[ci];
+          var isCheck = (ctx.check_code === ck.code && isTargeted);
+          var effStatus = ck.status || 'unknown';
+          var effValue = ck.value || '';
+
+          // Get effective values if overrides exist
+          if (typeof _pftlGetEffectiveCheckStatus === 'function') {
+            effStatus = _pftlGetEffectiveCheckStatus(g.key, ck.code, effStatus);
+          }
+          if (typeof _pftlGetEffectiveCheckValue === 'function') {
+            effValue = _pftlGetEffectiveCheckValue(g.key, ck.code, effValue);
+          }
+
+          var isUnmapped = _wsv2IsUnmapped(g.key, ck.code);
+
+          html += '<tr style="border-bottom:1px solid var(--border-1);' + (isCheck ? ' background:#bbdefb;' : '') + (isUnmapped ? ' text-decoration:line-through; opacity:0.6;' : '') + '">';
+          html += '<td style="padding:6px 8px; font-weight:' + (isCheck ? '600' : '400') + ';">' + _wsv2Esc(ck.label || ck.code);
+          if (isUnmapped) html += ' <span style="font-size:0.7em; background:#ff9800; color:#fff; padding:1px 4px; border-radius:3px;">unmapped</span>';
+          html += '</td>';
+          html += '<td style="padding:6px 8px;"><span style="color:' + (effStatus === 'pass' ? '#2e7d32' : effStatus === 'fail' ? '#c62828' : '#f57f17') + ';">' + _wsv2Esc(effStatus) + '</span></td>';
+          html += '<td style="padding:6px 8px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + _wsv2Esc(String(effValue)) + '</td>';
+          html += '<td style="padding:6px 8px; text-align:center;">';
+          if (!isUnmapped) {
+            html += '<button onclick="_wsv2EditCheck(\'' + _wsv2JsEsc(g.key) + '\',\'' + _wsv2JsEsc(ck.code) + '\')" style="padding:3px 8px; font-size:0.8em; border:1px solid #1976d2; background:#e3f2fd; color:#1565c0; border-radius:4px; cursor:pointer;">Edit</button> ';
+            if (_wsv2HasPerm('ingestion_unmap')) {
+              html += '<button onclick="_wsv2UnmapHighlight(\'' + _wsv2JsEsc(g.key) + '\',\'' + _wsv2JsEsc(ck.code) + '\')" style="padding:3px 8px; font-size:0.8em; border:1px solid #ff9800; background:#fff3e0; color:#e65100; border-radius:4px; cursor:pointer;" title="Mark as false positive">Unmap</button>';
+            }
+          }
+          html += '</td></tr>';
+        }
+        html += '</tbody></table>';
+      }
+      html += '</div>';
+    }
+
+    container.innerHTML = html;
+
+    // Focus targeted section
+    if (ctx.scope) {
+      _wsv2Audit('WORKSPACE_SECTION_FOCUSED', { scope: ctx.scope, check_code: ctx.check_code });
+    }
+  }
+
+  // ===== EVIDENCE PANEL (Phase 2) =====
+  function _wsv2RenderEvidence() {
+    var ctx = _wsv2State.context;
+    var contentEl = document.getElementById('wsv2-evidence-content');
+    if (!contentEl || !ctx) return;
+
+    var r = ctx.preflight_result || {};
+    var html = '';
+
+    // Document info
+    if (r.doc_id || r.file_url) {
+      html += '<div style="margin-bottom:12px; padding:10px; background:var(--bg-1); border:1px solid var(--border-1); border-radius:6px;">';
+      html += '<div style="font-weight:600; font-size:0.85em; margin-bottom:4px;">Document</div>';
+      if (r.doc_id) html += '<div style="font-size:0.8em; color:var(--text-3);">ID: ' + _wsv2Esc(r.doc_id) + '</div>';
+      if (r.file_url) html += '<div style="font-size:0.8em; color:var(--text-3);">URL: <a href="' + _wsv2Esc(r.file_url) + '" target="_blank" style="color:#1976d2;">' + _wsv2Esc(r.file_url).substring(0, 60) + '...</a></div>';
+      html += '</div>';
+    }
+
+    // Resolution story
+    var story = r.resolution_story || {};
+    if (Object.keys(story).length > 0) {
+      html += '<div style="margin-bottom:12px; padding:10px; background:var(--bg-1); border:1px solid var(--border-1); border-radius:6px;">';
+      html += '<div style="font-weight:600; font-size:0.85em; margin-bottom:4px;">Resolution Story</div>';
+      var storyKeys = Object.keys(story);
+      for (var sk = 0; sk < storyKeys.length; sk++) {
+        var sv = story[storyKeys[sk]];
+        if (sv && typeof sv !== 'object') {
+          html += '<div style="font-size:0.8em; color:var(--text-3);"><strong>' + _wsv2Esc(storyKeys[sk]) + ':</strong> ' + _wsv2Esc(String(sv)) + '</div>';
+        }
+      }
+      html += '</div>';
+    }
+
+    // Findings summary
+    var findings = ctx.findings || [];
+    if (findings.length > 0) {
+      html += '<div style="margin-bottom:12px; padding:10px; background:#fff8e1; border:1px solid #ffe082; border-radius:6px;">';
+      html += '<div style="font-weight:600; font-size:0.85em; margin-bottom:4px; color:#f57f17;">Open Findings (' + findings.length + ')</div>';
+      for (var fi = 0; fi < findings.length; fi++) {
+        var f = findings[fi];
+        html += '<div style="font-size:0.78em; padding:2px 0; color:var(--text-3);">' + _wsv2Esc(f.label) + ' [' + _wsv2Esc(f.status || '') + ']</div>';
+      }
+      html += '</div>';
+    }
+
+    // Page classifications
+    var pages = r.page_classifications || [];
+    if (pages.length > 0) {
+      html += '<div style="margin-bottom:12px; padding:10px; background:var(--bg-1); border:1px solid var(--border-1); border-radius:6px;">';
+      html += '<div style="font-weight:600; font-size:0.85em; margin-bottom:4px;">Page Analysis (' + pages.length + ' pages)</div>';
+      for (var pi = 0; pi < Math.min(pages.length, 10); pi++) {
+        var pg = pages[pi];
+        html += '<div style="font-size:0.78em; padding:1px 0; color:var(--text-3);">Page ' + pg.page + ': ' + _wsv2Esc(pg.mode || 'unknown') + ' (' + (pg.char_count || 0) + ' chars)</div>';
+      }
+      if (pages.length > 10) html += '<div style="font-size:0.75em; color:#999;">... and ' + (pages.length - 10) + ' more pages</div>';
+      html += '</div>';
+    }
+
+    if (!html) html = '<p style="color:#999; font-size:0.85em;">No evidence data available for this document.</p>';
+    contentEl.innerHTML = html;
+  }
+
+  // ===== CHANGE REASON MODAL (Phase 2) =====
+  window._wsv2EditCheck = function(scope, checkCode) {
+    var ctx = _wsv2State.context;
+    if (!ctx || !ctx.preflight_result) return;
+
+    var section = ctx.preflight_result[scope] || {};
+    var checks = section.checks || [];
+    var ck = null;
+    for (var i = 0; i < checks.length; i++) {
+      if (checks[i].code === checkCode) { ck = checks[i]; break; }
+    }
+    if (!ck) return;
+
+    var currentValue = ck.value || '';
+    var currentStatus = ck.status || '';
+    if (typeof _pftlGetEffectiveCheckValue === 'function') currentValue = _pftlGetEffectiveCheckValue(scope, checkCode, currentValue);
+    if (typeof _pftlGetEffectiveCheckStatus === 'function') currentStatus = _pftlGetEffectiveCheckStatus(scope, checkCode, currentStatus);
+
+    _wsv2ShowChangeReasonModal({
+      scope: scope,
+      checkCode: checkCode,
+      label: ck.label || checkCode,
+      currentValue: currentValue,
+      currentStatus: currentStatus
+    });
+  };
+
+  function _wsv2ShowChangeReasonModal(opts) {
+    // Remove existing modal if any
+    var existing = document.getElementById('wsv2-change-modal');
+    if (existing) existing.remove();
+
+    var overlay = document.createElement('div');
+    overlay.id = 'wsv2-change-modal';
+    overlay.className = 'alias-modal-overlay';
+    overlay.innerHTML = '<div class="alias-modal" style="max-width:520px;">' +
+      '<div class="alias-modal-header"><h3>Edit: ' + _wsv2Esc(opts.label) + '</h3><button class="alias-modal-close" onclick="_wsv2CloseChangeModal()">&times;</button></div>' +
+      '<div class="alias-modal-body">' +
+        '<div style="margin-bottom:12px;">' +
+          '<label style="display:block; font-size:0.8em; color:#666; margin-bottom:4px;">Current Status</label>' +
+          '<div style="padding:6px 10px; background:#f5f5f5; border-radius:4px; font-size:0.85em;">' + _wsv2Esc(opts.currentStatus) + '</div>' +
+        '</div>' +
+        '<div style="margin-bottom:12px;">' +
+          '<label style="display:block; font-size:0.8em; color:#666; margin-bottom:4px;">New Status</label>' +
+          '<select id="wsv2-modal-status" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.85em;">' +
+            '<option value="">Keep current</option>' +
+            '<option value="pass">Pass</option>' +
+            '<option value="fail">Fail</option>' +
+            '<option value="warning">Warning</option>' +
+          '</select>' +
+        '</div>' +
+        '<div style="margin-bottom:12px;">' +
+          '<label style="display:block; font-size:0.8em; color:#666; margin-bottom:4px;">Current Value</label>' +
+          '<div style="padding:6px 10px; background:#f5f5f5; border-radius:4px; font-size:0.85em; max-height:60px; overflow:auto;">' + _wsv2Esc(opts.currentValue) + '</div>' +
+        '</div>' +
+        '<div style="margin-bottom:12px;">' +
+          '<label style="display:block; font-size:0.8em; color:#666; margin-bottom:4px;">New Value (optional)</label>' +
+          '<input type="text" id="wsv2-modal-value" placeholder="Leave empty to keep current" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.85em; box-sizing:border-box;">' +
+        '</div>' +
+        '<div style="margin-bottom:12px;">' +
+          '<label style="display:block; font-size:0.8em; color:#666; margin-bottom:4px;">Reason / Evidence <span style="color:red;">*</span></label>' +
+          '<textarea id="wsv2-modal-reason" rows="3" placeholder="Explain why this change is needed (min 10 characters)" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.85em; resize:vertical; box-sizing:border-box;"></textarea>' +
+          '<div id="wsv2-modal-reason-error" style="display:none; color:#c62828; font-size:0.75em; margin-top:4px;"></div>' +
+        '</div>' +
+        '<div style="display:flex; gap:8px; justify-content:flex-end;">' +
+          '<button onclick="_wsv2CloseChangeModal()" style="padding:8px 16px; background:#f5f5f5; border:1px solid #ddd; border-radius:4px; cursor:pointer; font-size:0.85em;">Cancel</button>' +
+          '<button onclick="_wsv2SubmitChange(\'' + _wsv2JsEsc(opts.scope) + '\',\'' + _wsv2JsEsc(opts.checkCode) + '\')" style="padding:8px 16px; background:#1976d2; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:0.85em;">Apply Change</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+    document.body.appendChild(overlay);
+  }
+
+  window._wsv2CloseChangeModal = function() {
+    var modal = document.getElementById('wsv2-change-modal');
+    if (modal) modal.remove();
+  };
+
+  window._wsv2SubmitChange = function(scope, checkCode) {
+    var reason = (document.getElementById('wsv2-modal-reason') || {}).value || '';
+    var newStatus = (document.getElementById('wsv2-modal-status') || {}).value || '';
+    var newValue = (document.getElementById('wsv2-modal-value') || {}).value || '';
+    var errorEl = document.getElementById('wsv2-modal-reason-error');
+
+    if (reason.trim().length < 10) {
+      if (errorEl) { errorEl.textContent = 'Reason must be at least 10 characters.'; errorEl.style.display = 'block'; }
+      return;
+    }
+
+    // Record the edit
+    var edit = {
+      scope: scope,
+      check_code: checkCode,
+      new_status: newStatus || null,
+      new_value: newValue || null,
+      reason: reason.trim(),
+      timestamp: new Date().toISOString()
+    };
+    _wsv2State.edits.push(edit);
+
+    // Apply overrides to PTL state if functions available
+    if (newStatus && typeof _pftlSetCheckOverride === 'function') {
+      _pftlSetCheckOverride(scope, checkCode, newStatus, reason);
+      _wsv2Audit('STATUS_OVERRIDE_APPLIED', { scope: scope, check_code: checkCode, new_status: newStatus, reason: reason });
+    }
+    if (newValue && typeof _pftlSetCheckValueOverride === 'function') {
+      _pftlSetCheckValueOverride(scope, checkCode, newValue, reason);
+      _wsv2Audit('VALUE_OVERRIDE_APPLIED', { scope: scope, check_code: checkCode, new_value: newValue, reason: reason });
+    }
+
+    _wsv2Audit('FIELD_EDIT_PROPOSED', edit);
+    _wsv2Audit('EVIDENCE_NOTE_CAPTURED', { scope: scope, check_code: checkCode, reason: reason });
+
+    _wsv2CloseChangeModal();
+    _wsv2RenderSections();
+    _wsv2UpdateFooter();
+
+    if (typeof showToast === 'function') showToast('Change recorded for ' + checkCode, 'success');
+  };
+
+  // ===== UNMAP (Phase 3) =====
+  function _wsv2IsUnmapped(scope, checkCode) {
+    for (var i = 0; i < _wsv2State.unmappedExtractions.length; i++) {
+      if (_wsv2State.unmappedExtractions[i].scope === scope && _wsv2State.unmappedExtractions[i].check_code === checkCode) return true;
+    }
+    return false;
+  }
+
+  window._wsv2UnmapHighlight = function(scope, checkCode) {
+    if (_wsv2IsUnmapped(scope, checkCode)) return;
+    if (!_wsv2HasPerm('ingestion_unmap')) {
+      _wsv2Audit('UNMAP_APPLIED_DENIED', { scope: scope, check_code: checkCode });
+      if (typeof showToast === 'function') showToast('Permission denied: requires ingestion_unmap', 'warning');
+      return;
+    }
+    _wsv2State.unmappedExtractions.push({ scope: scope, check_code: checkCode, timestamp: new Date().toISOString() });
+    _wsv2Audit('UNMAP_APPLIED', { scope: scope, check_code: checkCode });
+    _wsv2RenderSections();
+    _wsv2UpdateFooter();
+    if (typeof showToast === 'function') showToast('Extraction unmapped: ' + checkCode, 'info');
+  };
+
+  // ===== ALIAS CREATION (Phase 3) =====
+  function _wsv2RenderMappingControls() {
+    var el = document.getElementById('wsv2-mapping-controls');
+    if (!el || !_wsv2State.context) return;
+    if (!_wsv2HasPerm('ingestion_alias')) { el.style.display = 'none'; return; }
+
+    el.style.display = 'block';
+    var html = '<div style="margin-top:16px; padding:14px 16px; border:1px solid #ffe082; border-radius:8px; background:#fffde7;">';
+    html += '<h3 style="margin:0 0 8px; font-size:0.9em; font-weight:600; color:#f57f17;">Alias Mapping Controls</h3>';
+    html += '<p style="font-size:0.8em; color:#666; margin-bottom:10px;">Create alias terms to remap non-highlighted text to canonical fields. Aliases apply to this document only.</p>';
+    html += '<div style="display:flex; gap:8px; margin-bottom:10px;">';
+    html += '<input type="text" id="wsv2-alias-text" placeholder="Raw text from document" style="flex:1; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em;">';
+    html += '<input type="text" id="wsv2-alias-target" placeholder="Canonical field key" style="flex:1; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em;">';
+    html += '<button onclick="_wsv2CreateAlias()" style="padding:6px 14px; background:#ff8f00; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:0.82em;">Create Alias</button>';
+    html += '</div>';
+
+    // Show existing aliases
+    if (_wsv2State.aliases.length > 0) {
+      html += '<div style="font-size:0.78em; color:#666;">';
+      for (var ai = 0; ai < _wsv2State.aliases.length; ai++) {
+        var a = _wsv2State.aliases[ai];
+        html += '<div style="padding:2px 0;">"' + _wsv2Esc(a.text) + '" → <strong>' + _wsv2Esc(a.target) + '</strong></div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
+  window._wsv2CreateAlias = function() {
+    var textEl = document.getElementById('wsv2-alias-text');
+    var targetEl = document.getElementById('wsv2-alias-target');
+    var text = (textEl || {}).value || '';
+    var target = (targetEl || {}).value || '';
+
+    if (!text.trim() || !target.trim()) {
+      if (typeof showToast === 'function') showToast('Both alias text and target field are required.', 'warning');
+      return;
+    }
+    if (!_wsv2HasPerm('ingestion_alias')) {
+      _wsv2Audit('ALIAS_CREATED_DENIED', { text: text, target: target });
+      if (typeof showToast === 'function') showToast('Permission denied: requires ingestion_alias', 'warning');
+      return;
+    }
+
+    var alias = { text: text.trim(), target: target.trim(), timestamp: new Date().toISOString() };
+    _wsv2State.aliases.push(alias);
+    _wsv2Audit('ALIAS_CREATED', alias);
+    _wsv2Audit('ALIAS_RULE_APPLIED_DOC', { alias_text: alias.text, target_field: alias.target, doc_id: (_wsv2State.context || {}).doc_id || '' });
+
+    if (textEl) textEl.value = '';
+    if (targetEl) targetEl.value = '';
+
+    _wsv2RenderMappingControls();
+    if (typeof showToast === 'function') showToast('Alias created: "' + text + '" → ' + target, 'success');
+  };
+
+  // ===== CLAUSE COMPOSER (Phase 4) =====
+  var CLAUSE_CANONICAL_ORDER = [
+    { key: 'entity_opportunity_resolution', label: 'Entity & Opportunity Resolution', sheets: ['Accounts.*', 'Opportunity.*'] },
+    { key: 'asset_catalog_synchronization', label: 'Asset Catalog Synchronization', sheets: ['Schedule.*', 'Schedule Catalog.*', 'Catalog.*'] },
+    { key: 'financial_rights_modeling', label: 'Financial Rights Modeling', sheets: ['Financials.*', 'V2 Add Ons.*'] }
+  ];
+
+  function _wsv2RenderClauseComposer() {
+    var el = document.getElementById('wsv2-clause-composer');
+    if (!el || !_wsv2State.context) return;
+    if (!_wsv2HasPerm('generation_compose')) { el.style.display = 'none'; return; }
+
+    el.style.display = 'block';
+    var html = '<div style="margin-top:16px; padding:14px 16px; border:1px solid #90caf9; border-radius:8px; background:#e3f2fd;">';
+    html += '<h3 style="margin:0 0 8px; font-size:0.9em; font-weight:600; color:#1565c0;">Clause Composer</h3>';
+    html += '<p style="font-size:0.8em; color:#666; margin-bottom:10px;">Select clause payloads for generation. Canonical ordering is enforced.</p>';
+
+    for (var ci = 0; ci < CLAUSE_CANONICAL_ORDER.length; ci++) {
+      var clause = CLAUSE_CANONICAL_ORDER[ci];
+      var included = !!_wsv2State.clauseSelections[clause.key];
+      html += '<div style="display:flex; align-items:center; gap:10px; padding:8px 10px; margin-bottom:6px; background:' + (included ? '#bbdefb' : '#fff') + '; border:1px solid ' + (included ? '#64b5f6' : '#ddd') + '; border-radius:6px;">';
+      html += '<label style="display:flex; align-items:center; gap:6px; cursor:pointer; flex:1; font-size:0.82em;">';
+      html += '<input type="checkbox" ' + (included ? 'checked' : '') + ' onchange="_wsv2ToggleClause(\'' + _wsv2JsEsc(clause.key) + '\', this.checked)">';
+      html += '<strong>' + _wsv2Esc(clause.label) + '</strong>';
+      html += '</label>';
+      html += '<span style="font-size:0.72em; color:#999;">' + clause.sheets.join(', ') + '</span>';
+      html += '</div>';
+    }
+
+    // Live preview
+    html += '<div style="margin-top:12px;">';
+    html += '<div style="font-weight:600; font-size:0.82em; color:#1565c0; margin-bottom:6px;">Live Preview</div>';
+    html += '<div id="wsv2-clause-preview" style="padding:10px; background:#fff; border:1px solid #ddd; border-radius:6px; font-size:0.78em; min-height:60px; white-space:pre-wrap; font-family:monospace; color:var(--text-3);">';
+    html += _wsv2BuildClausePreview();
+    html += '</div></div>';
+    html += '</div>';
+
+    el.innerHTML = html;
+  }
+
+  window._wsv2ToggleClause = function(clauseKey, included) {
+    if (!_wsv2HasPerm('generation_compose')) {
+      _wsv2Audit(included ? 'CLAUSE_PAYLOAD_ADDED_DENIED' : 'CLAUSE_PAYLOAD_REMOVED_DENIED', { clause: clauseKey });
+      if (typeof showToast === 'function') showToast('Permission denied: requires generation_compose', 'warning');
+      return;
+    }
+    _wsv2State.clauseSelections[clauseKey] = included;
+    _wsv2Audit(included ? 'CLAUSE_PAYLOAD_ADDED' : 'CLAUSE_PAYLOAD_REMOVED', { clause: clauseKey });
+    _wsv2RenderClauseComposer();
+    _wsv2Audit('GENERATION_DRAFT_UPDATED', { clauses: Object.keys(_wsv2State.clauseSelections).filter(function(k) { return _wsv2State.clauseSelections[k]; }) });
+  };
+
+  function _wsv2BuildClausePreview() {
+    var selected = CLAUSE_CANONICAL_ORDER.filter(function(c) { return _wsv2State.clauseSelections[c.key]; });
+    if (!selected.length) return '(No clauses selected — select clauses above to preview)';
+    var preview = '# Contract Draft Preview\n\n';
+    for (var i = 0; i < selected.length; i++) {
+      preview += '## ' + (i + 1) + '. ' + selected[i].label + '\n';
+      preview += 'Sections: ' + selected[i].sheets.join(', ') + '\n';
+      preview += '[Payload fields will be populated from worksheet data]\n\n';
+    }
+    preview += '---\nGenerated: ' + new Date().toISOString() + '\nStatus: DRAFT (requires patch approval)';
+    return _wsv2Esc(preview);
+  }
+
+  // ===== NEW COUNTERPARTY (Phase 5) =====
+  function _wsv2RenderCounterpartySection() {
+    var el = document.getElementById('wsv2-counterparty-section');
+    if (!el || !_wsv2State.context) return;
+    if (!_wsv2HasPerm('ingestion_edit')) { el.style.display = 'none'; return; }
+
+    el.style.display = 'block';
+    var ctx = _wsv2State.context;
+    var story = (ctx.preflight_result || {}).resolution_story || {};
+    var suggestedName = story.counterparty_name || story.extracted_party_name || '';
+
+    var html = '<div style="margin-top:16px; padding:14px 16px; border:1px solid #ce93d8; border-radius:8px; background:#f3e5f5;">';
+    html += '<h3 style="margin:0 0 8px; font-size:0.9em; font-weight:600; color:#7b1fa2;">New Counterparty</h3>';
+    html += '<p style="font-size:0.8em; color:#666; margin-bottom:10px;">Create a new counterparty record when no existing match is found.</p>';
+
+    html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">';
+    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Legal Entity *</label>';
+    html += '<select id="wsv2-cp-legal-entity" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;">';
+    html += '<option value="">Select entity...</option>';
+    // Populate from resolver if available
+    if (typeof cgbState !== 'undefined' && cgbState.resolver && cgbState.resolver.legalEntities) {
+      for (var le = 0; le < cgbState.resolver.legalEntities.length; le++) {
+        html += '<option value="' + _wsv2Esc(cgbState.resolver.legalEntities[le]) + '">' + _wsv2Esc(cgbState.resolver.legalEntities[le]) + '</option>';
+      }
+    }
+    html += '</select></div>';
+
+    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Counterparty Name *</label>';
+    html += '<input type="text" id="wsv2-cp-name" value="' + _wsv2Esc(suggestedName) + '" placeholder="Legal/account name" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+    html += '</div>';
+
+    html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">';
+    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Street Address *</label>';
+    html += '<input type="text" id="wsv2-cp-street" placeholder="Street address" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">City *</label>';
+    html += '<input type="text" id="wsv2-cp-city" placeholder="City" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+    html += '</div>';
+
+    html += '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">';
+    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">State/Province *</label>';
+    html += '<input type="text" id="wsv2-cp-state" placeholder="State" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Postal Code *</label>';
+    html += '<input type="text" id="wsv2-cp-postal" placeholder="Postal code" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Country *</label>';
+    html += '<input type="text" id="wsv2-cp-country" placeholder="Country" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+    html += '</div>';
+
+    html += '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">';
+    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Contact Name *</label>';
+    html += '<input type="text" id="wsv2-cp-contact-name" placeholder="Full name" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Contact Email *</label>';
+    html += '<input type="text" id="wsv2-cp-contact-email" placeholder="email@example.com" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Contact Phone</label>';
+    html += '<input type="text" id="wsv2-cp-contact-phone" placeholder="Phone number" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+    html += '</div>';
+
+    html += '<div id="wsv2-cp-errors" style="display:none; color:#c62828; font-size:0.78em; margin-bottom:8px;"></div>';
+    html += '<button onclick="_wsv2SubmitNewCounterparty()" style="padding:8px 16px; background:#7b1fa2; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:0.85em;">Create Counterparty</button>';
+    html += '</div>';
+
+    el.innerHTML = html;
+  }
+
+  window._wsv2SubmitNewCounterparty = function() {
+    var errors = [];
+    var val = function(id) { return ((document.getElementById(id) || {}).value || '').trim(); };
+
+    var data = {
+      legal_entity: val('wsv2-cp-legal-entity'),
+      name: val('wsv2-cp-name'),
+      street: val('wsv2-cp-street'),
+      city: val('wsv2-cp-city'),
+      state: val('wsv2-cp-state'),
+      postal_code: val('wsv2-cp-postal'),
+      country: val('wsv2-cp-country'),
+      contact_name: val('wsv2-cp-contact-name'),
+      contact_email: val('wsv2-cp-contact-email'),
+      contact_phone: val('wsv2-cp-contact-phone')
+    };
+
+    if (!data.legal_entity) errors.push('Legal entity is required');
+    if (!data.name || data.name.length < 2) errors.push('Counterparty name is required (min 2 characters)');
+    if (!data.street) errors.push('Street address is required');
+    if (!data.city) errors.push('City is required');
+    if (!data.state) errors.push('State/province is required');
+    if (!data.postal_code) errors.push('Postal code is required');
+    if (!data.country) errors.push('Country is required');
+    if (!data.contact_name) errors.push('Contact name is required');
+    if (!data.contact_email || !/\S+@\S+\.\S+/.test(data.contact_email)) errors.push('Valid contact email is required');
+
+    var errEl = document.getElementById('wsv2-cp-errors');
+    if (errors.length > 0) {
+      if (errEl) { errEl.textContent = errors.join('. ') + '.'; errEl.style.display = 'block'; }
+      return;
+    }
+    if (errEl) errEl.style.display = 'none';
+
+    _wsv2State.counterpartyForm = data;
+    _wsv2Audit('NEW_COUNTERPARTY_CREATED', data);
+
+    if (typeof showToast === 'function') showToast('Counterparty created: ' + data.name, 'success');
+    _wsv2UpdateFooter();
+  };
+
+  // ===== ATTESTATION (Phase 2) =====
+  window._wsv2OnAttestChange = function(checked) {
+    _wsv2State.attestChecked = checked;
+    _wsv2UpdateFooter();
+  };
+
+  // ===== FOOTER / SUBMIT (Phase 2) =====
+  function _wsv2UpdateFooter() {
+    var ctx = _wsv2State.context;
+    var saveDraftBtn = document.getElementById('wsv2-btn-save-draft');
+    var submitBtn = document.getElementById('wsv2-btn-submit');
+    var statusEl = document.getElementById('wsv2-footer-status');
+
+    var hasEdits = _wsv2State.edits.length > 0 || _wsv2State.unmappedExtractions.length > 0 || _wsv2State.aliases.length > 0 || _wsv2State.counterpartyForm;
+    var needsAttest = ctx && ctx.gate_color === 'GREEN' && !_wsv2State.attestChecked;
+
+    if (saveDraftBtn) saveDraftBtn.disabled = !hasEdits;
+    if (submitBtn) submitBtn.disabled = !hasEdits || needsAttest;
+    if (statusEl) {
+      if (needsAttest) statusEl.textContent = 'Attestation required for green-gate contracts.';
+      else if (!hasEdits) statusEl.textContent = 'Make edits to enable submission.';
+      else statusEl.textContent = _wsv2State.edits.length + ' edit(s), ' + _wsv2State.unmappedExtractions.length + ' unmap(s), ' + _wsv2State.aliases.length + ' alias(es)';
+    }
+  }
+
+  window._wsv2SaveDraft = function() {
+    var request = _wsv2BuildPatchRequest('comment', true);
+    if (request) {
+      _wsv2Audit('PATCH_DRAFT_CREATED', { request_id: request.request_id });
+      if (typeof showToast === 'function') showToast('Draft saved: ' + request.request_id, 'success');
+    }
+  };
+
+  window._wsv2SubmitPatch = function() {
+    var request = _wsv2BuildPatchRequest('correction', false);
+    if (!request) return;
+
+    _wsv2Audit('PATCH_DRAFT_CREATED', { request_id: request.request_id });
+
+    if (typeof submitPatchRequest === 'function') {
+      var role = (typeof currentMode !== 'undefined') ? currentMode : 'analyst';
+      var actor = role.charAt(0).toUpperCase() + role.slice(1);
+      var submitted = submitPatchRequest(request.request_id, actor, role);
+      if (submitted) {
+        _wsv2Audit('PATCH_SUBMITTED', { request_id: request.request_id });
+        if (typeof showToast === 'function') showToast('Correction submitted: ' + request.request_id, 'success');
+      } else {
+        if (typeof showToast === 'function') showToast('Submission failed.', 'error');
+      }
+    }
+  };
+
+  function _wsv2BuildPatchRequest(kind, draftOnly) {
+    var ctx = _wsv2State.context;
+    if (!ctx) return null;
+
+    var role = (typeof currentMode !== 'undefined') ? currentMode : 'analyst';
+    var proposed = [];
+
+    // Add field edits
+    for (var ei = 0; ei < _wsv2State.edits.length; ei++) {
+      var e = _wsv2State.edits[ei];
+      if (e.new_status) proposed.push({ field: 'preflight.check_override.' + e.scope + '.' + e.check_code, old_value: null, new_value: e.new_status });
+      if (e.new_value) proposed.push({ field: 'preflight.check_value_override.' + e.scope + '.' + e.check_code, old_value: null, new_value: e.new_value });
+    }
+
+    // Add unmapped extractions
+    for (var ui = 0; ui < _wsv2State.unmappedExtractions.length; ui++) {
+      var u = _wsv2State.unmappedExtractions[ui];
+      proposed.push({ field: 'workspace.unmap.' + u.scope + '.' + u.check_code, old_value: null, new_value: 'unmapped' });
+    }
+
+    // Add aliases
+    for (var ai = 0; ai < _wsv2State.aliases.length; ai++) {
+      var a = _wsv2State.aliases[ai];
+      proposed.push({ field: 'workspace.alias.' + a.target, old_value: null, new_value: a.text });
+    }
+
+    // Add counterparty
+    if (_wsv2State.counterpartyForm) {
+      proposed.push({ field: 'workspace.new_counterparty', old_value: null, new_value: JSON.stringify(_wsv2State.counterpartyForm) });
+    }
+
+    // Add clause selections
+    var selectedClauses = Object.keys(_wsv2State.clauseSelections).filter(function(k) { return _wsv2State.clauseSelections[k]; });
+    if (selectedClauses.length > 0) {
+      proposed.push({ field: 'workspace.clause_selections', old_value: null, new_value: selectedClauses.join(',') });
+    }
+
+    if (typeof createPatchRequest !== 'function') return null;
+
+    var request = createPatchRequest({
+      author: role.charAt(0).toUpperCase() + role.slice(1),
+      author_role: role,
+      status: draftOnly ? 'Draft' : 'Submitted',
+      patch_kind: kind,
+      target: 'workspace_v2_correction',
+      sheet: 'Workspace V2',
+      field: 'multi_field_edit',
+      condition_type: 'OTHER',
+      action_type: kind === 'correction' ? 'UPDATE_VALUE' : 'ADD_COMMENT',
+      severity: (ctx.gate_color === 'RED') ? 'blocking' : (ctx.gate_color === 'YELLOW' ? 'warning' : 'info'),
+      risk: (ctx.gate_color === 'RED') ? 'high' : (ctx.gate_color === 'YELLOW' ? 'medium' : 'low'),
+      because: 'Workspace V2 ' + kind + ': ' + _wsv2State.edits.length + ' edit(s), ' + _wsv2State.unmappedExtractions.length + ' unmap(s), ' + _wsv2State.aliases.length + ' alias(es).',
+      rationale: 'Gate: ' + (ctx.gate_color || 'UNKNOWN') + '. Health: ' + (ctx.health_score || 'N/A') + '.',
+      evidence_observation: _wsv2State.edits.map(function(e) { return e.check_code + ': ' + (e.reason || '').substring(0, 80); }).join('; ') || 'No field edits.',
+      evidence_expected: 'Apply workspace corrections and route to review.',
+      evidence_justification: 'Analyst workspace edits with evidence capture.',
+      evidence_repro: 'Open PTL > Edit in Workspace > Apply corrections > Submit.',
+      proposed_changes: proposed,
+      preflight_context: ctx.preflight_context,
+      contract_key: (typeof currentSelection !== 'undefined' && currentSelection && currentSelection.joinIdentity) ? currentSelection.joinIdentity.contractKey : null,
+      file_name: (typeof currentSelection !== 'undefined' && currentSelection && currentSelection.joinIdentity) ? currentSelection.joinIdentity.fileName : null,
+      file_url: (typeof currentSelection !== 'undefined' && currentSelection && currentSelection.joinIdentity) ? currentSelection.joinIdentity.fileUrl : null,
+      record_id: (typeof currentSelection !== 'undefined' && currentSelection && currentSelection.recordIdentity) ? currentSelection.recordIdentity.recordId : null
+    });
+
+    return request;
+  }
+
+  // ===== UTILITY =====
+  function _wsv2Esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function _wsv2JsEsc(s) { return String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+  function _wsv2GateColor(gate) {
+    var g = String(gate || '').toUpperCase();
+    if (g === 'GREEN') return '#4caf50';
+    if (g === 'YELLOW') return '#ff9800';
+    if (g === 'RED') return '#f44336';
+    return '#9e9e9e';
+  }
+
+})();
+</script>
+
 <div id="pftl-overlay" class="pftl-overlay" style="display: none;"></div>
 <!-- Member Drive Folder Modal -->
 <div id="member-drive-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;">

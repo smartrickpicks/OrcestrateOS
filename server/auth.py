@@ -30,11 +30,13 @@ class Role(str, Enum):
     VERIFIER = "verifier"
     ADMIN = "admin"
     ARCHITECT = "architect"
+    CONTRACT_AUTHOR = "contract_author"
 
 
 ROLE_HIERARCHY = {
     Role.ANALYST: 0,
     Role.VERIFIER: 1,
+    Role.CONTRACT_AUTHOR: 1,
     Role.ADMIN: 2,
     Role.ARCHITECT: 3,
 }
