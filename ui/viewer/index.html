@@ -59280,6 +59280,7 @@ var P022_RuntimeValidation = {
     try {
       _pftlRender();
     } catch (renderErr) {
+      console.log('[PFTL-DIAG] RENDER CRASH:', renderErr && renderErr.message ? renderErr.message : String(renderErr), renderErr && renderErr.stack ? renderErr.stack : '');
       console.error('[PFTL] render error after success:', renderErr && renderErr.message ? renderErr.message : renderErr, renderErr && renderErr.stack ? renderErr.stack : '');
       try {
         var overlay = document.getElementById('pftl-overlay');
@@ -59980,7 +59981,12 @@ var P022_RuntimeValidation = {
     }
 
     if (_pftlState.result) {
-      html += _pftlRenderReport(_pftlState.result);
+      try {
+        html += _pftlRenderReport(_pftlState.result);
+      } catch(e) {
+        console.log('[PFTL-DIAG] CRASH in renderReport:', e && e.message ? e.message : e, e && e.stack ? e.stack : '');
+        html += '<div class="pftl-error" style="margin-top:12px;">Report render error: ' + _pftlEsc(e && e.message ? e.message : 'unknown') + '</div>';
+      }
       html += '<details class="pftl-focus-fold">';
       html += '<summary>Field Suggestions (advanced)</summary>';
       html += '<div class="pftl-suggestions-section"><div id="pftl-suggestions-container"></div></div>';
@@ -59990,7 +59996,7 @@ var P022_RuntimeValidation = {
     html += '</div>';
 
     if (_pftlState.result && !_pftlState.forbidden) {
-      html += _pftlRenderFooter(_pftlState.result);
+      try { html += _pftlRenderFooter(_pftlState.result); } catch(e) { console.log('[PFTL-DIAG] CRASH in footer:', e && e.message ? e.message : e); }
     }
 
     html += _pftlRenderOverrideDialog();
@@ -59999,7 +60005,7 @@ var P022_RuntimeValidation = {
     var nextBody = overlay.querySelector('.pftl-body');
     if (nextBody && _pftlState.scrollTop > 0) nextBody.scrollTop = _pftlState.scrollTop;
     if (_pftlState.result) {
-      _pftlRenderSuggestionsSection();
+      try { _pftlRenderSuggestionsSection(); } catch(e) { console.log('[PFTL-DIAG] CRASH in suggestions:', e && e.message ? e.message : e); }
     }
   }
 
@@ -60039,7 +60045,7 @@ var P022_RuntimeValidation = {
     }
     html += '</div>';
 
-    html += _pftlWhyGate(r);
+    try { html += _pftlWhyGate(r); } catch(e) { console.log('[PFTL-DIAG] CRASH in whyGate:', e && e.message ? e.message : e); }
 
     if (r.gate_reasons && r.gate_reasons.length > 0) {
       html += '<div class="pftl-section">';
@@ -60051,21 +60057,21 @@ var P022_RuntimeValidation = {
       html += '</ul></div>';
     }
 
-    html += _pftlFoldSection('Encoding Details', _pftlRenderCorruptionSamples(r), false);
+    try { html += _pftlFoldSection('Encoding Details', _pftlRenderCorruptionSamples(r), false); } catch(e) { console.log('[PFTL-DIAG] CRASH in encoding:', e && e.message ? e.message : e); html += '<div class="pftl-section"><div class="pftl-section-title">Encoding Details</div><div style="color:#e53935;font-size:0.85em;">Section render error: ' + _pftlEsc(e && e.message ? e.message : 'unknown') + '</div></div>'; }
 
-    html += _pftlRenderResolutionStory(r);
+    try { html += _pftlRenderResolutionStory(r); } catch(e) { console.log('[PFTL-DIAG] CRASH in resolution_story:', e && e.message ? e.message : e); html += '<div class="pftl-section"><div class="pftl-section-title">Entity Resolution Story</div><div style="color:#e53935;font-size:0.85em;">Section render error: ' + _pftlEsc(e && e.message ? e.message : 'unknown') + '</div></div>'; }
 
-    html += _pftlRenderOpportunitySpine(r);
+    try { html += _pftlRenderOpportunitySpine(r); } catch(e) { console.log('[PFTL-DIAG] CRASH in opportunity_spine:', e && e.message ? e.message : e); html += '<div class="pftl-section"><div class="pftl-section-title">Opportunity Spine</div><div style="color:#e53935;font-size:0.85em;">Section render error: ' + _pftlEsc(e && e.message ? e.message : 'unknown') + '</div></div>'; }
 
-    html += _pftlRenderScheduleStructure(r);
+    try { html += _pftlRenderScheduleStructure(r); } catch(e) { console.log('[PFTL-DIAG] CRASH in schedule_structure:', e && e.message ? e.message : e); html += '<div class="pftl-section"><div class="pftl-section-title">Schedule Structure</div><div style="color:#e53935;font-size:0.85em;">Section render error: ' + _pftlEsc(e && e.message ? e.message : 'unknown') + '</div></div>'; }
 
+    try { html += _pftlRenderFinancialsReadiness(r); } catch(e) { console.log('[PFTL-DIAG] CRASH in financials:', e && e.message ? e.message : e); html += '<div class="pftl-section"><div class="pftl-section-title">Financials Readiness</div><div style="color:#e53935;font-size:0.85em;">Section render error: ' + _pftlEsc(e && e.message ? e.message : 'unknown') + '</div></div>'; }
 
-    html += _pftlRenderFinancialsReadiness(r);
+    try { html += _pftlRenderAddonsReadiness(r); } catch(e) { console.log('[PFTL-DIAG] CRASH in addons:', e && e.message ? e.message : e); html += '<div class="pftl-section"><div class="pftl-section-title">V2 Add-ons Readiness</div><div style="color:#e53935;font-size:0.85em;">Section render error: ' + _pftlEsc(e && e.message ? e.message : 'unknown') + '</div></div>'; }
 
-    html += _pftlRenderAddonsReadiness(r);
+    try { html += _pftlRenderHealthScore(r); } catch(e) { console.log('[PFTL-DIAG] CRASH in health_score:', e && e.message ? e.message : e); html += '<div class="pftl-section"><div class="pftl-section-title">Contract Health Score</div><div style="color:#e53935;font-size:0.85em;">Section render error: ' + _pftlEsc(e && e.message ? e.message : 'unknown') + '</div></div>'; }
 
-    html += _pftlRenderHealthScore(r);
-    html += _pftlRenderSfMatchSection(r);
+    try { html += _pftlRenderSfMatchSection(r); } catch(e) { console.log('[PFTL-DIAG] CRASH in sf_match:', e && e.message ? e.message : e); html += '<div class="pftl-section"><div class="pftl-section-title">Salesforce Account Match</div><div style="color:#e53935;font-size:0.85em;">Section render error: ' + _pftlEsc(e && e.message ? e.message : 'unknown') + '</div></div>'; }
 
     var diag = '';
     var m = r.metrics || {};
