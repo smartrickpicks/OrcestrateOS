@@ -60035,14 +60035,17 @@ var P022_RuntimeValidation = {
   function _pftlRenderOverrideDialog() {
     var dlg = _pftlState.overrideDialog;
     if (!dlg || !dlg.open) return '';
-    var title = 'Override Status';
-    var sub = (dlg.label || dlg.code || 'Check') + ' → ' + String(dlg.status || '').toUpperCase();
+    var isValue = dlg.kind === 'value';
+    var title = isValue ? 'Override Value' : 'Override Status';
+    var sub = isValue
+      ? (dlg.label || dlg.code || 'Check') + ' → ' + String(dlg.value || '')
+      : (dlg.label || dlg.code || 'Check') + ' → ' + String(dlg.status || '').toUpperCase();
     var comment = dlg.comment || '';
     var html = '<div class="pftl-override-modal-backdrop">';
     html += '<div class="pftl-override-modal">';
     html += '<h4>' + _pftlEsc(title) + '</h4>';
-    html += '<p>' + _pftlEsc(sub) + '. Add a brief comment for audit trail.</p>';
-    html += '<textarea id="pftl-override-comment" placeholder="Reason for override (required)">' + _pftlEsc(comment) + '</textarea>';
+    html += '<p>' + _pftlEsc(sub) + '. Add evidence or reason for audit trail.</p>';
+    html += '<textarea id="pftl-override-comment" placeholder="Evidence / reason for override (required)">' + _pftlEsc(comment) + '</textarea>';
     html += '<div class="pftl-override-modal-actions">';
     html += '<button type="button" class="cancel" onclick="pftlCloseCheckOverrideDialog()">Cancel</button>';
     html += '<button type="button" class="confirm" onclick="pftlConfirmCheckOverride()">Apply Override</button>';
@@ -60581,7 +60584,7 @@ var P022_RuntimeValidation = {
       if (!hasEffective) options.unshift(String(effective));
     }
     var html = '<div class="pftl-value-editor" style="margin-top:6px;display:flex;gap:6px;align-items:center;">';
-    html += '<select style="min-width:170px;max-width:260px;" onchange="pftlApplyCheckValueOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(ck.code) + '\', this.value)">';
+    html += '<select style="min-width:170px;max-width:260px;" onchange="pftlOpenCheckValueOverrideDialog(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(ck.code) + '\', this.value)">';
     html += '<option value="">— select schema option —</option>';
     for (var oi = 0; oi < options.length; oi++) {
       var opt = String(options[oi]);
@@ -60618,6 +60621,30 @@ var P022_RuntimeValidation = {
     if (!assigns.check_value_overrides) assigns.check_value_overrides = {};
     delete assigns.check_value_overrides[_pftlOverrideKey(scope, code)];
     _pftlSaveAssignments();
+    _pftlRender();
+  };
+
+  window.pftlOpenCheckValueOverrideDialog = function(scope, code, value) {
+    if (!value) return;
+    var r = _pftlState.result || {};
+    var label = code;
+    var groups = ['opportunity_spine', 'schedule_structure', 'financials_readiness', 'addons_readiness'];
+    for (var gi = 0; gi < groups.length; gi++) {
+      var checks = ((r[groups[gi]] || {}).checks || []);
+      for (var ci = 0; ci < checks.length; ci++) {
+        if (checks[ci] && checks[ci].code === code) { label = checks[ci].label || checks[ci].code; break; }
+      }
+    }
+    var current = _pftlGetCheckValueOverride(scope, code);
+    _pftlState.overrideDialog = {
+      open: true,
+      kind: 'value',
+      scope: scope,
+      code: code,
+      value: value,
+      label: label,
+      comment: (current && current.comment) ? current.comment : ''
+    };
     _pftlRender();
   };
 
@@ -60736,10 +60763,27 @@ var P022_RuntimeValidation = {
     var txt = document.getElementById('pftl-override-comment');
     var comment = txt ? String(txt.value || '').trim() : '';
     if (!comment) {
-      if (typeof showToast === 'function') showToast('Override comment is required.', 'warning');
+      if (typeof showToast === 'function') showToast('Override evidence is required.', 'warning');
       return;
     }
-    pftlApplyCheckOverride(dlg.scope, dlg.code, dlg.status, comment);
+    if (dlg.kind === 'value') {
+      var assigns = _pftlGetAssignments();
+      if (!assigns.check_value_overrides) assigns.check_value_overrides = {};
+      var key = _pftlOverrideKey(dlg.scope, dlg.code);
+      var nextVal = dlg.value === undefined || dlg.value === null ? '' : String(dlg.value).trim();
+      if (!nextVal) {
+        delete assigns.check_value_overrides[key];
+      } else {
+        assigns.check_value_overrides[key] = {
+          value: nextVal,
+          comment: comment,
+          ts: new Date().toISOString()
+        };
+      }
+      _pftlSaveAssignments();
+    } else {
+      pftlApplyCheckOverride(dlg.scope, dlg.code, dlg.status, comment);
+    }
     _pftlState.overrideDialog = null;
     _pftlRender();
   };
@@ -61071,6 +61115,8 @@ var P022_RuntimeValidation = {
       if (effectiveStatus !== st) oppReason = 'Analyst override \u2192 ' + String(effectiveStatus || '').toUpperCase() + (oppReason ? '. ' + oppReason : '');
       var oppOverride = _pftlGetCheckOverride('opportunity_spine', ck.code);
       if (oppOverride && oppOverride.comment) oppReason += (oppReason ? ' ' : '') + '(Comment: ' + oppOverride.comment + ')';
+      var oppValOv = _pftlGetCheckValueOverride('opportunity_spine', ck.code);
+      if (oppValOv && oppValOv.comment) oppReason += (oppReason ? ' ' : '') + '(Value evidence: ' + oppValOv.comment + ')';
       html += '<td class="opp-reason">' + (oppReason ? _pftlEsc(oppReason) : '') + '</td>';
       html += '</tr>';
 
@@ -61191,6 +61237,8 @@ var P022_RuntimeValidation = {
       if (effectiveStatus !== st) reasonText = 'Analyst override \u2192 ' + String(effectiveStatus || '').toUpperCase() + (reasonText ? '. ' + reasonText : '');
       var schOverride = _pftlGetCheckOverride('schedule_structure', ck.code);
       if (schOverride && schOverride.comment) reasonText += (reasonText ? ' ' : '') + '(Comment: ' + schOverride.comment + ')';
+      var schValOv = _pftlGetCheckValueOverride('schedule_structure', ck.code);
+      if (schValOv && schValOv.comment) reasonText += (reasonText ? ' ' : '') + '(Value evidence: ' + schValOv.comment + ')';
       html += '<td class="sch-reason">' + (reasonText ? _pftlEsc(reasonText) : '') + '</td>';
       html += '</tr>';
 
@@ -61260,6 +61308,8 @@ var P022_RuntimeValidation = {
       if (effectiveStatus !== st) finReason = 'Analyst override → ' + String(effectiveStatus || '').toUpperCase() + (finReason ? '. ' + finReason : '');
       var finOverride = _pftlGetCheckOverride('financials_readiness', ck.code);
       if (finOverride && finOverride.comment) finReason += (finReason ? ' ' : '') + '(Comment: ' + finOverride.comment + ')';
+      var finValOv = _pftlGetCheckValueOverride('financials_readiness', ck.code);
+      if (finValOv && finValOv.comment) finReason += (finReason ? ' ' : '') + '(Value evidence: ' + finValOv.comment + ')';
       html += '<td class="sch-reason">' + (finReason ? _pftlEsc(finReason) : '') + '</td>';
       html += '</tr>';
     }
@@ -61309,6 +61359,8 @@ var P022_RuntimeValidation = {
       if (effectiveStatus !== st) addonReason = 'Analyst override → ' + String(effectiveStatus || '').toUpperCase() + (addonReason ? '. ' + addonReason : '');
       var addonOverride = _pftlGetCheckOverride('addons_readiness', ck.code);
       if (addonOverride && addonOverride.comment) addonReason += (addonReason ? ' ' : '') + '(Comment: ' + addonOverride.comment + ')';
+      var addonValOv = _pftlGetCheckValueOverride('addons_readiness', ck.code);
+      if (addonValOv && addonValOv.comment) addonReason += (addonReason ? ' ' : '') + '(Value evidence: ' + addonValOv.comment + ')';
       html += '<td class="sch-reason">' + (addonReason ? _pftlEsc(addonReason) : '') + '</td>';
       html += '</tr>';
     }
