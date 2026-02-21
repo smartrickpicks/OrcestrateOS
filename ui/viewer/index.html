@@ -48433,21 +48433,65 @@
       }, 80);
     }
 
-    function cgbSeedFromPreflight(preflightResult) {
+    function cgbSeedFromPreflight(preflightResult, preflightExport) {
       if (!preflightResult) return;
       var story = preflightResult.resolution_story || {};
       var classification = preflightResult.contract_classification || {};
       var spine = preflightResult.opportunity_spine || {};
+      var scheduleStructure = preflightResult.schedule_structure || {};
+      var assignments = (preflightExport && preflightExport.analyst_assignments) ? preflightExport.analyst_assignments : {};
+      var statusOverrides = assignments.check_overrides || {};
+      var valueOverrides = assignments.check_value_overrides || {};
+      function overrideKey(scope, code) { return scope + '::' + code; }
+      function effectiveStatus(scope, check) {
+        var base = (check && check.status) ? check.status : 'review';
+        var ov = statusOverrides[overrideKey(scope, check && check.code)];
+        return ov && ov.status ? ov.status : base;
+      }
+      function effectiveValue(scope, check) {
+        var base = (check && check.value !== undefined && check.value !== null) ? check.value : '';
+        var ov = valueOverrides[overrideKey(scope, check && check.code)];
+        return (ov && ov.value !== undefined && ov.value !== null && String(ov.value).trim() !== '') ? ov.value : base;
+      }
+      function summarizeChecks(scope, label, moduleObj) {
+        var checks = (moduleObj && Array.isArray(moduleObj.checks)) ? moduleObj.checks : [];
+        if (!checks.length) return label + ': [TO_BE_DEFINED]';
+        var parts = [];
+        for (var i = 0; i < checks.length; i++) {
+          var ck = checks[i] || {};
+          var st = String(effectiveStatus(scope, ck) || '').toUpperCase();
+          var val = effectiveValue(scope, ck);
+          var seg = (ck.label || ck.code || 'Check') + ' [' + st + ']';
+          if (val !== undefined && val !== null && String(val).trim() !== '') seg += ': ' + String(val).trim();
+          parts.push(seg);
+        }
+        return label + ': ' + parts.join('; ');
+      }
+      function findCheck(moduleObj, code) {
+        var checks = (moduleObj && moduleObj.checks) ? moduleObj.checks : [];
+        for (var i = 0; i < checks.length; i++) if (checks[i] && checks[i].code === code) return checks[i];
+        return null;
+      }
 
       cgbStartNewSession();
 
       var legal = story.legal_entity_account;
-      if (legal && legal.name) {
-        cgbState.legalEntity = legal.name;
+      var chosenLegal = (assignments.legal_entity && String(assignments.legal_entity).trim()) || (legal && legal.name) || '';
+      if (chosenLegal) {
+        cgbState.legalEntity = chosenLegal;
+        cgbState.whoWhere.businessUnit = chosenLegal;
       }
 
       var counterparties = story.counterparties || [];
-      if (counterparties.length > 0) {
+      var manualCounterparty = assignments.manual_counterparty && String(assignments.manual_counterparty).trim();
+      var selectedCounterparty = assignments.counterparty && String(assignments.counterparty).trim();
+      if (manualCounterparty) {
+        cgbState.whoWhere.counterpartyName = manualCounterparty;
+        cgbState.whoWhere.counterpartyResolved = false;
+      } else if (selectedCounterparty) {
+        cgbState.whoWhere.counterpartyName = selectedCounterparty;
+        cgbState.whoWhere.counterpartyResolved = true;
+      } else if (counterparties.length > 0) {
         cgbState.whoWhere.counterpartyName = counterparties[0].name || '';
         cgbState.whoWhere.counterpartyResolved = true;
       }
@@ -48467,22 +48511,44 @@
 
       var checks = spine.checks || [];
       for (var i = 0; i < checks.length; i++) {
-        if (checks[i].code === 'OPP_CONTRACT_TYPE' && checks[i].value) {
-          cgbState.workflow.contractType = checks[i].value;
+        if (checks[i].code === 'OPP_CONTRACT_TYPE') {
+          var oppType = effectiveValue('opportunity_spine', checks[i]);
+          if (oppType) cgbState.workflow.contractType = oppType;
         }
       }
+      var schTypeCheck = findCheck(scheduleStructure, 'SCH_TYPE');
+      var scheduleType = schTypeCheck ? effectiveValue('schedule_structure', schTypeCheck) : '';
+      if (scheduleType) cgbState.sections.schedule = 'Schedule Type: ' + scheduleType + '.';
+      if ((assignments.opportunity_subtypes || []).length) {
+        cgbState.sections.opportunity = 'Contract subtypes: ' + assignments.opportunity_subtypes.join(', ') + '.';
+      }
+      var finSummary = summarizeChecks('financials_readiness', 'Financial checks', preflightResult.financials_readiness);
+      var addonSummary = summarizeChecks('addons_readiness', 'Add-on checks', preflightResult.addons_readiness);
+      cgbState.sections.financials = finSummary + ' ' + addonSummary;
+      cgbState.catalogSource.scope = scheduleType ? String(scheduleType).toUpperCase().replace(/[^A-Z0-9]+/g, '_') : cgbState.catalogSource.scope;
+      cgbState.catalogSource.sourceType = 'preflight';
+      cgbState.catalogSource.sourceRef = preflightResult.doc_id || (((typeof currentSelection !== 'undefined') && currentSelection && currentSelection.joinIdentity) ? (currentSelection.joinIdentity.fileName || '') : '');
 
       cgbState.preflightSeed = {
         gate_color: preflightResult.gate_color,
         health_score: preflightResult.health_score,
+        source_doc_id: preflightResult.doc_id || null,
+        analyst_assignments: assignments,
+        check_overrides: statusOverrides,
+        check_value_overrides: valueOverrides,
+        opportunity_spine: preflightResult.opportunity_spine || null,
+        schedule_structure: preflightResult.schedule_structure || null,
         financials_readiness: preflightResult.financials_readiness,
         addons_readiness: preflightResult.addons_readiness,
+        export_context: preflightExport || null,
         seeded_at: new Date().toISOString()
       };
 
       navigateTo('contract-generator');
       setTimeout(function() {
         if (typeof cgbInitPage === 'function') cgbInitPage(true);
+        cgbRenderEditorFromState();
+        cgbGenerateFromBuilder();
         showToast('Contract Generator seeded from preflight data.', 'success');
       }, 80);
     }
@@ -49298,7 +49364,8 @@
           financial_rights_modeling: ['Financials.*', 'V2 Add Ons.*']
         },
         source_records: refs,
-        preflight: cgbState.preflight
+        preflight: cgbState.preflight,
+        preflight_seed: cgbState.preflightSeed || null
       };
     }
 
@@ -54942,22 +55009,11 @@ Add any additional notes here.
   };
 })();
 </script>
-<!-- Feedback FAB + Panel -->
+<!-- AutoBot FAB + Panel -->
 <style>
   .fab-actions {
     position: fixed; bottom: 80px; right: 24px; z-index: 99999;
   }
-  .fab-actions-menu {
-    position: absolute; right: 0; bottom: 54px; min-width: 164px;
-    background: #fff; border: 1px solid #d7dde4; border-radius: 10px;
-    box-shadow: 0 8px 22px rgba(0,0,0,0.25); display: none; padding: 8px;
-  }
-  .fab-actions-menu.open { display: block; }
-  .fab-actions-item {
-    width: 100%; border: none; background: transparent; cursor: pointer;
-    text-align: left; padding: 8px 10px; font-size: 13px; border-radius: 6px; color: #1a2a3a;
-  }
-  .fab-actions-item:hover { background: #e3f2fd; }
   .feedback-fab {
     background: #1565c0; color: #fff; border: none; border-radius: 28px;
     padding: 12px 20px; font-size: 14px; font-weight: 600;
@@ -54967,29 +55023,17 @@ Add any additional notes here.
   }
   .feedback-fab:hover { background: #0d47a1; transform: translateY(-2px); }
   .feedback-fab svg { width: 18px; height: 18px; fill: currentColor; }
-  .feedback-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
-    z-index: 100000; opacity: 0; visibility: hidden;
-    transition: opacity 0.25s;
+  .kiwi-fab {
+    border-radius: 14px;
+    padding: 8px 10px;
+    background: #0f2e4b;
   }
-  .feedback-overlay.open { opacity: 1; visibility: visible; }
-  .feedback-panel {
-    position: fixed; top: 0; right: -440px; bottom: 0; width: 420px; max-width: 95vw;
-    background: #fff; z-index: 100001; box-shadow: -4px 0 24px rgba(0,0,0,0.25);
-    display: flex; flex-direction: column; transition: right 0.3s ease;
+  .kiwi-fab:hover { background: #0c243a; }
+  .kiwi-fab img {
+    height: 22px;
+    width: auto;
+    display: block;
   }
-  .feedback-panel.open { right: 0; }
-  .feedback-panel-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 20px; border-bottom: 1px solid #e0e0e0; background: #f5f5f5;
-  }
-  .feedback-panel-header h3 { margin: 0; font-size: 16px; color: #333; }
-  .feedback-panel-close {
-    background: none; border: none; font-size: 22px; cursor: pointer;
-    color: #666; padding: 4px 8px; border-radius: 4px; line-height: 1;
-  }
-  .feedback-panel-close:hover { background: #e0e0e0; color: #333; }
-  .feedback-panel-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
   .feedback-local-note {
     font-size: 12px; color: #4e5d6c; background: #eef5ff;
     border: 1px solid #d3e5ff; border-radius: 6px; padding: 10px; margin-bottom: 12px;
@@ -55024,8 +55068,75 @@ Add any additional notes here.
     line-height: 1; border-radius: 4px; padding: 3px 6px;
   }
   .autobot-panel-close:hover { background: #dfe6ee; color: #22313f; }
-  .autobot-panel-body { flex: 1; overflow-y: auto; padding: 14px 18px; }
+  .autobot-panel-body {
+    flex: 1; overflow: hidden; padding: 14px 18px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
   .autobot-status-line { font-size: 12px; color: #3a4a5c; margin-bottom: 10px; }
+  .autobot-chat-thread {
+    flex: 1; overflow-y: auto; border: 1px solid #e0e6ed; border-radius: 8px;
+    background: #f7f9fc; padding: 10px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .autobot-msg {
+    max-width: 88%; padding: 8px 10px; border-radius: 10px; font-size: 12px;
+    line-height: 1.4; word-break: break-word; border: 1px solid transparent;
+  }
+  .autobot-msg.user {
+    margin-left: auto; background: #1565c0; color: #fff; border-color: #1565c0;
+  }
+  .autobot-msg.assistant {
+    margin-right: auto; background: #fff; color: #22313f; border-color: #d9e3ef;
+  }
+  .autobot-msg-meta { display: block; margin-top: 4px; font-size: 10px; opacity: 0.75; }
+  .autobot-msg-files { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .autobot-file-pill {
+    font-size: 10px; padding: 2px 7px; border-radius: 10px;
+    background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.45);
+  }
+  .autobot-msg.assistant .autobot-file-pill {
+    background: #eef3fb; border-color: #d6e2f4; color: #2c3f55;
+  }
+  .autobot-file-image {
+    max-width: 140px; max-height: 100px; border-radius: 6px; border: 1px solid #d2dce8;
+    object-fit: cover; background: #fff;
+  }
+  .autobot-composer {
+    border: 1px solid #dbe3ec; border-radius: 8px; background: #fff; padding: 8px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .autobot-chat-input {
+    width: 100%; min-height: 64px; resize: vertical; box-sizing: border-box;
+    border: 1px solid #cfd9e5; border-radius: 6px; padding: 8px; font-size: 12px;
+  }
+  .autobot-composer-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .autobot-composer-left { display: flex; align-items: center; gap: 6px; }
+  .autobot-btn.attach { background: #eef2f7; color: #2e4054; border: 1px solid #d0dbe7; }
+  .autobot-btn.send { background: #1565c0; color: #fff; }
+  .autobot-pending-attachments {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .autobot-pending-pill {
+    background: #eef3fb; border: 1px solid #d4dfef; border-radius: 10px; padding: 3px 7px;
+    font-size: 10px; color: #2d435b; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .autobot-pending-remove {
+    border: none; background: transparent; color: #4f6070; cursor: pointer; font-size: 11px; padding: 0;
+  }
+  .autobot-action-shell {
+    border: 1px solid #e0e6ed; border-radius: 8px; background: #fff; padding: 8px;
+  }
+  .autobot-action-shell summary {
+    cursor: pointer; font-size: 12px; font-weight: 600; color: #2c4157; user-select: none;
+    list-style: none;
+  }
+  .autobot-action-shell summary::-webkit-details-marker { display: none; }
+  .autobot-action-shell summary:before {
+    content: '▸'; margin-right: 6px; color: #62758a;
+  }
+  .autobot-action-shell[open] summary:before { content: '▾'; }
   .autobot-stepper { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
   .autobot-step { font-size: 12px; color: #5f6f80; background: #f6f8fb; border: 1px solid #e6ebf1; border-radius: 6px; padding: 7px 9px; }
   .autobot-step.running { color: #0d47a1; border-color: #90caf9; background: #e3f2fd; }
@@ -55250,29 +55361,9 @@ Add any additional notes here.
 
 </style>
 <div class="fab-actions" id="fab-actions">
-  <button class="feedback-fab" id="fab-main-btn" onclick="toggleFabMenu(event)" aria-label="Open Actions">
-    <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v8h8a1 1 0 1 1 0 2h-8v8a1 1 0 1 1-2 0v-8H3a1 1 0 1 1 0-2h8V3a1 1 0 0 1 1-1z"/></svg>
-    Actions
+  <button class="feedback-fab kiwi-fab" id="fab-main-btn" onclick="openAutoBotPanel()" aria-label="Open AutoBot">
+    <img src="kiwi_logo_white_text.svg" alt="Kiwi">
   </button>
-  <div class="fab-actions-menu" id="fab-actions-menu">
-    <button class="fab-actions-item" type="button" onclick="openAutoBotPanel()">AutoBot</button>
-    <button class="fab-actions-item" type="button" onclick="openFeedbackPanel()">Feedback</button>
-  </div>
-</div>
-
-<div class="feedback-overlay" id="feedback-overlay" onclick="closeFeedbackPanel()"></div>
-<div class="feedback-panel" id="feedback-panel">
-  <div class="feedback-panel-header">
-    <h3>Send Feedback</h3>
-    <button class="feedback-panel-close" onclick="closeFeedbackPanel()">&times;</button>
-  </div>
-  <div class="feedback-panel-body">
-    <div class="feedback-local-note">
-      External docs/forms are disabled in this build. Capture notes locally and share through your internal channel.
-    </div>
-    <textarea id="feedback-local-notes" placeholder="What happened? What did you expect? Include doc_id/workspace_id if useful."></textarea>
-    <button class="feedback-copy-btn" type="button" onclick="copyFeedbackDraft()">Copy Feedback Draft</button>
-  </div>
 </div>
 
 <div class="autobot-overlay" id="autobot-overlay" onclick="closeAutoBotPanel(event)"></div>
@@ -55283,25 +55374,54 @@ Add any additional notes here.
   </div>
   <div class="autobot-panel-body">
     <div id="autobot-status-line" class="autobot-status-line"></div>
-    <div id="autobot-stepper" class="autobot-stepper"></div>
-    <div id="autobot-results" class="autobot-results"></div>
-    <div class="autobot-action-block">
-      <label for="autobot-action-select">Action</label>
-      <select id="autobot-action-select" onchange="autobotActionChanged()"></select>
-      <textarea id="autobot-action-reason" placeholder="Action reason (required for override_red)"></textarea>
-      <textarea id="autobot-reconstruction-review" placeholder='reconstruction_review JSON (required for reconstruction_complete), e.g. {"decisions":[{"decision":"APPROVED"}]}' style="display:none;"></textarea>
-      <div class="autobot-actions-row">
-        <button class="autobot-btn apply" id="autobot-apply-btn" type="button" onclick="autobotApplyAction()">Apply Action</button>
-        <label class="autobot-inline-note"><input type="checkbox" id="autobot-dev-mock" onchange="toggleAutoBotMock(this.checked)"> Dev mock</label>
+    <div id="autobot-chat-thread" class="autobot-chat-thread"></div>
+    <details class="autobot-action-shell">
+      <summary>PRA Status and Actions</summary>
+      <div style="margin-top:8px;">
+        <div id="autobot-stepper" class="autobot-stepper"></div>
+        <div id="autobot-results" class="autobot-results"></div>
+        <div class="autobot-action-block">
+          <label for="autobot-action-select">Action</label>
+          <select id="autobot-action-select" onchange="autobotActionChanged()"></select>
+          <textarea id="autobot-action-reason" placeholder="Action reason (required for override_red)"></textarea>
+          <textarea id="autobot-reconstruction-review" placeholder='reconstruction_review JSON (required for reconstruction_complete), e.g. {"decisions":[{"decision":"APPROVED"}]}' style="display:none;"></textarea>
+          <div class="autobot-actions-row">
+            <button class="autobot-btn apply" id="autobot-apply-btn" type="button" onclick="autobotApplyAction()">Apply Action</button>
+            <label class="autobot-inline-note"><input type="checkbox" id="autobot-dev-mock" onchange="toggleAutoBotMock(this.checked)"> Dev mock</label>
+          </div>
+        </div>
       </div>
+    </details>
+    <details class="autobot-action-shell">
+      <summary>Feedback Draft</summary>
+      <div style="margin-top:8px;">
+        <div class="feedback-local-note">
+          External docs/forms are disabled in this build. Capture notes here and share through your internal channel.
+        </div>
+        <textarea id="feedback-local-notes" placeholder="What happened? What did you expect? Include doc_id/workspace_id if useful."></textarea>
+        <button class="feedback-copy-btn" type="button" onclick="copyFeedbackDraft()">Copy Feedback Draft</button>
+      </div>
+    </details>
+    <div class="autobot-composer">
+      <div id="autobot-pending-attachments" class="autobot-pending-attachments"></div>
+      <textarea id="autobot-chat-input" class="autobot-chat-input" placeholder="Message AutoBot...  (Tip: /run, /export, /action generate_copy). Paste screenshots with Cmd/Ctrl+V." oninput="autobotChatInput(this.value)" onpaste="autobotChatPaste(event)"></textarea>
+      <div class="autobot-composer-row">
+        <div class="autobot-composer-left">
+          <button class="autobot-btn attach" type="button" onclick="openAutoBotAttachmentPicker()">Attach files</button>
+          <span class="autobot-inline-note">Messenger mode: notes + screenshots + files</span>
+        </div>
+        <button class="autobot-btn send" type="button" onclick="sendAutoBotMessage()">Send</button>
+      </div>
+      <input type="file" id="autobot-file-input" style="display:none;" multiple onchange="autobotAttachFiles(this.files)">
     </div>
   </div>
   <div class="autobot-panel-footer">
     <button class="autobot-btn run" id="autobot-run-btn" type="button" onclick="runAutoBot()">Run AutoBot</button>
+    <button class="autobot-btn secondary" id="autobot-copy-report-btn" type="button" onclick="copyAutoBotRunReport()">Copy Run Report</button>
     <button class="autobot-btn secondary" type="button" onclick="closeAutoBotPanel()">Close</button>
   </div>
 </div>
-<!-- /Feedback FAB -->
+<!-- /AutoBot FAB -->
 
 <script>
 (function() {
@@ -55320,7 +55440,16 @@ Add any additional notes here.
     actionEventsCount: 0,
     actionBusy: false,
     runEnvelope: null,
-    headerMissingWarnKey: ''
+    headerMissingWarnKey: '',
+    lastResponses: {
+      suggestion: null,
+      preflight: null,
+      export: null,
+      action: null
+    },
+    chatMessages: [],
+    pendingAttachments: [],
+    chatBooted: false
   };
   window._autoBotState = _autoBotState;
   window.__AUTOBOT_DEV_MOCK__ = false;
@@ -55337,6 +55466,157 @@ Add any additional notes here.
   function _abData(payload) {
     if (payload && typeof payload === 'object' && payload.data) return payload.data;
     return payload;
+  }
+
+  function _abNowLabel() {
+    try {
+      return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function _abRedactedHeaders(headers) {
+    var out = {};
+    var k;
+    for (k in (headers || {})) {
+      if (!Object.prototype.hasOwnProperty.call(headers, k)) continue;
+      if (String(k).toLowerCase() === 'authorization') out[k] = 'Bearer [REDACTED]';
+      else out[k] = headers[k];
+    }
+    return out;
+  }
+
+  function _abEnsureChatBoot() {
+    if (_autoBotState.chatBooted) return;
+    _autoBotState.chatBooted = true;
+    _autoBotState.chatMessages.push({
+      id: 'm0',
+      role: 'assistant',
+      text: 'Hey, I am AutoBot. You can chat naturally, attach screenshots/files, and run PRA with /run.',
+      created_at: _abNowLabel(),
+      attachments: []
+    });
+  }
+
+  function _abAddChat(role, text, attachments) {
+    _abEnsureChatBoot();
+    _autoBotState.chatMessages.push({
+      id: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      role: role,
+      text: String(text || ''),
+      created_at: _abNowLabel(),
+      attachments: attachments || []
+    });
+  }
+
+  function _abRenderPendingAttachments() {
+    var host = document.getElementById('autobot-pending-attachments');
+    if (!host) return;
+    var files = _autoBotState.pendingAttachments || [];
+    if (!files.length) {
+      host.innerHTML = '';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i];
+      html += '<span class="autobot-pending-pill">' + _abEsc(f.name) + ' (' + _abEsc(f.size_label || '') + ')';
+      html += '<button class="autobot-pending-remove" type="button" onclick="autobotRemovePendingAttachment(' + i + ')">x</button>';
+      html += '</span>';
+    }
+    host.innerHTML = html;
+  }
+
+  function _abRenderChat() {
+    var host = document.getElementById('autobot-chat-thread');
+    if (!host) return;
+    _abEnsureChatBoot();
+    var html = '';
+    var msgs = _autoBotState.chatMessages || [];
+    for (var i = 0; i < msgs.length; i++) {
+      var m = msgs[i];
+      var role = m.role === 'user' ? 'user' : 'assistant';
+      html += '<div class="autobot-msg ' + role + '">';
+      html += _abEsc(m.text || '');
+      if (m.attachments && m.attachments.length) {
+        html += '<div class="autobot-msg-files">';
+        for (var j = 0; j < m.attachments.length; j++) {
+          var a = m.attachments[j];
+          if (a.is_image && a.preview_url) {
+            html += '<img class="autobot-file-image" src="' + _abEsc(a.preview_url) + '" alt="' + _abEsc(a.name) + '">';
+          } else {
+            html += '<span class="autobot-file-pill">' + _abEsc(a.name) + '</span>';
+          }
+        }
+        html += '</div>';
+      }
+      html += '<span class="autobot-msg-meta">' + _abEsc(m.created_at || '') + '</span>';
+      html += '</div>';
+    }
+    host.innerHTML = html;
+    host.scrollTop = host.scrollHeight;
+  }
+
+  function _abBytesLabel(bytes) {
+    var n = Number(bytes || 0);
+    if (n <= 0) return '0B';
+    if (n < 1024) return n + 'B';
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + 'KB';
+    return (n / (1024 * 1024)).toFixed(1) + 'MB';
+  }
+
+  function _abHandleIntent(text, attachments) {
+    var t = String(text || '').trim();
+    var lower = t.toLowerCase();
+    var hasAttachments = !!(attachments && attachments.length);
+    if (!t && !hasAttachments) return;
+    if (!t && hasAttachments) {
+      _abAddChat('assistant', 'Attachment captured. Add a note or type /run when ready.', []);
+      return;
+    }
+    if (lower === '/run' || lower.indexOf('run autobot') >= 0 || lower.indexOf('run pra') >= 0) {
+      _abAddChat('assistant', 'Running PRA sequence now.', []);
+      window.runAutoBot();
+      return;
+    }
+    if (lower === '/export' || lower.indexOf('export') === 0) {
+      var exportDocId = (_autoBotState.runEnvelope && _autoBotState.runEnvelope.preflight_doc_id) || _autoBotState.docId;
+      if (!exportDocId) {
+        _abAddChat('assistant', 'I need a run context first. Use /run.', []);
+        _abRenderChat();
+        return;
+      }
+      _abAddChat('assistant', 'Exporting latest preflight snapshot for doc_id ' + exportDocId + ' ...', []);
+      _abPost('/api/preflight/export', { doc_id: exportDocId })
+        .then(function(respExport) {
+          _autoBotState.lastResponses.export = respExport || null;
+          _autoBotState.exportPayload = _abData(respExport) || _autoBotState.exportPayload;
+          _abSyncRunEnvelope();
+          _abAddChat('assistant', 'Export complete.', []);
+          _abRender();
+        })
+        .catch(function(err) {
+          _abAddChat('assistant', 'Export failed: ' + (err && err.message ? err.message : 'unknown'), []);
+          _abRender();
+        });
+      return;
+    }
+    if (lower.indexOf('/action ') === 0) {
+      var action = t.split(/\s+/)[1] || '';
+      if (!action) {
+        _abAddChat('assistant', 'Usage: /action <accept_risk|generate_copy|escalate_ocr|override_red|reconstruction_complete>', []);
+        return;
+      }
+      var select = document.getElementById('autobot-action-select');
+      if (select) {
+        select.value = action;
+        _autoBotState.selectedAction = action;
+        window.autobotApplyAction();
+      }
+      return;
+    }
+    _abAddChat('assistant', 'Got it. I can run PRA with /run, export with /export, or apply an action with /action <name>.', []);
   }
 
   function _abErrorMessage(body, statusCode) {
@@ -55620,6 +55900,10 @@ Add any additional notes here.
 
     var reviewBox = document.getElementById('autobot-reconstruction-review');
     if (reviewBox) reviewBox.style.display = actionSelect.value === 'reconstruction_complete' ? '' : 'none';
+    _abRenderPendingAttachments();
+    _abRenderChat();
+    var copyBtn = document.getElementById('autobot-copy-report-btn');
+    if (copyBtn) copyBtn.disabled = !_autoBotState.runEnvelope;
   }
 
   function _abMockEndpoint(path, body) {
@@ -55723,30 +56007,13 @@ Add any additional notes here.
     _autoBotState.selectedAction = '';
     _autoBotState.actionEventsCount = 0;
     _autoBotState.runEnvelope = null;
+    _autoBotState.lastResponses = {
+      suggestion: null,
+      preflight: null,
+      export: null,
+      action: null
+    };
   }
-
-  window.toggleFabMenu = function(event) {
-    if (event && event.stopPropagation) event.stopPropagation();
-    var menu = document.getElementById('fab-actions-menu');
-    if (!menu) return;
-    menu.classList.toggle('open');
-  };
-
-  window.openFeedbackPanel = function() {
-    var menu = document.getElementById('fab-actions-menu');
-    if (menu) menu.classList.remove('open');
-    var overlay = document.getElementById('feedback-overlay');
-    var panel = document.getElementById('feedback-panel');
-    if (overlay) overlay.classList.add('open');
-    if (panel) panel.classList.add('open');
-  };
-
-  window.closeFeedbackPanel = function() {
-    var overlay = document.getElementById('feedback-overlay');
-    var panel = document.getElementById('feedback-panel');
-    if (overlay) overlay.classList.remove('open');
-    if (panel) panel.classList.remove('open');
-  };
 
   window.copyFeedbackDraft = function() {
     var input = document.getElementById('feedback-local-notes');
@@ -55764,8 +56031,6 @@ Add any additional notes here.
   };
 
   window.openAutoBotPanel = function() {
-    var menu = document.getElementById('fab-actions-menu');
-    if (menu) menu.classList.remove('open');
     var overlay = document.getElementById('autobot-overlay');
     var panel = document.getElementById('autobot-panel');
     if (overlay) overlay.classList.add('open');
@@ -55797,6 +56062,123 @@ Add any additional notes here.
     _abRender();
   };
 
+  window.autobotChatInput = function(_value) {};
+
+  window.openAutoBotAttachmentPicker = function() {
+    var input = document.getElementById('autobot-file-input');
+    if (input) input.click();
+  };
+
+  window.autobotAttachFiles = function(fileList) {
+    if (!fileList || !fileList.length) return;
+    for (var i = 0; i < fileList.length; i++) {
+      var file = fileList[i];
+      var isImage = file.type && file.type.indexOf('image/') === 0;
+      var item = {
+        name: file.name || ('file_' + i),
+        size: Number(file.size || 0),
+        size_label: _abBytesLabel(file.size || 0),
+        mime: file.type || 'application/octet-stream',
+        is_image: !!isImage,
+        preview_url: isImage ? URL.createObjectURL(file) : ''
+      };
+      _autoBotState.pendingAttachments.push(item);
+    }
+    var input = document.getElementById('autobot-file-input');
+    if (input) input.value = '';
+    _abRender();
+  };
+
+  window.autobotChatPaste = function(event) {
+    if (!event || !event.clipboardData || !event.clipboardData.items) return;
+    var items = event.clipboardData.items;
+    var found = false;
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      if (item.kind === 'file') {
+        var file = item.getAsFile();
+        if (file) {
+          found = true;
+          window.autobotAttachFiles([file]);
+        }
+      }
+    }
+    if (found) event.preventDefault();
+  };
+
+  window.autobotRemovePendingAttachment = function(index) {
+    var list = _autoBotState.pendingAttachments || [];
+    if (index < 0 || index >= list.length) return;
+    var it = list[index];
+    if (it && it.preview_url) {
+      try { URL.revokeObjectURL(it.preview_url); } catch (e) {}
+    }
+    list.splice(index, 1);
+    _abRender();
+  };
+
+  window.sendAutoBotMessage = function() {
+    var input = document.getElementById('autobot-chat-input');
+    var text = input ? String(input.value || '').trim() : '';
+    var attachments = (_autoBotState.pendingAttachments || []).slice();
+    if (!text && !attachments.length) return;
+    _abAddChat('user', text || '[attachment]', attachments);
+    _autoBotState.pendingAttachments = [];
+    if (input) input.value = '';
+    _abRender();
+    _abHandleIntent(text, attachments);
+    _abRender();
+  };
+
+  window.copyAutoBotRunReport = function() {
+    if (!_autoBotState.runEnvelope) {
+      _autoBotState.error = 'No run report available yet.';
+      _abRender();
+      return;
+    }
+    var headerState = _abHeaderState();
+    var report = {
+      generated_at: new Date().toISOString(),
+      headers: _abRedactedHeaders(headerState.headers),
+      missing_headers: headerState.missing,
+      run_envelope: _autoBotState.runEnvelope,
+      responses: _autoBotState.lastResponses,
+      chat_messages: _autoBotState.chatMessages.map(function(m) {
+        return {
+          id: m.id,
+          role: m.role,
+          text: m.text,
+          created_at: m.created_at,
+          attachments: (m.attachments || []).map(function(a) {
+            return {
+              name: a.name,
+              size: a.size,
+              mime: a.mime,
+              is_image: !!a.is_image
+            };
+          })
+        };
+      })
+    };
+    var payload = JSON.stringify(report, null, 2);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(payload).then(function() {
+        if (typeof showToast === 'function') showToast('AutoBot run report copied', 'info');
+      }).catch(function() {
+        _autoBotState.error = 'Copy failed';
+        _abRender();
+      });
+      return;
+    }
+    var ta = document.createElement('textarea');
+    ta.value = payload;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (typeof showToast === 'function') showToast('AutoBot run report copied', 'info');
+  };
+
   window.runAutoBot = function() {
     if (_autoBotState.running) return;
     if (!window.__AUTOBOT_DEV_MOCK__) {
@@ -55804,6 +56186,7 @@ Add any additional notes here.
       if (headerState.missing.length) {
         _autoBotState.error = 'Missing required headers: ' + headerState.missing.join(', ');
         _autoBotState.status = 'Cannot run AutoBot.';
+        _abAddChat('assistant', 'Cannot run yet. Missing required headers: ' + headerState.missing.join(', ') + '.', []);
         _abRender();
         return;
       }
@@ -55819,41 +56202,51 @@ Add any additional notes here.
       _autoBotState.running = false;
       _autoBotState.error = buildErr.message;
       _autoBotState.status = 'Failed before starting.';
+      _abAddChat('assistant', 'Pre-run validation failed: ' + buildErr.message, []);
       _abRender();
       return;
     }
 
     _abSetStep('suggestion', 'running');
     _autoBotState.status = 'Running suggestion-runs/local...';
+    _abAddChat('assistant', 'Step 1/3: running Suggestion Run.', []);
     _abRender();
     _abPost('/api/v2.5/suggestion-runs/local', suggestionBody)
       .then(function(respSug) {
         _abSetStep('suggestion', 'done');
+        _autoBotState.lastResponses.suggestion = respSug || null;
         _autoBotState.suggestionRun = _abData(respSug) || {};
         _autoBotState.docId = _autoBotState.suggestionRun.document_id || _autoBotState.docId;
+        _abAddChat('assistant', 'Suggestion Run complete (' + String(_autoBotState.suggestionRun.total_suggestions || 0) + ' suggestions).', []);
         _abSyncRunEnvelope();
         _abSetStep('preflight', 'running');
         _autoBotState.status = 'Running preflight/run...';
+        _abAddChat('assistant', 'Step 2/3: running Preflight gate.', []);
         _abRender();
         return _abPost('/api/preflight/run', _abBuildPreflightPayload());
       })
       .then(function(respPreflight) {
         _abSetStep('preflight', 'done');
+        _autoBotState.lastResponses.preflight = respPreflight || null;
         _autoBotState.preflightRun = _abData(respPreflight) || {};
         _autoBotState.docId = _autoBotState.preflightRun.doc_id || _autoBotState.docId;
+        _abAddChat('assistant', 'Preflight complete. Gate: ' + (_abGateColor() || 'UNKNOWN') + '.', []);
         _abSyncRunEnvelope();
         _abSetStep('export', 'running');
         _autoBotState.status = 'Running preflight/export...';
+        _abAddChat('assistant', 'Step 3/3: exporting preflight snapshot.', []);
         _abRender();
         return _abPost('/api/preflight/export', { doc_id: (_autoBotState.runEnvelope && _autoBotState.runEnvelope.preflight_doc_id) || _autoBotState.docId });
       })
       .then(function(respExport) {
         _abSetStep('export', 'done');
+        _autoBotState.lastResponses.export = respExport || null;
         _autoBotState.exportPayload = _abData(respExport) || {};
         _abSyncRunEnvelope();
         _autoBotState.running = false;
         _autoBotState.status = 'AutoBot complete. Review and optionally apply an action.';
         _autoBotState.error = null;
+        _abAddChat('assistant', 'Run complete. Open PRA Status and Actions to review reasons, trace, and allowed actions.', []);
         _abRender();
       })
       .catch(function(err) {
@@ -55863,6 +56256,7 @@ Add any additional notes here.
         else if (_autoBotState.steps.suggestion === 'running') _abSetStep('suggestion', 'error');
         _autoBotState.error = err.message || 'Unknown error';
         _autoBotState.status = 'AutoBot failed.';
+        _abAddChat('assistant', 'Run failed: ' + _autoBotState.error, []);
         _abRender();
         if (typeof showToast === 'function') showToast('AutoBot failed: ' + _autoBotState.error, 'error');
       });
@@ -55875,6 +56269,7 @@ Add any additional notes here.
       if (headerState.missing.length) {
         _autoBotState.error = 'Missing required headers: ' + headerState.missing.join(', ');
         _autoBotState.status = 'Cannot apply action.';
+        _abAddChat('assistant', 'Cannot apply action. Missing required headers: ' + headerState.missing.join(', ') + '.', []);
         _abRender();
         return;
       }
@@ -55887,6 +56282,7 @@ Add any additional notes here.
     if (!action) return;
     if (_abGateColor() === 'RED' && action === 'accept_risk') {
       _autoBotState.error = 'accept_risk is blocked on RED gate.';
+      _abAddChat('assistant', 'Blocked: accept_risk is not allowed on RED gate.', []);
       _abRender();
       return;
     }
@@ -55897,6 +56293,7 @@ Add any additional notes here.
       var raw = reviewInput ? String(reviewInput.value || '').trim() : '';
       if (!raw) {
         _autoBotState.error = 'reconstruction_review JSON is required for reconstruction_complete.';
+        _abAddChat('assistant', 'reconstruction_complete requires reconstruction_review JSON.', []);
         _abRender();
         return;
       }
@@ -55904,6 +56301,7 @@ Add any additional notes here.
         payload.reconstruction_review = JSON.parse(raw);
       } catch (e) {
         _autoBotState.error = 'Invalid reconstruction_review JSON.';
+        _abAddChat('assistant', 'Invalid reconstruction_review JSON.', []);
         _abRender();
         return;
       }
@@ -55911,21 +56309,26 @@ Add any additional notes here.
     _autoBotState.actionBusy = true;
     _autoBotState.status = 'Applying action...';
     _autoBotState.error = null;
+    _abAddChat('assistant', 'Applying action: ' + action + ' ...', []);
     _abRender();
 
     _abPost('/api/preflight/action', payload)
       .then(function(respAction) {
+        _autoBotState.lastResponses.action = respAction || null;
         _abReadActionResponse(respAction);
         _autoBotState.actionBusy = false;
         _autoBotState.status = 'Action applied. Refreshing export snapshot...';
+        _abAddChat('assistant', 'Action accepted. Refreshing export snapshot.', []);
         _abSyncRunEnvelope();
         _abRender();
         return _abPost('/api/preflight/export', { doc_id: preflightDocId });
       })
       .then(function(respExport) {
+        _autoBotState.lastResponses.export = respExport || null;
         _autoBotState.exportPayload = _abData(respExport) || _autoBotState.exportPayload;
         _autoBotState.actionBusy = false;
         _autoBotState.status = 'Action recorded (append-only event).';
+        _abAddChat('assistant', 'Action event appended. Total action events: ' + String(_autoBotState.actionEventsCount || 0) + '.', []);
         _abSyncRunEnvelope();
         _abRender();
       })
@@ -55933,6 +56336,7 @@ Add any additional notes here.
         _autoBotState.actionBusy = false;
         _autoBotState.error = err.message || 'Action failed';
         _autoBotState.status = 'Action failed.';
+        _abAddChat('assistant', 'Action failed: ' + _autoBotState.error, []);
         _abRender();
       });
   };
@@ -55944,13 +56348,6 @@ Add any additional notes here.
     window.openAutoBotPanel();
     window.runAutoBot();
   };
-
-  document.addEventListener('click', function(event) {
-    var menu = document.getElementById('fab-actions-menu');
-    var wrap = document.getElementById('fab-actions');
-    if (!menu || !wrap) return;
-    if (!wrap.contains(event.target)) menu.classList.remove('open');
-  });
 })();
 </script>
 
@@ -59497,9 +59894,10 @@ var P022_RuntimeValidation = {
   }
   function _pftlGetAssignments() {
     var key = _pftlGetRecordKey();
-    if (!_pftlAssignmentsStore[key]) _pftlAssignmentsStore[key] = { legal_entity: null, counterparty: null, opportunity_subtypes: [], check_overrides: {} };
+    if (!_pftlAssignmentsStore[key]) _pftlAssignmentsStore[key] = { legal_entity: null, counterparty: null, opportunity_subtypes: [], check_overrides: {}, check_value_overrides: {} };
     if (!_pftlAssignmentsStore[key].opportunity_subtypes) _pftlAssignmentsStore[key].opportunity_subtypes = [];
     if (!_pftlAssignmentsStore[key].check_overrides) _pftlAssignmentsStore[key].check_overrides = {};
+    if (!_pftlAssignmentsStore[key].check_value_overrides) _pftlAssignmentsStore[key].check_value_overrides = {};
     return _pftlAssignmentsStore[key];
   }
   function _pftlSaveAssignments() {
@@ -59518,7 +59916,8 @@ var P022_RuntimeValidation = {
         legal_entity: assigns.legal_entity || null,
         counterparty: assigns.counterparty || null,
         manual_counterparty: assigns.manual_counterparty || null,
-        check_overrides: assigns.check_overrides || {}
+        check_overrides: assigns.check_overrides || {},
+        check_value_overrides: assigns.check_value_overrides || {}
       }
     };
   }
@@ -59528,6 +59927,141 @@ var P022_RuntimeValidation = {
     "Distro CMA", "Label Ventures", "LE Revision", "Licensing Agreement",
     "Profit Participation Agreement", "Pub Admin", "Sync", "Side Artist", "Assignment", "Other"
   ];
+
+  var _PFTL_CHECK_VALUE_OPTIONS = {
+    schedule_structure: {
+      SCH_TYPE: ['Distribution', 'Distribution + Sync', 'Sync', 'Master License', 'Services', 'Termination', 'Amendment', 'Back Catalog Existing']
+    },
+    financials_readiness: {
+      FIN_AMOUNTS: ['No amounts', 'Partial amounts', 'Amounts defined'],
+      FIN_RATES: ['No rates', 'Partial rates', 'Rates defined'],
+      FIN_PAYMENT_TERMS: ['No terms', 'Partial terms', 'Terms defined'],
+      FIN_CURRENCY: ['No currency', 'Currency defined'],
+      FIN_COMPLETENESS: ['0/3 pillars', '1/3 pillars', '2/3 pillars', '3/3 pillars']
+    },
+    addons_readiness: {
+      ADDON_TYPE: ['None', 'Sync', 'Merch', 'Option', 'Other'],
+      ADDON_RIGHTS: ['None', 'Partial rights', 'Rights defined'],
+      ADDON_PRICING: ['No pricing', 'Partial pricing', 'Pricing defined'],
+      ADDON_DATES: ['No dates', 'Partial dates', 'Dates defined'],
+      ADDON_COMPLETENESS: ['0/3 pillars', '1/3 pillars', '2/3 pillars', '3/3 pillars']
+    }
+  };
+
+  function _pftlTitleCase(str) {
+    return String(str || '').replace(/\b([a-z])/g, function(_, c) { return c.toUpperCase(); });
+  }
+
+  function _schTypeLabel(value) {
+    if (value === undefined || value === null) return '';
+    var raw = String(value).trim();
+    if (!raw) return '';
+    var key = raw.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    var map = {
+      distribution: 'Distribution',
+      distribution_sync: 'Distribution + Sync',
+      sync: 'Sync',
+      master_license: 'Master License',
+      services: 'Services',
+      termination: 'Termination',
+      amendment: 'Amendment',
+      back_catalog_existing: 'Back Catalog Existing'
+    };
+    if (map[key]) return map[key];
+    return _pftlTitleCase(raw.replace(/_/g, ' '));
+  }
+
+  function _pftlGetCheckValueOverride(scope, code) {
+    var assigns = _pftlGetAssignments();
+    var key = _pftlOverrideKey(scope, code);
+    return (assigns.check_value_overrides || {})[key] || null;
+  }
+
+  function _pftlGetEffectiveCheckValue(scope, code, baseValue) {
+    var ov = _pftlGetCheckValueOverride(scope, code);
+    if (!ov || ov.value === undefined || ov.value === null || String(ov.value).trim() === '') return baseValue;
+    return ov.value;
+  }
+
+  function _pftlGetCheckValueOptions(scope, ck) {
+    var code = (ck && ck.code) ? ck.code : '';
+    var options = [];
+    var seen = {};
+    function add(v) {
+      if (v === undefined || v === null) return;
+      var s = String(v).trim();
+      if (!s || seen[s]) return;
+      seen[s] = true;
+      options.push(s);
+    }
+    if (ck && Array.isArray(ck.options)) {
+      for (var oi = 0; oi < ck.options.length; oi++) add(ck.options[oi]);
+    }
+    if (ck && Array.isArray(ck.candidates)) {
+      for (var ci = 0; ci < ck.candidates.length; ci++) {
+        var cv = ck.candidates[ci] && (ck.candidates[ci].value || ck.candidates[ci].label);
+        add(cv);
+      }
+    }
+    var mapped = (((_PFTL_CHECK_VALUE_OPTIONS[scope] || {})[code]) || []);
+    for (var mi = 0; mi < mapped.length; mi++) add(mapped[mi]);
+    return options;
+  }
+
+  function _pftlRenderCheckValueEditor(scope, ck) {
+    if (!ck || !ck.code) return '';
+    var options = _pftlGetCheckValueOptions(scope, ck);
+    if (!options.length) return '';
+    var baseValue = ck.value ? String(ck.value) : '';
+    var effective = _pftlGetEffectiveCheckValue(scope, ck.code, baseValue);
+    var overridden = _pftlGetCheckValueOverride(scope, ck.code);
+    if (effective) {
+      var hasEffective = false;
+      for (var i = 0; i < options.length; i++) {
+        if (String(options[i]) === String(effective)) { hasEffective = true; break; }
+      }
+      if (!hasEffective) options.unshift(String(effective));
+    }
+    var html = '<div class="pftl-value-editor" style="margin-top:6px;display:flex;gap:6px;align-items:center;">';
+    html += '<select style="min-width:170px;max-width:260px;" onchange="pftlApplyCheckValueOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(ck.code) + '\', this.value)">';
+    html += '<option value="">— select schema option —</option>';
+    for (var oi = 0; oi < options.length; oi++) {
+      var opt = String(options[oi]);
+      var selected = effective && opt === String(effective) ? ' selected' : '';
+      html += '<option value="' + _pftlEsc(opt) + '"' + selected + '>' + _pftlEsc(opt) + '</option>';
+    }
+    html += '</select>';
+    if (overridden) {
+      html += '<button type="button" class="pftl-status-edit-btn" onclick="pftlClearCheckValueOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(ck.code) + '\')">Clear</button>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  window.pftlApplyCheckValueOverride = function(scope, code, value) {
+    var assigns = _pftlGetAssignments();
+    if (!assigns.check_value_overrides) assigns.check_value_overrides = {};
+    var key = _pftlOverrideKey(scope, code);
+    var nextVal = value === undefined || value === null ? '' : String(value).trim();
+    if (!nextVal) {
+      delete assigns.check_value_overrides[key];
+    } else {
+      assigns.check_value_overrides[key] = {
+        value: nextVal,
+        ts: new Date().toISOString()
+      };
+    }
+    _pftlSaveAssignments();
+    _pftlRender();
+  };
+
+  window.pftlClearCheckValueOverride = function(scope, code) {
+    var assigns = _pftlGetAssignments();
+    if (!assigns.check_value_overrides) assigns.check_value_overrides = {};
+    delete assigns.check_value_overrides[_pftlOverrideKey(scope, code)];
+    _pftlSaveAssignments();
+    _pftlRender();
+  };
 
   window.pftlToggleOppSubtype = function(name, checked) {
     var assigns = _pftlGetAssignments();
@@ -60000,12 +60534,13 @@ var P022_RuntimeValidation = {
       html += '<tr>';
       html += '<td class="sch-label">' + _pftlEsc(ck.label || ck.code) + '</td>';
       html += '<td>' + _pftlRenderCheckStatusEditor('sch', 'schedule_structure', ck.code, st, i) + '</td>';
-      var displayVal = ck.value;
+      var displayVal = _pftlGetEffectiveCheckValue('schedule_structure', ck.code, ck.value);
       if (ck.code === 'SCH_TYPE' && displayVal) displayVal = _schTypeLabel(displayVal);
       var valueCell = displayVal ? _pftlEsc(String(displayVal)) : '\u2014';
       if (ck.confidence) {
         valueCell += ' <span class="sch-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
       }
+      valueCell += _pftlRenderCheckValueEditor('schedule_structure', ck);
       html += '<td class="sch-value">' + valueCell + '</td>';
       var reasonText = ck.reason || '';
       if (ck.code === 'SCH_TYPE' && ck.value && reasonText) {
@@ -60067,16 +60602,20 @@ var P022_RuntimeValidation = {
     for (var i = 0; i < checks.length; i++) {
       var ck = checks[i];
       var st = ck.status || 'fail';
-      var badgeClass = st === 'pass' ? 'sch-badge-pass' : st === 'fail' ? 'sch-badge-fail' : 'sch-badge-review';
+      var effectiveStatus = _pftlGetEffectiveCheckStatus('financials_readiness', ck.code, st);
       html += '<tr>';
       html += '<td class="sch-label">' + _pftlEsc(ck.label || ck.code) + '</td>';
-      html += '<td><span class="sch-status-badge ' + badgeClass + '">' + st.toUpperCase() + '</span></td>';
-      var valueCell = ck.value ? _pftlEsc(String(ck.value)) : '\u2014';
+      html += '<td>' + _pftlRenderCheckStatusEditor('sch', 'financials_readiness', ck.code, st, i) + '</td>';
+      var effectiveVal = _pftlGetEffectiveCheckValue('financials_readiness', ck.code, ck.value);
+      var valueCell = effectiveVal ? _pftlEsc(String(effectiveVal)) : '\u2014';
       if (ck.confidence) {
         valueCell += ' <span class="sch-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
       }
+      valueCell += _pftlRenderCheckValueEditor('financials_readiness', ck);
       html += '<td class="sch-value">' + valueCell + '</td>';
-      html += '<td class="sch-reason">' + (ck.reason ? _pftlEsc(ck.reason) : '') + '</td>';
+      var finReason = ck.reason || '';
+      if (effectiveStatus !== st) finReason = 'Analyst override → ' + String(effectiveStatus || '').toUpperCase() + (finReason ? '. ' + finReason : '');
+      html += '<td class="sch-reason">' + (finReason ? _pftlEsc(finReason) : '') + '</td>';
       html += '</tr>';
     }
 
@@ -60110,16 +60649,20 @@ var P022_RuntimeValidation = {
     for (var i = 0; i < checks.length; i++) {
       var ck = checks[i];
       var st = ck.status || 'fail';
-      var badgeClass = st === 'pass' ? 'sch-badge-pass' : st === 'fail' ? 'sch-badge-fail' : 'sch-badge-review';
+      var effectiveStatus = _pftlGetEffectiveCheckStatus('addons_readiness', ck.code, st);
       html += '<tr>';
       html += '<td class="sch-label">' + _pftlEsc(ck.label || ck.code) + '</td>';
-      html += '<td><span class="sch-status-badge ' + badgeClass + '">' + st.toUpperCase() + '</span></td>';
-      var valueCell = ck.value ? _pftlEsc(String(ck.value)) : '\u2014';
+      html += '<td>' + _pftlRenderCheckStatusEditor('sch', 'addons_readiness', ck.code, st, i) + '</td>';
+      var effectiveVal = _pftlGetEffectiveCheckValue('addons_readiness', ck.code, ck.value);
+      var valueCell = effectiveVal ? _pftlEsc(String(effectiveVal)) : '\u2014';
       if (ck.confidence) {
         valueCell += ' <span class="sch-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
       }
+      valueCell += _pftlRenderCheckValueEditor('addons_readiness', ck);
       html += '<td class="sch-value">' + valueCell + '</td>';
-      html += '<td class="sch-reason">' + (ck.reason ? _pftlEsc(ck.reason) : '') + '</td>';
+      var addonReason = ck.reason || '';
+      if (effectiveStatus !== st) addonReason = 'Analyst override → ' + String(effectiveStatus || '').toUpperCase() + (addonReason ? '. ' + addonReason : '');
+      html += '<td class="sch-reason">' + (addonReason ? _pftlEsc(addonReason) : '') + '</td>';
       html += '</tr>';
     }
 
@@ -60402,13 +60945,14 @@ var P022_RuntimeValidation = {
         var base = ck.status || 'fail';
         var eff = _pftlGetEffectiveCheckStatus(group.key, ck.code, base);
         if (eff !== 'pass') {
+          var effectiveVal = _pftlGetEffectiveCheckValue(group.key, ck.code, ck.value || '');
           findings.push({
             scope: group.key,
             code: ck.code,
             label: ck.label || ck.code,
             status: eff,
             reason: ck.reason || '',
-            value: ck.value || ''
+            value: effectiveVal || ''
           });
         }
       }
@@ -60444,10 +60988,10 @@ var P022_RuntimeValidation = {
 
   window.pftlOpenContractGenerator = function() {
     if (!_pftlState.result) return;
-    if (typeof cgbSeedFromPreflight === 'function') {
-      cgbSeedFromPreflight(_pftlState.result);
-      return;
-    }
+      if (typeof cgbSeedFromPreflight === 'function') {
+        cgbSeedFromPreflight(_pftlState.result, _pftlBuildResultForExport());
+        return;
+      }
     if (typeof openContractGeneratorEntry === 'function') {
       openContractGeneratorEntry();
     }
@@ -60472,6 +61016,18 @@ var P022_RuntimeValidation = {
     if (assigns.counterparty) proposed.push({ field: 'resolution_story.counterparty', old_value: null, new_value: assigns.counterparty });
     if (assigns.manual_counterparty) proposed.push({ field: 'resolution_story.manual_counterparty', old_value: null, new_value: assigns.manual_counterparty });
     if ((assigns.opportunity_subtypes || []).length > 0) proposed.push({ field: 'opportunity.contract_subtypes', old_value: null, new_value: assigns.opportunity_subtypes.join(', ') });
+    var checkOverrideKeys = Object.keys(assigns.check_overrides || {});
+    for (var coi = 0; coi < checkOverrideKeys.length; coi++) {
+      var coKey = checkOverrideKeys[coi];
+      var coVal = assigns.check_overrides[coKey] || {};
+      proposed.push({ field: 'preflight.check_override.' + coKey, old_value: null, new_value: coVal.status || '' });
+    }
+    var checkValueOverrideKeys = Object.keys(assigns.check_value_overrides || {});
+    for (var cvi = 0; cvi < checkValueOverrideKeys.length; cvi++) {
+      var cvKey = checkValueOverrideKeys[cvi];
+      var cvVal = assigns.check_value_overrides[cvKey] || {};
+      proposed.push({ field: 'preflight.check_value_override.' + cvKey, old_value: null, new_value: cvVal.value || '' });
+    }
 
     var request = createPatchRequest({
       author: (role === 'architect' ? 'Architect' : 'Admin'),
