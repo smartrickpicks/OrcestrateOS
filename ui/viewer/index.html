@@ -48542,7 +48542,24 @@
 
     var CGB_PAST_SESSIONS_KEY = 'contract_generator_past_sessions_v1';
 
-    function cgbSafe(v) { return (v === null || v === undefined) ? '' : String(v).trim(); }
+    function cgbValueToText(v) {
+      if (v === null || v === undefined) return '';
+      if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return String(v).trim();
+      if (Array.isArray(v)) return v.map(cgbValueToText).filter(Boolean).join(', ');
+      if (typeof v === 'object') {
+        var keys = ['name', 'Name', 'label', 'Label', 'value', 'Value', 'id', 'Id', 'ID'];
+        for (var i = 0; i < keys.length; i++) {
+          if (v[keys[i]] !== undefined && v[keys[i]] !== null && String(v[keys[i]]).trim() !== '') return String(v[keys[i]]).trim();
+        }
+        try {
+          var raw = JSON.stringify(v);
+          if (raw && raw !== '{}' && raw !== '[]') return raw;
+        } catch (e) {}
+        return '';
+      }
+      return String(v).trim();
+    }
+    function cgbSafe(v) { return cgbValueToText(v); }
     function cgbNorm(v) { return cgbSafe(v).toLowerCase(); }
     function cgbNormKey(v) { return (typeof normalizeFieldKey === 'function') ? normalizeFieldKey(v || '') : cgbNorm(v).replace(/[^a-z0-9]/g, '_'); }
     function cgbFormKey(sheet, fieldKey) { return sheet + '::' + fieldKey; }
@@ -48679,6 +48696,33 @@
       return '';
     }
 
+    function cgbExtractDisplayNameForType(row, objectType) {
+      var ot = cgbNorm(objectType || '');
+      var hints = [];
+      if (ot.indexOf('account') >= 0) {
+        hints = ['Account_Name__c', 'Account_Name', 'Legal_Name__c', 'Company_Name__c', 'Counterparty__c', 'Name'];
+      } else if (ot.indexOf('opportunity') >= 0) {
+        hints = ['Opportunity_Name__c', 'Opportunity_Name', 'Opportunity__c', 'Name'];
+      } else if (ot.indexOf('schedule_catalog') >= 0) {
+        hints = ['Schedule_Catalog_Name__c', 'Schedule_Catalog__c', 'Name'];
+      } else if (ot.indexOf('schedule') >= 0) {
+        hints = ['Schedule_Name__c', 'Schedule_Name', 'Schedule__c', 'Name'];
+      } else if (ot.indexOf('catalog') >= 0) {
+        hints = ['Catalog_Name__c', 'Catalog_Name', 'Track_Title__c', 'Release_Title__c', 'Name', 'Title'];
+      } else if (ot.indexOf('add_on') >= 0 || ot.indexOf('addon') >= 0) {
+        hints = ['Add_On_Name__c', 'Addon_Name__c', 'Type__c', 'Name'];
+      } else if (ot.indexOf('seed') >= 0 || ot.indexOf('contract') >= 0) {
+        hints = ['Contract_Name__c', 'Document_Name__c', 'File_Name__c', 'Name', 'Title'];
+      }
+      if (hints.length) {
+        var direct = cgbFindExactFieldValue(row, hints);
+        if (direct && !cgbLooksSynthetic(direct)) return direct;
+        var loose = cgbFindValue(row, hints.map(function(h) { return String(h).replace(/__c$/i, '').replace(/_/g, ' '); }));
+        if (loose && !cgbLooksSynthetic(loose)) return loose;
+      }
+      return cgbExtractDisplayName(row);
+    }
+
     function cgbRecordSourceTag(row) {
       if (!row) return 'workbook_fallback';
       return cgbExtractRecordId(row) ? 'salesforce_resolver' : 'workbook_fallback';
@@ -48687,7 +48731,7 @@
     function cgbDescribeRow(row, idx, objectType) {
       if (!row) return 'No Salesforce record mapped';
       var id = cgbExtractRecordId(row);
-      var name = cgbExtractDisplayName(row);
+      var name = cgbExtractDisplayNameForType(row, objectType);
       var src = cgbRecordSourceTag(row);
       var typeText = objectType ? (objectType + ': ') : '';
       if (name && id) return typeText + name + ' (' + id + ') [' + src + ']';
