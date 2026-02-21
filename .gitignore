@@ -38,3 +38,22 @@ Thumbs.db
 # Environment
 .env
 .env.local
+.env.*
+!.env.example
+
+# Generated runtime output — never commit
+out/*.json
+out/*.csv
+!out/.gitkeep
+
+# Duplicate/stale preview artifacts
+*.preview.prev.json
+
+# ML model artifacts
+*.joblib
+*.pkl
+
+# Internal docs (move these to private repo)
+EDDIE_LOOK_HERE_DO_THIS.txt
+docs/handoff/
+config/docs/handoff/
