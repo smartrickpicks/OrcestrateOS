@@ -62,3 +62,5 @@ externalPort = 80
 [userenv.shared]
 EVIDENCE_INSPECTOR_V251 = "true"
 PREFLIGHT_GATE_SYNC = "true"
+RECORD_INSPECTOR_V2 = "true"
+RECORD_INSPECTOR_V2_DEFAULT = "false"
