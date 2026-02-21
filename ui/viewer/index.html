@@ -2177,6 +2177,26 @@
     .pftl-raw-toggle:hover { text-decoration: underline; }
     .pftl-raw-content { background: var(--bg-2); border: 1px solid var(--border-1); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.75em; max-height: 300px; overflow: auto; white-space: pre-wrap; word-break: break-all; display: none; }
     .pftl-raw-content.open { display: block; }
+    .hs-score-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+    .hs-score-card { background: var(--bg-2, #f5f5f5); border: 1px solid var(--border-1, #e0e0e0); border-radius: 8px; padding: 12px 16px; text-align: center; min-width: 80px; }
+    .hs-score-value { font-size: 1.4em; font-weight: 700; color: var(--text-1, #333); }
+    .hs-score-label { font-size: 0.72em; color: var(--text-3, #999); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .hs-penalty .hs-score-value { color: var(--bad, #e74c3c); }
+    .hs-band-badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 0.78em; font-weight: 600; }
+    .hs-band-healthy { background: rgba(46, 204, 113, 0.15); color: #27ae60; border: 1px solid rgba(46, 204, 113, 0.3); }
+    .hs-band-spotcheck { background: rgba(52, 152, 219, 0.12); color: #2980b9; border: 1px solid rgba(52, 152, 219, 0.25); }
+    .hs-band-moderate { background: rgba(241, 196, 15, 0.15); color: #f39c12; border: 1px solid rgba(241, 196, 15, 0.3); }
+    .hs-band-review { background: rgba(231, 76, 60, 0.12); color: #c0392b; border: 1px solid rgba(231, 76, 60, 0.25); }
+    .hs-sections { margin-top: 8px; }
+    .hs-section-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .hs-section-label { font-size: 0.78em; color: var(--text-2, #555); width: 130px; flex-shrink: 0; }
+    .hs-bar-track { flex: 1; height: 8px; background: var(--bg-3, #eee); border-radius: 4px; overflow: hidden; }
+    .hs-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+    .hs-bar-pass { background: #2ecc71; }
+    .hs-bar-review { background: #f1c40f; }
+    .hs-bar-fail { background: #e74c3c; }
+    .hs-section-pct { font-size: 0.78em; font-weight: 600; color: var(--text-2, #555); width: 35px; text-align: right; }
+    .hs-version { font-size: 0.7em; color: var(--text-3, #999); margin-top: 8px; font-style: italic; }
     .pftl-why-gate { background: var(--bg-3); border: 1px solid #bbdefb; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.85em; color: var(--accent-2); line-height: 1.5; }
     .pftl-trace-table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
     .pftl-trace-table th { background: var(--table-head); padding: 6px 10px; text-align: left; font-weight: 600; color: var(--table-head-text); border-bottom: 2px solid var(--border-1); }
@@ -48380,6 +48400,60 @@
       }, 80);
     }
 
+    function cgbSeedFromPreflight(preflightResult) {
+      if (!preflightResult) return;
+      var story = preflightResult.resolution_story || {};
+      var classification = preflightResult.contract_classification || {};
+      var spine = preflightResult.opportunity_spine || {};
+
+      cgbStartNewSession();
+
+      var legal = story.legal_entity_account;
+      if (legal && legal.name) {
+        cgbState.legalEntity = legal.name;
+      }
+
+      var counterparties = story.counterparties || [];
+      if (counterparties.length > 0) {
+        cgbState.whoWhere.counterpartyName = counterparties[0].name || '';
+        cgbState.whoWhere.counterpartyResolved = true;
+      }
+
+      var unresolved = story.unresolved_counterparties || [];
+      if (unresolved.length > 0 && !cgbState.whoWhere.counterpartyName) {
+        cgbState.whoWhere.counterpartyName = unresolved[0].name || unresolved[0] || '';
+      }
+
+      if (classification.contract_category) {
+        var cat = classification.contract_category;
+        if (cat === 'distribution') cgbState.templateType = 'distribution_sync';
+        else if (cat === 'termination') cgbState.templateType = 'termination';
+        else if (cat === 'amendment') cgbState.templateType = 'amendment';
+        else cgbState.templateType = cat;
+      }
+
+      var checks = spine.checks || [];
+      for (var i = 0; i < checks.length; i++) {
+        if (checks[i].code === 'OPP_CONTRACT_TYPE' && checks[i].value) {
+          cgbState.workflow.contractType = checks[i].value;
+        }
+      }
+
+      cgbState.preflightSeed = {
+        gate_color: preflightResult.gate_color,
+        health_score: preflightResult.health_score,
+        financials_readiness: preflightResult.financials_readiness,
+        addons_readiness: preflightResult.addons_readiness,
+        seeded_at: new Date().toISOString()
+      };
+
+      navigateTo('contract-generator');
+      setTimeout(function() {
+        if (typeof cgbInitPage === 'function') cgbInitPage(true);
+        showToast('Contract Generator seeded from preflight data.', 'success');
+      }, 80);
+    }
+
     var cgbState = {
       initialized: false,
       sessionMode: 'new',
@@ -49610,10 +49684,10 @@
       html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">';
       if (gate === 'YELLOW' && !st.actionTaken && !st.generateCopyDone) {
         html += '<button class="pf-gate-btn accept" onclick="pfGateAction(\x27accept_risk\x27).then(function(){cgbRenderGateStatus()})">Accept Risk</button>';
-        html += '<button class="pf-gate-btn generate-copy" onclick="pfGateAction(\x27generate_copy\x27).then(function(){cgbRenderGateStatus()})">Generate Copy</button>';
+        html += '<button class="pf-gate-btn generate-copy" onclick="pfGateAction(\x27generate_copy\x27).then(function(){cgbRenderGateStatus();cgbSeedFromPreflight(window._pfGateState&&window._pfGateState.result)})">Generate Copy</button>';
       }
       if (gate === 'RED' && !st.generateCopyDone) {
-        html += '<button class="pf-gate-btn generate-copy" onclick="pfGateAction(\x27generate_copy\x27).then(function(){cgbRenderGateStatus()})">Generate Copy</button>';
+        html += '<button class="pf-gate-btn generate-copy" onclick="pfGateAction(\x27generate_copy\x27).then(function(){cgbRenderGateStatus();cgbSeedFromPreflight(window._pfGateState&&window._pfGateState.result)})">Generate Copy</button>';
       }
       if (gate !== 'GREEN' && st.generateCopyDone && !st.reconstructionCompleteDone) {
         html += '<button class="pf-gate-btn reconstruct" onclick="cgPageMarkReconstructionComplete()">Mark Reconstruction Complete</button>';
@@ -56259,7 +56333,7 @@ var P022_RuntimeValidation = {
         } else {
           html += '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
           html += '<button class="pf-gate-btn accept" onclick="pfGateAction(\'accept_risk\')">Accept Risk</button>';
-          html += '<button class="pf-gate-btn generate-copy" onclick="pfGateAction(\'generate_copy\')">Generate Copy</button>';
+          html += '<button class="pf-gate-btn generate-copy" onclick="pfGateAction(\'generate_copy\').then(function(){if(typeof cgbSeedFromPreflight===\'function\')cgbSeedFromPreflight(window._pfGateState&&window._pfGateState.result)})">Generate Copy</button>';
           html += '</div>';
           html += '<div style="font-size:0.74em;color:#888;margin-top:4px;">Accept Risk unlocks immediately. Generate Copy requires reconstruction review.</div>';
         }
@@ -56279,7 +56353,7 @@ var P022_RuntimeValidation = {
           html += '</div>';
           html += '<div style="font-size:0.74em;color:#999;margin-top:4px;">After reconstruction: RED override required.</div>';
         } else {
-          html += '<button class="pf-gate-btn generate-copy" onclick="pfGateAction(\'generate_copy\')">Generate Copy</button>';
+          html += '<button class="pf-gate-btn generate-copy" onclick="pfGateAction(\'generate_copy\').then(function(){if(typeof cgbSeedFromPreflight===\'function\')cgbSeedFromPreflight(window._pfGateState&&window._pfGateState.result)})">Generate Copy</button>';
           html += '<div style="font-size:0.74em;color:#999;margin-top:4px;">RED gate: Generate Copy + Reconstruction + Override required.</div>';
         }
       }
@@ -58022,6 +58096,12 @@ var P022_RuntimeValidation = {
 
     html += _pftlRenderScheduleStructure(r);
 
+
+    html += _pftlRenderFinancialsReadiness(r);
+
+    html += _pftlRenderAddonsReadiness(r);
+
+    html += _pftlRenderHealthScore(r);
     html += _pftlRenderSfMatchSection(r);
 
     var m = r.metrics || {};
@@ -58774,6 +58854,145 @@ var P022_RuntimeValidation = {
     }
 
     html += '</tbody></table></div>';
+    return html;
+  }
+
+  function _pftlRenderFinancialsReadiness(r) {
+    var fin = r.financials_readiness;
+    if (!fin) return '';
+    var checks = fin.checks || [];
+    var summary = fin.summary || {};
+    var overall = fin.status || 'fail';
+
+    var html = '<div class="pftl-section pftl-fin-section">';
+    html += '<div class="pftl-section-title" style="display:flex;align-items:center;gap:8px;">Financials Readiness';
+    var overallClass = overall === 'pass' ? 'sch-badge-pass' : overall === 'fail' ? 'sch-badge-fail' : 'sch-badge-review';
+    html += ' <span class="sch-overall-badge ' + overallClass + '">' + overall.toUpperCase() + '</span>';
+    html += '</div>';
+
+    html += '<div class="sch-summary">';
+    if (summary.passed > 0) html += '<span class="sch-chip sch-chip-pass">' + summary.passed + ' Passed</span>';
+    if (summary.review > 0) html += '<span class="sch-chip sch-chip-review">' + summary.review + ' Review</span>';
+    if (summary.failed > 0) html += '<span class="sch-chip sch-chip-fail">' + summary.failed + ' Failed</span>';
+    html += '</div>';
+
+    html += '<table class="sch-table"><thead><tr>';
+    html += '<th>Check</th><th>Status</th><th>Value</th><th>Reason</th>';
+    html += '</tr></thead><tbody>';
+
+    for (var i = 0; i < checks.length; i++) {
+      var ck = checks[i];
+      var st = ck.status || 'fail';
+      var badgeClass = st === 'pass' ? 'sch-badge-pass' : st === 'fail' ? 'sch-badge-fail' : 'sch-badge-review';
+      html += '<tr>';
+      html += '<td class="sch-label">' + _pftlEsc(ck.label || ck.code) + '</td>';
+      html += '<td><span class="sch-status-badge ' + badgeClass + '">' + st.toUpperCase() + '</span></td>';
+      var valueCell = ck.value ? _pftlEsc(String(ck.value)) : '\u2014';
+      if (ck.confidence) {
+        valueCell += ' <span class="sch-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
+      }
+      html += '<td class="sch-value">' + valueCell + '</td>';
+      html += '<td class="sch-reason">' + (ck.reason ? _pftlEsc(ck.reason) : '') + '</td>';
+      html += '</tr>';
+    }
+
+    html += '</tbody></table></div>';
+    return html;
+  }
+
+  function _pftlRenderAddonsReadiness(r) {
+    var addon = r.addons_readiness;
+    if (!addon) return '';
+    var checks = addon.checks || [];
+    var summary = addon.summary || {};
+    var overall = addon.status || 'fail';
+
+    var html = '<div class="pftl-section pftl-addon-section">';
+    html += '<div class="pftl-section-title" style="display:flex;align-items:center;gap:8px;">V2 Add-ons Readiness';
+    var overallClass = overall === 'pass' ? 'sch-badge-pass' : overall === 'fail' ? 'sch-badge-fail' : 'sch-badge-review';
+    html += ' <span class="sch-overall-badge ' + overallClass + '">' + overall.toUpperCase() + '</span>';
+    html += '</div>';
+
+    html += '<div class="sch-summary">';
+    if (summary.passed > 0) html += '<span class="sch-chip sch-chip-pass">' + summary.passed + ' Passed</span>';
+    if (summary.review > 0) html += '<span class="sch-chip sch-chip-review">' + summary.review + ' Review</span>';
+    if (summary.failed > 0) html += '<span class="sch-chip sch-chip-fail">' + summary.failed + ' Failed</span>';
+    html += '</div>';
+
+    html += '<table class="sch-table"><thead><tr>';
+    html += '<th>Check</th><th>Status</th><th>Value</th><th>Reason</th>';
+    html += '</tr></thead><tbody>';
+
+    for (var i = 0; i < checks.length; i++) {
+      var ck = checks[i];
+      var st = ck.status || 'fail';
+      var badgeClass = st === 'pass' ? 'sch-badge-pass' : st === 'fail' ? 'sch-badge-fail' : 'sch-badge-review';
+      html += '<tr>';
+      html += '<td class="sch-label">' + _pftlEsc(ck.label || ck.code) + '</td>';
+      html += '<td><span class="sch-status-badge ' + badgeClass + '">' + st.toUpperCase() + '</span></td>';
+      var valueCell = ck.value ? _pftlEsc(String(ck.value)) : '\u2014';
+      if (ck.confidence) {
+        valueCell += ' <span class="sch-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
+      }
+      html += '<td class="sch-value">' + valueCell + '</td>';
+      html += '<td class="sch-reason">' + (ck.reason ? _pftlEsc(ck.reason) : '') + '</td>';
+      html += '</tr>';
+    }
+
+    html += '</tbody></table></div>';
+    return html;
+  }
+
+  function _pftlRenderHealthScore(r) {
+    var hs = r.health_score;
+    if (!hs) return '';
+
+    var band = hs.band || 'NEEDS_DETAILED_REVIEW';
+    var calibrated = hs.calibrated_score || 0;
+    var raw = hs.raw_score || 0;
+    var penalty = hs.gate_penalty || 0;
+    var sections = hs.section_scores || {};
+
+    var bandClass = 'hs-band-review';
+    var bandLabel = 'Needs Detailed Review';
+    if (band === 'VERY_HIGH_CONFIDENCE_HEALTHY') { bandClass = 'hs-band-healthy'; bandLabel = 'Very High Confidence'; }
+    else if (band === 'HEALTHY_REVIEW_SPOTCHECK') { bandClass = 'hs-band-spotcheck'; bandLabel = 'Healthy \u2014 Spot Check'; }
+    else if (band === 'MODERATE_CONFIDENCE') { bandClass = 'hs-band-moderate'; bandLabel = 'Moderate Confidence'; }
+
+    var html = '<div class="pftl-section pftl-health-section">';
+    html += '<div class="pftl-section-title" style="display:flex;align-items:center;gap:8px;">Contract Health Score';
+    html += ' <span class="hs-band-badge ' + bandClass + '">' + _pftlEsc(bandLabel) + '</span>';
+    html += '</div>';
+
+    html += '<div class="hs-score-row">';
+    html += '<div class="hs-score-card"><div class="hs-score-value">' + Math.round(calibrated * 100) + '%</div><div class="hs-score-label">Calibrated</div></div>';
+    html += '<div class="hs-score-card"><div class="hs-score-value">' + Math.round(raw * 100) + '%</div><div class="hs-score-label">Raw</div></div>';
+    if (penalty > 0) {
+      html += '<div class="hs-score-card hs-penalty"><div class="hs-score-value">-' + Math.round(penalty * 100) + '%</div><div class="hs-score-label">Gate Penalty</div></div>';
+    }
+    html += '</div>';
+
+    html += '<div class="hs-sections">';
+    var sectionLabels = {opportunity_spine:'Opportunity Spine', schedule_structure:'Schedule Structure', financials_readiness:'Financials', addons_readiness:'Add-ons', entity_resolution:'Entity Resolution'};
+    var sectionKeys = ['opportunity_spine','schedule_structure','financials_readiness','addons_readiness','entity_resolution'];
+    for (var i = 0; i < sectionKeys.length; i++) {
+      var sk = sectionKeys[i];
+      var sv = sections[sk] || 0;
+      var pct = Math.round(sv * 100);
+      var barClass = pct >= 80 ? 'hs-bar-pass' : pct >= 50 ? 'hs-bar-review' : 'hs-bar-fail';
+      html += '<div class="hs-section-row">';
+      html += '<span class="hs-section-label">' + sectionLabels[sk] + '</span>';
+      html += '<div class="hs-bar-track"><div class="hs-bar-fill ' + barClass + '" style="width:' + pct + '%;"></div></div>';
+      html += '<span class="hs-section-pct">' + pct + '%</span>';
+      html += '</div>';
+    }
+    html += '</div>';
+
+    if (hs.calibration_version) {
+      html += '<div class="hs-version">Calibration: ' + _pftlEsc(hs.calibration_version) + '</div>';
+    }
+
+    html += '</div>';
     return html;
   }
 

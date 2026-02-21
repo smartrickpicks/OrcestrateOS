@@ -368,6 +368,13 @@ def run_preflight(pages_data):
     contract_type_val = _opp_check_value(opportunity_spine, "OPP_CONTRACT_TYPE")
     contract_classification = classify_contract(contract_type_val, full_text)
 
+    financials_readiness = build_financials_readiness(full_text, opportunity_spine)
+    addons_readiness = build_addons_readiness(full_text, opportunity_spine)
+    health_score = compute_preflight_health_score(
+        gate_color, opportunity_spine, schedule_structure,
+        financials_readiness, addons_readiness, resolution_story,
+    )
+
     return {
         "doc_mode": doc_mode,
         "gate_color": gate_color,
@@ -379,6 +386,9 @@ def run_preflight(pages_data):
         "opportunity_spine": opportunity_spine,
         "schedule_structure": schedule_structure,
         "contract_classification": contract_classification,
+        "financials_readiness": financials_readiness,
+        "addons_readiness": addons_readiness,
+        "health_score": health_score,
         "page_classifications": page_results,
         "extracted_text": full_text[:50000],
         "extracted_headers": extracted_headers,
@@ -1786,3 +1796,314 @@ def _run_salesforce_match(extracted_headers, full_text=""):
     ))
 
     return results
+
+
+_FINANCIAL_AMOUNT_KW = [
+    "advance", "fee", "payment", "compensation", "consideration",
+    "amount", "sum", "price", "cost", "budget", "deposit",
+]
+_FINANCIAL_RATE_KW = [
+    "royalty", "rate", "percentage", "percent", "share", "split",
+    "commission", "margin", "revenue share",
+]
+_PAYMENT_TERM_KW = [
+    "net 30", "net 60", "net 90", "payable", "quarterly", "monthly",
+    "annually", "semi-annual", "accounting period", "payment terms",
+    "within", "days of", "upon receipt", "invoic",
+]
+_CURRENCY_KW = [
+    "usd", "eur", "gbp", "cad", "aud", "jpy", "currency",
+    "dollar", "euro", "pound", "sterling",
+]
+_CURRENCY_SYMBOLS = ["$", "€", "£", "¥"]
+
+
+def _extract_financial_amounts(text):
+    if not text or not text.strip():
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
+    lower = text.lower()
+    amount_pat = re.compile(r'[\$€£¥]\s*[\d,]+(?:\.\d+)?|\d[\d,]*(?:\.\d+)?\s*(?:dollars|usd|eur|gbp)')
+    amounts_found = amount_pat.findall(lower)
+    kw_hits = sum(1 for kw in _FINANCIAL_AMOUNT_KW if kw in lower)
+    if amounts_found and kw_hits >= 1:
+        return {"status": "pass", "confidence": min(0.95, 0.75 + kw_hits * 0.05 + len(amounts_found) * 0.03), "value": f"{len(amounts_found)} amounts, {kw_hits} keywords", "reason": "Financial amounts and keywords detected"}
+    if amounts_found or kw_hits >= 1:
+        return {"status": "review", "confidence": 0.4 + min(0.3, kw_hits * 0.1), "value": f"{len(amounts_found)} amounts, {kw_hits} keywords", "reason": "Partial financial signals"}
+    return {"status": "fail", "confidence": 0.1, "value": None, "reason": "No financial amount signals detected"}
+
+
+def _extract_financial_rates(text):
+    if not text or not text.strip():
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
+    lower = text.lower()
+    rate_pat = re.compile(r'\d+(?:\.\d+)?\s*%|(?:royalty|rate|share|split)\s+(?:of\s+)?\d')
+    rates_found = rate_pat.findall(lower)
+    kw_hits = sum(1 for kw in _FINANCIAL_RATE_KW if kw in lower)
+    if rates_found and kw_hits >= 2:
+        return {"status": "pass", "confidence": min(0.95, 0.7 + kw_hits * 0.05), "value": f"{len(rates_found)} rates, {kw_hits} keywords", "reason": "Financial rates and keywords detected"}
+    if rates_found or kw_hits >= 1:
+        return {"status": "review", "confidence": 0.3 + min(0.3, kw_hits * 0.1), "value": f"{len(rates_found)} rates, {kw_hits} keywords", "reason": "Partial rate signals"}
+    return {"status": "fail", "confidence": 0.1, "value": None, "reason": "No rate signals detected"}
+
+
+def _extract_payment_terms(text):
+    if not text or not text.strip():
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
+    lower = text.lower()
+    kw_hits = sum(1 for kw in _PAYMENT_TERM_KW if kw in lower)
+    if kw_hits >= 3:
+        return {"status": "pass", "confidence": min(0.95, 0.6 + kw_hits * 0.07), "value": f"{kw_hits} payment term signals", "reason": "Payment terms well-defined"}
+    if kw_hits >= 1:
+        return {"status": "review", "confidence": 0.3 + kw_hits * 0.1, "value": f"{kw_hits} payment term signals", "reason": "Partial payment terms"}
+    return {"status": "fail", "confidence": 0.1, "value": None, "reason": "No payment term signals"}
+
+
+def _extract_currency_signals(text):
+    if not text or not text.strip():
+        return {"status": "review", "confidence": 0.2, "value": None, "reason": "No text available"}
+    lower = text.lower()
+    kw_hits = sum(1 for kw in _CURRENCY_KW if kw in lower)
+    sym_hits = sum(1 for s in _CURRENCY_SYMBOLS if s in text)
+    total = kw_hits + sym_hits
+    if total >= 1:
+        return {"status": "pass", "confidence": min(0.95, 0.6 + total * 0.1), "value": f"{total} currency signals", "reason": "Currency identified"}
+    return {"status": "review", "confidence": 0.2, "value": None, "reason": "No explicit currency signals"}
+
+
+def _check_financial_completeness(text, opportunity_spine):
+    if not text or not text.strip():
+        return {"status": "fail", "confidence": 0, "value": "0/3 pillars", "reason": "No text for completeness check"}
+    lower = text.lower()
+    contract_type = _opp_check_value(opportunity_spine, "OPP_CONTRACT_TYPE") if opportunity_spine else None
+    is_termination = contract_type and "termination" in str(contract_type).lower()
+    has_amounts = bool(re.search(r'[\$€£¥]\s*[\d,]+|\d[\d,]+\s*(?:dollars|usd)', lower))
+    has_rates = bool(re.search(r'\d+(?:\.\d+)?\s*%', lower))
+    has_terms = any(kw in lower for kw in ["payable", "quarterly", "monthly", "net 30", "net 60", "payment terms", "accounting period"])
+    pillars = sum([has_amounts, has_rates, has_terms])
+    if is_termination:
+        if pillars >= 1:
+            return {"status": "pass", "confidence": 0.8, "value": f"{pillars}/3 pillars (termination lenient)", "reason": "Termination contract — reduced financial requirements"}
+        return {"status": "review", "confidence": 0.5, "value": f"{pillars}/3 pillars (termination)", "reason": "Termination with no financial signals"}
+    if pillars >= 3:
+        return {"status": "pass", "confidence": 0.95, "value": "3/3 pillars", "reason": "Full financial completeness"}
+    if pillars >= 2:
+        return {"status": "pass", "confidence": 0.75, "value": f"{pillars}/3 pillars", "reason": "Most financial pillars present"}
+    if pillars >= 1:
+        return {"status": "review", "confidence": 0.45, "value": f"{pillars}/3 pillars", "reason": "Partial financial coverage"}
+    return {"status": "fail", "confidence": 0.1, "value": "0/3 pillars", "reason": "No financial completeness"}
+
+
+def build_financials_readiness(full_text, opportunity_spine):
+    checks = [
+        {"code": "FIN_AMOUNTS", "label": "Financial Amounts", **_extract_financial_amounts(full_text)},
+        {"code": "FIN_RATES", "label": "Financial Rates", **_extract_financial_rates(full_text)},
+        {"code": "FIN_PAYMENT_TERMS", "label": "Payment Terms", **_extract_payment_terms(full_text)},
+        {"code": "FIN_CURRENCY", "label": "Currency Signals", **_extract_currency_signals(full_text)},
+        {"code": "FIN_COMPLETENESS", "label": "Financial Completeness", **_check_financial_completeness(full_text, opportunity_spine)},
+    ]
+    passed = sum(1 for c in checks if c["status"] == "pass")
+    review = sum(1 for c in checks if c["status"] == "review")
+    failed = sum(1 for c in checks if c["status"] == "fail")
+    if passed >= 4:
+        overall = "pass"
+    elif failed >= 3:
+        overall = "fail"
+    else:
+        overall = "review"
+    return {
+        "status": overall,
+        "checks": checks,
+        "summary": {"passed": passed, "review": review, "failed": failed},
+    }
+
+
+_ADDON_TYPE_KW = [
+    "add-on", "addon", "amendment", "rider", "supplemental",
+    "addendum", "supplement", "additional services", "synchronization",
+    "sync", "modification", "extension",
+]
+_ADDON_RIGHTS_KW = [
+    "synchronization", "mechanical", "performance", "digital",
+    "distribution", "streaming", "download", "reproduction",
+    "master use", "sync rights", "neighboring", "publishing",
+    "broadcasting", "theatrical", "sublicens",
+]
+_ADDON_PRICING_KW = [
+    "additional fee", "supplemental", "per use", "flat fee",
+    "add-on price", "addon fee", "incremental", "surcharge",
+]
+_ADDON_DATE_KW = [
+    "effective date", "commencement", "renewal", "term extension",
+    "option period", "expiration", "valid from", "valid until",
+]
+
+
+def _extract_addon_type_signals(text):
+    if not text or not text.strip():
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
+    lower = text.lower()
+    kw_hits = sum(1 for kw in _ADDON_TYPE_KW if kw in lower)
+    if kw_hits >= 3:
+        return {"status": "pass", "confidence": min(0.95, 0.6 + kw_hits * 0.07), "value": f"{kw_hits} addon type signals", "reason": "Add-on type clearly identified"}
+    if kw_hits >= 1:
+        return {"status": "review", "confidence": 0.3 + kw_hits * 0.1, "value": f"{kw_hits} addon type signals", "reason": "Partial add-on type signals"}
+    return {"status": "fail", "confidence": 0.1, "value": None, "reason": "No add-on type signals"}
+
+
+def _extract_addon_rights(text):
+    if not text or not text.strip():
+        return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
+    lower = text.lower()
+    kw_hits = sum(1 for kw in _ADDON_RIGHTS_KW if kw in lower)
+    if kw_hits >= 3:
+        return {"status": "pass", "confidence": min(0.95, 0.65 + kw_hits * 0.05), "value": f"{kw_hits} rights signals", "reason": "Rights well-defined"}
+    if kw_hits >= 1:
+        return {"status": "review", "confidence": 0.3 + kw_hits * 0.1, "value": f"{kw_hits} rights signals", "reason": "Partial rights coverage"}
+    return {"status": "fail", "confidence": 0.1, "value": None, "reason": "No rights signals"}
+
+
+def _extract_addon_pricing(text):
+    if not text or not text.strip():
+        return {"status": "review", "confidence": 0.2, "value": None, "reason": "No text available"}
+    lower = text.lower()
+    amount_pat = re.compile(r'[\$€£¥]\s*[\d,]+(?:\.\d+)?|\d[\d,]*(?:\.\d+)?\s*(?:dollars|usd|eur|gbp)')
+    amounts = amount_pat.findall(lower)
+    kw_hits = sum(1 for kw in _ADDON_PRICING_KW if kw in lower)
+    if amounts and kw_hits >= 1:
+        return {"status": "pass", "confidence": min(0.95, 0.6 + kw_hits * 0.1), "value": f"{len(amounts)} amounts, {kw_hits} pricing keywords", "reason": "Add-on pricing identified"}
+    if amounts or kw_hits >= 1:
+        return {"status": "review", "confidence": 0.35, "value": f"{len(amounts)} amounts, {kw_hits} pricing keywords", "reason": "Partial pricing signals"}
+    return {"status": "review", "confidence": 0.2, "value": None, "reason": "No explicit pricing"}
+
+
+def _extract_addon_dates(text):
+    if not text or not text.strip():
+        return {"status": "review", "confidence": 0.2, "value": None, "reason": "No text available"}
+    lower = text.lower()
+    kw_hits = sum(1 for kw in _ADDON_DATE_KW if kw in lower)
+    date_pat = re.compile(r'(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s+\d{4}|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2}')
+    dates = date_pat.findall(lower)
+    total = kw_hits + len(dates)
+    if total >= 2:
+        return {"status": "pass", "confidence": min(0.95, 0.5 + total * 0.1), "value": f"{kw_hits} date keywords, {len(dates)} dates", "reason": "Add-on dates well-defined"}
+    if total >= 1:
+        return {"status": "review", "confidence": 0.35, "value": f"{kw_hits} date keywords, {len(dates)} dates", "reason": "Partial date coverage"}
+    return {"status": "review", "confidence": 0.2, "value": None, "reason": "No explicit dates"}
+
+
+def _check_addon_completeness(text, opportunity_spine):
+    if not text or not text.strip():
+        return {"status": "fail", "confidence": 0, "value": "0/3 pillars", "reason": "No text for completeness check"}
+    contract_type = _opp_check_value(opportunity_spine, "OPP_CONTRACT_TYPE") if opportunity_spine else None
+    is_termination = contract_type and "termination" in str(contract_type).lower()
+    if is_termination:
+        return {"status": "pass", "confidence": 0.8, "value": "N/A (termination)", "reason": "Add-on completeness not applicable for termination contracts"}
+    lower = text.lower()
+    has_type = any(kw in lower for kw in _ADDON_TYPE_KW)
+    has_rights = any(kw in lower for kw in _ADDON_RIGHTS_KW)
+    has_pricing = any(kw in lower for kw in _ADDON_PRICING_KW) or bool(re.search(r'[\$€£¥]\s*[\d,]+', text))
+    pillars = sum([has_type, has_rights, has_pricing])
+    if pillars >= 3:
+        return {"status": "pass", "confidence": 0.9, "value": "3/3 pillars", "reason": "Full add-on completeness"}
+    if pillars >= 2:
+        return {"status": "pass", "confidence": 0.7, "value": f"{pillars}/3 pillars", "reason": "Most add-on pillars present"}
+    if pillars >= 1:
+        return {"status": "review", "confidence": 0.4, "value": f"{pillars}/3 pillars", "reason": "Partial add-on coverage"}
+    return {"status": "fail", "confidence": 0.1, "value": "0/3 pillars", "reason": "No add-on completeness"}
+
+
+def build_addons_readiness(full_text, opportunity_spine):
+    checks = [
+        {"code": "ADDON_TYPE", "label": "Add-on Type Signals", **_extract_addon_type_signals(full_text)},
+        {"code": "ADDON_RIGHTS", "label": "Add-on Rights", **_extract_addon_rights(full_text)},
+        {"code": "ADDON_PRICING", "label": "Add-on Pricing", **_extract_addon_pricing(full_text)},
+        {"code": "ADDON_DATES", "label": "Add-on Dates", **_extract_addon_dates(full_text)},
+        {"code": "ADDON_COMPLETENESS", "label": "Add-on Completeness", **_check_addon_completeness(full_text, opportunity_spine)},
+    ]
+    passed = sum(1 for c in checks if c["status"] == "pass")
+    review = sum(1 for c in checks if c["status"] == "review")
+    failed = sum(1 for c in checks if c["status"] == "fail")
+    if passed >= 4:
+        overall = "pass"
+    elif failed >= 3:
+        overall = "fail"
+    else:
+        overall = "review"
+    return {
+        "status": overall,
+        "checks": checks,
+        "summary": {"passed": passed, "review": review, "failed": failed},
+    }
+
+
+def _module_score(module):
+    if not module:
+        return 0.0
+    checks = module.get("checks", [])
+    if not checks:
+        return 0.0
+    total = 0.0
+    for c in checks:
+        st = c.get("status", "fail")
+        conf = float(c.get("confidence", 0))
+        if st == "pass":
+            total += conf
+        elif st == "review":
+            total += conf * 0.5
+    return total / len(checks)
+
+
+def _entity_score(story):
+    if not story:
+        return 0.0
+    has_legal = bool(story.get("legal_entity_account"))
+    has_counter = bool(story.get("counterparties"))
+    if has_legal and has_counter:
+        return 1.0
+    if has_legal:
+        return 0.6
+    if has_counter:
+        return 0.3
+    return 0.0
+
+
+_GATE_PENALTIES = {"GREEN": 0.0, "YELLOW": 0.15, "RED": 0.35}
+
+_SECTION_WEIGHTS = {
+    "opportunity_spine": 0.25,
+    "schedule_structure": 0.15,
+    "financials_readiness": 0.25,
+    "addons_readiness": 0.15,
+    "entity_resolution": 0.20,
+}
+
+
+def compute_preflight_health_score(gate_color, opportunity_spine, schedule_structure, financials_readiness, addons_readiness, resolution_story):
+    from server.contract_health_runtime import (
+        calibrate_contract_health_score,
+        classify_contract_health_band,
+        get_calibration_version,
+    )
+
+    section_scores = {
+        "opportunity_spine": _module_score(opportunity_spine),
+        "schedule_structure": _module_score(schedule_structure),
+        "financials_readiness": _module_score(financials_readiness),
+        "addons_readiness": _module_score(addons_readiness),
+        "entity_resolution": _entity_score(resolution_story),
+    }
+
+    raw = sum(section_scores[k] * _SECTION_WEIGHTS[k] for k in _SECTION_WEIGHTS)
+    gate_penalty = _GATE_PENALTIES.get(gate_color, 0.0)
+    penalized = max(0.0, raw - gate_penalty)
+    calibrated = calibrate_contract_health_score(penalized)
+    band = classify_contract_health_band(calibrated)
+
+    return {
+        "raw_score": round(raw, 6),
+        "calibrated_score": round(calibrated, 6),
+        "band": band,
+        "calibration_version": get_calibration_version(),
+        "section_scores": {k: round(v, 6) for k, v in section_scores.items()},
+        "gate_penalty": gate_penalty,
+    }
