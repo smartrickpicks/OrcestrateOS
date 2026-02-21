@@ -59161,9 +59161,28 @@ var P022_RuntimeValidation = {
     }
   };
 
+  function _pftlFetchWithTimeout(url, opts, timeoutMs) {
+    timeoutMs = timeoutMs || 120000;
+    var controller = new AbortController();
+    opts = opts || {};
+    opts.signal = controller.signal;
+    var timer = setTimeout(function() { controller.abort(); }, timeoutMs);
+    return fetch(url, opts).then(function(resp) {
+      clearTimeout(timer);
+      return resp;
+    }).catch(function(err) {
+      clearTimeout(timer);
+      if (err.name === 'AbortError') {
+        throw new Error('Preflight request timed out after 120s — the backend may be overloaded. Please try again.');
+      }
+      throw err;
+    });
+  }
+
   function _pftlRunUpload(file) {
     var reader = new FileReader();
     reader.onload = function(e) {
+<<<<<<< HEAD
       var dataUrl = e.target.result || '';
       var comma = dataUrl.indexOf(',');
       var base64 = comma >= 0 ? dataUrl.substring(comma + 1) : '';
@@ -59171,6 +59190,10 @@ var P022_RuntimeValidation = {
         _pftlOnError(new Error('Failed to encode PDF for upload'));
         return;
       }
+=======
+      var dataUrl = e.target.result;
+      var base64 = dataUrl.split(',')[1] || '';
+>>>>>>> 4467913 (Improve file upload handling and add request timeouts)
 
       var hashStr = file.name + '|' + file.size + '|' + file.lastModified;
       var docId = 'upload_' + _pftlSimpleHash(hashStr);

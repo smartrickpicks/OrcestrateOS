@@ -1,6 +1,6 @@
 {
   "run_id": "V2.56-PREFLIGHT-EXPORT-REGRESSION",
-  "generated_at_utc": "2026-02-21T14:57:38.051Z",
+  "generated_at_utc": "2026-02-21T15:06:42.386Z",
   "source_file": "/home/runner/workspace/ui/viewer/index.html",
   "checks": {
     "create_stores_preflight_context": true,
