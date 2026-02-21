@@ -59280,7 +59280,22 @@ var P022_RuntimeValidation = {
     try {
       _pftlRender();
     } catch (renderErr) {
-      console.error('[PFTL] render error after success:', renderErr);
+      console.error('[PFTL] render error after success:', renderErr && renderErr.message ? renderErr.message : renderErr, renderErr && renderErr.stack ? renderErr.stack : '');
+      try {
+        var overlay = document.getElementById('pftl-overlay');
+        if (overlay) {
+          var fallback = '<div class="pftl-modal"><div class="pftl-header"><h3>Preflight Test Lab</h3>';
+          fallback += '<button class="pftl-close" onclick="pftlClose()">&times;</button></div>';
+          fallback += '<div class="pftl-body"><div class="pftl-gate-row"><span class="pftl-gate-badge ' + (_pftlState.result.gate_color || 'GREEN').toLowerCase() + '">' + (_pftlState.result.gate_color || 'GREEN') + '</span>';
+          fallback += '<span class="pftl-doc-mode">Document Mode: ' + (_pftlState.result.doc_mode || 'UNKNOWN') + '</span></div>';
+          fallback += '<div class="pftl-error" style="margin-top:12px;">Report render encountered an error. Gate result: ' + (_pftlState.result.gate_color || 'GREEN') + '. Use Download JSON for full data.</div>';
+          fallback += '<button class="pftl-btn download" onclick="pftlDownload()" style="margin-top:8px;">Download JSON</button>';
+          fallback += '</div></div>';
+          overlay.innerHTML = fallback;
+        }
+      } catch (fallbackErr) {
+        console.error('[PFTL] fallback render also failed:', fallbackErr);
+      }
     }
     console.log('[PFTL] run complete:', _pftlState.result.gate_color, _pftlState.result.doc_mode,
       'headers:', (_pftlState.result.extracted_headers || []).length,
@@ -60277,7 +60292,7 @@ var P022_RuntimeValidation = {
 
   function _pftlRenderResolutionStory(r) {
     var story = r.resolution_story;
-    if (!story) return '';
+    if (!story || typeof story !== 'object') return '';
 
     var html = '<div class="pftl-section rs-story-container">';
     html += '<div class="pftl-section-title">Entity Resolution Story</div>';
@@ -60742,7 +60757,7 @@ var P022_RuntimeValidation = {
       });
     }
     var le = story.legal_entity_account;
-    if (le && !seen[le.name.toLowerCase()]) {
+    if (le && le.name && !seen[le.name.toLowerCase()]) {
       seen[le.name.toLowerCase()] = true;
       pool.push({
         name: le.name, source_field: le.name,
@@ -60753,7 +60768,7 @@ var P022_RuntimeValidation = {
     }
     var cps = story.counterparties || [];
     for (var j = 0; j < cps.length; j++) {
-      if (!seen[cps[j].name.toLowerCase()]) {
+      if (cps[j].name && !seen[cps[j].name.toLowerCase()]) {
         seen[cps[j].name.toLowerCase()] = true;
         pool.push({
           name: cps[j].name, source_field: cps[j].name,
@@ -60966,7 +60981,7 @@ var P022_RuntimeValidation = {
 
   function _pftlRenderOpportunitySpine(r) {
     var spine = r.opportunity_spine;
-    if (!spine) return '';
+    if (!spine || typeof spine !== 'object') return '';
 
     var checks = spine.checks || [];
     var summary = spine.summary || {};
@@ -61063,7 +61078,7 @@ var P022_RuntimeValidation = {
 
   function _pftlRenderScheduleStructure(r) {
     var sch = r.schedule_structure;
-    if (!sch) return '';
+    if (!sch || typeof sch !== 'object') return '';
 
     var checks = sch.checks || [];
     var summary = sch.summary || {};
@@ -61138,7 +61153,7 @@ var P022_RuntimeValidation = {
 
   function _pftlRenderFinancialsReadiness(r) {
     var fin = r.financials_readiness;
-    if (!fin) return '';
+    if (!fin || typeof fin !== 'object') return '';
     var checks = fin.checks || [];
     var summary = fin.summary || {};
     var overall = fin.status || 'fail';
@@ -61187,7 +61202,7 @@ var P022_RuntimeValidation = {
 
   function _pftlRenderAddonsReadiness(r) {
     var addon = r.addons_readiness;
-    if (!addon) return '';
+    if (!addon || typeof addon !== 'object') return '';
     var checks = addon.checks || [];
     var summary = addon.summary || {};
     var overall = addon.status || 'fail';
@@ -61236,7 +61251,7 @@ var P022_RuntimeValidation = {
 
   function _pftlRenderHealthScore(r) {
     var hs = r.health_score;
-    if (!hs) return '';
+    if (!hs || typeof hs !== "object") return '';
 
     var band = hs.band || 'NEEDS_DETAILED_REVIEW';
     var calibrated = hs.calibrated_score || 0;
@@ -61328,7 +61343,7 @@ var P022_RuntimeValidation = {
   }
 
   function _pftlRenderSfMatchSection(r) {
-    var matches = r.salesforce_match || [];
+    var matches = Array.isArray(r.salesforce_match) ? r.salesforce_match : [];
     if (matches.length === 0) return '';
 
     var hasStory = !!(r.resolution_story);
