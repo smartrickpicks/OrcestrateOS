@@ -1,0 +1,13 @@
+# Default: all changes need at least one owner review
+* @smartrickpicks
+
+# Backend API
+/server/ @smartrickpicks
+/supabase/ @smartrickpicks
+
+# Frontend
+/ui/ @smartrickpicks
+
+# Config and secrets
+/.replit @smartrickpicks
+/.env* @smartrickpicks
