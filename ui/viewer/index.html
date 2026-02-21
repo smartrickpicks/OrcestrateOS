@@ -14777,6 +14777,7 @@
           preflight_results: null,
           checklist_status: {}
         },
+        preflight_context: options.preflight_context || null,
         thread: options.thread || [],
         review_notes: '',
         clarification_questions: [],
@@ -55252,6 +55253,7 @@ Add any additional notes here.
   </div>
   <div class="autobot-panel-footer">
     <button class="autobot-btn run" id="autobot-run-btn" type="button" onclick="runAutoBot()">Run AutoBot</button>
+    <button class="autobot-btn secondary" id="autobot-copy-report-btn" type="button" onclick="copyAutoBotRunReport()">Copy Run Report</button>
     <button class="autobot-btn secondary" type="button" onclick="closeAutoBotPanel()">Close</button>
   </div>
 </div>
@@ -55274,7 +55276,13 @@ Add any additional notes here.
     actionEventsCount: 0,
     actionBusy: false,
     runEnvelope: null,
-    headerMissingWarnKey: ''
+    headerMissingWarnKey: '',
+    lastResponses: {
+      suggestion: null,
+      preflight: null,
+      export: null,
+      action: null
+    }
   };
   window._autoBotState = _autoBotState;
   window.__AUTOBOT_DEV_MOCK__ = false;
@@ -55291,6 +55299,17 @@ Add any additional notes here.
   function _abData(payload) {
     if (payload && typeof payload === 'object' && payload.data) return payload.data;
     return payload;
+  }
+
+  function _abRedactedHeaders(headers) {
+    var out = {};
+    var key;
+    for (key in (headers || {})) {
+      if (!Object.prototype.hasOwnProperty.call(headers, key)) continue;
+      if (String(key).toLowerCase() === 'authorization') out[key] = 'Bearer [REDACTED]';
+      else out[key] = headers[key];
+    }
+    return out;
   }
 
   function _abErrorMessage(body, statusCode) {
@@ -55472,6 +55491,7 @@ Add any additional notes here.
     var resultsEl = document.getElementById('autobot-results');
     var runBtn = document.getElementById('autobot-run-btn');
     var applyBtn = document.getElementById('autobot-apply-btn');
+    var copyBtn = document.getElementById('autobot-copy-report-btn');
     var actionSelect = document.getElementById('autobot-action-select');
     if (!statusEl || !stepperEl || !resultsEl || !runBtn || !applyBtn || !actionSelect) return;
 
@@ -55571,6 +55591,7 @@ Add any additional notes here.
     runBtn.textContent = _autoBotState.running ? 'Running...' : 'Run AutoBot';
     applyBtn.disabled = _autoBotState.running || _autoBotState.actionBusy || !_autoBotState.preflightRun || !actions.length || !headersReady;
     applyBtn.textContent = _autoBotState.actionBusy ? 'Applying...' : 'Apply Action';
+    if (copyBtn) copyBtn.disabled = !_autoBotState.runEnvelope;
 
     var reviewBox = document.getElementById('autobot-reconstruction-review');
     if (reviewBox) reviewBox.style.display = actionSelect.value === 'reconstruction_complete' ? '' : 'none';
@@ -55677,6 +55698,12 @@ Add any additional notes here.
     _autoBotState.selectedAction = '';
     _autoBotState.actionEventsCount = 0;
     _autoBotState.runEnvelope = null;
+    _autoBotState.lastResponses = {
+      suggestion: null,
+      preflight: null,
+      export: null,
+      action: null
+    };
   }
 
   window.toggleFabMenu = function(event) {
@@ -55751,6 +55778,46 @@ Add any additional notes here.
     _abRender();
   };
 
+  window.copyAutoBotRunReport = function() {
+    if (!_autoBotState.runEnvelope) {
+      _autoBotState.error = 'No AutoBot run report available yet.';
+      _abRender();
+      return;
+    }
+    var headerState = _abHeaderState();
+    var report = {
+      generated_at: new Date().toISOString(),
+      runtime_contract: 'v1.1',
+      endpoint_chain: [
+        '/api/v2.5/suggestion-runs/local',
+        '/api/preflight/run',
+        '/api/preflight/export',
+        '/api/preflight/action'
+      ],
+      headers: _abRedactedHeaders(headerState.headers),
+      header_missing: headerState.missing,
+      run_envelope: _autoBotState.runEnvelope,
+      responses: _autoBotState.lastResponses
+    };
+    var text = JSON.stringify(report, null, 2);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() {
+        if (typeof showToast === 'function') showToast('AutoBot run report copied', 'info');
+      }).catch(function(err) {
+        _autoBotState.error = 'Copy failed: ' + (err && err.message ? err.message : 'unknown');
+        _abRender();
+      });
+      return;
+    }
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (typeof showToast === 'function') showToast('AutoBot run report copied', 'info');
+  };
+
   window.runAutoBot = function() {
     if (_autoBotState.running) return;
     if (!window.__AUTOBOT_DEV_MOCK__) {
@@ -55782,6 +55849,7 @@ Add any additional notes here.
     _abRender();
     _abPost('/api/v2.5/suggestion-runs/local', suggestionBody)
       .then(function(respSug) {
+        _autoBotState.lastResponses.suggestion = respSug || null;
         _abSetStep('suggestion', 'done');
         _autoBotState.suggestionRun = _abData(respSug) || {};
         _autoBotState.docId = _autoBotState.suggestionRun.document_id || _autoBotState.docId;
@@ -55792,6 +55860,7 @@ Add any additional notes here.
         return _abPost('/api/preflight/run', _abBuildPreflightPayload());
       })
       .then(function(respPreflight) {
+        _autoBotState.lastResponses.preflight = respPreflight || null;
         _abSetStep('preflight', 'done');
         _autoBotState.preflightRun = _abData(respPreflight) || {};
         _autoBotState.docId = _autoBotState.preflightRun.doc_id || _autoBotState.docId;
@@ -55802,6 +55871,7 @@ Add any additional notes here.
         return _abPost('/api/preflight/export', { doc_id: (_autoBotState.runEnvelope && _autoBotState.runEnvelope.preflight_doc_id) || _autoBotState.docId });
       })
       .then(function(respExport) {
+        _autoBotState.lastResponses.export = respExport || null;
         _abSetStep('export', 'done');
         _autoBotState.exportPayload = _abData(respExport) || {};
         _abSyncRunEnvelope();
@@ -55869,6 +55939,7 @@ Add any additional notes here.
 
     _abPost('/api/preflight/action', payload)
       .then(function(respAction) {
+        _autoBotState.lastResponses.action = respAction || null;
         _abReadActionResponse(respAction);
         _autoBotState.actionBusy = false;
         _autoBotState.status = 'Action applied. Refreshing export snapshot...';
@@ -55877,6 +55948,7 @@ Add any additional notes here.
         return _abPost('/api/preflight/export', { doc_id: preflightDocId });
       })
       .then(function(respExport) {
+        _autoBotState.lastResponses.export = respExport || null;
         _autoBotState.exportPayload = _abData(respExport) || _autoBotState.exportPayload;
         _autoBotState.actionBusy = false;
         _autoBotState.status = 'Action recorded (append-only event).';
@@ -60283,14 +60355,22 @@ var P022_RuntimeValidation = {
     var isAdmin = (role === 'admin' || role === 'architect');
     var gate = r.gate_color || 'GREEN';
     var isMaterialized = r.materialized === true;
+    var submitState = _pftlBuildSubmitState(r);
     var html = '<div class="pftl-footer">';
     if (!isAdmin) {
       html += '<span style="color:#999;font-size:0.85em;">Admin-only. Actions are restricted.</span>';
-    } else if (gate === 'GREEN') {
-      html += '<span style="color:#2e7d32;font-size:0.85em;font-weight:500;">All checks passed — no action needed.</span>';
     } else {
-      html += '<button class="pftl-action-btn accept-risk" onclick="pftlAcceptRisk()">Accept Risk</button>';
-      html += '<button class="pftl-action-btn escalate-ocr" onclick="pftlEscalateOcr()">Escalate OCR</button>';
+      html += '<button class="pftl-action-btn" style="background:#1565c0;color:#fff;" onclick="pftlOpenContractGenerator()">Open Contract Generator</button>';
+      html += '<button class="pftl-action-btn" style="background:#455a64;color:#fff;" onclick="pftlSubmitFromLab(\'comment\', true)">Save Comment Draft</button>';
+      html += '<button class="pftl-action-btn" style="background:#5d4037;color:#fff;" onclick="pftlSubmitFromLab(\'comment\', false)">Submit Comment</button>';
+      html += '<button class="pftl-action-btn" style="background:#2e7d32;color:#fff;" onclick="pftlSubmitFromLab(\'correction\', false)"' + (submitState.allowCorrection ? '' : ' disabled') + '>Submit Correction</button>';
+      if (!submitState.allowCorrection && submitState.reason) {
+        html += '<span class="pftl-footer-note">' + _pftlEsc(submitState.reason) + '</span>';
+      }
+      if (gate !== 'GREEN') {
+        html += '<button class="pftl-action-btn accept-risk" onclick="pftlAcceptRisk()">Accept Risk</button>';
+        html += '<button class="pftl-action-btn escalate-ocr" onclick="pftlEscalateOcr()">Escalate OCR</button>';
+      }
       if (!isMaterialized) {
         html += '<span class="pftl-footer-note">Document not materialized — action will be deferred until patch submission.</span>';
       }
@@ -60315,6 +60395,142 @@ var P022_RuntimeValidation = {
     _pftlState.result._action_ts = new Date().toISOString();
     if (typeof showToast === 'function') showToast('Escalated to OCR — re-extraction recommended', 'info');
     _pftlRender();
+  };
+
+  function _pftlCollectCheckFindings(r) {
+    var findings = [];
+    var groups = [
+      { key: 'opportunity_spine', checks: ((r.opportunity_spine || {}).checks || []) },
+      { key: 'schedule_structure', checks: ((r.schedule_structure || {}).checks || []) },
+      { key: 'financials_readiness', checks: ((r.financials_readiness || {}).checks || []) },
+      { key: 'addons_readiness', checks: ((r.addons_readiness || {}).checks || []) }
+    ];
+    for (var gi = 0; gi < groups.length; gi++) {
+      var group = groups[gi];
+      for (var ci = 0; ci < group.checks.length; ci++) {
+        var ck = group.checks[ci];
+        var base = ck.status || 'fail';
+        var eff = _pftlGetEffectiveCheckStatus(group.key, ck.code, base);
+        if (eff !== 'pass') {
+          findings.push({
+            scope: group.key,
+            code: ck.code,
+            label: ck.label || ck.code,
+            status: eff,
+            reason: ck.reason || '',
+            value: ck.value || ''
+          });
+        }
+      }
+    }
+    return findings;
+  }
+
+  function _pftlBuildSubmitState(r) {
+    var assigns = _pftlGetAssignments();
+    var story = (r && r.resolution_story) ? r.resolution_story : {};
+    if (story.new_entry_detected && !(assigns.manual_counterparty && String(assigns.manual_counterparty).trim().length >= 3)) {
+      return {
+        allowCorrection: false,
+        reason: 'Correction locked: confirm manual counterparty for new-entry contracts.'
+      };
+    }
+    return { allowCorrection: true, reason: '' };
+  }
+
+  function _pftlBuildPreflightContext(kind) {
+    var payload = _pftlBuildResultForExport() || {};
+    var r = _pftlState.result || {};
+    var findings = _pftlCollectCheckFindings(r);
+    payload.source = 'preflight_test_lab';
+    payload.record_key = _pftlGetRecordKey();
+    payload.submit_kind = kind;
+    payload.captured_at_utc = new Date().toISOString();
+    payload.gate_color = r.gate_color || 'UNKNOWN';
+    payload.health_score = r.health_score || null;
+    payload.pending_findings = findings;
+    return payload;
+  }
+
+  window.pftlOpenContractGenerator = function() {
+    if (!_pftlState.result) return;
+    if (typeof cgbSeedFromPreflight === 'function') {
+      cgbSeedFromPreflight(_pftlState.result);
+      return;
+    }
+    if (typeof openContractGeneratorEntry === 'function') {
+      openContractGeneratorEntry();
+    }
+  };
+
+  window.pftlSubmitFromLab = function(kind, draftOnly) {
+    if (!_pftlState.result) return;
+    var role = (_pftlGetRole() || 'analyst').toLowerCase();
+    if (role !== 'admin' && role !== 'architect') {
+      if (typeof showToast === 'function') showToast('Admin-only action.', 'warning');
+      return;
+    }
+    var submitState = _pftlBuildSubmitState(_pftlState.result);
+    if (kind === 'correction' && !submitState.allowCorrection) {
+      if (typeof showToast === 'function') showToast(submitState.reason, 'warning');
+      return;
+    }
+    var findings = _pftlCollectCheckFindings(_pftlState.result);
+    var assigns = _pftlGetAssignments();
+    var proposed = [];
+    if (assigns.legal_entity) proposed.push({ field: 'resolution_story.legal_entity', old_value: null, new_value: assigns.legal_entity });
+    if (assigns.counterparty) proposed.push({ field: 'resolution_story.counterparty', old_value: null, new_value: assigns.counterparty });
+    if (assigns.manual_counterparty) proposed.push({ field: 'resolution_story.manual_counterparty', old_value: null, new_value: assigns.manual_counterparty });
+    if ((assigns.opportunity_subtypes || []).length > 0) proposed.push({ field: 'opportunity.contract_subtypes', old_value: null, new_value: assigns.opportunity_subtypes.join(', ') });
+
+    var request = createPatchRequest({
+      author: (role === 'architect' ? 'Architect' : 'Admin'),
+      author_role: role,
+      status: 'Draft',
+      patch_kind: kind === 'correction' ? 'correction' : 'comment',
+      target: 'preflight_resolution',
+      sheet: 'Preflight',
+      field: 'resolution_story',
+      condition_type: 'OTHER',
+      action_type: kind === 'correction' ? 'UPDATE_VALUE' : 'ADD_COMMENT',
+      severity: findings.some(function(f) { return f.status === 'fail'; }) ? 'blocking' : 'warning',
+      risk: (_pftlState.result.gate_color === 'RED') ? 'high' : (_pftlState.result.gate_color === 'YELLOW' ? 'medium' : 'low'),
+      because: kind === 'correction'
+        ? 'Analyst correction submitted from Preflight Test Lab.'
+        : 'Analyst comment submitted from Preflight Test Lab.',
+      rationale: 'Preflight gate: ' + (_pftlState.result.gate_color || 'UNKNOWN') + '. Findings: ' + findings.length + '.',
+      evidence_observation: findings.length
+        ? ('Open checks: ' + findings.map(function(f) { return f.label + ' [' + String(f.status || '').toUpperCase() + ']'; }).join('; '))
+        : 'No open checks.',
+      evidence_expected: kind === 'correction'
+        ? 'Apply selected preflight corrections and proceed to review.'
+        : 'Capture analyst note and route to verifier for acknowledgement.',
+      evidence_justification: 'Preflight deterministic checks + analyst assignment choices.',
+      evidence_repro: 'Open Preflight Test Lab, run analysis, review readiness sections, submit from footer.',
+      proposed_changes: proposed,
+      preflight_context: _pftlBuildPreflightContext(kind),
+      contract_key: (((typeof currentSelection !== 'undefined') && currentSelection && currentSelection.joinIdentity) ? currentSelection.joinIdentity.contractKey : null),
+      file_name: (((typeof currentSelection !== 'undefined') && currentSelection && currentSelection.joinIdentity) ? currentSelection.joinIdentity.fileName : null),
+      file_url: (((typeof currentSelection !== 'undefined') && currentSelection && currentSelection.joinIdentity) ? currentSelection.joinIdentity.fileUrl : null),
+      record_id: (((typeof currentSelection !== 'undefined') && currentSelection && currentSelection.recordIdentity) ? currentSelection.recordIdentity.recordId : null)
+    });
+
+    if (!request) {
+      if (typeof showToast === 'function') showToast('Failed to create patch request.', 'error');
+      return;
+    }
+
+    if (!draftOnly) {
+      var actor = role === 'architect' ? 'Architect' : 'Admin';
+      var submitted = submitPatchRequest(request.request_id, actor, role);
+      if (!submitted) {
+        if (typeof showToast === 'function') showToast('Patch draft saved, but submit failed.', 'warning');
+        return;
+      }
+      if (typeof showToast === 'function') showToast('Patch submitted: ' + request.request_id, 'success');
+    } else if (typeof showToast === 'function') {
+      showToast('Patch draft created: ' + request.request_id, 'success');
+    }
   };
 
   window.pftlToggleSfDebug = function() {

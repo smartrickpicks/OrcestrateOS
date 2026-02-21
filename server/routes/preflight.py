@@ -16,11 +16,15 @@ All require:
 """
 import hashlib
 import logging
+import time
+import uuid
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Literal, Optional
 from urllib.parse import urlparse, unquote
 
 from fastapi import APIRouter, Request, Query, Depends
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 
 from server.api_v25 import envelope, error_envelope
 from server.auth import AuthClass, require_auth, require_role, get_workspace_role
@@ -34,6 +38,67 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/preflight", tags=["preflight"])
 
 _preflight_cache = {}
+_ACTION_EVENTS_MAX = 200
+
+
+PreflightActionName = Literal[
+    "accept_risk",
+    "generate_copy",
+    "escalate_ocr",
+    "override_red",
+    "reconstruction_complete",
+]
+
+
+class _ResponseMeta(BaseModel):
+    request_id: str
+    timestamp: str
+
+
+class PreflightActionRequest(BaseModel):
+    doc_id: str = Field(min_length=1)
+    action: PreflightActionName
+    reason: str = ""
+    patch_id: str = ""
+    reconstruction_review: Optional[Dict[str, Any]] = None
+    workspace_id: Optional[str] = None
+
+
+class PreflightActionEvent(BaseModel):
+    action_id: str
+    at_utc: int
+    actor_id: str
+    action: PreflightActionName
+    reason: str = ""
+    gate_color: str
+    health_score: Any = None
+    gate_reasons: List[str] = Field(default_factory=list)
+    decision_trace: List[Dict[str, Any]] = Field(default_factory=list)
+    patch_id: Optional[str] = None
+    reconstruction_review: Optional[Dict[str, Any]] = None
+    patch_metadata: Optional[Dict[str, Any]] = None
+    red_override: Optional[Dict[str, Any]] = None
+
+
+class PreflightActionData(BaseModel):
+    doc_id: str
+    action: PreflightActionName
+    gate_color: str
+    health_score: Any = None
+    timestamp: str
+    actor_id: str
+    evidence_pack_id: Optional[str] = None
+    patch_metadata: Optional[Dict[str, Any]] = None
+    red_override: Optional[Dict[str, Any]] = None
+    reconstruction_review: Optional[Dict[str, Any]] = None
+    selected_action: Optional[PreflightActionName] = None
+    latest_event: PreflightActionEvent
+    action_events_count: int
+
+
+class PreflightActionEnvelope(BaseModel):
+    data: PreflightActionData
+    meta: _ResponseMeta
 
 
 def _resolve_workspace(request, auth, body=None):
@@ -574,9 +639,10 @@ async def preflight_read(
     return JSONResponse(status_code=200, content=envelope(cached))
 
 
-@router.post("/action")
+@router.post("/action", response_model=PreflightActionEnvelope)
 async def preflight_action(
     request: Request,
+    payload: PreflightActionRequest,
     auth=Depends(require_auth(AuthClass.EITHER)),
 ):
     """Handle Accept Risk / Generate Copy / RED override / reconstruction complete actions."""
@@ -587,13 +653,7 @@ async def preflight_action(
     if flag_check:
         return flag_check
 
-    try:
-        body = await request.json()
-    except Exception:
-        return JSONResponse(
-            status_code=400,
-            content=error_envelope("VALIDATION_ERROR", "Invalid JSON body"),
-        )
+    body = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
 
     ws_id, ws_err = _resolve_workspace(request, auth, body)
     if ws_err:
@@ -613,15 +673,6 @@ async def preflight_action(
         return JSONResponse(
             status_code=400,
             content=error_envelope("VALIDATION_ERROR", "doc_id and action are required"),
-        )
-
-    if action not in ("accept_risk", "generate_copy", "escalate_ocr", "override_red", "reconstruction_complete"):
-        return JSONResponse(
-            status_code=400,
-            content=error_envelope(
-                "VALIDATION_ERROR",
-                "action must be 'accept_risk', 'generate_copy', 'escalate_ocr', 'override_red', or 'reconstruction_complete'",
-            ),
         )
 
     ck = _cache_key(ws_id, doc_id)
@@ -694,13 +745,14 @@ async def preflight_action(
                 content=error_envelope("VALIDATION_ERROR", "fallback_note is required for NO_ENTITY_TEMPLATE_AVAILABLE"),
             )
 
+    actor_id = auth.user_id
     result = {
         "doc_id": doc_id,
         "action": action,
         "gate_color": gate,
         "health_score": health_score,
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "actor_id": auth.user_id,
+        "actor_id": actor_id,
     }
 
     if action == "override_red":
@@ -708,14 +760,14 @@ async def preflight_action(
             "approved": True,
             "reason": reason,
             "timestamp": result["timestamp"],
-            "actor_id": auth.user_id,
+            "actor_id": actor_id,
         }
         cached["red_override"] = red_override
         result["red_override"] = red_override
         if not cached.get("action_taken"):
             cached["action_taken"] = action
             cached["action_timestamp"] = result["timestamp"]
-            cached["action_actor"] = auth.user_id
+            cached["action_actor"] = actor_id
             cached["action_health_score"] = health_score
     elif action == "reconstruction_complete":
         review_entry = {
@@ -728,14 +780,14 @@ async def preflight_action(
             "completed": True,
             "completed_at": str(reconstruction_review.get("completed_at") or result["timestamp"]),
             "recorded_at": result["timestamp"],
-            "recorded_by": auth.user_id,
+            "recorded_by": actor_id,
         }
         cached["reconstruction_review"] = review_entry
         result["reconstruction_review"] = review_entry
     else:
         cached["action_taken"] = action
         cached["action_timestamp"] = result["timestamp"]
-        cached["action_actor"] = auth.user_id
+        cached["action_actor"] = actor_id
         cached["action_health_score"] = health_score
         if "red_override" in cached:
             result["red_override"] = cached.get("red_override")
@@ -762,9 +814,47 @@ async def preflight_action(
     else:
         logger.info("[PREFLIGHT] action=%s doc=%s (no patch, cache-only)", action, doc_id)
 
+    # Airlock: append-only immutable action event + derived selected state
+    event = {
+        "action_id": "pa_%s" % uuid.uuid4().hex[:16],
+        "at_utc": int(time.time()),
+        "actor_id": actor_id,
+        "action": action,
+        "reason": reason,
+        "gate_color": gate,
+        "health_score": health_score,
+        "gate_reasons": cached.get("gate_reasons") or [],
+        "decision_trace": cached.get("decision_trace") or [],
+    }
+    if patch_id:
+        event["patch_id"] = patch_id
+    if cached.get("reconstruction_review") is not None:
+        event["reconstruction_review"] = cached.get("reconstruction_review")
+    if result.get("patch_metadata") is not None:
+        event["patch_metadata"] = result.get("patch_metadata")
+    if cached.get("red_override") is not None:
+        event["red_override"] = cached.get("red_override")
+
+    events = cached.setdefault("action_events", [])
+    events.append(event)
+    if len(events) > _ACTION_EVENTS_MAX:
+        del events[:-_ACTION_EVENTS_MAX]
+
+    cached["selected_action"] = action
+    cached["selected_action_at_utc"] = event["at_utc"]
+    cached["selected_action_actor_id"] = actor_id
+
+    # Legacy mutable fields kept for compatibility.
+    cached["action_taken"] = action
+    cached["action_timestamp"] = result["timestamp"]
+    cached["action_actor"] = actor_id
+
     if action != "override_red" and cached.get("red_override") is not None:
         result["red_override"] = cached.get("red_override")
     if cached.get("reconstruction_review") is not None:
         result["reconstruction_review"] = cached.get("reconstruction_review")
+    result["selected_action"] = cached.get("selected_action")
+    result["latest_event"] = event
+    result["action_events_count"] = len(cached.get("action_events", []))
 
     return JSONResponse(status_code=200, content=envelope(result))

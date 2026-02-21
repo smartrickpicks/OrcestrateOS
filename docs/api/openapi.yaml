@@ -1546,6 +1546,55 @@ paths:
           description: Stale version
         '422':
           description: Missing workspace selector
+  /api/preflight/action:
+    post:
+      operationId: preflightAction
+      summary: Record preflight review action
+      description: >
+        Records an immutable action event for preflight review (append-only) and
+        returns derived selected action state for UI convenience.
+      tags:
+      - Preflight
+      servers:
+      - url: /
+        description: Root base for preflight endpoints
+      parameters:
+      - name: X-Workspace-Id
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreflightActionRequest'
+      responses:
+        '200':
+          description: Action accepted and event appended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreflightActionEnvelope'
+        '400':
+          description: Validation or gate policy failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Workspace/auth mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: No cached preflight result for doc_id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
 components:
   parameters:
     WorkspaceId:
@@ -2751,6 +2800,167 @@ components:
             $ref: '#/components/schemas/Rfi'
         meta:
           $ref: '#/components/schemas/CollectionMeta'
+    PreflightActionRequest:
+      type: object
+      required:
+      - doc_id
+      - action
+      properties:
+        doc_id:
+          type: string
+        action:
+          type: string
+          enum:
+          - accept_risk
+          - generate_copy
+          - escalate_ocr
+          - override_red
+          - reconstruction_complete
+        reason:
+          type: string
+          default: ''
+        patch_id:
+          type: string
+          default: ''
+        reconstruction_review:
+          type:
+          - object
+          - 'null'
+          additionalProperties: true
+        workspace_id:
+          type:
+          - string
+          - 'null'
+    PreflightActionEvent:
+      type: object
+      required:
+      - action_id
+      - at_utc
+      - actor_id
+      - action
+      - gate_color
+      - gate_reasons
+      - decision_trace
+      properties:
+        action_id:
+          type: string
+        at_utc:
+          type: integer
+        actor_id:
+          type: string
+        action:
+          type: string
+          enum:
+          - accept_risk
+          - generate_copy
+          - escalate_ocr
+          - override_red
+          - reconstruction_complete
+        reason:
+          type: string
+        gate_color:
+          type: string
+          enum:
+          - GREEN
+          - YELLOW
+          - RED
+        health_score:
+          oneOf:
+          - type: number
+          - type: integer
+          nullable: true
+        gate_reasons:
+          type: array
+          items:
+            type: string
+        decision_trace:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        patch_id:
+          type: string
+        reconstruction_review:
+          type: object
+          additionalProperties: true
+        patch_metadata:
+          type: object
+          additionalProperties: true
+        red_override:
+          type: object
+          additionalProperties: true
+    PreflightActionData:
+      type: object
+      required:
+      - doc_id
+      - action
+      - gate_color
+      - timestamp
+      - actor_id
+      - selected_action
+      - latest_event
+      - action_events_count
+      properties:
+        doc_id:
+          type: string
+        action:
+          type: string
+          enum:
+          - accept_risk
+          - generate_copy
+          - escalate_ocr
+          - override_red
+          - reconstruction_complete
+        gate_color:
+          type: string
+          enum:
+          - GREEN
+          - YELLOW
+          - RED
+        health_score:
+          oneOf:
+          - type: number
+          - type: integer
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+        actor_id:
+          type: string
+        evidence_pack_id:
+          type: string
+        patch_metadata:
+          type: object
+          additionalProperties: true
+        red_override:
+          type: object
+          additionalProperties: true
+        reconstruction_review:
+          type: object
+          additionalProperties: true
+        selected_action:
+          type: string
+          enum:
+          - accept_risk
+          - generate_copy
+          - escalate_ocr
+          - override_red
+          - reconstruction_complete
+        latest_event:
+          $ref: '#/components/schemas/PreflightActionEvent'
+        action_events_count:
+          type: integer
+          minimum: 0
+    PreflightActionEnvelope:
+      type: object
+      required:
+      - data
+      - meta
+      properties:
+        data:
+          $ref: '#/components/schemas/PreflightActionData'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
   responses:
     StaleVersion:
       description: Optimistic concurrency conflict
