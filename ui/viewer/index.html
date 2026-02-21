@@ -6290,7 +6290,10 @@
                 </div>
                 <div>
                   <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Legal Entity (Batch Resolver)</label>
-                  <select id="cgb-business-unit" onchange="cgbOnWhoWhereChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+                  <div style="position:relative;">
+                    <input id="cgb-business-unit-search" autocomplete="off" placeholder="Search legal entity..." onfocus="cgbOpenLegalEntityPicker()" oninput="cgbOnLegalEntityInput(this.value)" onkeydown="cgbOnLegalEntityKeydown(event)" onblur="cgbOnLegalEntityBlur()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                    <div id="cgb-business-unit-dropdown" style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:20; max-height:220px; overflow:auto; border:1px solid #cfd8dc; border-radius:6px; background:#fff; box-shadow:0 8px 18px rgba(0,0,0,0.12);"></div>
+                  </div>
                 </div>
                 <div>
                   <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Counterparty Status</label>
@@ -48500,6 +48503,11 @@
         legalEntities: [],
         accountsByEntity: {}
       },
+      legalEntityPicker: {
+        open: false,
+        filtered: [],
+        activeIndex: -1
+      },
       counterpartyPicker: {
         open: false,
         filtered: [],
@@ -48538,6 +48546,11 @@
     function cgbNormKey(v) { return (typeof normalizeFieldKey === 'function') ? normalizeFieldKey(v || '') : cgbNorm(v).replace(/[^a-z0-9]/g, '_'); }
     function cgbFormKey(sheet, fieldKey) { return sheet + '::' + fieldKey; }
     function cgbJsEsc(str) { return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+    function cgbLooksSynthetic(v) {
+      var t = cgbNorm(v);
+      if (!t) return false;
+      return /(^|[\s:_-])row[_-]?\d+($|[\s:_-])/.test(t) || t.indexOf(':row_') >= 0;
+    }
 
     function cgbGetSheetNames() {
       var names = [];
@@ -48629,6 +48642,7 @@
         }
       }
       var entities = Object.keys(index).sort(function(a, b) { return a.localeCompare(b); });
+      if (!entities.length && cgbState.legalEntity) entities.push(cgbState.legalEntity);
       var byEntity = {};
       for (var i = 0; i < entities.length; i++) {
         var names = Object.keys(index[entities[i]]).map(function(k) { return index[entities[i]][k]; });
@@ -48639,10 +48653,46 @@
       cgbState.resolver.accountsByEntity = byEntity;
     }
 
-    function cgbDescribeRow(row, idx) {
-      if (!row) return 'Row ' + (idx + 1);
-      var id = cgbFindValue(row, ['contract_key', 'contract_id', 'record_id', 'name', 'file_name']);
-      return id || ('Row ' + (idx + 1));
+    function cgbExtractRecordId(row) {
+      var id = cgbFindExactFieldValue(row, [
+        'Id', 'ID', 'record_id', 'contract_id', 'contract_key',
+        'Opportunity_Id__c', 'Account_Id__c', 'Catalog_Id__c', 'Schedule_Id__c'
+      ]);
+      if (id && !cgbLooksSynthetic(id)) return id;
+      id = cgbFindValue(row, ['record id', 'contract id', 'salesforce id', 'id']);
+      if (id && !cgbLooksSynthetic(id)) return id;
+      return '';
+    }
+
+    function cgbExtractDisplayName(row) {
+      var name = cgbFindExactFieldValue(row, [
+        'Name', 'Account_Name__c', 'Opportunity_Name__c', 'Schedule_Name__c',
+        'Catalog_Name__c', 'Title', 'Document_Name__c', 'File_Name__c'
+      ]);
+      if (name && !cgbLooksSynthetic(name)) return name;
+      name = cgbFindValue(row, [
+        'account_name', 'opportunity_name', 'schedule_name', 'catalog_name',
+        'title', 'document_name', 'file_name', 'name'
+      ]);
+      if (name && !cgbLooksSynthetic(name)) return name;
+      return '';
+    }
+
+    function cgbRecordSourceTag(row) {
+      if (!row) return 'workbook_fallback';
+      return cgbExtractRecordId(row) ? 'salesforce_resolver' : 'workbook_fallback';
+    }
+
+    function cgbDescribeRow(row, idx, objectType) {
+      if (!row) return 'No Salesforce record mapped';
+      var id = cgbExtractRecordId(row);
+      var name = cgbExtractDisplayName(row);
+      var src = cgbRecordSourceTag(row);
+      var typeText = objectType ? (objectType + ': ') : '';
+      if (name && id) return typeText + name + ' (' + id + ') [' + src + ']';
+      if (name) return typeText + name + ' [' + src + ']';
+      if (id) return typeText + id + ' [' + src + ']';
+      return typeText + 'Unmapped Salesforce record [' + src + ']';
     }
 
     function cgbRowValue(row, fieldKey) {
@@ -48811,27 +48861,123 @@
     function cgbSyncWhoWhereInputs() {
       var cp = document.getElementById('cgb-counterparty-name');
       var pt = document.getElementById('cgb-party-type');
-      var bu = document.getElementById('cgb-business-unit');
+      var buInput = document.getElementById('cgb-business-unit-search');
       cgbEnsureCounterpartyPickerState();
       if (cp) cp.value = cgbState.whoWhere.counterpartyName || '';
       if (pt) pt.value = cgbState.whoWhere.partyType || '';
-      cgbPopulateLegalEntityOptions();
-      if (bu) bu.value = cgbState.whoWhere.businessUnit || '';
+      if (buInput) buInput.value = cgbState.whoWhere.businessUnit || '';
+      cgbSyncLegalEntityPicker(false);
       if (document.activeElement !== cp) cgbState.counterpartyPicker.open = false;
       cgbSyncCounterpartyPicker(false);
       cgbRenderCounterpartyStatus();
     }
 
-    function cgbPopulateLegalEntityOptions() {
-      var bu = document.getElementById('cgb-business-unit');
-      if (!bu) return;
+    function cgbEnsureLegalEntityPickerState() {
+      if (!cgbState.legalEntityPicker) cgbState.legalEntityPicker = { open: false, filtered: [], activeIndex: -1 };
+    }
+
+    function cgbSyncLegalEntityPicker(keepActive) {
+      cgbEnsureLegalEntityPickerState();
+      var typed = cgbNorm(cgbState.whoWhere.businessUnit || '');
       var entities = cgbState.resolver.legalEntities || [];
-      var html = '<option value="">Select Legal Entity</option>';
-      for (var i = 0; i < entities.length; i++) {
-        var selected = entities[i] === cgbState.whoWhere.businessUnit ? ' selected' : '';
-        html += '<option value="' + escapeHtml(entities[i]) + '"' + selected + '>' + escapeHtml(entities[i]) + '</option>';
+      var out = [];
+      if (!typed) out = entities.slice();
+      else {
+        for (var i = 0; i < entities.length; i++) {
+          if (cgbNorm(entities[i]).indexOf(typed) >= 0) out.push(entities[i]);
+        }
       }
-      bu.innerHTML = html;
+      cgbState.legalEntityPicker.filtered = out;
+      if (!keepActive) cgbState.legalEntityPicker.activeIndex = -1;
+      cgbRenderLegalEntityDropdown();
+    }
+
+    function cgbRenderLegalEntityDropdown() {
+      cgbEnsureLegalEntityPickerState();
+      var dd = document.getElementById('cgb-business-unit-dropdown');
+      if (!dd) return;
+      if (!cgbState.legalEntityPicker.open) {
+        dd.style.display = 'none';
+        return;
+      }
+      var items = cgbState.legalEntityPicker.filtered || [];
+      if (!items.length) {
+        dd.innerHTML = '<div style="padding:8px 10px; font-size:0.78em; color:#607d8b;">No legal entities matched.</div>';
+        dd.style.display = 'block';
+        return;
+      }
+      var html = '';
+      for (var i = 0; i < items.length; i++) {
+        var active = cgbState.legalEntityPicker.activeIndex === i;
+        html += '<div onclick="cgbPickLegalEntityOption(' + i + ')" style="padding:8px 10px; border-bottom:1px solid #f1f4f6; cursor:pointer; font-size:0.82em; background:' + (active ? '#e3f2fd' : '#fff') + '; color:' + (active ? '#0d47a1' : '#263238') + ';">' + escapeHtml(items[i]) + '</div>';
+      }
+      dd.innerHTML = html;
+      dd.style.display = 'block';
+    }
+
+    function cgbOpenLegalEntityPicker() {
+      cgbEnsureLegalEntityPickerState();
+      cgbState.legalEntityPicker.open = true;
+      cgbSyncLegalEntityPicker(false);
+    }
+
+    function cgbCloseLegalEntityPicker() {
+      cgbEnsureLegalEntityPickerState();
+      cgbState.legalEntityPicker.open = false;
+      cgbRenderLegalEntityDropdown();
+    }
+
+    function cgbOnLegalEntityBlur() {
+      setTimeout(function() { cgbCloseLegalEntityPicker(); }, 120);
+    }
+
+    function cgbOnLegalEntityInput(value) {
+      cgbState.whoWhere.businessUnit = cgbSafe(value);
+      cgbState.whoWhere.counterpartyResolved = false;
+      cgbState.legalEntityPicker.open = true;
+      cgbSyncLegalEntityPicker(false);
+      cgbSyncCounterpartyPicker(false);
+      cgbRenderCounterpartyStatus();
+      cgbComputePreflight();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbPickLegalEntityOption(index) {
+      cgbEnsureLegalEntityPickerState();
+      var item = cgbState.legalEntityPicker.filtered[index] || '';
+      if (!item) return;
+      cgbState.whoWhere.businessUnit = item;
+      cgbState.whoWhere.counterpartyResolved = false;
+      var inp = document.getElementById('cgb-business-unit-search');
+      if (inp) inp.value = item;
+      cgbCloseLegalEntityPicker();
+      cgbSyncCounterpartyPicker(false);
+      cgbRenderCounterpartyStatus();
+      cgbComputePreflight();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbOnLegalEntityKeydown(ev) {
+      cgbEnsureLegalEntityPickerState();
+      var key = ev && ev.key ? ev.key : '';
+      var list = cgbState.legalEntityPicker.filtered || [];
+      if (!cgbState.legalEntityPicker.open && (key === 'ArrowDown' || key === 'ArrowUp' || key === 'Enter')) cgbOpenLegalEntityPicker();
+      if (key === 'ArrowDown') {
+        ev.preventDefault();
+        cgbState.legalEntityPicker.activeIndex = Math.min(list.length - 1, cgbState.legalEntityPicker.activeIndex + 1);
+        cgbRenderLegalEntityDropdown();
+      } else if (key === 'ArrowUp') {
+        ev.preventDefault();
+        cgbState.legalEntityPicker.activeIndex = Math.max(0, cgbState.legalEntityPicker.activeIndex - 1);
+        cgbRenderLegalEntityDropdown();
+      } else if (key === 'Enter') {
+        if (cgbState.legalEntityPicker.activeIndex >= 0 && cgbState.legalEntityPicker.activeIndex < list.length) {
+          ev.preventDefault();
+          cgbPickLegalEntityOption(cgbState.legalEntityPicker.activeIndex);
+        }
+      } else if (key === 'Escape') {
+        cgbCloseLegalEntityPicker();
+      }
     }
 
     function cgbCounterpartyAccountsForEntity() {
@@ -49024,7 +49170,6 @@
 
     function cgbOnWhoWhereChange() {
       cgbState.whoWhere.partyType = (document.getElementById('cgb-party-type') || {}).value || '';
-      cgbState.whoWhere.businessUnit = (document.getElementById('cgb-business-unit') || {}).value || '';
       cgbState.whoWhere.counterpartyResolved = false;
       cgbSyncCounterpartyPicker(false);
       if (cgbState.whoWhere.counterpartyName) {
@@ -49067,6 +49212,29 @@
     }
 
     function cgbBuildAnnotationMap() {
+      function buildRef(sheetName, idx, objectType) {
+        if (!sheetName || idx === '' || idx === null || idx === undefined) return null;
+        var row = cgbGetRow(sheetName, idx);
+        if (!row) return null;
+        return {
+          object_type: objectType,
+          sheet: sheetName,
+          row_index: parseInt(idx, 10),
+          record_id: cgbExtractRecordId(row) || '',
+          record_label: cgbDescribeRow(row, parseInt(idx, 10), objectType),
+          source: cgbRecordSourceTag(row)
+        };
+      }
+
+      var refs = {
+        opportunity: buildRef(cgbState.sheetMap.opportunity, cgbState.workflow.opportunity, 'opportunity'),
+        schedule: buildRef(cgbState.sheetMap.schedule, cgbState.workflow.schedule, 'schedule'),
+        catalog: buildRef(cgbState.sheetMap.catalog, cgbState.workflow.catalog, 'catalog'),
+        schedule_catalog: buildRef(cgbState.sheetMap.scheduleCatalog, cgbState.workflow.scheduleCatalog, 'schedule_catalog')
+      };
+      refs.accounts = (cgbState.workflow.accounts || []).map(function(v) { return buildRef(cgbState.sheetMap.accounts, v, 'account'); }).filter(Boolean);
+      refs.v2_add_ons = (cgbState.workflow.v2addons || []).map(function(v) { return buildRef(cgbState.sheetMap.v2addons, v, 'v2_add_on'); }).filter(Boolean);
+
       return {
         session_mode: cgbState.sessionMode,
         contract_profile: 'back_catalog_distribution_sync_youtube_cpa',
@@ -49083,6 +49251,7 @@
           asset_catalog_synchronization: ['Schedule.*', 'Schedule Catalog.*', 'Catalog.*'],
           financial_rights_modeling: ['Financials.*', 'V2 Add Ons.*']
         },
+        source_records: refs,
         preflight: cgbState.preflight
       };
     }
@@ -49094,7 +49263,7 @@
       var sheets = cgbGetSheetNames();
       if (!sheets.length) {
         sheetSel.innerHTML = '<option value="">No dataset loaded</option>';
-        rowSel.innerHTML = '<option value="">No records</option>';
+        rowSel.innerHTML = '<option value="">No Salesforce records available for this selector in current context.</option>';
         return;
       }
       if (!cgbState.seed.sheet || sheets.indexOf(cgbState.seed.sheet) === -1 || forceRefresh) cgbState.seed.sheet = sheets[0];
@@ -49103,12 +49272,12 @@
       sheetSel.innerHTML = shHtml;
       var rows = cgbGetRows(cgbState.seed.sheet);
       if (!rows.length) {
-        rowSel.innerHTML = '<option value="">No records</option>';
+        rowSel.innerHTML = '<option value="">No Salesforce records available for this selector in current context.</option>';
         return;
       }
       if (cgbState.seed.rowIndex < 0 || cgbState.seed.rowIndex >= rows.length) cgbState.seed.rowIndex = 0;
       var rHtml = '';
-      for (var ri = 0; ri < rows.length; ri++) rHtml += '<option value="' + ri + '"' + (ri === cgbState.seed.rowIndex ? ' selected' : '') + '>' + escapeHtml((ri + 1) + ' - ' + cgbDescribeRow(rows[ri], ri)) + '</option>';
+      for (var ri = 0; ri < rows.length; ri++) rHtml += '<option value="' + ri + '"' + (ri === cgbState.seed.rowIndex ? ' selected' : '') + '>' + escapeHtml(cgbDescribeRow(rows[ri], ri, cgbState.seed.sheet || 'seed')) + '</option>';
       rowSel.innerHTML = rHtml;
     }
 
@@ -49136,11 +49305,11 @@
         if (!el) return;
         var rows = cgbGetRows(sheetName);
         if (!rows.length) {
-          el.innerHTML = '<option value="">No ' + label + ' rows</option>';
+          el.innerHTML = '<option value="">No Salesforce records available for this selector in current context.</option>';
           return;
         }
         var html = '<option value="">Select ' + label + '</option>';
-        for (var i = 0; i < rows.length; i++) html += '<option value="' + i + '"' + (String(i) === String(selectedIdx) ? ' selected' : '') + '>' + escapeHtml(cgbDescribeRow(rows[i], i)) + '</option>';
+        for (var i = 0; i < rows.length; i++) html += '<option value="' + i + '"' + (String(i) === String(selectedIdx) ? ' selected' : '') + '>' + escapeHtml(cgbDescribeRow(rows[i], i, label)) + '</option>';
         el.innerHTML = html;
       }
       buildSingleSelect('cgb-opportunity-select', cgbState.sheetMap.opportunity, cgbState.workflow.opportunity, 'opportunity');
@@ -49153,11 +49322,11 @@
         if (!el) return;
         var rows = cgbGetRows(sheetName);
         if (!rows.length) {
-          el.innerHTML = '<option value="">No ' + label + ' rows</option>';
+          el.innerHTML = '<option value="">No Salesforce records available for this selector in current context.</option>';
           return;
         }
         var html = '';
-        for (var i = 0; i < rows.length; i++) html += '<option value="' + i + '"' + (selectedVals.indexOf(String(i)) >= 0 ? ' selected' : '') + '>' + escapeHtml(cgbDescribeRow(rows[i], i)) + '</option>';
+        for (var i = 0; i < rows.length; i++) html += '<option value="' + i + '"' + (selectedVals.indexOf(String(i)) >= 0 ? ' selected' : '') + '>' + escapeHtml(cgbDescribeRow(rows[i], i, label)) + '</option>';
         el.innerHTML = html;
       }
       buildMultiSelect('cgb-accounts-select', cgbState.sheetMap.accounts, cgbState.workflow.accounts, 'account');
@@ -54729,8 +54898,21 @@ Add any additional notes here.
 </script>
 <!-- Feedback FAB + Panel -->
 <style>
-  .feedback-fab {
+  .fab-actions {
     position: fixed; bottom: 80px; right: 24px; z-index: 99999;
+  }
+  .fab-actions-menu {
+    position: absolute; right: 0; bottom: 54px; min-width: 164px;
+    background: #fff; border: 1px solid #d7dde4; border-radius: 10px;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.25); display: none; padding: 8px;
+  }
+  .fab-actions-menu.open { display: block; }
+  .fab-actions-item {
+    width: 100%; border: none; background: transparent; cursor: pointer;
+    text-align: left; padding: 8px 10px; font-size: 13px; border-radius: 6px; color: #1a2a3a;
+  }
+  .fab-actions-item:hover { background: #e3f2fd; }
+  .feedback-fab {
     background: #1565c0; color: #fff; border: none; border-radius: 28px;
     padding: 12px 20px; font-size: 14px; font-weight: 600;
     cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
@@ -54761,8 +54943,90 @@ Add any additional notes here.
     color: #666; padding: 4px 8px; border-radius: 4px; line-height: 1;
   }
   .feedback-panel-close:hover { background: #e0e0e0; color: #333; }
-  .feedback-panel-body { flex: 1; overflow-y: auto; padding: 0; }
-  .feedback-panel-body iframe { width: 100%; height: 3300px; border: none; }
+  .feedback-panel-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+  .feedback-local-note {
+    font-size: 12px; color: #4e5d6c; background: #eef5ff;
+    border: 1px solid #d3e5ff; border-radius: 6px; padding: 10px; margin-bottom: 12px;
+  }
+  #feedback-local-notes {
+    width: 100%; min-height: 160px; border: 1px solid #ccd5df; border-radius: 6px;
+    padding: 10px; font-size: 12px; resize: vertical; box-sizing: border-box;
+  }
+  .feedback-copy-btn {
+    margin-top: 10px; background: #1565c0; color: #fff; border: none;
+    padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;
+  }
+  .feedback-copy-btn:hover { background: #0d47a1; }
+  .autobot-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.42);
+    z-index: 100002; display: none;
+  }
+  .autobot-overlay.open { display: block; }
+  .autobot-panel {
+    position: fixed; top: 0; right: -460px; bottom: 0; width: 440px; max-width: 96vw;
+    background: #fff; z-index: 100003; box-shadow: -4px 0 24px rgba(0,0,0,0.24);
+    display: flex; flex-direction: column; transition: right 0.28s ease;
+  }
+  .autobot-panel.open { right: 0; }
+  .autobot-panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid #e0e0e0; background: #f7f9fc;
+  }
+  .autobot-panel-header h3 { margin: 0; font-size: 15px; color: #0e2f57; }
+  .autobot-panel-close {
+    background: none; border: none; font-size: 22px; cursor: pointer; color: #607080;
+    line-height: 1; border-radius: 4px; padding: 3px 6px;
+  }
+  .autobot-panel-close:hover { background: #dfe6ee; color: #22313f; }
+  .autobot-panel-body { flex: 1; overflow-y: auto; padding: 14px 18px; }
+  .autobot-status-line { font-size: 12px; color: #3a4a5c; margin-bottom: 10px; }
+  .autobot-stepper { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .autobot-step { font-size: 12px; color: #5f6f80; background: #f6f8fb; border: 1px solid #e6ebf1; border-radius: 6px; padding: 7px 9px; }
+  .autobot-step.running { color: #0d47a1; border-color: #90caf9; background: #e3f2fd; }
+  .autobot-step.done { color: #1b5e20; border-color: #a5d6a7; background: #e8f5e9; }
+  .autobot-step.error { color: #b71c1c; border-color: #ffcdd2; background: #ffebee; }
+  .autobot-results {
+    border: 1px solid #e0e6ed; background: #fafcff; border-radius: 8px;
+    padding: 10px 11px; margin-bottom: 12px;
+  }
+  .autobot-results h4 { margin: 0 0 8px 0; font-size: 13px; color: #2a3b4d; }
+  .autobot-kv { font-size: 12px; margin: 3px 0; color: #3d4d5d; }
+  .autobot-chip { display: inline-block; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 600; margin-left: 6px; }
+  .autobot-chip.green { background: #e8f5e9; color: #2e7d32; }
+  .autobot-chip.yellow { background: #fff8e1; color: #f57f17; }
+  .autobot-chip.red { background: #ffebee; color: #c62828; }
+  .autobot-list { margin: 6px 0 0 0; padding-left: 16px; font-size: 12px; color: #435365; }
+  .autobot-list li { margin: 3px 0; }
+  .autobot-action-block {
+    border: 1px solid #e0e6ed; border-radius: 8px; padding: 10px;
+    background: #ffffff;
+  }
+  .autobot-action-block label { display: block; font-size: 12px; color: #3f4f5f; margin: 0 0 5px 0; font-weight: 600; }
+  #autobot-action-select,
+  #autobot-action-reason,
+  #autobot-reconstruction-review {
+    width: 100%; box-sizing: border-box; border: 1px solid #ccd6e2; border-radius: 6px;
+    padding: 8px; font-size: 12px;
+  }
+  #autobot-action-reason,
+  #autobot-reconstruction-review { margin-top: 7px; min-height: 64px; resize: vertical; }
+  .autobot-actions-row {
+    display: flex; align-items: center; justify-content: space-between; margin-top: 9px; gap: 10px;
+  }
+  .autobot-inline-note { font-size: 11px; color: #6d7d8f; }
+  .autobot-btn {
+    border: none; border-radius: 6px; padding: 8px 12px; font-size: 12px; cursor: pointer;
+  }
+  .autobot-btn.run { background: #1565c0; color: #fff; }
+  .autobot-btn.run:hover { background: #0d47a1; }
+  .autobot-btn.apply { background: #2e7d32; color: #fff; }
+  .autobot-btn.apply:hover { background: #1b5e20; }
+  .autobot-btn.secondary { background: #eef2f7; color: #3a4a5a; }
+  .autobot-btn.secondary:hover { background: #dde4ed; }
+  .autobot-panel-footer {
+    padding: 10px 18px; border-top: 1px solid #e0e0e0;
+    display: flex; gap: 8px; justify-content: flex-end; background: #f7f9fc;
+  }
 
     /* V2.3: Triage Analytics Header */
     .ta-lane-card { position: relative; overflow: hidden; }
@@ -54939,21 +55203,710 @@ Add any additional notes here.
     #ei-rfis-section .ei-section-header { border-left: 3px solid #7b1fa2; }
 
 </style>
-<button class="feedback-fab" onclick="document.querySelector('.feedback-overlay').classList.add('open');document.querySelector('.feedback-panel').classList.add('open');" aria-label="Send Feedback">
-  <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12zM7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg>
-  Feedback
-</button>
-<div class="feedback-overlay" onclick="this.classList.remove('open');document.querySelector('.feedback-panel').classList.remove('open');"></div>
-<div class="feedback-panel">
+<div class="fab-actions" id="fab-actions">
+  <button class="feedback-fab" id="fab-main-btn" onclick="toggleFabMenu(event)" aria-label="Open Actions">
+    <svg viewBox="0 0 24 24"><path d="M12 2a1 1 0 0 1 1 1v8h8a1 1 0 1 1 0 2h-8v8a1 1 0 1 1-2 0v-8H3a1 1 0 1 1 0-2h8V3a1 1 0 0 1 1-1z"/></svg>
+    Actions
+  </button>
+  <div class="fab-actions-menu" id="fab-actions-menu">
+    <button class="fab-actions-item" type="button" onclick="openAutoBotPanel()">AutoBot</button>
+    <button class="fab-actions-item" type="button" onclick="openFeedbackPanel()">Feedback</button>
+  </div>
+</div>
+
+<div class="feedback-overlay" id="feedback-overlay" onclick="closeFeedbackPanel()"></div>
+<div class="feedback-panel" id="feedback-panel">
   <div class="feedback-panel-header">
     <h3>Send Feedback</h3>
-    <button class="feedback-panel-close" onclick="document.querySelector('.feedback-overlay').classList.remove('open');document.querySelector('.feedback-panel').classList.remove('open');">&times;</button>
+    <button class="feedback-panel-close" onclick="closeFeedbackPanel()">&times;</button>
   </div>
   <div class="feedback-panel-body">
-    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfQEf5fbM_Ly2URDEY3UoSqeRoC4--0QjS--fCLKyqP7qCdYA/viewform?embedded=true" marginheight="0" marginwidth="0">Loading\u2026</iframe>
+    <div class="feedback-local-note">
+      External docs/forms are disabled in this build. Capture notes locally and share through your internal channel.
+    </div>
+    <textarea id="feedback-local-notes" placeholder="What happened? What did you expect? Include doc_id/workspace_id if useful."></textarea>
+    <button class="feedback-copy-btn" type="button" onclick="copyFeedbackDraft()">Copy Feedback Draft</button>
+  </div>
+</div>
+
+<div class="autobot-overlay" id="autobot-overlay" onclick="closeAutoBotPanel(event)"></div>
+<div class="autobot-panel" id="autobot-panel" role="dialog" aria-label="AutoBot">
+  <div class="autobot-panel-header">
+    <h3>AutoBot (Airlock PRA)</h3>
+    <button class="autobot-panel-close" onclick="closeAutoBotPanel()">&times;</button>
+  </div>
+  <div class="autobot-panel-body">
+    <div id="autobot-status-line" class="autobot-status-line"></div>
+    <div id="autobot-stepper" class="autobot-stepper"></div>
+    <div id="autobot-results" class="autobot-results"></div>
+    <div class="autobot-action-block">
+      <label for="autobot-action-select">Action</label>
+      <select id="autobot-action-select" onchange="autobotActionChanged()"></select>
+      <textarea id="autobot-action-reason" placeholder="Action reason (required for override_red)"></textarea>
+      <textarea id="autobot-reconstruction-review" placeholder='reconstruction_review JSON (required for reconstruction_complete), e.g. {"decisions":[{"decision":"APPROVED"}]}' style="display:none;"></textarea>
+      <div class="autobot-actions-row">
+        <button class="autobot-btn apply" id="autobot-apply-btn" type="button" onclick="autobotApplyAction()">Apply Action</button>
+        <label class="autobot-inline-note"><input type="checkbox" id="autobot-dev-mock" onchange="toggleAutoBotMock(this.checked)"> Dev mock</label>
+      </div>
+    </div>
+  </div>
+  <div class="autobot-panel-footer">
+    <button class="autobot-btn run" id="autobot-run-btn" type="button" onclick="runAutoBot()">Run AutoBot</button>
+    <button class="autobot-btn secondary" type="button" onclick="closeAutoBotPanel()">Close</button>
   </div>
 </div>
 <!-- /Feedback FAB -->
+
+<script>
+(function() {
+  var _autoBotState = {
+    open: false,
+    running: false,
+    status: 'Ready to run AutoBot.',
+    error: null,
+    steps: { suggestion: 'idle', preflight: 'idle', export: 'idle' },
+    docId: '',
+    suggestionRun: null,
+    preflightRun: null,
+    exportPayload: null,
+    selectedAction: '',
+    latestEvent: null,
+    actionEventsCount: 0,
+    actionBusy: false,
+    runEnvelope: null,
+    headerMissingWarnKey: ''
+  };
+  window._autoBotState = _autoBotState;
+  window.__AUTOBOT_DEV_MOCK__ = false;
+
+  function _abEsc(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function _abData(payload) {
+    if (payload && typeof payload === 'object' && payload.data) return payload.data;
+    return payload;
+  }
+
+  function _abErrorMessage(body, statusCode) {
+    if (!body) return 'HTTP ' + statusCode;
+    if (body.error && body.error.message) return body.error.message;
+    if (body.detail && typeof body.detail === 'string') return body.detail;
+    return 'HTTP ' + statusCode;
+  }
+
+  function _abCollectHeaders() {
+    var headers = {};
+    if (typeof _syncHeaders === 'function') {
+      headers = _syncHeaders();
+    } else {
+      headers = { 'Content-Type': 'application/json' };
+      var wsId = '';
+      if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) wsId = IDENTITY_CONTEXT.workspace_id;
+      if (!wsId) {
+        try {
+          var sess = JSON.parse(localStorage.getItem('orchestrate_session') || '{}');
+          wsId = sess.workspace_id || '';
+        } catch (e) {
+          wsId = '';
+        }
+      }
+      if (wsId) headers['X-Workspace-Id'] = wsId;
+      if (typeof window._authToken !== 'undefined' && window._authToken) headers['Authorization'] = 'Bearer ' + window._authToken;
+    }
+    headers['Content-Type'] = 'application/json';
+    return headers;
+  }
+
+  function _abMissingHeaders(headers) {
+    var missing = [];
+    if (!headers || !headers['Authorization']) missing.push('Authorization');
+    if (!headers || !headers['X-Workspace-Id']) missing.push('X-Workspace-Id');
+    return missing;
+  }
+
+  function _abHeaderState() {
+    var headers = _abCollectHeaders();
+    return { headers: headers, missing: _abMissingHeaders(headers) };
+  }
+
+  function _abHeaders() {
+    var state = _abHeaderState();
+    if (state.missing.length) throw new Error('Missing required headers: ' + state.missing.join(', '));
+    return state.headers;
+  }
+
+  function _abGetFileUrl() {
+    if (typeof _pfGateGetFileUrl === 'function') return _pfGateGetFileUrl();
+    if (typeof _evState !== 'undefined' && _evState.documentUrl) return _evState.documentUrl;
+    return '';
+  }
+
+  function _abGetDocId() {
+    if (typeof _pfGateGetDocId === 'function') return _pfGateGetDocId();
+    if (typeof _evState !== 'undefined' && _evState.documentId) return _evState.documentId;
+    return '';
+  }
+
+  function _abGetSourceFields() {
+    if (typeof _syncGetSourceFields === 'function') {
+      var sf = _syncGetSourceFields();
+      if (sf && sf.length) return sf;
+    }
+    if (typeof workbook !== 'undefined' && workbook && workbook.data) {
+      var fields = [];
+      var sheets = workbook.order || [];
+      for (var i = 0; i < sheets.length; i++) {
+        var rows = workbook.data[sheets[i]];
+        if (!rows || !rows.length) continue;
+        var keys = Object.keys(rows[0]);
+        for (var k = 0; k < keys.length; k++) {
+          if (keys[k] && keys[k].charAt(0) !== '_' && fields.indexOf(keys[k]) === -1) fields.push(keys[k]);
+        }
+      }
+      return fields;
+    }
+    return [];
+  }
+
+  function _abReadActionResponse(data) {
+    var d = _abData(data) || {};
+    _autoBotState.selectedAction = d.selected_action || _autoBotState.selectedAction;
+    _autoBotState.latestEvent = d.latest_event || null;
+    if (typeof d.action_events_count === 'number') _autoBotState.actionEventsCount = d.action_events_count;
+    if (_autoBotState.runEnvelope) {
+      _autoBotState.runEnvelope.selected_action = _autoBotState.selectedAction;
+      _autoBotState.runEnvelope.latest_event = _autoBotState.latestEvent;
+      _autoBotState.runEnvelope.action_events_count = _autoBotState.actionEventsCount;
+    }
+  }
+
+  function _abGateColor() {
+    if (_autoBotState.runEnvelope && _autoBotState.runEnvelope.gate_color) {
+      return String(_autoBotState.runEnvelope.gate_color || '').toUpperCase();
+    }
+    var run = _autoBotState.preflightRun || {};
+    return String(run.gate_color || '').toUpperCase();
+  }
+
+  function _abCanShow(actionName) {
+    var gate = _abGateColor();
+    var prior = _autoBotState.selectedAction || '';
+    if (gate === 'RED' && actionName === 'accept_risk') return false;
+    if (actionName === 'override_red') {
+      return gate === 'RED' && (prior === 'generate_copy' || prior === 'escalate_ocr' || prior === 'override_red');
+    }
+    if (actionName === 'reconstruction_complete') {
+      return gate === 'RED' && (prior === 'generate_copy' || prior === 'escalate_ocr' || prior === 'override_red' || prior === 'reconstruction_complete');
+    }
+    if (gate === 'GREEN') return actionName === 'generate_copy' || actionName === 'escalate_ocr';
+    if (gate === 'YELLOW') return actionName === 'accept_risk' || actionName === 'generate_copy' || actionName === 'escalate_ocr';
+    if (gate === 'RED') return actionName === 'generate_copy' || actionName === 'escalate_ocr';
+    return false;
+  }
+
+  function _abAllowedActions() {
+    var all = ['accept_risk', 'generate_copy', 'escalate_ocr', 'override_red', 'reconstruction_complete'];
+    var out = [];
+    for (var i = 0; i < all.length; i++) {
+      if (_abCanShow(all[i])) out.push(all[i]);
+    }
+    return out;
+  }
+
+  function _abBuildSuggestionPayload() {
+    var sourceFields = _abGetSourceFields();
+    var bodyText = '';
+    if (typeof _pfGateState !== 'undefined' && _pfGateState.result && _pfGateState.result.extracted_text) {
+      bodyText = String(_pfGateState.result.extracted_text || '').slice(0, 20000);
+    } else if (_autoBotState.preflightRun && _autoBotState.preflightRun.extracted_text) {
+      bodyText = String(_autoBotState.preflightRun.extracted_text || '').slice(0, 20000);
+    }
+    if (!sourceFields.length && !bodyText) {
+      throw new Error('No source_fields/body_text available. Load workbook fields or run preflight first.');
+    }
+    var docId = _abGetDocId() || _autoBotState.docId || '';
+    if (!docId) docId = 'local_autobot';
+    var payload = { source_fields: sourceFields, document_id: docId };
+    if (bodyText) payload.body_text = bodyText;
+    return payload;
+  }
+
+  function _abBuildPreflightPayload() {
+    var fileUrl = _abGetFileUrl();
+    if (!fileUrl) throw new Error('No file_url available for preflight/run');
+    var payload = { file_url: fileUrl };
+    if (_autoBotState.docId) payload.doc_id = _autoBotState.docId;
+    return payload;
+  }
+
+  function _abSetStep(stepName, status) {
+    _autoBotState.steps[stepName] = status;
+  }
+
+  function _abSyncRunEnvelope() {
+    var preflight = _autoBotState.preflightRun || {};
+    var suggestion = _autoBotState.suggestionRun || {};
+    _autoBotState.runEnvelope = {
+      suggestion_run_id: suggestion.id || null,
+      preflight_doc_id: preflight.doc_id || _autoBotState.docId || null,
+      preflight_cache_id: preflight.doc_id || _autoBotState.docId || null,
+      gate_color: preflight.gate_color || null,
+      gate_reasons: preflight.gate_reasons || [],
+      decision_trace: preflight.decision_trace || [],
+      export_blob: _autoBotState.exportPayload || null,
+      selected_action: _autoBotState.selectedAction || null,
+      latest_event: _autoBotState.latestEvent || null,
+      action_events_count: _autoBotState.actionEventsCount || 0
+    };
+  }
+
+  function _abRender() {
+    var statusEl = document.getElementById('autobot-status-line');
+    var stepperEl = document.getElementById('autobot-stepper');
+    var resultsEl = document.getElementById('autobot-results');
+    var runBtn = document.getElementById('autobot-run-btn');
+    var applyBtn = document.getElementById('autobot-apply-btn');
+    var actionSelect = document.getElementById('autobot-action-select');
+    if (!statusEl || !stepperEl || !resultsEl || !runBtn || !applyBtn || !actionSelect) return;
+
+    var headerState = _abHeaderState();
+    var missingHeaders = headerState.missing;
+    var statusText = _autoBotState.error ? ('Error: ' + _autoBotState.error) : _autoBotState.status;
+    if (!_autoBotState.running && !window.__AUTOBOT_DEV_MOCK__ && missingHeaders.length) {
+      statusText = 'Missing required headers: ' + missingHeaders.join(', ');
+      var warnKey = missingHeaders.join('|');
+      if (_autoBotState.headerMissingWarnKey !== warnKey) {
+        console.warn('[AUTOBOT] Missing required headers:', missingHeaders.join(', '));
+        _autoBotState.headerMissingWarnKey = warnKey;
+      }
+    } else if (!missingHeaders.length) {
+      _autoBotState.headerMissingWarnKey = '';
+    }
+    statusEl.textContent = statusText || '';
+
+    var labels = [
+      { key: 'suggestion', text: '1) Suggestion Run (/api/v2.5/suggestion-runs/local)' },
+      { key: 'preflight', text: '2) Preflight Run (/api/preflight/run)' },
+      { key: 'export', text: '3) Export (/api/preflight/export)' }
+    ];
+    var stepsHtml = '';
+    for (var i = 0; i < labels.length; i++) {
+      var st = _autoBotState.steps[labels[i].key];
+      var cls = st === 'running' ? 'running' : st === 'done' ? 'done' : st === 'error' ? 'error' : '';
+      var icon = st === 'done' ? 'Done' : st === 'running' ? 'Running' : st === 'error' ? 'Error' : 'Pending';
+      stepsHtml += '<div class="autobot-step ' + cls + '">' + icon + ' - ' + labels[i].text + '</div>';
+    }
+    stepperEl.innerHTML = stepsHtml;
+
+    var gateColor = _abGateColor();
+    var reasons = [];
+    var trace = [];
+    var runData = _autoBotState.preflightRun || {};
+    if (runData.gate_reasons && runData.gate_reasons.length) reasons = runData.gate_reasons;
+    if (runData.decision_trace && runData.decision_trace.length) trace = runData.decision_trace;
+    var sug = _autoBotState.suggestionRun || {};
+    var topSuggestions = (sug.suggestions || []).slice(0, 5);
+    var eventCount = _autoBotState.actionEventsCount || 0;
+
+    var resultHtml = '';
+    resultHtml += '<h4>Results</h4>';
+    if (!_autoBotState.preflightRun) {
+      resultHtml += '<div class="autobot-kv">Ready. Click <strong>Run AutoBot</strong> to execute Suggestion Run, Preflight Run, and Export.</div>';
+    } else {
+      if (_autoBotState.runEnvelope && _autoBotState.runEnvelope.preflight_doc_id) {
+        resultHtml += '<div class="autobot-kv">preflight_doc_id: ' + _abEsc(_autoBotState.runEnvelope.preflight_doc_id) + '</div>';
+      }
+      if (gateColor) {
+        resultHtml += '<div class="autobot-kv">gate_color: <span class="autobot-chip ' + gateColor.toLowerCase() + '">' + _abEsc(gateColor) + '</span></div>';
+      }
+      resultHtml += '<div class="autobot-kv">proposal summary: ' + _abEsc(String(sug.total_suggestions || 0)) + ' suggestions, ' + _abEsc(String((sug.suppressed || []).length)) + ' suppressed</div>';
+      resultHtml += '<div class="autobot-kv">action_events_count: ' + _abEsc(eventCount) + '</div>';
+      if (reasons.length) {
+        resultHtml += '<div class="autobot-kv">gate_reasons:</div><ul class="autobot-list">';
+        for (var r = 0; r < reasons.length; r++) resultHtml += '<li>' + _abEsc(reasons[r]) + '</li>';
+        resultHtml += '</ul>';
+      }
+      if (trace.length) {
+        resultHtml += '<div class="autobot-kv">decision_trace (first 5):</div><ul class="autobot-list">';
+        for (var t = 0; t < trace.length && t < 5; t++) {
+          var line = trace[t];
+          if (typeof line === 'string') resultHtml += '<li>' + _abEsc(line) + '</li>';
+          else resultHtml += '<li>' + _abEsc(JSON.stringify(line)) + '</li>';
+        }
+        resultHtml += '</ul>';
+      }
+      if (topSuggestions.length) {
+        resultHtml += '<div class="autobot-kv">proposal preview:</div><ul class="autobot-list">';
+        for (var s = 0; s < topSuggestions.length; s++) {
+          var item = topSuggestions[s] || {};
+          var src = item.source_field || '';
+          var tgt = item.glossary_field_key || item.suggested_label || item.suggested_term_id || '';
+          resultHtml += '<li>' + _abEsc(src) + ' -> ' + _abEsc(tgt) + '</li>';
+        }
+        resultHtml += '</ul>';
+      }
+    }
+    resultsEl.innerHTML = resultHtml;
+
+    var actions = _abAllowedActions();
+    var optionsHtml = '';
+    for (var a = 0; a < actions.length; a++) {
+      var selected = _autoBotState.selectedAction === actions[a] ? ' selected' : '';
+      optionsHtml += '<option value="' + actions[a] + '"' + selected + '>' + actions[a] + '</option>';
+    }
+    if (!optionsHtml) optionsHtml = '<option value="">No allowed actions</option>';
+    actionSelect.innerHTML = optionsHtml;
+    if (!_autoBotState.selectedAction && actions.length) _autoBotState.selectedAction = actions[0];
+    if (actions.length && actionSelect.value !== _autoBotState.selectedAction) {
+      _autoBotState.selectedAction = actionSelect.value;
+    }
+    var headersReady = window.__AUTOBOT_DEV_MOCK__ || !missingHeaders.length;
+    runBtn.disabled = !!_autoBotState.running || !headersReady;
+    runBtn.textContent = _autoBotState.running ? 'Running...' : 'Run AutoBot';
+    applyBtn.disabled = _autoBotState.running || _autoBotState.actionBusy || !_autoBotState.preflightRun || !actions.length || !headersReady;
+    applyBtn.textContent = _autoBotState.actionBusy ? 'Applying...' : 'Apply Action';
+
+    var reviewBox = document.getElementById('autobot-reconstruction-review');
+    if (reviewBox) reviewBox.style.display = actionSelect.value === 'reconstruction_complete' ? '' : 'none';
+  }
+
+  function _abMockEndpoint(path, body) {
+    var docId = (body && body.doc_id) || (_autoBotState.runEnvelope && _autoBotState.runEnvelope.preflight_doc_id) || _autoBotState.docId || 'doc_mock_autobot';
+    if (path === '/api/v2.5/suggestion-runs/local') {
+      return Promise.resolve({
+        data: {
+          id: 'sgr_mock_autobot',
+          document_id: (body && body.document_id) || docId,
+          total_suggestions: 2,
+          diagnostics: { run_mode: 'local_fallback' },
+          suggestions: [
+            { source_field: 'Artist Name', glossary_field_key: 'artist_name', suggested_label: 'Artist Name' },
+            { source_field: 'Territory', glossary_field_key: 'territory', suggested_label: 'Territory' }
+          ],
+          suppressed: [{ source_field: 'Notes', suppression_reasons: ['low_confidence'] }]
+        }
+      });
+    }
+    if (path === '/api/preflight/run') {
+      return Promise.resolve({
+        data: {
+          doc_id: docId,
+          gate_color: 'YELLOW',
+          gate_reasons: ['doc_mode_mixed', 'avg_chars_per_page_low:16.0<30'],
+          decision_trace: [{ layer: 'doc_mode', verdict: 'warn' }, { layer: 'density', verdict: 'warn' }],
+          metrics: { total_pages: 2, avg_chars_per_page: 16, searchable_pages: 1, scanned_pages: 1, mixed_pages: 0 }
+        }
+      });
+    }
+    if (path === '/api/preflight/export') {
+      return Promise.resolve({
+        data: {
+          schema_version: 'prep_export_v0',
+          context: { doc_id: docId, workspace_id: 'ws_mock' },
+          preflight: {
+            recommended_gate: (_autoBotState.preflightRun && _autoBotState.preflightRun.gate_color) || 'YELLOW',
+            reason_codes: (_autoBotState.preflightRun && _autoBotState.preflightRun.gate_reasons) || [],
+            decision_trace: (_autoBotState.preflightRun && _autoBotState.preflightRun.decision_trace) || []
+          }
+        }
+      });
+    }
+    if (path === '/api/preflight/action') {
+      var action = body && body.action ? body.action : 'generate_copy';
+      var cnt = (_autoBotState.actionEventsCount || 0) + 1;
+      return Promise.resolve({
+        data: {
+          doc_id: docId,
+          action: action,
+          gate_color: _abGateColor() || 'YELLOW',
+          actor_id: 'mock_actor',
+          timestamp: new Date().toISOString(),
+          selected_action: action,
+          latest_event: {
+            action_id: 'pa_mock_' + cnt,
+            at_utc: Math.floor(Date.now() / 1000),
+            actor_id: 'mock_actor',
+            action: action,
+            reason: (body && body.reason) || '',
+            gate_color: _abGateColor() || 'YELLOW',
+            gate_reasons: (_autoBotState.preflightRun && _autoBotState.preflightRun.gate_reasons) || [],
+            decision_trace: (_autoBotState.preflightRun && _autoBotState.preflightRun.decision_trace) || []
+          },
+          action_events_count: cnt
+        }
+      });
+    }
+    return Promise.reject(new Error('Mock endpoint not implemented: ' + path));
+  }
+
+  function _abPost(path, payload) {
+    if (window.__AUTOBOT_DEV_MOCK__) {
+      return _abMockEndpoint(path, payload);
+    }
+    var baseUrl = window.location.origin;
+    return fetch(baseUrl + path, {
+      method: 'POST',
+      headers: _abHeaders(),
+      body: JSON.stringify(payload || {})
+    })
+    .then(function(resp) {
+      return resp.json()
+        .catch(function() { return null; })
+        .then(function(body) {
+          if (!resp.ok) throw new Error(_abErrorMessage(body, resp.status));
+          return body;
+        });
+    });
+  }
+
+  function _abResetForRun() {
+    _autoBotState.running = true;
+    _autoBotState.error = null;
+    _autoBotState.status = 'Running AutoBot...';
+    _autoBotState.steps = { suggestion: 'idle', preflight: 'idle', export: 'idle' };
+    _autoBotState.suggestionRun = null;
+    _autoBotState.preflightRun = null;
+    _autoBotState.exportPayload = null;
+    _autoBotState.latestEvent = null;
+    _autoBotState.selectedAction = '';
+    _autoBotState.actionEventsCount = 0;
+    _autoBotState.runEnvelope = null;
+  }
+
+  window.toggleFabMenu = function(event) {
+    if (event && event.stopPropagation) event.stopPropagation();
+    var menu = document.getElementById('fab-actions-menu');
+    if (!menu) return;
+    menu.classList.toggle('open');
+  };
+
+  window.openFeedbackPanel = function() {
+    var menu = document.getElementById('fab-actions-menu');
+    if (menu) menu.classList.remove('open');
+    var overlay = document.getElementById('feedback-overlay');
+    var panel = document.getElementById('feedback-panel');
+    if (overlay) overlay.classList.add('open');
+    if (panel) panel.classList.add('open');
+  };
+
+  window.closeFeedbackPanel = function() {
+    var overlay = document.getElementById('feedback-overlay');
+    var panel = document.getElementById('feedback-panel');
+    if (overlay) overlay.classList.remove('open');
+    if (panel) panel.classList.remove('open');
+  };
+
+  window.copyFeedbackDraft = function() {
+    var input = document.getElementById('feedback-local-notes');
+    var text = input ? String(input.value || '') : '';
+    if (!text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() {
+        if (typeof showToast === 'function') showToast('Feedback copied to clipboard', 'info');
+      }).catch(function() {});
+    } else {
+      input.select();
+      document.execCommand('copy');
+      if (typeof showToast === 'function') showToast('Feedback copied to clipboard', 'info');
+    }
+  };
+
+  window.openAutoBotPanel = function() {
+    var menu = document.getElementById('fab-actions-menu');
+    if (menu) menu.classList.remove('open');
+    var overlay = document.getElementById('autobot-overlay');
+    var panel = document.getElementById('autobot-panel');
+    if (overlay) overlay.classList.add('open');
+    if (panel) panel.classList.add('open');
+    _autoBotState.open = true;
+    _autoBotState.status = _autoBotState.runEnvelope ? 'Loaded previous AutoBot run.' : 'Ready to run AutoBot.';
+    _autoBotState.error = null;
+    _abRender();
+  };
+
+  window.closeAutoBotPanel = function(event) {
+    if (event && event.target && event.target.id !== 'autobot-overlay') return;
+    var overlay = document.getElementById('autobot-overlay');
+    var panel = document.getElementById('autobot-panel');
+    if (overlay) overlay.classList.remove('open');
+    if (panel) panel.classList.remove('open');
+    _autoBotState.open = false;
+  };
+
+  window.toggleAutoBotMock = function(enabled) {
+    window.__AUTOBOT_DEV_MOCK__ = !!enabled;
+    _autoBotState.status = enabled ? 'Dev mock enabled.' : 'Dev mock disabled.';
+    _abRender();
+  };
+
+  window.autobotActionChanged = function() {
+    var select = document.getElementById('autobot-action-select');
+    if (select) _autoBotState.selectedAction = select.value;
+    _abRender();
+  };
+
+  window.runAutoBot = function() {
+    if (_autoBotState.running) return;
+    if (!window.__AUTOBOT_DEV_MOCK__) {
+      var headerState = _abHeaderState();
+      if (headerState.missing.length) {
+        _autoBotState.error = 'Missing required headers: ' + headerState.missing.join(', ');
+        _autoBotState.status = 'Cannot run AutoBot.';
+        _abRender();
+        return;
+      }
+    }
+    _abResetForRun();
+    _abRender();
+
+    var suggestionBody;
+    try {
+      suggestionBody = _abBuildSuggestionPayload();
+      _autoBotState.docId = suggestionBody.document_id || _abGetDocId();
+    } catch (buildErr) {
+      _autoBotState.running = false;
+      _autoBotState.error = buildErr.message;
+      _autoBotState.status = 'Failed before starting.';
+      _abRender();
+      return;
+    }
+
+    _abSetStep('suggestion', 'running');
+    _autoBotState.status = 'Running suggestion-runs/local...';
+    _abRender();
+    _abPost('/api/v2.5/suggestion-runs/local', suggestionBody)
+      .then(function(respSug) {
+        _abSetStep('suggestion', 'done');
+        _autoBotState.suggestionRun = _abData(respSug) || {};
+        _autoBotState.docId = _autoBotState.suggestionRun.document_id || _autoBotState.docId;
+        _abSyncRunEnvelope();
+        _abSetStep('preflight', 'running');
+        _autoBotState.status = 'Running preflight/run...';
+        _abRender();
+        return _abPost('/api/preflight/run', _abBuildPreflightPayload());
+      })
+      .then(function(respPreflight) {
+        _abSetStep('preflight', 'done');
+        _autoBotState.preflightRun = _abData(respPreflight) || {};
+        _autoBotState.docId = _autoBotState.preflightRun.doc_id || _autoBotState.docId;
+        _abSyncRunEnvelope();
+        _abSetStep('export', 'running');
+        _autoBotState.status = 'Running preflight/export...';
+        _abRender();
+        return _abPost('/api/preflight/export', { doc_id: (_autoBotState.runEnvelope && _autoBotState.runEnvelope.preflight_doc_id) || _autoBotState.docId });
+      })
+      .then(function(respExport) {
+        _abSetStep('export', 'done');
+        _autoBotState.exportPayload = _abData(respExport) || {};
+        _abSyncRunEnvelope();
+        _autoBotState.running = false;
+        _autoBotState.status = 'AutoBot complete. Review and optionally apply an action.';
+        _autoBotState.error = null;
+        _abRender();
+      })
+      .catch(function(err) {
+        _autoBotState.running = false;
+        if (_autoBotState.steps.export === 'running') _abSetStep('export', 'error');
+        else if (_autoBotState.steps.preflight === 'running') _abSetStep('preflight', 'error');
+        else if (_autoBotState.steps.suggestion === 'running') _abSetStep('suggestion', 'error');
+        _autoBotState.error = err.message || 'Unknown error';
+        _autoBotState.status = 'AutoBot failed.';
+        _abRender();
+        if (typeof showToast === 'function') showToast('AutoBot failed: ' + _autoBotState.error, 'error');
+      });
+  };
+
+  window.autobotApplyAction = function() {
+    if (_autoBotState.actionBusy || !_autoBotState.preflightRun) return;
+    if (!window.__AUTOBOT_DEV_MOCK__) {
+      var headerState = _abHeaderState();
+      if (headerState.missing.length) {
+        _autoBotState.error = 'Missing required headers: ' + headerState.missing.join(', ');
+        _autoBotState.status = 'Cannot apply action.';
+        _abRender();
+        return;
+      }
+    }
+    var select = document.getElementById('autobot-action-select');
+    var reasonInput = document.getElementById('autobot-action-reason');
+    var reviewInput = document.getElementById('autobot-reconstruction-review');
+    var action = select ? select.value : '';
+    var reason = reasonInput ? String(reasonInput.value || '').trim() : '';
+    if (!action) return;
+    if (_abGateColor() === 'RED' && action === 'accept_risk') {
+      _autoBotState.error = 'accept_risk is blocked on RED gate.';
+      _abRender();
+      return;
+    }
+    var preflightDocId = (_autoBotState.runEnvelope && _autoBotState.runEnvelope.preflight_doc_id) || _autoBotState.docId;
+    var payload = { doc_id: preflightDocId, action: action };
+    if (reason) payload.reason = reason;
+    if (action === 'reconstruction_complete') {
+      var raw = reviewInput ? String(reviewInput.value || '').trim() : '';
+      if (!raw) {
+        _autoBotState.error = 'reconstruction_review JSON is required for reconstruction_complete.';
+        _abRender();
+        return;
+      }
+      try {
+        payload.reconstruction_review = JSON.parse(raw);
+      } catch (e) {
+        _autoBotState.error = 'Invalid reconstruction_review JSON.';
+        _abRender();
+        return;
+      }
+    }
+    _autoBotState.actionBusy = true;
+    _autoBotState.status = 'Applying action...';
+    _autoBotState.error = null;
+    _abRender();
+
+    _abPost('/api/preflight/action', payload)
+      .then(function(respAction) {
+        _abReadActionResponse(respAction);
+        _autoBotState.actionBusy = false;
+        _autoBotState.status = 'Action applied. Refreshing export snapshot...';
+        _abSyncRunEnvelope();
+        _abRender();
+        return _abPost('/api/preflight/export', { doc_id: preflightDocId });
+      })
+      .then(function(respExport) {
+        _autoBotState.exportPayload = _abData(respExport) || _autoBotState.exportPayload;
+        _autoBotState.actionBusy = false;
+        _autoBotState.status = 'Action recorded (append-only event).';
+        _abSyncRunEnvelope();
+        _abRender();
+      })
+      .catch(function(err) {
+        _autoBotState.actionBusy = false;
+        _autoBotState.error = err.message || 'Action failed';
+        _autoBotState.status = 'Action failed.';
+        _abRender();
+      });
+  };
+
+  window.autobotDevSmoke = function() {
+    window.__AUTOBOT_DEV_MOCK__ = true;
+    var mockToggle = document.getElementById('autobot-dev-mock');
+    if (mockToggle) mockToggle.checked = true;
+    window.openAutoBotPanel();
+    window.runAutoBot();
+  };
+
+  document.addEventListener('click', function(event) {
+    var menu = document.getElementById('fab-actions-menu');
+    var wrap = document.getElementById('fab-actions');
+    if (!menu || !wrap) return;
+    if (!wrap.contains(event.target)) menu.classList.remove('open');
+  });
+})();
+</script>
 
     <!-- Contract Detail Drawer (v2.2) -->
     <div id="contract-detail-drawer" style="display:none; position:fixed; top:0; right:0; bottom:0; width:520px; background:white; box-shadow:-4px 0 20px rgba(0,0,0,0.15); z-index:9000; overflow-y:auto; border-left:3px solid #1565c0;">
