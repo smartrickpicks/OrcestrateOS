@@ -60,7 +60,5 @@ externalPort = 80
 [userenv]
 
 [userenv.shared]
-JWT_SECRET = "<ROTATE-ME — set via Replit Secrets, not here>"
-DRIVE_ROOT_FOLDER_ID = "<set via Replit Secrets>"
 EVIDENCE_INSPECTOR_V251 = "true"
 PREFLIGHT_GATE_SYNC = "true"

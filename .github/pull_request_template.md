@@ -4,7 +4,7 @@
 ## Module/area affected
 - [ ] server/routes/
 - [ ] server/ (engines, auth, db)
-- [ ] ui/src/
+- [ ] ui/viewer/
 - [ ] scripts/
 - [ ] docs/
 - [ ] infra/config
