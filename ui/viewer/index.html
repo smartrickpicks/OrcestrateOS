@@ -57390,7 +57390,7 @@ var P022_RuntimeValidation = {
     try {
       _pftlRender();
     } catch (renderErr) {
-      console.error('[PFTL] render error after success:', renderErr);
+      console.error('[PFTL] render error after success:', renderErr, renderErr && renderErr.message, renderErr && renderErr.stack);
     }
     console.log('[PFTL] run complete:', _pftlState.result.gate_color, _pftlState.result.doc_mode,
       'headers:', (_pftlState.result.extracted_headers || []).length,
@@ -58126,7 +58126,6 @@ var P022_RuntimeValidation = {
     html += _pftlRenderOpportunitySpine(r);
 
     html += _pftlRenderScheduleStructure(r);
-
 
     html += _pftlRenderFinancialsReadiness(r);
 
@@ -58955,6 +58954,17 @@ var P022_RuntimeValidation = {
   }
 
   function _pftlRenderScheduleStructure(r) {
+    var _schTypeLabelMap = {
+      catalog_acquisition_masters: 'Catalog Acquisition (Masters)',
+      distro_sync_existing_masters: 'Distribution / Sync (Existing Masters)',
+      general_schedule: 'General Schedule',
+      termination_schedule: 'Termination Schedule'
+    };
+    function _schTypeLabel(val) {
+      if (!val) return '';
+      return _schTypeLabelMap[val] || val.replace(/_/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+    }
+
     var sch = r.schedule_structure;
     if (!sch) return '';
 
