@@ -1,0 +1,20 @@
+{
+  "run_id": "V2.56-EXPORT-DRIVE-E2E",
+  "generated_at_utc": "2026-02-19T01:30:50.202Z",
+  "source_file": "/home/runner/workspace/ui/viewer/index.html",
+  "checks": {
+    "export_corrected_values_persist": true,
+    "export_has_no_full_audit_sheets": true,
+    "export_full_includes_gov_meta": true,
+    "export_full_includes_orchestrate_meta": true,
+    "export_full_includes_audit_log": true,
+    "export_full_gov_meta_status_normalized": true,
+    "export_full_audit_header_stable": true,
+    "export_filename_convention": true,
+    "save_to_drive_uses_full_workbook": true,
+    "save_to_drive_posts_drive_save_endpoint": true,
+    "export_action_wires_clean_mode": true,
+    "export_full_action_wires_full_mode": true
+  },
+  "all_passed": true
+}

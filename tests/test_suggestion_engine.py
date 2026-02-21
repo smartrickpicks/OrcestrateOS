@@ -431,34 +431,41 @@ class TestExportContractValidation:
         assert payload["preflight"]["recommended_gate"] == "YELLOW"
 
 
-class TestSalesforceResolverStub:
+class TestSalesforceResolver:
 
-    def test_resolver_disabled_by_default(self):
+    def test_resolver_enabled_with_csv(self):
         from server.resolvers.salesforce import is_resolver_enabled
-        assert is_resolver_enabled() is False
+        from server.resolvers.account_index import ensure_loaded
+        ensure_loaded()
+        assert is_resolver_enabled() is True
 
     def test_resolve_entity_returns_contract(self):
         from server.resolvers.salesforce import resolve_entity
+        from server.resolvers.account_index import ensure_loaded
+        ensure_loaded()
         result = resolve_entity("ws_1", "Acme Corp", address="123 Main St")
-        assert result["classification"] == "Unknown"
-        assert result["score"] == 0.0
+        assert result["classification"] in ("matched", "ambiguous", "not_found")
+        assert isinstance(result["score"], float)
         assert isinstance(result["candidates"], list)
         assert isinstance(result["explanation"], str)
-        assert result["provider"] == "salesforce_mock"
-        assert result["resolved"] is False
+        assert result["provider"] == "cmg_csv_v1"
 
     def test_resolver_status(self):
         from server.resolvers.salesforce import get_resolver_status
+        from server.resolvers.account_index import ensure_loaded
+        ensure_loaded()
         status = get_resolver_status()
-        assert status["enabled"] is False
+        assert status["enabled"] is True
+        assert status["provider"] == "cmg_csv_v1"
         assert status["ready_for_integration"] is True
         assert status["live_api"] is False
 
     def test_no_network_calls(self):
         from server.resolvers.salesforce import resolve_entity
+        from server.resolvers.account_index import ensure_loaded
+        ensure_loaded()
         result = resolve_entity("ws_1", "Test Entity")
-        assert result["provider"] == "salesforce_mock"
-        assert result["resolved"] is False
+        assert result["provider"] == "cmg_csv_v1"
 
 
 if __name__ == "__main__":

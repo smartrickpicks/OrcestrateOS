@@ -4,7 +4,7 @@ Preflight API routes for Orchestrate OS.
 POST /api/preflight/run     - Run preflight analysis on a document (URL)
 POST /api/preflight/upload  - Run preflight on uploaded PDF (base64, internal/Test Lab)
 GET  /api/preflight/{doc_id} - Read cached preflight result
-POST /api/preflight/action  - Accept Risk / Escalate OCR (internal)
+POST /api/preflight/action  - Accept Risk / Generate Copy / RED Override / Reconstruction Complete (internal)
 GET  /api/preflight/export  - Export cached preflight state as prep_export_v0 JSON (minimal)
 POST /api/preflight/export  - Export with client-side OGC/evaluation/operator state merged
 
@@ -366,6 +366,9 @@ def _build_export_payload(cached, ws_id, doc_id, ck, client_state=None):
         "action_taken": cached.get("action_taken"),
         "action_timestamp": cached.get("action_timestamp"),
         "action_actor": cached.get("action_actor"),
+        "action_health_score": cached.get("action_health_score"),
+        "red_override": cached.get("red_override"),
+        "reconstruction_review": cached.get("reconstruction_review"),
         "materialized": cached.get("materialized", False),
         "timestamp": cached.get("timestamp"),
     }
@@ -393,6 +396,9 @@ def _build_export_payload(cached, ws_id, doc_id, ck, client_state=None):
         "action": op_client.get("action") or cached.get("action_taken"),
         "timestamp": op_client.get("timestamp") or cached.get("action_timestamp"),
         "actor": op_client.get("actor") or cached.get("action_actor"),
+        "health_score": op_client.get("health_score") or cached.get("action_health_score"),
+        "red_override": op_client.get("red_override") or cached.get("red_override"),
+        "reconstruction_review": op_client.get("reconstruction_review") or cached.get("reconstruction_review"),
         "notes": op_client.get("notes"),
         "escalation_metadata": op_client.get("escalation_metadata"),
     }
@@ -573,7 +579,7 @@ async def preflight_action(
     request: Request,
     auth=Depends(require_auth(AuthClass.EITHER)),
 ):
-    """Handle Accept Risk or Escalate OCR actions."""
+    """Handle Accept Risk / Generate Copy / RED override / reconstruction complete actions."""
     if isinstance(auth, JSONResponse):
         return auth
 
@@ -599,7 +605,9 @@ async def preflight_action(
 
     doc_id = body.get("doc_id", "").strip()
     action = body.get("action", "").strip()
+    reason = body.get("reason", "").strip()
     patch_id = body.get("patch_id", "").strip()
+    reconstruction_review = body.get("reconstruction_review")
 
     if not doc_id or not action:
         return JSONResponse(
@@ -607,10 +615,13 @@ async def preflight_action(
             content=error_envelope("VALIDATION_ERROR", "doc_id and action are required"),
         )
 
-    if action not in ("accept_risk", "escalate_ocr"):
+    if action not in ("accept_risk", "generate_copy", "escalate_ocr", "override_red", "reconstruction_complete"):
         return JSONResponse(
             status_code=400,
-            content=error_envelope("VALIDATION_ERROR", "action must be 'accept_risk' or 'escalate_ocr'"),
+            content=error_envelope(
+                "VALIDATION_ERROR",
+                "action must be 'accept_risk', 'generate_copy', 'escalate_ocr', 'override_red', or 'reconstruction_complete'",
+            ),
         )
 
     ck = _cache_key(ws_id, doc_id)
@@ -622,23 +633,112 @@ async def preflight_action(
         )
 
     gate = cached.get("gate_color", "RED")
+    health_score = cached.get("health_score") or gate
     if action == "accept_risk" and gate == "RED":
         return JSONResponse(
             status_code=400,
-            content=error_envelope("GATE_BLOCKED", "Cannot accept risk on RED gate. Must escalate to OCR."),
+            content=error_envelope("GATE_BLOCKED", "Cannot accept risk on RED gate. Must generate copy."),
         )
+    if action == "override_red":
+        if gate != "RED":
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("GATE_BLOCKED", "RED override is only valid on RED gate."),
+            )
+        if not reason:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "reason is required for override_red"),
+            )
+        prior_action = cached.get("action_taken")
+        if prior_action not in ("generate_copy", "escalate_ocr", "override_red"):
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("GATE_BLOCKED", "Must request generate_copy before override_red."),
+            )
+    if action == "reconstruction_complete":
+        prior_action = cached.get("action_taken")
+        if prior_action not in ("generate_copy", "escalate_ocr", "override_red", "reconstruction_complete"):
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("GATE_BLOCKED", "Must request generate_copy before reconstruction_complete."),
+            )
+        if not isinstance(reconstruction_review, dict):
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "reconstruction_review object is required for reconstruction_complete"),
+            )
+        decisions = reconstruction_review.get("decisions")
+        if not isinstance(decisions, list) or len(decisions) == 0:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "reconstruction_review.decisions must be a non-empty list"),
+            )
+        for item in decisions:
+            if not isinstance(item, dict):
+                return JSONResponse(
+                    status_code=400,
+                    content=error_envelope("VALIDATION_ERROR", "Each reconstruction decision must be an object"),
+                )
+            decision = str(item.get("decision") or "PENDING").strip().upper()
+            if decision == "PENDING":
+                return JSONResponse(
+                    status_code=400,
+                    content=error_envelope("VALIDATION_ERROR", "All reconstruction decisions must be non-pending"),
+                )
+        template_status = str(reconstruction_review.get("template_status_code") or "").strip()
+        fallback_note = str(reconstruction_review.get("fallback_note") or "").strip()
+        if template_status == "NO_ENTITY_TEMPLATE_AVAILABLE" and not fallback_note:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "fallback_note is required for NO_ENTITY_TEMPLATE_AVAILABLE"),
+            )
 
     result = {
         "doc_id": doc_id,
         "action": action,
         "gate_color": gate,
+        "health_score": health_score,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "actor_id": auth.user_id,
     }
 
-    cached["action_taken"] = action
-    cached["action_timestamp"] = result["timestamp"]
-    cached["action_actor"] = auth.user_id
+    if action == "override_red":
+        red_override = {
+            "approved": True,
+            "reason": reason,
+            "timestamp": result["timestamp"],
+            "actor_id": auth.user_id,
+        }
+        cached["red_override"] = red_override
+        result["red_override"] = red_override
+        if not cached.get("action_taken"):
+            cached["action_taken"] = action
+            cached["action_timestamp"] = result["timestamp"]
+            cached["action_actor"] = auth.user_id
+            cached["action_health_score"] = health_score
+    elif action == "reconstruction_complete":
+        review_entry = {
+            "source": str(reconstruction_review.get("source") or "contract_generator"),
+            "legal_entity": str(reconstruction_review.get("legal_entity") or ""),
+            "contract_type": str(reconstruction_review.get("contract_type") or ""),
+            "template_status_code": str(reconstruction_review.get("template_status_code") or ""),
+            "decisions": reconstruction_review.get("decisions") or [],
+            "fallback_note": str(reconstruction_review.get("fallback_note") or ""),
+            "completed": True,
+            "completed_at": str(reconstruction_review.get("completed_at") or result["timestamp"]),
+            "recorded_at": result["timestamp"],
+            "recorded_by": auth.user_id,
+        }
+        cached["reconstruction_review"] = review_entry
+        result["reconstruction_review"] = review_entry
+    else:
+        cached["action_taken"] = action
+        cached["action_timestamp"] = result["timestamp"]
+        cached["action_actor"] = auth.user_id
+        cached["action_health_score"] = health_score
+        if "red_override" in cached:
+            result["red_override"] = cached.get("red_override")
 
     if patch_id:
         evidence_pack_id = generate_id("evp_")
@@ -647,9 +747,12 @@ async def preflight_action(
             "preflight_summary": {
                 "doc_id": doc_id,
                 "gate_color": gate,
+                "health_score": health_score,
                 "doc_mode": cached.get("doc_mode"),
                 "action": action,
                 "metrics": cached.get("metrics"),
+                "red_override": cached.get("red_override"),
+                "reconstruction_review": cached.get("reconstruction_review"),
             },
             "system_evidence_pack_id": evidence_pack_id,
         }
@@ -658,5 +761,10 @@ async def preflight_action(
         logger.info("[PREFLIGHT] action=%s doc=%s patch=%s evp=%s", action, doc_id, patch_id, evidence_pack_id)
     else:
         logger.info("[PREFLIGHT] action=%s doc=%s (no patch, cache-only)", action, doc_id)
+
+    if action != "override_red" and cached.get("red_override") is not None:
+        result["red_override"] = cached.get("red_override")
+    if cached.get("reconstruction_review") is not None:
+        result["reconstruction_review"] = cached.get("reconstruction_review")
 
     return JSONResponse(status_code=200, content=envelope(result))
