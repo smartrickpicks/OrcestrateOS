@@ -11,3 +11,5 @@
 # Config and secrets
 /.replit @smartrickpicks
 /.env* @smartrickpicks
+/config/ @smartrickpicks
+/scripts/ @smartrickpicks
