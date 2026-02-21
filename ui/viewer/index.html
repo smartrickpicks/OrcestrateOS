@@ -2108,7 +2108,7 @@
     .opp-spine-table td { padding: 6px 8px; border-bottom: 1px solid var(--border-1, #eee); }
     .opp-spine-table .opp-label { font-weight: 500; white-space: nowrap; }
     .opp-spine-table .opp-value { font-family: var(--font-mono, monospace); font-size: 0.92em; }
-    .opp-spine-table .opp-reason { color: var(--text-2, #888); font-size: 0.92em; }
+    .opp-spine-table .opp-reason { color: var(--text-2, #888); font-size: 0.92em; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
     .opp-status-badge { font-size: 0.75em; padding: 2px 7px; border-radius: 3px; font-weight: 600; }
     .opp-conf-badge { font-size: 0.72em; padding: 1px 6px; border-radius: 3px; background: var(--bg-3, #eee); color: var(--text-2, #666); font-weight: 600; margin-left: 4px; }
     .opp-subtype-expand-row td { padding: 0 8px 8px 8px !important; border-bottom: 1px solid var(--border-1, #eee); }
@@ -2143,13 +2143,13 @@
     .sch-table td { padding: 6px 8px; border-bottom: 1px solid var(--border-1, #eee); }
     .sch-label { font-weight: 500; white-space: nowrap; }
     .sch-value { font-family: var(--font-mono, monospace); font-size: 0.92em; }
-    .sch-reason { color: var(--text-2, #888); font-size: 0.92em; }
+    .sch-reason { color: var(--text-2, #888); font-size: 0.92em; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
     .sch-status-badge { font-size: 0.75em; padding: 2px 7px; border-radius: 3px; font-weight: 600; }
     .pftl-status-editor { position: relative; display: inline-flex; align-items: center; gap: 5px; }
     .pftl-status-edit-btn { border: 1px solid var(--border-1, #ddd); background: var(--bg-1, #fff); color: var(--text-2, #666); border-radius: 4px; font-size: 0.7em; padding: 1px 6px; cursor: pointer; }
     .pftl-status-edit-btn:hover { background: var(--bg-2, #f5f5f5); }
     .pftl-status-overridden { font-size: 0.68em; background: #ede7f6; color: #5e35b1; border-radius: 8px; padding: 1px 6px; font-weight: 700; text-transform: uppercase; }
-    .pftl-status-menu { position: absolute; top: 22px; left: 0; z-index: 50; min-width: 200px; background: var(--bg-1, #fff); border: 1px solid var(--border-1, #ddd); border-radius: 8px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14); padding: 8px; display: none; }
+    .pftl-status-menu { position: absolute; bottom: 22px; left: 0; z-index: 50; min-width: 220px; background: var(--bg-1, #fff); border: 1px solid var(--border-1, #ddd); border-radius: 8px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14); padding: 8px; display: none; }
     .pftl-status-menu.open { display: block; }
     .pftl-status-menu-title { font-size: 0.72em; color: var(--text-3, #888); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
     .pftl-status-menu-actions { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -2159,6 +2159,15 @@
     .pftl-status-menu-actions .is-review { background: rgba(241, 196, 15, 0.15); color: #d4a017; border-color: rgba(241, 196, 15, 0.35); }
     .pftl-status-menu-actions .is-fail { background: rgba(231, 76, 60, 0.15); color: #c0392b; border-color: rgba(231, 76, 60, 0.35); }
     .pftl-status-menu-actions .is-clear { background: var(--bg-1, #fff); color: #777; }
+    .pftl-override-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1200; }
+    .pftl-override-modal { width: min(520px, 92vw); background: var(--bg-1, #fff); border: 1px solid var(--border-1, #ddd); border-radius: 10px; box-shadow: 0 20px 48px rgba(0,0,0,0.32); padding: 14px; }
+    .pftl-override-modal h4 { margin: 0 0 8px; font-size: 0.95em; color: var(--text-1, #222); }
+    .pftl-override-modal p { margin: 0 0 10px; font-size: 0.82em; color: var(--text-2, #666); }
+    .pftl-override-modal textarea { width: 100%; min-height: 90px; box-sizing: border-box; border-radius: 8px; border: 1px solid var(--border-1, #d6d6d6); background: var(--bg-2, #f8fafc); color: var(--text-1, #222); padding: 8px; font-size: 0.82em; resize: vertical; }
+    .pftl-override-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+    .pftl-override-modal-actions button { border: 1px solid var(--border-1, #ddd); border-radius: 6px; padding: 6px 10px; font-size: 0.78em; font-weight: 600; cursor: pointer; }
+    .pftl-override-modal-actions .cancel { background: var(--bg-2, #f8fafc); color: var(--text-2, #555); }
+    .pftl-override-modal-actions .confirm { background: #1565c0; color: #fff; border-color: #1565c0; }
     .sch-conf-badge { font-size: 0.72em; padding: 1px 6px; border-radius: 3px; background: var(--bg-3, #eee); color: var(--text-2, #666); font-weight: 600; margin-left: 4px; }
     .sch-candidates-row td { padding: 0 8px 8px 8px !important; border-bottom: 1px solid var(--border-1, #eee); }
     .sch-candidates-toggle { cursor: pointer; font-size: 0.78em; color: var(--accent, #4a90d9); padding: 4px 0; user-select: none; }
@@ -5482,6 +5491,7 @@
           <button class="admin-tab active" data-admin-tab="governance" onclick="switchAdminTab('governance')" style="padding: 10px 20px; background: #1976d2; color: white; border: none; border-radius: 6px 6px 0 0; cursor: pointer; font-weight: 600;">Pipeline</button>
           <button class="admin-tab" data-admin-tab="standardizer" onclick="switchAdminTab('standardizer')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Schema &amp; Standards</button>
           <button class="admin-tab" data-admin-tab="quality" onclick="switchAdminTab('quality')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Quality &amp; Gates</button>
+          <button class="admin-tab" data-admin-tab="health-calibration" onclick="switchAdminTab('health-calibration')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Health Calibration</button>
           <button class="admin-tab" data-admin-tab="patch-ops" onclick="switchAdminTab('patch-ops')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Patch Ops <span id="patch-queue-count" style="display:none; background:#e91e63; color:white; padding:1px 6px; border-radius:10px; font-size:0.8em; margin-left:4px;">0</span></button>
           <button class="admin-tab" data-admin-tab="people" onclick="switchAdminTab('people')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">People &amp; Access</button>
         </div>
@@ -6123,6 +6133,18 @@
         </div><!-- end qa-runner section -->
 
         </div><!-- end admin-tab-quality -->
+
+        <!-- HEALTH CALIBRATION TAB -->
+        <div id="admin-tab-health-calibration" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Tune preflight contract-health scoring weights, penalties, and band thresholds.</span></div>
+          <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 10px; font-size: 1.1em; color: #333;">Preflight Health Calibration Workbench</h3>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 14px;">
+              Configure section weights, gate penalties, and calibrated band cutoffs. Use this tab to fine-tune score behavior quickly in admin sandbox, then export JSON for backend calibration configs.
+            </p>
+            <div id="hc-workbench-root"></div>
+          </div>
+        </div><!-- end admin-tab-health-calibration -->
 
         <!-- PEOPLE TAB (P0.7) -->
         <div id="admin-tab-people" class="admin-tab-panel" data-admin-section="true" style="display: none;">
@@ -26849,7 +26871,7 @@
           if (typeof _initArchitectRailState === 'function') _initArchitectRailState();
         }
       }
-      var tabs = ['governance', 'users', 'patch-ops', 'patch-queue', 'runtime-config', 'config', 'inspector', 'standardizer', 'patch-console', 'gov-controls', 'evidence', 'unknown-cols', 'people', 'qa-runner', 'quality'];
+      var tabs = ['governance', 'users', 'patch-ops', 'patch-queue', 'runtime-config', 'config', 'inspector', 'standardizer', 'patch-console', 'gov-controls', 'evidence', 'unknown-cols', 'people', 'qa-runner', 'quality', 'health-calibration'];
       if (tabName === 'patch-queue' || tabName === 'patch-console') tabName = 'patch-ops';
       if (tabName === 'evidence' || tabName === 'gov-controls') tabName = 'governance';
       if (tabName === 'config' || tabName === 'inspector' || tabName === 'runtime-config') tabName = 'quality';
@@ -26948,7 +26970,275 @@
         if (typeof QARunner !== 'undefined' && QARunner._onTabOpen) QARunner._onTabOpen();
         if (typeof renderGlossarySummary === 'function') renderGlossarySummary();
       }
+      if (tabName === 'health-calibration') {
+        if (typeof HealthCalibrationWorkbench !== 'undefined' && HealthCalibrationWorkbench.render) {
+          HealthCalibrationWorkbench.render();
+        }
+      }
     }
+
+    var HealthCalibrationWorkbench = {
+      _storageKey: 'health_calibration_workbench_v1',
+      _state: null,
+      _defaultState: function() {
+        return {
+          apply_live: true,
+          section_weights: {
+            opportunity_spine: 0.25,
+            schedule_structure: 0.15,
+            financials_readiness: 0.25,
+            addons_readiness: 0.15,
+            entity_resolution: 0.20
+          },
+          gate_penalties: { GREEN: 0.0, YELLOW: 0.15, RED: 0.35 },
+          calibrator: { model_type: 'identity', coef: 1.0, intercept: 0.0 },
+          bands: {
+            very_high_min: 0.95,
+            healthy_min: 0.80
+          }
+        };
+      },
+      _clamp01: function(v) {
+        var n = parseFloat(v);
+        if (isNaN(n)) return 0;
+        if (n < 0) return 0;
+        if (n > 1) return 1;
+        return n;
+      },
+      _round: function(v, d) {
+        var p = Math.pow(10, d || 4);
+        return Math.round((parseFloat(v) || 0) * p) / p;
+      },
+      _normalizeWeights: function() {
+        var w = this._state.section_weights;
+        var keys = Object.keys(w);
+        var sum = 0;
+        for (var i = 0; i < keys.length; i++) sum += parseFloat(w[keys[i]]) || 0;
+        if (sum <= 0) return;
+        for (var j = 0; j < keys.length; j++) w[keys[j]] = this._round((parseFloat(w[keys[j]]) || 0) / sum, 6);
+      },
+      load: function() {
+        if (!this._state) this._state = this._defaultState();
+        try {
+          var raw = localStorage.getItem(this._storageKey);
+          if (!raw) return;
+          var parsed = JSON.parse(raw);
+          this._state = Object.assign({}, this._defaultState(), parsed || {});
+          if (!this._state.section_weights) this._state.section_weights = this._defaultState().section_weights;
+          if (!this._state.gate_penalties) this._state.gate_penalties = this._defaultState().gate_penalties;
+          if (!this._state.calibrator) this._state.calibrator = this._defaultState().calibrator;
+          if (!this._state.bands) this._state.bands = this._defaultState().bands;
+          this._normalizeWeights();
+        } catch (e) {
+          this._state = this._defaultState();
+        }
+      },
+      save: function() {
+        try {
+          localStorage.setItem(this._storageKey, JSON.stringify(this._state || this._defaultState()));
+        } catch (e) {
+          console.warn('[HC] failed to persist calibration state');
+        }
+      },
+      _getLivePreflightResult: function() {
+        if (window._pfGateState && window._pfGateState.result) return window._pfGateState.result;
+        return null;
+      },
+      _computePreview: function() {
+        var r = this._getLivePreflightResult();
+        var section = {
+          opportunity_spine: 0,
+          schedule_structure: 0,
+          financials_readiness: 0,
+          addons_readiness: 0,
+          entity_resolution: 0
+        };
+        var gate = 'GREEN';
+        if (r && r.health_score && r.health_score.section_scores) {
+          section = Object.assign(section, r.health_score.section_scores);
+          gate = (r.gate_color || 'GREEN').toUpperCase();
+        }
+        var w = this._state.section_weights;
+        var raw = 0;
+        raw += (section.opportunity_spine || 0) * (w.opportunity_spine || 0);
+        raw += (section.schedule_structure || 0) * (w.schedule_structure || 0);
+        raw += (section.financials_readiness || 0) * (w.financials_readiness || 0);
+        raw += (section.addons_readiness || 0) * (w.addons_readiness || 0);
+        raw += (section.entity_resolution || 0) * (w.entity_resolution || 0);
+        var penalty = this._state.gate_penalties[gate] || 0;
+        var penalized = Math.max(0, raw - penalty);
+        var calibrated = penalized;
+        if (this._state.calibrator.model_type === 'platt') {
+          var coef = parseFloat(this._state.calibrator.coef) || 1;
+          var intercept = parseFloat(this._state.calibrator.intercept) || 0;
+          var z = (coef * penalized) + intercept;
+          if (z >= 0) {
+            var expNeg = Math.exp(-z);
+            calibrated = 1 / (1 + expNeg);
+          } else {
+            var expPos = Math.exp(z);
+            calibrated = expPos / (1 + expPos);
+          }
+        }
+        calibrated = this._clamp01(calibrated);
+        var band = 'NEEDS_DETAILED_REVIEW';
+        if (calibrated >= this._state.bands.very_high_min) band = 'VERY_HIGH_CONFIDENCE_HEALTHY';
+        else if (calibrated >= this._state.bands.healthy_min) band = 'HEALTHY_REVIEW_SPOTCHECK';
+        return {
+          has_live_result: !!r,
+          gate: gate,
+          section: section,
+          raw: this._round(raw, 6),
+          penalized: this._round(penalized, 6),
+          calibrated: this._round(calibrated, 6),
+          band: band
+        };
+      },
+      getAppliedConfig: function() {
+        this.load();
+        if (!this._state.apply_live) return null;
+        return JSON.parse(JSON.stringify(this._state));
+      },
+      _input: function(id, val, step, min, max) {
+        return '<input id="' + id + '" type="number" step="' + (step || '0.01') + '" min="' + (min || '0') + '" max="' + (max || '1') + '" value="' + this._round(val, 6) + '" style="width:110px;padding:6px;border:1px solid #d0d7de;border-radius:6px;font-size:0.82em;">';
+      },
+      render: function() {
+        this.load();
+        var root = document.getElementById('hc-workbench-root');
+        if (!root) return;
+        var st = this._state;
+        var preview = this._computePreview();
+        var html = '';
+        html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">';
+        html += '<div style="border:1px solid #e3e8ef;border-radius:8px;padding:12px;">';
+        html += '<h4 style="margin:0 0 8px;font-size:0.9em;color:#263238;">Section Weights</h4>';
+        html += this._renderWeightRow('Opportunity Spine', 'hc-w-opp', st.section_weights.opportunity_spine);
+        html += this._renderWeightRow('Schedule Structure', 'hc-w-sch', st.section_weights.schedule_structure);
+        html += this._renderWeightRow('Financials', 'hc-w-fin', st.section_weights.financials_readiness);
+        html += this._renderWeightRow('Add-ons', 'hc-w-add', st.section_weights.addons_readiness);
+        html += this._renderWeightRow('Entity Resolution', 'hc-w-ent', st.section_weights.entity_resolution);
+        var sum = st.section_weights.opportunity_spine + st.section_weights.schedule_structure + st.section_weights.financials_readiness + st.section_weights.addons_readiness + st.section_weights.entity_resolution;
+        html += '<div style="margin-top:8px;font-size:0.78em;color:#607d8b;">Current sum: <strong>' + this._round(sum, 6) + '</strong> (use Normalize)</div>';
+        html += '</div>';
+        html += '<div style="border:1px solid #e3e8ef;border-radius:8px;padding:12px;">';
+        html += '<h4 style="margin:0 0 8px;font-size:0.9em;color:#263238;">Gate Penalties</h4>';
+        html += this._renderSimpleRow('GREEN', this._input('hc-p-green', st.gate_penalties.GREEN, '0.01', '0', '1'));
+        html += this._renderSimpleRow('YELLOW', this._input('hc-p-yellow', st.gate_penalties.YELLOW, '0.01', '0', '1'));
+        html += this._renderSimpleRow('RED', this._input('hc-p-red', st.gate_penalties.RED, '0.01', '0', '1'));
+        html += '<h4 style="margin:12px 0 8px;font-size:0.9em;color:#263238;">Bands</h4>';
+        html += this._renderSimpleRow('Very High Min', this._input('hc-b-vhigh', st.bands.very_high_min, '0.01', '0', '1'));
+        html += this._renderSimpleRow('Healthy Min', this._input('hc-b-healthy', st.bands.healthy_min, '0.01', '0', '1'));
+        html += '</div>';
+        html += '<div style="border:1px solid #e3e8ef;border-radius:8px;padding:12px;">';
+        html += '<h4 style="margin:0 0 8px;font-size:0.9em;color:#263238;">Calibrator</h4>';
+        html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
+        html += '<label style="font-size:0.8em;color:#455a64;">Model</label>';
+        html += '<select id="hc-model" style="padding:6px;border:1px solid #d0d7de;border-radius:6px;font-size:0.82em;">';
+        html += '<option value="identity"' + (st.calibrator.model_type === 'identity' ? ' selected' : '') + '>identity</option>';
+        html += '<option value="platt"' + (st.calibrator.model_type === 'platt' ? ' selected' : '') + '>platt</option>';
+        html += '</select></div>';
+        html += this._renderSimpleRow('Platt Coef', this._input('hc-platt-coef', st.calibrator.coef, '0.1', '-10', '10'));
+        html += this._renderSimpleRow('Platt Intercept', this._input('hc-platt-int', st.calibrator.intercept, '0.1', '-10', '10'));
+        html += '<div style="margin-top:10px;padding:10px;background:#f8fafc;border:1px solid #e3e8ef;border-radius:6px;font-size:0.8em;color:#455a64;">';
+        html += '<div><strong>Preview Gate:</strong> ' + preview.gate + '</div>';
+        html += '<div><strong>Raw:</strong> ' + this._round(preview.raw * 100, 2) + '%</div>';
+        html += '<div><strong>Penalized:</strong> ' + this._round(preview.penalized * 100, 2) + '%</div>';
+        html += '<div><strong>Calibrated:</strong> ' + this._round(preview.calibrated * 100, 2) + '%</div>';
+        html += '<div><strong>Band:</strong> ' + preview.band + '</div>';
+        if (!preview.has_live_result) html += '<div style="margin-top:6px;color:#607d8b;">No live preflight result loaded; preview is using zeros.</div>';
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+        html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">';
+        html += '<button class="toolbar-btn" onclick="HealthCalibrationWorkbench.applyFromInputs()">Apply Settings</button>';
+        html += '<button class="toolbar-btn" onclick="HealthCalibrationWorkbench.normalizeAndApply()">Normalize Weights</button>';
+        html += '<button class="toolbar-btn" onclick="HealthCalibrationWorkbench.resetDefaults()">Reset Defaults</button>';
+        html += '<button class="toolbar-btn" onclick="HealthCalibrationWorkbench.downloadConfig()" style="background:#2e7d32;color:white;">Download Calibration JSON</button>';
+        html += '<label style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid #d0d7de;border-radius:6px;font-size:0.8em;color:#455a64;">';
+        html += '<input id="hc-apply-live" type="checkbox"' + (st.apply_live ? ' checked' : '') + ' onchange="HealthCalibrationWorkbench.toggleLive(this.checked)"> Apply live to PTL health display';
+        html += '</label>';
+        html += '</div>';
+        html += '<div id="hc-status" style="margin-top:10px;font-size:0.82em;color:#607d8b;"></div>';
+        root.innerHTML = html;
+      },
+      _renderWeightRow: function(label, id, val) {
+        return this._renderSimpleRow(label, this._input(id, val, '0.01', '0', '1'));
+      },
+      _renderSimpleRow: function(label, controlHtml) {
+        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;"><span style="font-size:0.8em;color:#455a64;">' + label + '</span>' + controlHtml + '</div>';
+      },
+      _readInput: function(id, fallback) {
+        var el = document.getElementById(id);
+        if (!el) return fallback;
+        var n = parseFloat(el.value);
+        return isNaN(n) ? fallback : n;
+      },
+      applyFromInputs: function() {
+        this.load();
+        this._state.section_weights.opportunity_spine = this._clamp01(this._readInput('hc-w-opp', this._state.section_weights.opportunity_spine));
+        this._state.section_weights.schedule_structure = this._clamp01(this._readInput('hc-w-sch', this._state.section_weights.schedule_structure));
+        this._state.section_weights.financials_readiness = this._clamp01(this._readInput('hc-w-fin', this._state.section_weights.financials_readiness));
+        this._state.section_weights.addons_readiness = this._clamp01(this._readInput('hc-w-add', this._state.section_weights.addons_readiness));
+        this._state.section_weights.entity_resolution = this._clamp01(this._readInput('hc-w-ent', this._state.section_weights.entity_resolution));
+        this._state.gate_penalties.GREEN = this._clamp01(this._readInput('hc-p-green', this._state.gate_penalties.GREEN));
+        this._state.gate_penalties.YELLOW = this._clamp01(this._readInput('hc-p-yellow', this._state.gate_penalties.YELLOW));
+        this._state.gate_penalties.RED = this._clamp01(this._readInput('hc-p-red', this._state.gate_penalties.RED));
+        this._state.bands.very_high_min = this._clamp01(this._readInput('hc-b-vhigh', this._state.bands.very_high_min));
+        this._state.bands.healthy_min = this._clamp01(this._readInput('hc-b-healthy', this._state.bands.healthy_min));
+        if (this._state.bands.healthy_min > this._state.bands.very_high_min) this._state.bands.healthy_min = this._state.bands.very_high_min;
+        var modelEl = document.getElementById('hc-model');
+        this._state.calibrator.model_type = modelEl ? modelEl.value : this._state.calibrator.model_type;
+        this._state.calibrator.coef = this._readInput('hc-platt-coef', this._state.calibrator.coef);
+        this._state.calibrator.intercept = this._readInput('hc-platt-int', this._state.calibrator.intercept);
+        this._normalizeWeights();
+        this.save();
+        this.render();
+        var status = document.getElementById('hc-status');
+        if (status) status.textContent = 'Calibration settings applied and saved locally.';
+      },
+      normalizeAndApply: function() {
+        this.applyFromInputs();
+      },
+      toggleLive: function(checked) {
+        this.load();
+        this._state.apply_live = !!checked;
+        this.save();
+        this.render();
+      },
+      resetDefaults: function() {
+        this._state = this._defaultState();
+        this.save();
+        this.render();
+      },
+      downloadConfig: function() {
+        this.applyFromInputs();
+        var payload = {
+          version: 'admin_workbench_v1',
+          generated_at: new Date().toISOString(),
+          section_weights: this._state.section_weights,
+          gate_penalties: this._state.gate_penalties,
+          calibrator: {
+            model_type: this._state.calibrator.model_type,
+            platt: { coef: this._state.calibrator.coef, intercept: this._state.calibrator.intercept }
+          },
+          bands: [
+            { name: 'VERY_HIGH_CONFIDENCE_HEALTHY', min: this._state.bands.very_high_min, max: 1.01 },
+            { name: 'HEALTHY_REVIEW_SPOTCHECK', min: this._state.bands.healthy_min, max: this._state.bands.very_high_min },
+            { name: 'NEEDS_DETAILED_REVIEW', min: 0.0, max: this._state.bands.healthy_min }
+          ]
+        };
+        var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'preflight_health_calibration.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    };
+    window.HealthCalibrationWorkbench = HealthCalibrationWorkbench;
 
     function renderBatchAddAdminToggles() {
       var container = document.getElementById('admin-batch-add-toggles');
@@ -48901,8 +49191,29 @@
       for (var i = 0; i < el.options.length; i++) el.options[i].selected = target.indexOf(el.options[i].value) >= 0;
     }
 
-    function cgbCloneState() {
-      return JSON.parse(JSON.stringify(cgbState));
+    function cgbCloneState(compactForStorage) {
+      var base = JSON.parse(JSON.stringify(cgbState));
+      if (!compactForStorage) return base;
+      // Persist only user-authored generator state; runtime caches and large resolver/preflight blobs are rebuilt.
+      var compact = {
+        sessionMode: base.sessionMode,
+        currentPastId: base.currentPastId,
+        termsTab: base.termsTab,
+        legalEntity: base.legalEntity,
+        templateType: base.templateType,
+        whoWhere: base.whoWhere || {},
+        catalogSource: base.catalogSource || {},
+        seed: base.seed || {},
+        sheetMap: base.sheetMap || {},
+        workflow: base.workflow || {},
+        sections: base.sections || {},
+        lineItems: base.lineItems || [],
+        catalogItems: base.catalogItems || [],
+        formValues: base.formValues || {},
+        preflight: base.preflight || {},
+        outputFileName: base.outputFileName || ''
+      };
+      return compact;
     }
 
     function cgbLoadPastSessions() {
@@ -48918,7 +49229,7 @@
       cgbLoadPastSessions();
       var id = cgbState.currentPastId || ('cg_' + Date.now());
       var name = (cgbState.whoWhere.counterpartyName || 'Untitled Counterparty') + ' - ' + (new Date().toLocaleString());
-      var snapshot = cgbCloneState();
+      var snapshot = cgbCloneState(true);
       snapshot.currentPastId = id;
       var existingIdx = -1;
       for (var i = 0; i < cgbState.pastSessions.length; i++) {
@@ -48927,7 +49238,25 @@
       var payload = { id: id, name: name, updated_at: new Date().toISOString(), state: snapshot };
       if (existingIdx >= 0) cgbState.pastSessions[existingIdx] = payload;
       else cgbState.pastSessions.unshift(payload);
-      localStorage.setItem(CGB_PAST_SESSIONS_KEY, JSON.stringify(cgbState.pastSessions.slice(0, 30)));
+      var written = false;
+      var limits = [30, 15, 8, 3, 1];
+      for (var li = 0; li < limits.length; li++) {
+        try {
+          localStorage.setItem(CGB_PAST_SESSIONS_KEY, JSON.stringify(cgbState.pastSessions.slice(0, limits[li])));
+          written = true;
+          break;
+        } catch (err) {}
+      }
+      if (!written) {
+        try {
+          localStorage.removeItem(CGB_PAST_SESSIONS_KEY);
+          localStorage.setItem(CGB_PAST_SESSIONS_KEY, JSON.stringify([payload]));
+          written = true;
+        } catch (finalErr) {
+          if (typeof showToast === 'function') showToast('Past session autosave skipped (browser storage full).', 'warning');
+          console.warn('[CGB] session save skipped: storage quota exceeded');
+        }
+      }
       cgbState.currentPastId = id;
       return id;
     }
@@ -58566,7 +58895,9 @@ var P022_RuntimeValidation = {
     elapsed: 0,
     timer: null,
     file: null,
-    forbidden: false
+    forbidden: false,
+    scrollTop: 0,
+    overrideDialog: null
   };
 
   var _pftlSugState = {
@@ -59426,6 +59757,8 @@ var P022_RuntimeValidation = {
   function _pftlRender() {
     var overlay = document.getElementById('pftl-overlay');
     if (!overlay) return;
+    var existingBody = overlay.querySelector('.pftl-body');
+    if (existingBody) _pftlState.scrollTop = existingBody.scrollTop || 0;
     if (!_pftlState.open) {
       overlay.style.display = 'none';
       return;
@@ -59494,11 +59827,32 @@ var P022_RuntimeValidation = {
       html += _pftlRenderFooter(_pftlState.result);
     }
 
+    html += _pftlRenderOverrideDialog();
     html += '</div>';
     overlay.innerHTML = html;
+    var nextBody = overlay.querySelector('.pftl-body');
+    if (nextBody && _pftlState.scrollTop > 0) nextBody.scrollTop = _pftlState.scrollTop;
     if (_pftlState.result) {
       _pftlRenderSuggestionsSection();
     }
+  }
+
+  function _pftlRenderOverrideDialog() {
+    var dlg = _pftlState.overrideDialog;
+    if (!dlg || !dlg.open) return '';
+    var title = 'Override Status';
+    var sub = (dlg.label || dlg.code || 'Check') + ' → ' + String(dlg.status || '').toUpperCase();
+    var comment = dlg.comment || '';
+    var html = '<div class="pftl-override-modal-backdrop">';
+    html += '<div class="pftl-override-modal">';
+    html += '<h4>' + _pftlEsc(title) + '</h4>';
+    html += '<p>' + _pftlEsc(sub) + '. Add a brief comment for audit trail.</p>';
+    html += '<textarea id="pftl-override-comment" placeholder="Reason for override (required)">' + _pftlEsc(comment) + '</textarea>';
+    html += '<div class="pftl-override-modal-actions">';
+    html += '<button type="button" class="cancel" onclick="pftlCloseCheckOverrideDialog()">Cancel</button>';
+    html += '<button type="button" class="confirm" onclick="pftlConfirmCheckOverride()">Apply Override</button>';
+    html += '</div></div></div>';
+    return html;
   }
 
   window.pftlOnFileChange = function() {
@@ -60125,9 +60479,9 @@ var P022_RuntimeValidation = {
     html += '<div id="' + _pftlEsc(menuId) + '" class="pftl-status-menu">';
     html += '<div class="pftl-status-menu-title">Override status</div>';
     html += '<div class="pftl-status-menu-actions">';
-    html += '<button class="is-pass" type="button" onclick="pftlApplyCheckOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'pass\')">Pass</button>';
-    html += '<button class="is-review" type="button" onclick="pftlApplyCheckOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'review\')">Review</button>';
-    html += '<button class="is-fail" type="button" onclick="pftlApplyCheckOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'fail\')">Fail</button>';
+    html += '<button class="is-pass" type="button" onclick="pftlOpenCheckOverrideDialog(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'pass\')">Pass</button>';
+    html += '<button class="is-review" type="button" onclick="pftlOpenCheckOverrideDialog(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'review\')">Review</button>';
+    html += '<button class="is-fail" type="button" onclick="pftlOpenCheckOverrideDialog(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'fail\')">Fail</button>';
     if (overridden) {
       html += '<button class="is-clear" type="button" onclick="pftlClearCheckOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\')">Clear</button>';
     }
@@ -60145,11 +60499,53 @@ var P022_RuntimeValidation = {
     el.classList.toggle('open');
   };
 
-  window.pftlApplyCheckOverride = function(scope, code, status) {
+  window.pftlOpenCheckOverrideDialog = function(scope, code, status) {
+    var r = _pftlState.result || {};
+    var label = code;
+    var groups = ['opportunity_spine', 'schedule_structure', 'financials_readiness', 'addons_readiness'];
+    for (var gi = 0; gi < groups.length; gi++) {
+      var checks = ((r[groups[gi]] || {}).checks || []);
+      for (var ci = 0; ci < checks.length; ci++) {
+        if (checks[ci] && checks[ci].code === code) { label = checks[ci].label || checks[ci].code; break; }
+      }
+    }
+    var current = _pftlGetCheckOverride(scope, code);
+    _pftlState.overrideDialog = {
+      open: true,
+      scope: scope,
+      code: code,
+      status: status,
+      label: label,
+      comment: (current && current.comment) ? current.comment : ''
+    };
+    _pftlRender();
+  };
+
+  window.pftlCloseCheckOverrideDialog = function() {
+    _pftlState.overrideDialog = null;
+    _pftlRender();
+  };
+
+  window.pftlConfirmCheckOverride = function() {
+    var dlg = _pftlState.overrideDialog;
+    if (!dlg || !dlg.open) return;
+    var txt = document.getElementById('pftl-override-comment');
+    var comment = txt ? String(txt.value || '').trim() : '';
+    if (!comment) {
+      if (typeof showToast === 'function') showToast('Override comment is required.', 'warning');
+      return;
+    }
+    pftlApplyCheckOverride(dlg.scope, dlg.code, dlg.status, comment);
+    _pftlState.overrideDialog = null;
+    _pftlRender();
+  };
+
+  window.pftlApplyCheckOverride = function(scope, code, status, comment) {
     var assigns = _pftlGetAssignments();
     if (!assigns.check_overrides) assigns.check_overrides = {};
     assigns.check_overrides[_pftlOverrideKey(scope, code)] = {
       status: status,
+      comment: comment ? String(comment) : '',
       ts: new Date().toISOString()
     };
     _pftlSaveAssignments();
@@ -60446,6 +60842,8 @@ var P022_RuntimeValidation = {
       html += '<td class="opp-value">' + valueCell + '</td>';
       var oppReason = ck.reason || '';
       if (effectiveStatus !== st) oppReason = 'Analyst override \u2192 ' + String(effectiveStatus || '').toUpperCase() + (oppReason ? '. ' + oppReason : '');
+      var oppOverride = _pftlGetCheckOverride('opportunity_spine', ck.code);
+      if (oppOverride && oppOverride.comment) oppReason += (oppReason ? ' ' : '') + '(Comment: ' + oppOverride.comment + ')';
       html += '<td class="opp-reason">' + (oppReason ? _pftlEsc(oppReason) : '') + '</td>';
       html += '</tr>';
 
@@ -60548,6 +60946,8 @@ var P022_RuntimeValidation = {
         reasonText = reasonText.replace(new RegExp('\\(' + ck.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '(' + _schTypeLabel(ck.value));
       }
       if (effectiveStatus !== st) reasonText = 'Analyst override \u2192 ' + String(effectiveStatus || '').toUpperCase() + (reasonText ? '. ' + reasonText : '');
+      var schOverride = _pftlGetCheckOverride('schedule_structure', ck.code);
+      if (schOverride && schOverride.comment) reasonText += (reasonText ? ' ' : '') + '(Comment: ' + schOverride.comment + ')';
       html += '<td class="sch-reason">' + (reasonText ? _pftlEsc(reasonText) : '') + '</td>';
       html += '</tr>';
 
@@ -60615,6 +61015,8 @@ var P022_RuntimeValidation = {
       html += '<td class="sch-value">' + valueCell + '</td>';
       var finReason = ck.reason || '';
       if (effectiveStatus !== st) finReason = 'Analyst override → ' + String(effectiveStatus || '').toUpperCase() + (finReason ? '. ' + finReason : '');
+      var finOverride = _pftlGetCheckOverride('financials_readiness', ck.code);
+      if (finOverride && finOverride.comment) finReason += (finReason ? ' ' : '') + '(Comment: ' + finOverride.comment + ')';
       html += '<td class="sch-reason">' + (finReason ? _pftlEsc(finReason) : '') + '</td>';
       html += '</tr>';
     }
@@ -60662,6 +61064,8 @@ var P022_RuntimeValidation = {
       html += '<td class="sch-value">' + valueCell + '</td>';
       var addonReason = ck.reason || '';
       if (effectiveStatus !== st) addonReason = 'Analyst override → ' + String(effectiveStatus || '').toUpperCase() + (addonReason ? '. ' + addonReason : '');
+      var addonOverride = _pftlGetCheckOverride('addons_readiness', ck.code);
+      if (addonOverride && addonOverride.comment) addonReason += (addonReason ? ' ' : '') + '(Comment: ' + addonOverride.comment + ')';
       html += '<td class="sch-reason">' + (addonReason ? _pftlEsc(addonReason) : '') + '</td>';
       html += '</tr>';
     }
@@ -60679,6 +61083,46 @@ var P022_RuntimeValidation = {
     var raw = hs.raw_score || 0;
     var penalty = hs.gate_penalty || 0;
     var sections = hs.section_scores || {};
+
+    try {
+      if (window.HealthCalibrationWorkbench && window.HealthCalibrationWorkbench.getAppliedConfig) {
+        var cfg = window.HealthCalibrationWorkbench.getAppliedConfig();
+        if (cfg) {
+          var w = cfg.section_weights || {};
+          var gp = cfg.gate_penalties || {};
+          var gate = (r.gate_color || 'GREEN').toUpperCase();
+          raw = 0;
+          raw += (sections.opportunity_spine || 0) * (w.opportunity_spine || 0);
+          raw += (sections.schedule_structure || 0) * (w.schedule_structure || 0);
+          raw += (sections.financials_readiness || 0) * (w.financials_readiness || 0);
+          raw += (sections.addons_readiness || 0) * (w.addons_readiness || 0);
+          raw += (sections.entity_resolution || 0) * (w.entity_resolution || 0);
+          penalty = gp[gate] || 0;
+          calibrated = Math.max(0, raw - penalty);
+          if (cfg.calibrator && cfg.calibrator.model_type === 'platt') {
+            var coef = parseFloat(cfg.calibrator.coef) || 1;
+            var intercept = parseFloat(cfg.calibrator.intercept) || 0;
+            var z = (coef * calibrated) + intercept;
+            if (z >= 0) {
+              var expNeg = Math.exp(-z);
+              calibrated = 1 / (1 + expNeg);
+            } else {
+              var expPos = Math.exp(z);
+              calibrated = expPos / (1 + expPos);
+            }
+          }
+          if (calibrated < 0) calibrated = 0;
+          if (calibrated > 1) calibrated = 1;
+          var veryHighMin = ((cfg.bands || {}).very_high_min !== undefined) ? parseFloat(cfg.bands.very_high_min) : 0.95;
+          var healthyMin = ((cfg.bands || {}).healthy_min !== undefined) ? parseFloat(cfg.bands.healthy_min) : 0.80;
+          if (isNaN(veryHighMin)) veryHighMin = 0.95;
+          if (isNaN(healthyMin)) healthyMin = 0.80;
+          if (calibrated >= veryHighMin) band = 'VERY_HIGH_CONFIDENCE_HEALTHY';
+          else if (calibrated >= healthyMin) band = 'HEALTHY_REVIEW_SPOTCHECK';
+          else band = 'NEEDS_DETAILED_REVIEW';
+        }
+      }
+    } catch (e) {}
 
     var bandClass = 'hs-band-review';
     var bandLabel = 'Needs Detailed Review';
