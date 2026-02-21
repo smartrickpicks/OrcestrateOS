@@ -2043,6 +2043,19 @@
     .pf-gate-btn.accept:hover { background: #ffa000; }
     .pf-gate-btn.escalate { background: var(--bad); color: white; }
     .pf-gate-btn.escalate:hover { background: var(--danger); }
+    .pf-gate-btn.generate-copy { background: #6a1b9a; color: white; }
+    .pf-gate-btn.generate-copy:hover { background: #7b1fa2; }
+    .pf-gate-btn.reconstruct { background: #00695c; color: white; }
+    .pf-gate-btn.reconstruct:hover { background: #00796b; }
+    .pf-gate-btn.override-red { background: #b71c1c; color: white; }
+    .pf-gate-btn.override-red:hover { background: #c62828; }
+    .pf-gate-step { display: flex; align-items: center; gap: 6px; font-size: 0.78em; margin-top: 4px; }
+    .pf-gate-step .step-done { color: #2e7d32; font-weight: 600; }
+    .pf-gate-step .step-pending { color: #999; }
+    .pf-gate-step .step-icon { font-size: 1.1em; }
+    .cgb-gate-panel { border: 1px solid var(--border-1, #e0e0e0); border-radius: 8px; padding: 10px; margin-top: 10px; background: var(--bg-2, #fafafa); }
+    .cgb-gate-panel h4 { margin: 0 0 8px; font-size: 0.88em; color: var(--text-2, #455a64); }
+    .cgb-gate-step-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
     .pf-admin-note { font-size: 0.75em; color: var(--text-3); font-style: italic; margin-top: 6px; }
     .pftl-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; }
     .pftl-modal { background: var(--bg-1); border-radius: 12px; width: 90vw; max-width: 960px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
@@ -2132,6 +2145,20 @@
     .sch-value { font-family: var(--font-mono, monospace); font-size: 0.92em; }
     .sch-reason { color: var(--text-2, #888); font-size: 0.92em; }
     .sch-status-badge { font-size: 0.75em; padding: 2px 7px; border-radius: 3px; font-weight: 600; }
+    .pftl-status-editor { position: relative; display: inline-flex; align-items: center; gap: 5px; }
+    .pftl-status-edit-btn { border: 1px solid var(--border-1, #ddd); background: var(--bg-1, #fff); color: var(--text-2, #666); border-radius: 4px; font-size: 0.7em; padding: 1px 6px; cursor: pointer; }
+    .pftl-status-edit-btn:hover { background: var(--bg-2, #f5f5f5); }
+    .pftl-status-overridden { font-size: 0.68em; background: #ede7f6; color: #5e35b1; border-radius: 8px; padding: 1px 6px; font-weight: 700; text-transform: uppercase; }
+    .pftl-status-menu { position: absolute; top: 22px; left: 0; z-index: 50; min-width: 200px; background: var(--bg-1, #fff); border: 1px solid var(--border-1, #ddd); border-radius: 8px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14); padding: 8px; display: none; }
+    .pftl-status-menu.open { display: block; }
+    .pftl-status-menu-title { font-size: 0.72em; color: var(--text-3, #888); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .pftl-status-menu-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+    .pftl-status-menu-actions button { border: 1px solid var(--border-1, #ddd); background: var(--bg-2, #f5f5f5); color: var(--text-2, #666); border-radius: 6px; font-size: 0.74em; padding: 3px 8px; cursor: pointer; font-weight: 600; }
+    .pftl-status-menu-actions button:hover { opacity: 0.92; }
+    .pftl-status-menu-actions .is-pass { background: rgba(46, 204, 113, 0.15); color: #27ae60; border-color: rgba(46, 204, 113, 0.35); }
+    .pftl-status-menu-actions .is-review { background: rgba(241, 196, 15, 0.15); color: #d4a017; border-color: rgba(241, 196, 15, 0.35); }
+    .pftl-status-menu-actions .is-fail { background: rgba(231, 76, 60, 0.15); color: #c0392b; border-color: rgba(231, 76, 60, 0.35); }
+    .pftl-status-menu-actions .is-clear { background: var(--bg-1, #fff); color: #777; }
     .sch-conf-badge { font-size: 0.72em; padding: 1px 6px; border-radius: 3px; background: var(--bg-3, #eee); color: var(--text-2, #666); font-weight: 600; margin-left: 4px; }
     .sch-candidates-row td { padding: 0 8px 8px 8px !important; border-bottom: 1px solid var(--border-1, #eee); }
     .sch-candidates-toggle { cursor: pointer; font-size: 0.78em; color: var(--accent, #4a90d9); padding: 4px 0; user-select: none; }
@@ -2140,13 +2167,6 @@
     .sch-candidate-card { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 5px 8px; border-radius: 5px; background: var(--bg-1, #fff); border: 1px solid var(--border-1, #e0e0e0); }
     .sch-candidate-name { font-weight: 600; font-size: 0.85em; }
     .sch-evidence-chip { font-size: 0.68em; padding: 1px 6px; border-radius: 3px; background: rgba(74, 144, 217, 0.1); color: var(--accent, #4a90d9); border: 1px solid rgba(74, 144, 217, 0.2); white-space: nowrap; }
-    .sch-type-selector { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-1, #ddd); }
-    .sch-type-selected { font-size: 0.78em; color: var(--text-2, #888); margin-bottom: 6px; }
-    .sch-type-checks { display: flex; flex-wrap: wrap; gap: 8px 10px; margin-bottom: 6px; }
-    .sch-type-check { display: inline-flex; align-items: center; gap: 5px; font-size: 0.8em; }
-    .sch-type-manual { display: flex; gap: 6px; align-items: center; }
-    .sch-type-manual select { padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border-1, #ddd); font-size: 0.78em; background: var(--bg-1); color: var(--text-2); }
-    .sch-type-manual button { padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-1, #ddd); font-size: 0.76em; background: var(--bg-2); color: var(--text-2); cursor: pointer; }
     .pftl-section-title { font-size: 0.82em; font-weight: 600; color: var(--text-2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
     .pftl-reasons { list-style: none; padding: 0; margin: 0; }
     .pftl-reasons li { padding: 3px 0; font-size: 0.82em; color: var(--text-3); }
@@ -2171,6 +2191,26 @@
     .pftl-raw-toggle:hover { text-decoration: underline; }
     .pftl-raw-content { background: var(--bg-2); border: 1px solid var(--border-1); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.75em; max-height: 300px; overflow: auto; white-space: pre-wrap; word-break: break-all; display: none; }
     .pftl-raw-content.open { display: block; }
+    .hs-score-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+    .hs-score-card { background: var(--bg-2, #f5f5f5); border: 1px solid var(--border-1, #e0e0e0); border-radius: 8px; padding: 12px 16px; text-align: center; min-width: 80px; }
+    .hs-score-value { font-size: 1.4em; font-weight: 700; color: var(--text-1, #333); }
+    .hs-score-label { font-size: 0.72em; color: var(--text-3, #999); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .hs-penalty .hs-score-value { color: var(--bad, #e74c3c); }
+    .hs-band-badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 0.78em; font-weight: 600; }
+    .hs-band-healthy { background: rgba(46, 204, 113, 0.15); color: #27ae60; border: 1px solid rgba(46, 204, 113, 0.3); }
+    .hs-band-spotcheck { background: rgba(52, 152, 219, 0.12); color: #2980b9; border: 1px solid rgba(52, 152, 219, 0.25); }
+    .hs-band-moderate { background: rgba(241, 196, 15, 0.15); color: #f39c12; border: 1px solid rgba(241, 196, 15, 0.3); }
+    .hs-band-review { background: rgba(231, 76, 60, 0.12); color: #c0392b; border: 1px solid rgba(231, 76, 60, 0.25); }
+    .hs-sections { margin-top: 8px; }
+    .hs-section-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .hs-section-label { font-size: 0.78em; color: var(--text-2, #555); width: 130px; flex-shrink: 0; }
+    .hs-bar-track { flex: 1; height: 8px; background: var(--bg-3, #eee); border-radius: 4px; overflow: hidden; }
+    .hs-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+    .hs-bar-pass { background: #2ecc71; }
+    .hs-bar-review { background: #f1c40f; }
+    .hs-bar-fail { background: #e74c3c; }
+    .hs-section-pct { font-size: 0.78em; font-weight: 600; color: var(--text-2, #555); width: 35px; text-align: right; }
+    .hs-version { font-size: 0.7em; color: var(--text-3, #999); margin-top: 8px; font-style: italic; }
     .pftl-why-gate { background: var(--bg-3); border: 1px solid #bbdefb; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.85em; color: var(--accent-2); line-height: 1.5; }
     .pftl-trace-table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
     .pftl-trace-table th { background: var(--table-head); padding: 6px 10px; text-align: left; font-weight: 600; color: var(--table-head-text); border-bottom: 2px solid var(--border-1); }
@@ -2344,10 +2384,8 @@
     .rs-new-entry-banner-icon { font-size: 1.3em; flex-shrink: 0; }
     .rs-new-entry-banner-text { font-size: 0.88em; color: #e65100; line-height: 1.4; }
     .rs-badge-new-entry { background: #ff9800; color: #fff; padding: 2px 10px; border-radius: 10px; font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
-    .rs-onboarding-card { background: var(--bg-base, #fff); border: 1px solid #ffcc80; border-left: 4px solid #ff9800; border-radius: 8px; padding: 8px 12px; margin-top: 10px; margin-bottom: 10px; }
-    .rs-onboarding-title { font-size: 0.82em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #e65100; margin-bottom: 10px; cursor: pointer; list-style: none; }
-    .rs-onboarding-title::-webkit-details-marker { display: none; }
-    .rs-onboarding-body { padding-top: 4px; }
+    .rs-onboarding-card { background: var(--bg-base, #fff); border: 1px solid #ffcc80; border-left: 4px solid #ff9800; border-radius: 8px; padding: 14px 16px; margin-top: 10px; margin-bottom: 10px; }
+    .rs-onboarding-title { font-size: 0.82em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #e65100; margin-bottom: 10px; }
     .rs-onboarding-row { display: flex; gap: 8px; padding: 4px 0; font-size: 0.85em; color: var(--text-1, #333); }
     .rs-onboarding-row-label { font-weight: 600; min-width: 140px; flex-shrink: 0; color: var(--text-2, #666); }
     .rs-onboarding-readonly { font-size: 0.78em; color: var(--text-3, #aaa); margin-top: 6px; font-style: italic; }
@@ -2368,9 +2406,23 @@
     html[data-theme="dark"] .rs-manual-input:focus { border-color: #ffcc80; box-shadow: 0 0 0 2px rgba(255,152,0,0.2); }
     .rs-manual-status { font-size: 0.78em; margin-top: 6px; font-weight: 500; }
     .rs-manual-status-empty { color: #e65100; }
+    .rs-manual-status-pending { color: #1565c0; }
     .rs-manual-status-ok { color: #2e7d32; }
+    .pftl-focus-fold { border: 1px solid var(--border-1, #e0e0e0); border-radius: 8px; background: var(--bg-2, #f8f9fa); margin: 10px 0; }
+    .pftl-focus-fold > summary { cursor: pointer; list-style: none; font-size: 0.84em; font-weight: 700; color: var(--text-2, #666); padding: 10px 12px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .pftl-focus-fold > summary::-webkit-details-marker { display: none; }
+    .pftl-focus-fold > summary::before { content: '\25B6'; display: inline-block; margin-right: 8px; transition: transform 0.15s ease; font-size: 0.8em; }
+    .pftl-focus-fold[open] > summary::before { transform: rotate(90deg); }
+    .pftl-focus-fold > .pftl-section,
+    .pftl-focus-fold > .pftl-suggestions-section { margin: 0 10px 10px 10px; }
     html[data-theme="dark"] .rs-manual-status-empty { color: #ffcc80; }
+    html[data-theme="dark"] .rs-manual-status-pending { color: #90caf9; }
     html[data-theme="dark"] .rs-manual-status-ok { color: #66bb6a; }
+    html[data-theme="dark"] .pftl-status-edit-btn { background: var(--bg-1); color: var(--text-2); border-color: var(--border-1); }
+    html[data-theme="dark"] .pftl-status-menu { background: var(--bg-1); border-color: var(--border-1); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35); }
+    html[data-theme="dark"] .pftl-status-overridden { background: rgba(139, 92, 246, 0.18); color: #c4b5fd; }
+    html[data-theme="dark"] .pftl-focus-fold { background: var(--bg-2); border-color: var(--border-1); }
+    html[data-theme="dark"] .pftl-focus-fold > summary { color: var(--text-2); }
     html[data-theme="dark"] .rs-manual-input-label { color: var(--text-1, #e0e0e0); }
     html[data-theme="dark"] .rs-manual-input-section { border-top-color: var(--border-1, #444); }
 
@@ -3394,9 +3446,9 @@
             <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
             <span class="nav-label">Admin Panel</span>
           </a>
-          <a class="nav-item admin-only" id="nav-config-flows" href="#" onclick="openConfigFlows(); return false;" title="Config Flows">
+          <a class="nav-item admin-only" data-page="contract-generator" id="nav-contract-generator" href="#/contract-generator" onclick="openContractGeneratorEntry(); return false;" title="Contract Generator">
             <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="12" y1="2" x2="12" y2="22"/></svg></span>
-            <span class="nav-label">Config Flows</span>
+            <span class="nav-label">Contract Generator</span>
           </a>
         </div>
 
@@ -5489,6 +5541,27 @@
               <div style="color: #999; font-size: 0.85em; font-style: italic;">Load a dataset to see available contract sections.</div>
             </div>
           </div>
+          <div class="admin-section" id="admin-contract-generator-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 10px; font-size: 1.1em; color: #333;">Contract Generator (Sandbox)</h3>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 14px;">Generate a canonical contract draft from ingested records and schema checks. Output is plain text for testing.</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+              <div style="min-width: 240px; flex: 1;">
+                <label style="display: block; font-size: 0.78em; color: #666; margin-bottom: 4px;">Contract Section</label>
+                <select id="cg-sheet-select" onchange="cgRefreshRows()" style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85em;"></select>
+              </div>
+              <div style="min-width: 280px; flex: 2;">
+                <label style="display: block; font-size: 0.78em; color: #666; margin-bottom: 4px;">Record</label>
+                <select id="cg-row-select" style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85em;"></select>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+              <button class="toolbar-btn" onclick="cgInitContractGenerator(true)">Refresh</button>
+              <button class="toolbar-btn" onclick="cgGenerateContract()" style="background: #1976d2; color: white;">Generate Text</button>
+              <button class="toolbar-btn" onclick="cgDownloadContractMd()" style="background: #2e7d32; color: white;">Download .md</button>
+            </div>
+            <div id="cg-status" style="display: none; margin-bottom: 10px; padding: 8px 10px; border-radius: 6px; font-size: 0.82em;"></div>
+            <textarea id="cg-output-preview" readonly placeholder="Generated contract text will appear here..." style="width: 100%; min-height: 220px; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.82em; font-family: 'Courier New', monospace; box-sizing: border-box; resize: vertical;"></textarea>
+          </div>
         <div class="admin-section" id="batch-merge-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
   <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Merge Batches <span class="info-icon" title="Merge two or more existing batches into a single governance container. Contract IDs remain stable. Tenant rules do NOT auto-inherit.">&#9432;</span></h3>
   <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Combine source batches into a single merged batch. Source batch lineage is preserved read-only. Tenant rules require explicit promotion.</p>
@@ -6181,6 +6254,200 @@
 
         <div style="margin-top: 12px; text-align: right; font-size: 0.75em; color: #aaa;">PAGE: ADMIN-PANEL | BUILD v1.6.49</div>
       </div><!-- end page-admin -->
+
+      <div class="page" id="page-contract-generator">
+        <div class="page-header">
+          <h2>Contract Generator</h2>
+          <p class="page-desc">Admin-only generator tool. Build contract sections from canonical schema data with live preview and Markdown export.</p>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(420px, 1fr) minmax(420px, 1fr); gap: 16px; align-items: start;">
+          <section style="background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.06);">
+            <h3 style="margin: 0 0 12px; font-size: 1.02em; color: #263238;">Builder</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+              <button id="cgb-start-new-btn" class="toolbar-btn" onclick="cgbStartNewSession()" style="background:#1976d2; color:#fff;">Create New</button>
+              <button class="toolbar-btn" onclick="cgbLoadPastSession()">Past Contracts</button>
+            </div>
+            <div style="border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin-bottom:10px; background:#fafafa;">
+              <h4 style="margin:0 0 8px; font-size:0.9em;">Who &amp; Where From</h4>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <div>
+                  <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Counterparty Account</label>
+                  <div style="position:relative;">
+                    <input id="cgb-counterparty-name" autocomplete="off" placeholder="Search accounts (or choose Create New)..." onfocus="cgbOpenCounterpartyPicker()" oninput="cgbOnCounterpartyInput(this.value)" onkeydown="cgbOnCounterpartyKeydown(event)" onblur="cgbOnCounterpartyBlur()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                    <div id="cgb-counterparty-dropdown" style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:20; max-height:260px; overflow:auto; border:1px solid #cfd8dc; border-radius:6px; background:#fff; box-shadow:0 8px 18px rgba(0,0,0,0.12);" onscroll="cgbOnCounterpartyScroll()"></div>
+                  </div>
+                </div>
+                <div>
+                  <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Party Type</label>
+                  <select id="cgb-party-type" onchange="cgbOnWhoWhereChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                    <option value="">Select type</option>
+                    <option value="artist">Artist</option>
+                    <option value="label">Label</option>
+                    <option value="producer">Producer</option>
+                    <option value="publisher">Publisher</option>
+                    <option value="company">Company</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Legal Entity (Batch Resolver)</label>
+                  <select id="cgb-business-unit" onchange="cgbOnWhoWhereChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+                </div>
+                <div>
+                  <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Counterparty Status</label>
+                  <div id="cgb-counterparty-status" style="padding:8px; border:1px solid #ddd; border-radius:6px; background:#fff; font-size:0.8em; color:#546e7a;">Not set</div>
+                </div>
+              </div>
+            </div>
+            <div style="border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin-bottom:10px; background:#fafafa;">
+              <h4 style="margin:0 0 8px; font-size:0.9em;">Catalog Source &amp; Scope</h4>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <div>
+                  <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Source Type</label>
+                  <select id="cgb-catalog-source-type" onchange="cgbOnCatalogSourceChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                    <option value="manual">Manual</option>
+                    <option value="spotify">Spotify</option>
+                    <option value="youtube">YouTube</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Scope</label>
+                  <select id="cgb-catalog-scope" onchange="cgbOnCatalogSourceChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                    <option value="BACK_CATALOG_EXISTING">Back Catalog Existing</option>
+                    <option value="SPECIFIC_RELEASES">Specific Releases</option>
+                    <option value="NEW_FUTURE">New/Future</option>
+                  </select>
+                </div>
+                <div style="grid-column:1 / span 2;">
+                  <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Source URL / Handle</label>
+                  <input id="cgb-catalog-source-ref" placeholder="Spotify artist URL, YouTube channel URL, or manual note..." oninput="cgbOnCatalogSourceChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                </div>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(2, minmax(160px, 1fr)); gap: 10px; margin-bottom: 10px;">
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Legal Entity</label>
+                <select id="cgb-legal-entity" onchange="cgbOnMetaChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                  <option value="Create Music Group">Create Music Group</option>
+                  <option value="Create Music Group Distribution">Create Music Group Distribution</option>
+                  <option value="Create Music Group Publishing">Create Music Group Publishing</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Template Type</label>
+                <select id="cgb-template-type" onchange="cgbOnMetaChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                  <option value="distribution_sync">Distribution + Sync</option>
+                  <option value="master_license">Master License</option>
+                  <option value="services">Services Agreement</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Seed Contract Section</label>
+                <select id="cgb-sheet-select" onchange="cgbRefreshRows()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Seed Source Record</label>
+                <select id="cgb-row-select" onchange="cgbOnRowChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(3, minmax(140px, 1fr)); gap: 10px; margin-bottom: 10px;">
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Contract Type</label>
+                <select id="cgb-contract-type" onchange="cgbOnWorkflowChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Opportunity</label>
+                <select id="cgb-opportunity-select" onchange="cgbOnWorkflowChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Schedule</label>
+                <select id="cgb-schedule-select" onchange="cgbOnWorkflowChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Catalog</label>
+                <select id="cgb-catalog-select" onchange="cgbOnWorkflowChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Schedule Catalog</label>
+                <select id="cgb-schedule-catalog-select" onchange="cgbOnWorkflowChange()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">V2 Add Ons</label>
+                <select id="cgb-v2addons-select" multiple onchange="cgbOnWorkflowChange()" style="width:100%; min-height:72px; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(2, minmax(200px, 1fr)); gap: 10px; margin-bottom: 10px;">
+              <div>
+                <label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Accounts (multi)</label>
+                <select id="cgb-accounts-select" multiple onchange="cgbOnWorkflowChange()" style="width:100%; min-height:92px; padding:8px; border:1px solid #ddd; border-radius:6px;"></select>
+              </div>
+              <div id="cgb-preflight-summary" style="border:1px solid #e0e0e0; border-radius:6px; padding:10px; font-size:0.8em; color:#455a64; background:#fafafa;"></div>
+            </div>
+            <div class="cgb-gate-panel" id="cgb-gate-status"></div>
+            <div style="display:flex; gap:8px; flex-wrap: wrap; margin-bottom: 12px;">
+              <button class="toolbar-btn" onclick="cgbAutoFillFromRecord()">Auto Fill</button>
+              <button class="toolbar-btn" onclick="cgbGenerateFromBuilder()" style="background:#1976d2; color:white;">Generate Preview</button>
+              <button class="toolbar-btn" onclick="cgbDownloadMarkdown()" style="background:#2e7d32; color:white;">Download .md</button>
+            </div>
+            <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+              <span style="font-size:0.74em; color:#607d8b; font-weight:600;">Terms Modeling:</span>
+              <button class="toolbar-btn" onclick="cgbSetTermsTab('schedules')">Schedules</button>
+              <button class="toolbar-btn" onclick="cgbSetTermsTab('schedule_catalog')">Schedule Catalog</button>
+              <button class="toolbar-btn" onclick="cgbSetTermsTab('financials')">Financials</button>
+              <button class="toolbar-btn" onclick="cgbSetTermsTab('addons')">Add Ons</button>
+            </div>
+            <div id="cgb-terms-hint" style="margin-bottom:12px; padding:8px 10px; border:1px dashed #cfd8dc; border-radius:6px; font-size:0.8em; color:#546e7a; background:#fafafa;"></div>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+                <h4 style="margin:0 0 6px; font-size:0.9em;">Accounts</h4>
+                <textarea id="cgb-sec-accounts" oninput="cgbOnSectionInput()" style="width:100%; min-height:56px; border:1px solid #ddd; border-radius:6px; padding:8px;"></textarea>
+              </div>
+              <div style="border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+                <h4 style="margin:0 0 6px; font-size:0.9em;">Opportunity</h4>
+                <textarea id="cgb-sec-opportunity" oninput="cgbOnSectionInput()" style="width:100%; min-height:56px; border:1px solid #ddd; border-radius:6px; padding:8px;"></textarea>
+              </div>
+              <div style="border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+                <h4 style="margin:0 0 6px; font-size:0.9em;">Financials</h4>
+                <textarea id="cgb-sec-financials" oninput="cgbOnSectionInput()" style="width:100%; min-height:56px; border:1px solid #ddd; border-radius:6px; padding:8px;"></textarea>
+              </div>
+              <div style="border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+                <h4 style="margin:0 0 6px; font-size:0.9em;">Schedule</h4>
+                <textarea id="cgb-sec-schedule" oninput="cgbOnSectionInput()" style="width:100%; min-height:56px; border:1px solid #ddd; border-radius:6px; padding:8px;"></textarea>
+              </div>
+            </div>
+
+            <div style="margin-top:12px; border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+              <h4 style="margin:0 0 8px; font-size:0.9em;">Governed Fields (Schema + Picklists)</h4>
+              <div id="cgb-governed-fields-wrap"></div>
+            </div>
+
+            <div style="margin-top:12px; border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                <h4 style="margin:0; font-size:0.9em;">Contract Line Items</h4>
+                <button class="toolbar-btn" onclick="cgbAddLineItem()">Add Line Item</button>
+              </div>
+              <div id="cgb-lineitems-wrap"></div>
+            </div>
+
+            <div style="margin-top:12px; border:1px solid #e0e0e0; border-radius:8px; padding:10px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                <h4 style="margin:0; font-size:0.9em;">Catalog Line Items</h4>
+                <button class="toolbar-btn" onclick="cgbAddCatalogItem()">Add Catalog Item</button>
+              </div>
+              <div id="cgb-catalog-wrap"></div>
+            </div>
+          </section>
+
+          <section style="background: #0f172a; border-radius: 10px; padding: 14px; color: #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.18);">
+            <h3 style="margin:0 0 10px; font-size:1.02em; color:#bfdbfe;">Live Contract Preview</h3>
+            <div id="cgb-preview-embed" style="background:#1f2937; border-left:4px solid #60a5fa; border-radius:8px; padding:12px; margin-bottom:12px;"></div>
+            <label style="display:block; font-size:0.78em; color:#93c5fd; margin-bottom:4px;">Generated Markdown</label>
+            <textarea id="cgb-markdown-output" readonly style="width:100%; min-height:240px; border:1px solid #334155; background:#111827; color:#d1d5db; border-radius:6px; padding:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace; font-size:0.8em;"></textarea>
+            <label style="display:block; font-size:0.78em; color:#93c5fd; margin:8px 0 4px;">Clause Annotation Map (JSON)</label>
+            <textarea id="cgb-annotation-output" readonly style="width:100%; min-height:150px; border:1px solid #334155; background:#111827; color:#d1d5db; border-radius:6px; padding:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace; font-size:0.78em;"></textarea>
+          </section>
+        </div>
+      </div><!-- end page-contract-generator -->
 
     </main><!-- end main-content -->
   </div><!-- end app-layout -->
@@ -14432,69 +14699,9 @@
         because: intentStructured.because || ''
       };
     }
-
-    function _buildPreflightContextSnapshot() {
-      var snapshot = {
-        record_key: null,
-        source: null,
-        new_entry_detected: false,
-        contract_classification: null,
-        analyst_assignments: null,
-        captured_at_utc: new Date().toISOString()
-      };
-      try {
-        if (typeof _pftlGetRecordKey === 'function') {
-          snapshot.record_key = _pftlGetRecordKey();
-        }
-        var pftlResult = (typeof _pftlBuildResultForExport === 'function') ? _pftlBuildResultForExport() : null;
-        if (pftlResult) {
-          snapshot.source = 'preflight_test_lab';
-          snapshot.contract_classification = pftlResult.contract_classification || null;
-          snapshot.analyst_assignments = pftlResult.analyst_assignments || null;
-          snapshot.new_entry_detected = !!(
-            (typeof _pftlHasNewEntrySignal === 'function' && _pftlHasNewEntrySignal(pftlResult.resolution_story)) ||
-            (pftlResult.contract_classification && pftlResult.contract_classification.new_entry_detected === true)
-          );
-          return snapshot;
-        }
-        if (typeof _pfGateState !== 'undefined' && _pfGateState && _pfGateState.result) {
-          snapshot.source = 'preflight_gate';
-          snapshot.contract_classification = _pfGateState.result.contract_classification || null;
-          snapshot.analyst_assignments = null;
-          snapshot.new_entry_detected = !!(
-            (typeof _pftlHasNewEntrySignal === 'function' && _pftlHasNewEntrySignal(_pfGateState.result.resolution_story)) ||
-            (_pfGateState.result.contract_classification && _pfGateState.result.contract_classification.new_entry_detected === true)
-          );
-          return snapshot;
-        }
-      } catch (e) {
-        console.warn('[PatchRequest] preflight context snapshot failed:', e);
-      }
-      return snapshot;
-    }
-
-    function _isNewEntryDetected(preflightContext) {
-      if (!preflightContext) return false;
-      if (preflightContext.new_entry_detected === true) return true;
-      if (preflightContext.contract_classification && preflightContext.contract_classification.new_entry_detected === true) return true;
-      return false;
-    }
-
-    function _requiresManualCounterparty(preflightContext) {
-      if (!_isNewEntryDetected(preflightContext)) return false;
-      var aa = (preflightContext && preflightContext.analyst_assignments) || {};
-      var val = (aa.manual_counterparty || '').trim();
-      return val.length < 3;
-    }
     
     function createPatchRequest(options) {
       var now = new Date().toISOString();
-      var preflightContext = _buildPreflightContextSnapshot();
-      if (_requiresManualCounterparty(preflightContext)) {
-        showToast('Manual counterparty is required before submitting this patch.', 'warning');
-        console.log('[PatchRequest] blocked: missing manual_counterparty for new-entry contract');
-        return null;
-      }
       
       var intentStructured = {
         target_field: options.target_field || (options.sheet && options.field ? options.sheet + '.' + options.field : null),
@@ -14567,7 +14774,6 @@
           preflight_results: null,
           checklist_status: {}
         },
-        preflight_context: preflightContext,
         thread: options.thread || [],
         review_notes: '',
         clarification_questions: [],
@@ -14580,18 +14786,7 @@
             actor: options.author || 'Unknown',
             role: options.author_role || currentMode || 'Analyst',
             event: 'PATCH_REQUEST_CREATED',
-            details: (function() {
-              var cc = (preflightContext && preflightContext.contract_classification) || {};
-              var aa = (preflightContext && preflightContext.analyst_assignments) || {};
-              var subtypeCount = Array.isArray(aa.opportunity_subtypes) ? aa.opportunity_subtypes.length : 0;
-              var scheduleCount = Array.isArray(aa.schedule_types_raw)
-                ? aa.schedule_types_raw.length
-                : (Array.isArray(aa.schedule_types) ? aa.schedule_types.length : 0);
-              return 'preflight_source=' + (preflightContext.source || 'none') +
-                '; category=' + (cc.contract_category || 'n/a') +
-                '; subtype_count=' + subtypeCount +
-                '; schedule_count=' + scheduleCount;
-            })()
+            details: null
           }
         ],
         history: [
@@ -15003,7 +15198,6 @@
             record_identity: r.record_identity,
             target_scope: r.target_scope,
             proposed_change: r.proposed_change,
-            preflight_context: r.preflight_context || null,
             author: r.author,
             created_at_utc: r.created_at_utc
           };
@@ -15022,7 +15216,6 @@
             request_id: r.request_id,
             target: r.target_scope.target,
             patch_payload_json: r.kiwi_return.patch_payload_json,
-            preflight_context: r.preflight_context || null,
             suggested_files: getSuggestedFilesForTarget(r.target_scope.target),
             changelog_entry: generateChangelogEntry(r),
             pr_summary_markdown: generatePRSummary(r)
@@ -15324,25 +15517,6 @@
         html += '<div style="margin-bottom: 20px;">' +
           '<h4 style="margin: 0 0 10px 0; font-size: 0.9em; text-transform: uppercase; color: #333;">Rationale</h4>' +
           '<p style="margin: 0; font-size: 0.9em; color: #555;">' + escapeHtml(request.proposed_change.rationale) + '</p>' +
-          '</div>';
-      }
-
-      // Preflight context snapshot
-      if (request.preflight_context) {
-        var pfc = request.preflight_context || {};
-        var cc = pfc.contract_classification || {};
-        var aa = pfc.analyst_assignments || {};
-        var subtypeList = (aa.opportunity_subtypes || []).join(', ') || '—';
-        var scheduleList = (aa.schedule_types_label || aa.schedule_types || []).join(', ') || '—';
-        html += '<div style="margin-bottom: 20px; border-top: 1px solid #e0e0e0; padding-top: 15px;">' +
-          '<h4 style="margin: 0 0 10px 0; font-size: 0.9em; text-transform: uppercase; color: #1565c0;">Preflight Context</h4>' +
-          '<table style="width: 100%; font-size: 0.9em;">' +
-          '<tr><td style="padding: 4px 0; color: #666; width: 170px;">Source</td><td>' + escapeHtml(pfc.source || 'n/a') + '</td></tr>' +
-          '<tr><td style="padding: 4px 0; color: #666;">Contract Category</td><td>' + escapeHtml(cc.contract_category || 'n/a') + '</td></tr>' +
-          '<tr><td style="padding: 4px 0; color: #666;">Selected Subtypes</td><td>' + escapeHtml(subtypeList) + '</td></tr>' +
-          '<tr><td style="padding: 4px 0; color: #666;">Selected Schedule Types</td><td>' + escapeHtml(scheduleList) + '</td></tr>' +
-          (aa.manual_counterparty ? ('<tr><td style="padding: 4px 0; color: #666;">Manual Counterparty</td><td>' + escapeHtml(aa.manual_counterparty) + '</td></tr>') : '') +
-          '</table>' +
           '</div>';
       }
       
@@ -21950,7 +22124,10 @@
             } else {
               drawerCtx._activeTab = 'edit';
             }
-            if (typeof _gridDrawerRender === 'function') _gridDrawerRender(drawerCtx);
+            if (typeof _gridDrawerRender === 'function') _gridDrawerRender(document.getElementById('grid-patch-drawer'));
+            if (action === 'rfi') {
+              _gridDrawerOpenPatchModal();
+            }
             console.log('[GRID-CONTEXT][P0] patch_preload_success', {
               type: action, record_id: panelResult.context.record_id,
               field_key: panelResult.context.field_key, old_value: panelResult.context.old_value,
@@ -22464,16 +22641,8 @@
       }
 
       if (ctx._pendingEdits.hasOwnProperty(fk) && editCount > 0 && !window._gridModalOpenedForSession) {
-        if (window._gridAutoSwitchTimer) clearTimeout(window._gridAutoSwitchTimer);
-        window._gridAutoSwitchTimer = setTimeout(function() {
-          var cx = window._gridDrawerContext;
-          if (cx && Object.keys(cx._pendingEdits).length > 0 && !window._gridModalOpenedForSession) {
-            var activeEl = document.activeElement;
-            if (activeEl && activeEl.getAttribute && activeEl.getAttribute('data-field')) return;
-            window._gridModalOpenedForSession = true;
-            _gridDrawerOpenPatchModal();
-          }
-        }, 800);
+        window._gridModalOpenedForSession = true;
+        _gridDrawerOpenPatchModal();
       }
 
     }
@@ -22530,6 +22699,7 @@
     function _gridDrawerOpenPatchModal() {
       var ctx = window._gridDrawerContext;
       if (!ctx) { showToast('No context available', 'warning'); return; }
+      window._gridModalOpenedForSession = true;
       var patchType = ctx.patchType || 'correction';
       var pendingEdits = ctx._pendingEdits || {};
       var oldVals = window._gridDrawerOldValues || {};
@@ -22661,10 +22831,6 @@
         author_role: author,
         linked_comment_id: commentId
       });
-      if (!patchRequest || !patchRequest.request_id) {
-        showToast('Patch request blocked. Complete required preflight fields and try again.', 'warning');
-        return;
-      }
       elevateToRequest(commentId, patchRequest.request_id, author, author);
       
       closeElevateToPatchModal();
@@ -25624,7 +25790,7 @@
       options = options || {};
       // Loader is now a drawer, not a page - redirect loader requests to triage
       if (page === 'loader') page = 'triage';
-      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-org', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'row', 'restricted'];
+      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-org', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'contract-generator', 'row', 'restricted'];
       var _basePage = page.split('/')[0];
       if (_basePage === 'row') {
         if (_srrCurrentPage !== 'row') {
@@ -25687,6 +25853,10 @@
         console.log('[Navigate] Admin page requires admin mode');
         restrictedReason = 'The Admin Panel is only available to users with the Admin role.';
         adminTab = null;
+      }
+      if (page === 'contract-generator' && currentMode !== 'admin') {
+        console.log('[Navigate] Contract Generator page requires admin mode');
+        restrictedReason = 'Contract Generator is only available to users with the Admin role.';
       }
       if (page === 'review' && currentMode !== 'verifier' && currentMode !== 'admin') {
         console.log('[Navigate] Review page requires verifier/admin mode');
@@ -25834,6 +26004,9 @@
         if (adminTab) {
           switchAdminTab(adminTab);
         }
+      }
+      if (page === 'contract-generator') {
+        setTimeout(function() { if (typeof cgbInitPage === 'function') cgbInitPage(); }, 0);
       }
       
       // v1.5.1: Show/hide Patch Tester tab based on role when entering SSR
@@ -26749,6 +26922,9 @@
           if (typeof pftlInit === 'function') pftlInit();
         }
       }
+      if (tabName === 'governance' && typeof cgInitContractGenerator === 'function') {
+        cgInitContractGenerator();
+      }
       
       console.log('[Admin] Switched to tab:', tabName);
 
@@ -26797,6 +26973,325 @@
       setBatchAddEnabled(sheetName, enabled);
       renderBatchAddAdminToggles();
       showToast('Batch Add ' + (enabled ? 'enabled' : 'disabled') + ' for ' + sheetName, 'success');
+    }
+
+    var _cgState = {
+      lastOutput: '',
+      lastFileName: 'contract_draft.md'
+    };
+
+    function _cgSetStatus(msg, type) {
+      var el = document.getElementById('cg-status');
+      if (!el) return;
+      if (!msg) {
+        el.style.display = 'none';
+        el.textContent = '';
+        return;
+      }
+      var bg = '#e3f2fd';
+      var fg = '#1565c0';
+      var border = '#bbdefb';
+      if (type === 'error') {
+        bg = '#ffebee'; fg = '#c62828'; border = '#ffcdd2';
+      } else if (type === 'warn') {
+        bg = '#fff3e0'; fg = '#e65100'; border = '#ffe0b2';
+      } else if (type === 'success') {
+        bg = '#e8f5e9'; fg = '#2e7d32'; border = '#c8e6c9';
+      }
+      el.style.display = 'block';
+      el.style.background = bg;
+      el.style.color = fg;
+      el.style.border = '1px solid ' + border;
+      el.textContent = msg;
+    }
+
+    function _cgInSandboxMode() {
+      return (typeof isDemoMode === 'function') ? !!isDemoMode() : false;
+    }
+
+    function _cgSafeText(v) {
+      if (v === null || v === undefined) return '';
+      return String(v).trim();
+    }
+
+    function _cgResolveRecordName(row) {
+      if (!row) return '';
+      var keys = [
+        'Contract_Name_c', 'Contract_Name__c', 'Contract_Name', 'contract_name',
+        'Account_Name_c', 'Account_Name__c', 'Account_Name', 'account_name',
+        'Artist_Name_pka_or_dba_c', 'Artist_Name__c', 'Artist_Name',
+        'Company_Name_c', 'Company_Name__c', 'Company_Name',
+        'Name', 'name', 'record_id', 'contract_key'
+      ];
+      for (var i = 0; i < keys.length; i++) {
+        var val = _cgSafeText(row[keys[i]]);
+        if (val) return val;
+      }
+      return '';
+    }
+
+    function _cgGetDataSheetNames() {
+      var sheets = [];
+      if (typeof getDataSheets === 'function') {
+        sheets = getDataSheets() || [];
+      } else if (typeof workbook !== 'undefined' && workbook && workbook.sheets) {
+        sheets = Object.keys(workbook.sheets);
+      }
+      sheets = sheets || [];
+      return sheets.filter(function(name) {
+        if (!name) return false;
+        if (typeof isMetaSheet === 'function' && isMetaSheet(name)) return false;
+        if (typeof isReferenceSheet === 'function' && isReferenceSheet(name)) return false;
+        return true;
+      });
+    }
+
+    function cgInitContractGenerator(forceRefresh) {
+      var sectionEl = document.getElementById('admin-contract-generator-section');
+      if (!sectionEl) return;
+      var isSandbox = _cgInSandboxMode();
+      sectionEl.style.opacity = isSandbox ? '1' : '0.6';
+      var disable = !isSandbox;
+      var controls = sectionEl.querySelectorAll('select,button');
+      for (var ci = 0; ci < controls.length; ci++) controls[ci].disabled = disable;
+      if (!isSandbox) {
+        _cgSetStatus('Contract Generator is sandbox-only. Switch Admin Environment to Sandbox to test.', 'warn');
+        var out = document.getElementById('cg-output-preview');
+        if (out) out.value = '';
+        _cgState.lastOutput = '';
+        return;
+      }
+
+      var sheetSel = document.getElementById('cg-sheet-select');
+      var rowSel = document.getElementById('cg-row-select');
+      if (!sheetSel || !rowSel) return;
+
+      var currentSheet = sheetSel.value || '';
+      var sheets = _cgGetDataSheetNames();
+      if (forceRefresh || sheetSel.options.length === 0) {
+        var html = '';
+        for (var i = 0; i < sheets.length; i++) {
+          var sn = sheets[i];
+          html += '<option value="' + escapeHtml(sn) + '">' + escapeHtml(sn) + '</option>';
+        }
+        sheetSel.innerHTML = html || '<option value="">No contract sections loaded</option>';
+      }
+
+      if (currentSheet) {
+        for (var si = 0; si < sheetSel.options.length; si++) {
+          if (sheetSel.options[si].value === currentSheet) {
+            sheetSel.selectedIndex = si;
+            break;
+          }
+        }
+      }
+      cgRefreshRows();
+      _cgSetStatus('Ready. Select a record and click Generate Text.', 'success');
+    }
+
+    function cgRefreshRows() {
+      var rowSel = document.getElementById('cg-row-select');
+      var sheetSel = document.getElementById('cg-sheet-select');
+      if (!rowSel || !sheetSel) return;
+      var sheetName = sheetSel.value;
+      if (!sheetName || !workbook || !workbook.sheets || !workbook.sheets[sheetName]) {
+        rowSel.innerHTML = '<option value="">No records</option>';
+        return;
+      }
+      var rows = workbook.sheets[sheetName].rows || [];
+      if (rows.length === 0) {
+        rowSel.innerHTML = '<option value="">No records</option>';
+        return;
+      }
+      var html = '';
+      for (var i = 0; i < rows.length; i++) {
+        var rn = _cgResolveRecordName(rows[i]) || ('Row ' + (i + 1));
+        html += '<option value="' + i + '">' + escapeHtml((i + 1) + ' - ' + rn) + '</option>';
+      }
+      rowSel.innerHTML = html;
+    }
+
+    function _cgGetCanonicalFieldsForSheet(sheetName) {
+      if (!rulesBundleCache || !rulesBundleCache.fieldMeta || !rulesBundleCache.fieldMeta.fields) return [];
+      var all = rulesBundleCache.fieldMeta.fields;
+      var out = [];
+      var fallback = [];
+      for (var i = 0; i < all.length; i++) {
+        var f = all[i];
+        if ((f.sheet || '') === sheetName) out.push(f);
+        else if (!f.sheet) fallback.push(f);
+      }
+      return out.length > 0 ? out : fallback;
+    }
+
+    function _cgIsEmptyLike(v) {
+      var s = _cgSafeText(v).toLowerCase();
+      return s === '' || s === 'n/a' || s === 'na' || s === 'null' || s === 'none' || s === '-';
+    }
+
+    function _cgComputeIngestionChecks(row, sheetName, canonicalFields) {
+      var missingRequired = [];
+      var invalidPicklists = [];
+      var canonicalKeys = {};
+      var normalizer = (typeof normalizeFieldKey === 'function') ? normalizeFieldKey : function(v) { return String(v || '').toLowerCase(); };
+      for (var i = 0; i < canonicalFields.length; i++) {
+        var f = canonicalFields[i];
+        canonicalKeys[normalizer(f.field_key)] = true;
+        var val = row[f.field_key];
+        if (f.requiredness === 'required' && _cgIsEmptyLike(val)) {
+          missingRequired.push(f.field_key);
+        }
+        if (f.picklist === true && f.options && f.options.length > 0 && !_cgIsEmptyLike(val)) {
+          var norm = _cgSafeText(val).toLowerCase();
+          var ok = false;
+          for (var oi = 0; oi < f.options.length; oi++) {
+            if (_cgSafeText(f.options[oi]).toLowerCase() === norm) { ok = true; break; }
+          }
+          if (!ok) invalidPicklists.push({ field: f.field_key, value: _cgSafeText(val) });
+        }
+      }
+
+      var unknownCols = [];
+      var keys = Object.keys(row || {});
+      for (var ki = 0; ki < keys.length; ki++) {
+        var k = keys[ki];
+        if (k.charAt(0) === '_') continue;
+        if (typeof _gridIsMetaField === 'function' && _gridIsMetaField(k)) continue;
+        if (!canonicalKeys[normalizer(k)]) unknownCols.push(k);
+      }
+
+      return {
+        missingRequired: missingRequired,
+        invalidPicklists: invalidPicklists,
+        unknownColumns: unknownCols,
+        sheetName: sheetName
+      };
+    }
+
+    function _cgFindValueByHint(row, hints) {
+      var keys = Object.keys(row || {});
+      for (var hi = 0; hi < hints.length; hi++) {
+        var hint = hints[hi];
+        for (var i = 0; i < keys.length; i++) {
+          var k = keys[i];
+          if (k.toLowerCase().indexOf(hint) >= 0) {
+            var val = _cgSafeText(row[k]);
+            if (val) return val;
+          }
+        }
+      }
+      return '';
+    }
+
+    function cgGenerateContract() {
+      if (!_cgInSandboxMode()) {
+        _cgSetStatus('Sandbox mode required for Contract Generator.', 'warn');
+        return;
+      }
+      var sheetSel = document.getElementById('cg-sheet-select');
+      var rowSel = document.getElementById('cg-row-select');
+      var outEl = document.getElementById('cg-output-preview');
+      if (!sheetSel || !rowSel || !outEl) return;
+      var sheetName = sheetSel.value;
+      var rowIdx = parseInt(rowSel.value || '-1', 10);
+      if (!sheetName || isNaN(rowIdx) || rowIdx < 0) {
+        _cgSetStatus('Select a contract section and record first.', 'warn');
+        return;
+      }
+      if (!workbook || !workbook.sheets || !workbook.sheets[sheetName] || !workbook.sheets[sheetName].rows[rowIdx]) {
+        _cgSetStatus('Selected record is no longer available.', 'error');
+        return;
+      }
+      var row = workbook.sheets[sheetName].rows[rowIdx];
+      var canonicalFields = _cgGetCanonicalFieldsForSheet(sheetName);
+      var checks = _cgComputeIngestionChecks(row, sheetName, canonicalFields);
+
+      var agreementName = _cgResolveRecordName(row) || ('Contract ' + (rowIdx + 1));
+      var effectiveDate = _cgFindValueByHint(row, ['effective_date', 'effective date', 'start_date', 'execution_date']);
+      var partyA = _cgFindValueByHint(row, ['company_name', 'account_name', 'legal_name']);
+      var partyB = _cgFindValueByHint(row, ['artist_name', 'payee', 'contact_name']);
+      var territory = _cgFindValueByHint(row, ['territory']);
+      var term = _cgFindValueByHint(row, ['term', 'duration', 'end_date', 'expiry']);
+      var compensation = _cgFindValueByHint(row, ['fee', 'royalty', 'rate', 'amount', 'payment']);
+
+      var lines = [];
+      lines.push('# Orchestrate OS Canonical Contract Draft');
+      lines.push('');
+      lines.push('- **Generated At:** ' + new Date().toISOString());
+      lines.push('- **Contract Section:** ' + sheetName);
+      lines.push('- **Source Row:** ' + (rowIdx + 1));
+      lines.push('');
+      lines.push('## Intake Check Summary');
+      lines.push('- Missing Required Fields: **' + checks.missingRequired.length + '**');
+      lines.push('- Invalid Picklist Values: **' + checks.invalidPicklists.length + '**');
+      lines.push('- Unknown Columns In Row: **' + checks.unknownColumns.length + '**');
+      if (checks.missingRequired.length > 0) lines.push('- Missing Fields: ' + checks.missingRequired.join(', '));
+      if (checks.invalidPicklists.length > 0) {
+        for (var ip = 0; ip < checks.invalidPicklists.length; ip++) {
+          lines.push('- Invalid picklist: ' + checks.invalidPicklists[ip].field + ' = "' + checks.invalidPicklists[ip].value + '"');
+        }
+      }
+      lines.push('');
+      lines.push('## Generated Contract Text');
+      lines.push('- **Agreement Title:** ' + (agreementName || '[TO_BE_DEFINED]'));
+      lines.push('- **Effective Date:** ' + (effectiveDate || '[TO_BE_DEFINED]'));
+      lines.push('- **Party A:** ' + (partyA || '[TO_BE_DEFINED]'));
+      lines.push('- **Party B:** ' + (partyB || '[TO_BE_DEFINED]'));
+      lines.push('');
+      lines.push('### 1. Scope');
+      lines.push('The parties agree to perform services and obligations as captured in the canonical record for this contract section.');
+      lines.push('');
+      lines.push('### 2. Territory');
+      lines.push(territory || '[TO_BE_DEFINED]');
+      lines.push('');
+      lines.push('### 3. Term');
+      lines.push(term || '[TO_BE_DEFINED]');
+      lines.push('');
+      lines.push('### 4. Compensation');
+      lines.push(compensation || '[TO_BE_DEFINED]');
+      lines.push('');
+      lines.push('### 5. Data Integrity');
+      lines.push('This draft is generated from canonical schema-mapped fields and is intended for sandbox testing only.');
+      lines.push('');
+      lines.push('## Canonical Field Snapshot');
+      if (canonicalFields.length === 0) {
+        lines.push('(No canonical field metadata loaded for this section.)');
+      } else {
+        for (var cf = 0; cf < canonicalFields.length; cf++) {
+          var meta = canonicalFields[cf];
+          var v = _cgSafeText(row[meta.field_key]);
+          var label = meta.field_label || meta.field_key;
+          lines.push('- **' + label + '** (`' + meta.field_key + '`): ' + (v || '(empty)'));
+        }
+      }
+
+      var output = lines.join('\n');
+      outEl.value = output;
+      _cgState.lastOutput = output;
+      _cgState.lastFileName = (sheetName + '_row_' + (rowIdx + 1) + '_contract_draft.md').replace(/[^a-zA-Z0-9_.-]/g, '_');
+      _cgSetStatus('Contract draft generated. Download the .md file to test output.', 'success');
+    }
+
+    function cgDownloadContractMd() {
+      if (!_cgState.lastOutput) {
+        _cgSetStatus('Generate contract text first.', 'warn');
+        return;
+      }
+      var blob = new Blob([_cgState.lastOutput], { type: 'text/markdown;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = _cgState.lastFileName || 'contract_draft.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      _cgSetStatus('Downloaded ' + a.download, 'success');
+    }
+
+    // Backward-compatible alias for old button handlers.
+    function cgDownloadContractTxt() {
+      cgDownloadContractMd();
     }
     
     // ========== ADMIN QUEUE RENDERING (v1.5.1) ==========
@@ -36076,12 +36571,12 @@
           srrCommitEdit(fieldKey, select.value);
         });
         select.addEventListener('blur', function() {
-          // Small delay to allow change event to fire first
+          // Allow change handlers to flush first, then commit immediately.
           setTimeout(function() {
             if (srrState.editingField === fieldKey) {
               srrCommitEdit(fieldKey, select.value);
             }
-          }, 150);
+          }, 0);
         });
       } else {
         // Regular text input
@@ -36160,17 +36655,11 @@
         scheduleAutosave();
 
         if (!window._srrModalOpenedForSession) {
-          if (window._srrAutoModalTimer) clearTimeout(window._srrAutoModalTimer);
-          window._srrAutoModalTimer = setTimeout(function() {
-            if (window._srrModalOpenedForSession) return;
-            var activeEl = document.activeElement;
-            if (activeEl && activeEl.tagName === 'INPUT' && activeEl.closest && activeEl.closest('.srr-field-card')) return;
-            var changes = Object.values(srrState.proposedChanges);
-            if (changes.length > 0) {
-              window._srrModalOpenedForSession = true;
-              _patchModalOpen(srrState.patchType || 'correction', changes, srrState.patchDraft.justification || '');
-            }
-          }, 800);
+          var changes = Object.values(srrState.proposedChanges);
+          if (changes.length > 0) {
+            window._srrModalOpenedForSession = true;
+            _patchModalOpen(srrState.patchType || 'correction', changes, srrState.patchDraft.justification || '');
+          }
         }
       } else {
         srrState.editingField = null;
@@ -38753,14 +39242,21 @@
       if (window._pfGateState.adminOnly) return [];
       if (!window._pfGateState.result) return ['Document preflight not run'];
       var gate = window._pfGateState.result.gate_color;
+      var st = window._pfGateState;
       if (gate === 'GREEN') return [];
       if (gate === 'YELLOW') {
-        if (window._pfGateState.actionTaken === 'accept_risk' || window._pfGateState.actionTaken === 'escalate_ocr') return [];
-        return ['Document preflight is YELLOW — must Accept Risk or Escalate OCR'];
+        if (st.actionTaken === 'accept_risk') return [];
+        if (st.generateCopyDone && st.reconstructionCompleteDone) return [];
+        if (st.generateCopyDone && !st.reconstructionCompleteDone) return ['YELLOW: Generate Copy requested — complete reconstruction review'];
+        return ['Document preflight is YELLOW — Accept Risk or Generate Copy required'];
       }
       if (gate === 'RED') {
-        if (window._pfGateState.actionTaken === 'escalate_ocr') return [];
-        return ['Document preflight is RED — must Escalate to OCR'];
+        if (st.generateCopyDone && st.reconstructionCompleteDone && st.overrideRedDone) return [];
+        var missing = [];
+        if (!st.generateCopyDone) missing.push('Generate Copy');
+        if (!st.reconstructionCompleteDone) missing.push('Reconstruction Review');
+        if (!st.overrideRedDone) missing.push('RED Override');
+        return ['RED gate: Still need — ' + missing.join(', ')];
       }
       return ['Unknown preflight gate state'];
     }
@@ -38824,6 +39320,7 @@
     function _patchModalOpen(patchType, changes, prefillJustification) {
       var existing = document.getElementById('patch-submit-modal-root');
       if (existing) existing.remove();
+      window._srrModalOpenedForSession = true;
 
       var overlay = document.createElement('div');
       overlay.id = 'patch-submit-modal-root';
@@ -39033,10 +39530,6 @@
         rationale: changeSummary,
         role_simulation: getRoleSimAuditMeta()
       });
-      if (!request || !request.request_id) {
-        showToast('Patch request blocked. Complete required preflight fields and try again.', 'warning');
-        return;
-      }
       
       var submittedRequest = submitPatchRequest(request.request_id, author, currentMode || 'Analyst');
       
@@ -47539,6 +48032,7 @@
       console.log('[EnvMode] Set to:', mode, 'by', loggedInRole);
       applyDemoControlsVisibility();
       if (typeof toolbarPdfPreflightInitVisibility === 'function') toolbarPdfPreflightInitVisibility();
+      if (typeof cgInitContractGenerator === 'function') cgInitContractGenerator(true);
     }
     
     function updateEnvModeUI() {
@@ -47612,6 +48106,7 @@
         sandboxBtn.style.borderColor = isPlayground ? '#4caf50' : '#ccc';
       }
       if (typeof syncPeopleEnvToggle === 'function') syncPeopleEnvToggle();
+      if (typeof cgInitContractGenerator === 'function' && currentAdminTab === 'governance') cgInitContractGenerator();
     }
 
     // Record Drawer functions
@@ -47921,7 +48416,1322 @@
       document.getElementById('config-flows-drawer').classList.add('active');
       selectConfigFlowStage('data_sources');
     }
-    
+
+    function openContractGeneratorEntry() {
+      if (currentMode !== 'admin') {
+        showToast('Contract Generator is available in Admin Panel.', 'warning');
+        return;
+      }
+      navigateTo('contract-generator');
+      setTimeout(function() {
+        if (typeof cgbInitPage === 'function') cgbInitPage(true);
+      }, 80);
+    }
+
+    function cgbSeedFromPreflight(preflightResult) {
+      if (!preflightResult) return;
+      var story = preflightResult.resolution_story || {};
+      var classification = preflightResult.contract_classification || {};
+      var spine = preflightResult.opportunity_spine || {};
+
+      cgbStartNewSession();
+
+      var legal = story.legal_entity_account;
+      if (legal && legal.name) {
+        cgbState.legalEntity = legal.name;
+      }
+
+      var counterparties = story.counterparties || [];
+      if (counterparties.length > 0) {
+        cgbState.whoWhere.counterpartyName = counterparties[0].name || '';
+        cgbState.whoWhere.counterpartyResolved = true;
+      }
+
+      var unresolved = story.unresolved_counterparties || [];
+      if (unresolved.length > 0 && !cgbState.whoWhere.counterpartyName) {
+        cgbState.whoWhere.counterpartyName = unresolved[0].name || unresolved[0] || '';
+      }
+
+      if (classification.contract_category) {
+        var cat = classification.contract_category;
+        if (cat === 'distribution') cgbState.templateType = 'distribution_sync';
+        else if (cat === 'termination') cgbState.templateType = 'termination';
+        else if (cat === 'amendment') cgbState.templateType = 'amendment';
+        else cgbState.templateType = cat;
+      }
+
+      var checks = spine.checks || [];
+      for (var i = 0; i < checks.length; i++) {
+        if (checks[i].code === 'OPP_CONTRACT_TYPE' && checks[i].value) {
+          cgbState.workflow.contractType = checks[i].value;
+        }
+      }
+
+      cgbState.preflightSeed = {
+        gate_color: preflightResult.gate_color,
+        health_score: preflightResult.health_score,
+        financials_readiness: preflightResult.financials_readiness,
+        addons_readiness: preflightResult.addons_readiness,
+        seeded_at: new Date().toISOString()
+      };
+
+      navigateTo('contract-generator');
+      setTimeout(function() {
+        if (typeof cgbInitPage === 'function') cgbInitPage(true);
+        showToast('Contract Generator seeded from preflight data.', 'success');
+      }, 80);
+    }
+
+    var cgbState = {
+      initialized: false,
+      sessionMode: 'new',
+      pastSessions: [],
+      currentPastId: '',
+      termsTab: 'schedules',
+      legalEntity: 'Create Music Group',
+      templateType: 'distribution_sync',
+      whoWhere: {
+        counterpartyName: '',
+        counterpartyResolved: false,
+        partyType: '',
+        businessUnit: ''
+      },
+      resolver: {
+        legalEntities: [],
+        accountsByEntity: {}
+      },
+      counterpartyPicker: {
+        open: false,
+        filtered: [],
+        renderCount: 0,
+        activeIndex: -1
+      },
+      catalogSource: {
+        sourceType: 'manual',
+        scope: 'BACK_CATALOG_EXISTING',
+        sourceRef: ''
+      },
+      seed: { sheet: '', rowIndex: 0 },
+      sheetMap: { accounts: '', opportunity: '', financials: '', schedule: '', scheduleCatalog: '', catalog: '', v2addons: '' },
+      workflow: {
+        contractType: '',
+        accounts: [],
+        opportunity: '',
+        schedule: '',
+        catalog: '',
+        scheduleCatalog: '',
+        v2addons: []
+      },
+      sections: { accounts: '', opportunity: '', financials: '', schedule: '' },
+      lineItems: [],
+      catalogItems: [],
+      formValues: {},
+      preflight: { missingRequired: 0, invalidPicklist: 0, unknownColumns: 0, blockers: [] },
+      markdown: '',
+      outputFileName: 'contract_generator_draft.md'
+    };
+
+    var CGB_PAST_SESSIONS_KEY = 'contract_generator_past_sessions_v1';
+
+    function cgbSafe(v) { return (v === null || v === undefined) ? '' : String(v).trim(); }
+    function cgbNorm(v) { return cgbSafe(v).toLowerCase(); }
+    function cgbNormKey(v) { return (typeof normalizeFieldKey === 'function') ? normalizeFieldKey(v || '') : cgbNorm(v).replace(/[^a-z0-9]/g, '_'); }
+    function cgbFormKey(sheet, fieldKey) { return sheet + '::' + fieldKey; }
+    function cgbJsEsc(str) { return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+
+    function cgbGetSheetNames() {
+      var names = [];
+      if (typeof getDataSheets === 'function') names = getDataSheets() || [];
+      else if (workbook && workbook.sheets) names = Object.keys(workbook.sheets);
+      return (names || []).filter(function(name) {
+        if (!name) return false;
+        if (typeof isMetaSheet === 'function' && isMetaSheet(name)) return false;
+        if (typeof isReferenceSheet === 'function' && isReferenceSheet(name)) return false;
+        return true;
+      });
+    }
+
+    function cgbGetRows(sheetName) {
+      if (!sheetName || !workbook || !workbook.sheets || !workbook.sheets[sheetName]) return [];
+      var rows = workbook.sheets[sheetName].rows || [];
+      return Array.isArray(rows) ? rows : [];
+    }
+
+    function cgbGetRow(sheetName, idx) {
+      var rows = cgbGetRows(sheetName);
+      var i = parseInt(idx, 10);
+      if (!rows.length || isNaN(i) || i < 0 || i >= rows.length) return null;
+      return rows[i];
+    }
+
+    function cgbFindValue(row, hints) {
+      if (!row) return '';
+      var keys = Object.keys(row || {});
+      var i, j;
+      for (i = 0; i < hints.length; i++) {
+        var hint = cgbNorm(hints[i]);
+        for (j = 0; j < keys.length; j++) {
+          if (cgbNorm(keys[j]).indexOf(hint) >= 0) {
+            var v = cgbSafe(row[keys[j]]);
+            if (v) return v;
+          }
+        }
+      }
+      return '';
+    }
+
+    function cgbFindExactFieldValue(row, candidates) {
+      if (!row) return '';
+      var keys = Object.keys(row || {});
+      var normalized = {};
+      for (var i = 0; i < keys.length; i++) normalized[cgbNormKey(keys[i])] = keys[i];
+      for (var j = 0; j < candidates.length; j++) {
+        var key = normalized[cgbNormKey(candidates[j])];
+        if (key) {
+          var v = cgbSafe(row[key]);
+          if (v) return v;
+        }
+      }
+      return '';
+    }
+
+    function cgbExtractLegalEntity(row) {
+      var direct = cgbFindExactFieldValue(row, [
+        'Legal_Entity__c', 'Legal_Entity_c', 'Legal_Entity',
+        'legal_entity', 'Business_Unit__c', 'Business_Unit_c', 'business_unit'
+      ]);
+      if (direct) return direct;
+      return cgbFindValue(row, ['legal entity', 'business unit', 'entity']);
+    }
+
+    function cgbExtractAccountName(row) {
+      var direct = cgbFindExactFieldValue(row, [
+        'Account_Name__c', 'Account_Name_c', 'Account_Name',
+        'account_name', 'Company_Name__c', 'Company_Name_c', 'Company_Name',
+        'company_name', 'Legal_Name__c', 'Legal_Name_c', 'Legal_Name'
+      ]);
+      if (direct) return direct;
+      return cgbFindValue(row, ['account_name', 'company_name', 'legal_name', 'counterparty']);
+    }
+
+    function cgbBuildBatchResolverIndex() {
+      var index = {};
+      var sheets = cgbGetSheetNames();
+      for (var si = 0; si < sheets.length; si++) {
+        var rows = cgbGetRows(sheets[si]);
+        for (var ri = 0; ri < rows.length; ri++) {
+          var row = rows[ri];
+          var entity = cgbExtractLegalEntity(row);
+          var acct = cgbExtractAccountName(row);
+          if (!entity || !acct) continue;
+          if (!index[entity]) index[entity] = {};
+          index[entity][cgbNorm(acct)] = acct;
+        }
+      }
+      var entities = Object.keys(index).sort(function(a, b) { return a.localeCompare(b); });
+      var byEntity = {};
+      for (var i = 0; i < entities.length; i++) {
+        var names = Object.keys(index[entities[i]]).map(function(k) { return index[entities[i]][k]; });
+        names.sort(function(a, b) { return a.localeCompare(b); });
+        byEntity[entities[i]] = names;
+      }
+      cgbState.resolver.legalEntities = entities;
+      cgbState.resolver.accountsByEntity = byEntity;
+    }
+
+    function cgbDescribeRow(row, idx) {
+      if (!row) return 'Row ' + (idx + 1);
+      var id = cgbFindValue(row, ['contract_key', 'contract_id', 'record_id', 'name', 'file_name']);
+      return id || ('Row ' + (idx + 1));
+    }
+
+    function cgbRowValue(row, fieldKey) {
+      if (!row || !fieldKey) return '';
+      if (row[fieldKey] !== undefined) return row[fieldKey];
+      var target = cgbNormKey(fieldKey);
+      var keys = Object.keys(row);
+      for (var i = 0; i < keys.length; i++) {
+        if (cgbNormKey(keys[i]) === target) return row[keys[i]];
+      }
+      return '';
+    }
+
+    function cgbTemplateDefaults(templateType) {
+      if (templateType === 'master_license') {
+        return {
+          accounts: 'The Licensor and Licensee are parties to this Master License agreement.',
+          opportunity: 'Opportunity scope includes master-use rights in approved channels and territories.',
+          financials: 'Fees, royalties, and recoupment terms follow the negotiated schedule.',
+          schedule: 'The agreement term begins at effectiveness and ends per stated duration or termination rights.'
+        };
+      }
+      if (templateType === 'services') {
+        return {
+          accounts: 'The service provider and client execute this Services agreement.',
+          opportunity: 'Opportunity scope includes service deliverables and approval milestones.',
+          financials: 'Compensation includes fees and payments due under milestone acceptance.',
+          schedule: 'Delivery, review, and final acceptance follow the agreed timeline.'
+        };
+      }
+      return {
+        accounts: 'Create Music Group and counterparties execute this Distribution + Sync agreement.',
+        opportunity: 'Opportunity scope includes distribution and synchronization usage rights.',
+        financials: 'Financial rights include advances, splits, and settlement cadence.',
+        schedule: 'Schedule defines effective date, term, and optional renewal windows.'
+      };
+    }
+
+    function cgbDefaultLineItem() { return { item: 'Distribution + Sync', subtype: 'Standard', split: '50/50', notes: '' }; }
+    function cgbDefaultCatalogItem() { return { title: 'Untitled Work', isrc: '', usage: 'Digital', term: '12 months' }; }
+
+    function cgbFieldMetaFields() {
+      if (!rulesBundleCache || !rulesBundleCache.fieldMeta || !Array.isArray(rulesBundleCache.fieldMeta.fields)) return [];
+      return rulesBundleCache.fieldMeta.fields;
+    }
+
+    function cgbFieldsForSheet(sheetName) {
+      var fields = cgbFieldMetaFields();
+      var scoped = fields.filter(function(f) { return (f.sheet || '') === sheetName; });
+      if (scoped.length) return scoped;
+      return fields.filter(function(f) { return !f.sheet; });
+    }
+
+    function cgbPicklistOptions(fieldMeta) {
+      var opts = [];
+      if (fieldMeta && Array.isArray(fieldMeta.options)) opts = fieldMeta.options.slice();
+      if ((!opts || !opts.length) && fieldMeta && Array.isArray(fieldMeta.picklist)) opts = fieldMeta.picklist.slice();
+      return (opts || []).map(function(v) { return cgbSafe(v); }).filter(Boolean);
+    }
+
+    function cgbIsPicklist(fieldMeta) {
+      var rf = cgbNorm(fieldMeta && fieldMeta.return_format);
+      return cgbPicklistOptions(fieldMeta).length > 0 || rf.indexOf('picklist') >= 0 || rf.indexOf('dropdown') >= 0;
+    }
+
+    function cgbGuessSheetMap() {
+      var names = cgbGetSheetNames();
+      var map = { accounts: '', opportunity: '', financials: '', schedule: '', scheduleCatalog: '', catalog: '', v2addons: '' };
+      for (var i = 0; i < names.length; i++) {
+        var n = cgbNorm(names[i]);
+        if (!map.accounts && n.indexOf('account') >= 0) map.accounts = names[i];
+        if (!map.opportunity && n.indexOf('opportunit') >= 0) map.opportunity = names[i];
+        if (!map.financials && (n.indexOf('financial') >= 0 || n.indexOf('finance') >= 0)) map.financials = names[i];
+        if (!map.scheduleCatalog && n.indexOf('schedule') >= 0 && n.indexOf('catalog') >= 0) map.scheduleCatalog = names[i];
+        if (!map.schedule && n.indexOf('schedule') >= 0 && n.indexOf('catalog') === -1) map.schedule = names[i];
+        if (!map.catalog && n.indexOf('catalog') >= 0 && n.indexOf('schedule') === -1) map.catalog = names[i];
+        if (!map.v2addons && (n.indexOf('v2') >= 0 || n.indexOf('add on') >= 0 || n.indexOf('addon') >= 0)) map.v2addons = names[i];
+      }
+      cgbState.sheetMap = map;
+    }
+
+    function cgbSelectValues(selectId) {
+      var el = document.getElementById(selectId);
+      if (!el) return [];
+      var out = [];
+      for (var i = 0; i < el.options.length; i++) if (el.options[i].selected) out.push(el.options[i].value);
+      return out;
+    }
+
+    function cgbSetSelectValues(selectId, vals) {
+      var el = document.getElementById(selectId);
+      if (!el) return;
+      var target = vals || [];
+      for (var i = 0; i < el.options.length; i++) el.options[i].selected = target.indexOf(el.options[i].value) >= 0;
+    }
+
+    function cgbCloneState() {
+      return JSON.parse(JSON.stringify(cgbState));
+    }
+
+    function cgbLoadPastSessions() {
+      try {
+        cgbState.pastSessions = JSON.parse(localStorage.getItem(CGB_PAST_SESSIONS_KEY) || '[]');
+        if (!Array.isArray(cgbState.pastSessions)) cgbState.pastSessions = [];
+      } catch (e) {
+        cgbState.pastSessions = [];
+      }
+    }
+
+    function cgbSaveCurrentSession() {
+      cgbLoadPastSessions();
+      var id = cgbState.currentPastId || ('cg_' + Date.now());
+      var name = (cgbState.whoWhere.counterpartyName || 'Untitled Counterparty') + ' - ' + (new Date().toLocaleString());
+      var snapshot = cgbCloneState();
+      snapshot.currentPastId = id;
+      var existingIdx = -1;
+      for (var i = 0; i < cgbState.pastSessions.length; i++) {
+        if (cgbState.pastSessions[i].id === id) { existingIdx = i; break; }
+      }
+      var payload = { id: id, name: name, updated_at: new Date().toISOString(), state: snapshot };
+      if (existingIdx >= 0) cgbState.pastSessions[existingIdx] = payload;
+      else cgbState.pastSessions.unshift(payload);
+      localStorage.setItem(CGB_PAST_SESSIONS_KEY, JSON.stringify(cgbState.pastSessions.slice(0, 30)));
+      cgbState.currentPastId = id;
+      return id;
+    }
+
+    function cgbStartNewSession() {
+      cgbState.sessionMode = 'new';
+      cgbState.currentPastId = '';
+      cgbState.whoWhere = { counterpartyName: '', counterpartyResolved: false, partyType: '', businessUnit: '' };
+      cgbState.catalogSource = { sourceType: 'manual', scope: 'BACK_CATALOG_EXISTING', sourceRef: '' };
+      cgbState.formValues = {};
+      cgbState.lineItems = [];
+      cgbState.catalogItems = [];
+      cgbState.preflight = { missingRequired: 0, invalidPicklist: 0, unknownColumns: 0, blockers: [] };
+      cgbSyncWhoWhereInputs();
+      cgbSyncCatalogSourceInputs();
+      cgbAutoFillFromRecord();
+      showToast('Started new contract session.', 'success');
+    }
+
+    function cgbLoadPastSession() {
+      cgbLoadPastSessions();
+      if (!cgbState.pastSessions.length) {
+        showToast('No past contract sessions found.', 'warning');
+        return;
+      }
+      var item = cgbState.pastSessions[0];
+      if (!item || !item.state) return;
+      var keepSheets = cgbGetSheetNames();
+      var restored = item.state;
+      cgbState = Object.assign(cgbState, restored);
+      cgbState.sessionMode = 'past';
+      cgbState.currentPastId = item.id;
+      // Guard against stale sheet mappings.
+      Object.keys(cgbState.sheetMap || {}).forEach(function(k) {
+        if (keepSheets.indexOf(cgbState.sheetMap[k]) === -1) cgbState.sheetMap[k] = '';
+      });
+      cgbSyncWhoWhereInputs();
+      cgbSyncCatalogSourceInputs();
+      cgbInitPage(true);
+      showToast('Loaded past session: ' + item.name, 'info');
+    }
+
+    function cgbSyncWhoWhereInputs() {
+      var cp = document.getElementById('cgb-counterparty-name');
+      var pt = document.getElementById('cgb-party-type');
+      var bu = document.getElementById('cgb-business-unit');
+      cgbEnsureCounterpartyPickerState();
+      if (cp) cp.value = cgbState.whoWhere.counterpartyName || '';
+      if (pt) pt.value = cgbState.whoWhere.partyType || '';
+      cgbPopulateLegalEntityOptions();
+      if (bu) bu.value = cgbState.whoWhere.businessUnit || '';
+      if (document.activeElement !== cp) cgbState.counterpartyPicker.open = false;
+      cgbSyncCounterpartyPicker(false);
+      cgbRenderCounterpartyStatus();
+    }
+
+    function cgbPopulateLegalEntityOptions() {
+      var bu = document.getElementById('cgb-business-unit');
+      if (!bu) return;
+      var entities = cgbState.resolver.legalEntities || [];
+      var html = '<option value="">Select Legal Entity</option>';
+      for (var i = 0; i < entities.length; i++) {
+        var selected = entities[i] === cgbState.whoWhere.businessUnit ? ' selected' : '';
+        html += '<option value="' + escapeHtml(entities[i]) + '"' + selected + '>' + escapeHtml(entities[i]) + '</option>';
+      }
+      bu.innerHTML = html;
+    }
+
+    function cgbCounterpartyAccountsForEntity() {
+      var entity = cgbState.whoWhere.businessUnit || '';
+      if (!entity) return [];
+      return cgbState.resolver.accountsByEntity[entity] || [];
+    }
+
+    function cgbEnsureCounterpartyPickerState() {
+      if (!cgbState.counterpartyPicker) {
+        cgbState.counterpartyPicker = { open: false, filtered: [], renderCount: 0, activeIndex: -1 };
+      }
+    }
+
+    function cgbSyncCounterpartyPicker(keepActive) {
+      cgbEnsureCounterpartyPickerState();
+      var typed = cgbNorm(cgbState.whoWhere.counterpartyName || '');
+      var accounts = cgbCounterpartyAccountsForEntity();
+      var filtered = [];
+      if (!typed) {
+        filtered = accounts.slice();
+      } else {
+        for (var i = 0; i < accounts.length; i++) {
+          if (cgbNorm(accounts[i]).indexOf(typed) >= 0) filtered.push(accounts[i]);
+        }
+      }
+      cgbState.counterpartyPicker.filtered = filtered;
+      if (!keepActive) cgbState.counterpartyPicker.activeIndex = -1;
+      cgbState.counterpartyPicker.renderCount = Math.min(filtered.length, 120);
+      cgbRenderCounterpartyDropdown();
+    }
+
+    function cgbRenderCounterpartyDropdown() {
+      cgbEnsureCounterpartyPickerState();
+      var dd = document.getElementById('cgb-counterparty-dropdown');
+      if (!dd) return;
+      if (!cgbState.counterpartyPicker.open) {
+        dd.style.display = 'none';
+        return;
+      }
+      var html = '';
+      var entity = cgbState.whoWhere.businessUnit || '';
+      if (!entity) {
+        html = '<div style="padding:8px 10px; font-size:0.78em; color:#607d8b;">Select Legal Entity first.</div>';
+      } else {
+        var active = cgbState.counterpartyPicker.activeIndex;
+        html += cgbCounterpartyOptionHtml(0, '+ Create New Counterparty…', true, active === 0);
+        var limit = Math.min(cgbState.counterpartyPicker.filtered.length, cgbState.counterpartyPicker.renderCount || 120);
+        for (var i = 0; i < limit; i++) {
+          html += cgbCounterpartyOptionHtml(i + 1, cgbState.counterpartyPicker.filtered[i], false, active === (i + 1));
+        }
+        if (!cgbState.counterpartyPicker.filtered.length) {
+          html += '<div style="padding:8px 10px; font-size:0.78em; color:#607d8b;">No matching accounts for this legal entity.</div>';
+        } else if (limit < cgbState.counterpartyPicker.filtered.length) {
+          html += '<div style="padding:7px 10px; font-size:0.72em; color:#78909c; border-top:1px solid #eceff1;">Scroll to load more (' + (cgbState.counterpartyPicker.filtered.length - limit) + ' remaining)</div>';
+        }
+      }
+      dd.innerHTML = html;
+      dd.style.display = 'block';
+    }
+
+    function cgbCounterpartyOptionHtml(index, label, isCreateNew, isActive) {
+      var bg = isActive ? '#e3f2fd' : '#fff';
+      var color = isCreateNew ? '#1565c0' : '#263238';
+      var weight = isCreateNew ? '600' : '400';
+      var createAttr = isCreateNew ? 'true' : 'false';
+      return '<div role="option" data-index="' + index + '" data-create-new="' + createAttr + '" onmousedown="cgbPickCounterpartyOption(' + index + ')" style="padding:8px 10px; border-bottom:1px solid #f1f4f6; background:' + bg + '; color:' + color + '; font-weight:' + weight + '; cursor:pointer; font-size:0.82em;">' + escapeHtml(label) + '</div>';
+    }
+
+    function cgbOpenCounterpartyPicker() {
+      cgbEnsureCounterpartyPickerState();
+      cgbState.counterpartyPicker.open = true;
+      cgbSyncCounterpartyPicker(false);
+    }
+
+    function cgbCloseCounterpartyPicker() {
+      cgbEnsureCounterpartyPickerState();
+      cgbState.counterpartyPicker.open = false;
+      cgbRenderCounterpartyDropdown();
+    }
+
+    function cgbOnCounterpartyBlur() {
+      setTimeout(function() { cgbCloseCounterpartyPicker(); }, 120);
+    }
+
+    function cgbPickCounterpartyOption(index) {
+      cgbEnsureCounterpartyPickerState();
+      if (index === 0) {
+        cgbState.whoWhere.counterpartyResolved = false;
+      } else {
+        var acct = cgbState.counterpartyPicker.filtered[index - 1] || '';
+        cgbState.whoWhere.counterpartyName = acct;
+        cgbState.whoWhere.counterpartyResolved = !!acct;
+      }
+      var cp = document.getElementById('cgb-counterparty-name');
+      if (cp) cp.value = cgbState.whoWhere.counterpartyName || '';
+      cgbCloseCounterpartyPicker();
+      cgbRenderCounterpartyStatus();
+      cgbComputePreflight();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbOnCounterpartyScroll() {
+      cgbEnsureCounterpartyPickerState();
+      var dd = document.getElementById('cgb-counterparty-dropdown');
+      if (!dd || !cgbState.counterpartyPicker.open) return;
+      if ((dd.scrollTop + dd.clientHeight) < (dd.scrollHeight - 24)) return;
+      var total = cgbState.counterpartyPicker.filtered.length;
+      var next = Math.min(total, (cgbState.counterpartyPicker.renderCount || 120) + 120);
+      if (next !== cgbState.counterpartyPicker.renderCount) {
+        cgbState.counterpartyPicker.renderCount = next;
+        cgbRenderCounterpartyDropdown();
+      }
+    }
+
+    function cgbOnCounterpartyKeydown(ev) {
+      cgbEnsureCounterpartyPickerState();
+      var key = ev && ev.key ? ev.key : '';
+      if (key === 'Tab') return;
+      if (!cgbState.counterpartyPicker.open && (key === 'ArrowDown' || key === 'ArrowUp' || key === 'Enter')) {
+        cgbOpenCounterpartyPicker();
+      }
+      var max = cgbState.counterpartyPicker.renderCount || 0;
+      var listSize = Math.max(1, max + 1);
+      if (key === 'ArrowDown') {
+        ev.preventDefault();
+        cgbState.counterpartyPicker.activeIndex = Math.min(listSize - 1, cgbState.counterpartyPicker.activeIndex + 1);
+        cgbRenderCounterpartyDropdown();
+      } else if (key === 'ArrowUp') {
+        ev.preventDefault();
+        cgbState.counterpartyPicker.activeIndex = Math.max(0, cgbState.counterpartyPicker.activeIndex - 1);
+        cgbRenderCounterpartyDropdown();
+      } else if (key === 'Enter') {
+        if (cgbState.counterpartyPicker.activeIndex >= 0) {
+          ev.preventDefault();
+          cgbPickCounterpartyOption(cgbState.counterpartyPicker.activeIndex);
+        }
+      } else if (key === 'Escape') {
+        cgbCloseCounterpartyPicker();
+      }
+    }
+
+    function cgbSyncCatalogSourceInputs() {
+      var st = document.getElementById('cgb-catalog-source-type');
+      var sc = document.getElementById('cgb-catalog-scope');
+      var sr = document.getElementById('cgb-catalog-source-ref');
+      if (st) st.value = cgbState.catalogSource.sourceType || 'manual';
+      if (sc) sc.value = cgbState.catalogSource.scope || 'BACK_CATALOG_EXISTING';
+      if (sr) sr.value = cgbState.catalogSource.sourceRef || '';
+      cgbRenderTermsHint();
+    }
+
+    function cgbRenderCounterpartyStatus() {
+      var el = document.getElementById('cgb-counterparty-status');
+      if (!el) return;
+      if (!cgbState.whoWhere.businessUnit) {
+        el.textContent = 'Select Legal Entity first';
+        el.style.color = '#546e7a';
+        return;
+      }
+      if (!cgbState.whoWhere.counterpartyName) {
+        el.textContent = 'Choose existing account or Create New';
+        el.style.color = '#546e7a';
+        return;
+      }
+      if (cgbState.whoWhere.counterpartyResolved) {
+        el.textContent = 'Matched existing account in selected legal entity';
+        el.style.color = '#2e7d32';
+      } else {
+        el.textContent = 'Will create new counterparty under selected legal entity';
+        el.style.color = '#ef6c00';
+      }
+    }
+
+    function cgbOnCounterpartyInput(value) {
+      cgbState.whoWhere.counterpartyName = cgbSafe(value);
+      cgbState.whoWhere.counterpartyResolved = false;
+      var target = cgbNorm(cgbState.whoWhere.counterpartyName);
+      var accounts = cgbCounterpartyAccountsForEntity();
+      for (var i = 0; i < accounts.length; i++) {
+        if (target && cgbNorm(accounts[i]) === target) { cgbState.whoWhere.counterpartyResolved = true; break; }
+      }
+      cgbEnsureCounterpartyPickerState();
+      cgbState.counterpartyPicker.open = true;
+      cgbSyncCounterpartyPicker(false);
+      cgbRenderCounterpartyStatus();
+      cgbComputePreflight();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbOnWhoWhereChange() {
+      cgbState.whoWhere.partyType = (document.getElementById('cgb-party-type') || {}).value || '';
+      cgbState.whoWhere.businessUnit = (document.getElementById('cgb-business-unit') || {}).value || '';
+      cgbState.whoWhere.counterpartyResolved = false;
+      cgbSyncCounterpartyPicker(false);
+      if (cgbState.whoWhere.counterpartyName) {
+        var target = cgbNorm(cgbState.whoWhere.counterpartyName);
+        var accounts = cgbCounterpartyAccountsForEntity();
+        for (var i = 0; i < accounts.length; i++) {
+          if (target && cgbNorm(accounts[i]) === target) { cgbState.whoWhere.counterpartyResolved = true; break; }
+        }
+      }
+      cgbRenderCounterpartyStatus();
+      cgbComputePreflight();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbOnCatalogSourceChange() {
+      cgbState.catalogSource.sourceType = (document.getElementById('cgb-catalog-source-type') || {}).value || 'manual';
+      cgbState.catalogSource.scope = (document.getElementById('cgb-catalog-scope') || {}).value || 'BACK_CATALOG_EXISTING';
+      cgbState.catalogSource.sourceRef = (document.getElementById('cgb-catalog-source-ref') || {}).value || '';
+      cgbRenderTermsHint();
+      cgbComputePreflight();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbSetTermsTab(tabName) {
+      cgbState.termsTab = tabName || 'schedules';
+      cgbRenderTermsHint();
+    }
+
+    function cgbRenderTermsHint() {
+      var el = document.getElementById('cgb-terms-hint');
+      if (!el) return;
+      var hints = {
+        schedules: 'Schedules tab: define effective windows, term, and territory control for the selected contract type.',
+        schedule_catalog: 'Schedule Catalog tab: map scoped assets (catalog items) to active schedules.',
+        financials: 'Financials tab: encode advances, splits, recoupability, and rights payments.',
+        addons: 'Add Ons tab: side-car rights (options, merch, first negotiation, matching).'
+      };
+      var scopeTxt = cgbState.catalogSource.scope ? (' Scope: ' + cgbState.catalogSource.scope + '.') : '';
+      el.textContent = (hints[cgbState.termsTab] || hints.schedules) + scopeTxt;
+    }
+
+    function cgbBuildAnnotationMap() {
+      return {
+        session_mode: cgbState.sessionMode,
+        contract_profile: 'back_catalog_distribution_sync_youtube_cpa',
+        who_where: {
+          counterparty_name: cgbState.whoWhere.counterpartyName || '',
+          counterparty_resolved: !!cgbState.whoWhere.counterpartyResolved,
+          party_type: cgbState.whoWhere.partyType || '',
+          legal_entity_resolver: cgbState.whoWhere.businessUnit || '',
+          author_legal_entity: cgbState.legalEntity || ''
+        },
+        catalog_source: cgbState.catalogSource,
+        clause_map: {
+          entity_opportunity_resolution: ['Accounts.*', 'Opportunity.*'],
+          asset_catalog_synchronization: ['Schedule.*', 'Schedule Catalog.*', 'Catalog.*'],
+          financial_rights_modeling: ['Financials.*', 'V2 Add Ons.*']
+        },
+        preflight: cgbState.preflight
+      };
+    }
+
+    function cgbPopulateSeedSelectors(forceRefresh) {
+      var sheetSel = document.getElementById('cgb-sheet-select');
+      var rowSel = document.getElementById('cgb-row-select');
+      if (!sheetSel || !rowSel) return;
+      var sheets = cgbGetSheetNames();
+      if (!sheets.length) {
+        sheetSel.innerHTML = '<option value="">No dataset loaded</option>';
+        rowSel.innerHTML = '<option value="">No records</option>';
+        return;
+      }
+      if (!cgbState.seed.sheet || sheets.indexOf(cgbState.seed.sheet) === -1 || forceRefresh) cgbState.seed.sheet = sheets[0];
+      var shHtml = '';
+      for (var i = 0; i < sheets.length; i++) shHtml += '<option value="' + escapeHtml(sheets[i]) + '"' + (sheets[i] === cgbState.seed.sheet ? ' selected' : '') + '>' + escapeHtml(sheets[i]) + '</option>';
+      sheetSel.innerHTML = shHtml;
+      var rows = cgbGetRows(cgbState.seed.sheet);
+      if (!rows.length) {
+        rowSel.innerHTML = '<option value="">No records</option>';
+        return;
+      }
+      if (cgbState.seed.rowIndex < 0 || cgbState.seed.rowIndex >= rows.length) cgbState.seed.rowIndex = 0;
+      var rHtml = '';
+      for (var ri = 0; ri < rows.length; ri++) rHtml += '<option value="' + ri + '"' + (ri === cgbState.seed.rowIndex ? ' selected' : '') + '>' + escapeHtml((ri + 1) + ' - ' + cgbDescribeRow(rows[ri], ri)) + '</option>';
+      rowSel.innerHTML = rHtml;
+    }
+
+    function cgbPopulateWorkflowSelectors() {
+      var fields = cgbFieldMetaFields();
+      var contractTypeSel = document.getElementById('cgb-contract-type');
+      if (contractTypeSel) {
+        var opts = [];
+        fields.forEach(function(f) {
+          var fk = cgbNorm(f.field_key);
+          if (fk.indexOf('document_type') >= 0 || fk.indexOf('contract_type') >= 0 || fk.indexOf('agreement_type') >= 0) {
+            opts = opts.concat(cgbPicklistOptions(f));
+          }
+        });
+        var uniq = {};
+        opts = opts.filter(function(v) { if (uniq[cgbNorm(v)]) return false; uniq[cgbNorm(v)] = true; return true; });
+        if (!opts.length) opts = ['Distribution + Sync', 'Master License', 'Services'];
+        var html = '<option value="">Select type</option>';
+        for (var i = 0; i < opts.length; i++) html += '<option value="' + escapeHtml(opts[i]) + '"' + (opts[i] === cgbState.workflow.contractType ? ' selected' : '') + '>' + escapeHtml(opts[i]) + '</option>';
+        contractTypeSel.innerHTML = html;
+      }
+
+      function buildSingleSelect(id, sheetName, selectedIdx, label) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var rows = cgbGetRows(sheetName);
+        if (!rows.length) {
+          el.innerHTML = '<option value="">No ' + label + ' rows</option>';
+          return;
+        }
+        var html = '<option value="">Select ' + label + '</option>';
+        for (var i = 0; i < rows.length; i++) html += '<option value="' + i + '"' + (String(i) === String(selectedIdx) ? ' selected' : '') + '>' + escapeHtml(cgbDescribeRow(rows[i], i)) + '</option>';
+        el.innerHTML = html;
+      }
+      buildSingleSelect('cgb-opportunity-select', cgbState.sheetMap.opportunity, cgbState.workflow.opportunity, 'opportunity');
+      buildSingleSelect('cgb-schedule-select', cgbState.sheetMap.schedule, cgbState.workflow.schedule, 'schedule');
+      buildSingleSelect('cgb-catalog-select', cgbState.sheetMap.catalog, cgbState.workflow.catalog, 'catalog');
+      buildSingleSelect('cgb-schedule-catalog-select', cgbState.sheetMap.scheduleCatalog, cgbState.workflow.scheduleCatalog, 'schedule catalog');
+
+      function buildMultiSelect(id, sheetName, selectedVals, label) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var rows = cgbGetRows(sheetName);
+        if (!rows.length) {
+          el.innerHTML = '<option value="">No ' + label + ' rows</option>';
+          return;
+        }
+        var html = '';
+        for (var i = 0; i < rows.length; i++) html += '<option value="' + i + '"' + (selectedVals.indexOf(String(i)) >= 0 ? ' selected' : '') + '>' + escapeHtml(cgbDescribeRow(rows[i], i)) + '</option>';
+        el.innerHTML = html;
+      }
+      buildMultiSelect('cgb-accounts-select', cgbState.sheetMap.accounts, cgbState.workflow.accounts, 'account');
+      buildMultiSelect('cgb-v2addons-select', cgbState.sheetMap.v2addons, cgbState.workflow.v2addons, 'V2 add-on');
+    }
+
+    function cgbReadWorkflowSelections() {
+      var typeSel = document.getElementById('cgb-contract-type');
+      cgbState.workflow.contractType = typeSel ? typeSel.value : cgbState.workflow.contractType;
+      cgbState.workflow.accounts = cgbSelectValues('cgb-accounts-select');
+      cgbState.workflow.opportunity = (document.getElementById('cgb-opportunity-select') || {}).value || '';
+      cgbState.workflow.schedule = (document.getElementById('cgb-schedule-select') || {}).value || '';
+      cgbState.workflow.catalog = (document.getElementById('cgb-catalog-select') || {}).value || '';
+      cgbState.workflow.scheduleCatalog = (document.getElementById('cgb-schedule-catalog-select') || {}).value || '';
+      cgbState.workflow.v2addons = cgbSelectValues('cgb-v2addons-select');
+    }
+
+    function cgbCurrentSeedRow() { return cgbGetRow(cgbState.seed.sheet, cgbState.seed.rowIndex); }
+
+    function cgbSelectedRowsBySheet() {
+      var map = {};
+      function add(sheet, idx) {
+        if (!sheet || idx === '' || idx === null || idx === undefined) return;
+        var row = cgbGetRow(sheet, idx);
+        if (!row) return;
+        if (!map[sheet]) map[sheet] = [];
+        map[sheet].push({ idx: parseInt(idx, 10), row: row });
+      }
+      if (cgbState.seed.sheet) add(cgbState.seed.sheet, cgbState.seed.rowIndex);
+      cgbState.workflow.accounts.forEach(function(v) { add(cgbState.sheetMap.accounts, v); });
+      add(cgbState.sheetMap.opportunity, cgbState.workflow.opportunity);
+      add(cgbState.sheetMap.schedule, cgbState.workflow.schedule);
+      add(cgbState.sheetMap.catalog, cgbState.workflow.catalog);
+      add(cgbState.sheetMap.scheduleCatalog, cgbState.workflow.scheduleCatalog);
+      cgbState.workflow.v2addons.forEach(function(v) { add(cgbState.sheetMap.v2addons, v); });
+      return map;
+    }
+
+    function cgbInitPage(forceRefresh) {
+      var page = document.getElementById('page-contract-generator');
+      if (!page) return;
+      cgbLoadPastSessions();
+      cgbBuildBatchResolverIndex();
+      var legalSel = document.getElementById('cgb-legal-entity');
+      var typeSel = document.getElementById('cgb-template-type');
+      if (legalSel) legalSel.value = cgbState.legalEntity;
+      if (typeSel) typeSel.value = cgbState.templateType;
+      cgbSyncWhoWhereInputs();
+      cgbSyncCatalogSourceInputs();
+      cgbGuessSheetMap();
+      cgbPopulateSeedSelectors(forceRefresh);
+      cgbPopulateWorkflowSelectors();
+      if (!cgbState.initialized) cgbAutoFillFromRecord();
+      else cgbGenerateFromBuilder();
+      cgbState.initialized = true;
+      if (typeof cgbRenderGateStatus === 'function') cgbRenderGateStatus();
+    }
+
+    function cgbRefreshRows() {
+      var sheetSel = document.getElementById('cgb-sheet-select');
+      var rowSel = document.getElementById('cgb-row-select');
+      if (sheetSel) cgbState.seed.sheet = sheetSel.value || '';
+      var idx = rowSel ? parseInt(rowSel.value || '0', 10) : 0;
+      cgbState.seed.rowIndex = isNaN(idx) ? 0 : idx;
+      cgbPopulateSeedSelectors(false);
+      cgbAutoFillFromRecord();
+    }
+
+    function cgbOnRowChange() {
+      var rowSel = document.getElementById('cgb-row-select');
+      var idx = rowSel ? parseInt(rowSel.value || '0', 10) : 0;
+      cgbState.seed.rowIndex = isNaN(idx) ? 0 : idx;
+      cgbAutoFillFromRecord();
+    }
+
+    function cgbOnMetaChange() {
+      var legalSel = document.getElementById('cgb-legal-entity');
+      var typeSel = document.getElementById('cgb-template-type');
+      if (legalSel) cgbState.legalEntity = legalSel.value || cgbState.legalEntity;
+      if (typeSel) cgbState.templateType = typeSel.value || cgbState.templateType;
+      cgbAutoFillFromRecord();
+    }
+
+    function cgbOnWorkflowChange() {
+      cgbReadWorkflowSelections();
+      cgbAutoFillFromRecord();
+    }
+
+    function cgbAutoFillFromRecord() {
+      cgbReadWorkflowSelections();
+      if ((!cgbState.workflow.accounts || !cgbState.workflow.accounts.length) && cgbGetRows(cgbState.sheetMap.accounts).length) cgbState.workflow.accounts = ['0'];
+      if (!cgbState.workflow.opportunity && cgbGetRows(cgbState.sheetMap.opportunity).length) cgbState.workflow.opportunity = '0';
+      if (!cgbState.workflow.schedule && cgbGetRows(cgbState.sheetMap.schedule).length) cgbState.workflow.schedule = '0';
+      if (!cgbState.workflow.catalog && cgbGetRows(cgbState.sheetMap.catalog).length) cgbState.workflow.catalog = '0';
+      if (!cgbState.workflow.scheduleCatalog && cgbGetRows(cgbState.sheetMap.scheduleCatalog).length) cgbState.workflow.scheduleCatalog = '0';
+      cgbPopulateWorkflowSelectors();
+      var seedRow = cgbCurrentSeedRow();
+      var defaults = cgbTemplateDefaults(cgbState.templateType);
+      var selectedRows = cgbSelectedRowsBySheet();
+      var accountNames = [];
+      (selectedRows[cgbState.sheetMap.accounts] || []).forEach(function(it) {
+        var nm = cgbFindValue(it.row, ['account_name', 'company_name', 'legal_name', 'artist_name']);
+        if (nm) accountNames.push(nm);
+      });
+      if (!accountNames.length) {
+        var seedNm = cgbFindValue(seedRow, ['account_name', 'company_name', 'legal_name']);
+        if (seedNm) accountNames.push(seedNm);
+      }
+      if (!cgbState.whoWhere.counterpartyName && accountNames.length) {
+        cgbState.whoWhere.counterpartyName = accountNames[0];
+      }
+      if (accountNames.length && cgbNorm(cgbState.whoWhere.counterpartyName) === cgbNorm(accountNames[0])) {
+        cgbState.whoWhere.counterpartyResolved = true;
+      }
+      cgbSyncWhoWhereInputs();
+      var oppRow = cgbGetRow(cgbState.sheetMap.opportunity, cgbState.workflow.opportunity);
+      var scheduleRow = cgbGetRow(cgbState.sheetMap.schedule, cgbState.workflow.schedule);
+      var catalogRow = cgbGetRow(cgbState.sheetMap.catalog, cgbState.workflow.catalog);
+      var contractType = cgbState.workflow.contractType || cgbFindValue(seedRow, ['document_type', 'contract_type', 'agreement_type']) || cgbState.templateType.replace(/_/g, ' ');
+      cgbState.workflow.contractType = contractType;
+      var contractTypeSel = document.getElementById('cgb-contract-type');
+      if (contractTypeSel && contractTypeSel.value !== contractType) contractTypeSel.value = contractType;
+
+      var territory = cgbFindValue(oppRow || seedRow, ['territory', 'region']) || 'Global';
+      var term = cgbFindValue(scheduleRow || seedRow, ['term', 'duration', 'effective_date', 'end_date']) || '[TO_BE_DEFINED]';
+      var split = cgbFindValue(seedRow, ['split', 'percentage', 'royalty', 'rate']) || '[TO_BE_DEFINED]';
+      cgbState.sections.accounts = cgbState.legalEntity + ' contracts with ' + (accountNames.length ? accountNames.join(', ') : '[TO_BE_DEFINED]') + '.';
+      cgbState.sections.opportunity = defaults.opportunity + ' Contract Type: ' + contractType + '. Territory: ' + territory + '.';
+      cgbState.sections.financials = defaults.financials + ' Current split/advance marker: ' + split + '.';
+      cgbState.sections.schedule = defaults.schedule + ' Term marker: ' + term + '.';
+
+      var workTitle = cgbFindValue(catalogRow || seedRow, ['title', 'record', 'track', 'contract_name']) || 'Primary Work';
+      cgbState.lineItems = [{ item: contractType, subtype: cgbState.templateType, split: split, notes: 'Linked account scope: ' + (accountNames[0] || 'TBD') }];
+      cgbState.catalogItems = [{ title: workTitle, isrc: cgbFindValue(catalogRow || seedRow, ['isrc']), usage: 'Digital', term: term }];
+
+      cgbAutofillGovernedFields(selectedRows);
+      cgbRenderEditorFromState();
+      cgbRenderGovernedFields();
+      cgbComputePreflight();
+      cgbGenerateFromBuilder();
+      cgbSaveCurrentSession();
+    }
+
+    function cgbAutofillGovernedFields(selectedRowsBySheet) {
+      var selected = selectedRowsBySheet || cgbSelectedRowsBySheet();
+      var sheets = Object.keys(selected);
+      for (var si = 0; si < sheets.length; si++) {
+        var sheet = sheets[si];
+        var rowObj = selected[sheet] && selected[sheet][0];
+        if (!rowObj || !rowObj.row) continue;
+        var fields = cgbFieldsForSheet(sheet);
+        for (var fi = 0; fi < fields.length; fi++) {
+          var fk = fields[fi].field_key;
+          if (!fk) continue;
+          var key = cgbFormKey(sheet, fk);
+          if (!cgbState.formValues.hasOwnProperty(key) || cgbState.formValues[key] === '') {
+            cgbState.formValues[key] = cgbSafe(cgbRowValue(rowObj.row, fk));
+          }
+        }
+      }
+    }
+
+    function cgbRenderEditorFromState() {
+      var secA = document.getElementById('cgb-sec-accounts');
+      var secO = document.getElementById('cgb-sec-opportunity');
+      var secF = document.getElementById('cgb-sec-financials');
+      var secS = document.getElementById('cgb-sec-schedule');
+      if (secA) secA.value = cgbState.sections.accounts || '';
+      if (secO) secO.value = cgbState.sections.opportunity || '';
+      if (secF) secF.value = cgbState.sections.financials || '';
+      if (secS) secS.value = cgbState.sections.schedule || '';
+      cgbRenderLineItems();
+      cgbRenderCatalogItems();
+    }
+
+    function cgbSyncSectionsFromInputs() {
+      cgbState.sections.accounts = (document.getElementById('cgb-sec-accounts') || {}).value || '';
+      cgbState.sections.opportunity = (document.getElementById('cgb-sec-opportunity') || {}).value || '';
+      cgbState.sections.financials = (document.getElementById('cgb-sec-financials') || {}).value || '';
+      cgbState.sections.schedule = (document.getElementById('cgb-sec-schedule') || {}).value || '';
+    }
+
+    function cgbOnSectionInput() {
+      cgbSyncSectionsFromInputs();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbRenderGovernedFields() {
+      var wrap = document.getElementById('cgb-governed-fields-wrap');
+      if (!wrap) return;
+      var selectedRows = cgbSelectedRowsBySheet();
+      var sheets = Object.keys(selectedRows);
+      if (!sheets.length) {
+        wrap.innerHTML = '<div style="font-size:0.82em; color:#777;">Select workflow rows to load governed schema fields.</div>';
+        return;
+      }
+      var html = '';
+      for (var si = 0; si < sheets.length; si++) {
+        var sheet = sheets[si];
+        var fields = cgbFieldsForSheet(sheet);
+        if (!fields.length) continue;
+        html += '<div style="border:1px solid #eceff1; border-radius:6px; margin-bottom:8px; padding:8px;">';
+        html += '<div style="font-size:0.82em; font-weight:700; color:#37474f; margin-bottom:6px;">' + escapeHtml(sheet) + '</div>';
+        for (var fi = 0; fi < fields.length; fi++) {
+          var fm = fields[fi];
+          var fk = fm.field_key || '';
+          if (!fk) continue;
+          var key = cgbFormKey(sheet, fk);
+          var val = cgbState.formValues[key] || '';
+          var required = (fm.requiredness === 'required') ? ' <span style="color:#c62828">*</span>' : '';
+          html += '<div style="display:grid; grid-template-columns: minmax(180px, 1fr) minmax(220px, 2fr); gap:8px; align-items:center; margin-bottom:6px;">';
+          html += '<label style="font-size:0.78em; color:#455a64;">' + escapeHtml(fm.field_label || fk) + required + '<div style="font-size:0.7em; color:#90a4ae;">' + escapeHtml(fk) + '</div></label>';
+          if (cgbIsPicklist(fm)) {
+            var opts = cgbPicklistOptions(fm);
+            html += '<select onchange="cgbOnGovernedFieldChange(\'' + cgbJsEsc(sheet) + '\', \'' + cgbJsEsc(fk) + '\', this.value)" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:4px;">';
+            html += '<option value="">[TO_BE_DEFINED]</option>';
+            for (var oi = 0; oi < opts.length; oi++) {
+              var selected = cgbNorm(opts[oi]) === cgbNorm(val) ? ' selected' : '';
+              html += '<option value="' + escapeHtml(opts[oi]) + '"' + selected + '>' + escapeHtml(opts[oi]) + '</option>';
+            }
+            html += '</select>';
+          } else {
+            html += '<input value="' + escapeHtml(val) + '" onchange="cgbOnGovernedFieldChange(\'' + cgbJsEsc(sheet) + '\', \'' + cgbJsEsc(fk) + '\', this.value)" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:4px;">';
+          }
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+      wrap.innerHTML = html || '<div style="font-size:0.82em; color:#777;">No governed fields found for selected sections.</div>';
+    }
+
+    function cgbOnGovernedFieldChange(sheet, fieldKey, value) {
+      cgbState.formValues[cgbFormKey(sheet, fieldKey)] = cgbSafe(value);
+      cgbComputePreflight();
+      cgbGenerateFromBuilder();
+    }
+
+    function cgbComputePreflight() {
+      var selected = cgbSelectedRowsBySheet();
+      var sheets = Object.keys(selected);
+      var missing = 0;
+      var invalid = 0;
+      var unknown = 0;
+      var blockers = [];
+      var si, ri, fi, ki;
+      for (si = 0; si < sheets.length; si++) {
+        var sheet = sheets[si];
+        var fields = cgbFieldsForSheet(sheet);
+        var canonical = {};
+        for (fi = 0; fi < fields.length; fi++) canonical[cgbNormKey(fields[fi].field_key)] = true;
+        var rows = selected[sheet] || [];
+        for (ri = 0; ri < rows.length; ri++) {
+          var row = rows[ri].row || {};
+          var keys = Object.keys(row);
+          for (fi = 0; fi < fields.length; fi++) {
+            var fm = fields[fi];
+            var fk = fm.field_key;
+            if (!fk) continue;
+            var val = cgbState.formValues[cgbFormKey(sheet, fk)];
+            if (val === undefined || val === '') val = cgbSafe(cgbRowValue(row, fk));
+            if (fm.requiredness === 'required' && (!val || (typeof isBlankValue === 'function' && isBlankValue(val)))) missing++;
+            if (cgbIsPicklist(fm) && val && !(typeof isBlankValue === 'function' && isBlankValue(val))) {
+              var opts = cgbPicklistOptions(fm).map(function(v) { return cgbNorm(v); });
+              if (opts.length && opts.indexOf(cgbNorm(val)) === -1) invalid++;
+            }
+          }
+          for (ki = 0; ki < keys.length; ki++) {
+            var k = keys[ki];
+            if (!k || k.charAt(0) === '_') continue;
+            if (typeof _gridIsMetaField === 'function' && _gridIsMetaField(k)) continue;
+            if (!canonical[cgbNormKey(k)]) unknown++;
+          }
+        }
+      }
+      if (!cgbState.legalEntity) blockers.push('Missing Legal Entity');
+      if (!cgbState.workflow.contractType) blockers.push('Missing Contract Type');
+      if (!cgbState.workflow.accounts || !cgbState.workflow.accounts.length) blockers.push('Missing Counterparty Account');
+      if (!cgbState.whoWhere.counterpartyName) blockers.push('Missing Counterparty Name');
+      if (!cgbState.whoWhere.partyType) blockers.push('Missing Party Type');
+      if (!cgbState.whoWhere.businessUnit) blockers.push('Missing Legal Entity');
+      if (cgbState.sheetMap.financials && !cgbGetRows(cgbState.sheetMap.financials).length) blockers.push('Financial rows unavailable');
+      cgbState.preflight = { missingRequired: missing, invalidPicklist: invalid, unknownColumns: unknown, blockers: blockers };
+      var el = document.getElementById('cgb-preflight-summary');
+      if (el) {
+        var hasHardBlocker = blockers.length > 0 || missing > 0;
+        var color = hasHardBlocker ? '#c62828' : (invalid > 0 || unknown > 0 ? '#ef6c00' : '#2e7d32');
+        var btText = blockers.length ? blockers.join('; ') : 'No hard blockers';
+        el.innerHTML = '<div style="font-weight:700; color:' + color + '; margin-bottom:4px;">Stage 1: Preflight Gate</div>' +
+          '<div>Hard Blockers: ' + blockers.length + '</div>' +
+          '<div>Missing Required: ' + missing + '</div>' +
+          '<div>Invalid Picklists: ' + invalid + '</div>' +
+          '<div>Unknown Columns: ' + unknown + '</div>' +
+          '<div style="margin-top:4px; color:#607d8b;">' + escapeHtml(btText) + '</div>';
+      }
+    }
+
+    function cgbRenderLineItems() {
+      var wrap = document.getElementById('cgb-lineitems-wrap');
+      if (!wrap) return;
+      var rows = cgbState.lineItems || [];
+      if (!rows.length) {
+        wrap.innerHTML = '<div style="font-size:0.82em; color:#777;">No line items yet.</div>';
+        return;
+      }
+      var html = '<table style="width:100%; border-collapse:collapse; font-size:0.8em;"><thead><tr><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Item</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Subtype</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Split</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Notes</th><th style="border-bottom:1px solid #ddd; padding:6px;"></th></tr></thead><tbody>';
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        html += '<tr><td style="padding:4px;"><input value="' + escapeHtml(r.item || '') + '" onchange="cgbUpdateLineItem(' + i + ', \'item\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.subtype || '') + '" onchange="cgbUpdateLineItem(' + i + ', \'subtype\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.split || '') + '" onchange="cgbUpdateLineItem(' + i + ', \'split\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.notes || '') + '" onchange="cgbUpdateLineItem(' + i + ', \'notes\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px; text-align:right;"><button class="toolbar-btn" onclick="cgbRemoveLineItem(' + i + ')">Remove</button></td></tr>';
+      }
+      wrap.innerHTML = html + '</tbody></table>';
+    }
+
+    function cgbRenderCatalogItems() {
+      var wrap = document.getElementById('cgb-catalog-wrap');
+      if (!wrap) return;
+      var rows = cgbState.catalogItems || [];
+      if (!rows.length) {
+        wrap.innerHTML = '<div style="font-size:0.82em; color:#777;">No catalog items yet.</div>';
+        return;
+      }
+      var html = '<table style="width:100%; border-collapse:collapse; font-size:0.8em;"><thead><tr><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Title</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">ISRC</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Usage</th><th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Term</th><th style="border-bottom:1px solid #ddd; padding:6px;"></th></tr></thead><tbody>';
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        html += '<tr><td style="padding:4px;"><input value="' + escapeHtml(r.title || '') + '" onchange="cgbUpdateCatalogItem(' + i + ', \'title\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.isrc || '') + '" onchange="cgbUpdateCatalogItem(' + i + ', \'isrc\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.usage || '') + '" onchange="cgbUpdateCatalogItem(' + i + ', \'usage\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px;"><input value="' + escapeHtml(r.term || '') + '" onchange="cgbUpdateCatalogItem(' + i + ', \'term\', this.value)" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;"></td>' +
+          '<td style="padding:4px; text-align:right;"><button class="toolbar-btn" onclick="cgbRemoveCatalogItem(' + i + ')">Remove</button></td></tr>';
+      }
+      wrap.innerHTML = html + '</tbody></table>';
+    }
+
+    function cgbAddLineItem() { cgbState.lineItems.push(cgbDefaultLineItem()); cgbRenderLineItems(); cgbGenerateFromBuilder(); }
+    function cgbRemoveLineItem(idx) { cgbState.lineItems.splice(idx, 1); cgbRenderLineItems(); cgbGenerateFromBuilder(); }
+    function cgbUpdateLineItem(idx, field, value) { if (cgbState.lineItems[idx]) { cgbState.lineItems[idx][field] = value || ''; cgbGenerateFromBuilder(); } }
+    function cgbAddCatalogItem() { cgbState.catalogItems.push(cgbDefaultCatalogItem()); cgbRenderCatalogItems(); cgbGenerateFromBuilder(); }
+    function cgbRemoveCatalogItem(idx) { cgbState.catalogItems.splice(idx, 1); cgbRenderCatalogItems(); cgbGenerateFromBuilder(); }
+    function cgbUpdateCatalogItem(idx, field, value) { if (cgbState.catalogItems[idx]) { cgbState.catalogItems[idx][field] = value || ''; cgbGenerateFromBuilder(); } }
+
+    function cgbBuildMarkdown() {
+      var seedRow = cgbCurrentSeedRow();
+      var contractName = cgbFindValue(seedRow, ['contract_name', 'record', 'title', 'contract_key']) || 'Generated Contract';
+      var md = [];
+      md.push('# Contract: ' + contractName);
+      md.push('');
+      md.push('- **Profile:** back_catalog_distribution_sync_youtube_cpa');
+      md.push('- **Author:** ' + cgbState.legalEntity);
+      md.push('- **Template:** ' + cgbState.templateType.replace(/_/g, ' '));
+      md.push('- **Contract Type:** ' + (cgbState.workflow.contractType || '[TO_BE_DEFINED]'));
+      md.push('- **Seed Source:** ' + (cgbState.seed.sheet || 'n/a') + ' / row ' + (cgbState.seed.rowIndex + 1));
+      md.push('- **Session Mode:** ' + cgbState.sessionMode);
+      md.push('- **Generated At:** ' + new Date().toISOString());
+      md.push('');
+      md.push('## Who & Where From');
+      md.push('- Counterparty: ' + (cgbState.whoWhere.counterpartyName || '[TO_BE_DEFINED]'));
+      md.push('- Party Type: ' + (cgbState.whoWhere.partyType || '[TO_BE_DEFINED]'));
+      md.push('- Legal Entity: ' + (cgbState.whoWhere.businessUnit || '[TO_BE_DEFINED]'));
+      md.push('- Counterparty Resolution: ' + (cgbState.whoWhere.counterpartyResolved ? 'matched_existing' : 'draft_create'));
+      md.push('');
+      md.push('## Catalog Source & Scope');
+      md.push('- Source Type: ' + (cgbState.catalogSource.sourceType || 'manual'));
+      md.push('- Scope: ' + (cgbState.catalogSource.scope || '[TO_BE_DEFINED]'));
+      md.push('- Source Ref: ' + (cgbState.catalogSource.sourceRef || '[TO_BE_DEFINED]'));
+      md.push('');
+      md.push('## Stage 1: Preflight Gate');
+      md.push('- Hard Blockers: ' + cgbState.preflight.blockers.length);
+      md.push('- Missing Required: ' + cgbState.preflight.missingRequired);
+      md.push('- Invalid Picklists: ' + cgbState.preflight.invalidPicklist);
+      md.push('- Unknown Columns: ' + cgbState.preflight.unknownColumns);
+      if (cgbState.preflight.blockers.length) md.push('- Blocker Reasons: ' + cgbState.preflight.blockers.join('; '));
+      md.push('');
+      md.push('## Stage 2: 6-Phase Workflow');
+      md.push('- Active Terms Tab: ' + cgbState.termsTab);
+      md.push('### Entity & Opportunity Resolution');
+      md.push(cgbState.sections.accounts || '[TO_BE_DEFINED]');
+      md.push(cgbState.sections.opportunity || '[TO_BE_DEFINED]');
+      md.push('');
+      md.push('### Asset & Catalog Synchronization');
+      md.push(cgbState.sections.schedule || '[TO_BE_DEFINED]');
+      md.push('');
+      md.push('### Financial & Rights Modeling');
+      md.push(cgbState.sections.financials || '[TO_BE_DEFINED]');
+      md.push('');
+      md.push('## Contract Line Items');
+      if (!cgbState.lineItems.length) md.push('- [TO_BE_DEFINED]');
+      for (var i = 0; i < cgbState.lineItems.length; i++) {
+        var li = cgbState.lineItems[i];
+        md.push('- **' + (li.item || 'Item') + '** | subtype: ' + (li.subtype || 'n/a') + ' | split: ' + (li.split || 'n/a') + ' | notes: ' + (li.notes || 'n/a'));
+      }
+      md.push('');
+      md.push('## Catalog Line Items');
+      if (!cgbState.catalogItems.length) md.push('- [TO_BE_DEFINED]');
+      for (var j = 0; j < cgbState.catalogItems.length; j++) {
+        var ci = cgbState.catalogItems[j];
+        md.push('- **' + (ci.title || 'Title') + '** | ISRC: ' + (ci.isrc || 'n/a') + ' | usage: ' + (ci.usage || 'n/a') + ' | term: ' + (ci.term || 'n/a'));
+      }
+      md.push('');
+      md.push('## Governed Field Values');
+      var keys = Object.keys(cgbState.formValues).sort();
+      if (!keys.length) md.push('- [TO_BE_DEFINED]');
+      for (var k = 0; k < keys.length; k++) {
+        var parts = keys[k].split('::');
+        md.push('- **' + parts[0] + '.' + parts[1] + '**: ' + (cgbState.formValues[keys[k]] || '[TO_BE_DEFINED]'));
+      }
+      return md.join('\n');
+    }
+
+    function cgbRenderPreview() {
+      var embed = document.getElementById('cgb-preview-embed');
+      if (!embed) return;
+      var seedRow = cgbCurrentSeedRow();
+      var contractName = cgbFindValue(seedRow, ['contract_name', 'record', 'title', 'contract_key']) || 'Generated Contract';
+      var html = '';
+      html += '<div style="font-size:0.78em; color:#9ca3af; margin-bottom:4px;">' + escapeHtml(cgbState.legalEntity) + ' authored this contract</div>';
+      html += '<div style="font-size:1.05em; font-weight:700; color:#f8fafc; margin-bottom:8px;">Contract: ' + escapeHtml(contractName) + '</div>';
+      html += '<div style="font-size:0.8em; color:#d1d5db; margin-bottom:6px;"><strong>Counterparty:</strong> ' + escapeHtml(cgbState.whoWhere.counterpartyName || '[TO_BE_DEFINED]') + ' | <strong>Party Type:</strong> ' + escapeHtml(cgbState.whoWhere.partyType || '[TO_BE_DEFINED]') + ' | <strong>Legal Entity:</strong> ' + escapeHtml(cgbState.whoWhere.businessUnit || '[TO_BE_DEFINED]') + '</div>';
+      html += '<div style="font-size:0.8em; color:#d1d5db; margin-bottom:6px;"><strong>Catalog Source:</strong> ' + escapeHtml(cgbState.catalogSource.sourceType || 'manual') + ' | <strong>Scope:</strong> ' + escapeHtml(cgbState.catalogSource.scope || '[TO_BE_DEFINED]') + '</div>';
+      html += '<div style="font-size:0.82em; color:#d1d5db; margin-bottom:8px;"><strong>Stage 1: Preflight Gate</strong> | blockers: ' + cgbState.preflight.blockers.length + ' | missing: ' + cgbState.preflight.missingRequired + '</div>';
+      html += '<div style="font-size:0.82em; line-height:1.5; color:#d1d5db;">';
+      html += '<strong>Entity & Opportunity Resolution</strong><br>' + escapeHtml(cgbState.sections.accounts || '[TO_BE_DEFINED]') + '<br>' + escapeHtml(cgbState.sections.opportunity || '[TO_BE_DEFINED]') + '<br><br>';
+      html += '<strong>Asset & Catalog Synchronization</strong><br>' + escapeHtml(cgbState.sections.schedule || '[TO_BE_DEFINED]') + '<br><br>';
+      html += '<strong>Financial & Rights Modeling</strong><br>' + escapeHtml(cgbState.sections.financials || '[TO_BE_DEFINED]') + '<br><br>';
+      html += '<strong>Contract Line Items</strong><br>';
+      if (!cgbState.lineItems.length) html += '- [TO_BE_DEFINED]<br>';
+      cgbState.lineItems.forEach(function(li) { html += '- ' + escapeHtml(li.item || 'Item') + ' (' + escapeHtml(li.subtype || 'n/a') + '), split ' + escapeHtml(li.split || 'n/a') + '<br>'; });
+      html += '<br><strong>Catalog Line Items</strong><br>';
+      if (!cgbState.catalogItems.length) html += '- [TO_BE_DEFINED]<br>';
+      cgbState.catalogItems.forEach(function(ci) { html += '- ' + escapeHtml(ci.title || 'Title') + ' (ISRC: ' + escapeHtml(ci.isrc || 'n/a') + ')<br>'; });
+      html += '</div>';
+      embed.innerHTML = html;
+    }
+
+    function cgbGenerateFromBuilder() {
+      cgbSyncSectionsFromInputs();
+      var md = cgbBuildMarkdown();
+      cgbState.markdown = md;
+      var output = document.getElementById('cgb-markdown-output');
+      if (output) output.value = md;
+      var annotation = document.getElementById('cgb-annotation-output');
+      if (annotation) annotation.value = JSON.stringify(cgbBuildAnnotationMap(), null, 2);
+      cgbState.outputFileName = ((cgbState.seed.sheet || 'contract') + '_row_' + (cgbState.seed.rowIndex + 1) + '_generated_contract.md').replace(/[^a-zA-Z0-9_.-]/g, '_');
+      cgbRenderPreview();
+      cgbSaveCurrentSession();
+    }
+
+    function cgbDownloadMarkdown() {
+      if (!cgbState.markdown) cgbGenerateFromBuilder();
+      if (!cgbState.markdown) {
+        showToast('Generate the contract first.', 'warning');
+        return;
+      }
+      var blob = new Blob([cgbState.markdown], { type: 'text/markdown;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = cgbState.outputFileName || 'generated_contract.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Downloaded ' + a.download, 'success');
+    }
+
+    window.cgPageMarkReconstructionComplete = function() {
+      if (!window._pfGateState) {
+        if (typeof showToast === 'function') showToast('Preflight gate not initialized', 'warning');
+        return;
+      }
+      if (!window._pfGateState.generateCopyDone) {
+        if (typeof showToast === 'function') showToast('Must request Generate Copy before marking reconstruction complete', 'warning');
+        return;
+      }
+      var decisions = [];
+      var sections = cgbState.sections || {};
+      var govFields = cgbState.governedFieldValues || {};
+      Object.keys(sections).forEach(function(key) {
+        var val = sections[key] || '';
+        if (val.trim()) {
+          decisions.push({ section: key, status: 'REVIEWED', note: val.substring(0, 200) });
+        }
+      });
+      Object.keys(govFields).forEach(function(key) {
+        var val = govFields[key];
+        if (val && val.toString().trim()) {
+          decisions.push({ field: key, status: 'CONFIRMED', value: val.toString().substring(0, 100) });
+        }
+      });
+      if (decisions.length === 0) {
+        decisions.push({ section: 'general', status: 'REVIEWED', note: 'Builder review completed' });
+      }
+      var fallbackNote = '';
+      var templateType = cgbState.templateType || '';
+      if (templateType === 'NO_ENTITY_TEMPLATE_AVAILABLE' || !templateType) {
+        fallbackNote = 'No entity template available — manual review completed for ' + (cgbState.whoWhere.counterpartyName || 'unknown party');
+      }
+      var reconstructionReview = {
+        decisions: decisions,
+        reviewed_at: new Date().toISOString(),
+        reviewer: (typeof _eiGetUserId === 'function' ? _eiGetUserId() : 'unknown'),
+        template_type: templateType,
+        counterparty: cgbState.whoWhere.counterpartyName || '',
+        legal_entity: cgbState.legalEntity || ''
+      };
+      if (fallbackNote) reconstructionReview.fallback_note = fallbackNote;
+      pfGateAction('reconstruction_complete', { reconstruction_review: reconstructionReview })
+        .then(function() {
+          cgbRenderGateStatus();
+        })
+        .catch(function(err) {
+          console.error('[CGB] reconstruction_complete failed:', err);
+        });
+    };
+
+    window.cgbRenderGateStatus = function() {
+      var wrap = document.getElementById('cgb-gate-status');
+      if (!wrap) return;
+      var st = window._pfGateState;
+      if (!st || !st.result) {
+        wrap.innerHTML = '<div style="font-size:0.8em;color:#999;">No preflight result. Run preflight from the Evidence Viewer first.</div>';
+        return;
+      }
+      var gate = st.result.gate_color || 'GREEN';
+      var html = '<h4>Gate: <span style="color:' + (gate === 'GREEN' ? '#2e7d32' : gate === 'YELLOW' ? '#f57f17' : '#c62828') + ';">' + gate + '</span></h4>';
+      html += '<div class="cgb-gate-step-list">';
+      if (gate === 'GREEN') {
+        html += '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">All checks passed</span></div>';
+      } else if (gate === 'YELLOW') {
+        if (st.actionTaken === 'accept_risk') {
+          html += '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">Risk Accepted — Unlocked</span></div>';
+        } else {
+          html += _cgbGateStepHtml('Generate Copy', st.generateCopyDone);
+          html += _cgbGateStepHtml('Reconstruction Complete', st.reconstructionCompleteDone);
+          var yellowUnlocked = st.generateCopyDone && st.reconstructionCompleteDone;
+          if (yellowUnlocked) {
+            html += '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">Submission Unlocked</span></div>';
+          }
+        }
+      } else if (gate === 'RED') {
+        html += _cgbGateStepHtml('Generate Copy', st.generateCopyDone);
+        html += _cgbGateStepHtml('Reconstruction Complete', st.reconstructionCompleteDone);
+        html += _cgbGateStepHtml('RED Override', st.overrideRedDone);
+        var redUnlocked = st.generateCopyDone && st.reconstructionCompleteDone && st.overrideRedDone;
+        if (redUnlocked) {
+          html += '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">Submission Unlocked</span></div>';
+        }
+      }
+      html += '</div>';
+      html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">';
+      if (gate === 'YELLOW' && !st.actionTaken && !st.generateCopyDone) {
+        html += '<button class="pf-gate-btn accept" onclick="pfGateAction(\x27accept_risk\x27).then(function(){cgbRenderGateStatus()})">Accept Risk</button>';
+        html += '<button class="pf-gate-btn generate-copy" onclick="pfGateAction(\x27generate_copy\x27).then(function(){cgbRenderGateStatus();cgbSeedFromPreflight(window._pfGateState&&window._pfGateState.result)})">Generate Copy</button>';
+      }
+      if (gate === 'RED' && !st.generateCopyDone) {
+        html += '<button class="pf-gate-btn generate-copy" onclick="pfGateAction(\x27generate_copy\x27).then(function(){cgbRenderGateStatus();cgbSeedFromPreflight(window._pfGateState&&window._pfGateState.result)})">Generate Copy</button>';
+      }
+      if (gate !== 'GREEN' && st.generateCopyDone && !st.reconstructionCompleteDone) {
+        html += '<button class="pf-gate-btn reconstruct" onclick="cgPageMarkReconstructionComplete()">Mark Reconstruction Complete</button>';
+      }
+      if (gate === 'RED' && st.generateCopyDone && st.reconstructionCompleteDone && !st.overrideRedDone) {
+        html += '<button class="pf-gate-btn override-red" onclick="pfGateAction(\x27override_red\x27).then(function(){cgbRenderGateStatus()})">Record RED Override</button>';
+      }
+      html += '</div>';
+      wrap.innerHTML = html;
+    };
+
+    function _cgbGateStepHtml(label, done) {
+      if (done) return '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">' + label + '</span></div>';
+      return '<div class="pf-gate-step"><span class="step-icon step-pending">&#9675;</span><span class="step-pending">' + label + '</span></div>';
+    }
+
     function closeConfigFlows() {
       document.getElementById('config-flows-drawer').classList.remove('active');
       masterEditMode = false;
@@ -49758,10 +51568,6 @@
         replay_steps: draft.evidence.replay_steps || '',
         replay_expected_result: draft.evidence.replay_expected_result || ''
       });
-      if (!request || !request.request_id) {
-        showToast('Patch request blocked. Complete required preflight fields and try again.', 'warning');
-        return;
-      }
       
       var submittedRequest = submitPatchRequest(request.request_id, author, currentMode || 'Analyst');
       
@@ -54455,7 +56261,11 @@ var P022_RuntimeValidation = {
     running: false,
     result: null,
     actionTaken: null,
-    adminOnly: true
+    adminOnly: true,
+    generateCopyDone: false,
+    reconstructionCompleteDone: false,
+    overrideRedDone: false,
+    reconstructionReview: null
   };
 
   window._pfGateState = _pfGateState;
@@ -54535,22 +56345,44 @@ var P022_RuntimeValidation = {
       }
 
       var gate = r.gate_color || 'GREEN';
-      html += '<div class="pf-gate-actions">';
+      html += '<div class="pf-gate-actions" style="flex-direction:column;">';
       if (gate === 'GREEN') {
         html += '<span style="font-size:0.82em;color:#2e7d32;font-weight:500;">All checks passed. Ready to submit.</span>';
       } else if (gate === 'YELLOW') {
-        if (_pfGateState.actionTaken) {
-          html += '<span style="font-size:0.82em;color:#f57f17;font-weight:500;">Risk accepted. Submission unlocked.</span>';
+        var yrUnlocked = _pfGateState.actionTaken === 'accept_risk' || (_pfGateState.generateCopyDone && _pfGateState.reconstructionCompleteDone);
+        if (yrUnlocked) {
+          var yrMethod = _pfGateState.actionTaken === 'accept_risk' ? 'Risk accepted' : 'Reconstruction complete';
+          html += '<span style="font-size:0.82em;color:#2e7d32;font-weight:500;">' + yrMethod + '. Submission unlocked.</span>';
+        } else if (_pfGateState.generateCopyDone && !_pfGateState.reconstructionCompleteDone) {
+          html += '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">Generate Copy requested</span></div>';
+          html += '<div style="display:flex;gap:8px;margin-top:6px;">';
+          html += '<button class="pf-gate-btn reconstruct" onclick="cgPageMarkReconstructionComplete()">Mark Reconstruction Complete</button>';
+          html += '</div>';
         } else {
+          html += '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
           html += '<button class="pf-gate-btn accept" onclick="pfGateAction(\'accept_risk\')">Accept Risk</button>';
-          html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'escalate_ocr\')">Escalate to OCR</button>';
+          html += '<button class="pf-gate-btn generate-copy" onclick="pfGateAction(\'generate_copy\').then(function(){if(typeof cgbSeedFromPreflight===\'function\')cgbSeedFromPreflight(window._pfGateState&&window._pfGateState.result)})">Generate Copy</button>';
+          html += '</div>';
+          html += '<div style="font-size:0.74em;color:#888;margin-top:4px;">Accept Risk unlocks immediately. Generate Copy requires reconstruction review.</div>';
         }
       } else if (gate === 'RED') {
-        if (_pfGateState.actionTaken === 'escalate_ocr') {
-          html += '<span style="font-size:0.82em;color:#c62828;font-weight:500;">OCR escalation requested.</span>';
+        if (_pfGateState.generateCopyDone && _pfGateState.reconstructionCompleteDone && _pfGateState.overrideRedDone) {
+          html += '<span style="font-size:0.82em;color:#c62828;font-weight:500;">RED override applied. Submission unlocked.</span>';
+        } else if (_pfGateState.generateCopyDone && _pfGateState.reconstructionCompleteDone && !_pfGateState.overrideRedDone) {
+          html += '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">Generate Copy</span></div>';
+          html += '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">Reconstruction Complete</span></div>';
+          html += '<div style="display:flex;gap:8px;margin-top:6px;">';
+          html += '<button class="pf-gate-btn override-red" onclick="pfGateAction(\'override_red\')">Record RED Override</button>';
+          html += '</div>';
+        } else if (_pfGateState.generateCopyDone && !_pfGateState.reconstructionCompleteDone) {
+          html += '<div class="pf-gate-step"><span class="step-icon step-done">&#10003;</span><span class="step-done">Generate Copy requested</span></div>';
+          html += '<div style="display:flex;gap:8px;margin-top:6px;">';
+          html += '<button class="pf-gate-btn reconstruct" onclick="cgPageMarkReconstructionComplete()">Mark Reconstruction Complete</button>';
+          html += '</div>';
+          html += '<div style="font-size:0.74em;color:#999;margin-top:4px;">After reconstruction: RED override required.</div>';
         } else {
-          html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'escalate_ocr\')">Escalate to OCR</button>';
-          html += '<span style="font-size:0.78em;color:#999;margin-left:8px;">Document quality too low for submission.</span>';
+          html += '<button class="pf-gate-btn generate-copy" onclick="pfGateAction(\'generate_copy\').then(function(){if(typeof cgbSeedFromPreflight===\'function\')cgbSeedFromPreflight(window._pfGateState&&window._pfGateState.result)})">Generate Copy</button>';
+          html += '<div style="font-size:0.74em;color:#999;margin-top:4px;">RED gate: Generate Copy + Reconstruction + Override required.</div>';
         }
       }
       html += '</div>';
@@ -54573,6 +56405,10 @@ var P022_RuntimeValidation = {
     _pfGateState.running = true;
     _pfGateState.result = null;
     _pfGateState.actionTaken = null;
+    _pfGateState.generateCopyDone = false;
+    _pfGateState.reconstructionCompleteDone = false;
+    _pfGateState.overrideRedDone = false;
+    _pfGateState.reconstructionReview = null;
     pfGateRenderPanel();
 
     var headers = {};
@@ -54623,49 +56459,72 @@ var P022_RuntimeValidation = {
     });
   };
 
-  window.pfGateAction = function(action) {
-    var headers = {};
-    if (typeof _syncHeaders === 'function') {
-      headers = _syncHeaders();
-    } else {
-      headers = { 'Content-Type': 'application/json' };
-      var wsId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : '';
-      if (wsId) headers['X-Workspace-Id'] = wsId;
-      if (typeof _authToken !== 'undefined' && _authToken) headers['Authorization'] = 'Bearer ' + _authToken;
-    }
+  window.pfGateAction = function(action, extraPayload) {
+    return new Promise(function(resolve, reject) {
+      var headers = {};
+      if (typeof _syncHeaders === 'function') {
+        headers = _syncHeaders();
+      } else {
+        headers = { 'Content-Type': 'application/json' };
+        var wsId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : '';
+        if (wsId) headers['X-Workspace-Id'] = wsId;
+        if (typeof _authToken !== 'undefined' && _authToken) headers['Authorization'] = 'Bearer ' + _authToken;
+      }
 
-    var docId = (_pfGateState.result && _pfGateState.result.doc_id) || '';
-    var body = { doc_id: docId, action: action };
+      var docId = (_pfGateState.result && _pfGateState.result.doc_id) || '';
+      var body = { doc_id: docId, action: action };
+      if (extraPayload && typeof extraPayload === 'object') {
+        Object.keys(extraPayload).forEach(function(k) { body[k] = extraPayload[k]; });
+      }
 
-    var baseUrl = window.location.origin;
-    fetch(baseUrl + '/api/preflight/action', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(body)
-    })
-    .then(function(resp) {
-      if (!resp.ok) {
-        return resp.json().then(function(err) {
-          throw new Error((err.error && err.error.message) || 'HTTP ' + resp.status);
+      var baseUrl = window.location.origin;
+      fetch(baseUrl + '/api/preflight/action', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(body)
+      })
+      .then(function(resp) {
+        if (!resp.ok) {
+          return resp.json().then(function(err) {
+            throw new Error((err.error && err.error.message) || 'HTTP ' + resp.status);
+          });
+        }
+        return resp.json();
+      })
+      .then(function(data) {
+        _pfGateState.actionTaken = action;
+        if (data.data && data.data.patch_metadata) {
+          _pfGateState.patchMetadata = data.data.patch_metadata;
+        }
+        if (action === 'generate_copy') _pfGateState.generateCopyDone = true;
+        if (action === 'reconstruction_complete') {
+          _pfGateState.reconstructionCompleteDone = true;
+          if (extraPayload && extraPayload.reconstruction_review) {
+            _pfGateState.reconstructionReview = extraPayload.reconstruction_review;
+          }
+        }
+        if (action === 'override_red') _pfGateState.overrideRedDone = true;
+        console.log('[PREFLIGHT-GATE] action complete:', action, 'state:', {
+          generateCopy: _pfGateState.generateCopyDone,
+          reconstruction: _pfGateState.reconstructionCompleteDone,
+          overrideRed: _pfGateState.overrideRedDone
         });
-      }
-      return resp.json();
-    })
-    .then(function(data) {
-      _pfGateState.actionTaken = action;
-      if (data.data && data.data.patch_metadata) {
-        _pfGateState.patchMetadata = data.data.patch_metadata;
-      }
-      console.log('[PREFLIGHT-GATE] action complete:', action);
-      pfGateRenderPanel();
-      if (typeof showToast === 'function') {
-        if (action === 'accept_risk') showToast('Risk accepted — submission unlocked', 'info');
-        else showToast('OCR escalation requested', 'info');
-      }
-    })
-    .catch(function(err) {
-      console.error('[PREFLIGHT-GATE] action error:', err);
-      if (typeof showToast === 'function') showToast('Action failed: ' + err.message, 'error');
+        pfGateRenderPanel();
+        if (typeof cgbRenderGateStatus === 'function') cgbRenderGateStatus();
+        if (typeof showToast === 'function') {
+          if (action === 'accept_risk') showToast('Risk accepted — submission unlocked', 'info');
+          else if (action === 'generate_copy') showToast('Generate copy requested — complete reconstruction review to proceed', 'info');
+          else if (action === 'reconstruction_complete') showToast('Reconstruction review marked complete', 'success');
+          else if (action === 'override_red') showToast('RED override recorded — submission unlocked', 'warning');
+          else if (action === 'escalate_ocr') showToast('OCR escalation requested', 'info');
+        }
+        resolve(data);
+      })
+      .catch(function(err) {
+        console.error('[PREFLIGHT-GATE] action error:', err);
+        if (typeof showToast === 'function') showToast('Action failed: ' + err.message, 'error');
+        reject(err);
+      });
     });
   };
 
@@ -55141,10 +57000,7 @@ var P022_RuntimeValidation = {
   };
 
   function _prepSimBuildExportPayload() {
-    var result = _pftlBuildResultForExport();
-    if (!result && typeof _pfGateState !== 'undefined' && _pfGateState.result) {
-      result = _pfGateState.result;
-    }
+    var result = (typeof _pfGateState !== 'undefined' && _pfGateState.result) ? _pfGateState.result : null;
     var m = result ? (result.metrics || {}) : {};
     var pages = result ? (result.page_classifications || []) : [];
     pages.sort(function(a, b) { return (a.page || 0) - (b.page || 0); });
@@ -55174,8 +57030,6 @@ var P022_RuntimeValidation = {
       preflight: {
         doc_mode: result ? result.doc_mode : null,
         recommended_gate: result ? result.gate_color : null,
-        contract_classification: result ? (result.contract_classification || null) : null,
-        analyst_assignments: result ? (result.analyst_assignments || null) : null,
         reason_codes: result ? (result.gate_reasons || []) : [],
         metrics: m,
         page_summaries: pages,
@@ -55365,7 +57219,6 @@ var P022_RuntimeValidation = {
     _pftlState.running = false;
     _pftlState.elapsed = 0;
     _pftlState.file = null;
-    _pftlSyncAssignmentsIntoResult();
     _pftlRender();
     var overlay = document.getElementById('pftl-overlay');
     if (overlay) overlay.style.display = '';
@@ -55425,12 +57278,11 @@ var P022_RuntimeValidation = {
 
   window.pftlDownload = function() {
     if (!_pftlState.result) return;
-    var exportResult = _pftlBuildResultForExport();
-    var json = JSON.stringify(exportResult, null, 2);
+    var json = JSON.stringify(_pftlState.result, null, 2);
     var blob = new Blob([json], { type: 'application/json' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    var docId = ((exportResult && exportResult.doc_id) || 'preflight').replace(/[^a-zA-Z0-9_-]/g, '_');
+    var docId = (_pftlState.result.doc_id || 'preflight').replace(/[^a-zA-Z0-9_-]/g, '_');
     a.download = 'preflight_report_' + docId + '.json';
     document.body.appendChild(a);
     a.click();
@@ -55535,11 +57387,10 @@ var P022_RuntimeValidation = {
     _pftlSugState.error = null;
     _pftlSugState.showText = false;
     _pftlSugState.highlightKeywords = [];
-    _pftlSyncAssignmentsIntoResult();
     try {
       _pftlRender();
     } catch (renderErr) {
-      console.error('[PFTL] render error after success:', renderErr);
+      console.error('[PFTL] render error after success:', renderErr, renderErr && renderErr.message, renderErr && renderErr.stack);
     }
     console.log('[PFTL] run complete:', _pftlState.result.gate_color, _pftlState.result.doc_mode,
       'headers:', (_pftlState.result.extracted_headers || []).length,
@@ -56219,7 +58070,10 @@ var P022_RuntimeValidation = {
 
     if (_pftlState.result) {
       html += _pftlRenderReport(_pftlState.result);
+      html += '<details class="pftl-focus-fold">';
+      html += '<summary>Field Suggestions (advanced)</summary>';
       html += '<div class="pftl-suggestions-section"><div id="pftl-suggestions-container"></div></div>';
+      html += '</details>';
     }
 
     html += '</div>';
@@ -56265,7 +58119,7 @@ var P022_RuntimeValidation = {
       html += '</ul></div>';
     }
 
-    html += _pftlRenderCorruptionSamples(r);
+    html += _pftlFoldSection('Encoding Details', _pftlRenderCorruptionSamples(r), false);
 
     html += _pftlRenderResolutionStory(r);
 
@@ -56273,20 +58127,26 @@ var P022_RuntimeValidation = {
 
     html += _pftlRenderScheduleStructure(r);
 
+    html += _pftlRenderFinancialsReadiness(r);
+
+    html += _pftlRenderAddonsReadiness(r);
+
+    html += _pftlRenderHealthScore(r);
     html += _pftlRenderSfMatchSection(r);
 
+    var diag = '';
     var m = r.metrics || {};
-    html += '<div class="pftl-section">';
-    html += '<div class="pftl-section-title">Key Metrics</div>';
-    html += '<div class="pftl-metrics-grid">';
-    html += _pftlMetricCard(m.total_pages, 'Page Count');
-    html += _pftlMetricCard(_pftlFmt(m.avg_chars_per_page, 1), 'Avg Chars/Page');
-    html += _pftlMetricCard(_pftlFmt(m.replacement_char_ratio, 6), 'Replacement Char Ratio');
-    html += _pftlMetricCard(_pftlFmt(m.control_char_ratio, 6), 'Control Char Ratio');
-    html += _pftlMetricCard(_pftlFmt(m.mojibake_ratio, 6), 'Mojibake Ratio');
-    html += _pftlMetricCard(m.searchable_pages, 'Searchable Pages');
-    html += _pftlMetricCard(m.scanned_pages, 'Scanned Pages');
-    html += _pftlMetricCard(m.mixed_pages, 'Mixed Pages');
+    diag += '<div class="pftl-section">';
+    diag += '<div class="pftl-section-title">Key Metrics</div>';
+    diag += '<div class="pftl-metrics-grid">';
+    diag += _pftlMetricCard(m.total_pages, 'Page Count');
+    diag += _pftlMetricCard(_pftlFmt(m.avg_chars_per_page, 1), 'Avg Chars/Page');
+    diag += _pftlMetricCard(_pftlFmt(m.replacement_char_ratio, 6), 'Replacement Char Ratio');
+    diag += _pftlMetricCard(_pftlFmt(m.control_char_ratio, 6), 'Control Char Ratio');
+    diag += _pftlMetricCard(_pftlFmt(m.mojibake_ratio, 6), 'Mojibake Ratio');
+    diag += _pftlMetricCard(m.searchable_pages, 'Searchable Pages');
+    diag += _pftlMetricCard(m.scanned_pages, 'Scanned Pages');
+    diag += _pftlMetricCard(m.mixed_pages, 'Mixed Pages');
     var sparseRatio = 0;
     if (m.total_pages > 0) {
       var pc = r.page_classifications || [];
@@ -56296,47 +58156,48 @@ var P022_RuntimeValidation = {
       }
       sparseRatio = sparseCount / m.total_pages;
     }
-    html += _pftlMetricCard(_pftlFmt(sparseRatio, 2), 'Sparse Page Ratio');
-    html += '</div></div>';
+    diag += _pftlMetricCard(_pftlFmt(sparseRatio, 2), 'Sparse Page Ratio');
+    diag += '</div></div>';
 
-    html += _pftlRenderDecisionTrace(r);
+    diag += _pftlRenderDecisionTrace(r);
 
     var pages = r.page_classifications || [];
     if (pages.length > 0) {
-      html += '<div class="pftl-section">';
-      html += '<div class="pftl-section-title">Per-Page Breakdown (' + pages.length + ' pages)</div>';
-      html += '<div style="max-height:300px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px;">';
-      html += '<table class="pftl-table">';
-      html += '<thead><tr><th>Page</th><th>Chars</th><th>Image Ratio</th><th>Mode</th><th>Dimensions</th></tr></thead>';
-      html += '<tbody>';
+      diag += '<div class="pftl-section">';
+      diag += '<div class="pftl-section-title">Per-Page Breakdown (' + pages.length + ' pages)</div>';
+      diag += '<div style="max-height:300px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px;">';
+      diag += '<table class="pftl-table">';
+      diag += '<thead><tr><th>Page</th><th>Chars</th><th>Image Ratio</th><th>Mode</th><th>Dimensions</th></tr></thead>';
+      diag += '<tbody>';
       for (var p = 0; p < pages.length; p++) {
         var pg = pages[p];
         var modeClass = (pg.mode || '').toLowerCase();
-        html += '<tr>';
-        html += '<td>' + pg.page + '</td>';
-        html += '<td>' + (pg.char_count || 0) + '</td>';
-        html += '<td>' + _pftlFmt(pg.image_coverage_ratio, 4) + '</td>';
-        html += '<td><span class="pftl-page-mode ' + modeClass + '">' + (pg.mode || 'UNKNOWN') + '</span></td>';
+        diag += '<tr>';
+        diag += '<td>' + pg.page + '</td>';
+        diag += '<td>' + (pg.char_count || 0) + '</td>';
+        diag += '<td>' + _pftlFmt(pg.image_coverage_ratio, 4) + '</td>';
+        diag += '<td><span class="pftl-page-mode ' + modeClass + '">' + (pg.mode || 'UNKNOWN') + '</span></td>';
         var dims = (pg.page_width || 0) + ' x ' + (pg.page_height || 0);
-        html += '<td style="font-size:0.85em;color:#888;">' + dims + '</td>';
-        html += '</tr>';
+        diag += '<td style="font-size:0.85em;color:#888;">' + dims + '</td>';
+        diag += '</tr>';
       }
-      html += '</tbody></table></div></div>';
+      diag += '</tbody></table></div></div>';
     }
 
-    html += '<div class="pftl-section">';
-    html += '<div class="pftl-section-title">Persistence Status</div>';
-    html += '<div class="pftl-persistence">';
-    html += _pftlPersRow('doc_materialized', r.materialized === true ? 'Yes' : 'No');
-    html += _pftlPersRow('cache_written', 'Yes');
-    html += _pftlPersRow('fk_bound_writes_skipped', r.materialized === true ? 'No' : 'Yes');
-    html += _pftlPersRow('skip_reason', r.materialized === true ? 'N/A (materialized)' : 'No patch_id provided (Test Lab is read-only)');
-    html += '</div></div>';
+    diag += '<div class="pftl-section">';
+    diag += '<div class="pftl-section-title">Persistence Status</div>';
+    diag += '<div class="pftl-persistence">';
+    diag += _pftlPersRow('doc_materialized', r.materialized === true ? 'Yes' : 'No');
+    diag += _pftlPersRow('cache_written', 'Yes');
+    diag += _pftlPersRow('fk_bound_writes_skipped', r.materialized === true ? 'No' : 'Yes');
+    diag += _pftlPersRow('skip_reason', r.materialized === true ? 'N/A (materialized)' : 'No patch_id provided (Test Lab is read-only)');
+    diag += '</div></div>';
 
-    html += '<div class="pftl-section">';
-    html += '<button class="pftl-raw-toggle" onclick="pftlToggleRaw()">Show Raw JSON Response</button>';
-    html += '<pre class="pftl-raw-content" id="pftl-raw-json">' + _pftlEsc(JSON.stringify(r, null, 2)) + '</pre>';
-    html += '</div>';
+    diag += '<div class="pftl-section">';
+    diag += '<button class="pftl-raw-toggle" onclick="pftlToggleRaw()">Show Raw JSON Response</button>';
+    diag += '<pre class="pftl-raw-content" id="pftl-raw-json">' + _pftlEsc(JSON.stringify(r, null, 2)) + '</pre>';
+    diag += '</div>';
+    html += _pftlFoldSection('Diagnostics (advanced)', diag, false);
 
     html += '</div>';
     return html;
@@ -56374,6 +58235,16 @@ var P022_RuntimeValidation = {
       msg += '. Review the decision trace and corruption samples below before proceeding.';
     }
     return '<div class="pftl-why-gate">' + _pftlEsc(msg) + '</div>';
+  }
+
+  function _pftlFoldSection(title, innerHtml, isOpen) {
+    if (!innerHtml) return '';
+    var openAttr = isOpen ? ' open' : '';
+    var html = '<details class="pftl-focus-fold"' + openAttr + '>';
+    html += '<summary>' + _pftlEsc(title) + '</summary>';
+    html += innerHtml;
+    html += '</details>';
+    return html;
   }
 
   function _pftlRenderDecisionTrace(r) {
@@ -56486,23 +58357,14 @@ var P022_RuntimeValidation = {
   }
 
 
-  function _pftlHasNewEntrySignal(story) {
-    if (!story) return false;
-    if (story.new_entry_detected === true) return true;
-    if (Array.isArray(story.unresolved_counterparties) && story.unresolved_counterparties.length > 0) return true;
-    if (Array.isArray(story.counterparties) && story.counterparties.length === 0) return true;
-    return false;
-  }
-
   function _pftlRenderResolutionStory(r) {
     var story = r.resolution_story;
     if (!story) return '';
-    var newEntryDetected = _pftlHasNewEntrySignal(story);
 
     var html = '<div class="pftl-section rs-story-container">';
     html += '<div class="pftl-section-title">Entity Resolution Story</div>';
 
-    if (newEntryDetected) {
+    if (story.new_entry_detected) {
       html += '<div class="rs-new-entry-banner">';
       html += '<span class="rs-new-entry-banner-icon">\u26A0</span>';
       html += '<div>';
@@ -56511,8 +58373,8 @@ var P022_RuntimeValidation = {
       html += '</div></div>';
     }
 
-    html += _pftlRenderStoryWho(story, r, newEntryDetected);
-    html += _pftlRenderOnboardingCard(story, newEntryDetected);
+    html += _pftlRenderStoryWho(story, r);
+    html += _pftlRenderOnboardingCard(story);
     html += _pftlRenderStoryWhy(story);
     html += _pftlRenderStoryWhat(story);
     html += _pftlRenderStoryAction(story);
@@ -56521,12 +58383,11 @@ var P022_RuntimeValidation = {
     return html;
   }
 
-  function _pftlRenderOnboardingCard(story, newEntryDetected) {
-    if (!newEntryDetected) return '';
+  function _pftlRenderOnboardingCard(story) {
+    if (!story.new_entry_detected) return '';
     var unresolved = story.unresolved_counterparties || [];
     var rec = story.onboarding_recommendation;
-    var html = '<details class="rs-onboarding-card"><summary class="rs-onboarding-title">Unresolved Counterparty Workflow</summary>';
-    html += '<div class="rs-onboarding-body">';
+    var html = '<div class="rs-onboarding-card">';
     html += '<div class="rs-onboarding-title">Unresolved Counterparty</div>';
 
     if (unresolved.length > 0) {
@@ -56547,29 +58408,59 @@ var P022_RuntimeValidation = {
       }
     }
 
-    html += '</div></details>';
+    var assigns = _pftlGetAssignments();
+    var manualValue = assigns.manual_counterparty || '';
+    var statusClass = 'rs-manual-status rs-manual-status-empty';
+    var statusText = 'Required — type the confirmed counterparty name, then click Confirm.';
+    if (manualValue && manualValue.length >= 3) {
+      statusClass = 'rs-manual-status rs-manual-status-ok';
+      statusText = 'Confirmed: ' + manualValue;
+    }
+
+    html += '<div class="rs-manual-input-section">';
+    html += '<label class="rs-manual-input-label" for="rs-manual-counterparty">Confirmed Counterparty (Manual)</label>';
+    html += '<div style="display:flex;gap:8px;align-items:center;">';
+    html += '<input type="text" id="rs-manual-counterparty" class="rs-manual-input" value="' + _pftlEsc(manualValue) + '" oninput="pftlOnManualCounterpartyDraft(this)" />';
+    html += '<button type="button" class="pftl-btn reset" onclick="pftlConfirmManualCounterparty()">Confirm</button>';
+    html += '</div>';
+    html += '<div id="rs-manual-counterparty-status" class="' + statusClass + '">' + _pftlEsc(statusText) + '</div>';
+    html += '</div>';
+
+    html += '</div>';
     return html;
   }
 
-  window.pftlOnManualCounterpartyInput = function(el) {
+  window.pftlOnManualCounterpartyDraft = function(el) {
     var val = (el.value || '').trim();
     var statusEl = document.getElementById('rs-manual-counterparty-status');
-    if (statusEl) {
-      if (val.length === 0) {
-        statusEl.className = 'rs-manual-status rs-manual-status-empty';
-        statusEl.textContent = 'Required — type the confirmed counterparty name to proceed.';
-      } else if (val.length < 3) {
-        statusEl.className = 'rs-manual-status rs-manual-status-empty';
-        statusEl.textContent = 'Name too short — enter the full entity name.';
-      } else {
-        statusEl.className = 'rs-manual-status rs-manual-status-ok';
-        statusEl.textContent = 'Confirmed: ' + val;
-      }
+    if (!statusEl) return;
+    if (val.length === 0) {
+      statusEl.className = 'rs-manual-status rs-manual-status-empty';
+      statusEl.textContent = 'Required — type the confirmed counterparty name, then click Confirm.';
+    } else if (val.length < 3) {
+      statusEl.className = 'rs-manual-status rs-manual-status-empty';
+      statusEl.textContent = 'Name too short — enter the full entity name.';
+    } else {
+      statusEl.className = 'rs-manual-status rs-manual-status-pending';
+      statusEl.textContent = 'Ready to confirm: ' + val;
+    }
+  };
+
+  window.pftlConfirmManualCounterparty = function() {
+    var input = document.getElementById('rs-manual-counterparty');
+    var statusEl = document.getElementById('rs-manual-counterparty-status');
+    if (!input || !statusEl) return;
+    var val = (input.value || '').trim();
+    if (val.length < 3) {
+      statusEl.className = 'rs-manual-status rs-manual-status-empty';
+      statusEl.textContent = 'Name too short — enter the full entity name.';
+      return;
     }
     var assigns = _pftlGetAssignments();
-    assigns.manual_counterparty = val.length >= 3 ? val : null;
-    if (assigns.manual_counterparty) assigns.counterparty = assigns.manual_counterparty;
+    assigns.manual_counterparty = val;
     _pftlSaveAssignments();
+    statusEl.className = 'rs-manual-status rs-manual-status-ok';
+    statusEl.textContent = 'Confirmed: ' + val;
   };
 
   var _pftlAssignmentsStore = {};
@@ -56590,58 +58481,30 @@ var P022_RuntimeValidation = {
   }
   function _pftlGetAssignments() {
     var key = _pftlGetRecordKey();
-    if (!_pftlAssignmentsStore[key]) _pftlAssignmentsStore[key] = { legal_entity: null, counterparty: null, opportunity_subtypes: [], schedule_types: [], schedule_types_raw: [] };
+    if (!_pftlAssignmentsStore[key]) _pftlAssignmentsStore[key] = { legal_entity: null, counterparty: null, opportunity_subtypes: [], check_overrides: {} };
     if (!_pftlAssignmentsStore[key].opportunity_subtypes) _pftlAssignmentsStore[key].opportunity_subtypes = [];
-    if (!_pftlAssignmentsStore[key].schedule_types) _pftlAssignmentsStore[key].schedule_types = [];
-    if (!_pftlAssignmentsStore[key].schedule_types_raw) _pftlAssignmentsStore[key].schedule_types_raw = [];
+    if (!_pftlAssignmentsStore[key].check_overrides) _pftlAssignmentsStore[key].check_overrides = {};
     return _pftlAssignmentsStore[key];
   }
   function _pftlSaveAssignments() {
     try { sessionStorage.setItem('_pftlAssignmentsStore', JSON.stringify(_pftlAssignmentsStore)); } catch(e) {}
-    _pftlSyncAssignmentsIntoResult();
-  }
-
-  function _pftlBuildAnalystAssignmentsPayload() {
-    var assigns = _pftlGetAssignments();
-    var normalizedSchedule = _pftlNormalizeScheduleTypes(
-      (assigns.schedule_types_raw && assigns.schedule_types_raw.length > 0)
-        ? assigns.schedule_types_raw
-        : (assigns.schedule_types || [])
-    );
-    return {
-      record_key: _pftlGetRecordKey(),
-      legal_entity: assigns.legal_entity || null,
-      counterparty: assigns.counterparty || null,
-      manual_counterparty: assigns.manual_counterparty || null,
-      opportunity_subtypes: (assigns.opportunity_subtypes || []).slice(),
-      schedule_types: normalizedSchedule.label.slice(),
-      schedule_types_raw: normalizedSchedule.raw.slice(),
-      schedule_types_label: normalizedSchedule.label.slice(),
-      updated_at: new Date().toISOString()
-    };
   }
 
   function _pftlBuildResultForExport() {
     if (!_pftlState.result) return null;
-    var out = JSON.parse(JSON.stringify(_pftlState.result));
-    var analystAssignments = _pftlBuildAnalystAssignmentsPayload();
-    out.analyst_assignments = analystAssignments;
-
-    if (!out.contract_classification || typeof out.contract_classification !== 'object') {
-      out.contract_classification = {};
-    }
-    out.contract_classification.analyst_selected_subtypes = analystAssignments.opportunity_subtypes.slice();
-    out.contract_classification.analyst_selected_schedule_types = analystAssignments.schedule_types_label.slice();
-    out.contract_classification.analyst_selected_schedule_types_raw = analystAssignments.schedule_types_raw.slice();
-    if (analystAssignments.manual_counterparty) {
-      out.contract_classification.analyst_confirmed_counterparty = analystAssignments.manual_counterparty;
-    }
-    return out;
-  }
-
-  function _pftlSyncAssignmentsIntoResult() {
-    var merged = _pftlBuildResultForExport();
-    if (merged) _pftlState.result = merged;
+    var r = _pftlState.result;
+    var assigns = _pftlGetAssignments();
+    return {
+      contract_classification: r.contract_classification || null,
+      analyst_assignments: {
+        opportunity_subtypes: (assigns.opportunity_subtypes && assigns.opportunity_subtypes.length > 0) ? assigns.opportunity_subtypes : [],
+        schedule_types: (assigns.schedule_types && assigns.schedule_types.length > 0) ? assigns.schedule_types : [],
+        legal_entity: assigns.legal_entity || null,
+        counterparty: assigns.counterparty || null,
+        manual_counterparty: assigns.manual_counterparty || null,
+        check_overrides: assigns.check_overrides || {}
+      }
+    };
   }
 
   var _OPP_SUBTYPE_OPTIONS = [
@@ -56649,81 +58512,6 @@ var P022_RuntimeValidation = {
     "Distro CMA", "Label Ventures", "LE Revision", "Licensing Agreement",
     "Profit Participation Agreement", "Pub Admin", "Sync", "Side Artist", "Assignment", "Other"
   ];
-
-  var _SCHEDULE_TYPE_OPTIONS = [
-    "Distro & Sync - Existing Masters",
-    "Front Catalog + Remixes",
-    "Ownership",
-    "Schedule 1 - Catalog Acquisition - Masters",
-    "Schedule 2 - Catalog Acquisition - Compositions",
-    "Shiloh - Existing Non Shiloh Recordings",
-    "Termination Schedule",
-    "Uncrossed Schedule"
-  ];
-
-  var _SCHEDULE_TYPE_LABEL_BY_RAW = {
-    'distro_sync_existing_masters': 'Distro & Sync - Existing Masters',
-    'front_catalog_remixes': 'Front Catalog + Remixes',
-    'ownership': 'Ownership',
-    'schedule_1_catalog_acquisition_masters': 'Schedule 1 - Catalog Acquisition - Masters',
-    'schedule_2_catalog_acquisition_compositions': 'Schedule 2 - Catalog Acquisition - Compositions',
-    'shiloh_existing_non_shiloh_recordings': 'Shiloh - Existing Non Shiloh Recordings',
-    'termination_schedule': 'Termination Schedule',
-    'uncrossed_schedule': 'Uncrossed Schedule',
-    'general_schedule': 'General Schedule'
-  };
-  var _SCHEDULE_TYPE_RAW_BY_LABEL = {};
-  (function() {
-    for (var raw in _SCHEDULE_TYPE_LABEL_BY_RAW) {
-      if (_SCHEDULE_TYPE_LABEL_BY_RAW.hasOwnProperty(raw)) {
-        _SCHEDULE_TYPE_RAW_BY_LABEL[_SCHEDULE_TYPE_LABEL_BY_RAW[raw].toLowerCase()] = raw;
-      }
-    }
-    for (var i = 0; i < _SCHEDULE_TYPE_OPTIONS.length; i++) {
-      var label = _SCHEDULE_TYPE_OPTIONS[i];
-      if (!_SCHEDULE_TYPE_RAW_BY_LABEL[label.toLowerCase()]) {
-        _SCHEDULE_TYPE_RAW_BY_LABEL[label.toLowerCase()] = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-      }
-    }
-  })();
-
-  function _pftlScheduleTypeToLabel(value) {
-    var v = String(value || '').trim();
-    if (!v) return '';
-    if (_SCHEDULE_TYPE_LABEL_BY_RAW[v]) return _SCHEDULE_TYPE_LABEL_BY_RAW[v];
-    if (_SCHEDULE_TYPE_RAW_BY_LABEL[v.toLowerCase()]) {
-      var rawFromLabel = _SCHEDULE_TYPE_RAW_BY_LABEL[v.toLowerCase()];
-      return _SCHEDULE_TYPE_LABEL_BY_RAW[rawFromLabel] || v;
-    }
-    if (v.indexOf('_') >= 0) {
-      return v.replace(/_/g, ' ').replace(/\b\w/g, function(ch) { return ch.toUpperCase(); });
-    }
-    return v;
-  }
-
-  function _pftlScheduleTypeToRaw(value) {
-    var v = String(value || '').trim();
-    if (!v) return '';
-    if (_SCHEDULE_TYPE_LABEL_BY_RAW[v]) return v;
-    var mapped = _SCHEDULE_TYPE_RAW_BY_LABEL[v.toLowerCase()];
-    if (mapped) return mapped;
-    return v.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-  }
-
-  function _pftlNormalizeScheduleTypes(values) {
-    var inVals = Array.isArray(values) ? values : [];
-    var outRaw = [];
-    var outLabel = [];
-    var seenRaw = {};
-    for (var i = 0; i < inVals.length; i++) {
-      var raw = _pftlScheduleTypeToRaw(inVals[i]);
-      if (!raw || seenRaw[raw]) continue;
-      seenRaw[raw] = true;
-      outRaw.push(raw);
-      outLabel.push(_pftlScheduleTypeToLabel(raw));
-    }
-    return { raw: outRaw, label: outLabel };
-  }
 
   window.pftlToggleOppSubtype = function(name, checked) {
     var assigns = _pftlGetAssignments();
@@ -56754,46 +58542,76 @@ var P022_RuntimeValidation = {
     if (cb) cb.checked = true;
   };
 
-  window.pftlToggleScheduleType = function(name, checked) {
+  function _pftlOverrideKey(scope, code) {
+    return scope + '::' + code;
+  }
+
+  function _pftlGetCheckOverride(scope, code) {
     var assigns = _pftlGetAssignments();
-    var currentRaw = (assigns.schedule_types_raw || []).slice();
-    if (currentRaw.length === 0 && (assigns.schedule_types || []).length > 0) {
-      currentRaw = _pftlNormalizeScheduleTypes(assigns.schedule_types).raw;
+    var key = _pftlOverrideKey(scope, code);
+    return (assigns.check_overrides || {})[key] || null;
+  }
+
+  function _pftlGetEffectiveCheckStatus(scope, code, baseStatus) {
+    var ov = _pftlGetCheckOverride(scope, code);
+    return ov && ov.status ? ov.status : baseStatus;
+  }
+
+  function _pftlStatusBadgeClass(prefix, status) {
+    if (status === 'pass') return prefix + '-badge-pass';
+    if (status === 'review') return prefix + '-badge-review';
+    return prefix + '-badge-fail';
+  }
+
+  function _pftlRenderCheckStatusEditor(prefix, scope, code, baseStatus, rowIx) {
+    var effective = _pftlGetEffectiveCheckStatus(scope, code, baseStatus);
+    var overridden = effective !== baseStatus;
+    var badgeClass = _pftlStatusBadgeClass(prefix, effective);
+    var menuId = 'pftl-status-menu-' + _pftlSimpleHash(scope + '|' + code + '|' + rowIx);
+    var html = '<div class="pftl-status-editor">';
+    html += '<span class="' + prefix + '-status-badge ' + badgeClass + '">' + _pftlEsc(String(effective || '').toUpperCase()) + '</span>';
+    if (overridden) html += '<span class="pftl-status-overridden">OVERRIDE</span>';
+    html += '<button type="button" class="pftl-status-edit-btn" onclick="pftlToggleCheckStatusMenu(\'' + _pftlEsc(menuId) + '\')">Edit</button>';
+    html += '<div id="' + _pftlEsc(menuId) + '" class="pftl-status-menu">';
+    html += '<div class="pftl-status-menu-title">Override status</div>';
+    html += '<div class="pftl-status-menu-actions">';
+    html += '<button class="is-pass" type="button" onclick="pftlApplyCheckOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'pass\')">Pass</button>';
+    html += '<button class="is-review" type="button" onclick="pftlApplyCheckOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'review\')">Review</button>';
+    html += '<button class="is-fail" type="button" onclick="pftlApplyCheckOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'fail\')">Fail</button>';
+    if (overridden) {
+      html += '<button class="is-clear" type="button" onclick="pftlClearCheckOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\')">Clear</button>';
     }
-    var rawName = _pftlScheduleTypeToRaw(name);
-    if (checked) {
-      if (currentRaw.indexOf(rawName) < 0) currentRaw.push(rawName);
-    } else {
-      currentRaw = currentRaw.filter(function(v) { return v !== rawName; });
+    html += '</div></div></div>';
+    return html;
+  }
+
+  window.pftlToggleCheckStatusMenu = function(menuId) {
+    var menus = document.querySelectorAll('.pftl-status-menu');
+    for (var i = 0; i < menus.length; i++) {
+      if (menus[i].id !== menuId) menus[i].classList.remove('open');
     }
-    var normalized = _pftlNormalizeScheduleTypes(currentRaw);
-    assigns.schedule_types_raw = normalized.raw;
-    assigns.schedule_types = normalized.label;
-    _pftlSaveAssignments();
-    var out = document.getElementById('sch-type-selected');
-    if (out) out.textContent = normalized.label.length ? normalized.label.join(', ') : 'none';
+    var el = document.getElementById(menuId);
+    if (!el) return;
+    el.classList.toggle('open');
   };
 
-  window.pftlAddScheduleTypeOption = function() {
-    var sel = document.getElementById('sch-type-manual');
-    if (!sel) return;
-    var name = sel.value;
-    if (!name) return;
+  window.pftlApplyCheckOverride = function(scope, code, status) {
     var assigns = _pftlGetAssignments();
-    var currentRaw = (assigns.schedule_types_raw || []).slice();
-    if (currentRaw.length === 0 && (assigns.schedule_types || []).length > 0) {
-      currentRaw = _pftlNormalizeScheduleTypes(assigns.schedule_types).raw;
-    }
-    var rawName = _pftlScheduleTypeToRaw(name);
-    if (currentRaw.indexOf(rawName) < 0) currentRaw.push(rawName);
-    var normalized = _pftlNormalizeScheduleTypes(currentRaw);
-    assigns.schedule_types_raw = normalized.raw;
-    assigns.schedule_types = normalized.label;
+    if (!assigns.check_overrides) assigns.check_overrides = {};
+    assigns.check_overrides[_pftlOverrideKey(scope, code)] = {
+      status: status,
+      ts: new Date().toISOString()
+    };
     _pftlSaveAssignments();
-    var out = document.getElementById('sch-type-selected');
-    if (out) out.textContent = normalized.label.join(', ');
-    var cb = document.getElementById('sch-type-cb-' + rawName.replace(/[^a-z0-9]+/gi, '_'));
-    if (cb) cb.checked = true;
+    _pftlRender();
+  };
+
+  window.pftlClearCheckOverride = function(scope, code) {
+    var assigns = _pftlGetAssignments();
+    if (!assigns.check_overrides) assigns.check_overrides = {};
+    delete assigns.check_overrides[_pftlOverrideKey(scope, code)];
+    _pftlSaveAssignments();
+    _pftlRender();
   };
 
   function _pftlBuildCandidatePool(story, r) {
@@ -56867,16 +58685,15 @@ var P022_RuntimeValidation = {
     return html;
   }
 
-  function _pftlRenderStoryWho(story, r, newEntryDetected) {
+  function _pftlRenderStoryWho(story, r) {
     var pool = _pftlBuildCandidatePool(story, r);
     var le = story.legal_entity_account;
     var cps = story.counterparties || [];
     var assigns = _pftlGetAssignments();
     var defaultLe = assigns.legal_entity || (le ? le.name : '');
-    var defaultCp = assigns.counterparty || (cps.length > 0 ? cps[0].name : (assigns.manual_counterparty || ''));
+    var defaultCp = assigns.counterparty || (cps.length > 0 ? cps[0].name : '');
     if (!assigns.legal_entity && le) { assigns.legal_entity = le.name; _pftlSaveAssignments(); }
     if (!assigns.counterparty && cps.length > 0) { assigns.counterparty = cps[0].name; _pftlSaveAssignments(); }
-    var showCreateCounterparty = newEntryDetected || cps.length === 0;
 
     var html = '<div class="rs-section" id="rs-section-who">';
     html += '<div class="rs-section-header"><span class="rs-section-icon">A.</span> Who We Think This Is</div>';
@@ -56908,32 +58725,12 @@ var P022_RuntimeValidation = {
       var pctLabel2 = pool[j].final_confidence_pct != null ? ' (' + pool[j].final_confidence_pct + '%)' : '';
       html += '<option value="' + _pftlEsc(pool[j].name) + '"' + sel2 + '>' + _pftlEsc(pool[j].name) + pctLabel2 + '</option>';
     }
-    if (showCreateCounterparty) {
-      var createSel = (defaultCp && pool.every(function(p) { return p.name !== defaultCp; })) ? ' selected' : '';
-      html += '<option value="__create_new__"' + createSel + '>+ Create New Counterparty…</option>';
-    }
     html += '</select></label>';
     html += '<div id="rs-card-counter">';
     var cpEntity = null;
     for (var m = 0; m < pool.length; m++) { if (pool[m].name === defaultCp) { cpEntity = pool[m]; break; } }
-    if (cpEntity) {
-      html += _pftlRenderEntityCard(cpEntity, 'counterparty');
-    } else if (assigns.manual_counterparty) {
-      html += '<div class="rs-entity-card rs-entity-counter"><span class="rs-entity-name">' + _pftlEsc(assigns.manual_counterparty) + '</span><span class="rs-entity-meta"><span class="rs-badge rs-badge-counter">Counterparty</span><span class="rs-badge rs-badge-manual">Manual</span></span></div>';
-    } else {
-      html += _pftlRenderEntityCard(cpEntity, 'counterparty');
-    }
+    html += _pftlRenderEntityCard(cpEntity, 'counterparty');
     html += '</div></div>';
-    if (showCreateCounterparty) {
-      var manualPrefill = _pftlEsc(assigns.manual_counterparty || '');
-      var manualVisible = (assigns.manual_counterparty || defaultCp === '__create_new__') ? '' : ' style="display:none;"';
-      html += '<div id="rs-manual-counterparty-inline"' + manualVisible + '>';
-      html += '<div class="rs-manual-input-section">';
-      html += '<label class="rs-manual-input-label" for="rs-manual-counterparty-inline-input">Create Counterparty (Manual)</label>';
-      html += '<input type="text" id="rs-manual-counterparty-inline-input" class="rs-manual-input" value="' + manualPrefill + '" oninput="pftlOnManualCounterpartyInput(this)" />';
-      html += '<div id="rs-manual-counterparty-status" class="rs-manual-status ' + (assigns.manual_counterparty ? 'rs-manual-status-ok' : 'rs-manual-status-empty') + '">' + (assigns.manual_counterparty ? ('Confirmed: ' + manualPrefill) : 'Required — type the confirmed counterparty name to proceed.') + '</div>';
-      html += '</div></div>';
-    }
 
     if (story.requires_manual_confirmation) {
       html += '<div style="margin-top:8px;"><span class="rs-badge rs-badge-manual">Manual Confirmation Required</span></div>';
@@ -56979,19 +58776,8 @@ var P022_RuntimeValidation = {
     for (var w = 0; w < warns.length; w++) warns[w].remove();
 
     var assigns = _pftlGetAssignments();
-    if (role === 'counterparty' && chosen === '__create_new__') {
-      assigns.counterparty = null;
-      _pftlSaveAssignments();
-      var inline = document.getElementById('rs-manual-counterparty-inline');
-      if (inline) inline.style.display = '';
-      cardWrap.innerHTML = '<div class="rs-entity-card rs-entity-empty"><span class="rs-entity-name" style="font-style:italic;color:var(--text-3,#aaa);">Manual counterparty required</span></div>';
-      return;
-    }
     assigns[role] = chosen;
-    if (role === 'counterparty' && chosen) assigns.manual_counterparty = null;
     _pftlSaveAssignments();
-    var inlinePanel = document.getElementById('rs-manual-counterparty-inline');
-    if (inlinePanel && role === 'counterparty') inlinePanel.style.display = 'none';
     var pool = window._pftlCandidatePool || [];
     var entity = null;
     for (var i = 0; i < pool.length; i++) {
@@ -57099,16 +58885,18 @@ var P022_RuntimeValidation = {
     for (var i = 0; i < checks.length; i++) {
       var ck = checks[i];
       var st = ck.status || 'fail';
-      var badgeClass = st === 'pass' ? 'opp-badge-pass' : st === 'fail' ? 'opp-badge-fail' : 'opp-badge-review';
+      var effectiveStatus = _pftlGetEffectiveCheckStatus('opportunity_spine', ck.code, st);
       html += '<tr>';
       html += '<td class="opp-label">' + _pftlEsc(ck.label || ck.code) + '</td>';
-      html += '<td><span class="opp-status-badge ' + badgeClass + '">' + st.toUpperCase() + '</span></td>';
+      html += '<td>' + _pftlRenderCheckStatusEditor('opp', 'opportunity_spine', ck.code, st, i) + '</td>';
       var valueCell = ck.value ? _pftlEsc(String(ck.value)) : '\u2014';
       if (ck.code === 'OPP_CONTRACT_SUBTYPE' && ck.confidence) {
         valueCell += ' <span class="opp-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
       }
       html += '<td class="opp-value">' + valueCell + '</td>';
-      html += '<td class="opp-reason">' + (ck.reason ? _pftlEsc(ck.reason) : '') + '</td>';
+      var oppReason = ck.reason || '';
+      if (effectiveStatus !== st) oppReason = 'Analyst override \u2192 ' + String(effectiveStatus || '').toUpperCase() + (oppReason ? '. ' + oppReason : '');
+      html += '<td class="opp-reason">' + (oppReason ? _pftlEsc(oppReason) : '') + '</td>';
       html += '</tr>';
 
       if (ck.code === 'OPP_CONTRACT_SUBTYPE' && ck.candidates && ck.candidates.length > 0) {
@@ -57166,6 +58954,17 @@ var P022_RuntimeValidation = {
   }
 
   function _pftlRenderScheduleStructure(r) {
+    var _schTypeLabelMap = {
+      catalog_acquisition_masters: 'Catalog Acquisition (Masters)',
+      distro_sync_existing_masters: 'Distribution / Sync (Existing Masters)',
+      general_schedule: 'General Schedule',
+      termination_schedule: 'Termination Schedule'
+    };
+    function _schTypeLabel(val) {
+      if (!val) return '';
+      return _schTypeLabelMap[val] || val.replace(/_/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+    }
+
     var sch = r.schedule_structure;
     if (!sch) return '';
 
@@ -57175,6 +58974,77 @@ var P022_RuntimeValidation = {
 
     var html = '<div class="pftl-section sch-structure-section">';
     html += '<div class="pftl-section-title" style="display:flex;align-items:center;gap:8px;">Schedule Structure';
+    var overallClass = overall === 'pass' ? 'sch-badge-pass' : overall === 'fail' ? 'sch-badge-fail' : 'sch-badge-review';
+    html += ' <span class="sch-overall-badge ' + overallClass + '">' + overall.toUpperCase() + '</span>';
+    html += '</div>';
+
+    html += '<div class="sch-summary">';
+    if (summary.passed > 0) html += '<span class="sch-chip sch-chip-pass">' + summary.passed + ' Passed</span>';
+    if (summary.review > 0) html += '<span class="sch-chip sch-chip-review">' + summary.review + ' Review</span>';
+    if (summary.failed > 0) html += '<span class="sch-chip sch-chip-fail">' + summary.failed + ' Failed</span>';
+    html += '</div>';
+
+    html += '<table class="sch-table"><thead><tr>';
+    html += '<th>Check</th><th>Status</th><th>Value</th><th>Reason</th>';
+    html += '</tr></thead><tbody>';
+
+    for (var i = 0; i < checks.length; i++) {
+      var ck = checks[i];
+      var st = ck.status || 'fail';
+      var effectiveStatus = _pftlGetEffectiveCheckStatus('schedule_structure', ck.code, st);
+      html += '<tr>';
+      html += '<td class="sch-label">' + _pftlEsc(ck.label || ck.code) + '</td>';
+      html += '<td>' + _pftlRenderCheckStatusEditor('sch', 'schedule_structure', ck.code, st, i) + '</td>';
+      var displayVal = ck.value;
+      if (ck.code === 'SCH_TYPE' && displayVal) displayVal = _schTypeLabel(displayVal);
+      var valueCell = displayVal ? _pftlEsc(String(displayVal)) : '\u2014';
+      if (ck.confidence) {
+        valueCell += ' <span class="sch-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
+      }
+      html += '<td class="sch-value">' + valueCell + '</td>';
+      var reasonText = ck.reason || '';
+      if (ck.code === 'SCH_TYPE' && ck.value && reasonText) {
+        reasonText = reasonText.replace(new RegExp("'" + ck.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "'", 'g'), "'" + _schTypeLabel(ck.value) + "'");
+        reasonText = reasonText.replace(new RegExp('\\(' + ck.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '(' + _schTypeLabel(ck.value));
+      }
+      if (effectiveStatus !== st) reasonText = 'Analyst override \u2192 ' + String(effectiveStatus || '').toUpperCase() + (reasonText ? '. ' + reasonText : '');
+      html += '<td class="sch-reason">' + (reasonText ? _pftlEsc(reasonText) : '') + '</td>';
+      html += '</tr>';
+
+      if (ck.code === 'SCH_TYPE' && ck.candidates && ck.candidates.length > 0) {
+        html += '<tr class="sch-candidates-row"><td colspan="4">';
+        html += '<details>';
+        html += '<summary class="sch-candidates-toggle">Show schedule type candidates (' + ck.candidates.length + ')</summary>';
+        html += '<div class="sch-candidates-list">';
+        for (var j = 0; j < ck.candidates.length; j++) {
+          var cand = ck.candidates[j];
+          html += '<div class="sch-candidate-card">';
+          html += '<span class="sch-candidate-name">' + _pftlEsc(cand.value) + '</span>';
+          html += '<span class="sch-conf-badge">' + Math.round((cand.confidence || 0) * 100) + '%</span>';
+          if (cand.evidence && cand.evidence.length > 0) {
+            for (var e = 0; e < cand.evidence.length; e++) {
+              html += '<span class="sch-evidence-chip">' + _pftlEsc(cand.evidence[e]) + '</span>';
+            }
+          }
+          html += '</div>';
+        }
+        html += '</div></details></td></tr>';
+      }
+    }
+
+    html += '</tbody></table></div>';
+    return html;
+  }
+
+  function _pftlRenderFinancialsReadiness(r) {
+    var fin = r.financials_readiness;
+    if (!fin) return '';
+    var checks = fin.checks || [];
+    var summary = fin.summary || {};
+    var overall = fin.status || 'fail';
+
+    var html = '<div class="pftl-section pftl-fin-section">';
+    html += '<div class="pftl-section-title" style="display:flex;align-items:center;gap:8px;">Financials Readiness';
     var overallClass = overall === 'pass' ? 'sch-badge-pass' : overall === 'fail' ? 'sch-badge-fail' : 'sch-badge-review';
     html += ' <span class="sch-overall-badge ' + overallClass + '">' + overall.toUpperCase() + '</span>';
     html += '</div>';
@@ -57203,63 +59073,105 @@ var P022_RuntimeValidation = {
       html += '<td class="sch-value">' + valueCell + '</td>';
       html += '<td class="sch-reason">' + (ck.reason ? _pftlEsc(ck.reason) : '') + '</td>';
       html += '</tr>';
-
-      if (ck.code === 'SCH_TYPE' && ck.candidates && ck.candidates.length > 0) {
-        var assignsSch = _pftlGetAssignments();
-        if (
-          (!assignsSch.schedule_types_raw || assignsSch.schedule_types_raw.length === 0) &&
-          (!assignsSch.schedule_types || assignsSch.schedule_types.length === 0)
-        ) {
-          var defaultRaw = ck.candidates.map(function(c) { return _pftlScheduleTypeToRaw(c.value); }).slice(0, 1);
-          var defaultNorm = _pftlNormalizeScheduleTypes(defaultRaw);
-          assignsSch.schedule_types_raw = defaultNorm.raw;
-          assignsSch.schedule_types = defaultNorm.label;
-          _pftlSaveAssignments();
-        }
-        var selectedRaw = (assignsSch.schedule_types_raw || []).slice();
-        if (selectedRaw.length === 0 && (assignsSch.schedule_types || []).length > 0) {
-          selectedRaw = _pftlNormalizeScheduleTypes(assignsSch.schedule_types).raw;
-        }
-        var selectedLabel = _pftlNormalizeScheduleTypes(selectedRaw).label;
-        html += '<tr class="sch-candidates-row"><td colspan="4">';
-        html += '<details>';
-        html += '<summary class="sch-candidates-toggle">Show schedule type candidates (' + ck.candidates.length + ')</summary>';
-        html += '<div class="sch-candidates-list">';
-        for (var j = 0; j < ck.candidates.length; j++) {
-          var cand = ck.candidates[j];
-          var candRaw = _pftlScheduleTypeToRaw(cand.value);
-          var candLabel = _pftlScheduleTypeToLabel(candRaw);
-          var cbId = 'sch-type-cb-' + String(candRaw).replace(/[^a-z0-9]+/gi, '_');
-          var checked = selectedRaw.indexOf(candRaw) >= 0 ? ' checked' : '';
-          html += '<div class="sch-candidate-card">';
-          html += '<label class="sch-type-check" for="' + cbId + '">';
-          html += '<input id="' + cbId + '" type="checkbox"' + checked + ' onchange="pftlToggleScheduleType(\'' + _pftlEsc(candRaw) + '\', this.checked)" />';
-          html += '</label>';
-          html += '<span class="sch-candidate-name">' + _pftlEsc(candLabel) + '</span>';
-          html += '<span class="sch-conf-badge">' + Math.round((cand.confidence || 0) * 100) + '%</span>';
-          if (cand.evidence && cand.evidence.length > 0) {
-            for (var e = 0; e < cand.evidence.length; e++) {
-              html += '<span class="sch-evidence-chip">' + _pftlEsc(cand.evidence[e]) + '</span>';
-            }
-          }
-          html += '</div>';
-        }
-        html += '<div class="sch-type-selector">';
-        html += '<div class="sch-type-selected">Selected schedule types: <strong id="sch-type-selected">' + _pftlEsc(selectedLabel.join(', ') || 'none') + '</strong></div>';
-        html += '<div class="sch-type-manual">';
-        html += '<select id="sch-type-manual">';
-        html += '<option value="">Add schedule type…</option>';
-        for (var si = 0; si < _SCHEDULE_TYPE_OPTIONS.length; si++) {
-          html += '<option value="' + _pftlEsc(_SCHEDULE_TYPE_OPTIONS[si]) + '">' + _pftlEsc(_SCHEDULE_TYPE_OPTIONS[si]) + '</option>';
-        }
-        html += '</select>';
-        html += '<button type="button" onclick="pftlAddScheduleTypeOption()">Add</button>';
-        html += '</div></div>';
-        html += '</div></details></td></tr>';
-      }
     }
 
     html += '</tbody></table></div>';
+    return html;
+  }
+
+  function _pftlRenderAddonsReadiness(r) {
+    var addon = r.addons_readiness;
+    if (!addon) return '';
+    var checks = addon.checks || [];
+    var summary = addon.summary || {};
+    var overall = addon.status || 'fail';
+
+    var html = '<div class="pftl-section pftl-addon-section">';
+    html += '<div class="pftl-section-title" style="display:flex;align-items:center;gap:8px;">V2 Add-ons Readiness';
+    var overallClass = overall === 'pass' ? 'sch-badge-pass' : overall === 'fail' ? 'sch-badge-fail' : 'sch-badge-review';
+    html += ' <span class="sch-overall-badge ' + overallClass + '">' + overall.toUpperCase() + '</span>';
+    html += '</div>';
+
+    html += '<div class="sch-summary">';
+    if (summary.passed > 0) html += '<span class="sch-chip sch-chip-pass">' + summary.passed + ' Passed</span>';
+    if (summary.review > 0) html += '<span class="sch-chip sch-chip-review">' + summary.review + ' Review</span>';
+    if (summary.failed > 0) html += '<span class="sch-chip sch-chip-fail">' + summary.failed + ' Failed</span>';
+    html += '</div>';
+
+    html += '<table class="sch-table"><thead><tr>';
+    html += '<th>Check</th><th>Status</th><th>Value</th><th>Reason</th>';
+    html += '</tr></thead><tbody>';
+
+    for (var i = 0; i < checks.length; i++) {
+      var ck = checks[i];
+      var st = ck.status || 'fail';
+      var badgeClass = st === 'pass' ? 'sch-badge-pass' : st === 'fail' ? 'sch-badge-fail' : 'sch-badge-review';
+      html += '<tr>';
+      html += '<td class="sch-label">' + _pftlEsc(ck.label || ck.code) + '</td>';
+      html += '<td><span class="sch-status-badge ' + badgeClass + '">' + st.toUpperCase() + '</span></td>';
+      var valueCell = ck.value ? _pftlEsc(String(ck.value)) : '\u2014';
+      if (ck.confidence) {
+        valueCell += ' <span class="sch-conf-badge">' + Math.round(ck.confidence * 100) + '%</span>';
+      }
+      html += '<td class="sch-value">' + valueCell + '</td>';
+      html += '<td class="sch-reason">' + (ck.reason ? _pftlEsc(ck.reason) : '') + '</td>';
+      html += '</tr>';
+    }
+
+    html += '</tbody></table></div>';
+    return html;
+  }
+
+  function _pftlRenderHealthScore(r) {
+    var hs = r.health_score;
+    if (!hs) return '';
+
+    var band = hs.band || 'NEEDS_DETAILED_REVIEW';
+    var calibrated = hs.calibrated_score || 0;
+    var raw = hs.raw_score || 0;
+    var penalty = hs.gate_penalty || 0;
+    var sections = hs.section_scores || {};
+
+    var bandClass = 'hs-band-review';
+    var bandLabel = 'Needs Detailed Review';
+    if (band === 'VERY_HIGH_CONFIDENCE_HEALTHY') { bandClass = 'hs-band-healthy'; bandLabel = 'Very High Confidence'; }
+    else if (band === 'HEALTHY_REVIEW_SPOTCHECK') { bandClass = 'hs-band-spotcheck'; bandLabel = 'Healthy \u2014 Spot Check'; }
+    else if (band === 'MODERATE_CONFIDENCE') { bandClass = 'hs-band-moderate'; bandLabel = 'Moderate Confidence'; }
+
+    var html = '<div class="pftl-section pftl-health-section">';
+    html += '<div class="pftl-section-title" style="display:flex;align-items:center;gap:8px;">Contract Health Score';
+    html += ' <span class="hs-band-badge ' + bandClass + '">' + _pftlEsc(bandLabel) + '</span>';
+    html += '</div>';
+
+    html += '<div class="hs-score-row">';
+    html += '<div class="hs-score-card"><div class="hs-score-value">' + Math.round(calibrated * 100) + '%</div><div class="hs-score-label">Calibrated</div></div>';
+    html += '<div class="hs-score-card"><div class="hs-score-value">' + Math.round(raw * 100) + '%</div><div class="hs-score-label">Raw</div></div>';
+    if (penalty > 0) {
+      html += '<div class="hs-score-card hs-penalty"><div class="hs-score-value">-' + Math.round(penalty * 100) + '%</div><div class="hs-score-label">Gate Penalty</div></div>';
+    }
+    html += '</div>';
+
+    html += '<div class="hs-sections">';
+    var sectionLabels = {opportunity_spine:'Opportunity Spine', schedule_structure:'Schedule Structure', financials_readiness:'Financials', addons_readiness:'Add-ons', entity_resolution:'Entity Resolution'};
+    var sectionKeys = ['opportunity_spine','schedule_structure','financials_readiness','addons_readiness','entity_resolution'];
+    for (var i = 0; i < sectionKeys.length; i++) {
+      var sk = sectionKeys[i];
+      var sv = sections[sk] || 0;
+      var pct = Math.round(sv * 100);
+      var barClass = pct >= 80 ? 'hs-bar-pass' : pct >= 50 ? 'hs-bar-review' : 'hs-bar-fail';
+      html += '<div class="hs-section-row">';
+      html += '<span class="hs-section-label">' + sectionLabels[sk] + '</span>';
+      html += '<div class="hs-bar-track"><div class="hs-bar-fill ' + barClass + '" style="width:' + pct + '%;"></div></div>';
+      html += '<span class="hs-section-pct">' + pct + '%</span>';
+      html += '</div>';
+    }
+    html += '</div>';
+
+    if (hs.calibration_version) {
+      html += '<div class="hs-version">Calibration: ' + _pftlEsc(hs.calibration_version) + '</div>';
+    }
+
+    html += '</div>';
     return html;
   }
 

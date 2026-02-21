@@ -365,9 +365,13 @@ def run_preflight(pages_data):
     opportunity_spine = build_opportunity_spine(full_text, resolution_story)
     schedule_structure = build_schedule_structure(full_text, resolution_story, opportunity_spine)
     financials_readiness = build_financials_readiness(full_text, opportunity_spine, schedule_structure)
-    v2_addons_readiness = build_v2_addons_readiness(full_text, opportunity_spine)
+    addons_readiness = build_v2_addons_readiness(full_text, opportunity_spine)
     contract_type_val = _opp_check_value(opportunity_spine, "OPP_CONTRACT_TYPE")
     contract_classification = classify_contract(contract_type_val, full_text)
+    health_score = compute_preflight_health_score(
+        gate_color, opportunity_spine, schedule_structure,
+        financials_readiness, addons_readiness, resolution_story,
+    )
 
     return {
         "doc_mode": doc_mode,
@@ -380,7 +384,8 @@ def run_preflight(pages_data):
         "opportunity_spine": opportunity_spine,
         "schedule_structure": schedule_structure,
         "financials_readiness": financials_readiness,
-        "v2_addons_readiness": v2_addons_readiness,
+        "addons_readiness": addons_readiness,
+        "health_score": health_score,
         "contract_classification": contract_classification,
         "page_classifications": page_results,
         "extracted_text": full_text[:50000],
@@ -2189,3 +2194,76 @@ def _run_salesforce_match(extracted_headers, full_text=""):
     ))
 
     return results
+
+
+def _module_score(module):
+    if not module:
+        return 0.0
+    checks = module.get("checks", [])
+    if not checks:
+        return 0.0
+    total = 0.0
+    for c in checks:
+        st = c.get("status", "fail")
+        conf = float(c.get("confidence", 0))
+        if st == "pass":
+            total += conf
+        elif st == "review":
+            total += conf * 0.5
+    return total / len(checks)
+
+
+def _entity_score(story):
+    if not story:
+        return 0.0
+    has_legal = bool(story.get("legal_entity_account"))
+    has_counter = bool(story.get("counterparties"))
+    if has_legal and has_counter:
+        return 1.0
+    if has_legal:
+        return 0.6
+    if has_counter:
+        return 0.3
+    return 0.0
+
+
+_GATE_PENALTIES = {"GREEN": 0.0, "YELLOW": 0.15, "RED": 0.35}
+
+_SECTION_WEIGHTS = {
+    "opportunity_spine": 0.25,
+    "schedule_structure": 0.15,
+    "financials_readiness": 0.25,
+    "addons_readiness": 0.15,
+    "entity_resolution": 0.20,
+}
+
+
+def compute_preflight_health_score(gate_color, opportunity_spine, schedule_structure, financials_readiness, addons_readiness, resolution_story):
+    from server.contract_health_runtime import (
+        calibrate_contract_health_score,
+        classify_contract_health_band,
+        get_calibration_version,
+    )
+
+    section_scores = {
+        "opportunity_spine": _module_score(opportunity_spine),
+        "schedule_structure": _module_score(schedule_structure),
+        "financials_readiness": _module_score(financials_readiness),
+        "addons_readiness": _module_score(addons_readiness),
+        "entity_resolution": _entity_score(resolution_story),
+    }
+
+    raw = sum(section_scores[k] * _SECTION_WEIGHTS[k] for k in _SECTION_WEIGHTS)
+    gate_penalty = _GATE_PENALTIES.get(gate_color, 0.0)
+    penalized = max(0.0, raw - gate_penalty)
+    calibrated = calibrate_contract_health_score(penalized)
+    band = classify_contract_health_band(calibrated)
+
+    return {
+        "raw_score": round(raw, 6),
+        "calibrated_score": round(calibrated, 6),
+        "band": band,
+        "calibration_version": get_calibration_version(),
+        "section_scores": {k: round(v, 6) for k, v in section_scores.items()},
+        "gate_penalty": gate_penalty,
+    }

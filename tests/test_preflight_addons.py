@@ -96,8 +96,8 @@ class TestBuildAddonsReadiness:
             "page": 1,
         }]
         result = run_preflight(pages)
-        assert "v2_addons_readiness" in result
-        addon = result["v2_addons_readiness"]
+        assert "addons_readiness" in result
+        addon = result["addons_readiness"]
         assert "status" in addon
         assert "checks" in addon
         assert "summary" in addon
