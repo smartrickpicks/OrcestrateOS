@@ -15203,7 +15203,11 @@
             target_scope: r.target_scope,
             proposed_change: r.proposed_change,
             author: r.author,
-            created_at_utc: r.created_at_utc
+            created_at_utc: r.created_at_utc,
+            patch_kind: r.patch_kind || null,
+            status: r.status || null,
+            evidence_pack: r.evidence_pack || null,
+            preflight_context: r.preflight_context || null
           };
         })
       }, null, 2);
@@ -59584,7 +59588,16 @@ var P022_RuntimeValidation = {
     _pftlSaveAssignments();
     statusEl.className = 'rs-manual-status rs-manual-status-ok';
     statusEl.textContent = 'Confirmed: ' + val;
+    var footerEl = document.querySelector('.pftl-footer');
+    if (footerEl && _pftlState.result) {
+      var tmp = document.createElement('div');
+      tmp.innerHTML = _pftlRenderFooter(_pftlState.result);
+      var newFooter = tmp.firstChild;
+      if (newFooter) footerEl.parentNode.replaceChild(newFooter, footerEl);
+    }
   };
+
+
 
   var _pftlAssignmentsStore = {};
   (function() {
