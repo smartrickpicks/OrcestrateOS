@@ -2507,6 +2507,22 @@
     .ev-reader-loading { text-align: center; padding: 40px 20px; color: var(--text-3); }
     .ev-reader-loading-spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border-1); border-top-color: var(--accent-2); border-radius: 50%; animation: ev-spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
     @keyframes ev-spin { to { transform: rotate(360deg); } }
+    /* v1.6.58: Unified context menu base — shared by Grid, Reader, and SRR surfaces */
+    .os-ctx-menu { position: fixed; z-index: 99999; background: var(--bg-1); border: 1px solid var(--border-1); border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.06); padding: 5px 0; min-width: 190px; font-size: 0.84em; font-family: inherit; animation: osCtxFadeIn 0.12s ease-out; }
+    @keyframes osCtxFadeIn { from { opacity: 0; transform: scale(0.96) translateY(-4px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .os-ctx-item { display: flex; align-items: center; gap: 10px; padding: 7px 16px; cursor: pointer; color: #1e293b; white-space: nowrap; border: none; background: none; width: 100%; text-align: left; font-size: inherit; font-family: inherit; outline: none; transition: background 0.1s; line-height: 1.4; }
+    .os-ctx-item:hover, .os-ctx-item:focus { background: #e8f0fe; }
+    .os-ctx-item:active { background: #c8ddf8; }
+    .os-ctx-item[disabled] { color: #b0b8c4; cursor: not-allowed; opacity: 0.5; }
+    .os-ctx-item[disabled]:hover, .os-ctx-item[disabled]:focus { background: transparent; }
+    .os-ctx-item .ctx-icon { width: 20px; text-align: center; flex-shrink: 0; font-size: 1.08em; line-height: 1; }
+    .os-ctx-sep { height: 1px; background: var(--border-1); margin: 3px 10px; }
+    .os-ctx-header { padding: 6px 16px 3px; font-size: 0.68em; color: #8896a8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; line-height: 1.3; }
+    .os-ctx-header:first-child { padding-top: 8px; }
+    html[data-theme="dark"] .os-ctx-menu { background: var(--bg-2); border: 1px solid var(--border-soft); box-shadow: var(--shadow-2); }
+    html[data-theme="dark"] .os-ctx-item { color: var(--text-secondary); }
+    html[data-theme="dark"] .os-ctx-item:hover { background: var(--bg-3); color: var(--text-primary); }
+
     .ev-sel-menu { position: fixed; z-index: 9999; background: var(--bg-1); border: 1px solid var(--border-1); border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.06); padding: 5px 0; min-width: 190px; display: none; font-family: inherit; animation: evSelFadeIn 0.12s ease-out; }
     @keyframes evSelFadeIn { from { opacity: 0; transform: scale(0.96) translateY(-4px); } to { opacity: 1; transform: scale(1) translateY(0); } }
     .ev-sel-menu-item { display: flex; align-items: center; gap: 10px; padding: 6px 16px; font-size: 0.82em; color: #1e293b; cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-family: inherit; outline: none; transition: background 0.1s; white-space: nowrap; line-height: 1.4; }
@@ -16741,7 +16757,7 @@
         laneEl.innerHTML = '<span class="ev-cor-lane-icon">&#10003;</span><span>Minor encoding fix — will be auto-applied</span>';
       } else {
         laneEl.className = 'ev-cor-lane-preview ev-cor-lane-risky';
-        laneEl.innerHTML = '<span class="ev-cor-lane-icon">&#9888;</span><span>Risky edit (numbers, currency, date, or large change) — requires verifier approval</span>';
+        laneEl.innerHTML = '<span class="ev-cor-lane-icon">&#9888;</span><span>Substantive edit — will open Evidence Pack form (WHEN / THEN / BECAUSE)</span>';
       }
     }
 
@@ -16804,6 +16820,49 @@
         if (typeof showToast === 'function') showToast('Corrected text is the same as the original', 'warning');
         return;
       }
+
+      // v1.6.58: Positive Friction — risky edits route through patch submit modal
+      // with WHEN/THEN/BECAUSE evidence pack. Minor encoding fixes stay on the fast path.
+      var classification = _evCorClassify(originalValue, correctedValue);
+      if (classification === 'risky') {
+        var recordId = payload.record_id || _evState.activeRecordId;
+        var fieldKey = payload.field_key || 'reader_text';
+        _evCorModalClose();
+
+        // Set up srrState so the patch modal has context
+        srrState.patchType = 'correction';
+        srrState.proposedChanges = {};
+        srrState.proposedChanges[fieldKey] = {
+          field: fieldKey,
+          label: fieldKey === 'reader_text' ? 'Document Text' : fieldKey,
+          from: originalValue,
+          to: correctedValue
+        };
+        // Pre-populate draft with encoding context for auto-fill
+        srrState.patchDraft.patch_type = 'correction';
+        srrState.patchDraft.observation_type = payload.moji_class === 'suspect_mojibake' ? 'formatting_issue' : 'incorrect_value';
+        srrState.patchDraft.expected_type = payload.moji_class === 'suspect_mojibake' ? 'standardize_format' : 'correct_value';
+        srrState.patchDraft.repro_type = 'doc_evidence_mismatch';
+        srrState.patchDraft.justification = '';
+        // Carry evidence metadata for the patch
+        srrState.patchDraft.metadata = srrState.patchDraft.metadata || {};
+        srrState.patchDraft.metadata.ev_reader_source = true;
+        srrState.patchDraft.metadata.moji_class = payload.moji_class || 'ok';
+        srrState.patchDraft.metadata.evidence_page = payload.page;
+        srrState.patchDraft.metadata.evidence_char_start = payload.char_start;
+        srrState.patchDraft.metadata.evidence_char_end = payload.char_end;
+        srrState.patchDraft.metadata.document_id = payload.document_id;
+
+        // Store record context
+        if (recordId) srrState.currentRecordKey = recordId;
+        srrState._evReaderSource = true;
+
+        var changes = Object.values(srrState.proposedChanges);
+        _patchModalOpen('correction', changes, '');
+        console.log('[EV-COR] Risky edit routed to patch submit modal', { recordId: recordId, classification: classification });
+        return;
+      }
+
       var submitBtn = document.getElementById('ev-cor-submit-btn');
       var resultArea = document.getElementById('ev-cor-result-area');
       var footerStatus = document.getElementById('ev-cor-footer-status');
@@ -37038,6 +37097,7 @@
       localStorage.setItem(key, isNowCollapsed ? '1' : '0');
     }
 
+    // v1.6.58: SRR field context menu — now uses unified os-ctx-menu class + ESC key
     function srrFieldContextMenu(event, fieldKey) {
       event.preventDefault();
       event.stopPropagation();
@@ -37047,32 +37107,59 @@
       var state = srrState.fieldStates[fieldKey] || 'todo';
       var menu = document.createElement('div');
       menu.id = 'srr-field-ctx-menu';
-      menu.className = 'context-menu';
-      menu.style.cssText = 'position:fixed;top:' + event.clientY + 'px;left:' + event.clientX + 'px;z-index:10000;min-width:160px;padding:4px 0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.15);';
+      menu.className = 'os-ctx-menu';
+      menu.setAttribute('role', 'menu');
+      menu.setAttribute('aria-label', 'Field actions');
+      menu.style.top = event.clientY + 'px';
+      menu.style.left = event.clientX + 'px';
+
+      var headerDiv = document.createElement('div');
+      headerDiv.className = 'os-ctx-header';
+      headerDiv.textContent = state === 'todo' ? 'Field Actions' : 'Field State';
+      menu.appendChild(headerDiv);
+
       var items = [];
       if (state === 'todo') {
-        items.push({label: '&#10003; Verify', action: "srrVerifyField('" + fieldKey + "')"});
-        items.push({label: '&#9998; Request Info (RFI)', action: "srrRfiField('" + fieldKey + "')"});
-        items.push({label: '&#9873; Flag / Block', action: "srrBlacklistField('" + fieldKey + "')"});
+        items.push({icon: '&#10003;', label: 'Verify', action: "srrVerifyField('" + fieldKey + "')"});
+        items.push({icon: '&#9998;', label: 'Request Info (RFI)', action: "srrRfiField('" + fieldKey + "')"});
+        items.push({icon: '&#9873;', label: 'Flag / Block', action: "srrBlacklistField('" + fieldKey + "')"});
       } else {
-        items.push({label: '&#8634; Reset to TODO', action: "srrResetFieldState('" + fieldKey + "')"});
+        items.push({icon: '&#8634;', label: 'Reset to TODO', action: "srrResetFieldState('" + fieldKey + "')"});
       }
-      items.push({label: '&#128269; Select field', action: "srrSelectField('" + fieldKey + "')"});
-      items.forEach(function(it) {
-        var div = document.createElement('div');
-        div.className = 'context-menu-item';
-        div.style.cssText = 'padding:8px 16px;cursor:pointer;font-size:0.85em;';
-        div.innerHTML = it.label;
-        div.setAttribute('onclick', it.action + '; document.getElementById("srr-field-ctx-menu").remove();');
-        menu.appendChild(div);
+      // Separator before utility action
+      var sep = document.createElement('div');
+      sep.className = 'os-ctx-sep';
+      menu.appendChild(sep);
+      items.push({icon: '&#128269;', label: 'Select field', action: "srrSelectField('" + fieldKey + "')"});
+
+      items.forEach(function(it, idx) {
+        var btn = document.createElement('button');
+        btn.className = 'os-ctx-item';
+        btn.setAttribute('role', 'menuitem');
+        btn.innerHTML = '<span class="ctx-icon">' + it.icon + '</span>' + it.label;
+        btn.setAttribute('onclick', it.action + '; document.getElementById("srr-field-ctx-menu").remove();');
+        // Insert separator before last item (Select field)
+        menu.appendChild(btn);
       });
       document.body.appendChild(menu);
+
+      // Dismiss on click-away + ESC (consistent with grid/reader menus)
+      function _srrCtxDismiss() {
+        var m = document.getElementById('srr-field-ctx-menu');
+        if (m) m.remove();
+        document.removeEventListener('click', _srrCtxClickAway);
+        document.removeEventListener('keydown', _srrCtxEsc);
+      }
+      function _srrCtxClickAway(e) {
+        var m = document.getElementById('srr-field-ctx-menu');
+        if (m && !m.contains(e.target)) _srrCtxDismiss();
+      }
+      function _srrCtxEsc(e) {
+        if (e.key === 'Escape') _srrCtxDismiss();
+      }
       setTimeout(function() {
-        function dismissCtx(e) {
-          var m = document.getElementById('srr-field-ctx-menu');
-          if (m && !m.contains(e.target)) { m.remove(); document.removeEventListener('click', dismissCtx); }
-        }
-        document.addEventListener('click', dismissCtx);
+        document.addEventListener('click', _srrCtxClickAway);
+        document.addEventListener('keydown', _srrCtxEsc);
       }, 50);
     }
     
@@ -40117,6 +40204,69 @@
       _patchModalOpen(patchType, changes, draft.justification || '');
     }
 
+    // v1.6.58: Auto-populate WHEN/THEN/REPRO from signal context (Positive Friction)
+    // Maps signal types and field context to sensible defaults so the user
+    // only has to confirm (or override) rather than manually re-state the obvious.
+    function _patchInferDropdowns(changes) {
+      var result = { observation: '', expected: '', repro: '' };
+      if (!changes || changes.length === 0) return result;
+
+      // Gather signals for the first changed field
+      var recordId = '';
+      if (srrState.currentRecord) {
+        recordId = (srrState.currentRecord._identity && srrState.currentRecord._identity.record_id) || srrState.currentRecord.record_id || srrState.currentRecordKey || '';
+      }
+      var fieldKey = changes[0].field || '';
+      var signals = [];
+      if (recordId && fieldKey && typeof signalStore !== 'undefined' && signalStore.signals_by_cell && signalStore.signals_by_cell[recordId]) {
+        signals = signalStore.signals_by_cell[recordId][fieldKey] || [];
+      }
+
+      // Build a set of signal types on this field
+      var sigTypes = {};
+      for (var i = 0; i < signals.length; i++) {
+        sigTypes[signals[i].signal_type || ''] = true;
+      }
+
+      // Infer from signal type
+      if (sigTypes['MISSING_REQUIRED']) {
+        result.observation = 'missing_value';
+        result.expected = 'populate_field';
+        result.repro = 'breaks_qa_gate';
+      } else if (sigTypes['OCR_UNREADABLE']) {
+        result.observation = 'incorrect_value';
+        result.expected = 'correct_value';
+        result.repro = 'doc_evidence_mismatch';
+      } else if (sigTypes['PICKLIST_INVALID']) {
+        result.observation = 'incorrect_value';
+        result.expected = 'correct_value';
+        result.repro = 'breaks_salesforce_rule';
+      } else if (sigTypes['ADDRESS_INCOMPLETE_CANDIDATE'] || sigTypes['ADDRESS_INCOMPLETE_AMBIGUOUS']) {
+        result.observation = 'missing_value';
+        result.expected = 'populate_field';
+        result.repro = 'breaks_qa_gate';
+      } else if (sigTypes['ADDRESS_SYSTEM_CORRECTED']) {
+        result.observation = 'formatting_issue';
+        result.expected = 'standardize_format';
+        result.repro = 'resolver_mismatch';
+      }
+
+      // Infer from value change shape (fallback when no signal)
+      if (!result.observation && changes[0]) {
+        var from = String(changes[0].from || '').trim();
+        var to = String(changes[0].to || '').trim();
+        if (!from && to) {
+          result.observation = 'missing_value';
+          result.expected = 'populate_field';
+        } else if (from && to && from !== to) {
+          result.observation = 'incorrect_value';
+          result.expected = 'correct_value';
+        }
+      }
+
+      return result;
+    }
+
     function _patchModalOpen(patchType, changes, prefillJustification) {
       var existing = document.getElementById('patch-submit-modal-root');
       if (existing) existing.remove();
@@ -40149,6 +40299,16 @@
       }
 
       var draft = srrState.patchDraft || {};
+
+      // v1.6.58: Auto-populate WHEN/THEN/REPRO from signal context (positive friction)
+      // Draft values take precedence; inference fills gaps so users confirm, not re-state
+      if (patchType === 'correction') {
+        var inferred = _patchInferDropdowns(changes);
+        if (!draft.observation_type && inferred.observation) draft.observation_type = inferred.observation;
+        if (!draft.expected_type && inferred.expected) draft.expected_type = inferred.expected;
+        if (!draft.repro_type && inferred.repro) draft.repro_type = inferred.repro;
+      }
+
       var html = '<div class="patch-submit-modal-title">' +
         '<span>Submit Patch Request</span>' +
         '<span class="patch-submit-modal-badge ' + badgeClass + '">' + typeLabel + '</span></div>';
@@ -58289,8 +58449,8 @@ var P022_RuntimeValidation = {
     </div>
 
 <!-- Grid Context Menu -->
-<div id="grid-ctx-menu" class="grid-ctx-menu" role="menu" aria-label="Grid actions"></div>
-<div id="ev-sel-menu" class="ev-sel-menu" role="menu" aria-label="Reader selection actions"></div>
+<div id="grid-ctx-menu" class="grid-ctx-menu os-ctx-menu" role="menu" aria-label="Grid actions"></div>
+<div id="ev-sel-menu" class="ev-sel-menu os-ctx-menu" role="menu" aria-label="Reader selection actions"></div>
 
 <div id="ev-rfi-modal-overlay" class="ev-rfi-modal-overlay">
   <div class="ev-rfi-modal">
