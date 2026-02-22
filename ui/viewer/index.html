@@ -55526,8 +55526,10 @@ var P022_RuntimeValidation = {
 
   function _pftlHandleResponse(resp) {
     if (resp.status === 403) {
-      return resp.json().then(function(body) {
-        var msg = (body.error && body.error.message) || 'Forbidden';
+      return resp.text().then(function(text) {
+        var body;
+        try { body = JSON.parse(text); } catch(e) { body = null; }
+        var msg = (body && body.error && body.error.message) || 'Forbidden';
         if (msg === 'Preflight is in admin sandbox mode.') {
           _pftlState.forbidden = true;
           _pftlState.running = false;
@@ -55539,8 +55541,10 @@ var P022_RuntimeValidation = {
       });
     }
     if (!resp.ok) {
-      return resp.json().then(function(body) {
-        var msg = (body.error && body.error.message) || ('HTTP ' + resp.status);
+      return resp.text().then(function(text) {
+        var body;
+        try { body = JSON.parse(text); } catch(e) { body = null; }
+        var msg = (body && body.error && body.error.message) || ('HTTP ' + resp.status);
         throw new Error(msg);
       });
     }
