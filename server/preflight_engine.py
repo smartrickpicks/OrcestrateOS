@@ -961,7 +961,11 @@ def _enrich_checks_with_evidence(checks, full_text):
         if ck.get("evidence_context"):
             continue  # already has evidence
         search_terms = []
-        # Try the value first
+        # Try evidence hints first (actual matched keywords from _extract_* functions)
+        hints = ck.pop("_evidence_hints", None)
+        if hints:
+            search_terms.extend(hints)
+        # Try the value
         val = ck.get("value")
         if val and isinstance(val, str) and len(val) >= 3:
             search_terms.append(val)
@@ -1233,10 +1237,10 @@ def _opp_check_value(opportunity_spine, check_code):
 def _extract_schedule_presence(full_text, opportunity_spine):
     if not full_text:
         return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
-    has_schedule = re.search(r'\b(schedule|exhibit|appendix|annex)\b', full_text, re.IGNORECASE) is not None
+    m = re.search(r'\b(schedule|exhibit|appendix|annex)\b', full_text, re.IGNORECASE)
     ctype = (_opp_check_value(opportunity_spine, "OPP_CONTRACT_TYPE") or "").lower()
-    if has_schedule:
-        return {"status": "pass", "confidence": 0.9, "value": "Schedule references detected", "reason": "Found schedule/exhibit references in document text"}
+    if m:
+        return {"status": "pass", "confidence": 0.9, "value": "Schedule references detected", "reason": "Found schedule/exhibit references in document text", "_evidence_hints": [m.group(0)]}
     if ctype in {"termination", "amendment"}:
         return {"status": "review", "confidence": 0.5, "value": None, "reason": "No explicit schedule markers; may be valid for termination/amendment form"}
     return {"status": "fail", "confidence": 0.0, "value": None, "reason": "No schedule/exhibit markers detected"}
@@ -1323,9 +1327,9 @@ def _extract_ownership_signals(full_text):
         return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
     hits = [kw for kw in _OWNERSHIP_KEYWORDS if kw in full_text.lower()]
     if len(hits) >= 2:
-        return {"status": "pass", "confidence": 0.85, "value": ", ".join(hits[:3]), "reason": f"Ownership markers detected ({len(hits)} hits)"}
+        return {"status": "pass", "confidence": 0.85, "value": ", ".join(hits[:3]), "reason": f"Ownership markers detected ({len(hits)} hits)", "_evidence_hints": hits[:3]}
     if len(hits) == 1:
-        return {"status": "review", "confidence": 0.55, "value": hits[0], "reason": "Limited ownership evidence; verify schedule rows manually"}
+        return {"status": "review", "confidence": 0.55, "value": hits[0], "reason": "Limited ownership evidence; verify schedule rows manually", "_evidence_hints": hits}
     return {"status": "fail", "confidence": 0.0, "value": None, "reason": "No ownership markers detected"}
 
 
@@ -1334,9 +1338,9 @@ def _extract_lifecycle_signals(full_text):
         return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
     hits = [kw for kw in _LIFECYCLE_KEYWORDS if kw in full_text.lower()]
     if len(hits) >= 2:
-        return {"status": "pass", "confidence": 0.8, "value": ", ".join(hits[:3]), "reason": f"Lifecycle timing markers detected ({len(hits)} hits)"}
+        return {"status": "pass", "confidence": 0.8, "value": ", ".join(hits[:3]), "reason": f"Lifecycle timing markers detected ({len(hits)} hits)", "_evidence_hints": hits[:3]}
     if len(hits) == 1:
-        return {"status": "review", "confidence": 0.5, "value": hits[0], "reason": "Single lifecycle marker detected; review timing fields"}
+        return {"status": "review", "confidence": 0.5, "value": hits[0], "reason": "Single lifecycle marker detected; review timing fields", "_evidence_hints": hits}
     return {"status": "review", "confidence": 0.35, "value": None, "reason": "No lifecycle markers detected"}
 
 
@@ -2016,11 +2020,13 @@ def _extract_financial_amounts(text):
     lower = text.lower()
     amount_pat = re.compile(r'[\$€£¥]\s*[\d,]+(?:\.\d+)?|\d[\d,]*(?:\.\d+)?\s*(?:dollars|usd|eur|gbp)')
     amounts_found = amount_pat.findall(lower)
-    kw_hits = sum(1 for kw in _FINANCIAL_AMOUNT_KW if kw in lower)
+    matched_kw = [kw for kw in _FINANCIAL_AMOUNT_KW if kw in lower]
+    kw_hits = len(matched_kw)
+    hints = amounts_found[:2] + matched_kw[:2]
     if amounts_found and kw_hits >= 1:
-        return {"status": "pass", "confidence": min(0.95, 0.75 + kw_hits * 0.05 + len(amounts_found) * 0.03), "value": f"{len(amounts_found)} amounts, {kw_hits} keywords", "reason": "Financial amounts and keywords detected"}
+        return {"status": "pass", "confidence": min(0.95, 0.75 + kw_hits * 0.05 + len(amounts_found) * 0.03), "value": f"{len(amounts_found)} amounts, {kw_hits} keywords", "reason": "Financial amounts and keywords detected", "_evidence_hints": hints}
     if amounts_found or kw_hits >= 1:
-        return {"status": "review", "confidence": 0.4 + min(0.3, kw_hits * 0.1), "value": f"{len(amounts_found)} amounts, {kw_hits} keywords", "reason": "Partial financial signals"}
+        return {"status": "review", "confidence": 0.4 + min(0.3, kw_hits * 0.1), "value": f"{len(amounts_found)} amounts, {kw_hits} keywords", "reason": "Partial financial signals", "_evidence_hints": hints}
     return {"status": "fail", "confidence": 0.1, "value": None, "reason": "No financial amount signals detected"}
 
 
@@ -2030,11 +2036,13 @@ def _extract_financial_rates(text):
     lower = text.lower()
     rate_pat = re.compile(r'\d+(?:\.\d+)?\s*%|(?:royalty|rate|share|split)\s+(?:of\s+)?\d')
     rates_found = rate_pat.findall(lower)
-    kw_hits = sum(1 for kw in _FINANCIAL_RATE_KW if kw in lower)
+    matched_kw = [kw for kw in _FINANCIAL_RATE_KW if kw in lower]
+    kw_hits = len(matched_kw)
+    hints = rates_found[:2] + matched_kw[:2]
     if rates_found and kw_hits >= 2:
-        return {"status": "pass", "confidence": min(0.95, 0.7 + kw_hits * 0.05), "value": f"{len(rates_found)} rates, {kw_hits} keywords", "reason": "Financial rates and keywords detected"}
+        return {"status": "pass", "confidence": min(0.95, 0.7 + kw_hits * 0.05), "value": f"{len(rates_found)} rates, {kw_hits} keywords", "reason": "Financial rates and keywords detected", "_evidence_hints": hints}
     if rates_found or kw_hits >= 1:
-        return {"status": "review", "confidence": 0.3 + min(0.3, kw_hits * 0.1), "value": f"{len(rates_found)} rates, {kw_hits} keywords", "reason": "Partial rate signals"}
+        return {"status": "review", "confidence": 0.3 + min(0.3, kw_hits * 0.1), "value": f"{len(rates_found)} rates, {kw_hits} keywords", "reason": "Partial rate signals", "_evidence_hints": hints}
     return {"status": "fail", "confidence": 0.1, "value": None, "reason": "No rate signals detected"}
 
 
@@ -2042,11 +2050,12 @@ def _extract_payment_terms(text):
     if not text or not text.strip():
         return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
     lower = text.lower()
-    kw_hits = sum(1 for kw in _PAYMENT_TERM_KW if kw in lower)
+    matched_kw = [kw for kw in _PAYMENT_TERM_KW if kw in lower]
+    kw_hits = len(matched_kw)
     if kw_hits >= 3:
-        return {"status": "pass", "confidence": min(0.95, 0.6 + kw_hits * 0.07), "value": f"{kw_hits} payment term signals", "reason": "Payment terms well-defined"}
+        return {"status": "pass", "confidence": min(0.95, 0.6 + kw_hits * 0.07), "value": f"{kw_hits} payment term signals", "reason": "Payment terms well-defined", "_evidence_hints": matched_kw[:3]}
     if kw_hits >= 1:
-        return {"status": "review", "confidence": 0.3 + kw_hits * 0.1, "value": f"{kw_hits} payment term signals", "reason": "Partial payment terms"}
+        return {"status": "review", "confidence": 0.3 + kw_hits * 0.1, "value": f"{kw_hits} payment term signals", "reason": "Partial payment terms", "_evidence_hints": matched_kw[:3]}
     return {"status": "fail", "confidence": 0.1, "value": None, "reason": "No payment term signals"}
 
 
@@ -2054,11 +2063,14 @@ def _extract_currency_signals(text):
     if not text or not text.strip():
         return {"status": "review", "confidence": 0.2, "value": None, "reason": "No text available"}
     lower = text.lower()
-    kw_hits = sum(1 for kw in _CURRENCY_KW if kw in lower)
-    sym_hits = sum(1 for s in _CURRENCY_SYMBOLS if s in text)
+    matched_kw = [kw for kw in _CURRENCY_KW if kw in lower]
+    matched_sym = [s for s in _CURRENCY_SYMBOLS if s in text]
+    kw_hits = len(matched_kw)
+    sym_hits = len(matched_sym)
     total = kw_hits + sym_hits
+    hints = matched_kw[:2] + matched_sym[:2]
     if total >= 1:
-        return {"status": "pass", "confidence": min(0.95, 0.6 + total * 0.1), "value": f"{total} currency signals", "reason": "Currency identified"}
+        return {"status": "pass", "confidence": min(0.95, 0.6 + total * 0.1), "value": f"{total} currency signals", "reason": "Currency identified", "_evidence_hints": hints}
     return {"status": "review", "confidence": 0.2, "value": None, "reason": "No explicit currency signals"}
 
 
@@ -2135,11 +2147,12 @@ def _extract_addon_type_signals(text):
     if not text or not text.strip():
         return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
     lower = text.lower()
-    kw_hits = sum(1 for kw in _ADDON_TYPE_KW if kw in lower)
+    matched_kw = [kw for kw in _ADDON_TYPE_KW if kw in lower]
+    kw_hits = len(matched_kw)
     if kw_hits >= 3:
-        return {"status": "pass", "confidence": min(0.95, 0.6 + kw_hits * 0.07), "value": f"{kw_hits} addon type signals", "reason": "Add-on type clearly identified"}
+        return {"status": "pass", "confidence": min(0.95, 0.6 + kw_hits * 0.07), "value": f"{kw_hits} addon type signals", "reason": "Add-on type clearly identified", "_evidence_hints": matched_kw[:3]}
     if kw_hits >= 1:
-        return {"status": "review", "confidence": 0.3 + kw_hits * 0.1, "value": f"{kw_hits} addon type signals", "reason": "Partial add-on type signals"}
+        return {"status": "review", "confidence": 0.3 + kw_hits * 0.1, "value": f"{kw_hits} addon type signals", "reason": "Partial add-on type signals", "_evidence_hints": matched_kw[:3]}
     return {"status": "fail", "confidence": 0.1, "value": None, "reason": "No add-on type signals"}
 
 
@@ -2147,11 +2160,12 @@ def _extract_addon_rights(text):
     if not text or not text.strip():
         return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
     lower = text.lower()
-    kw_hits = sum(1 for kw in _ADDON_RIGHTS_KW if kw in lower)
+    matched_kw = [kw for kw in _ADDON_RIGHTS_KW if kw in lower]
+    kw_hits = len(matched_kw)
     if kw_hits >= 3:
-        return {"status": "pass", "confidence": min(0.95, 0.65 + kw_hits * 0.05), "value": f"{kw_hits} rights signals", "reason": "Rights well-defined"}
+        return {"status": "pass", "confidence": min(0.95, 0.65 + kw_hits * 0.05), "value": f"{kw_hits} rights signals", "reason": "Rights well-defined", "_evidence_hints": matched_kw[:3]}
     if kw_hits >= 1:
-        return {"status": "review", "confidence": 0.3 + kw_hits * 0.1, "value": f"{kw_hits} rights signals", "reason": "Partial rights coverage"}
+        return {"status": "review", "confidence": 0.3 + kw_hits * 0.1, "value": f"{kw_hits} rights signals", "reason": "Partial rights coverage", "_evidence_hints": matched_kw[:3]}
     return {"status": "fail", "confidence": 0.1, "value": None, "reason": "No rights signals"}
 
 
@@ -2161,11 +2175,13 @@ def _extract_addon_pricing(text):
     lower = text.lower()
     amount_pat = re.compile(r'[\$€£¥]\s*[\d,]+(?:\.\d+)?|\d[\d,]*(?:\.\d+)?\s*(?:dollars|usd|eur|gbp)')
     amounts = amount_pat.findall(lower)
-    kw_hits = sum(1 for kw in _ADDON_PRICING_KW if kw in lower)
+    matched_kw = [kw for kw in _ADDON_PRICING_KW if kw in lower]
+    kw_hits = len(matched_kw)
+    hints = amounts[:2] + matched_kw[:2]
     if amounts and kw_hits >= 1:
-        return {"status": "pass", "confidence": min(0.95, 0.6 + kw_hits * 0.1), "value": f"{len(amounts)} amounts, {kw_hits} pricing keywords", "reason": "Add-on pricing identified"}
+        return {"status": "pass", "confidence": min(0.95, 0.6 + kw_hits * 0.1), "value": f"{len(amounts)} amounts, {kw_hits} pricing keywords", "reason": "Add-on pricing identified", "_evidence_hints": hints}
     if amounts or kw_hits >= 1:
-        return {"status": "review", "confidence": 0.35, "value": f"{len(amounts)} amounts, {kw_hits} pricing keywords", "reason": "Partial pricing signals"}
+        return {"status": "review", "confidence": 0.35, "value": f"{len(amounts)} amounts, {kw_hits} pricing keywords", "reason": "Partial pricing signals", "_evidence_hints": hints}
     return {"status": "review", "confidence": 0.2, "value": None, "reason": "No explicit pricing"}
 
 
@@ -2173,14 +2189,16 @@ def _extract_addon_dates(text):
     if not text or not text.strip():
         return {"status": "review", "confidence": 0.2, "value": None, "reason": "No text available"}
     lower = text.lower()
-    kw_hits = sum(1 for kw in _ADDON_DATE_KW if kw in lower)
+    matched_kw = [kw for kw in _ADDON_DATE_KW if kw in lower]
+    kw_hits = len(matched_kw)
     date_pat = re.compile(r'(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s+\d{4}|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2}')
     dates = date_pat.findall(lower)
     total = kw_hits + len(dates)
+    hints = matched_kw[:2] + dates[:2]
     if total >= 2:
-        return {"status": "pass", "confidence": min(0.95, 0.5 + total * 0.1), "value": f"{kw_hits} date keywords, {len(dates)} dates", "reason": "Add-on dates well-defined"}
+        return {"status": "pass", "confidence": min(0.95, 0.5 + total * 0.1), "value": f"{kw_hits} date keywords, {len(dates)} dates", "reason": "Add-on dates well-defined", "_evidence_hints": hints}
     if total >= 1:
-        return {"status": "review", "confidence": 0.35, "value": f"{kw_hits} date keywords, {len(dates)} dates", "reason": "Partial date coverage"}
+        return {"status": "review", "confidence": 0.35, "value": f"{kw_hits} date keywords, {len(dates)} dates", "reason": "Partial date coverage", "_evidence_hints": hints}
     return {"status": "review", "confidence": 0.2, "value": None, "reason": "No explicit dates"}
 
 

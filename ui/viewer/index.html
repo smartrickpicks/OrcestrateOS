@@ -20725,6 +20725,7 @@
         if (!resp.ok) {
           console.log('[EI] Feature flags endpoint returned ' + resp.status + ', checking flag via env');
           _eiState.enabled = false;
+          if (typeof toolbarPdfPreflightInitVisibility === 'function') toolbarPdfPreflightInitVisibility();
           return;
         }
         return resp.json().then(function(body) {
@@ -20747,11 +20748,13 @@
               if (typeof pftlInit === 'function') pftlInit();
             } else {
               console.log('[PREFLIGHT-GATE] Feature flag PREFLIGHT_GATE_SYNC is OFF');
+              if (typeof toolbarPdfPreflightInitVisibility === 'function') toolbarPdfPreflightInitVisibility();
             }
         });
       }).catch(function(err) {
         console.log('[EI] Feature probe failed: ' + err.message);
         _eiState.enabled = false;
+        if (typeof toolbarPdfPreflightInitVisibility === 'function') toolbarPdfPreflightInitVisibility();
       });
     }
 
@@ -59618,25 +59621,12 @@ var P022_RuntimeValidation = {
   }
 
   window.toolbarPdfPreflightInitVisibility = function() {
+    // Preflight and Lab buttons are visible for all roles — the server
+    // endpoint enforces its own auth/role check.
     var btn = document.getElementById('toolbar-pdf-preflight-btn');
-    if (!btn) return;
-    var role = (typeof _pfGateGetRole === 'function') ? _pfGateGetRole() : 'analyst';
-    var sandbox = (typeof isDemoMode === 'function') && isDemoMode();
-    if (role === 'admin' || role === 'architect' || sandbox) {
-      btn.style.display = '';
-    } else {
-      btn.style.display = 'none';
-    }
-    // Preflight Lab button visibility (same role gate + preflight feature flag)
+    if (btn) btn.style.display = '';
     var labBtn = document.getElementById('toolbar-preflight-lab-btn');
-    if (labBtn) {
-      var pfEnabled = (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.PREFLIGHT_GATE_SYNC === true) || window.__PREFLIGHT_LAB_ENABLED === true || sandbox;
-      if ((role === 'admin' || role === 'architect' || sandbox) && pfEnabled) {
-        labBtn.style.display = '';
-      } else {
-        labBtn.style.display = 'none';
-      }
-    }
+    if (labBtn) labBtn.style.display = '';
   };
 
   window.toolbarPdfPreflightClick = function() {
@@ -59660,7 +59650,7 @@ var P022_RuntimeValidation = {
   window.preflightLabOpen = function() {
     var role = (typeof _pfGateGetRole === 'function') ? _pfGateGetRole() : 'analyst';
     var sandbox = (typeof isDemoMode === 'function') && isDemoMode();
-    var allowed = (role === 'admin' || role === 'architect' || sandbox);
+    var allowed = true; // Lab is a read-only diagnostic tool, available to all roles
     console.log('[PREFLIGHT-LAB] open: role=' + role + ', sandbox=' + sandbox + ', allowed=' + allowed);
     _preflightLabRender(allowed);
     var overlay = document.getElementById('preflight-lab-overlay');
@@ -59766,13 +59756,6 @@ var P022_RuntimeValidation = {
     if (!file) return;
     if (file.type !== 'application/pdf' && file.name.toLowerCase().indexOf('.pdf') === -1) {
       if (typeof showToast === 'function') showToast('Please select a PDF file', 'error');
-      input.value = '';
-      return;
-    }
-
-    var role = (typeof _pfGateGetRole === 'function') ? _pfGateGetRole() : 'analyst';
-    if (role !== 'admin' && role !== 'architect') {
-      if (typeof showToast === 'function') showToast('Preflight upload is admin-only', 'error');
       input.value = '';
       return;
     }
@@ -60385,13 +60368,7 @@ var P022_RuntimeValidation = {
   };
 
   window.pftlOpen = function() {
-    var role = _pftlGetRole();
-    var sandbox = (typeof isDemoMode === 'function') && isDemoMode();
-    if (role !== 'admin' && role !== 'architect' && !sandbox) {
-      _pftlState.forbidden = true;
-    } else {
-      _pftlState.forbidden = false;
-    }
+    _pftlState.forbidden = false;
     _pftlState.open = true;
     _pftlState.result = null;
     _pftlState.error = null;
@@ -60423,13 +60400,7 @@ var P022_RuntimeValidation = {
   };
 
   window.pftlOpenWithResult = function(result) {
-    var role = _pftlGetRole();
-    var sandbox = (typeof isDemoMode === 'function') && isDemoMode();
-    if (role !== 'admin' && role !== 'architect' && !sandbox) {
-      _pftlState.forbidden = true;
-    } else {
-      _pftlState.forbidden = false;
-    }
+    _pftlState.forbidden = false;
     _pftlState.open = true;
     _pftlState.result = result;
     _pftlState.error = null;
