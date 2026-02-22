@@ -6524,6 +6524,7 @@
           <!-- Workspace V2 Top Bar -->
           <div id="wsv2-topbar" style="display:flex; align-items:center; gap:12px; padding:12px 20px; border-bottom:1px solid var(--border-1); background:var(--bg-1);">
             <button class="toolbar-btn" onclick="navigateTo('triage')" style="padding:6px 12px; font-size:0.85em;">← Back</button>
+            <button class="toolbar-btn" onclick="_wsv2BackToPreflight()" style="padding:6px 12px; font-size:0.85em; background:#e3f2fd; color:#1565c0; border:1px solid #90caf9;">← Preflight Lab</button>
             <h2 style="margin:0; font-size:1.1em; font-weight:600; color:var(--text-1);">Record Inspector V2 <span style="font-size:0.7em; background:#e3f2fd; color:#1565c0; padding:2px 8px; border-radius:4px; margin-left:6px;">Beta</span></h2>
             <div id="wsv2-record-identity" style="flex:1; font-size:0.85em; color:var(--text-3);"></div>
             <div id="wsv2-gate-badge" style="font-size:0.8em; font-weight:600; padding:4px 10px; border-radius:4px;"></div>
@@ -59625,6 +59626,7 @@ var P022_RuntimeValidation = {
     elapsed: 0,
     timer: null,
     file: null,
+    fileName: null,
     forbidden: false,
     scrollTop: 0,
     overrideDialog: null
@@ -60553,6 +60555,9 @@ var P022_RuntimeValidation = {
     html += '<div class="pftl-modal">';
     html += '<div class="pftl-header">';
     html += '<h3>Preflight Test Lab</h3>';
+    if (_pftlState.fileName) {
+      html += '<span style="margin-left:12px; font-size:0.8em; font-weight:500; color:#1976d2; background:#e3f2fd; padding:3px 10px; border-radius:4px; max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + _pftlEsc(_pftlState.fileName) + '">' + _pftlEsc(_pftlState.fileName) + '</span>';
+    }
     html += '<button class="pftl-close" onclick="pftlClose()">&times;</button>';
     html += '</div>';
     html += '<div class="pftl-body">';
@@ -60647,6 +60652,14 @@ var P022_RuntimeValidation = {
   window.pftlOnFileChange = function() {
     var urlInput = document.getElementById('pftl-url-input');
     if (urlInput) urlInput.value = '';
+    var fileInput = document.getElementById('pftl-file-input');
+    var file = fileInput && fileInput.files && fileInput.files[0];
+    if (file) {
+      _pftlState.file = file;
+      _pftlState.fileName = file.name;
+      // Auto-run: skip the extra click
+      setTimeout(function() { if (typeof pftlRun === 'function') pftlRun(); }, 50);
+    }
   };
 
   function _pftlRenderReport(r) {
@@ -62555,6 +62568,18 @@ var P022_RuntimeValidation = {
     return false;
   }
 
+  // ===== BACK TO PREFLIGHT LAB =====
+  window._wsv2BackToPreflight = function() {
+    // Re-open PTL with the current result so the user can review it
+    var ctx = _wsv2State.context;
+    var r = ctx && ctx.preflight_result;
+    if (r && typeof pftlOpenWithResult === 'function') {
+      pftlOpenWithResult(r);
+    } else if (typeof pftlOpen === 'function') {
+      pftlOpen();
+    }
+  };
+
   // ===== PAGE INIT (called by navigateTo) =====
   window._wsv2InitPage = function() {
     var ctx = window._workspaceV2Context;
@@ -62634,6 +62659,9 @@ var P022_RuntimeValidation = {
     _wsv2State.counterpartySelected = null;
 
     _wsv2Audit('PTL_EDIT_OPENED', { scope: scope, check_code: checkCode, gate_color: ctx.gate_color });
+
+    // Close the Preflight Test Lab overlay before navigating
+    if (typeof pftlClose === 'function') pftlClose();
 
     if (typeof navigateTo === 'function') navigateTo('record-inspector-v2');
   };
@@ -62813,6 +62841,36 @@ var P022_RuntimeValidation = {
         html += '<div style="font-size:0.78em; padding:1px 0; color:var(--text-3);">Page ' + pg.page + ': ' + _wsv2Esc(pg.mode || 'unknown') + ' (' + (pg.char_count || 0) + ' chars)</div>';
       }
       if (pages.length > 10) html += '<div style="font-size:0.75em; color:#999;">... and ' + (pages.length - 10) + ' more pages</div>';
+      html += '</div>';
+    }
+
+    // Extracted headers (document structure)
+    var headers = r.extracted_headers || [];
+    if (headers.length > 0) {
+      html += '<div style="margin-bottom:12px; padding:10px; background:var(--bg-1); border:1px solid var(--border-1); border-radius:6px;">';
+      html += '<div style="font-weight:600; font-size:0.85em; margin-bottom:6px;">Document Structure (' + headers.length + ' sections)</div>';
+      for (var hi = 0; hi < headers.length; hi++) {
+        var hdr = headers[hi];
+        var hText = (typeof hdr === 'string') ? hdr : (hdr.text || hdr.header || String(hdr));
+        var hLevel = (typeof hdr === 'object' && hdr.level) ? hdr.level : 1;
+        var indent = Math.max(0, (hLevel - 1)) * 12;
+        html += '<div style="font-size:0.78em; padding:1px 0 1px ' + indent + 'px; color:var(--text-2);">' + _wsv2Esc(hText) + '</div>';
+      }
+      html += '</div>';
+    }
+
+    // Extracted text (actual document content)
+    var docText = r.extracted_text || '';
+    if (docText) {
+      var previewLen = 5000;
+      var truncated = docText.length > previewLen;
+      var displayText = truncated ? docText.substring(0, previewLen) : docText;
+      html += '<div style="margin-bottom:12px; padding:10px; background:var(--bg-1); border:1px solid var(--border-1); border-radius:6px;">';
+      html += '<div style="font-weight:600; font-size:0.85em; margin-bottom:6px;">Document Content</div>';
+      html += '<pre id="wsv2-doc-text" style="font-size:0.75em; line-height:1.5; color:var(--text-3); white-space:pre-wrap; word-break:break-word; max-height:400px; overflow-y:auto; margin:0; padding:8px; background:var(--bg-base); border-radius:4px;">' + _wsv2Esc(displayText) + '</pre>';
+      if (truncated) {
+        html += '<button onclick="this.previousElementSibling.textContent=(' + "window._workspaceV2Context&&window._workspaceV2Context.preflight_result&&window._workspaceV2Context.preflight_result.extracted_text||'')" + ';this.style.display=\'none\'" style="margin-top:6px; font-size:0.75em; color:#1976d2; background:none; border:none; cursor:pointer; padding:0;">Show full document (' + docText.length.toLocaleString() + ' chars) →</button>';
+      }
       html += '</div>';
     }
 
