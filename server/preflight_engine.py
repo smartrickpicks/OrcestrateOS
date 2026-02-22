@@ -286,11 +286,123 @@ def _is_low_signal(text):
     return False
 
 
+# ---------------------------------------------------------------------------
+# Track-listing / schedule-of-songs section detection
+# ---------------------------------------------------------------------------
+_TRACK_SECTION_HEADER_RE = re.compile(
+    r'(?:track\s*list|song\s*list|list\s+of\s+(?:songs|tracks|recordings|masters)'
+    r'|schedule\s+of\s+(?:songs|tracks|recordings|masters)'
+    r'|annexure|appendix|exhibit)\s*',
+    re.IGNORECASE,
+)
+_NUMBERED_LINE_RE = re.compile(
+    r'^\s*(?:\d{1,4}[\.\)\-]|\d{1,4}\s+[A-Z])',
+)
+_SR_NO_HEADER_RE = re.compile(
+    r'sr\.?\s*no|s\.?\s*no|song\s*title|track\s*(?:title|name)|artist\s*name',
+    re.IGNORECASE,
+)
+
+
+def _detect_track_listing_lines(full_text):
+    """Return a set of line indices that belong to track-listing / song-schedule sections.
+
+    Detection strategy:
+    1. Look for section headers (Track List, Annexure, etc.) or table headers (Sr. No., Song Title)
+    2. After a header, consume consecutive short numbered/titled lines as track entries
+    3. Also detect dense runs of numbered short lines even without an explicit header
+    """
+    if not full_text:
+        return set()
+
+    lines = full_text.split("\n")
+    track_lines = set()
+
+    # --- Strategy 1: Header-triggered sections ---
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        if _TRACK_SECTION_HEADER_RE.search(line) or _SR_NO_HEADER_RE.search(line):
+            # Mark the header line itself
+            track_lines.add(i)
+            # Consume following lines that look like track entries
+            j = i + 1
+            consecutive_short = 0
+            while j < len(lines):
+                tl = lines[j].strip()
+                if not tl:
+                    # blank line — tolerate up to 2 consecutive blanks
+                    if j + 1 < len(lines) and not lines[j + 1].strip():
+                        if j + 2 < len(lines) and not lines[j + 2].strip():
+                            break  # 3+ blanks = section ended
+                    j += 1
+                    continue
+                if len(tl) > 120:
+                    break  # long prose line = new section
+                # Break on contract section headers (e.g. "SECTION 2: Payment")
+                if re.match(r'^\s*(?:SECTION|ARTICLE|CLAUSE|PART|CHAPTER)\s+\d', tl, re.IGNORECASE):
+                    break
+                # Break on ALL-CAPS headers that signal a new contract section
+                if tl == tl.upper() and len(tl) >= 5 and not _NUMBERED_LINE_RE.match(tl):
+                    break
+                words = tl.split()
+                if len(words) <= 8 or _NUMBERED_LINE_RE.match(tl):
+                    track_lines.add(j)
+                    consecutive_short += 1
+                    j += 1
+                else:
+                    # non-track line — break if we already have entries
+                    if consecutive_short >= 3:
+                        break
+                    j += 1
+            i = j
+        else:
+            i += 1
+
+    # --- Strategy 2: Dense numbered-line runs without explicit header ---
+    run_start = None
+    run_count = 0
+    for i, raw_line in enumerate(lines):
+        line = raw_line.strip()
+        if _NUMBERED_LINE_RE.match(line) and len(line) <= 80 and len(line.split()) <= 8:
+            if run_start is None:
+                run_start = i
+            run_count += 1
+        else:
+            if run_count >= 8:
+                for k in range(run_start, run_start + run_count):
+                    track_lines.add(k)
+            run_start = None
+            run_count = 0
+    if run_count >= 8:
+        for k in range(run_start, run_start + run_count):
+            track_lines.add(k)
+
+    return track_lines
+
+
+def _strip_track_listing_text(full_text):
+    """Return full_text with track-listing lines blanked out."""
+    if not full_text:
+        return full_text
+    track_indices = _detect_track_listing_lines(full_text)
+    if not track_indices:
+        return full_text
+    lines = full_text.split("\n")
+    for idx in track_indices:
+        if idx < len(lines):
+            lines[idx] = ""
+    return "\n".join(lines)
+
+
 def _extract_candidate_headers(full_text):
     raw_candidates = set()
     lines = full_text.split("\n")
-    for line in lines:
-        line = line.strip()
+    track_lines = _detect_track_listing_lines(full_text)
+    for line_idx, raw_line in enumerate(lines):
+        if line_idx in track_lines:
+            continue
+        line = raw_line.strip()
         if not line or len(line) > 80:
             continue
         if len(line) < 3:
@@ -544,7 +656,14 @@ def _is_valid_value(val):
 
 
 def _csv_phrase_scan(full_text):
-    """Scan full_text for exact CSV account name phrases (word-boundary, case-insensitive)."""
+    """Scan full_text for exact CSV account name phrases (word-boundary, case-insensitive).
+
+    Track-listing sections (song titles, artist names in schedules) are stripped
+    before scanning to prevent music metadata from matching Salesforce accounts.
+    """
+    # Strip track-listing sections so song titles / artist names don't match
+    full_text = _strip_track_listing_text(full_text)
+
     try:
         from server.resolvers.account_index import get_index
     except ImportError:
@@ -569,6 +688,11 @@ def _csv_phrase_scan(full_text):
             if name_low in seen_lower:
                 continue
             if name_low in _GENERIC_SINGLE_TOKENS:
+                continue
+            # Suppress single-word person-name-like matches (e.g. "Sanjay", "Dilip")
+            # that are too ambiguous to be reliable counterparty identifiers.
+            name_tokens = name_low.split()
+            if len(name_tokens) == 1 and not _COMPANY_MARKERS_RE.search(name):
                 continue
             pos = text_lower.find(name_low)
             if pos < 0:

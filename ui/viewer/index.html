@@ -61518,6 +61518,7 @@ var P022_RuntimeValidation = {
     html += '<span class="rs-badge rs-badge-counter" style="min-width:100px;text-align:center;">Counterparty</span>';
     html += '<select id="rs-assign-counter" class="rs-assign-select" onchange="pftlOnAssignChange(\'counterparty\')">';
     html += '<option value="">\u2014 Select Counterparty \u2014</option>';
+    html += '<option value="__create_new__" style="font-weight:600;color:#1565c0;">+ Create New Counterparty\u2026</option>';
     for (var j = 0; j < pool.length; j++) {
       var sel2 = pool[j].name === defaultCp ? ' selected' : '';
       var pctLabel2 = pool[j].final_confidence_pct != null ? ' (' + pool[j].final_confidence_pct + '%)' : '';
@@ -61528,6 +61529,14 @@ var P022_RuntimeValidation = {
     var cpEntity = null;
     for (var m = 0; m < pool.length; m++) { if (pool[m].name === defaultCp) { cpEntity = pool[m]; break; } }
     html += _pftlRenderEntityCard(cpEntity, 'counterparty');
+    html += '</div>';
+    html += '<div id="rs-create-new-counter" style="display:none;margin-top:8px;padding:10px;border:1px solid #bbdefb;border-radius:6px;background:#e3f2fd;">';
+    html += '<label style="font-size:0.85em;font-weight:600;color:#1565c0;display:block;margin-bottom:4px;">New Counterparty Name</label>';
+    html += '<div style="display:flex;gap:8px;align-items:center;">';
+    html += '<input type="text" id="rs-create-new-counter-input" style="flex:1;padding:6px 10px;border:1px solid #90caf9;border-radius:4px;font-size:0.9em;" placeholder="Enter counterparty name\u2026" />';
+    html += '<button type="button" class="pftl-btn reset" onclick="pftlConfirmCreateNewCounterparty()" style="white-space:nowrap;">Confirm</button>';
+    html += '</div>';
+    html += '<div id="rs-create-new-counter-status" style="margin-top:4px;font-size:0.78em;color:#666;">Type the full entity name, then click Confirm.</div>';
     html += '</div></div>';
 
     if (story.requires_manual_confirmation) {
@@ -61551,6 +61560,20 @@ var P022_RuntimeValidation = {
     var cardWrap = document.getElementById(cardId);
     if (!sel || !cardWrap) return;
     var chosen = sel.value;
+
+    // Handle "Create New Counterparty" selection
+    var createNewPanel = document.getElementById('rs-create-new-counter');
+    if (role === 'counterparty' && chosen === '__create_new__') {
+      if (createNewPanel) createNewPanel.style.display = 'block';
+      cardWrap.innerHTML = '<div class="rs-entity-card rs-entity-empty"><span class="rs-entity-name" style="font-style:italic;color:#1565c0;">Creating new counterparty\u2026</span></div>';
+      var assigns = _pftlGetAssignments();
+      assigns.counterparty = '';
+      assigns.manual_counterparty = '';
+      _pftlSaveAssignments();
+      console.log('[RS-ASSIGN] counterparty = __create_new__ (manual entry mode)');
+      return;
+    }
+    if (createNewPanel) createNewPanel.style.display = 'none';
 
     var otherSel = document.getElementById(otherSelectId);
     var otherVal = otherSel ? otherSel.value : '';
@@ -61583,6 +61606,33 @@ var P022_RuntimeValidation = {
     }
     cardWrap.innerHTML = _pftlRenderEntityCard(entity, role);
     console.log('[RS-ASSIGN] ' + role + ' = ' + (chosen || '(none)'));
+  };
+
+  window.pftlConfirmCreateNewCounterparty = function() {
+    var input = document.getElementById('rs-create-new-counter-input');
+    var statusEl = document.getElementById('rs-create-new-counter-status');
+    if (!input) return;
+    var val = (input.value || '').trim();
+    if (val.length < 3) {
+      if (statusEl) {
+        statusEl.style.color = '#c62828';
+        statusEl.textContent = 'Name too short \u2014 enter the full entity name.';
+      }
+      return;
+    }
+    var assigns = _pftlGetAssignments();
+    assigns.counterparty = val;
+    assigns.manual_counterparty = val;
+    _pftlSaveAssignments();
+    if (statusEl) {
+      statusEl.style.color = '#2e7d32';
+      statusEl.textContent = '\u2713 Confirmed: ' + val;
+    }
+    var cardWrap = document.getElementById('rs-card-counter');
+    if (cardWrap) {
+      cardWrap.innerHTML = '<div class="rs-entity-card rs-entity-counter"><span class="rs-entity-name">' + _pftlEsc(val) + '</span><span class="rs-entity-meta"><span class="rs-badge rs-badge-counter">Counterparty</span><span class="sm-status-badge" style="background:#fff3e0;color:#e65100;">New Entry</span></span></div>';
+    }
+    console.log('[RS-ASSIGN] counterparty = ' + val + ' (manually created)');
   };
 
   function _pftlRenderStoryWhy(story) {
@@ -62302,7 +62352,11 @@ var P022_RuntimeValidation = {
   function _pftlBuildSubmitState(r) {
     var assigns = _pftlGetAssignments();
     var story = (r && r.resolution_story) ? r.resolution_story : {};
-    if (story.new_entry_detected && !(assigns.manual_counterparty && String(assigns.manual_counterparty).trim().length >= 3)) {
+    var needsManual = story.new_entry_detected;
+    // Also gate when user explicitly chose "Create New Counterparty" from dropdown
+    var selEl = document.getElementById('rs-assign-counter');
+    if (selEl && selEl.value === '__create_new__') needsManual = true;
+    if (needsManual && !(assigns.manual_counterparty && String(assigns.manual_counterparty).trim().length >= 3)) {
       return {
         allowCorrection: false,
         reason: 'Correction locked: confirm manual counterparty for new-entry contracts.'
