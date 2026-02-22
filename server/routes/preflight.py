@@ -135,127 +135,134 @@ async def preflight_run(
     auth=Depends(require_auth(AuthClass.EITHER)),
 ):
     """Run preflight analysis on a document."""
-    if isinstance(auth, JSONResponse):
-        return auth
-
-    flag_check = require_preflight()
-    if flag_check:
-        return flag_check
-
     try:
-        body = await request.json()
-    except Exception:
-        return JSONResponse(
-            status_code=400,
-            content=error_envelope("VALIDATION_ERROR", "Invalid JSON body"),
-        )
+        if isinstance(auth, JSONResponse):
+            return auth
 
-    ws_id, ws_err = _resolve_workspace(request, auth, body)
-    if ws_err:
-        return ws_err
+        flag_check = require_preflight()
+        if flag_check:
+            return flag_check
 
-    admin_err = _require_admin_sandbox(auth, ws_id)
-    if admin_err:
-        return admin_err
-
-    file_url = body.get("file_url", "").strip()
-    doc_id = body.get("doc_id", "").strip()
-
-    if not file_url:
-        return JSONResponse(
-            status_code=400,
-            content=error_envelope("VALIDATION_ERROR", "file_url is required"),
-        )
-
-    if not doc_id:
-        doc_id = derive_cache_identity(ws_id, file_url)
-
-    from server.pdf_proxy import is_host_allowed, is_private_ip, MAX_SIZE_BYTES
-    import httpx
-
-    try:
-        decoded_url = unquote(file_url)
-        parsed = urlparse(decoded_url)
-    except Exception:
-        return JSONResponse(
-            status_code=400,
-            content=error_envelope("VALIDATION_ERROR", "Invalid file_url format"),
-        )
-
-    if parsed.scheme not in ("http", "https"):
-        return JSONResponse(
-            status_code=400,
-            content=error_envelope("VALIDATION_ERROR", "Only HTTP/HTTPS URLs allowed"),
-        )
-
-    hostname = parsed.hostname
-    if not hostname:
-        return JSONResponse(
-            status_code=400,
-            content=error_envelope("VALIDATION_ERROR", "Missing hostname in file_url"),
-        )
-
-    if not is_host_allowed(hostname):
-        return JSONResponse(
-            status_code=403,
-            content=error_envelope("FORBIDDEN", "Host not in allowlist: %s" % hostname),
-        )
-
-    if is_private_ip(hostname):
-        return JSONResponse(
-            status_code=403,
-            content=error_envelope("FORBIDDEN", "Private/reserved IPs are blocked"),
-        )
-
-    async with httpx.AsyncClient(timeout=30.0, follow_redirects=False) as client:
         try:
-            resp = await client.get(decoded_url)
-            if resp.status_code in (301, 302, 303, 307, 308):
-                redirect_url = resp.headers.get("location")
-                if redirect_url:
-                    redirect_parsed = urlparse(redirect_url)
-                    redirect_host = redirect_parsed.hostname
-                    if not redirect_host or not is_host_allowed(redirect_host) or is_private_ip(redirect_host):
-                        return JSONResponse(
-                            status_code=403,
-                            content=error_envelope("FORBIDDEN", "Redirect to non-allowlisted host blocked"),
-                        )
-                    resp = await client.get(redirect_url)
-            resp.raise_for_status()
-            if len(resp.content) > MAX_SIZE_BYTES:
+            body = await request.json()
+        except Exception:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "Invalid JSON body"),
+            )
+
+        ws_id, ws_err = _resolve_workspace(request, auth, body)
+        if ws_err:
+            return ws_err
+
+        admin_err = _require_admin_sandbox(auth, ws_id)
+        if admin_err:
+            return admin_err
+
+        file_url = body.get("file_url", "").strip()
+        doc_id = body.get("doc_id", "").strip()
+
+        if not file_url:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "file_url is required"),
+            )
+
+        if not doc_id:
+            doc_id = derive_cache_identity(ws_id, file_url)
+
+        from server.pdf_proxy import is_host_allowed, is_private_ip, MAX_SIZE_BYTES
+        import httpx
+
+        try:
+            decoded_url = unquote(file_url)
+            parsed = urlparse(decoded_url)
+        except Exception:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "Invalid file_url format"),
+            )
+
+        if parsed.scheme not in ("http", "https"):
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "Only HTTP/HTTPS URLs allowed"),
+            )
+
+        hostname = parsed.hostname
+        if not hostname:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "Missing hostname in file_url"),
+            )
+
+        if not is_host_allowed(hostname):
+            return JSONResponse(
+                status_code=403,
+                content=error_envelope("FORBIDDEN", "Host not in allowlist: %s" % hostname),
+            )
+
+        if is_private_ip(hostname):
+            return JSONResponse(
+                status_code=403,
+                content=error_envelope("FORBIDDEN", "Private/reserved IPs are blocked"),
+            )
+
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=False) as client:
+            try:
+                resp = await client.get(decoded_url)
+                if resp.status_code in (301, 302, 303, 307, 308):
+                    redirect_url = resp.headers.get("location")
+                    if redirect_url:
+                        redirect_parsed = urlparse(redirect_url)
+                        redirect_host = redirect_parsed.hostname
+                        if not redirect_host or not is_host_allowed(redirect_host) or is_private_ip(redirect_host):
+                            return JSONResponse(
+                                status_code=403,
+                                content=error_envelope("FORBIDDEN", "Redirect to non-allowlisted host blocked"),
+                            )
+                        resp = await client.get(redirect_url)
+                resp.raise_for_status()
+                if len(resp.content) > MAX_SIZE_BYTES:
+                    return JSONResponse(
+                        status_code=413,
+                        content=error_envelope("FILE_TOO_LARGE", "File exceeds size limit"),
+                    )
+            except httpx.TimeoutException:
                 return JSONResponse(
-                    status_code=413,
-                    content=error_envelope("FILE_TOO_LARGE", "File exceeds size limit"),
+                    status_code=504,
+                    content=error_envelope("UPSTREAM_TIMEOUT", "PDF fetch timed out"),
                 )
-        except httpx.TimeoutException:
-            return JSONResponse(
-                status_code=504,
-                content=error_envelope("UPSTREAM_TIMEOUT", "PDF fetch timed out"),
-            )
-        except httpx.HTTPStatusError as e:
-            return JSONResponse(
-                status_code=e.response.status_code,
-                content=error_envelope("UPSTREAM_ERROR", "Upstream error: %s" % e.response.status_code),
-            )
-        except httpx.RequestError as e:
-            return JSONResponse(
-                status_code=502,
-                content=error_envelope("UPSTREAM_ERROR", "Upstream request failed: %s" % str(e)),
-            )
+            except httpx.HTTPStatusError as e:
+                return JSONResponse(
+                    status_code=e.response.status_code,
+                    content=error_envelope("UPSTREAM_ERROR", "Upstream error: %s" % e.response.status_code),
+                )
+            except httpx.RequestError as e:
+                return JSONResponse(
+                    status_code=502,
+                    content=error_envelope("UPSTREAM_ERROR", "Upstream request failed: %s" % str(e)),
+                )
 
-    pages_data, extract_err = _extract_pages_from_pdf(resp.content)
-    if extract_err:
-        return extract_err
+        pages_data, extract_err = _extract_pages_from_pdf(resp.content)
+        if extract_err:
+            return extract_err
 
-    result = _build_preflight_result(pages_data, doc_id, ws_id, file_url)
+        result = _build_preflight_result(pages_data, doc_id, ws_id, file_url)
 
-    logger.info(
-        "[PREFLIGHT] run complete: doc=%s ws=%s gate=%s mode=%s pages=%d",
-        doc_id, ws_id, result["gate_color"], result["doc_mode"],
-        result["metrics"]["total_pages"],
-    )
+        logger.info(
+            "[PREFLIGHT] run complete: doc=%s ws=%s gate=%s mode=%s pages=%d",
+            doc_id, ws_id, result["gate_color"], result["doc_mode"],
+            result["metrics"]["total_pages"],
+        )
 
-    return JSONResponse(status_code=200, content=envelope(result))
+        return JSONResponse(status_code=200, content=envelope(result))
+    except Exception as exc:
+        logger.exception("[PREFLIGHT] run unhandled error: %s", exc)
+        return JSONResponse(
+            status_code=500,
+            content=error_envelope("INTERNAL_ERROR", "Preflight run failed: %s" % str(exc)),
+        )
 
 
 @router.post("/upload")
@@ -264,72 +271,79 @@ async def preflight_upload(
     auth=Depends(require_auth(AuthClass.EITHER)),
 ):
     """Run preflight on an uploaded PDF (base64-encoded). Internal/Test Lab use."""
-    if isinstance(auth, JSONResponse):
-        return auth
-
-    flag_check = require_preflight()
-    if flag_check:
-        return flag_check
-
     try:
-        body = await request.json()
-    except Exception:
-        return JSONResponse(
-            status_code=400,
-            content=error_envelope("VALIDATION_ERROR", "Invalid JSON body"),
+        if isinstance(auth, JSONResponse):
+            return auth
+
+        flag_check = require_preflight()
+        if flag_check:
+            return flag_check
+
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "Invalid JSON body"),
+            )
+
+        ws_id, ws_err = _resolve_workspace(request, auth, body)
+        if ws_err:
+            return ws_err
+
+        admin_err = _require_admin_sandbox(auth, ws_id)
+        if admin_err:
+            return admin_err
+
+        pdf_base64 = body.get("pdf_base64", "").strip()
+        filename = body.get("filename", "uploaded.pdf").strip()
+        doc_id = body.get("doc_id", "").strip()
+
+        if not pdf_base64:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "pdf_base64 is required"),
+            )
+
+        import base64
+        try:
+            pdf_bytes = base64.b64decode(pdf_base64)
+        except Exception:
+            return JSONResponse(
+                status_code=400,
+                content=error_envelope("VALIDATION_ERROR", "Invalid base64 encoding"),
+            )
+
+        from server.pdf_proxy import MAX_SIZE_BYTES
+        if len(pdf_bytes) > MAX_SIZE_BYTES:
+            return JSONResponse(
+                status_code=413,
+                content=error_envelope("FILE_TOO_LARGE", "File exceeds size limit"),
+            )
+
+        if not doc_id:
+            doc_id = derive_cache_identity(ws_id, "upload://%s" % filename)
+
+        pages_data, extract_err = _extract_pages_from_pdf(pdf_bytes)
+        if extract_err:
+            return extract_err
+
+        file_url = "upload://%s" % filename
+        result = _build_preflight_result(pages_data, doc_id, ws_id, file_url)
+
+        logger.info(
+            "[PREFLIGHT] upload complete: doc=%s ws=%s gate=%s mode=%s pages=%d",
+            doc_id, ws_id, result["gate_color"], result["doc_mode"],
+            result["metrics"]["total_pages"],
         )
 
-    ws_id, ws_err = _resolve_workspace(request, auth, body)
-    if ws_err:
-        return ws_err
-
-    admin_err = _require_admin_sandbox(auth, ws_id)
-    if admin_err:
-        return admin_err
-
-    pdf_base64 = body.get("pdf_base64", "").strip()
-    filename = body.get("filename", "uploaded.pdf").strip()
-    doc_id = body.get("doc_id", "").strip()
-
-    if not pdf_base64:
+        return JSONResponse(status_code=200, content=envelope(result))
+    except Exception as exc:
+        logger.exception("[PREFLIGHT] upload unhandled error: %s", exc)
         return JSONResponse(
-            status_code=400,
-            content=error_envelope("VALIDATION_ERROR", "pdf_base64 is required"),
+            status_code=500,
+            content=error_envelope("INTERNAL_ERROR", "Preflight upload failed: %s" % str(exc)),
         )
-
-    import base64
-    try:
-        pdf_bytes = base64.b64decode(pdf_base64)
-    except Exception:
-        return JSONResponse(
-            status_code=400,
-            content=error_envelope("VALIDATION_ERROR", "Invalid base64 encoding"),
-        )
-
-    from server.pdf_proxy import MAX_SIZE_BYTES
-    if len(pdf_bytes) > MAX_SIZE_BYTES:
-        return JSONResponse(
-            status_code=413,
-            content=error_envelope("FILE_TOO_LARGE", "File exceeds size limit"),
-        )
-
-    if not doc_id:
-        doc_id = derive_cache_identity(ws_id, "upload://%s" % filename)
-
-    pages_data, extract_err = _extract_pages_from_pdf(pdf_bytes)
-    if extract_err:
-        return extract_err
-
-    file_url = "upload://%s" % filename
-    result = _build_preflight_result(pages_data, doc_id, ws_id, file_url)
-
-    logger.info(
-        "[PREFLIGHT] upload complete: doc=%s ws=%s gate=%s mode=%s pages=%d",
-        doc_id, ws_id, result["gate_color"], result["doc_mode"],
-        result["metrics"]["total_pages"],
-    )
-
-    return JSONResponse(status_code=200, content=envelope(result))
 
 
 _REQUIRED_CACHE_FIELDS = ["doc_mode", "gate_color", "metrics", "page_classifications"]
