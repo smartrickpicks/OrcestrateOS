@@ -2057,6 +2057,24 @@
     .cgb-gate-panel h4 { margin: 0 0 8px; font-size: 0.88em; color: var(--text-2, #455a64); }
     .cgb-gate-step-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
     .pf-admin-note { font-size: 0.75em; color: var(--text-3); font-style: italic; margin-top: 6px; }
+    /* Preflight Lab overlay */
+    .preflight-lab-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10001; display: flex; align-items: center; justify-content: center; }
+    .preflight-lab-panel { background: var(--bg-1); border-radius: 12px; width: 90vw; max-width: 720px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .preflight-lab-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--border-1); }
+    .preflight-lab-header h3 { margin: 0; font-size: 1.1em; color: var(--text-2); }
+    .preflight-lab-close { background: none; border: none; font-size: 1.4em; cursor: pointer; color: #999; padding: 4px 8px; }
+    .preflight-lab-close:hover { color: var(--text-2); }
+    .preflight-lab-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+    .preflight-lab-section { margin-bottom: 18px; padding: 14px 16px; background: var(--bg-base); border: 1px solid var(--border-1); border-radius: 8px; }
+    .preflight-lab-section h4 { margin: 0 0 8px; font-size: 0.92em; color: var(--text-2); }
+    .preflight-lab-section p { margin: 0; font-size: 0.84em; color: var(--text-3); line-height: 1.5; }
+    .preflight-lab-section .lab-kv { display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.82em; }
+    .preflight-lab-section .lab-kv .lab-k { color: var(--text-3); }
+    .preflight-lab-section .lab-kv .lab-v { color: var(--text-2); font-weight: 500; }
+    .preflight-lab-cta { margin-top: 18px; text-align: center; }
+    .preflight-lab-cta button { padding: 10px 28px; border-radius: 6px; font-size: 0.9em; cursor: pointer; border: none; font-weight: 600; background: linear-gradient(135deg, #6a1b9a 0%, #4a148c 100%); color: white; }
+    .preflight-lab-cta button:hover { opacity: 0.9; }
+    .preflight-lab-empty { font-size: 0.82em; color: #999; font-style: italic; }
     .pftl-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; }
     .pftl-modal { background: var(--bg-1); border-radius: 12px; width: 90vw; max-width: 960px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
     .pftl-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--border-1); }
@@ -2494,7 +2512,7 @@
     .ev-view-toggle-btn:first-child { border-right: 1px solid var(--border-2); }
     .ev-view-toggle-btn:hover { background: var(--bg-3); }
     .ev-view-toggle-btn.active { background: var(--accent-2); color: #fff; }
-    .ev-reader-pane { width: 100%; height: 100%; overflow-y: auto; padding: 0; font-size: 0.92em; line-height: 1.6; color: var(--text-2); background: var(--bg-1); }
+    .ev-reader-pane { width: 100%; height: 100%; overflow: hidden; padding: 0; font-size: 0.92em; line-height: 1.6; color: var(--text-2); background: var(--bg-1); display: flex; flex-direction: column; }
     .ev-reader-placeholder { color: #aaa; text-align: center; padding: 40px 20px; font-size: 0.9em; }
     .ev-reader-page { padding: 16px 20px; border-bottom: 1px solid var(--border-1); }
     .ev-reader-page:last-child { border-bottom: none; }
@@ -2629,6 +2647,27 @@
     .ev-reader-raw-toggle:hover { background: var(--bg-3); color: var(--text-3); }
     .ev-reader-raw-block { display: none; white-space: pre-wrap; font-family: monospace; font-size: 0.85em; background: var(--bg-2); border: 1px solid var(--border-1); padding: 10px; border-radius: 4px; margin-top: 6px; color: var(--text-3); }
     .ev-reader-raw-block.visible { display: block; }
+    .ev-search-bar { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--bg-2, #f5f5f5); border-bottom: 1px solid var(--border-1, #e0e0e0); flex-shrink: 0; }
+    .ev-search-input { flex: 1; padding: 5px 10px; font-size: 0.85em; border: 1px solid var(--border-1, #ccc); border-radius: 4px; background: var(--bg-1, #fff); color: var(--text-1, #333); outline: none; min-width: 0; }
+    .ev-search-input:focus { border-color: var(--accent-2, #1976d2); box-shadow: 0 0 0 2px rgba(25,118,210,0.15); }
+    .ev-search-input::placeholder { color: var(--text-muted, #999); }
+    .ev-search-count { font-size: 0.78em; color: var(--text-muted, #888); white-space: nowrap; min-width: 55px; text-align: center; }
+    .ev-search-nav-btn { padding: 3px 8px; font-size: 0.82em; border: 1px solid var(--border-1, #ccc); border-radius: 4px; background: var(--bg-1, #fff); color: var(--text-2, #555); cursor: pointer; line-height: 1; }
+    .ev-search-nav-btn:hover:not(:disabled) { background: var(--bg-3, #eee); }
+    .ev-search-nav-btn:disabled { opacity: 0.4; cursor: default; }
+    .ev-search-close-btn { padding: 3px 7px; font-size: 0.85em; border: none; background: transparent; color: var(--text-muted, #999); cursor: pointer; line-height: 1; }
+    .ev-search-close-btn:hover { color: var(--text-1, #333); }
+    .ev-search-highlight { background: var(--warn-bg, #fff3cd); border-radius: 2px; padding: 0 1px; scroll-margin-top: 60px; }
+    .ev-search-highlight-active { background: var(--warn, #f57c00); color: #fff; border-radius: 2px; padding: 0 1px; scroll-margin-top: 60px; }
+    html[data-theme="dark"] .ev-search-bar { background: var(--bg-3, #13233b); border-color: var(--border-soft, #1a2e4b); }
+    html[data-theme="dark"] .ev-search-input { background: var(--bg-2, #0f1a2e); border-color: var(--border-soft, #1a2e4b); color: var(--text-primary, #eaf2ff); }
+    html[data-theme="dark"] .ev-search-input:focus { border-color: var(--accent-border, #8b5cf6); box-shadow: 0 0 0 2px rgba(139,92,246,0.2); }
+    html[data-theme="dark"] .ev-search-nav-btn { background: var(--bg-2, #0f1a2e); border-color: var(--border-soft, #1a2e4b); color: var(--text-secondary, #b8c7e6); }
+    html[data-theme="dark"] .ev-search-nav-btn:hover:not(:disabled) { background: var(--bg-4, #1a2e4b); }
+    html[data-theme="dark"] .ev-search-close-btn { color: var(--text-muted, #8ea2c8); }
+    html[data-theme="dark"] .ev-search-close-btn:hover { color: var(--text-primary, #eaf2ff); }
+    html[data-theme="dark"] .ev-search-highlight { background: rgba(251,191,36,0.3); color: var(--text-primary); }
+    html[data-theme="dark"] .ev-search-highlight-active { background: var(--warn, #fbbf24); color: #000; }
     .ev-moji-suspect { background: var(--encoding-bg); border-left: 3px solid var(--encoding-underline); padding-left: 6px; }
     .ev-moji-unreadable { background: #ffebee; border-left: 3px solid #f44336; padding-left: 6px; opacity: 0.7; }
     .ev-moji-unreadable-overlay { position: relative; pointer-events: none; user-select: none; }
@@ -3441,7 +3480,7 @@
               <a class="nav-section-link" data-section="v2_add_ons" href="#" onclick="_selectGridSection('V2 Add Ons'); return false;">V2 Add Ons</a>
             </div>
           </div>
-          <a class="nav-item verifier-only" data-page="verifier-org" href="#/verifier-org" title="Org Overview">
+          <a class="nav-item verifier-only" data-page="verifier-org" href="#/verifier-org" title="Org Overview" style="display:none;">
             <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
             <span class="nav-label">Org Overview</span>
           </a>
@@ -3757,6 +3796,16 @@
                 <span class="btn-label">Preflight</span>
               </button>
               <input type="file" id="toolbar-pdf-preflight-input" accept=".pdf,application/pdf" style="display: none;" onchange="toolbarPdfPreflightUpload(this)">
+              <button id="toolbar-preflight-lab-btn" onclick="toolbarPreflightLabClick()" class="triage-icon-btn"
+                      style="display: none; background: linear-gradient(135deg, #00897b 0%, #004d40 100%); color: white;"
+                      title="Preflight Lab (Preview)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 3h6v5l4 7H5l4-7V3z"/>
+                  <line x1="5" y1="20" x2="19" y2="20"/>
+                  <line x1="10" y1="3" x2="14" y2="3"/>
+                </svg>
+                <span class="btn-label">Lab</span>
+              </button>
               <div id="audit-header-dropdown-container" style="position: relative; display: inline-flex;">
                 <button onclick="toggleAuditHeaderDropdown()" id="btn-audit-header" class="triage-icon-btn" title="Audit Log"
                         style="background: #f5f5f5; border: 1px solid #e0e0e0; color: #555; max-width: 52px;"
@@ -4230,10 +4279,37 @@
               </div>
             </div>
             <!-- S3: Verifier Lane Cards (moved above filter bar) -->
-            <!-- S4: Governance Lifecycle Rail (placeholder — VTRIAGE-06) -->
-            <div id="vtriage-lifecycle" style="display:none;"></div>
-            <!-- S5: Governance Snapshot Tiles (placeholder — VTRIAGE-07) -->
-            <div id="vtriage-snapshot" style="display:none;"></div>
+            <!-- S4: Governance Lifecycle Rail (VTRIAGE-06) -->
+            <div id="vtriage-lifecycle" style="margin-bottom:20px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">
+                <h3 style="margin:0;font-size:1.1em;color:var(--text-1,#333);">Governance Lifecycle</h3>
+                <span style="font-size:0.75em;color:var(--text-muted,#999);" id="vtriage-lifecycle-updated"></span>
+              </div>
+              <div id="vtriage-lifecycle-stages" style="display:flex;gap:2px;align-items:stretch;overflow-x:auto;"></div>
+            </div>
+            <!-- S5: Governance Snapshot Tiles (VTRIAGE-07) -->
+            <div id="vtriage-snapshot" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;">
+              <div style="background:var(--tile-bg,var(--bg-1,#fff));border:1px solid var(--tile-border,var(--border-1,#e0e0e0));border-radius:10px;padding:14px 16px;text-align:center;">
+                <div style="font-size:0.72em;font-weight:600;color:var(--text-muted,#888);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;">Unknown Columns</div>
+                <div id="vtriage-snap-unknown" style="font-size:1.5em;font-weight:700;color:var(--tile-unknown-accent,var(--warn,#f57c00));">—</div>
+                <div id="vtriage-snap-unknown-hint" style="font-size:0.68em;color:var(--text-muted,#999);margin-top:4px;">Schema data not loaded</div>
+              </div>
+              <div style="background:var(--tile-bg,var(--bg-1,#fff));border:1px solid var(--tile-border,var(--border-1,#e0e0e0));border-radius:10px;padding:14px 16px;text-align:center;">
+                <div style="font-size:0.72em;font-weight:600;color:var(--text-muted,#888);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;">Address Merges</div>
+                <div id="vtriage-snap-merges" style="font-size:1.5em;font-weight:700;color:var(--tile-mapped-accent,var(--info,#1976d2));">0</div>
+                <div style="font-size:0.68em;color:var(--text-muted,#999);margin-top:4px;">From batch metadata</div>
+              </div>
+              <div style="background:var(--tile-bg,var(--bg-1,#fff));border:1px solid var(--tile-border,var(--border-1,#e0e0e0));border-radius:10px;padding:14px 16px;text-align:center;">
+                <div style="font-size:0.72em;font-weight:600;color:var(--text-muted,#888);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;">NA with Justification</div>
+                <div id="vtriage-snap-na" style="font-size:1.5em;font-weight:700;color:var(--tile-quality-accent,var(--ok,#2e7d32));">0</div>
+                <div style="font-size:0.68em;color:var(--text-muted,#999);margin-top:4px;">Resolved RFIs with NA</div>
+              </div>
+              <div style="background:var(--tile-bg,var(--bg-1,#fff));border:1px solid var(--tile-border,var(--border-1,#e0e0e0));border-radius:10px;padding:14px 16px;text-align:center;">
+                <div style="font-size:0.72em;font-weight:600;color:var(--text-muted,#888);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;">Correction Coverage</div>
+                <div id="vtriage-snap-corrections" style="font-size:1.5em;font-weight:700;color:var(--tile-missing-accent,var(--accent,#8B5CF6));">—</div>
+                <div id="vtriage-snap-corrections-detail" style="font-size:0.68em;color:var(--text-muted,#999);margin-top:4px;">0 / 0 corrections</div>
+              </div>
+            </div>
             <!-- S6: Unified Work Queue (VTRIAGE-08) -->
             <div id="vtriage-queue" style="margin-bottom:20px;">
               <h3 style="margin:0 0 12px 0;font-size:1.1em;color:var(--text-1,#333);">Work Queue</h3>
@@ -4255,6 +4331,24 @@
                 </table>
               </div>
               <div id="vtriage-queue-empty" style="display:none;padding:30px 20px;text-align:center;color:var(--text-muted,#666);font-size:0.9em;">No items match current filters.</div>
+            </div>
+            <div id="vtriage-workload" style="display:none;margin-bottom:20px;">
+              <h3 style="margin:0 0 12px 0;font-size:1.1em;color:var(--text-1,#333);">Analyst Workload</h3>
+              <div style="overflow-x:auto;border:1px solid var(--border-1,#e0e0e0);border-radius:8px;">
+                <table id="vtriage-workload-table" style="width:100%;border-collapse:collapse;">
+                  <thead>
+                    <tr>
+                      <th style="text-align:left;padding:10px 12px;border-bottom:2px solid var(--border-1,#e0e0e0);font-size:0.8em;color:var(--text-muted,#888);text-transform:uppercase;background:var(--table-head-bg,var(--bg-2,#fafafa));">Analyst</th>
+                      <th style="text-align:center;padding:10px 12px;border-bottom:2px solid var(--border-1,#e0e0e0);font-size:0.8em;color:var(--text-muted,#888);text-transform:uppercase;background:var(--table-head-bg,var(--bg-2,#fafafa));">Total</th>
+                      <th style="text-align:center;padding:10px 12px;border-bottom:2px solid var(--border-1,#e0e0e0);font-size:0.8em;color:var(--text-muted,#888);text-transform:uppercase;background:var(--table-head-bg,var(--bg-2,#fafafa));">Pending</th>
+                      <th style="text-align:center;padding:10px 12px;border-bottom:2px solid var(--border-1,#e0e0e0);font-size:0.8em;color:var(--text-muted,#888);text-transform:uppercase;background:var(--table-head-bg,var(--bg-2,#fafafa));">Open RFIs</th>
+                      <th style="text-align:center;padding:10px 12px;border-bottom:2px solid var(--border-1,#e0e0e0);font-size:0.8em;color:var(--text-muted,#888);text-transform:uppercase;background:var(--table-head-bg,var(--bg-2,#fafafa));">Oldest Pending</th>
+                    </tr>
+                  </thead>
+                  <tbody id="vtriage-workload-tbody"></tbody>
+                </table>
+              </div>
+              <div id="vtriage-workload-empty" style="display:none;padding:20px;text-align:center;color:var(--text-muted,#666);font-size:0.9em;">No analyst workload data.</div>
             </div>
           </div>
         </div>
@@ -4428,6 +4522,9 @@
                     <button class="ev-view-toggle-btn active" id="ev-toggle-reader" onclick="_evSetViewMode('reader')" title="Reader view with text extraction">Reader</button>
                     <button class="ev-view-toggle-btn" id="ev-toggle-pdf" onclick="_evSetViewMode('pdf')" title="Native PDF embed">PDF</button>
                   </div>
+                  <button onclick="_evSearchOpen()" title="Search in document (Ctrl+F)" style="padding:3px 7px;border:1px solid var(--border-1,#ccc);border-radius:4px;background:var(--bg-1,#fff);color:var(--text-2,#555);cursor:pointer;font-size:0.8em;line-height:1;display:flex;align-items:center;gap:3px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  </button>
                   <span class="ev-pdf-source" id="ev-pdf-source"></span>
                 </div>
               </div>
@@ -4440,7 +4537,15 @@
                   </div>
                 </div>
                 <div id="ev-reader-pane" class="ev-reader-pane" style="display: none;">
-                  <div class="ev-reader-content" id="ev-reader-content">
+                  <div class="ev-search-bar" id="ev-search-bar" style="display:none;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;color:var(--text-muted,#999);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" class="ev-search-input" id="ev-search-input" placeholder="Search in document..." autocomplete="off" spellcheck="false">
+                    <span class="ev-search-count" id="ev-search-count"></span>
+                    <button class="ev-search-nav-btn" id="ev-search-prev" onclick="_evSearchNav(-1)" disabled title="Previous match">&#9650;</button>
+                    <button class="ev-search-nav-btn" id="ev-search-next" onclick="_evSearchNav(1)" disabled title="Next match">&#9660;</button>
+                    <button class="ev-search-close-btn" id="ev-search-close" onclick="_evSearchClose()" title="Close search">&#10005;</button>
+                  </div>
+                  <div class="ev-reader-content" id="ev-reader-content" style="flex:1;overflow-y:auto;">
                     <div class="ev-reader-placeholder">Reader view will display extracted text with smart highlighting when a document is loaded.</div>
                   </div>
                 </div>
@@ -16062,7 +16167,7 @@
       if (readerBtn) readerBtn.classList.toggle('active', mode === 'reader');
       if (pdfBtn) pdfBtn.classList.toggle('active', mode === 'pdf');
       if (mode === 'reader') {
-        if (readerPane) readerPane.style.display = '';
+        if (readerPane) readerPane.style.display = 'flex';
         if (pdfObj) pdfObj.style.display = 'none';
         if (emptyEl) emptyEl.style.display = 'none';
         if (_evState._lastPdfUrl && _evState.activeRecordId) {
@@ -16084,6 +16189,7 @@
     }
 
     function _evFetchReaderText(pdfProxyUrl, recordId) {
+      _evSearchClose();
       var content = document.getElementById('ev-reader-content');
       if (!content) return;
       if (!pdfProxyUrl) {
@@ -16345,6 +16451,188 @@
       container.innerHTML = '';
       container.appendChild(div);
     }
+
+    var _evSearchState = { term: '', matches: [], activeIdx: -1, originalHTML: {}, debounceTimer: null };
+
+    function _evSearchOpen() {
+      if (_evState && _evState.viewMode !== 'reader') {
+        _evSetViewMode('reader');
+      }
+      var bar = document.getElementById('ev-search-bar');
+      if (!bar) return;
+      bar.style.display = 'flex';
+      var inp = document.getElementById('ev-search-input');
+      if (inp) { inp.value = ''; inp.focus(); }
+      var cnt = document.getElementById('ev-search-count');
+      if (cnt) cnt.textContent = '';
+      _evSearchState.term = '';
+      _evSearchState.matches = [];
+      _evSearchState.activeIdx = -1;
+      _evSearchUpdateNav();
+    }
+
+    function _evSearchClose() {
+      var bar = document.getElementById('ev-search-bar');
+      if (bar) bar.style.display = 'none';
+      _evSearchClearHighlights();
+      _evSearchState.term = '';
+      _evSearchState.matches = [];
+      _evSearchState.activeIdx = -1;
+      var cnt = document.getElementById('ev-search-count');
+      if (cnt) cnt.textContent = '';
+      _evSearchUpdateNav();
+    }
+
+    function _evSearchClearHighlights() {
+      var content = document.getElementById('ev-reader-content');
+      if (!content) return;
+      var pages = content.querySelectorAll('.ev-reader-page');
+      for (var i = 0; i < pages.length; i++) {
+        var pageEl = pages[i];
+        var key = pageEl.getAttribute('data-page-idx') || String(i);
+        if (_evSearchState.originalHTML[key] !== undefined) {
+          var textEl = pageEl.querySelector('.ev-reader-page-text');
+          if (textEl) textEl.innerHTML = _evSearchState.originalHTML[key];
+        }
+      }
+      _evSearchState.originalHTML = {};
+    }
+
+    function _evSearchExec() {
+      var inp = document.getElementById('ev-search-input');
+      var term = inp ? inp.value.trim() : '';
+      if (term === _evSearchState.term) return;
+      _evSearchState.term = term;
+      _evSearchClearHighlights();
+      _evSearchState.matches = [];
+      _evSearchState.activeIdx = -1;
+      var cnt = document.getElementById('ev-search-count');
+
+      if (!term || term.length < 2) {
+        if (cnt) cnt.textContent = term.length === 1 ? 'Min 2 chars' : '';
+        _evSearchUpdateNav();
+        return;
+      }
+
+      var content = document.getElementById('ev-reader-content');
+      if (!content) { if (cnt) cnt.textContent = ''; _evSearchUpdateNav(); return; }
+
+      var pages = content.querySelectorAll('.ev-reader-page');
+      var escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var regex = new RegExp('(' + escapedTerm + ')', 'gi');
+      var matchIdx = 0;
+
+      for (var i = 0; i < pages.length; i++) {
+        var pageEl = pages[i];
+        var textEl = pageEl.querySelector('.ev-reader-page-text');
+        if (!textEl) continue;
+        var key = pageEl.getAttribute('data-page-idx') || String(i);
+        if (!pageEl.getAttribute('data-page-idx')) pageEl.setAttribute('data-page-idx', String(i));
+        _evSearchState.originalHTML[key] = textEl.innerHTML;
+
+        var walker = document.createTreeWalker(textEl, NodeFilter.SHOW_TEXT, null, false);
+        var textNodes = [];
+        while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+        for (var t = 0; t < textNodes.length; t++) {
+          var node = textNodes[t];
+          var nodeText = node.textContent;
+          if (!regex.test(nodeText)) { regex.lastIndex = 0; continue; }
+          regex.lastIndex = 0;
+
+          var frag = document.createDocumentFragment();
+          var lastIdx = 0;
+          var m;
+          while ((m = regex.exec(nodeText)) !== null) {
+            if (m.index > lastIdx) frag.appendChild(document.createTextNode(nodeText.substring(lastIdx, m.index)));
+            var mark = document.createElement('mark');
+            mark.className = 'ev-search-highlight';
+            mark.setAttribute('data-search-idx', String(matchIdx));
+            mark.textContent = m[1];
+            frag.appendChild(mark);
+            _evSearchState.matches.push(mark);
+            matchIdx++;
+            lastIdx = regex.lastIndex;
+          }
+          if (lastIdx < nodeText.length) frag.appendChild(document.createTextNode(nodeText.substring(lastIdx)));
+          node.parentNode.replaceChild(frag, node);
+        }
+      }
+
+      if (cnt) cnt.textContent = _evSearchState.matches.length > 0 ? '0 / ' + _evSearchState.matches.length : 'No matches';
+      if (_evSearchState.matches.length > 0) {
+        _evSearchState.activeIdx = 0;
+        _evSearchHighlightActive();
+      }
+      _evSearchUpdateNav();
+    }
+
+    function _evSearchHighlightActive() {
+      for (var i = 0; i < _evSearchState.matches.length; i++) {
+        _evSearchState.matches[i].className = 'ev-search-highlight';
+      }
+      var idx = _evSearchState.activeIdx;
+      if (idx >= 0 && idx < _evSearchState.matches.length) {
+        var el = _evSearchState.matches[idx];
+        el.className = 'ev-search-highlight-active';
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        var cnt = document.getElementById('ev-search-count');
+        if (cnt) cnt.textContent = (idx + 1) + ' / ' + _evSearchState.matches.length;
+      }
+    }
+
+    function _evSearchNav(dir) {
+      if (_evSearchState.matches.length === 0) return;
+      var next = _evSearchState.activeIdx + dir;
+      if (next < 0) next = _evSearchState.matches.length - 1;
+      if (next >= _evSearchState.matches.length) next = 0;
+      _evSearchState.activeIdx = next;
+      _evSearchHighlightActive();
+    }
+
+    function _evSearchUpdateNav() {
+      var prev = document.getElementById('ev-search-prev');
+      var next = document.getElementById('ev-search-next');
+      var has = _evSearchState.matches.length > 0;
+      if (prev) prev.disabled = !has;
+      if (next) next.disabled = !has;
+    }
+
+    (function() {
+      document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+          var readerPane = document.getElementById('ev-reader-pane');
+          if (readerPane && readerPane.style.display !== 'none') {
+            e.preventDefault();
+            _evSearchOpen();
+          }
+        }
+        if (e.key === 'Escape') {
+          var bar = document.getElementById('ev-search-bar');
+          if (bar && bar.style.display !== 'none') {
+            _evSearchClose();
+          }
+        }
+        if (e.key === 'Enter') {
+          var bar = document.getElementById('ev-search-bar');
+          var inp = document.getElementById('ev-search-input');
+          if (bar && bar.style.display !== 'none' && document.activeElement === inp) {
+            e.preventDefault();
+            if (e.shiftKey) _evSearchNav(-1);
+            else _evSearchNav(1);
+          }
+        }
+      });
+      setTimeout(function() {
+        var inp = document.getElementById('ev-search-input');
+        if (inp) {
+          inp.addEventListener('input', function() {
+            clearTimeout(_evSearchState.debounceTimer);
+            _evSearchState.debounceTimer = setTimeout(_evSearchExec, 250);
+          });
+        }
+      }, 500);
+    })();
 
     function _evEscapeHtml(str) {
       if (!str) return '';
@@ -17185,7 +17473,7 @@
         if (_evState.viewMode === 'reader') {
           pdfObj.style.display = 'none';
           if (readerPane) {
-            readerPane.style.display = '';
+            readerPane.style.display = 'flex';
             _evFetchReaderText(resolved.pdfUrl, recordId);
           }
         } else {
@@ -26302,7 +26590,15 @@
       options = options || {};
       // Loader is now a drawer, not a page - redirect loader requests to triage
       if (page === 'loader') page = 'triage';
-      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-org', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'contract-generator', 'record-inspector-v2', 'row', 'restricted'];
+      // v2.56: Redirect verifier-org to unified triage (before pages check)
+      if (page === 'verifier-org') {
+        var orgHash = window.location.hash || '';
+        var orgParams = orgHash.indexOf('?') !== -1 ? orgHash.substring(orgHash.indexOf('?')) : '';
+        console.log('[V2.56] Redirecting #/verifier-org → #/triage' + orgParams);
+        window.location.hash = '#/triage' + orgParams;
+        return;
+      }
+      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'contract-generator', 'record-inspector-v2', 'row', 'restricted'];
       var _basePage = page.split('/')[0];
       if (_basePage === 'row') {
         if (_srrCurrentPage !== 'row') {
@@ -26379,10 +26675,6 @@
       if (page === 'review' && currentMode !== 'verifier' && currentMode !== 'admin') {
         console.log('[Navigate] Review page requires verifier/admin mode');
         restrictedReason = 'Config Inspector is only available to Verifiers and Admins.';
-      }
-      if (page === 'verifier-org' && currentMode !== 'verifier' && currentMode !== 'admin') {
-        console.log('[Navigate] Verifier Org Overview page requires verifier/admin mode');
-        restrictedReason = 'Org Overview is only available to Verifiers and Admins.';
       }
       if (page === 'verifier-review' && currentMode !== 'verifier' && currentMode !== 'admin') {
         console.log('[Navigate] Verifier Review page requires verifier/admin mode');
@@ -26572,11 +26864,6 @@
       // If navigating to admin-approval, load sample data
       if (page === 'admin-approval') {
         setTimeout(function() { loadAdminApprovalData(); }, 0);
-      }
-      
-      // v2.55: If navigating to verifier-org, load operations data
-      if (page === 'verifier-org') {
-        setTimeout(function() { if (typeof vorgLoadData === 'function') vorgLoadData(); }, 0);
       }
       
       // Update hash (include tab for admin deep-links, preserve grid query params)
@@ -41959,6 +42246,9 @@
       vTriageRenderBatchTable(filteredBatches);
       vTriageRenderLanes();
       vTriageRenderQueue();
+      vTriageRenderLifecycle();
+      vTriageRenderSnapshot();
+      vTriageRenderAnalystWorkload();
       _vTriageUpdateUrlState();
     }
 
@@ -42173,7 +42463,7 @@
           if (tp === 'patch') pv.patches++;
           else if (tp === 'rfi') pv.rfis++;
           else if (tp === 'correction') pv.corrections++;
-        } else if (st === 'needs_clarification' || st === 'returned_to_analyst') {
+        } else if (st === 'needs_clarification' || st === 'returned_to_analyst' || st === 'awaiting_verifier') {
           cl.total++;
           if (st === 'returned_to_analyst') cl.returned++;
           else cl.awaiting++;
@@ -42265,6 +42555,165 @@
       });
       tbody.innerHTML = html;
     }
+    function vTriageRenderLifecycle() {
+      var container = document.getElementById('vtriage-lifecycle-stages');
+      if (!container) return;
+      var items = _vTriageState.queueItems;
+      var total = items.length || 1;
+      var stages = [
+        { label: 'Submitted', icon: '📥', key: 'submitted', statuses: ['pending', 'submitted'] },
+        { label: 'Under Review', icon: '🔍', key: 'review', statuses: ['under_review', 'verifier_responded', 'in_review'] },
+        { label: 'Clarification', icon: '💬', key: 'clarification', statuses: ['needs_clarification', 'returned_to_analyst', 'awaiting_verifier'] },
+        { label: 'Approved', icon: '✅', key: 'approved', statuses: ['verifier_approved', 'approved', 'sent_to_admin'] },
+        { label: 'Applied / Rejected', icon: '🏁', key: 'terminal', statuses: ['applied', 'rejected', 'resolved'] }
+      ];
+      var counts = {};
+      stages.forEach(function(s) { counts[s.key] = 0; });
+      items.forEach(function(it) {
+        var st = _vTriageGetStatusLower(it);
+        for (var i = 0; i < stages.length; i++) {
+          if (stages[i].statuses.indexOf(st) !== -1) { counts[stages[i].key]++; break; }
+        }
+      });
+      var maxKey = '';
+      var maxCount = -1;
+      Object.keys(counts).forEach(function(k) { if (counts[k] > maxCount) { maxCount = counts[k]; maxKey = k; } });
+      var html = '';
+      stages.forEach(function(s, i) {
+        var c = counts[s.key];
+        var pct = items.length > 0 ? Math.round((c / items.length) * 100) : 0;
+        var active = (s.key === maxKey && c > 0);
+        var cls = 'ta-lifecycle-stage' + (active ? ' ta-lifecycle-active' : '');
+        html += '<div class="' + cls + '" style="flex:1;text-align:center;padding:10px 6px;border-radius:8px;min-width:90px;cursor:default;">';
+        html += '<div class="ta-lifecycle-icon" style="font-size:0.85em;display:flex;align-items:center;justify-content:center;">' + s.icon + '</div>';
+        html += '<div class="ta-lifecycle-label" style="font-size:0.62em;font-weight:600;margin:2px 0 0;">' + s.label + '</div>';
+        html += '<div class="ta-lifecycle-count" style="font-size:0.9em;font-weight:700;">' + c + ' <span style="font-size:0.65em;font-weight:400;">(' + pct + '%)</span></div>';
+        html += '</div>';
+        if (i < stages.length - 1) html += '<div class="ta-lifecycle-arrow" style="display:flex;align-items:center;font-size:0.7em;">\u25B6</div>';
+      });
+      container.innerHTML = html;
+      var updEl = document.getElementById('vtriage-lifecycle-updated');
+      if (updEl) updEl.textContent = 'Updated ' + new Date().toLocaleTimeString();
+    }
+
+    function vTriageRenderSnapshot() {
+      var items = _vTriageState.queueItems;
+      var unknownEl = document.getElementById('vtriage-snap-unknown');
+      var unknownHint = document.getElementById('vtriage-snap-unknown-hint');
+      if (unknownEl) {
+        var schemaCache = (typeof window._schemaColumnCache !== 'undefined') ? window._schemaColumnCache : null;
+        if (schemaCache && schemaCache.unknown_count !== undefined) {
+          unknownEl.textContent = schemaCache.unknown_count;
+          if (unknownHint) unknownHint.textContent = 'From schema validation';
+        } else {
+          unknownEl.textContent = '\u2014';
+          if (unknownHint) unknownHint.textContent = 'Schema data not loaded';
+        }
+      }
+      var mergesEl = document.getElementById('vtriage-snap-merges');
+      if (mergesEl) {
+        var mergeCount = 0;
+        _vTriageState.batches.forEach(function(b) {
+          var meta = b.metadata || b.meta || {};
+          mergeCount += parseInt(meta.address_merges || meta.merge_count || 0, 10);
+        });
+        mergesEl.textContent = mergeCount;
+      }
+      var naEl = document.getElementById('vtriage-snap-na');
+      if (naEl) {
+        var naCount = 0;
+        items.forEach(function(it) {
+          var tp = (it.item_type || it.type || '').toLowerCase();
+          var st = _vTriageGetStatusLower(it);
+          if (tp === 'rfi' && (st === 'resolved' || st === 'verifier_approved' || st === 'approved')) {
+            var meta = it.metadata || it.meta || {};
+            if (meta.na_justification || meta.is_na || meta.justification_type === 'NA') naCount++;
+          }
+        });
+        naEl.textContent = naCount;
+      }
+      var corrEl = document.getElementById('vtriage-snap-corrections');
+      var corrDetail = document.getElementById('vtriage-snap-corrections-detail');
+      if (corrEl) {
+        var totalCorr = 0, approvedCorr = 0;
+        items.forEach(function(it) {
+          var tp = (it.item_type || it.type || '').toLowerCase();
+          if (tp === 'correction') {
+            totalCorr++;
+            var st = _vTriageGetStatusLower(it);
+            if (st === 'approved' || st === 'verifier_approved' || st === 'applied') approvedCorr++;
+          }
+        });
+        if (totalCorr > 0) {
+          var pct = Math.round((approvedCorr / totalCorr) * 100);
+          corrEl.textContent = pct + '%';
+          if (corrDetail) corrDetail.textContent = approvedCorr + ' / ' + totalCorr + ' corrections';
+        } else {
+          corrEl.textContent = '\u2014';
+          if (corrDetail) corrDetail.textContent = '0 / 0 corrections';
+        }
+      }
+    }
+
+    function vTriageRenderAnalystWorkload() {
+      var panel = document.getElementById('vtriage-workload');
+      if (!panel) return;
+      if (typeof currentMode !== 'undefined' && currentMode !== 'admin') {
+        panel.style.display = 'none';
+        return;
+      }
+      panel.style.display = 'block';
+      var tbody = document.getElementById('vtriage-workload-tbody');
+      var emptyEl = document.getElementById('vtriage-workload-empty');
+      if (!tbody) return;
+      var items = _vTriageState.queueItems;
+      var analysts = {};
+      items.forEach(function(it) {
+        var author = it.author_email || it.author_id || it.created_by || 'unknown';
+        if (!analysts[author]) analysts[author] = { total: 0, pending: 0, openRfis: 0, oldestPending: null };
+        var a = analysts[author];
+        a.total++;
+        var st = _vTriageGetStatusLower(it);
+        var tp = (it.item_type || it.type || '').toLowerCase();
+        if (st === 'pending' || st === 'submitted') {
+          a.pending++;
+          if (it.created_at) {
+            var ts = new Date(it.created_at).getTime();
+            if (a.oldestPending === null || ts < a.oldestPending) a.oldestPending = ts;
+          }
+        }
+        if (tp === 'rfi' && st !== 'resolved' && st !== 'verifier_approved' && st !== 'approved' && st !== 'applied' && st !== 'rejected') {
+          a.openRfis++;
+        }
+      });
+      var keys = Object.keys(analysts).sort(function(a, b) { return analysts[b].total - analysts[a].total; });
+      if (keys.length === 0) {
+        tbody.innerHTML = '';
+        if (emptyEl) emptyEl.style.display = 'block';
+        return;
+      }
+      if (emptyEl) emptyEl.style.display = 'none';
+      var html = '';
+      keys.forEach(function(k) {
+        var a = analysts[k];
+        var oldest = '\u2014';
+        var oldestColor = 'var(--text-muted,#999)';
+        if (a.oldestPending !== null) {
+          var ageH = Math.floor((Date.now() - a.oldestPending) / 3600000);
+          oldest = ageH < 24 ? ageH + 'h' : Math.floor(ageH / 24) + 'd';
+          oldestColor = ageH < 24 ? 'var(--ok,#2e7d32)' : ageH < 72 ? 'var(--warn,#f57c00)' : 'var(--bad,#c62828)';
+        }
+        html += '<tr>';
+        html += '<td style="padding:8px 12px;border-bottom:1px solid var(--border-1,#eee);font-size:0.85em;font-weight:500;color:var(--text-1,#333);">' + _vorgEsc(k) + '</td>';
+        html += '<td style="padding:8px 12px;border-bottom:1px solid var(--border-1,#eee);text-align:center;font-size:0.85em;">' + a.total + '</td>';
+        html += '<td style="padding:8px 12px;border-bottom:1px solid var(--border-1,#eee);text-align:center;font-size:0.85em;">' + (a.pending > 0 ? '<span style="color:var(--warn,#e65100);font-weight:600;">' + a.pending + '</span>' : '0') + '</td>';
+        html += '<td style="padding:8px 12px;border-bottom:1px solid var(--border-1,#eee);text-align:center;font-size:0.85em;">' + (a.openRfis > 0 ? '<span style="color:var(--info,#1565c0);font-weight:600;">' + a.openRfis + '</span>' : '0') + '</td>';
+        html += '<td style="padding:8px 12px;border-bottom:1px solid var(--border-1,#eee);text-align:center;font-size:0.85em;"><span style="color:' + oldestColor + ';font-weight:600;">' + oldest + '</span></td>';
+        html += '</tr>';
+      });
+      tbody.innerHTML = html;
+    }
+
     // === END V2.56 VERIFIER TRIAGE UNIFICATION (P0) ===
 
     // ========== VERIFIER TRIAGE & PAYLOAD SYSTEM (v1.5.2) ==========
@@ -42353,10 +42802,6 @@
 
     function opsOnRoleSwitch() {
       console.log('[OpsView] Role switch detected (dbRead=' + _opsViewFlags.dbRead + ')');
-      if (typeof currentPage !== 'undefined' && currentPage === 'verifier-org' && typeof vorgLoadData === 'function') {
-        console.log('[OpsView] Refreshing Org View for role switch');
-        vorgLoadData();
-      }
       if (_opsViewFlags.dbRead) {
         verifierQueueState.payloads = [];
         try { localStorage.removeItem('srr_verifier_queue_v1'); } catch(e) {}
@@ -59181,9 +59626,20 @@ var P022_RuntimeValidation = {
     } else {
       btn.style.display = 'none';
     }
+    // Preflight Lab button visibility (same role gate + feature flag)
+    var labBtn = document.getElementById('toolbar-preflight-lab-btn');
+    if (labBtn) {
+      var labEnabled = window.__PREFLIGHT_LAB_ENABLED === true || sandbox;
+      if ((role === 'admin' || role === 'architect' || sandbox) && labEnabled) {
+        labBtn.style.display = '';
+      } else {
+        labBtn.style.display = 'none';
+      }
+    }
   };
 
   window.toolbarPdfPreflightClick = function() {
+    console.log('[PREFLIGHT-BTN] click: source=preflight_btn, ts=' + new Date().toISOString());
     var sandbox = (typeof isDemoMode === 'function') && isDemoMode();
     if (sandbox && typeof pftlOpen === 'function') {
       pftlOpen();
@@ -59192,6 +59648,117 @@ var P022_RuntimeValidation = {
       if (input) input.click();
     }
   };
+
+  /* ── Preflight Lab (test-only) ── */
+
+  window.toolbarPreflightLabClick = function() {
+    console.log('[PREFLIGHT-LAB] click: source=lab_btn, ts=' + new Date().toISOString());
+    preflightLabOpen();
+  };
+
+  window.preflightLabOpen = function() {
+    var role = (typeof _pfGateGetRole === 'function') ? _pfGateGetRole() : 'analyst';
+    var sandbox = (typeof isDemoMode === 'function') && isDemoMode();
+    var allowed = (role === 'admin' || role === 'architect' || sandbox);
+    console.log('[PREFLIGHT-LAB] open: role=' + role + ', sandbox=' + sandbox + ', allowed=' + allowed);
+    _preflightLabRender(allowed);
+    var overlay = document.getElementById('preflight-lab-overlay');
+    if (overlay) overlay.style.display = '';
+  };
+
+  window.preflightLabClose = function() {
+    var overlay = document.getElementById('preflight-lab-overlay');
+    if (overlay) overlay.style.display = 'none';
+  };
+
+  function _preflightLabRender(allowed) {
+    var overlay = document.getElementById('preflight-lab-overlay');
+    if (!overlay) return;
+
+    if (!allowed) {
+      overlay.innerHTML =
+        '<div class="preflight-lab-panel">' +
+          '<div class="preflight-lab-header"><h3>Preflight Lab</h3>' +
+            '<button class="preflight-lab-close" onclick="preflightLabClose()">&times;</button></div>' +
+          '<div class="preflight-lab-body">' +
+            '<div class="pftl-forbidden">Access restricted to admin/architect roles.</div>' +
+          '</div></div>';
+      return;
+    }
+
+    var html = '<div class="preflight-lab-panel">' +
+      '<div class="preflight-lab-header"><h3>Preflight Lab (Preview)</h3>' +
+        '<button class="preflight-lab-close" onclick="preflightLabClose()">&times;</button></div>' +
+      '<div class="preflight-lab-body">';
+
+    // ── Contract Context section ──
+    html += '<div class="preflight-lab-section"><h4>Contract Context</h4>';
+    var cache = (typeof TriageAnalytics !== 'undefined' && TriageAnalytics._cache) ? TriageAnalytics._cache : null;
+    if (cache && cache.contracts && cache.contracts.length > 0) {
+      var totalContracts = cache.contracts.length;
+      var bands = { critical: 0, at_risk: 0, watch: 0, healthy: 0 };
+      cache.contracts.forEach(function(c) {
+        var b = c._health_band ? c._health_band.key : 'healthy';
+        if (bands.hasOwnProperty(b)) bands[b]++;
+      });
+      html += '<div class="lab-kv"><span class="lab-k">Total contracts</span><span class="lab-v">' + totalContracts + '</span></div>';
+      html += '<div class="lab-kv"><span class="lab-k">Critical</span><span class="lab-v" style="color:#c62828;">' + bands.critical + '</span></div>';
+      html += '<div class="lab-kv"><span class="lab-k">At risk</span><span class="lab-v" style="color:#e65100;">' + bands.at_risk + '</span></div>';
+      html += '<div class="lab-kv"><span class="lab-k">Watch</span><span class="lab-v" style="color:#f9a825;">' + bands.watch + '</span></div>';
+      html += '<div class="lab-kv"><span class="lab-k">Healthy</span><span class="lab-v" style="color:#2e7d32;">' + bands.healthy + '</span></div>';
+    } else {
+      html += '<p class="preflight-lab-empty">No contract data loaded yet.</p>';
+    }
+    html += '</div>';
+
+    // ── Social / Work Activity Summary section ──
+    html += '<div class="preflight-lab-section"><h4>Social / Work Activity Summary</h4>';
+    if (cache && cache.lanes) {
+      html += '<div class="lab-kv"><span class="lab-k">Preflight lane</span><span class="lab-v">' + (cache.lanes.preflight ? cache.lanes.preflight.total || 0 : 0) + ' items</span></div>';
+      html += '<div class="lab-kv"><span class="lab-k">Semantic lane</span><span class="lab-v">' + (cache.lanes.semantic ? cache.lanes.semantic.total || 0 : 0) + ' items</span></div>';
+      html += '<div class="lab-kv"><span class="lab-k">Patch review lane</span><span class="lab-v">' + (cache.lanes.patch_review ? cache.lanes.patch_review.total || 0 : 0) + ' items</span></div>';
+    } else {
+      html += '<p class="preflight-lab-empty">No activity data available.</p>';
+    }
+    if (cache && cache.lifecycle_stage_counts) {
+      var stages = cache.lifecycle_stage_counts;
+      var stageKeys = Object.keys(stages);
+      if (stageKeys.length > 0) {
+        html += '<div style="margin-top: 8px; font-size: 0.82em; color: var(--text-3);">Lifecycle stages:</div>';
+        stageKeys.forEach(function(sk) {
+          html += '<div class="lab-kv"><span class="lab-k">' + sk + '</span><span class="lab-v">' + stages[sk] + '</span></div>';
+        });
+      }
+    }
+    html += '</div>';
+
+    // ── Annotation / Evidence Context section ──
+    html += '<div class="preflight-lab-section"><h4>Annotation / Evidence Context</h4>';
+    var pfState = (typeof _pfGateState !== 'undefined') ? _pfGateState : null;
+    if (pfState && pfState.result) {
+      var r = pfState.result;
+      html += '<div class="lab-kv"><span class="lab-k">Gate color</span><span class="lab-v">' + (r.gate_color || 'N/A') + '</span></div>';
+      html += '<div class="lab-kv"><span class="lab-k">Doc mode</span><span class="lab-v">' + (r.doc_mode || 'N/A') + '</span></div>';
+      if (r.metrics) {
+        html += '<div class="lab-kv"><span class="lab-k">Total pages</span><span class="lab-v">' + (r.metrics.total_pages || 0) + '</span></div>';
+        html += '<div class="lab-kv"><span class="lab-k">Avg chars/page</span><span class="lab-v">' + (r.metrics.avg_chars_per_page != null ? Math.round(r.metrics.avg_chars_per_page) : 'N/A') + '</span></div>';
+      }
+      if (pfState.actionTaken) {
+        html += '<div class="lab-kv"><span class="lab-k">Action taken</span><span class="lab-v">' + pfState.actionTaken + '</span></div>';
+      }
+    } else {
+      html += '<p class="preflight-lab-empty">No preflight result available. Run preflight first.</p>';
+    }
+    html += '</div>';
+
+    // ── CTA ──
+    html += '<div class="preflight-lab-cta">' +
+      '<button onclick="preflightLabClose(); toolbarPdfPreflightClick();">Run Preflight</button>' +
+    '</div>';
+
+    html += '</div></div>';
+    overlay.innerHTML = html;
+  }
 
   window.toolbarPdfPreflightUpload = function(input) {
     var file = input && input.files && input.files[0];
@@ -60035,8 +60602,10 @@ var P022_RuntimeValidation = {
 
   function _pftlHandleResponse(resp) {
     if (resp.status === 403) {
-      return resp.json().then(function(body) {
-        var msg = (body.error && body.error.message) || 'Forbidden';
+      return resp.text().then(function(text) {
+        var body;
+        try { body = JSON.parse(text); } catch(e) { body = null; }
+        var msg = (body && body.error && body.error.message) || 'Forbidden';
         if (msg === 'Preflight is in admin sandbox mode.') {
           _pftlState.forbidden = true;
           _pftlState.running = false;
@@ -60048,8 +60617,10 @@ var P022_RuntimeValidation = {
       });
     }
     if (!resp.ok) {
-      return resp.json().then(function(body) {
-        var msg = (body.error && body.error.message) || ('HTTP ' + resp.status);
+      return resp.text().then(function(text) {
+        var body;
+        try { body = JSON.parse(text); } catch(e) { body = null; }
+        var msg = (body && body.error && body.error.message) || ('HTTP ' + resp.status);
         throw new Error(msg);
       });
     }
@@ -64050,6 +64621,7 @@ var P022_RuntimeValidation = {
 </script>
 
 <div id="pftl-overlay" class="pftl-overlay" style="display: none;"></div>
+<div id="preflight-lab-overlay" class="preflight-lab-overlay" style="display: none;"></div>
 <!-- Member Drive Folder Modal -->
 <div id="member-drive-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;">
   <div style="background:var(--bg-2,#fff);border-radius:8px;padding:24px;max-width:480px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.3);border:1px solid var(--border-1,#ddd);">

@@ -55,6 +55,12 @@ def require_evidence_inspector():
     return None
 
 
+PREFLIGHT_LAB = "PREFLIGHT_LAB"
+
+def is_preflight_lab_enabled():
+    return is_enabled(PREFLIGHT_LAB)
+
+
 OPS_VIEW_DB_READ = "OPS_VIEW_DB_READ"
 OPS_VIEW_DB_WRITE = "OPS_VIEW_DB_WRITE"
 
