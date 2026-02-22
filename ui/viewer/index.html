@@ -3459,9 +3459,10 @@
             <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="12" y1="2" x2="12" y2="22"/></svg></span>
             <span class="nav-label">Contract Generator</span>
           </a>
-          <a class="nav-item" data-page="record-inspector-v2" id="nav-record-inspector-v2" href="#/record-inspector-v2" title="Workspace V2 (Beta)" style="display:none;">
+          <!-- Annotation Layer Inspector: access via grid toolbar tab, not sidebar -->
+          <a class="nav-item" data-page="record-inspector-v2" id="nav-record-inspector-v2" href="#/record-inspector-v2" title="Annotation Layer Inspector" style="display:none !important;">
             <span class="sidebar-icon-wrap"><svg class="sidebar-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/></svg></span>
-            <span class="nav-label">Workspace V2</span>
+            <span class="nav-label">Annotation Layer</span>
           </a>
         </div>
 
@@ -4339,6 +4340,7 @@
             <button id="grid-mode-grid-btn" class="gfc-btn" onclick="setGridViewMode('grid')">Evidence Viewer</button>
             <button id="grid-mode-sync-btn" class="gfc-btn" onclick="_syncTogglePanel()">Suggestions</button>
             <button class="gfc-btn" id="pf-gate-tab-btn" onclick="pfGateTogglePanel()" style="display:none;">Preflight</button>
+            <button class="gfc-btn" id="gfc-annotation-layer-btn" onclick="_gfcOpenAnnotationLayer()" style="display:none;">Annotation Layer</button>
             <div class="gfc-divider" id="gfc-composite-divider" style="display:none;"></div>
             <button id="gfc-expand-btn" class="gfc-btn" onclick="_p1cExpandAll()" style="display:none;">Expand All</button>
             <button id="gfc-collapse-btn" class="gfc-btn" onclick="_p1cCollapseAll()" style="display:none;">Collapse All</button>
@@ -17780,6 +17782,17 @@
         setTimeout(function() { openRowReviewDrawer(sn, ri); }, 50);
       }
     }
+
+    // Annotation Layer tab: opens workspace V2 from grid toolbar
+    window._gfcOpenAnnotationLayer = function() {
+      var hasResult = (typeof _pftlState !== 'undefined' && _pftlState.result) ||
+                      (typeof _pfGateState !== 'undefined' && _pfGateState.result);
+      if (!hasResult) {
+        if (typeof showToast === 'function') showToast('Run preflight first to open the Annotation Layer.', 'info');
+        return;
+      }
+      if (typeof pftlOpenWorkspaceV2 === 'function') pftlOpenWorkspaceV2();
+    };
 
     function setGridViewMode(mode) {
       var prevMode = _gridViewMode;
@@ -41699,9 +41712,10 @@
         if (d && d.data) {
           if (d.data.RECORD_INSPECTOR_V2 === true) FEATURE_FLAGS.RECORD_INSPECTOR_V2 = true;
           if (d.data.RECORD_INSPECTOR_V2_DEFAULT === true) FEATURE_FLAGS.RECORD_INSPECTOR_V2_DEFAULT = true;
-          // V3: Show/hide workspace nav item based on flag
-          var wsNav = document.getElementById('nav-record-inspector-v2');
-          if (wsNav) wsNav.style.display = FEATURE_FLAGS.RECORD_INSPECTOR_V2 ? '' : 'none';
+          // V3: Annotation Layer nav moved to grid toolbar tab; sidebar item stays hidden
+          // Show/hide toolbar tab instead
+          var alBtn = document.getElementById('gfc-annotation-layer-btn');
+          if (alBtn) alBtn.style.display = FEATURE_FLAGS.RECORD_INSPECTOR_V2 ? '' : 'none';
           // V3: Activate contract_author role when workspace V2 is enabled
           if (FEATURE_FLAGS.RECORD_INSPECTOR_V2 && typeof ROLE_REGISTRY !== 'undefined' && ROLE_REGISTRY.contract_author) {
             ROLE_REGISTRY.contract_author.active = true;
@@ -58639,6 +58653,11 @@ var P022_RuntimeValidation = {
         _pfGateState.result = result;
         _pfGateState.actionTaken = null;
         if (typeof pfGateRenderPanel === 'function') pfGateRenderPanel();
+        // Auto-show Annotation Layer tab after preflight completes
+        var _alBtn = document.getElementById('gfc-annotation-layer-btn');
+        if (_alBtn && typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.RECORD_INSPECTOR_V2) {
+          _alBtn.style.display = '';
+        }
         var gateColor = (result.gate_color || 'GREEN').toUpperCase();
         if (gateColor === 'GREEN') {
           if (typeof showToast === 'function') showToast('Preflight complete — GREEN (all checks passed)', 'success');
@@ -61178,7 +61197,11 @@ var P022_RuntimeValidation = {
       if (effectiveStatus !== st) oppReason = 'Analyst override \u2192 ' + String(effectiveStatus || '').toUpperCase() + (oppReason ? '. ' + oppReason : '');
       var oppOverride = _pftlGetCheckOverride('opportunity_spine', ck.code);
       if (oppOverride && oppOverride.comment) oppReason += (oppReason ? ' ' : '') + '(Comment: ' + oppOverride.comment + ')';
-      html += '<td class="opp-reason">' + (oppReason ? _pftlEsc(oppReason) : '') + '</td>';
+      var oppReasonHtml = oppReason ? _pftlEsc(oppReason) : '';
+      if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.RECORD_INSPECTOR_V2 && effectiveStatus !== 'pass') {
+        oppReasonHtml += ' <a href="#" onclick="event.preventDefault(); pftlOpenWorkspaceV2(\'opportunity_spine\', \'' + _pftlEsc(ck.code) + '\')" style="color:#1565c0;font-size:0.85em;text-decoration:underline;white-space:nowrap;">Open in Inspector \u2192</a>';
+      }
+      html += '<td class="opp-reason">' + oppReasonHtml + '</td>';
       html += '</tr>';
 
       if (ck.code === 'OPP_CONTRACT_SUBTYPE' && ck.candidates && ck.candidates.length > 0) {
@@ -61298,7 +61321,11 @@ var P022_RuntimeValidation = {
       if (effectiveStatus !== st) reasonText = 'Analyst override \u2192 ' + String(effectiveStatus || '').toUpperCase() + (reasonText ? '. ' + reasonText : '');
       var schOverride = _pftlGetCheckOverride('schedule_structure', ck.code);
       if (schOverride && schOverride.comment) reasonText += (reasonText ? ' ' : '') + '(Comment: ' + schOverride.comment + ')';
-      html += '<td class="sch-reason">' + (reasonText ? _pftlEsc(reasonText) : '') + '</td>';
+      var schReasonHtml = reasonText ? _pftlEsc(reasonText) : '';
+      if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.RECORD_INSPECTOR_V2 && effectiveStatus !== 'pass') {
+        schReasonHtml += ' <a href="#" onclick="event.preventDefault(); pftlOpenWorkspaceV2(\'schedule_structure\', \'' + _pftlEsc(ck.code) + '\')" style="color:#1565c0;font-size:0.85em;text-decoration:underline;white-space:nowrap;">Open in Inspector \u2192</a>';
+      }
+      html += '<td class="sch-reason">' + schReasonHtml + '</td>';
       html += '</tr>';
 
       if (ck.code === 'SCH_TYPE' && ck.candidates && ck.candidates.length > 0) {
@@ -61367,7 +61394,11 @@ var P022_RuntimeValidation = {
       if (effectiveStatus !== st) finReason = 'Analyst override → ' + String(effectiveStatus || '').toUpperCase() + (finReason ? '. ' + finReason : '');
       var finOverride = _pftlGetCheckOverride('financials_readiness', ck.code);
       if (finOverride && finOverride.comment) finReason += (finReason ? ' ' : '') + '(Comment: ' + finOverride.comment + ')';
-      html += '<td class="sch-reason">' + (finReason ? _pftlEsc(finReason) : '') + '</td>';
+      var finReasonHtml = finReason ? _pftlEsc(finReason) : '';
+      if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.RECORD_INSPECTOR_V2 && effectiveStatus !== 'pass') {
+        finReasonHtml += ' <a href="#" onclick="event.preventDefault(); pftlOpenWorkspaceV2(\'financials_readiness\', \'' + _pftlEsc(ck.code) + '\')" style="color:#1565c0;font-size:0.85em;text-decoration:underline;white-space:nowrap;">Open in Inspector \u2192</a>';
+      }
+      html += '<td class="sch-reason">' + finReasonHtml + '</td>';
       html += '</tr>';
     }
 
@@ -61416,7 +61447,11 @@ var P022_RuntimeValidation = {
       if (effectiveStatus !== st) addonReason = 'Analyst override → ' + String(effectiveStatus || '').toUpperCase() + (addonReason ? '. ' + addonReason : '');
       var addonOverride = _pftlGetCheckOverride('addons_readiness', ck.code);
       if (addonOverride && addonOverride.comment) addonReason += (addonReason ? ' ' : '') + '(Comment: ' + addonOverride.comment + ')';
-      html += '<td class="sch-reason">' + (addonReason ? _pftlEsc(addonReason) : '') + '</td>';
+      var addonReasonHtml = addonReason ? _pftlEsc(addonReason) : '';
+      if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.RECORD_INSPECTOR_V2 && effectiveStatus !== 'pass') {
+        addonReasonHtml += ' <a href="#" onclick="event.preventDefault(); pftlOpenWorkspaceV2(\'addons_readiness\', \'' + _pftlEsc(ck.code) + '\')" style="color:#1565c0;font-size:0.85em;text-decoration:underline;white-space:nowrap;">Open in Inspector \u2192</a>';
+      }
+      html += '<td class="sch-reason">' + addonReasonHtml + '</td>';
       html += '</tr>';
     }
 
@@ -62050,11 +62085,17 @@ var P022_RuntimeValidation = {
 
   // ===== PTL DEEP-LINK (Phase 1) =====
   window.pftlOpenWorkspaceV2 = function(scope, checkCode) {
-    if (typeof _pftlState === 'undefined' || !_pftlState.result) {
-      if (typeof showToast === 'function') showToast('No preflight result available.', 'warning');
+    // Bridge: try PTL state first, fall back to toolbar preflight state
+    var r = null;
+    if (typeof _pftlState !== 'undefined' && _pftlState.result) {
+      r = _pftlState.result;
+    } else if (typeof _pfGateState !== 'undefined' && _pfGateState.result) {
+      r = _pfGateState.result;
+    }
+    if (!r) {
+      if (typeof showToast === 'function') showToast('No preflight result available. Run preflight first.', 'warning');
       return;
     }
-    var r = _pftlState.result;
     var assigns = (typeof _pftlGetAssignments === 'function') ? _pftlGetAssignments() : {};
     var findings = (typeof _pftlCollectCheckFindings === 'function') ? _pftlCollectCheckFindings(r) : [];
 
