@@ -45,6 +45,69 @@ V2.58 Reconstruction Completion Gates wire the generate_copy → reconstruction_
 
 Resolver Data Feed (v2.56+): `server/routes/resolver_feed.py` exposes canonical Salesforce resolver datasets to the CGB frontend via `/api/v2.5/resolver/accounts` (paginated, searchable) and `/api/v2.5/resolver/accounts/summary`. The `AccountIndex` loads 14,385 accounts from `server/data/CMG_Account.csv`. Frontend functions `cgbFetchResolverAccounts()`, `cgbResolverAccountToRow()`, `cgbGetResolverRows()`, and `cgbHasResolverData()` cache and serve resolver records. CGB selectors (`buildSingleSelect`, `buildMultiSelect`) prefer resolver-sourced rows over workbook-derived rows; resolver values use `sf:` prefix (e.g., `sf:42`). `cgbBuildAnnotationMap` and `cgbSelectedRowsBySheet` handle resolver refs with `source: 'salesforce_resolver'` tagging. `cgbBuildBatchResolverIndex` incorporates resolver accounts into the legal entity typeahead. Currently only accounts have resolver backing; other object types (opportunity, schedule, catalog, v2 add-ons) continue using workbook rows.
 
+Patch-to-Live (PTL) Pipeline (v2.59+): The PTL system provides a governed workflow for promoting analyst patch requests from sandbox to production. `srrCheckSyncPreflightGate()` enforces gate progression before patch submission. The PTL footer is simplified to show a single "Open Record" / "Open Annotation Layer" CTA when `RECORD_INSPECTOR_V2=true` — patch-submit buttons (Save Comment Draft, Submit Comment, Submit Correction) are moved into the workspace modal flow and removed from the PTL footer. State bridge (`_ptlStateBridge`) syncs gate state between the preflight test lab (`_pfGateState`) and the PTL pipeline (`_pftlState`). Check reason cells in all 4 section renderers (opportunity spine, schedule structure, SF match, encoding/quality) include actionable "Open in Inspector →" deep-links that call `pftlOpenWorkspaceV2(scope, checkCode)` for non-pass checks. The "Annotation Layer" tab button appears in the grid toolbar (alongside Review, Evidence Viewer, Suggestions, Preflight) instead of as a sidebar nav item.
+
+Analyst Sandbox Triage Queue (v2.60+): The triage system includes a sandbox preflight queue (Queue 0) gated by `RECORD_INSPECTOR_V2`. `PREFLIGHT_TRIAGE_STORE` provides localStorage-backed CRUD (`orchestrate.preflight_triage_items` key) for sandbox preflight triage items with add/list/get/updateStatus/updateResult/remove/clear operations. Single PDF uploads via the toolbar auto-create triage items with gate color, health score, and check counts. A "Batch Preflight" toolbar button scans the `file_url` column from imported spreadsheets and queues items for async processing via `/api/preflight/run`. Progress UI shows a progress bar with per-item status (queued/running/done/failed) and a detail panel. Deep-link "Open in Inspector" buttons load stored preflight results into `_pfGateState` and open the workspace via `pftlOpenWorkspaceV2()`. The batch button auto-shows when a `file_url` column is detected during spreadsheet import.
+
+V3 Unified Contract Workspace — Record Inspector V2 Beta (v2.60+): The unified workspace merges the Contract Generator, Preflight Test Lab, and Record Inspector into a single integrated view gated by `RECORD_INSPECTOR_V2` feature flag. Entry point: `pftlOpenWorkspaceV2(scope, checkCode)`. The workspace supports end-to-end flow: upload PDF → preflight gate → resolution story → contract generation → patch submission. Seven phases: (1) PTL deep-link with context payload, (2) focused section editor + evidence pane + change reason modal (10-char min reason, green gate attestation), (3) unmap/alias ingestion mapping controls, (4) canonical clause composer with live preview (entity_opportunity_resolution → asset_catalog_synchronization → financial_rights_modeling), (5) counterparty create flow with search/create dual mode, (6) domain-split permission matrix (ingestion: edit/unmap/alias/override; generation: compose/preview/draft) with CONTRACT_AUTHOR role, (7) patch submission aggregating all workspace state. 15 audit event types emitted via `_wsv2Audit()` → `AuditTimeline.emit()`. `RECORD_INSPECTOR_V2_DEFAULT` controls whether PTL edit targets workspace (true) or legacy CGB (false). `RECORD_INSPECTOR_V2_LEGACY_HIDDEN` reserved for v3.1 cutover.
+
+## Tech Stack
+- **Backend:** Python 3.11, FastAPI + Uvicorn (ASGI), PyMuPDF, openpyxl, playwright, psycopg2-binary, google-auth, rapidfuzz, sse-starlette, pytest
+- **Database:** PostgreSQL 16 (Supabase-hosted), 13 migration files in `server/migrations/`
+- **Frontend:** Vanilla JavaScript (no framework, no build step), single-file app at `ui/viewer/index.html` (~3.2 MB)
+- **Styling:** `ui/viewer/theme.css` — CSS variable tokens for light/dark mode
+- **Node.js:** Node 22 for `@redocly/cli` (OpenAPI linting) and verification scripts only
+- **Integrations:** SheetJS (XLSX), Google Drive (workbook import/export), Google OAuth
+
+## Run Configuration
+The Replit "Project" button runs two workflows in parallel:
+1. **Smoke Test:** `bash scripts/replit_smoke.sh` — validates config, runs deterministic preview, JSON-normalized diff vs expected output
+2. **PDF Proxy:** `python -m uvicorn server.pdf_proxy:app --host 0.0.0.0 --port 5000` — CORS-safe PDF fetching + text extraction
+
+Port 5000 maps to external port 80. Deployment target is `autoscale`.
+
+## Testing
+- **Smoke test:** `bash scripts/replit_smoke.sh` (baseline) or `bash scripts/replit_smoke.sh --edge` (edge cases) or `bash scripts/replit_smoke.sh --allow-diff` (skip JSON diff)
+- **V3 parity test:** `bash scripts/v3_parity_test.sh` — 23 structural checks for V3 workspace parity
+- **Unit tests:** `pytest tests/ -q --tb=short` — 437+ tests across 14 test files (use `--ignore=tests/test_suggestion_engine.py` if rapidfuzz missing)
+- **Key test files:** `test_preflight_sf_match.py` (90KB), `test_preflight_opportunity_spine.py` (23KB), `test_custody_transitions.py` (21KB), `test_suggestion_engine.py` (19KB)
+
+## Feature Flags
+Set these environment variables before starting the server:
+- `EVIDENCE_INSPECTOR_V251=true` — enables evidence inspector
+- `PREFLIGHT_GATE_SYNC=true` — enables preflight gate synchronization
+- `RECORD_INSPECTOR_V2=true` — enables V3 workspace, triage queue, PTL deep-links, annotation layer toolbar tab
+- `RECORD_INSPECTOR_V2_DEFAULT=false` — when true, PTL edit targets workspace instead of legacy CGB
+- `RECORD_INSPECTOR_V2_LEGACY_HIDDEN` — (reserved for v3.1) hides legacy nav items after cutover
+
+Flag cache: flags cached on first read in `server/feature_flags.py`. Restart server or call `feature_flags.clear_cache()` to pick up changes.
+
+## Key File Paths
+| File | Purpose |
+|---|---|
+| `ui/viewer/index.html` | Entire frontend (~3.2 MB single-file vanilla JS app) |
+| `ui/viewer/theme.css` | CSS token system (light/dark mode) |
+| `server/pdf_proxy.py` | FastAPI entry point — PDF proxy + text extraction + feature flags endpoint |
+| `server/preflight_engine.py` | Core preflight logic (85KB) |
+| `server/preflight_rules.py` | Deterministic rule evaluator |
+| `server/suggestion_engine.py` | Heuristic field suggestions (34KB) |
+| `server/feature_flags.py` | V3 feature flag constants + helpers |
+| `server/auth.py` | Role enum (ANALYST, VERIFIER, ADMIN, ARCHITECT, CONTRACT_AUTHOR) + RBAC |
+| `server/resolvers/context_scorer.py` | Multi-account composite scoring |
+| `server/data/CMG_Account.csv` | 14,385 Salesforce account records |
+| `config/config_pack.base.json` | Authoritative base semantics ("Truth Config") |
+| `scripts/v3_parity_test.sh` | 23-check V3 workspace validation gate |
+| `scripts/replit_smoke.sh` | Baseline + edge-case smoke tests |
+
+## Sandbox Session Reset
+If the app gets into a bad state, run this in the browser console:
+```js
+localStorage.removeItem('orchestrate_session');
+localStorage.removeItem('orchestrate_preflight_state');
+localStorage.removeItem('orchestrate.preflight_triage_items');
+location.reload(true);
+```
+
 ## External Dependencies
 - **FastAPI server**: Used as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
 - **SheetJS (XLSX)**: Integrated for Excel import/export functionality.
