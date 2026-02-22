@@ -59627,11 +59627,11 @@ var P022_RuntimeValidation = {
     } else {
       btn.style.display = 'none';
     }
-    // Preflight Lab button visibility (same role gate + feature flag)
+    // Preflight Lab button visibility (same role gate + preflight feature flag)
     var labBtn = document.getElementById('toolbar-preflight-lab-btn');
     if (labBtn) {
-      var labEnabled = window.__PREFLIGHT_LAB_ENABLED === true || sandbox;
-      if ((role === 'admin' || role === 'architect' || sandbox) && labEnabled) {
+      var pfEnabled = (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.PREFLIGHT_GATE_SYNC === true) || window.__PREFLIGHT_LAB_ENABLED === true || sandbox;
+      if ((role === 'admin' || role === 'architect' || sandbox) && pfEnabled) {
         labBtn.style.display = '';
       } else {
         labBtn.style.display = 'none';
@@ -61791,6 +61791,10 @@ var P022_RuntimeValidation = {
     } catch(e) {}
   })();
   function _pftlGetRecordKey() {
+    // Prefer doc_id from current preflight result for per-contract isolation
+    if (_pftlState.result && _pftlState.result.doc_id) {
+      return 'assign_doc_' + _pftlState.result.doc_id;
+    }
     try {
       var sel = (typeof currentSelection !== 'undefined') ? currentSelection : null;
       if (sel && sel.joinIdentity) {
