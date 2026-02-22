@@ -17828,7 +17828,10 @@
 
     // Annotation Layer tab: opens workspace V2 from grid toolbar
     window._gfcOpenAnnotationLayer = function() {
-      var hasResult = (typeof _pftlState !== 'undefined' && _pftlState.result) ||
+      // Use state bridge to sync and detect available result
+      var bridged = (typeof _ptlStateBridge === 'function') ? _ptlStateBridge() : null;
+      var hasResult = !!bridged ||
+                      (typeof _pftlState !== 'undefined' && _pftlState.result) ||
                       (typeof _pfGateState !== 'undefined' && _pfGateState.result);
       if (!hasResult) {
         if (typeof showToast === 'function') showToast('Run preflight first to open the Annotation Layer.', 'info');
@@ -17889,8 +17892,10 @@
         if (typeof showToast === 'function') showToast('Preflight result not found for this item.', 'warning');
         return;
       }
-      // Store result in _pfGateState so pftlOpenWorkspaceV2 can find it
-      if (typeof _pfGateState !== 'undefined') {
+      // Bridge result into both state stores so pftlOpenWorkspaceV2 can find it
+      if (typeof _ptlStateBridge === 'function') {
+        _ptlStateBridge(item.preflight_result);
+      } else if (typeof _pfGateState !== 'undefined') {
         _pfGateState.result = item.preflight_result;
       }
       if (typeof pftlOpenWorkspaceV2 === 'function') {
@@ -59657,6 +59662,26 @@ var P022_RuntimeValidation = {
     if (overlay) overlay.style.display = '';
   };
 
+  // v3.0: State bridge — syncs gate result between preflight test lab and PTL pipeline
+  // If a source result is provided, it is written into both state stores.
+  // Otherwise, returns whichever store has a result (_pftlState preferred).
+  window._ptlStateBridge = function(sourceResult) {
+    if (sourceResult) {
+      _pftlState.result = sourceResult;
+      if (typeof _pfGateState !== 'undefined') _pfGateState.result = sourceResult;
+      return sourceResult;
+    }
+    if (_pftlState.result) {
+      if (typeof _pfGateState !== 'undefined' && !_pfGateState.result) _pfGateState.result = _pftlState.result;
+      return _pftlState.result;
+    }
+    if (typeof _pfGateState !== 'undefined' && _pfGateState.result) {
+      _pftlState.result = _pfGateState.result;
+      return _pfGateState.result;
+    }
+    return null;
+  };
+
   window.pftlOpenWithResult = function(result) {
     var role = _pftlGetRole();
     var sandbox = (typeof isDemoMode === 'function') && isDemoMode();
@@ -62546,13 +62571,10 @@ var P022_RuntimeValidation = {
 
   // ===== PTL DEEP-LINK (Phase 1) =====
   window.pftlOpenWorkspaceV2 = function(scope, checkCode) {
-    // Bridge: try PTL state first, fall back to toolbar preflight state
-    var r = null;
-    if (typeof _pftlState !== 'undefined' && _pftlState.result) {
-      r = _pftlState.result;
-    } else if (typeof _pfGateState !== 'undefined' && _pfGateState.result) {
-      r = _pfGateState.result;
-    }
+    // Bridge: sync state between PTL and gate, return whichever has a result
+    var r = (typeof _ptlStateBridge === 'function') ? _ptlStateBridge() : null;
+    if (!r && typeof _pftlState !== 'undefined' && _pftlState.result) r = _pftlState.result;
+    if (!r && typeof _pfGateState !== 'undefined' && _pfGateState.result) r = _pfGateState.result;
     if (!r) {
       if (typeof showToast === 'function') showToast('No preflight result available. Run preflight first.', 'warning');
       return;
