@@ -55,6 +55,12 @@ def require_evidence_inspector():
     return None
 
 
+PREFLIGHT_LAB = "PREFLIGHT_LAB"
+
+def is_preflight_lab_enabled():
+    return is_enabled(PREFLIGHT_LAB)
+
+
 OPS_VIEW_DB_READ = "OPS_VIEW_DB_READ"
 OPS_VIEW_DB_WRITE = "OPS_VIEW_DB_WRITE"
 
@@ -63,3 +69,28 @@ def is_ops_view_db_read():
 
 def is_ops_view_db_write():
     return is_enabled(OPS_VIEW_DB_WRITE)
+
+
+RECORD_INSPECTOR_V2 = "RECORD_INSPECTOR_V2"
+RECORD_INSPECTOR_V2_DEFAULT = "RECORD_INSPECTOR_V2_DEFAULT"
+RECORD_INSPECTOR_V2_LEGACY_HIDDEN = "RECORD_INSPECTOR_V2_LEGACY_HIDDEN"
+
+def is_workspace_v2_enabled():
+    """Check if Record Inspector V2 (Beta) workspace is enabled."""
+    return is_enabled(RECORD_INSPECTOR_V2)
+
+def is_workspace_v2_default():
+    """Check if V2 workspace is the default PTL edit target."""
+    return is_workspace_v2_enabled() and is_enabled(RECORD_INSPECTOR_V2_DEFAULT)
+
+def require_workspace_v2():
+    """Gate check returning 404 JSONResponse if workspace V2 disabled."""
+    if not is_workspace_v2_enabled():
+        return JSONResponse(
+            status_code=404,
+            content=error_envelope(
+                "FEATURE_DISABLED",
+                "Record Inspector V2 is not enabled. Set RECORD_INSPECTOR_V2=true to activate.",
+            ),
+        )
+    return None

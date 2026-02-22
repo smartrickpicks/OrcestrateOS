@@ -1,0 +1,24 @@
+{
+  "run_id": "V2.56-PREFLIGHT-EXPORT-REGRESSION",
+  "generated_at_utc": "2026-02-21T15:06:42.386Z",
+  "source_file": "/home/runner/workspace/ui/viewer/index.html",
+  "checks": {
+    "create_stores_preflight_context": true,
+    "stored_context_has_pending_findings": true,
+    "stored_context_gate_color": true,
+    "stored_context_health_score": true,
+    "stored_patch_kind_comment": true,
+    "draft_status_correct": true,
+    "submit_transitions_to_submitted": true,
+    "export_includes_preflight_context": true,
+    "export_preflight_context_has_findings": true,
+    "export_includes_patch_kind": true,
+    "export_includes_status": true,
+    "export_includes_evidence_pack": true,
+    "correction_export_patch_kind": true,
+    "correction_export_preflight_context": true,
+    "correction_export_gate_color_red": true,
+    "correction_export_health_score": true
+  },
+  "all_passed": true
+}
