@@ -63275,7 +63275,9 @@ var P022_RuntimeValidation = {
     }, 100);
   };
 
-  // ---- Click-to-evidence: show source contract text for a check ----
+  // ---- Click-to-evidence: show OGC chunk inline under the clicked check row ----
+  window._wsv2ActiveEvidence = null; // tracks { scope, code } of expanded row
+
   window._wsv2ShowCheckEvidence = function(scope, checkCode) {
     var ctx = _wsv2State.context;
     if (!ctx || !ctx.preflight_result) return;
@@ -63286,14 +63288,120 @@ var P022_RuntimeValidation = {
     for (var i = 0; i < checks.length; i++) { if (checks[i].code === checkCode) { ck = checks[i]; break; } }
     if (!ck) return;
 
-    // If check has evidence_context from backend, use it
-    var evidence = ck.evidence_context || '';
-    var matchTerm = ck.evidence_match_term || ck.value || '';
+    var panelId = 'wsv2-ogc-' + scope + '-' + checkCode;
+    var existing = document.getElementById(panelId);
 
-    // Switch to Content tab
+    // Collapse all other OGC panels
+    var allPanels = document.querySelectorAll('.wsv2-ogc-panel');
+    for (var ap = 0; ap < allPanels.length; ap++) {
+      if (allPanels[ap].id !== panelId) {
+        allPanels[ap].style.maxHeight = '0';
+        allPanels[ap].style.opacity = '0';
+        allPanels[ap].style.padding = '0 16px';
+        setTimeout(function(el) { return function() { el.remove(); }; }(allPanels[ap]), 200);
+      }
+    }
+
+    // Toggle: if clicking the same row, collapse and done
+    if (existing && _wsv2ActiveEvidence && _wsv2ActiveEvidence.scope === scope && _wsv2ActiveEvidence.code === checkCode) {
+      existing.style.maxHeight = '0';
+      existing.style.opacity = '0';
+      existing.style.padding = '0 16px';
+      setTimeout(function() { if (existing.parentNode) existing.remove(); }, 200);
+      _wsv2ActiveEvidence = null;
+      return;
+    }
+
+    _wsv2ActiveEvidence = { scope: scope, code: checkCode };
+
+    var evidence = ck.evidence_context || '';
+    var matchTerm = ck.evidence_match_term || '';
+    var reason = ck.reason || '';
+
+    // Build the OGC chunk card
+    var html = '';
+    html += '<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">';
+    html += '<span style="font-size:0.72em; font-weight:700; color:#1565c0; text-transform:uppercase; letter-spacing:0.5px;">Contract Source</span>';
+    html += '<span style="font-size:0.68em; color:var(--text-3,#999);">' + _wsv2Esc(ck.label || checkCode) + '</span>';
+    html += '</div>';
+
+    // Reason line
+    if (reason) {
+      html += '<div style="font-size:0.78em; color:var(--text-2,#555); margin-bottom:8px; line-height:1.5; padding:6px 10px; background:#f5f5f5; border-radius:4px;">';
+      html += '<strong style="color:var(--text-1,#333);">Finding:</strong> ' + _wsv2Esc(reason);
+      html += '</div>';
+    }
+
+    // OGC chunk with highlighted match term
+    if (evidence) {
+      var evidenceHtml = _wsv2Esc(evidence);
+      if (matchTerm) {
+        var termEsc = matchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var re = new RegExp('(' + _wsv2Esc(termEsc) + ')', 'gi');
+        evidenceHtml = evidenceHtml.replace(re, '<mark style="background:#fff176; padding:1px 3px; border-radius:2px; font-weight:600;">$1</mark>');
+      }
+      html += '<div style="font-size:0.8em; line-height:1.7; color:var(--text-2,#444); padding:12px 14px; background:#fff; border:1px solid #e0e0e0; border-left:3px solid #1565c0; border-radius:4px; white-space:pre-wrap; word-break:break-word; font-family:Georgia,serif; max-height:250px; overflow-y:auto;">';
+      html += evidenceHtml;
+      html += '</div>';
+
+      // "View in Document" link
+      html += '<div style="margin-top:8px; text-align:right;">';
+      html += '<a onclick="_wsv2JumpToEvidence(\'' + _wsv2JsEsc(scope) + '\',\'' + _wsv2JsEsc(checkCode) + '\')" style="font-size:0.72em; color:#1565c0; cursor:pointer; text-decoration:none;">View in full document &#8594;</a>';
+      html += '</div>';
+    } else {
+      html += '<div style="font-size:0.8em; color:#999; padding:10px 14px; background:#fafafa; border:1px solid #eee; border-radius:4px; font-style:italic;">';
+      html += 'No source text extracted for this check. The value was derived from structural analysis.';
+      html += '</div>';
+    }
+
+    // Insert the panel as a <tr> right after the clicked row
+    var clickedRow = null;
+    var rows = document.querySelectorAll('tr[onclick*="' + checkCode + '"]');
+    for (var ri = 0; ri < rows.length; ri++) {
+      if (rows[ri].getAttribute('onclick').indexOf(scope) >= 0) { clickedRow = rows[ri]; break; }
+    }
+    if (!clickedRow) return;
+
+    // Highlight the active row
+    var allRows = document.querySelectorAll('.wsv2-row-active');
+    for (var ar = 0; ar < allRows.length; ar++) { allRows[ar].classList.remove('wsv2-row-active'); allRows[ar].style.background = ''; }
+    clickedRow.classList.add('wsv2-row-active');
+    clickedRow.style.background = '#e3f2fd';
+
+    var panelRow = document.createElement('tr');
+    panelRow.id = panelId;
+    panelRow.className = 'wsv2-ogc-panel';
+    var td = document.createElement('td');
+    td.colSpan = 4;
+    td.style.cssText = 'padding:0 16px; overflow:hidden; transition:max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease;';
+    td.innerHTML = '<div style="padding:12px 0;">' + html + '</div>';
+    panelRow.appendChild(td);
+
+    // Animate in
+    td.style.maxHeight = '0';
+    td.style.opacity = '0';
+    clickedRow.parentNode.insertBefore(panelRow, clickedRow.nextSibling);
+    requestAnimationFrame(function() {
+      td.style.maxHeight = '500px';
+      td.style.opacity = '1';
+      td.style.padding = '0 16px';
+    });
+  };
+
+  // Jump from inline OGC panel to Content tab full-document view
+  window._wsv2JumpToEvidence = function(scope, checkCode) {
+    var ctx = _wsv2State.context;
+    if (!ctx || !ctx.preflight_result) return;
+    var r = ctx.preflight_result;
+    var section = r[scope] || {};
+    var checks = section.checks || [];
+    var ck = null;
+    for (var i = 0; i < checks.length; i++) { if (checks[i].code === checkCode) { ck = checks[i]; break; } }
+    if (!ck) return;
+
+    var matchTerm = ck.evidence_match_term || ck.value || '';
     _wsv2SwitchEvidenceTab('content');
 
-    // Try to find and highlight the passage in the content
     setTimeout(function() {
       var container = document.getElementById('wsv2-doc-text-container');
       if (!container) return;
@@ -63301,15 +63409,12 @@ var P022_RuntimeValidation = {
       var searchTerms = [];
       if (matchTerm) searchTerms.push(matchTerm.toLowerCase());
       if (ck.value && typeof ck.value === 'string') searchTerms.push(ck.value.toLowerCase());
-      // Extract quoted terms from reason
       var quoted = (ck.reason || '').match(/'([^']{3,})'/g);
       if (quoted) { for (var q = 0; q < quoted.length; q++) searchTerms.push(quoted[q].replace(/'/g, '').toLowerCase()); }
 
-      // Clear previous evidence highlights
       var prevEv = container.querySelectorAll('.wsv2-evidence-highlight');
       for (var pe = 0; pe < prevEv.length; pe++) { prevEv[pe].classList.remove('wsv2-evidence-highlight'); prevEv[pe].style.background = ''; prevEv[pe].style.borderLeft = ''; }
 
-      // Find best matching paragraph
       for (var si = 0; si < searchTerms.length; si++) {
         var term = searchTerms[si];
         for (var pi = 0; pi < paras.length; pi++) {
@@ -63318,7 +63423,6 @@ var P022_RuntimeValidation = {
             paras[pi].style.borderLeft = '3px solid #ff9800';
             paras[pi].classList.add('wsv2-evidence-highlight');
             paras[pi].scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // Fade after 6s
             setTimeout(function(el) { return function() { el.style.background = ''; el.style.borderLeft = ''; }; }(paras[pi]), 6000);
             return;
           }
