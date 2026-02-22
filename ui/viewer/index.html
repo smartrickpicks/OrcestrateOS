@@ -2021,6 +2021,24 @@
     .pf-gate-btn.escalate { background: var(--bad); color: white; }
     .pf-gate-btn.escalate:hover { background: var(--danger); }
     .pf-admin-note { font-size: 0.75em; color: var(--text-3); font-style: italic; margin-top: 6px; }
+    /* Preflight Lab overlay */
+    .preflight-lab-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10001; display: flex; align-items: center; justify-content: center; }
+    .preflight-lab-panel { background: var(--bg-1); border-radius: 12px; width: 90vw; max-width: 720px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .preflight-lab-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--border-1); }
+    .preflight-lab-header h3 { margin: 0; font-size: 1.1em; color: var(--text-2); }
+    .preflight-lab-close { background: none; border: none; font-size: 1.4em; cursor: pointer; color: #999; padding: 4px 8px; }
+    .preflight-lab-close:hover { color: var(--text-2); }
+    .preflight-lab-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+    .preflight-lab-section { margin-bottom: 18px; padding: 14px 16px; background: var(--bg-base); border: 1px solid var(--border-1); border-radius: 8px; }
+    .preflight-lab-section h4 { margin: 0 0 8px; font-size: 0.92em; color: var(--text-2); }
+    .preflight-lab-section p { margin: 0; font-size: 0.84em; color: var(--text-3); line-height: 1.5; }
+    .preflight-lab-section .lab-kv { display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.82em; }
+    .preflight-lab-section .lab-kv .lab-k { color: var(--text-3); }
+    .preflight-lab-section .lab-kv .lab-v { color: var(--text-2); font-weight: 500; }
+    .preflight-lab-cta { margin-top: 18px; text-align: center; }
+    .preflight-lab-cta button { padding: 10px 28px; border-radius: 6px; font-size: 0.9em; cursor: pointer; border: none; font-weight: 600; background: linear-gradient(135deg, #6a1b9a 0%, #4a148c 100%); color: white; }
+    .preflight-lab-cta button:hover { opacity: 0.9; }
+    .preflight-lab-empty { font-size: 0.82em; color: #999; font-style: italic; }
     .pftl-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; }
     .pftl-modal { background: var(--bg-1); border-radius: 12px; width: 90vw; max-width: 960px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
     .pftl-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--border-1); }
@@ -3468,6 +3486,16 @@
                 <span class="btn-label">Preflight</span>
               </button>
               <input type="file" id="toolbar-pdf-preflight-input" accept=".pdf,application/pdf" style="display: none;" onchange="toolbarPdfPreflightUpload(this)">
+              <button id="toolbar-preflight-lab-btn" onclick="toolbarPreflightLabClick()" class="triage-icon-btn"
+                      style="display: none; background: linear-gradient(135deg, #00897b 0%, #004d40 100%); color: white;"
+                      title="Preflight Lab (Preview)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 3h6v5l4 7H5l4-7V3z"/>
+                  <line x1="5" y1="20" x2="19" y2="20"/>
+                  <line x1="10" y1="3" x2="14" y2="3"/>
+                </svg>
+                <span class="btn-label">Lab</span>
+              </button>
               <div id="audit-header-dropdown-container" style="position: relative; display: inline-flex;">
                 <button onclick="toggleAuditHeaderDropdown()" id="btn-audit-header" class="triage-icon-btn" title="Audit Log"
                         style="background: #f5f5f5; border: 1px solid #e0e0e0; color: #555; max-width: 52px;"
@@ -54594,9 +54622,20 @@ var P022_RuntimeValidation = {
     } else {
       btn.style.display = 'none';
     }
+    // Preflight Lab button visibility (same role gate + feature flag)
+    var labBtn = document.getElementById('toolbar-preflight-lab-btn');
+    if (labBtn) {
+      var labEnabled = window.__PREFLIGHT_LAB_ENABLED === true || sandbox;
+      if ((role === 'admin' || role === 'architect' || sandbox) && labEnabled) {
+        labBtn.style.display = '';
+      } else {
+        labBtn.style.display = 'none';
+      }
+    }
   };
 
   window.toolbarPdfPreflightClick = function() {
+    console.log('[PREFLIGHT-BTN] click: source=preflight_btn, ts=' + new Date().toISOString());
     var sandbox = (typeof isDemoMode === 'function') && isDemoMode();
     if (sandbox && typeof pftlOpen === 'function') {
       pftlOpen();
@@ -54605,6 +54644,117 @@ var P022_RuntimeValidation = {
       if (input) input.click();
     }
   };
+
+  /* ── Preflight Lab (test-only) ── */
+
+  window.toolbarPreflightLabClick = function() {
+    console.log('[PREFLIGHT-LAB] click: source=lab_btn, ts=' + new Date().toISOString());
+    preflightLabOpen();
+  };
+
+  window.preflightLabOpen = function() {
+    var role = (typeof _pfGateGetRole === 'function') ? _pfGateGetRole() : 'analyst';
+    var sandbox = (typeof isDemoMode === 'function') && isDemoMode();
+    var allowed = (role === 'admin' || role === 'architect' || sandbox);
+    console.log('[PREFLIGHT-LAB] open: role=' + role + ', sandbox=' + sandbox + ', allowed=' + allowed);
+    _preflightLabRender(allowed);
+    var overlay = document.getElementById('preflight-lab-overlay');
+    if (overlay) overlay.style.display = '';
+  };
+
+  window.preflightLabClose = function() {
+    var overlay = document.getElementById('preflight-lab-overlay');
+    if (overlay) overlay.style.display = 'none';
+  };
+
+  function _preflightLabRender(allowed) {
+    var overlay = document.getElementById('preflight-lab-overlay');
+    if (!overlay) return;
+
+    if (!allowed) {
+      overlay.innerHTML =
+        '<div class="preflight-lab-panel">' +
+          '<div class="preflight-lab-header"><h3>Preflight Lab</h3>' +
+            '<button class="preflight-lab-close" onclick="preflightLabClose()">&times;</button></div>' +
+          '<div class="preflight-lab-body">' +
+            '<div class="pftl-forbidden">Access restricted to admin/architect roles.</div>' +
+          '</div></div>';
+      return;
+    }
+
+    var html = '<div class="preflight-lab-panel">' +
+      '<div class="preflight-lab-header"><h3>Preflight Lab (Preview)</h3>' +
+        '<button class="preflight-lab-close" onclick="preflightLabClose()">&times;</button></div>' +
+      '<div class="preflight-lab-body">';
+
+    // ── Contract Context section ──
+    html += '<div class="preflight-lab-section"><h4>Contract Context</h4>';
+    var cache = (typeof TriageAnalytics !== 'undefined' && TriageAnalytics._cache) ? TriageAnalytics._cache : null;
+    if (cache && cache.contracts && cache.contracts.length > 0) {
+      var totalContracts = cache.contracts.length;
+      var bands = { critical: 0, at_risk: 0, watch: 0, healthy: 0 };
+      cache.contracts.forEach(function(c) {
+        var b = c._health_band ? c._health_band.key : 'healthy';
+        if (bands.hasOwnProperty(b)) bands[b]++;
+      });
+      html += '<div class="lab-kv"><span class="lab-k">Total contracts</span><span class="lab-v">' + totalContracts + '</span></div>';
+      html += '<div class="lab-kv"><span class="lab-k">Critical</span><span class="lab-v" style="color:#c62828;">' + bands.critical + '</span></div>';
+      html += '<div class="lab-kv"><span class="lab-k">At risk</span><span class="lab-v" style="color:#e65100;">' + bands.at_risk + '</span></div>';
+      html += '<div class="lab-kv"><span class="lab-k">Watch</span><span class="lab-v" style="color:#f9a825;">' + bands.watch + '</span></div>';
+      html += '<div class="lab-kv"><span class="lab-k">Healthy</span><span class="lab-v" style="color:#2e7d32;">' + bands.healthy + '</span></div>';
+    } else {
+      html += '<p class="preflight-lab-empty">No contract data loaded yet.</p>';
+    }
+    html += '</div>';
+
+    // ── Social / Work Activity Summary section ──
+    html += '<div class="preflight-lab-section"><h4>Social / Work Activity Summary</h4>';
+    if (cache && cache.lanes) {
+      html += '<div class="lab-kv"><span class="lab-k">Preflight lane</span><span class="lab-v">' + (cache.lanes.preflight ? cache.lanes.preflight.total || 0 : 0) + ' items</span></div>';
+      html += '<div class="lab-kv"><span class="lab-k">Semantic lane</span><span class="lab-v">' + (cache.lanes.semantic ? cache.lanes.semantic.total || 0 : 0) + ' items</span></div>';
+      html += '<div class="lab-kv"><span class="lab-k">Patch review lane</span><span class="lab-v">' + (cache.lanes.patch_review ? cache.lanes.patch_review.total || 0 : 0) + ' items</span></div>';
+    } else {
+      html += '<p class="preflight-lab-empty">No activity data available.</p>';
+    }
+    if (cache && cache.lifecycle_stage_counts) {
+      var stages = cache.lifecycle_stage_counts;
+      var stageKeys = Object.keys(stages);
+      if (stageKeys.length > 0) {
+        html += '<div style="margin-top: 8px; font-size: 0.82em; color: var(--text-3);">Lifecycle stages:</div>';
+        stageKeys.forEach(function(sk) {
+          html += '<div class="lab-kv"><span class="lab-k">' + sk + '</span><span class="lab-v">' + stages[sk] + '</span></div>';
+        });
+      }
+    }
+    html += '</div>';
+
+    // ── Annotation / Evidence Context section ──
+    html += '<div class="preflight-lab-section"><h4>Annotation / Evidence Context</h4>';
+    var pfState = (typeof _pfGateState !== 'undefined') ? _pfGateState : null;
+    if (pfState && pfState.result) {
+      var r = pfState.result;
+      html += '<div class="lab-kv"><span class="lab-k">Gate color</span><span class="lab-v">' + (r.gate_color || 'N/A') + '</span></div>';
+      html += '<div class="lab-kv"><span class="lab-k">Doc mode</span><span class="lab-v">' + (r.doc_mode || 'N/A') + '</span></div>';
+      if (r.metrics) {
+        html += '<div class="lab-kv"><span class="lab-k">Total pages</span><span class="lab-v">' + (r.metrics.total_pages || 0) + '</span></div>';
+        html += '<div class="lab-kv"><span class="lab-k">Avg chars/page</span><span class="lab-v">' + (r.metrics.avg_chars_per_page != null ? Math.round(r.metrics.avg_chars_per_page) : 'N/A') + '</span></div>';
+      }
+      if (pfState.actionTaken) {
+        html += '<div class="lab-kv"><span class="lab-k">Action taken</span><span class="lab-v">' + pfState.actionTaken + '</span></div>';
+      }
+    } else {
+      html += '<p class="preflight-lab-empty">No preflight result available. Run preflight first.</p>';
+    }
+    html += '</div>';
+
+    // ── CTA ──
+    html += '<div class="preflight-lab-cta">' +
+      '<button onclick="preflightLabClose(); toolbarPdfPreflightClick();">Run Preflight</button>' +
+    '</div>';
+
+    html += '</div></div>';
+    overlay.innerHTML = html;
+  }
 
   window.toolbarPdfPreflightUpload = function(input) {
     var file = input && input.files && input.files[0];
@@ -56408,6 +56558,7 @@ var P022_RuntimeValidation = {
 })();
 </script>
 <div id="pftl-overlay" class="pftl-overlay" style="display: none;"></div>
+<div id="preflight-lab-overlay" class="preflight-lab-overlay" style="display: none;"></div>
 <!-- Member Drive Folder Modal -->
 <div id="member-drive-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;">
   <div style="background:var(--bg-2,#fff);border-radius:8px;padding:24px;max-width:480px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.3);border:1px solid var(--border-1,#ddd);">
