@@ -6563,11 +6563,21 @@
               </div>
             </div>
 
-            <!-- Right Panel: Evidence/PDF Viewer -->
-            <div id="wsv2-evidence-panel" style="flex:1; overflow-y:auto; padding:16px; background:var(--bg-base);">
-              <div id="wsv2-evidence-header" style="margin-bottom:12px; font-weight:600; font-size:0.9em; color:var(--text-2);">Evidence Context</div>
-              <div id="wsv2-evidence-content" style="font-size:0.85em; color:var(--text-3);">
-                <p style="color:#999;">Open a contract from the Preflight Test Lab to see evidence context here.</p>
+            <!-- Right Panel: Evidence/PDF Viewer (Tabbed) -->
+            <div id="wsv2-evidence-panel" style="flex:1; display:flex; flex-direction:column; min-height:0; background:var(--bg-base);">
+              <!-- Tab Bar -->
+              <div id="wsv2-ev-tabs" style="display:flex; gap:0; border-bottom:2px solid var(--border-1,#e0e0e0); padding:0 16px; background:var(--bg-1,#fafafa); flex-shrink:0;">
+                <button class="wsv2-ev-tab wsv2-ev-tab-active" data-tab="overview" onclick="_wsv2SwitchEvidenceTab('overview')" style="padding:10px 18px; font-size:0.82em; font-weight:600; border:none; background:none; cursor:pointer; border-bottom:2px solid #1565c0; margin-bottom:-2px; color:#1565c0;">Overview</button>
+                <button class="wsv2-ev-tab" data-tab="structure" onclick="_wsv2SwitchEvidenceTab('structure')" style="padding:10px 18px; font-size:0.82em; font-weight:500; border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; color:var(--text-3,#999);">Structure</button>
+                <button class="wsv2-ev-tab" data-tab="content" onclick="_wsv2SwitchEvidenceTab('content')" style="padding:10px 18px; font-size:0.82em; font-weight:500; border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; color:var(--text-3,#999);">Content</button>
+              </div>
+              <!-- Tab Content Panels -->
+              <div style="flex:1; overflow-y:auto; min-height:0;">
+                <div id="wsv2-ev-tab-overview" class="wsv2-ev-tab-panel" style="padding:16px;">
+                  <p style="color:#999; font-size:0.85em;">Open a contract from the Preflight Test Lab to see evidence context here.</p>
+                </div>
+                <div id="wsv2-ev-tab-structure" class="wsv2-ev-tab-panel" style="padding:16px; display:none;"></div>
+                <div id="wsv2-ev-tab-content" class="wsv2-ev-tab-panel" style="padding:16px; display:none;"></div>
               </div>
             </div>
           </div>
@@ -62812,8 +62822,9 @@ var P022_RuntimeValidation = {
 
           var isUnmapped = _wsv2IsUnmapped(g.key, ck.code);
 
-          html += '<tr style="border-bottom:1px solid var(--border-1);' + (isCheck ? ' background:#bbdefb;' : '') + (isUnmapped ? ' text-decoration:line-through; opacity:0.6;' : '') + '">';
+          html += '<tr onclick="_wsv2ShowCheckEvidence(\'' + _wsv2JsEsc(g.key) + '\',\'' + _wsv2JsEsc(ck.code) + '\')" style="border-bottom:1px solid var(--border-1); cursor:pointer; transition:background 0.15s;' + (isCheck ? ' background:#bbdefb;' : '') + (isUnmapped ? ' text-decoration:line-through; opacity:0.6;' : '') + '" onmouseover="if(!this.classList.contains(\'wsv2-row-active\'))this.style.background=\'#f5f5f5\'" onmouseout="if(!this.classList.contains(\'wsv2-row-active\'))this.style.background=\'\'">';
           html += '<td style="padding:6px 8px; font-weight:' + (isCheck ? '600' : '400') + ';">' + _wsv2Esc(ck.label || ck.code);
+          if (ck.evidence_context) html += ' <span style="font-size:0.6em; color:#1565c0; margin-left:4px;" title="Click to see source text">&#128270;</span>';
           if (isUnmapped) html += ' <span style="font-size:0.7em; background:#ff9800; color:#fff; padding:1px 4px; border-radius:3px;">unmapped</span>';
           html += '</td>';
           html += '<td style="padding:6px 8px;"><span style="color:' + (effStatus === 'pass' ? '#2e7d32' : effStatus === 'fail' ? '#c62828' : '#f57f17') + ';">' + _wsv2Esc(effStatus) + '</span></td>';
@@ -62840,97 +62851,321 @@ var P022_RuntimeValidation = {
     }
   }
 
-  // ===== EVIDENCE PANEL (Phase 2) =====
+  // ===== EVIDENCE PANEL — TABBED INTERFACE (Phase 2) =====
+
+  window._wsv2EvidenceTab = 'overview';
+
+  window._wsv2SwitchEvidenceTab = function(tab) {
+    _wsv2EvidenceTab = tab;
+    var tabs = document.querySelectorAll('.wsv2-ev-tab');
+    for (var t = 0; t < tabs.length; t++) {
+      var isActive = tabs[t].getAttribute('data-tab') === tab;
+      tabs[t].style.borderBottomColor = isActive ? '#1565c0' : 'transparent';
+      tabs[t].style.color = isActive ? '#1565c0' : 'var(--text-3,#999)';
+      tabs[t].style.fontWeight = isActive ? '600' : '500';
+    }
+    var panels = document.querySelectorAll('.wsv2-ev-tab-panel');
+    for (var p = 0; p < panels.length; p++) panels[p].style.display = 'none';
+    var active = document.getElementById('wsv2-ev-tab-' + tab);
+    if (active) active.style.display = 'block';
+  };
+
   function _wsv2RenderEvidence() {
     var ctx = _wsv2State.context;
-    var contentEl = document.getElementById('wsv2-evidence-content');
-    if (!contentEl || !ctx) return;
+    if (!ctx) return;
+    _wsv2RenderEvidenceOverview(ctx);
+    _wsv2RenderEvidenceStructure(ctx);
+    _wsv2RenderEvidenceContent(ctx);
+  }
 
+  // ---- TAB 1: OVERVIEW ----
+  function _wsv2RenderEvidenceOverview(ctx) {
+    var el = document.getElementById('wsv2-ev-tab-overview');
+    if (!el) return;
     var r = ctx.preflight_result || {};
+    var story = r.resolution_story || {};
     var html = '';
 
-    // Document info
-    if (r.doc_id || r.file_url) {
-      html += '<div style="margin-bottom:12px; padding:10px; background:var(--bg-1); border:1px solid var(--border-1); border-radius:6px;">';
-      html += '<div style="font-weight:600; font-size:0.85em; margin-bottom:4px;">Document</div>';
-      if (r.doc_id) html += '<div style="font-size:0.8em; color:var(--text-3);">ID: ' + _wsv2Esc(r.doc_id) + '</div>';
-      if (r.file_url) html += '<div style="font-size:0.8em; color:var(--text-3);">URL: <a href="' + _wsv2Esc(r.file_url) + '" target="_blank" style="color:#1976d2;">' + _wsv2Esc(r.file_url).substring(0, 60) + '...</a></div>';
-      html += '</div>';
-    }
+    // Document Identity card
+    var docName = r.file_name || r.doc_id || '';
+    var gateColor = r.gate_color || 'UNKNOWN';
+    var healthScore = r.health_score;
+    var docMode = r.doc_mode || '';
+    var gateColors = { GREEN: '#2e7d32', YELLOW: '#f57f17', RED: '#c62828', UNKNOWN: '#757575' };
+    var gateBg = { GREEN: '#e8f5e9', YELLOW: '#fff8e1', RED: '#fce4ec', UNKNOWN: '#f5f5f5' };
 
-    // Resolution story
-    var story = r.resolution_story || {};
-    if (Object.keys(story).length > 0) {
-      html += '<div style="margin-bottom:12px; padding:10px; background:var(--bg-1); border:1px solid var(--border-1); border-radius:6px;">';
-      html += '<div style="font-weight:600; font-size:0.85em; margin-bottom:4px;">Resolution Story</div>';
-      var storyKeys = Object.keys(story);
-      for (var sk = 0; sk < storyKeys.length; sk++) {
-        var sv = story[storyKeys[sk]];
-        if (sv && typeof sv !== 'object') {
-          html += '<div style="font-size:0.8em; color:var(--text-3);"><strong>' + _wsv2Esc(storyKeys[sk]) + ':</strong> ' + _wsv2Esc(String(sv)) + '</div>';
-        }
+    html += '<div style="margin-bottom:14px; padding:14px; background:var(--bg-1,#fafafa); border:1px solid var(--border-1,#e0e0e0); border-radius:8px;">';
+    html += '<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">';
+    html += '<span style="font-size:1.1em; line-height:1;">&#128196;</span>';
+    html += '<div style="flex:1; min-width:0;">';
+    html += '<div style="font-weight:700; font-size:0.92em; color:var(--text-1,#222); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="' + _wsv2Esc(docName) + '">' + _wsv2Esc(docName || 'Unknown Document') + '</div>';
+    if (r.doc_id) html += '<div style="font-size:0.72em; color:var(--text-3,#999); margin-top:1px;">ID: ' + _wsv2Esc(r.doc_id) + '</div>';
+    html += '</div>';
+    html += '<span style="font-size:0.75em; font-weight:700; padding:3px 10px; border-radius:4px; background:' + (gateBg[gateColor] || gateBg.UNKNOWN) + '; color:' + (gateColors[gateColor] || gateColors.UNKNOWN) + ';">' + _wsv2Esc(gateColor) + '</span>';
+    html += '</div>';
+    // Quick stats
+    html += '<div style="display:flex; gap:6px; flex-wrap:wrap;">';
+    if (docMode) html += '<span style="font-size:0.7em; padding:2px 7px; border-radius:3px; background:#e3f2fd; color:#1565c0;">' + _wsv2Esc(docMode) + '</span>';
+    var pages = r.page_classifications || [];
+    if (pages.length) html += '<span style="font-size:0.7em; padding:2px 7px; border-radius:3px; background:#f3e5f5; color:#7b1fa2;">' + pages.length + ' pages</span>';
+    if (healthScore != null) html += '<span style="font-size:0.7em; padding:2px 7px; border-radius:3px; background:#e8f5e9; color:#2e7d32;">Health: ' + healthScore + '</span>';
+    if (story.agreement_type_guess) html += '<span style="font-size:0.7em; padding:2px 7px; border-radius:3px; background:#fff3e0; color:#e65100;">' + _wsv2Esc(story.agreement_type_guess) + '</span>';
+    html += '</div></div>';
+
+    // Entity Resolution
+    var le = story.legal_entity_account;
+    var cps = story.counterparties || [];
+    if (le || cps.length) {
+      html += '<div style="margin-bottom:14px; padding:14px; background:var(--bg-1,#fafafa); border:1px solid var(--border-1,#e0e0e0); border-radius:8px;">';
+      html += '<div style="font-weight:700; font-size:0.85em; margin-bottom:8px; color:var(--text-1,#222);">Entity Resolution</div>';
+      if (le) {
+        html += '<div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">';
+        html += '<span style="font-size:0.68em; padding:2px 6px; border-radius:3px; background:#e8eaf6; color:#283593; font-weight:600;">Legal Entity</span>';
+        html += '<span style="font-size:0.82em; font-weight:600; color:var(--text-1,#222);">' + _wsv2Esc(le.name || '') + '</span>';
+        if (le.final_confidence_pct != null) html += '<span style="font-size:0.68em; color:var(--text-3,#999);">' + le.final_confidence_pct + '%</span>';
+        html += '</div>';
+      }
+      for (var ci = 0; ci < cps.length; ci++) {
+        html += '<div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">';
+        html += '<span style="font-size:0.68em; padding:2px 6px; border-radius:3px; background:#fff3e0; color:#e65100; font-weight:600;">Counterparty</span>';
+        html += '<span style="font-size:0.82em; font-weight:600; color:var(--text-1,#222);">' + _wsv2Esc(cps[ci].name || '') + '</span>';
+        if (cps[ci].final_confidence_pct != null) html += '<span style="font-size:0.68em; color:var(--text-3,#999);">' + cps[ci].final_confidence_pct + '%</span>';
+        html += '</div>';
+      }
+      if (story.new_entry_detected) {
+        html += '<div style="margin-top:6px; font-size:0.75em; padding:4px 8px; background:#fff8e1; border:1px solid #ffe082; border-radius:4px; color:#f57f17;"><strong>New Entry:</strong> Counterparty not in Salesforce — manual confirmation required.</div>';
       }
       html += '</div>';
     }
 
-    // Findings summary
+    // Open Findings
     var findings = ctx.findings || [];
-    if (findings.length > 0) {
-      html += '<div style="margin-bottom:12px; padding:10px; background:#fff8e1; border:1px solid #ffe082; border-radius:6px;">';
-      html += '<div style="font-weight:600; font-size:0.85em; margin-bottom:4px; color:#f57f17;">Open Findings (' + findings.length + ')</div>';
+    if (findings.length) {
+      html += '<div style="margin-bottom:14px; padding:14px; background:#fff8e1; border:1px solid #ffe082; border-radius:8px;">';
+      html += '<div style="font-weight:700; font-size:0.85em; margin-bottom:6px; color:#f57f17;">Open Findings (' + findings.length + ')</div>';
       for (var fi = 0; fi < findings.length; fi++) {
         var f = findings[fi];
-        html += '<div style="font-size:0.78em; padding:2px 0; color:var(--text-3);">' + _wsv2Esc(f.label) + ' [' + _wsv2Esc(f.status || '') + ']</div>';
+        html += '<div style="font-size:0.8em; padding:3px 0; color:var(--text-2,#555);">' + _wsv2Esc(f.label) + ' [' + _wsv2Esc(f.status || '') + ']</div>';
       }
       html += '</div>';
     }
 
-    // Page classifications
-    var pages = r.page_classifications || [];
-    if (pages.length > 0) {
-      html += '<div style="margin-bottom:12px; padding:10px; background:var(--bg-1); border:1px solid var(--border-1); border-radius:6px;">';
-      html += '<div style="font-weight:600; font-size:0.85em; margin-bottom:4px;">Page Analysis (' + pages.length + ' pages)</div>';
-      for (var pi = 0; pi < Math.min(pages.length, 10); pi++) {
+    // Page Analysis — visual bar
+    if (pages.length) {
+      html += '<div style="margin-bottom:14px; padding:14px; background:var(--bg-1,#fafafa); border:1px solid var(--border-1,#e0e0e0); border-radius:8px;">';
+      html += '<div style="font-weight:700; font-size:0.85em; margin-bottom:8px; color:var(--text-1,#222);">Page Analysis</div>';
+      html += '<div style="display:flex; gap:2px; flex-wrap:wrap; margin-bottom:6px;">';
+      var mc = { SEARCHABLE: '#4caf50', SCANNED: '#ff9800', MIXED: '#9c27b0' };
+      for (var pi = 0; pi < pages.length; pi++) {
         var pg = pages[pi];
-        html += '<div style="font-size:0.78em; padding:1px 0; color:var(--text-3);">Page ' + pg.page + ': ' + _wsv2Esc(pg.mode || 'unknown') + ' (' + (pg.char_count || 0) + ' chars)</div>';
-      }
-      if (pages.length > 10) html += '<div style="font-size:0.75em; color:#999;">... and ' + (pages.length - 10) + ' more pages</div>';
-      html += '</div>';
-    }
-
-    // Extracted headers (document structure)
-    var headers = r.extracted_headers || [];
-    if (headers.length > 0) {
-      html += '<div style="margin-bottom:12px; padding:10px; background:var(--bg-1); border:1px solid var(--border-1); border-radius:6px;">';
-      html += '<div style="font-weight:600; font-size:0.85em; margin-bottom:6px;">Document Structure (' + headers.length + ' sections)</div>';
-      for (var hi = 0; hi < headers.length; hi++) {
-        var hdr = headers[hi];
-        var hText = (typeof hdr === 'string') ? hdr : (hdr.text || hdr.header || String(hdr));
-        var hLevel = (typeof hdr === 'object' && hdr.level) ? hdr.level : 1;
-        var indent = Math.max(0, (hLevel - 1)) * 12;
-        html += '<div style="font-size:0.78em; padding:1px 0 1px ' + indent + 'px; color:var(--text-2);">' + _wsv2Esc(hText) + '</div>';
+        html += '<div title="Page ' + pg.page + ': ' + _wsv2Esc(pg.mode || '?') + ' (' + (pg.char_count || 0) + ' chars)" style="width:' + Math.max(8, Math.min(24, 200 / pages.length)) + 'px; height:18px; border-radius:2px; background:' + (mc[pg.mode] || '#bdbdbd') + ';"></div>';
       }
       html += '</div>';
+      html += '<div style="display:flex; gap:12px; font-size:0.68em; color:var(--text-3,#999);">';
+      var s = 0, sc = 0, mx = 0;
+      for (var ps = 0; ps < pages.length; ps++) { if (pages[ps].mode === 'SEARCHABLE') s++; else if (pages[ps].mode === 'SCANNED') sc++; else mx++; }
+      if (s) html += '<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#4caf50;margin-right:3px;"></span>Searchable: ' + s + '</span>';
+      if (sc) html += '<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#ff9800;margin-right:3px;"></span>Scanned: ' + sc + '</span>';
+      if (mx) html += '<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#9c27b0;margin-right:3px;"></span>Mixed: ' + mx + '</span>';
+      html += '</div></div>';
     }
 
-    // Extracted text (actual document content)
-    var docText = r.extracted_text || '';
-    if (docText) {
-      var previewLen = 5000;
-      var truncated = docText.length > previewLen;
-      var displayText = truncated ? docText.substring(0, previewLen) : docText;
-      html += '<div style="margin-bottom:12px; padding:10px; background:var(--bg-1); border:1px solid var(--border-1); border-radius:6px;">';
-      html += '<div style="font-weight:600; font-size:0.85em; margin-bottom:6px;">Document Content</div>';
-      html += '<pre id="wsv2-doc-text" style="font-size:0.75em; line-height:1.5; color:var(--text-3); white-space:pre-wrap; word-break:break-word; max-height:400px; overflow-y:auto; margin:0; padding:8px; background:var(--bg-base); border-radius:4px;">' + _wsv2Esc(displayText) + '</pre>';
-      if (truncated) {
-        html += '<button onclick="this.previousElementSibling.textContent=(' + "window._workspaceV2Context&&window._workspaceV2Context.preflight_result&&window._workspaceV2Context.preflight_result.extracted_text||'')" + ';this.style.display=\'none\'" style="margin-top:6px; font-size:0.75em; color:#1976d2; background:none; border:none; cursor:pointer; padding:0;">Show full document (' + docText.length.toLocaleString() + ' chars) →</button>';
-      }
-      html += '</div>';
+    // Resolution Reasoning (collapsed)
+    var reasons = story.reasoning_steps || [];
+    if (reasons.length) {
+      html += '<details style="margin-bottom:14px; padding:14px; background:var(--bg-1,#fafafa); border:1px solid var(--border-1,#e0e0e0); border-radius:8px;">';
+      html += '<summary style="font-weight:700; font-size:0.85em; color:var(--text-1,#222); cursor:pointer;">Resolution Reasoning (' + reasons.length + ' steps)</summary>';
+      html += '<ol style="margin:8px 0 0 16px; padding:0; font-size:0.78em; color:var(--text-3,#999); line-height:1.6;">';
+      for (var ri = 0; ri < reasons.length; ri++) html += '<li style="margin-bottom:2px;">' + _wsv2Esc(reasons[ri]) + '</li>';
+      html += '</ol></details>';
     }
 
-    if (!html) html = '<p style="color:#999; font-size:0.85em;">No evidence data available for this document.</p>';
-    contentEl.innerHTML = html;
+    if (!html) html = '<p style="color:#999; font-size:0.85em;">No evidence data available.</p>';
+    el.innerHTML = html;
   }
+
+  // ---- TAB 2: STRUCTURE (Table of Contents) ----
+  function _wsv2RenderEvidenceStructure(ctx) {
+    var el = document.getElementById('wsv2-ev-tab-structure');
+    if (!el) return;
+    var r = ctx.preflight_result || {};
+    var headers = r.extracted_headers || [];
+    var html = '';
+
+    if (!headers.length) { el.innerHTML = '<p style="color:#999; font-size:0.85em;">No document structure extracted.</p>'; return; }
+
+    html += '<div style="margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;">';
+    html += '<div style="font-weight:700; font-size:0.92em; color:var(--text-1,#222);">Table of Contents</div>';
+    html += '<span style="font-size:0.7em; color:var(--text-3,#999); padding:2px 8px; background:var(--bg-1,#f5f5f5); border-radius:3px;">' + headers.length + ' sections</span>';
+    html += '</div>';
+
+    html += '<div style="border:1px solid var(--border-1,#e0e0e0); border-radius:8px; overflow:hidden;">';
+    for (var hi = 0; hi < headers.length; hi++) {
+      var hdr = headers[hi];
+      var hText = (typeof hdr === 'string') ? hdr : (hdr.text || hdr.header || String(hdr));
+      var hLevel = (typeof hdr === 'object' && hdr.level) ? hdr.level : 1;
+      var isTop = hLevel <= 1;
+      var indent = Math.max(0, (hLevel - 1)) * 16;
+      var borderTop = hi > 0 ? ('border-top:1px solid ' + (isTop ? 'var(--border-1,#e0e0e0)' : '#f0f0f0') + ';') : '';
+      html += '<div onclick="_wsv2JumpToSection(' + hi + ')" style="display:flex; align-items:center; gap:8px; padding:7px 12px 7px ' + (12 + indent) + 'px; ' + borderTop + ' background:' + (isTop ? 'var(--bg-1,#fafafa)' : 'transparent') + '; cursor:pointer; transition:background 0.15s;" onmouseover="this.style.background=\'#e3f2fd\'" onmouseout="this.style.background=\'' + (isTop ? 'var(--bg-1,#fafafa)' : 'transparent') + '\'">';
+      html += '<span style="font-size:0.68em; color:var(--text-3,#bbb); min-width:22px; text-align:right;">' + (hi + 1) + '</span>';
+      html += '<span style="font-size:0.82em; font-weight:' + (isTop ? '600' : '400') + '; color:' + (isTop ? 'var(--text-1,#222)' : 'var(--text-2,#555)') + '; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + _wsv2Esc(hText) + '</span>';
+      html += '<span style="font-size:0.65em; color:#1565c0; opacity:0.6;">&#8594;</span>';
+      html += '</div>';
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
+  // ---- TAB 3: CONTENT (Document text with highlights) ----
+  function _wsv2RenderEvidenceContent(ctx) {
+    var el = document.getElementById('wsv2-ev-tab-content');
+    if (!el) return;
+    var r = ctx.preflight_result || {};
+    var docText = r.extracted_text || '';
+    var html = '';
+
+    if (!docText) { el.innerHTML = '<p style="color:#999; font-size:0.85em;">No document content extracted.</p>'; return; }
+
+    // Collect highlight keywords from resolution
+    var story = r.resolution_story || {};
+    var hlTerms = [];
+    if (story.legal_entity_account && story.legal_entity_account.name) hlTerms.push(story.legal_entity_account.name);
+    var cps = story.counterparties || [];
+    for (var ci = 0; ci < cps.length; ci++) { if (cps[ci].name) hlTerms.push(cps[ci].name); }
+    var recitals = story.recital_parties || [];
+    for (var ri = 0; ri < recitals.length; ri++) hlTerms.push(recitals[ri]);
+
+    // Stats bar
+    var lines = docText.split('\n');
+    var wordCount = docText.split(/\s+/).length;
+    html += '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">';
+    html += '<div style="font-weight:700; font-size:0.92em; color:var(--text-1,#222);">Document Content</div>';
+    html += '<div style="display:flex; gap:6px;">';
+    html += '<span style="font-size:0.68em; padding:2px 7px; border-radius:3px; background:#f5f5f5; color:#999;">' + wordCount.toLocaleString() + ' words</span>';
+    html += '<span style="font-size:0.68em; padding:2px 7px; border-radius:3px; background:#f5f5f5; color:#999;">' + lines.length + ' lines</span>';
+    html += '</div></div>';
+
+    // Highlight legend
+    if (hlTerms.length) {
+      var hlColors = ['#bbdefb', '#c8e6c9', '#ffe0b2', '#f8bbd0', '#d1c4e9', '#b2dfdb'];
+      html += '<div style="margin-bottom:10px; display:flex; gap:5px; flex-wrap:wrap; align-items:center;">';
+      html += '<span style="font-size:0.7em; color:var(--text-3,#999);">Highlights:</span>';
+      for (var ti = 0; ti < hlTerms.length; ti++) html += '<span style="font-size:0.68em; padding:2px 6px; border-radius:3px; background:' + hlColors[ti % hlColors.length] + '; color:#333;">' + _wsv2Esc(hlTerms[ti]) + '</span>';
+      html += '</div>';
+    }
+
+    // Render as paragraph blocks (preserving original structure)
+    html += '<div id="wsv2-doc-text-container" style="border:1px solid var(--border-1,#e0e0e0); border-radius:8px; overflow:hidden; max-height:calc(100vh - 220px); overflow-y:auto; background:#fff;">';
+    var paragraphs = docText.split(/\n\s*\n/);
+    var hlColors2 = ['#bbdefb', '#c8e6c9', '#ffe0b2', '#f8bbd0', '#d1c4e9', '#b2dfdb'];
+    for (var pi = 0; pi < paragraphs.length; pi++) {
+      var para = paragraphs[pi].trim();
+      if (!para) continue;
+      var escapedPara = _wsv2Esc(para);
+      // Apply highlights
+      for (var hi = 0; hi < hlTerms.length; hi++) {
+        var termEsc = hlTerms[hi].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var re = new RegExp('(' + _wsv2Esc(termEsc) + ')', 'gi');
+        escapedPara = escapedPara.replace(re, '<mark style="background:' + hlColors2[hi % hlColors2.length] + '; padding:0 2px; border-radius:2px;">$1</mark>');
+      }
+      html += '<div id="wsv2-para-' + pi + '" style="padding:8px 16px; border-bottom:1px solid #f5f5f5; font-size:0.8em; line-height:1.65; color:var(--text-2,#444); white-space:pre-wrap; word-break:break-word;">' + escapedPara + '</div>';
+    }
+    html += '</div>';
+
+    el.innerHTML = html;
+  }
+
+  // ---- Click-to-evidence: jump to section in Content tab ----
+  window._wsv2JumpToSection = function(headerIndex) {
+    var ctx = _wsv2State.context;
+    if (!ctx || !ctx.preflight_result) return;
+    var r = ctx.preflight_result;
+    var headers = r.extracted_headers || [];
+    var docText = r.extracted_text || '';
+    if (!docText || headerIndex >= headers.length) return;
+
+    var hdr = headers[headerIndex];
+    var hText = (typeof hdr === 'string') ? hdr : (hdr.text || hdr.header || String(hdr));
+
+    // Switch to Content tab
+    _wsv2SwitchEvidenceTab('content');
+
+    // Find the paragraph containing this header text
+    setTimeout(function() {
+      var container = document.getElementById('wsv2-doc-text-container');
+      if (!container) return;
+      var paras = container.children;
+      var searchLower = hText.toLowerCase();
+      for (var i = 0; i < paras.length; i++) {
+        if (paras[i].textContent.toLowerCase().indexOf(searchLower) >= 0) {
+          // Clear previous highlights
+          var prev = container.querySelector('.wsv2-section-highlight');
+          if (prev) { prev.classList.remove('wsv2-section-highlight'); prev.style.background = ''; prev.style.borderLeft = ''; }
+          // Highlight and scroll
+          paras[i].style.background = '#e3f2fd';
+          paras[i].style.borderLeft = '3px solid #1565c0';
+          paras[i].classList.add('wsv2-section-highlight');
+          paras[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Fade after 4s
+          setTimeout(function(el) { return function() { el.style.background = ''; el.style.borderLeft = ''; }; }(paras[i]), 4000);
+          return;
+        }
+      }
+    }, 100);
+  };
+
+  // ---- Click-to-evidence: show source contract text for a check ----
+  window._wsv2ShowCheckEvidence = function(scope, checkCode) {
+    var ctx = _wsv2State.context;
+    if (!ctx || !ctx.preflight_result) return;
+    var r = ctx.preflight_result;
+    var section = r[scope] || {};
+    var checks = section.checks || [];
+    var ck = null;
+    for (var i = 0; i < checks.length; i++) { if (checks[i].code === checkCode) { ck = checks[i]; break; } }
+    if (!ck) return;
+
+    // If check has evidence_context from backend, use it
+    var evidence = ck.evidence_context || '';
+    var matchTerm = ck.evidence_match_term || ck.value || '';
+
+    // Switch to Content tab
+    _wsv2SwitchEvidenceTab('content');
+
+    // Try to find and highlight the passage in the content
+    setTimeout(function() {
+      var container = document.getElementById('wsv2-doc-text-container');
+      if (!container) return;
+      var paras = container.children;
+      var searchTerms = [];
+      if (matchTerm) searchTerms.push(matchTerm.toLowerCase());
+      if (ck.value && typeof ck.value === 'string') searchTerms.push(ck.value.toLowerCase());
+      // Extract quoted terms from reason
+      var quoted = (ck.reason || '').match(/'([^']{3,})'/g);
+      if (quoted) { for (var q = 0; q < quoted.length; q++) searchTerms.push(quoted[q].replace(/'/g, '').toLowerCase()); }
+
+      // Clear previous evidence highlights
+      var prevEv = container.querySelectorAll('.wsv2-evidence-highlight');
+      for (var pe = 0; pe < prevEv.length; pe++) { prevEv[pe].classList.remove('wsv2-evidence-highlight'); prevEv[pe].style.background = ''; prevEv[pe].style.borderLeft = ''; }
+
+      // Find best matching paragraph
+      for (var si = 0; si < searchTerms.length; si++) {
+        var term = searchTerms[si];
+        for (var pi = 0; pi < paras.length; pi++) {
+          if (paras[pi].textContent.toLowerCase().indexOf(term) >= 0) {
+            paras[pi].style.background = '#fff3e0';
+            paras[pi].style.borderLeft = '3px solid #ff9800';
+            paras[pi].classList.add('wsv2-evidence-highlight');
+            paras[pi].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Fade after 6s
+            setTimeout(function(el) { return function() { el.style.background = ''; el.style.borderLeft = ''; }; }(paras[pi]), 6000);
+            return;
+          }
+        }
+      }
+    }, 100);
+  };
 
   // ===== CHANGE REASON MODAL (Phase 2) =====
   window._wsv2EditCheck = function(scope, checkCode) {

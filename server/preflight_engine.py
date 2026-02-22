@@ -913,6 +913,72 @@ _PERPETUAL_RE = re.compile(
 )
 
 
+# ---------------------------------------------------------------------------
+# Evidence context enrichment — attaches surrounding contract text to checks
+# ---------------------------------------------------------------------------
+_EVIDENCE_CONTEXT_RADIUS = 300  # chars before/after match to capture
+
+
+def _find_evidence_context(full_text, search_terms):
+    """Find the best matching passage in full_text for any of the search_terms.
+
+    Returns a dict with the evidence context, or empty dict if nothing found.
+    """
+    if not full_text or not search_terms:
+        return {}
+    text_lower = full_text.lower()
+    for term in search_terms:
+        if not term or len(term) < 3:
+            continue
+        term_lower = term.lower()
+        pos = text_lower.find(term_lower)
+        if pos < 0:
+            continue
+        # Expand to paragraph boundaries
+        start = max(0, pos - _EVIDENCE_CONTEXT_RADIUS)
+        end = min(len(full_text), pos + len(term) + _EVIDENCE_CONTEXT_RADIUS)
+        # Snap to newlines for cleaner excerpts
+        nl_before = full_text.rfind("\n", start, pos)
+        if nl_before >= start:
+            start = nl_before + 1
+        nl_after = full_text.find("\n", pos + len(term), end)
+        if nl_after > 0 and nl_after <= end:
+            end = nl_after
+        snippet = full_text[start:end].strip()
+        return {
+            "evidence_context": snippet,
+            "evidence_match_term": term,
+            "evidence_char_offset": pos,
+        }
+    return {}
+
+
+def _enrich_checks_with_evidence(checks, full_text):
+    """Post-process checks to attach evidence_context from the source document."""
+    if not full_text:
+        return checks
+    for ck in checks:
+        if ck.get("evidence_context"):
+            continue  # already has evidence
+        search_terms = []
+        # Try the value first
+        val = ck.get("value")
+        if val and isinstance(val, str) and len(val) >= 3:
+            search_terms.append(val)
+        # Try keywords from the reason field (quoted terms like 'distribution agreement')
+        reason = ck.get("reason", "")
+        import re as _re
+        quoted = _re.findall(r"'([^']{3,})'", reason)
+        search_terms.extend(quoted)
+        # Try the label as last resort
+        label = ck.get("label", "")
+        if label:
+            search_terms.append(label)
+        evidence = _find_evidence_context(full_text, search_terms)
+        ck.update(evidence)
+    return checks
+
+
 def _extract_contract_type(full_text):
     if not full_text:
         return {"status": "fail", "confidence": 0, "value": None, "reason": "No text available"}
@@ -1098,6 +1164,7 @@ def build_opportunity_spine(full_text, resolution_story):
         {"code": "OPP_TERRITORY", "label": "Territory", **_extract_territory(full_text)},
         {"code": "OPP_ROLE_LINKAGE", "label": "Role Linkage", **_check_role_linkage(resolution_story)},
     ]
+    _enrich_checks_with_evidence(checks, full_text)
 
     passed = sum(1 for c in checks if c["status"] == "pass")
     review = sum(1 for c in checks if c["status"] == "review")
@@ -1300,6 +1367,7 @@ def build_schedule_structure(full_text, resolution_story, opportunity_spine):
         {"code": "SCH_LIFECYCLE", "label": "Lifecycle Signals", **_extract_lifecycle_signals(full_text)},
         {"code": "SCH_ROLE_ALIGNMENT", "label": "Role Alignment", **_check_schedule_role_alignment(resolution_story)},
     ]
+    _enrich_checks_with_evidence(checks, full_text)
 
     passed = sum(1 for c in checks if c["status"] == "pass")
     review = sum(1 for c in checks if c["status"] == "review")
@@ -2025,6 +2093,7 @@ def build_financials_readiness(full_text, opportunity_spine):
         {"code": "FIN_CURRENCY", "label": "Currency Signals", **_extract_currency_signals(full_text)},
         {"code": "FIN_COMPLETENESS", "label": "Financial Completeness", **_check_financial_completeness(full_text, opportunity_spine)},
     ]
+    _enrich_checks_with_evidence(checks, full_text)
     passed = sum(1 for c in checks if c["status"] == "pass")
     review = sum(1 for c in checks if c["status"] == "review")
     failed = sum(1 for c in checks if c["status"] == "fail")
@@ -2144,6 +2213,7 @@ def build_addons_readiness(full_text, opportunity_spine):
         {"code": "ADDON_DATES", "label": "Add-on Dates", **_extract_addon_dates(full_text)},
         {"code": "ADDON_COMPLETENESS", "label": "Add-on Completeness", **_check_addon_completeness(full_text, opportunity_spine)},
     ]
+    _enrich_checks_with_evidence(checks, full_text)
     passed = sum(1 for c in checks if c["status"] == "pass")
     review = sum(1 for c in checks if c["status"] == "review")
     failed = sum(1 for c in checks if c["status"] == "fail")
