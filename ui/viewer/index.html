@@ -3957,6 +3957,43 @@
 
 
 
+          <!-- QUEUE 0: Sandbox Preflight (v3.0) — shows when RECORD_INSPECTOR_V2 flag is ON -->
+          <div id="sandbox-preflight-queue-section" class="triage-queue-section" style="margin-bottom: 24px; display: none;">
+            <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+              <h3 style="margin: 0; font-size: 1.05em; color: var(--text-1);">Sandbox Preflight <span id="preflight-queue-count" style="font-weight: 400; color: var(--text-3);">(0)</span></h3>
+              <button id="btn-clear-preflight-queue" onclick="_clearPreflightTriageQueue()" style="margin-left: auto; padding: 4px 10px; font-size: 0.75em; background: transparent; border: 1px solid #ddd; border-radius: 4px; color: #999; cursor: pointer;" title="Clear all preflight triage items">Clear</button>
+            </div>
+            <!-- Batch Preflight Progress Bar (hidden until batch runs) -->
+            <div id="batch-preflight-progress" style="display: none; margin-bottom: 12px; padding: 10px 14px; background: #e3f2fd; border: 1px solid #bbdefb; border-radius: 6px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                <span id="batch-pf-status-text" style="font-size: 0.82em; font-weight: 600; color: #1565c0;">Batch Preflight: Queued</span>
+                <span id="batch-pf-count-text" style="font-size: 0.78em; color: #666;">0 / 0</span>
+              </div>
+              <div style="width: 100%; height: 6px; background: #bbdefb; border-radius: 3px; overflow: hidden;">
+                <div id="batch-pf-bar-fill" style="width: 0%; height: 100%; background: #1565c0; border-radius: 3px; transition: width 0.3s ease;"></div>
+              </div>
+              <div id="batch-pf-detail" style="margin-top: 6px; font-size: 0.72em; color: #666; max-height: 120px; overflow-y: auto;"></div>
+            </div>
+            <div class="queue-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
+                <thead style="background: var(--table-head, #f5f5f5); border-bottom: 1px solid var(--border-1, #e0e0e0);">
+                  <tr>
+                    <th style="padding: 8px 12px;">Gate</th>
+                    <th style="padding: 8px 12px;">File</th>
+                    <th style="padding: 8px 12px;">Checks</th>
+                    <th style="padding: 8px 12px;">Source</th>
+                    <th style="padding: 8px 12px;">Status</th>
+                    <th style="padding: 8px 12px;">Time</th>
+                    <th style="padding: 8px 12px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="preflight-queue-list" style="background: var(--bg-1, #fff);">
+                  <tr><td colspan="7" style="padding: 20px; text-align: center; color: #999;">No preflight items. Upload a PDF or run batch preflight.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <!-- QUEUE 1: Pre-Flight -->
           <div class="triage-queue-section" style="margin-bottom: 24px;">
             <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
@@ -4341,6 +4378,7 @@
             <button id="grid-mode-sync-btn" class="gfc-btn" onclick="_syncTogglePanel()">Suggestions</button>
             <button class="gfc-btn" id="pf-gate-tab-btn" onclick="pfGateTogglePanel()" style="display:none;">Preflight</button>
             <button class="gfc-btn" id="gfc-annotation-layer-btn" onclick="_gfcOpenAnnotationLayer()" style="display:none;">Annotation Layer</button>
+            <button class="gfc-btn" id="gfc-batch-preflight-btn" onclick="_gfcRunBatchPreflight()" style="display:none;" title="Run preflight on all file_url entries in the spreadsheet">Batch Preflight</button>
             <div class="gfc-divider" id="gfc-composite-divider" style="display:none;"></div>
             <button id="gfc-expand-btn" class="gfc-btn" onclick="_p1cExpandAll()" style="display:none;">Expand All</button>
             <button id="gfc-collapse-btn" class="gfc-btn" onclick="_p1cCollapseAll()" style="display:none;">Collapse All</button>
@@ -13686,6 +13724,11 @@
       
       COLUMN_MAPPING_STATE.mappingResolved = COLUMN_MAPPING_STATE.missingColumns.length === 0;
       console.log('[ColumnMapping] Resolved:', COLUMN_MAPPING_STATE);
+      // v3.0: Auto-show batch preflight button when file_url column detected
+      if (COLUMN_MAPPING_STATE.fileUrlColumn && typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.RECORD_INSPECTOR_V2) {
+        var _bpBtn = document.getElementById('gfc-batch-preflight-btn');
+        if (_bpBtn) _bpBtn.style.display = '';
+      }
       return COLUMN_MAPPING_STATE;
     }
     
@@ -17792,6 +17835,291 @@
         return;
       }
       if (typeof pftlOpenWorkspaceV2 === 'function') pftlOpenWorkspaceV2();
+    };
+
+    // v3.0: Render sandbox preflight triage queue table
+    function _renderPreflightTriageQueue(items, container) {
+      if (!container) return;
+      if (items.length === 0) {
+        container.innerHTML = '<tr><td colspan="7" style="padding: 20px; text-align: center; color: #999;">No preflight items. Upload a PDF or run batch preflight.</td></tr>';
+        return;
+      }
+      container.innerHTML = items.map(function(item) {
+        var gateColor = (item.gate_color || 'UNKNOWN').toUpperCase();
+        var gateBg = gateColor === 'GREEN' ? '#e8f5e9' : (gateColor === 'YELLOW' ? '#fff8e1' : (gateColor === 'RED' ? '#ffebee' : '#f5f5f5'));
+        var gateFg = gateColor === 'GREEN' ? '#2e7d32' : (gateColor === 'YELLOW' ? '#f57f17' : (gateColor === 'RED' ? '#c62828' : '#757575'));
+        var gateBadge = '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.75em;font-weight:700;background:' + gateBg + ';color:' + gateFg + ';">' + gateColor + '</span>';
+        var checksText = item.check_count + ' checks';
+        if (item.fail_count > 0) checksText += ', ' + item.fail_count + ' fail';
+        if (item.review_count > 0) checksText += ', ' + item.review_count + ' review';
+        var sourceLabel = item.source === 'batch_file_url' ? 'Batch' : 'Upload';
+        var sourceBg = item.source === 'batch_file_url' ? '#e3f2fd' : '#f3e5f5';
+        var sourceFg = item.source === 'batch_file_url' ? '#1565c0' : '#7b1fa2';
+        var statusBadge = '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.75em;font-weight:600;background:' + item.status_color + '15;color:' + item.status_color + ';">' + item.status_label + '</span>';
+        var timeStr = item.created_at ? new Date(item.created_at).toLocaleString() : '-';
+        var actions = '';
+        if (item.status === 'completed') {
+          actions = '<button class="btn-secondary" style="padding:4px 8px;font-size:0.75em;background:#e3f2fd;border:1px solid #bbdefb;color:#1565c0;cursor:pointer;" onclick="event.stopPropagation(); _openPreflightTriageInInspector(\'' + item.id + '\')">Open in Inspector</button>';
+        } else if (item.status === 'failed') {
+          actions = '<span style="font-size:0.72em;color:#c62828;" title="' + ((item.error || '').replace(/"/g, '&quot;')) + '">Error</span>';
+        } else if (item.status === 'running') {
+          actions = '<span style="font-size:0.72em;color:#1565c0;">Running...</span>';
+        } else {
+          actions = '<span style="font-size:0.72em;color:#999;">Queued</span>';
+        }
+        var fileName = item.file_name || 'Unknown';
+        if (fileName.length > 30) fileName = fileName.substring(0, 28) + '...';
+        return '<tr style="border-bottom:1px solid var(--border-1,#e0e0e0);cursor:pointer;" onmouseover="this.style.background=\'#f5f8ff\'" onmouseout="this.style.background=\'transparent\'">' +
+          '<td style="padding:10px 12px;">' + gateBadge + '</td>' +
+          '<td style="padding:10px 12px;font-family:monospace;font-size:0.85em;" title="' + (item.file_name || '').replace(/"/g, '&quot;') + '">' + fileName + '</td>' +
+          '<td style="padding:10px 12px;font-size:0.82em;">' + checksText + '</td>' +
+          '<td style="padding:10px 12px;"><span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:0.72em;font-weight:600;background:' + sourceBg + ';color:' + sourceFg + ';">' + sourceLabel + '</span></td>' +
+          '<td style="padding:10px 12px;">' + statusBadge + '</td>' +
+          '<td style="padding:10px 12px;color:var(--text-3,#999);font-size:0.82em;">' + timeStr + '</td>' +
+          '<td style="padding:10px 12px;">' + actions + '</td>' +
+          '</tr>';
+      }).join('');
+    }
+    window._renderPreflightTriageQueue = _renderPreflightTriageQueue;
+
+    // v3.0: Open a preflight triage item in the Annotation Layer Inspector
+    window._openPreflightTriageInInspector = function(itemId) {
+      var item = PREFLIGHT_TRIAGE_STORE.get(itemId);
+      if (!item || !item.preflight_result) {
+        if (typeof showToast === 'function') showToast('Preflight result not found for this item.', 'warning');
+        return;
+      }
+      // Store result in _pfGateState so pftlOpenWorkspaceV2 can find it
+      if (typeof _pfGateState !== 'undefined') {
+        _pfGateState.result = item.preflight_result;
+      }
+      if (typeof pftlOpenWorkspaceV2 === 'function') {
+        pftlOpenWorkspaceV2();
+      }
+    };
+
+    // v3.0: Clear all preflight triage items
+    window._clearPreflightTriageQueue = function() {
+      if (typeof PREFLIGHT_TRIAGE_STORE !== 'undefined') {
+        PREFLIGHT_TRIAGE_STORE.clear();
+      }
+      if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
+      if (typeof showToast === 'function') showToast('Preflight queue cleared.', 'info');
+    };
+
+    // v3.0: Batch preflight — enqueue file_url items from spreadsheet and process sequentially
+    window._batchPreflightEnqueue = function(fileUrls) {
+      if (!fileUrls || fileUrls.length === 0) {
+        if (typeof showToast === 'function') showToast('No file URLs found in the spreadsheet.', 'warning');
+        return;
+      }
+      _batchPreflightQueue.items = fileUrls.map(function(entry, idx) {
+        var url = (typeof entry === 'string') ? entry : (entry.file_url || entry.url || '');
+        var name = (typeof entry === 'string') ? url.split('/').pop() : (entry.file_name || url.split('/').pop() || ('file_' + (idx + 1)));
+        return {
+          id: 'bpf_' + Date.now() + '_' + idx,
+          file_url: url.trim(),
+          file_name: name,
+          status: 'queued',
+          result: null,
+          error: null
+        };
+      }).filter(function(item) { return item.file_url.length > 0; });
+
+      if (_batchPreflightQueue.items.length === 0) {
+        if (typeof showToast === 'function') showToast('No valid file URLs to process.', 'warning');
+        return;
+      }
+
+      _batchPreflightQueue.running = true;
+      _batchPreflightQueue.activeCount = 0;
+      console.log('[BatchPreflight] Enqueued', _batchPreflightQueue.items.length, 'items');
+      if (typeof showToast === 'function') showToast('Batch preflight started: ' + _batchPreflightQueue.items.length + ' files queued.', 'info');
+
+      // Show the sandbox preflight section and progress bar
+      var pfSection = document.getElementById('sandbox-preflight-queue-section');
+      if (pfSection) pfSection.style.display = '';
+      _batchPreflightRenderProgress();
+
+      // Start processing
+      _batchPreflightProcessNext();
+    };
+
+    // v3.0: Process next item in batch preflight queue
+    function _batchPreflightProcessNext() {
+      if (!_batchPreflightQueue.running) return;
+      var next = null;
+      for (var i = 0; i < _batchPreflightQueue.items.length; i++) {
+        if (_batchPreflightQueue.items[i].status === 'queued') {
+          next = _batchPreflightQueue.items[i];
+          break;
+        }
+      }
+      if (!next) {
+        // All done
+        _batchPreflightQueue.running = false;
+        _batchPreflightRenderProgress();
+        var doneCount = _batchPreflightQueue.items.filter(function(i) { return i.status === 'done'; }).length;
+        var failCount = _batchPreflightQueue.items.filter(function(i) { return i.status === 'failed'; }).length;
+        if (typeof showToast === 'function') showToast('Batch preflight complete: ' + doneCount + ' passed, ' + failCount + ' failed.', doneCount > 0 ? 'success' : 'warning');
+        if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
+        return;
+      }
+
+      next.status = 'running';
+      _batchPreflightRenderProgress();
+
+      var headers = {};
+      if (typeof _syncHeaders === 'function') {
+        headers = _syncHeaders();
+      } else {
+        headers = { 'Content-Type': 'application/json' };
+        var wsId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : '';
+        if (wsId) headers['X-Workspace-Id'] = wsId;
+        if (typeof _authToken !== 'undefined' && _authToken) headers['Authorization'] = 'Bearer ' + _authToken;
+      }
+      headers['Content-Type'] = 'application/json';
+      if (typeof window._authToken === 'undefined' || !window._authToken) {
+        headers['X-Sandbox-Mode'] = 'true';
+      }
+
+      fetch('/api/preflight/run', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ file_url: next.file_url })
+      })
+      .then(function(resp) {
+        if (!resp.ok) {
+          return resp.json().then(function(body) {
+            throw new Error((body.detail || (body.error && body.error.message) || 'Preflight failed'));
+          });
+        }
+        return resp.json();
+      })
+      .then(function(envelope) {
+        var result = (envelope && envelope.data) ? envelope.data : envelope;
+        next.status = 'done';
+        next.result = result;
+        // Create triage item in store
+        PREFLIGHT_TRIAGE_STORE.add({
+          source: 'batch_file_url',
+          file_name: next.file_name,
+          file_url: next.file_url,
+          gate_color: (result.gate_color || 'GREEN').toUpperCase(),
+          health_score: result.health_score || null,
+          check_count: (result.checks || []).length,
+          fail_count: (result.checks || []).filter(function(c) { return c.status === 'fail'; }).length,
+          review_count: (result.checks || []).filter(function(c) { return c.status === 'review'; }).length,
+          status: 'completed',
+          preflight_result: result
+        });
+        _batchPreflightRenderProgress();
+        _batchPreflightProcessNext();
+      })
+      .catch(function(err) {
+        next.status = 'failed';
+        next.error = err.message;
+        // Create failed triage item
+        PREFLIGHT_TRIAGE_STORE.add({
+          source: 'batch_file_url',
+          file_name: next.file_name,
+          file_url: next.file_url,
+          gate_color: 'UNKNOWN',
+          status: 'failed',
+          error: err.message
+        });
+        console.error('[BatchPreflight] Failed:', next.file_name, err.message);
+        _batchPreflightRenderProgress();
+        _batchPreflightProcessNext();
+      });
+    }
+
+    // v3.0: Render batch preflight progress UI
+    function _batchPreflightRenderProgress() {
+      var progressEl = document.getElementById('batch-preflight-progress');
+      if (!progressEl) return;
+      var items = _batchPreflightQueue.items;
+      if (items.length === 0) {
+        progressEl.style.display = 'none';
+        return;
+      }
+      progressEl.style.display = '';
+      var done = items.filter(function(i) { return i.status === 'done'; }).length;
+      var failed = items.filter(function(i) { return i.status === 'failed'; }).length;
+      var running = items.filter(function(i) { return i.status === 'running'; }).length;
+      var total = items.length;
+      var completed = done + failed;
+      var pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+      var statusText = document.getElementById('batch-pf-status-text');
+      var countText = document.getElementById('batch-pf-count-text');
+      var barFill = document.getElementById('batch-pf-bar-fill');
+      var detailEl = document.getElementById('batch-pf-detail');
+
+      if (statusText) {
+        if (_batchPreflightQueue.running) {
+          statusText.textContent = 'Batch Preflight: Processing...';
+          statusText.style.color = '#1565c0';
+        } else {
+          statusText.textContent = 'Batch Preflight: Complete';
+          statusText.style.color = failed > 0 ? '#e65100' : '#2e7d32';
+        }
+      }
+      if (countText) countText.textContent = completed + ' / ' + total + (failed > 0 ? ' (' + failed + ' failed)' : '');
+      if (barFill) {
+        barFill.style.width = pct + '%';
+        barFill.style.background = failed > 0 && !_batchPreflightQueue.running ? '#e65100' : '#1565c0';
+      }
+      if (detailEl) {
+        detailEl.innerHTML = items.map(function(item) {
+          var icon = item.status === 'done' ? '\u2705' : (item.status === 'failed' ? '\u274c' : (item.status === 'running' ? '\u23f3' : '\u2b1c'));
+          var color = item.status === 'done' ? '#2e7d32' : (item.status === 'failed' ? '#c62828' : (item.status === 'running' ? '#1565c0' : '#999'));
+          var gate = item.result ? (' [' + (item.result.gate_color || '').toUpperCase() + ']') : '';
+          var err = item.error ? (' - ' + item.error) : '';
+          return '<div style="color:' + color + ';padding:1px 0;">' + icon + ' ' + item.file_name + gate + err + '</div>';
+        }).join('');
+      }
+    }
+
+    // v3.0: Trigger batch preflight from grid toolbar
+    window._gfcRunBatchPreflight = function() {
+      // Check for file_url column in loaded data
+      if (typeof COLUMN_MAPPING_STATE === 'undefined' || !COLUMN_MAPPING_STATE.fileUrlColumn) {
+        if (typeof showToast === 'function') showToast('No file_url column detected in the spreadsheet. Import a dataset with file URLs first.', 'warning');
+        return;
+      }
+      if (typeof workbook === 'undefined' || !workbook || !workbook.sheets) {
+        if (typeof showToast === 'function') showToast('No dataset loaded. Import a spreadsheet first.', 'warning');
+        return;
+      }
+      // Collect unique file_url values from all sheets
+      var urlCol = COLUMN_MAPPING_STATE.fileUrlColumn;
+      var fileNameCol = COLUMN_MAPPING_STATE.fileNameColumn;
+      var urls = [];
+      var seen = {};
+      var sheetKeys = Object.keys(workbook.sheets);
+      for (var si = 0; si < sheetKeys.length; si++) {
+        var sheet = workbook.sheets[sheetKeys[si]];
+        if (!sheet || !sheet.rows) continue;
+        for (var ri = 0; ri < sheet.rows.length; ri++) {
+          var row = sheet.rows[ri];
+          var url = (row[urlCol] || '').trim();
+          if (url && !seen[url] && (url.indexOf('http://') === 0 || url.indexOf('https://') === 0)) {
+            seen[url] = true;
+            urls.push({
+              file_url: url,
+              file_name: (row[fileNameCol] || url.split('/').pop() || 'file_' + (ri + 1))
+            });
+          }
+        }
+      }
+      if (urls.length === 0) {
+        if (typeof showToast === 'function') showToast('No valid HTTP/HTTPS URLs found in the ' + urlCol + ' column.', 'warning');
+        return;
+      }
+      // Navigate to triage and start batch
+      _batchPreflightEnqueue(urls);
+      if (typeof navigateTo === 'function') navigateTo('triage');
     };
 
     function setGridViewMode(mode) {
@@ -34308,6 +34636,73 @@
       }
     };
 
+    // v3.0: Sandbox Preflight Triage Store — persists single-PDF + batch preflight results as triage items
+    var PREFLIGHT_TRIAGE_STORE = {
+      _key: 'orchestrate.preflight_triage_items',
+      _items: null,
+      _load: function() {
+        if (this._items === null) {
+          try { this._items = JSON.parse(localStorage.getItem(this._key)) || []; }
+          catch(e) { this._items = []; }
+        }
+        return this._items;
+      },
+      _save: function() {
+        try { localStorage.setItem(this._key, JSON.stringify(this._items || [])); }
+        catch(e) { console.warn('[PreflightTriageStore] save error:', e); }
+      },
+      add: function(item) {
+        this._load();
+        item.id = item.id || ('pft_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6));
+        item.created_at = item.created_at || new Date().toISOString();
+        item.status = item.status || 'completed';
+        this._items.push(item);
+        this._save();
+        console.log('[PreflightTriageStore] Added item:', item.id, item.file_name);
+        return item;
+      },
+      list: function() { return this._load().slice(); },
+      get: function(id) { return this._load().find(function(i) { return i.id === id; }); },
+      updateStatus: function(id, status) {
+        this._load();
+        var item = this._items.find(function(i) { return i.id === id; });
+        if (item) { item.status = status; item.updated_at = new Date().toISOString(); this._save(); }
+        return item;
+      },
+      updateResult: function(id, result) {
+        this._load();
+        var item = this._items.find(function(i) { return i.id === id; });
+        if (item) {
+          item.preflight_result = result;
+          item.gate_color = (result.gate_color || 'GREEN').toUpperCase();
+          item.health_score = result.health_score || null;
+          item.check_count = (result.checks || []).length;
+          item.fail_count = (result.checks || []).filter(function(c) { return c.status === 'fail'; }).length;
+          item.review_count = (result.checks || []).filter(function(c) { return c.status === 'review'; }).length;
+          item.status = 'completed';
+          item.updated_at = new Date().toISOString();
+          this._save();
+        }
+        return item;
+      },
+      clear: function() { this._items = []; this._save(); },
+      remove: function(id) {
+        this._load();
+        this._items = this._items.filter(function(i) { return i.id !== id; });
+        this._save();
+      }
+    };
+    window.PREFLIGHT_TRIAGE_STORE = PREFLIGHT_TRIAGE_STORE;
+
+    // v3.0: Batch Preflight Queue — processes file_url column entries through /api/preflight/run
+    var _batchPreflightQueue = {
+      items: [],        // { id, file_url, file_name, status: queued|running|done|failed, result, error }
+      running: false,
+      concurrency: 1,
+      activeCount: 0,
+      onProgress: null  // callback(queue) for UI updates
+    };
+
     // v1.6.35: Seed Manual Review queue from RFI meta sheet (Note Type = "Manual Review")
     var _manualReviewSeedDatasetId = null;
     var _manualReviewItems = [];
@@ -41716,6 +42111,9 @@
           // Show/hide toolbar tab instead
           var alBtn = document.getElementById('gfc-annotation-layer-btn');
           if (alBtn) alBtn.style.display = FEATURE_FLAGS.RECORD_INSPECTOR_V2 ? '' : 'none';
+          // V3: Show batch preflight button when V2 flag is ON and file_url column detected
+          var bpBtn = document.getElementById('gfc-batch-preflight-btn');
+          if (bpBtn) bpBtn.style.display = (FEATURE_FLAGS.RECORD_INSPECTOR_V2 && typeof COLUMN_MAPPING_STATE !== 'undefined' && COLUMN_MAPPING_STATE.fileUrlColumn) ? '' : 'none';
           // V3: Activate contract_author role when workspace V2 is enabled
           if (FEATURE_FLAGS.RECORD_INSPECTOR_V2 && typeof ROLE_REGISTRY !== 'undefined' && ROLE_REGISTRY.contract_author) {
             ROLE_REGISTRY.contract_author.active = true;
@@ -44475,7 +44873,8 @@
       manualItems: [],
       sflogicItems: [],
       patchItems: [],
-      systemItems: []
+      systemItems: [],
+      preflightItems: []
     };
     
     // Map PatchRequest status to pipeline section
@@ -44833,11 +45232,43 @@
       if (changeLogItems && changeLogItems.length > 0) {
         analystTriageState.systemItems = analystTriageState.systemItems.concat(changeLogItems);
       }
-      
-      console.log('[AnalystTriage] Queue counts from signals: Manual=' + analystTriageState.manualItems.length + 
-        ', SystemPass=' + analystTriageState.sflogicItems.length + 
-        ', Patch=' + analystTriageState.patchItems.length + 
-        ', System=' + analystTriageState.systemItems.length);
+
+      // v3.0: Populate sandbox preflight triage items from store
+      analystTriageState.preflightItems = [];
+      if (typeof PREFLIGHT_TRIAGE_STORE !== 'undefined') {
+        var pfTriageItems = PREFLIGHT_TRIAGE_STORE.list();
+        analystTriageState.preflightItems = pfTriageItems.map(function(pft) {
+          var gateColor = (pft.gate_color || 'UNKNOWN').toUpperCase();
+          var statusLabel = gateColor === 'GREEN' ? 'Passed' : (gateColor === 'YELLOW' ? 'Review' : (gateColor === 'RED' ? 'Failed' : pft.status));
+          var statusColor = gateColor === 'GREEN' ? '#2e7d32' : (gateColor === 'YELLOW' ? '#f57f17' : (gateColor === 'RED' ? '#c62828' : '#757575'));
+          return {
+            id: pft.id,
+            source: pft.source || 'single_pdf_upload',
+            file_name: pft.file_name || 'Unknown',
+            file_url: pft.file_url || null,
+            gate_color: gateColor,
+            health_score: pft.health_score,
+            check_count: pft.check_count || 0,
+            fail_count: pft.fail_count || 0,
+            review_count: pft.review_count || 0,
+            status: pft.status,
+            status_label: statusLabel,
+            status_color: statusColor,
+            created_at: pft.created_at,
+            updated_at: pft.updated_at || pft.created_at,
+            error: pft.error || null,
+            _preflight_triage_id: pft.id
+          };
+        }).sort(function(a, b) {
+          return (b.created_at || '').localeCompare(a.created_at || '');
+        });
+      }
+
+      console.log('[AnalystTriage] Queue counts from signals: Manual=' + analystTriageState.manualItems.length +
+        ', SystemPass=' + analystTriageState.sflogicItems.length +
+        ', Patch=' + analystTriageState.patchItems.length +
+        ', System=' + analystTriageState.systemItems.length +
+        ', Preflight=' + analystTriageState.preflightItems.length);
       
       // v1.6.33: Update progress block after seeding patch requests
       if (typeof updateProgressBlock === 'function') {
@@ -45840,6 +46271,22 @@
       renderTriageQueueTable(analystTriageState.sflogicItems, 'sflogic-queue-list', 'No system pass items');
       renderTriageQueueTable(analystTriageState.patchItems, 'patch-queue-list', 'No patch requests yet');
       renderTriageQueueTable(analystTriageState.systemItems, 'system-queue-list', 'No system changes');
+
+      // v3.0: Render Sandbox Preflight queue
+      var pfSection = document.getElementById('sandbox-preflight-queue-section');
+      var pfCountEl = document.getElementById('preflight-queue-count');
+      var pfQueueList = document.getElementById('preflight-queue-list');
+      if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.RECORD_INSPECTOR_V2 && pfSection) {
+        var pfItems = analystTriageState.preflightItems;
+        pfSection.style.display = pfItems.length > 0 || _batchPreflightQueue.running ? '' : 'none';
+        if (pfCountEl) pfCountEl.textContent = '(' + pfItems.length + ')';
+        if (pfQueueList) {
+          _renderPreflightTriageQueue(pfItems, pfQueueList);
+        }
+      } else if (pfSection) {
+        pfSection.style.display = 'none';
+      }
+
       // P1: Debounced telemetry refresh
       if (typeof TriageTelemetry !== 'undefined') {
         TriageTelemetry.debouncedRefresh();
@@ -58657,6 +59104,20 @@ var P022_RuntimeValidation = {
         var _alBtn = document.getElementById('gfc-annotation-layer-btn');
         if (_alBtn && typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.RECORD_INSPECTOR_V2) {
           _alBtn.style.display = '';
+        }
+        // v3.0: Create sandbox preflight triage item on single PDF upload
+        if (typeof PREFLIGHT_TRIAGE_STORE !== 'undefined' && typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.RECORD_INSPECTOR_V2) {
+          PREFLIGHT_TRIAGE_STORE.add({
+            source: 'single_pdf_upload',
+            file_name: file.name,
+            gate_color: (result.gate_color || 'GREEN').toUpperCase(),
+            health_score: result.health_score || null,
+            check_count: (result.checks || []).length,
+            fail_count: (result.checks || []).filter(function(c) { return c.status === 'fail'; }).length,
+            review_count: (result.checks || []).filter(function(c) { return c.status === 'review'; }).length,
+            status: 'completed',
+            preflight_result: result
+          });
         }
         var gateColor = (result.gate_color || 'GREEN').toUpperCase();
         if (gateColor === 'GREEN') {
