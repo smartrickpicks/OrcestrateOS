@@ -20740,6 +20740,7 @@
           }
             if (flags.PREFLIGHT_GATE_SYNC === true || flags.PREFLIGHT_GATE_SYNC === 'true') {
               if (typeof FEATURE_FLAGS !== 'undefined') FEATURE_FLAGS.PREFLIGHT_GATE_SYNC = true;
+              window.__PREFLIGHT_LAB_ENABLED = true;
               console.log('[PREFLIGHT-GATE] Feature flag PREFLIGHT_GATE_SYNC is ON');
               if (typeof pfGateInit === 'function') pfGateInit();
               if (typeof toolbarPdfPreflightInitVisibility === 'function') toolbarPdfPreflightInitVisibility();
