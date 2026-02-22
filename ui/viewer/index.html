@@ -60662,6 +60662,17 @@ var P022_RuntimeValidation = {
     var baseValue = ck.value ? String(ck.value) : '';
     var effective = _pftlGetEffectiveCheckValue(scope, ck.code, baseValue);
     var overridden = _pftlGetCheckValueOverride(scope, ck.code);
+    // V2 mode: replace inline <select> with deep-link to Annotation Layer Inspector
+    if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.RECORD_INSPECTOR_V2) {
+      var html = '<div class="pftl-value-editor" style="margin-top:6px;display:flex;gap:6px;align-items:center;">';
+      html += '<button type="button" class="pftl-status-edit-btn" onclick="pftlOpenWorkspaceV2(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(ck.code) + '\')">Edit Value</button>';
+      if (overridden) {
+        html += '<span style="font-size:0.75em;color:#e65100;margin-left:4px;">overridden</span>';
+      }
+      html += '</div>';
+      return html;
+    }
+    // Legacy mode: inline select dropdown
     if (effective) {
       var hasEffective = false;
       for (var i = 0; i < options.length; i++) {
@@ -60764,21 +60775,28 @@ var P022_RuntimeValidation = {
     var effective = _pftlGetEffectiveCheckStatus(scope, code, baseStatus);
     var overridden = effective !== baseStatus;
     var badgeClass = _pftlStatusBadgeClass(prefix, effective);
-    var menuId = 'pftl-status-menu-' + _pftlSimpleHash(scope + '|' + code + '|' + rowIx);
     var html = '<div class="pftl-status-editor">';
     html += '<span class="' + prefix + '-status-badge ' + badgeClass + '">' + _pftlEsc(String(effective || '').toUpperCase()) + '</span>';
     if (overridden) html += '<span class="pftl-status-overridden">OVERRIDE</span>';
-    html += '<button type="button" class="pftl-status-edit-btn" onclick="pftlToggleCheckStatusMenu(\'' + _pftlEsc(menuId) + '\')">Edit</button>';
-    html += '<div id="' + _pftlEsc(menuId) + '" class="pftl-status-menu">';
-    html += '<div class="pftl-status-menu-title">Override status</div>';
-    html += '<div class="pftl-status-menu-actions">';
-    html += '<button class="is-pass" type="button" onclick="pftlOpenCheckOverrideDialog(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'pass\')">Pass</button>';
-    html += '<button class="is-review" type="button" onclick="pftlOpenCheckOverrideDialog(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'review\')">Review</button>';
-    html += '<button class="is-fail" type="button" onclick="pftlOpenCheckOverrideDialog(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'fail\')">Fail</button>';
-    if (overridden) {
-      html += '<button class="is-clear" type="button" onclick="pftlClearCheckOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\')">Clear</button>';
+    if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.RECORD_INSPECTOR_V2) {
+      // V2 mode: deep-link to Annotation Layer Inspector for this check
+      html += '<button type="button" class="pftl-status-edit-btn" onclick="pftlOpenWorkspaceV2(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\')">Edit</button>';
+      html += '</div>';
+    } else {
+      // Legacy mode: inline dropdown menu
+      var menuId = 'pftl-status-menu-' + _pftlSimpleHash(scope + '|' + code + '|' + rowIx);
+      html += '<button type="button" class="pftl-status-edit-btn" onclick="pftlToggleCheckStatusMenu(\'' + _pftlEsc(menuId) + '\')">Edit</button>';
+      html += '<div id="' + _pftlEsc(menuId) + '" class="pftl-status-menu">';
+      html += '<div class="pftl-status-menu-title">Override status</div>';
+      html += '<div class="pftl-status-menu-actions">';
+      html += '<button class="is-pass" type="button" onclick="pftlOpenCheckOverrideDialog(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'pass\')">Pass</button>';
+      html += '<button class="is-review" type="button" onclick="pftlOpenCheckOverrideDialog(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'review\')">Review</button>';
+      html += '<button class="is-fail" type="button" onclick="pftlOpenCheckOverrideDialog(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\', \'fail\')">Fail</button>';
+      if (overridden) {
+        html += '<button class="is-clear" type="button" onclick="pftlClearCheckOverride(\'' + _pftlEsc(scope) + '\', \'' + _pftlEsc(code) + '\')">Clear</button>';
+      }
+      html += '</div></div></div>';
     }
-    html += '</div></div></div>';
     return html;
   }
 
@@ -61668,11 +61686,19 @@ var P022_RuntimeValidation = {
     var html = '<div class="pftl-footer">';
     if (!isAdmin) {
       html += '<span style="color:#999;font-size:0.85em;">Admin-only. Actions are restricted.</span>';
-    } else {
-      html += '<button class="pftl-action-btn" style="background:#1565c0;color:#fff;" onclick="pftlOpenContractGenerator()">Open Contract Generator</button>';
-      if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.RECORD_INSPECTOR_V2) {
-        html += '<button class="pftl-action-btn" style="background:#0d47a1;color:#fff;" onclick="pftlOpenWorkspaceV2()">Edit in Workspace</button>';
+    } else if (typeof FEATURE_FLAGS !== 'undefined' && FEATURE_FLAGS.RECORD_INSPECTOR_V2) {
+      // V2 mode: single "Open Annotation Layer" CTA — patch submit actions live only in inspector
+      html += '<button class="pftl-action-btn" style="background:#1565c0;color:#fff;" onclick="pftlOpenWorkspaceV2()">Open Annotation Layer</button>';
+      if (gate !== 'GREEN') {
+        html += '<button class="pftl-action-btn accept-risk" onclick="pftlAcceptRisk()">Accept Risk</button>';
+        html += '<button class="pftl-action-btn escalate-ocr" onclick="pftlEscalateOcr()">Escalate OCR</button>';
       }
+      if (!isMaterialized) {
+        html += '<span class="pftl-footer-note">Document not materialized — action will be deferred until patch submission.</span>';
+      }
+    } else {
+      // Legacy mode: all original buttons preserved
+      html += '<button class="pftl-action-btn" style="background:#1565c0;color:#fff;" onclick="pftlOpenContractGenerator()">Open Contract Generator</button>';
       html += '<button class="pftl-action-btn" style="background:#455a64;color:#fff;" onclick="pftlSubmitFromLab(\'comment\', true)">Save Comment Draft</button>';
       html += '<button class="pftl-action-btn" style="background:#5d4037;color:#fff;" onclick="pftlSubmitFromLab(\'comment\', false)">Submit Comment</button>';
       html += '<button class="pftl-action-btn" style="background:#2e7d32;color:#fff;" onclick="pftlSubmitFromLab(\'correction\', false)"' + (submitState.allowCorrection ? '' : ' disabled') + '>Submit Correction</button>';
@@ -61965,6 +61991,9 @@ var P022_RuntimeValidation = {
     aliases: [],             // Phase 3: created aliases
     clauseSelections: {},    // Phase 4: clause inclusion state
     counterpartyForm: null,  // Phase 5: new counterparty data
+    counterpartyMode: 'search',   // 'search' or 'create' mode for counterparty section
+    counterpartySearch: '',        // search input text for counterparty lookup
+    counterpartySelected: null,    // selected existing account name (mode: 'existing')
     permissionDomain: null   // Phase 6: current permission domain context
   };
 
@@ -62076,6 +62105,9 @@ var P022_RuntimeValidation = {
     _wsv2State.unmappedExtractions = [];
     _wsv2State.aliases = [];
     _wsv2State.clauseSelections = {};
+    _wsv2State.counterpartyMode = 'search';
+    _wsv2State.counterpartySearch = '';
+    _wsv2State.counterpartySelected = null;
 
     _wsv2Audit('PTL_EDIT_OPENED', { scope: scope, check_code: checkCode, gate_color: ctx.gate_color });
 
@@ -62529,7 +62561,7 @@ var P022_RuntimeValidation = {
     return _wsv2Esc(preview);
   }
 
-  // ===== NEW COUNTERPARTY (Phase 5) =====
+  // ===== COUNTERPARTY SEARCH / CREATE (Phase 5 — UX Correction Pass) =====
   function _wsv2RenderCounterpartySection() {
     var el = document.getElementById('wsv2-counterparty-section');
     if (!el || !_wsv2State.context) return;
@@ -62539,56 +62571,140 @@ var P022_RuntimeValidation = {
     var ctx = _wsv2State.context;
     var story = (ctx.preflight_result || {}).resolution_story || {};
     var suggestedName = story.counterparty_name || story.extracted_party_name || '';
+    var isNewEntry = !!story.new_entry_detected;
+    var mode = _wsv2State.counterpartyMode || 'search';
+    var selected = _wsv2State.counterpartySelected;
 
     var html = '<div style="margin-top:16px; padding:14px 16px; border:1px solid #ce93d8; border-radius:8px; background:#f3e5f5;">';
-    html += '<h3 style="margin:0 0 8px; font-size:0.9em; font-weight:600; color:#7b1fa2;">New Counterparty</h3>';
-    html += '<p style="font-size:0.8em; color:#666; margin-bottom:10px;">Create a new counterparty record when no existing match is found.</p>';
+    html += '<h3 style="margin:0 0 8px; font-size:0.9em; font-weight:600; color:#7b1fa2;">Counterparty Resolution</h3>';
 
-    html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">';
-    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Legal Entity *</label>';
-    html += '<select id="wsv2-cp-legal-entity" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;">';
-    html += '<option value="">Select entity...</option>';
-    // Populate from resolver if available
-    if (typeof cgbState !== 'undefined' && cgbState.resolver && cgbState.resolver.legalEntities) {
-      for (var le = 0; le < cgbState.resolver.legalEntities.length; le++) {
-        html += '<option value="' + _wsv2Esc(cgbState.resolver.legalEntities[le]) + '">' + _wsv2Esc(cgbState.resolver.legalEntities[le]) + '</option>';
-      }
+    // New-entry guidance banner
+    if (isNewEntry) {
+      html += '<div style="margin-bottom:10px; padding:8px 12px; background:#fff3e0; border:1px solid #ffcc80; border-radius:6px; font-size:0.8em; color:#e65100;">';
+      html += '<strong>New entry detected.</strong> No existing counterparty matched. Create a new counterparty record or search manually.';
+      html += '</div>';
     }
-    html += '</select></div>';
 
-    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Counterparty Name *</label>';
-    html += '<input type="text" id="wsv2-cp-name" value="' + _wsv2Esc(suggestedName) + '" placeholder="Legal/account name" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+    // Selected counterparty display
+    if (selected) {
+      html += '<div style="margin-bottom:10px; padding:8px 12px; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:6px; display:flex; align-items:center; justify-content:space-between;">';
+      html += '<span style="font-size:0.85em; color:#2e7d32; font-weight:600;">Selected: ' + _wsv2Esc(selected) + '</span>';
+      html += '<button onclick="_wsv2ClearCpSelection()" style="padding:3px 10px; font-size:0.78em; background:#fff; border:1px solid #a5d6a7; border-radius:4px; cursor:pointer; color:#2e7d32;">Clear</button>';
+      html += '</div></div>';
+      el.innerHTML = html;
+      return;
+    }
+
+    // Mode tabs
+    var searchActive = mode === 'search';
+    var createActive = mode === 'create';
+    html += '<div style="display:flex; gap:6px; margin-bottom:10px;">';
+    html += '<button onclick="_wsv2SetCounterpartyMode(\'search\')" style="padding:5px 14px; font-size:0.8em; border:1px solid ' + (searchActive ? '#7b1fa2' : '#ddd') + '; background:' + (searchActive ? '#7b1fa2' : '#fff') + '; color:' + (searchActive ? '#fff' : '#666') + '; border-radius:4px; cursor:pointer;">Search Existing</button>';
+    html += '<button onclick="_wsv2SetCounterpartyMode(\'create\')" style="padding:5px 14px; font-size:0.8em; border:1px solid ' + (createActive ? '#7b1fa2' : '#ddd') + '; background:' + (createActive ? '#7b1fa2' : '#fff') + '; color:' + (createActive ? '#fff' : '#666') + '; border-radius:4px; cursor:pointer;">Create New Counterparty</button>';
     html += '</div>';
 
-    html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">';
-    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Street Address *</label>';
-    html += '<input type="text" id="wsv2-cp-street" placeholder="Street address" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
-    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">City *</label>';
-    html += '<input type="text" id="wsv2-cp-city" placeholder="City" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
-    html += '</div>';
+    if (mode === 'search') {
+      // --- SEARCH MODE ---
+      html += '<div style="margin-bottom:8px;">';
+      html += '<label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Legal Entity</label>';
+      html += '<select id="wsv2-cp-search-entity" onchange="_wsv2OnCpSearchInput(document.getElementById(\'wsv2-cp-search-input\').value)" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box; margin-bottom:8px;">';
+      html += '<option value="">All entities</option>';
+      if (typeof cgbState !== 'undefined' && cgbState.resolver && cgbState.resolver.legalEntities) {
+        for (var le = 0; le < cgbState.resolver.legalEntities.length; le++) {
+          html += '<option value="' + _wsv2Esc(cgbState.resolver.legalEntities[le]) + '">' + _wsv2Esc(cgbState.resolver.legalEntities[le]) + '</option>';
+        }
+      }
+      html += '</select>';
+      html += '<input type="text" id="wsv2-cp-search-input" value="' + _wsv2Esc(_wsv2State.counterpartySearch || '') + '" placeholder="Search accounts by name..." oninput="_wsv2OnCpSearchInput(this.value)" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;">';
+      html += '</div>';
 
-    html += '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">';
-    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">State/Province *</label>';
-    html += '<input type="text" id="wsv2-cp-state" placeholder="State" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
-    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Postal Code *</label>';
-    html += '<input type="text" id="wsv2-cp-postal" placeholder="Postal code" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
-    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Country *</label>';
-    html += '<input type="text" id="wsv2-cp-country" placeholder="Country" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
-    html += '</div>';
+      // Search results
+      var searchTerm = (_wsv2State.counterpartySearch || '').toLowerCase().trim();
+      var results = [];
+      if (searchTerm.length >= 2 && typeof cgbState !== 'undefined' && cgbState.resolver) {
+        var entityFilter = '';
+        var entityEl = document.getElementById('wsv2-cp-search-entity');
+        if (entityEl) entityFilter = entityEl.value || '';
+        var allAccounts = [];
+        if (cgbState.resolver.accountsByEntity) {
+          var entityKeys = Object.keys(cgbState.resolver.accountsByEntity);
+          for (var ek = 0; ek < entityKeys.length; ek++) {
+            if (entityFilter && entityKeys[ek] !== entityFilter) continue;
+            var accts = cgbState.resolver.accountsByEntity[entityKeys[ek]] || [];
+            for (var ai = 0; ai < accts.length; ai++) allAccounts.push(accts[ai]);
+          }
+        }
+        for (var si = 0; si < allAccounts.length && results.length < 20; si++) {
+          if (String(allAccounts[si]).toLowerCase().indexOf(searchTerm) >= 0) results.push(allAccounts[si]);
+        }
+      }
 
-    html += '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">';
-    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Contact Name *</label>';
-    html += '<input type="text" id="wsv2-cp-contact-name" placeholder="Full name" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
-    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Contact Email *</label>';
-    html += '<input type="text" id="wsv2-cp-contact-email" placeholder="email@example.com" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
-    html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Contact Phone</label>';
-    html += '<input type="text" id="wsv2-cp-contact-phone" placeholder="Phone number" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
-    html += '</div>';
+      if (searchTerm.length >= 2) {
+        html += '<div style="max-height:180px; overflow-y:auto; border:1px solid #e0e0e0; border-radius:4px; background:#fff;">';
+        if (results.length === 0) {
+          html += '<div style="padding:8px 10px; font-size:0.8em; color:#999;">No matching accounts. Try a different search or create a new counterparty.</div>';
+        } else {
+          for (var ri = 0; ri < results.length; ri++) {
+            html += '<div onclick="_wsv2SelectCpAccount(\'' + _wsv2JsEsc(results[ri]) + '\')" style="padding:7px 10px; font-size:0.82em; border-bottom:1px solid #f5f5f5; cursor:pointer; color:#263238;" onmouseover="this.style.background=\'#e3f2fd\'" onmouseout="this.style.background=\'#fff\'">' + _wsv2Esc(results[ri]) + '</div>';
+          }
+        }
+        html += '</div>';
+      } else if (searchTerm.length > 0) {
+        html += '<div style="font-size:0.78em; color:#999; padding:4px 0;">Type at least 2 characters to search.</div>';
+      }
 
-    html += '<div id="wsv2-cp-errors" style="display:none; color:#c62828; font-size:0.78em; margin-bottom:8px;"></div>';
-    html += '<button onclick="_wsv2SubmitNewCounterparty()" style="padding:8px 16px; background:#7b1fa2; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:0.85em;">Create Counterparty</button>';
-    html += '</div>';
+      html += '<div style="margin-top:8px; font-size:0.78em; color:#7b1fa2; cursor:pointer;" onclick="_wsv2SetCounterpartyMode(\'create\')">Or <strong>Create New Counterparty</strong> if no match exists</div>';
 
+    } else {
+      // --- CREATE MODE ---
+      html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">';
+      html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Legal Entity *</label>';
+      html += '<select id="wsv2-cp-legal-entity" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;">';
+      html += '<option value="">Select entity...</option>';
+      if (typeof cgbState !== 'undefined' && cgbState.resolver && cgbState.resolver.legalEntities) {
+        for (var le2 = 0; le2 < cgbState.resolver.legalEntities.length; le2++) {
+          html += '<option value="' + _wsv2Esc(cgbState.resolver.legalEntities[le2]) + '">' + _wsv2Esc(cgbState.resolver.legalEntities[le2]) + '</option>';
+        }
+      }
+      html += '</select></div>';
+
+      html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Counterparty Name *</label>';
+      html += '<input type="text" id="wsv2-cp-name" value="' + _wsv2Esc(suggestedName) + '" placeholder="Legal/account name" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+      html += '</div>';
+
+      html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">';
+      html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Street Address *</label>';
+      html += '<input type="text" id="wsv2-cp-street" placeholder="Street address" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+      html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">City *</label>';
+      html += '<input type="text" id="wsv2-cp-city" placeholder="City" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+      html += '</div>';
+
+      html += '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">';
+      html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">State/Province *</label>';
+      html += '<input type="text" id="wsv2-cp-state" placeholder="State" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+      html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Postal Code *</label>';
+      html += '<input type="text" id="wsv2-cp-postal" placeholder="Postal code" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+      html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Country *</label>';
+      html += '<input type="text" id="wsv2-cp-country" placeholder="Country" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+      html += '</div>';
+
+      html += '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">';
+      html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Contact Name *</label>';
+      html += '<input type="text" id="wsv2-cp-contact-name" placeholder="Full name" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+      html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Contact Email *</label>';
+      html += '<input type="text" id="wsv2-cp-contact-email" placeholder="email@example.com" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+      html += '<div><label style="display:block; font-size:0.76em; color:#666; margin-bottom:4px;">Contact Phone</label>';
+      html += '<input type="text" id="wsv2-cp-contact-phone" placeholder="Phone number" style="width:100%; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:0.82em; box-sizing:border-box;"></div>';
+      html += '</div>';
+
+      html += '<div id="wsv2-cp-errors" style="display:none; color:#c62828; font-size:0.78em; margin-bottom:8px;"></div>';
+      html += '<div style="display:flex; gap:8px;">';
+      html += '<button onclick="_wsv2SubmitNewCounterparty()" style="padding:8px 16px; background:#7b1fa2; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:0.85em;">Create Counterparty</button>';
+      html += '<button onclick="_wsv2SetCounterpartyMode(\'search\')" style="padding:8px 16px; background:#f5f5f5; border:1px solid #ddd; border-radius:4px; cursor:pointer; font-size:0.85em; color:#666;">Back to Search</button>';
+      html += '</div>';
+    }
+
+    html += '</div>';
     el.innerHTML = html;
   }
 
@@ -62626,10 +62742,41 @@ var P022_RuntimeValidation = {
     }
     if (errEl) errEl.style.display = 'none';
 
+    data.mode = 'create';
     _wsv2State.counterpartyForm = data;
+    _wsv2State.counterpartyMode = 'create';
     _wsv2Audit('NEW_COUNTERPARTY_CREATED', data);
 
     if (typeof showToast === 'function') showToast('Counterparty created: ' + data.name, 'success');
+    _wsv2UpdateFooter();
+    _wsv2RenderCounterpartySection();
+  };
+
+  // ===== COUNTERPARTY SEARCH/SELECT HELPERS (UX Correction Pass) =====
+  window._wsv2SetCounterpartyMode = function(mode) {
+    _wsv2State.counterpartyMode = mode;
+    _wsv2RenderCounterpartySection();
+  };
+
+  window._wsv2OnCpSearchInput = function(val) {
+    _wsv2State.counterpartySearch = val;
+    _wsv2RenderCounterpartySection();
+  };
+
+  window._wsv2SelectCpAccount = function(accountName) {
+    _wsv2State.counterpartySelected = accountName;
+    _wsv2State.counterpartyForm = { mode: 'existing', selected_account: accountName };
+    _wsv2Audit('COUNTERPARTY_SELECTED', { account: accountName });
+    if (typeof showToast === 'function') showToast('Counterparty selected: ' + accountName, 'success');
+    _wsv2UpdateFooter();
+    _wsv2RenderCounterpartySection();
+  };
+
+  window._wsv2ClearCpSelection = function() {
+    _wsv2State.counterpartySelected = null;
+    _wsv2State.counterpartyForm = null;
+    _wsv2State.counterpartySearch = '';
+    _wsv2RenderCounterpartySection();
     _wsv2UpdateFooter();
   };
 
